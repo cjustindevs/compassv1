@@ -1,59 +1,205 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+Project Overview
+COMPASS (Competency Oversight, Monitoring, Peer Assistance, Support, and Supervision) is a web-based peer support platform developed for Project Dial-A-Friend at Divine Word College of Calapan. It connects students (help seekers) with trained psychology student volunteers (helpers) in a secure, anonymous, and confidential environment.
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+The system streamlines the entire peer support process—from anonymous registration and pre-session screening to helper matching, real-time chat/voice sessions, post-session evaluation, and administrative monitoring. It replaces the program's manual, fragmented workflow with a centralized, database-driven platform that enhances service coordination, competency tracking, referral management, and institutional reporting.
 
-## About Laravel
+Target Users
+User Role	Description
+Help Seeker	Students seeking anonymous emotional support
+Helper	Trained psychology student volunteers providing peer support
+Moderator	Program coordinators managing daily operations
+Adviser	Faculty supervisors overseeing helpers and reviewing sessions
+Psychology Professional	Licensed professionals managing referrals
+System Administrator	Technical administrators maintaining the platform
+Key Features
+For Help Seekers
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Pseudonymous registration with OTP email verification
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+3-step request support flow (screening, preferences, matching)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Real-time risk classification based on screening responses
 
-## Learning Laravel
+Secure chat and voice sessions with recording consent
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+Post-session evaluation and session history
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Self-help resources (guided exercises, articles, tools)
 
-## Laravel Sponsors
+Notification system for session updates and reminders
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+For Helpers (In Development)
 
-### Premium Partners
+Session management and availability settings
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Competency monitoring with adviser feedback
 
-## Contributing
+Session documentation and reflection submission
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+For Advisers (In Development)
 
-## Code of Conduct
+Helper supervision and competency evaluation dashboards
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Referral review and approval workflow
 
-## Security Vulnerabilities
+Performance analytics and program reporting
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+System-Wide
 
-## License
+Role-based access control with fine-grained permissions
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Identity Vault for secure storage of personally identifiable information
+
+Audit logging for all system activities
+
+Compliance with Data Privacy Act of 2012 (RA 10173)
+
+Technology Stack
+Category	Technology
+Backend Framework	Laravel 12
+Backend Language	PHP 8.3+
+Database	PostgreSQL 17
+Frontend	Laravel Blade, Tailwind CSS, JavaScript
+Assets	Vite
+Authentication	Laravel Breeze (JWT-based)
+Icons	Font Awesome 6
+Typography	Google Fonts (Inter)
+Version Control	Git, GitHub
+Hosting	DigitalOcean VPS
+Database Schema
+The system uses 25+ relational tables organized into the following modules:
+
+Users and Roles (users, help_seekers, helpers, advisers, moderators, professionals, admins)
+
+Sessions and Queue (sessions, queue_requests, concern_categories)
+
+Communication (messages, call_logs)
+
+Consent and Identity (consent_records, identity_vault)
+
+Competency and Feedback (helper_competency_history, seeker_evaluations, adviser_feedback)
+
+Referrals (referrals, session_reports, incident_reports)
+
+Resources (self_help_resources, emergency_resources, faqs)
+
+System (notifications, analytics_reports, audit_logs)
+
+System Architecture
+The application follows a three-tier architecture:
+
+Presentation Layer: Responsive Blade views with role-specific dashboards
+
+Application Layer: Business logic including helper matching, queue management, risk classification, and competency monitoring
+
+Data Layer: PostgreSQL database with Identity Vault for PII isolation
+
+Key security components include HTTPS encryption, bcrypt password hashing, CSRF protection, prepared statements, and role-based access control.
+
+Current Development Status
+Module	Status
+Authentication (OTP Registration, Login)	Complete
+Landing Page	Complete
+Seeker Dashboard	Complete
+Request Support Flow	Complete
+Active Session (Chat/Voice)	Complete
+Post-Session Evaluation	Complete
+Session History	Complete
+Self-Help Tools	In Progress
+Notifications	In Progress
+Profile & Settings	In Progress
+Helper Module	Planned
+Adviser Module	Planned
+Installation
+Prerequisites
+PHP 8.3+
+
+Composer
+
+PostgreSQL 17+
+
+Node.js 18+
+
+NPM
+
+Quick Setup
+bash
+git clone https://github.com/your-username/compass.git
+cd compass
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+# Configure database in .env
+php artisan migrate
+php artisan db:seed
+npm run build
+php artisan serve
+Environment Configuration
+env
+APP_NAME=COMPASS
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost:8000
+
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=compass_db
+DB_USERNAME=compass_user
+DB_PASSWORD=your_password
+
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your_email@gmail.com
+MAIL_PASSWORD=your_app_password
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS=your_email@gmail.com
+MAIL_FROM_NAME="COMPASS Support"
+Development Commands
+bash
+php artisan serve                 # Start Laravel server
+npm run dev                       # Start Vite development server
+npm run build                     # Build assets for production
+php artisan migrate                # Run database migrations
+php artisan db:seed                # Seed database with sample data
+php artisan test                   # Run tests
+php artisan optimize               # Optimize for production
+Project Structure
+text
+COMPASS/
+├── app/
+│   ├── Http/Controllers/          # Controllers
+│   ├── Models/                    # Eloquent models
+│   └── Providers/                 # Service providers
+├── database/
+│   ├── migrations/                # Database migrations
+│   └── seeders/                   # Database seeders
+├── resources/
+│   └── views/                     # Blade templates
+│       ├── landing/               # Landing page
+│       ├── auth/                  # Authentication views
+│       ├── dashboard/             # Role-specific dashboards
+│       ├── request/               # Request support flow
+│       ├── session/               # Session views
+│       ├── selfhelp/              # Self-help resources
+│       ├── notifications/         # Notification center
+│       ├── profile/               # User profile
+│       └── settings/              # Settings pages
+├── routes/
+│   ├── web.php                    # Web routes
+│   └── api.php                    # API routes
+├── public/
+│   ├── manifest.json              # PWA manifest
+│   └── serviceworker.js           # Service worker
+└── .env.example                   # Environment template
+Contributors
+Name	Role
+Cuenza, Lorraine Anne O.	Developer
+Dancel, Lean Margaret L.	Scrum Master
+Faello, Aiken M.	Developer
+Lumanglas, Carl Justin B.	Lead Developer
+Institution
+Divine Word College of Calapan
+Gov. Infantado St., Calapan City, Oriental Mindoro
