@@ -127,11 +127,12 @@ class HelpSeekerRegisterController extends Controller
         try {
             DB::beginTransaction();
 
-            // Create user — users table columns: name, email, password, email_verified_at
+            // Create user — users table columns: name, email, password, role, email_verified_at
             $user = User::create([
                 'name' => $request->alias,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
+                'role' => 'seeker',
                 'email_verified_at' => now()
             ]);
 

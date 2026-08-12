@@ -104,13 +104,13 @@
     <div class="container">
         <div class="logo">
             <h1>COMPASS</h1>
-            <p class="tagline">Peer Support System · Project Dial-A-Friend</p>
+            <p class="tagline">Compass · Project Dial-A-Friend</p>
         </div>
 
         <p class="greeting">Hello,</p>
 
         <p class="message">
-            Thank you for choosing <strong>COMPASS</strong>. Use the verification code below to complete your registration and start your journey toward support and wellness.
+           Thank you for choosing <strong>COMPASS</strong>. We are truly honored that you've chosen to begin your journey with us. Just as a compass helps guide people through unfamiliar paths, COMPASS is here to provide a safe, supportive, and compassionate space where you can seek guidance, share your experiences, and connect with people who genuinely care. Every step you take matters, and reaching out for support is a courageous first step toward growth, resilience, and well-being. To help us keep your account secure and ensure a trusted community for everyone, please use the verification code below to complete your registration. We look forward to walking alongside you as you navigate life's challenges and celebrate every step forward. Welcome to the COMPASS community—where every journey begins with hope, and no one has to walk alone.
         </p>
 
         <div class="otp-box">
@@ -119,7 +119,7 @@
         </div>
 
         <p class="message" style="font-size: 14px;">
-            If you didn't request this code, please ignore this email or contact us at <a href="mailto:compass@dwcc.edu.ph" style="color: #16A34A;">compass@dwcc.edu.ph</a>
+            If you didn't request this code, please ignore this email or contact us at <a href="mailto:projectdialafriendorganization@gmail.com" style="color: #16A34A;">projectdialafriendorganization@gmail.com</a>
         </p>
 
         <hr class="divider">
