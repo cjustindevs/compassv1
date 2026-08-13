@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -14,6 +15,20 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /**
+     * Account roles currently supported by COMPASS.
+     *
+     * @var array<string, string>
+     */
+    public const ROLE_LABELS = [
+        'seeker' => 'Help Seeker',
+        'helper' => 'Helper',
+        'moderator' => 'Moderator',
+        'adviser' => 'Adviser',
+        'professional' => 'Psychology Professional',
+        'admin' => 'Administrator',
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -80,6 +95,11 @@ class User extends Authenticatable
         return $this->hasOne(HelpSeeker::class, 'user_account_id', 'id');
     }
 
+    public function helper(): HasOne
+    {
+        return $this->hasOne(Helper::class, 'user_account_id', 'id');
+    }
+
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class, 'user_account_id', 'id');
@@ -118,6 +138,6 @@ class User extends Authenticatable
 
         $parts = preg_split('/[\s_]+/', trim($name));
 
-        return strtoupper(mb_substr($parts[0] ?? 'S', 0, 1) . mb_substr($parts[1] ?? '', 0, 1));
+        return strtoupper(mb_substr($parts[0] ?? 'S', 0, 1).mb_substr($parts[1] ?? '', 0, 1));
     }
 }

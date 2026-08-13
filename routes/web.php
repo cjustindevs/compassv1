@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\ResourceLibraryController as AdminResourceLibraryController;
+use App\Http\Controllers\Admin\RolePermissionController as AdminRolePermissionController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Auth\AdminAuthenticatedSessionController;
 use App\Http\Controllers\Auth\HelpSeekerRegisterController;
 use App\Http\Controllers\Auth\OTPController;
 use App\Http\Controllers\LandingPageController;
@@ -21,6 +26,16 @@ use Illuminate\Support\Facades\Route;
 // LANDING PAGE
 // =============================================
 Route::get('/', [LandingPageController::class, 'index'])->name('home');
+
+// =============================================
+// SYSTEM ADMINISTRATOR LOGIN
+// =============================================
+Route::middleware('guest')->group(function () {
+    Route::get('/admin/login', [AdminAuthenticatedSessionController::class, 'create'])
+        ->name('admin.login');
+    Route::post('/admin/login', [AdminAuthenticatedSessionController::class, 'store'])
+        ->name('admin.login.store');
+});
 
 // =============================================
 // DASHBOARD (Protected Route)
@@ -67,9 +82,17 @@ Route::middleware('auth')->group(function () {
         return view('dashboard.professional');
     })->name('professional.dashboard');
 
-    Route::get('/admin/dashboard', function () {
-        return view('dashboard.admin');
-    })->name('admin.dashboard');
+});
+
+Route::get('/admin/dashboard', AdminDashboardController::class)
+    ->middleware(['auth', 'admin'])
+    ->name('admin.dashboard');
+
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/users', [AdminUserController::class, 'index'])->name('users');
+    Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
+    Route::get('/roles-permissions', AdminRolePermissionController::class)->name('roles-permissions');
+    Route::get('/resource-library', AdminResourceLibraryController::class)->name('resource-library');
 });
 
 // =============================================
