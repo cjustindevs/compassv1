@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ConcernCategory;
 use App\Models\Helper;
 use App\Models\Message;
+use App\Models\Notification;
 use App\Models\QueueRequest;
 use App\Models\Session;
 use Illuminate\Http\Request;
@@ -170,6 +171,16 @@ class RequestSupportController extends Controller
                         'assigned_helper_id' => $availableHelper->id,
                         'matched_date' => now(),
                     ]);
+
+                // Notify the helper about the new assignment
+                Notification::create([
+                    'user_account_id' => $availableHelper->user_account_id,
+                    'title' => 'New case assigned',
+                    'message' => 'You have been assigned a new case. Please review and accept it.',
+                    'notification_type' => 'assignment',
+                    'type_icon' => '📋',
+                    'link' => '/helper/cases',
+                ]);
             } else {
                 // No helper online — keep the session waiting in the queue
                 $session->update(['session_status' => 'waiting']);

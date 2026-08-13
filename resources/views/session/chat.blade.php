@@ -215,6 +215,12 @@
             border-bottom-right-radius: 4px;
         }
 
+        .message .sender-name { font-size: 12px; font-weight: 600; display: block; margin-bottom: 2px; }
+        .message.seeker .sender-name { color: rgba(255,255,255,0.85); }
+        .message.helper .sender-name { color: var(--green-600); }
+        .message p { margin: 0; line-height: 1.4; }
+        .message.seeker p { color: #fff; }
+
         .message .time {
             font-size: 10px;
             opacity: 0.6;
@@ -334,6 +340,8 @@
             .bottom-nav { display: flex; }
         }
     </style>
+
+    @vite(['resources/js/app.js', 'resources/js/chat.js'])
 </head>
 <body>
 
@@ -341,6 +349,10 @@
         'active' => ['session.chat'],
         'role'   => 'Help Seeker',
     ])
+
+    <input type="hidden" id="sessionId" value="{{ $session->id }}">
+    <input type="hidden" id="currentUserId" value="{{ auth()->id() }}">
+    <input type="hidden" id="currentUserRole" value="{{ auth()->user()->role }}">
 
     <!-- ══════════════════════════════════════════════ -->
     <!-- MAIN CONTENT                                 -->
@@ -399,20 +411,13 @@
 
             <!-- Messages -->
             <div class="chat-messages" id="chatMessages">
-                @forelse($messages as $msg)
-                    <div class="message {{ $msg->sender }}">
-                        {{ $msg->message_text }}
-                        <span class="time">{{ $msg->time_formatted }}</span>
-                    </div>
-                @empty
-                    <p class="text-sm text-gray-400 text-center py-8">No messages yet. Say hello to your helper to get started.</p>
-                @endforelse
+                <p class="chat-empty text-sm text-gray-400 text-center py-8">No messages yet. Say hello to your helper to get started.</p>
             </div>
 
             <!-- Input -->
             <div class="chat-input">
-                <input type="text" id="messageInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter') sendMessage()">
-                <button onclick="sendMessage()">
+                <input type="text" id="messageInput" placeholder="Type a message..." autofocus>
+                <button id="sendButton">
                     <i class="fas fa-paper-plane mr-2"></i> Send
                 </button>
             </div>
@@ -431,7 +436,7 @@
             const messagesContainer = document.getElementById('chatMessages');
             const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
-            // ── Scroll to bottom of messages ──
+            // ── Scroll to bottom of messages (initial, before Echo loads) ──
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
             // ── Session Timer ──
@@ -443,75 +448,6 @@
                 const secs = String(seconds % 60).padStart(2, '0');
                 if (timerDisplay) timerDisplay.textContent = mins + ':' + secs;
             }, 1000);
-
-            function appendMessage(sender, text, time) {
-                const msgDiv = document.createElement('div');
-                msgDiv.className = 'message ' + sender;
-                msgDiv.innerHTML = '<span class="text"></span><span class="time"></span>';
-                msgDiv.querySelector('.text').textContent = text;
-                msgDiv.querySelector('.time').textContent = time;
-                messagesContainer.appendChild(msgDiv);
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }
-
-            // ── Send Message (persisted to the database) ──
-            window.sendMessage = async function() {
-                const input = document.getElementById('messageInput');
-                const message = input.value.trim();
-                if (!message) return;
-
-                try {
-                    const response = await fetch('{{ route('session.chat.send') }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken
-                        },
-                        body: JSON.stringify({ message: message })
-                    });
-
-                    if (!response.ok) {
-                        const data = await response.json();
-                        alert(data.error || 'Could not send the message. Please try again.');
-                        return;
-                    }
-
-                    const data = await response.json();
-                    input.value = '';
-                    appendMessage('seeker', data.message, data.time);
-                } catch (err) {
-                    alert('Network error — could not send the message.');
-                }
-            };
-
-            // ── Poll for new helper messages every 5 seconds ──
-            async function pollMessages() {
-                try {
-                    const response = await fetch(window.location.href, {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                    });
-                    if (!response.ok) return;
-                    const html = await response.text();
-
-                    // Count helper messages currently rendered vs. fresh page
-                    const currentCount = messagesContainer.querySelectorAll('.message.helper').length;
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    const fresh = doc.getElementById('chatMessages');
-                    if (!fresh) return;
-                    const helperCount = fresh.querySelectorAll('.message.helper').length;
-
-                    if (helperCount > currentCount) {
-                        // Simplest reliable refresh — full reload with the new rows
-                        window.location.reload();
-                    }
-                } catch (err) {
-                    // ignore transient network errors
-                }
-            }
-
-            setInterval(pollMessages, 5000);
 
         });
     </script>

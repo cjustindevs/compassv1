@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             SelfHelpResourceSeeder::class,
             NotificationSeeder::class,
+            HelperModuleSeeder::class,
         ]);
     }
 }

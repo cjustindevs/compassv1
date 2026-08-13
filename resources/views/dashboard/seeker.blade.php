@@ -819,7 +819,7 @@
                         <span class="text-xs text-gray-400">vs last week</span>
                     </div>
                 </div>
-                <div class="stat-card">
+                <a href="{{ route('session.chat') }}" class="stat-card block hover:border-[#04A052] transition" style="display:block;text-decoration:none;">
                     <div class="flex items-center justify-between">
                         <span class="stat-label">Active Sessions</span>
                         <span class="text-2xl">🟢</span>
@@ -829,7 +829,7 @@
                         <span class="stat-change negative">-2</span>
                         <span class="text-xs text-gray-400">this week</span>
                     </div>
-                </div>
+                </a>
             </div>
 
             <!-- Recent Sessions -->

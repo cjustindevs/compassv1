@@ -35,6 +35,18 @@ class HelpSeeker extends Model
         return $this->hasMany(ConsentRecord::class, 'seeker_id', 'id');
     }
 
+    public function evaluations()
+    {
+        return $this->hasManyThrough(
+            HelpSeekerEvaluation::class,
+            Session::class,
+            'seeker_id',
+            'session_id',
+            'id',
+            'id'
+        );
+    }
+
     public function identityVault()
     {
         return $this->hasOne(IdentityVault::class, 'seeker_id', 'id');

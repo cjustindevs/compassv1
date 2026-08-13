@@ -20,6 +20,10 @@ class Helper extends Model
         'competency_level',
         'max_concurrent_sessions',
         'specializations',
+        'bio',
+        'phone',
+        'preferred_language',
+        'timezone',
     ];
 
     protected $casts = [
@@ -41,6 +45,50 @@ class Helper extends Model
     {
         return $this->hasMany(Session::class, 'helper_id', 'id')
             ->whereIn('session_status', ['scheduled', 'active']);
+    }
+
+    public function readinessChecks(): HasMany
+    {
+        return $this->hasMany(ReadinessCheck::class, 'helper_id', 'id');
+    }
+
+    public function latestReadiness()
+    {
+        return $this->hasOne(ReadinessCheck::class, 'helper_id', 'id')
+            ->latestOfMany();
+    }
+
+    public function competencyHistory(): HasMany
+    {
+        return $this->hasMany(HelperCompetencyHistory::class, 'helper_id', 'id');
+    }
+
+    public function latestCompetency()
+    {
+        return $this->hasOne(HelperCompetencyHistory::class, 'helper_id', 'id')
+            ->latestOfMany();
+    }
+
+    public function reports(): HasMany
+    {
+        return $this->hasManyThrough(
+            SessionReport::class,
+            Session::class,
+            'helper_id',
+            'session_id',
+            'id',
+            'id'
+        );
+    }
+
+    public function scopeAvailable($query)
+    {
+        return $query->where('status', 'available');
+    }
+
+    public function getAvailabilityLabelAttribute(): string
+    {
+        return ucfirst($this->status ?? 'offline');
     }
 
     public function queueRequests(): HasMany

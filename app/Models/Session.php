@@ -59,8 +59,55 @@ class Session extends Model
         return $this->hasMany(Message::class, 'session_id', 'id');
     }
 
+    public function report(): HasOne
+    {
+        return $this->hasOne(SessionReport::class, 'session_id', 'id');
+    }
+
+    public function callLog(): HasOne
+    {
+        return $this->hasOne(CallLog::class, 'session_id', 'id');
+    }
+
     public function evaluation(): HasOne
     {
         return $this->hasOne(HelpSeekerEvaluation::class, 'session_id', 'id');
+    }
+
+    public function scopeForHelper($query, int $helperId)
+    {
+        return $query->where('helper_id', $helperId);
+    }
+
+    public function scopeWithStatus($query, string $status)
+    {
+        return $query->where('session_status', $status);
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        $labels = [
+            'screening_completed' => 'Screening Done',
+            'preferences_set' => 'Awaiting Helper',
+            'waiting' => 'In Queue',
+            'helper_assigned' => 'Helper Assigned',
+            'active' => 'Active',
+            'completed' => 'Completed',
+            'cancelled' => 'Cancelled',
+            'no_show' => 'No Show',
+            'scheduled' => 'Scheduled',
+        ];
+
+        return $labels[$this->session_status] ?? ucfirst(str_replace('_', ' ', $this->session_status));
+    }
+
+    public function getReferenceNumberAttribute(): string
+    {
+        return 'R-' . str_pad((string) $this->id, 4, '0', STR_PAD_LEFT);
+    }
+
+    public function getModeLabelAttribute(): string
+    {
+        return $this->session_type === 'voice' ? 'Voice' : 'Chat';
     }
 }

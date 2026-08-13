@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\HelpSeekerEvaluation;
+use App\Events\MessageSent;
 use App\Models\Helper;
+use App\Models\HelpSeekerEvaluation;
 use App\Models\Message;
+use App\Models\Notification;
 use App\Models\Session;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -55,15 +57,24 @@ class SessionController extends Controller
 
         $message = Message::create([
             'session_id' => $session->id,
+            'sender_id' => Auth::id(),
             'sender' => 'seeker',
             'message_text' => $request->message,
             'sent_datetime' => now(),
         ]);
 
+        try {
+            broadcast(new MessageSent($message));
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         return response()->json([
             'id' => $message->id,
             'message' => $message->message_text,
             'sender' => 'seeker',
+            'sender_role' => 'seeker',
+            'sender_name' => $message->senderName(),
             'time' => $message->time_formatted,
         ]);
     }
@@ -116,11 +127,23 @@ class SessionController extends Controller
             'duration' => $durationMinutes,
         ]);
 
-        // Free the helper for future matches (helper module not built yet)
+        // Free the helper for future matches and notify them
         if ($session->helper_id) {
             Helper::where('id', $session->helper_id)
                 ->where('status', 'busy')
                 ->update(['status' => 'available']);
+
+            $helper = $session->helper;
+            if ($helper && $helper->user_account_id) {
+                Notification::create([
+                    'user_account_id' => $helper->user_account_id,
+                    'title' => 'Session completed',
+                    'message' => 'The seeker has ended the session. Please complete your session notes.',
+                    'notification_type' => 'session',
+                    'type_icon' => '📝',
+                    'link' => '/helper/session/' . $session->id . '/notes',
+                ]);
+            }
         }
 
         session([

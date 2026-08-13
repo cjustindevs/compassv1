@@ -80,6 +80,16 @@ class User extends Authenticatable
         return $this->hasOne(HelpSeeker::class, 'user_account_id', 'id');
     }
 
+    public function helper()
+    {
+        return $this->hasOne(Helper::class, 'user_account_id', 'id');
+    }
+
+    public function adviser()
+    {
+        return $this->hasOne(Adviser::class, 'user_account_id', 'id');
+    }
+
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class, 'user_account_id', 'id');

@@ -1,0 +1,26 @@
+<?php
+
+use App\Models\Session;
+use Illuminate\Support\Facades\Broadcast;
+
+/*
+|--------------------------------------------------------------------------
+| Broadcast Channels
+|--------------------------------------------------------------------------
+|
+| Register the authorization callbacks for the application's broadcast
+| channels. Only users who belong to a session may subscribe to its
+| real-time channel.
+|
+*/
+
+Broadcast::channel('session.{sessionId}', function ($user, $sessionId) {
+    $session = Session::find($sessionId);
+
+    if (! $session) {
+        return false;
+    }
+
+    return ($session->seeker_id && $session->seeker_id === $user->helpSeeker?->id)
+        || ($session->helper_id && $session->helper_id === $user->helper?->id);
+});

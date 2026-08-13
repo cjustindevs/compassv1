@@ -2,6 +2,19 @@
 
 use App\Http\Controllers\Auth\HelpSeekerRegisterController;
 use App\Http\Controllers\Auth\OTPController;
+use App\Http\Controllers\Helper\HelperCalendarController;
+use App\Http\Controllers\Helper\HelperCaseController;
+use App\Http\Controllers\Helper\HelperChatController;
+use App\Http\Controllers\Helper\HelperCompetencyController;
+use App\Http\Controllers\Helper\HelperDashboardController;
+use App\Http\Controllers\Helper\HelperNotificationController;
+use App\Http\Controllers\Helper\HelperNotesController;
+use App\Http\Controllers\Helper\HelperProfileController;
+use App\Http\Controllers\Helper\HelperReadinessController;
+use App\Http\Controllers\Helper\HelperResourceController;
+use App\Http\Controllers\Helper\HelperSessionController;
+use App\Http\Controllers\Helper\HelperSettingsController;
+use App\Http\Controllers\Helper\HelperVoiceController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
@@ -25,8 +38,6 @@ Route::get('/', [LandingPageController::class, 'index'])->name('home');
 // =============================================
 // DASHBOARD (Protected Route)
 // Redirects to the user's role-specific dashboard.
-// NOTE: `redirect()->intended()` in the login flow and the Breeze
-// navigation both point here — it must NEVER return the bare stub view.
 // =============================================
 Route::get('/dashboard', function () {
     $role = auth()->user()?->role ?? 'seeker';
@@ -51,9 +62,7 @@ Route::middleware('auth')->group(function () {
         return view('dashboard.seeker');
     })->name('seeker.dashboard');
 
-    Route::get('/helper/dashboard', function () {
-        return view('dashboard.helper');
-    })->name('helper.dashboard');
+    Route::get('/helper/dashboard', [HelperDashboardController::class, 'index'])->name('helper.dashboard');
 
     Route::get('/adviser/dashboard', function () {
         return view('dashboard.adviser');
@@ -171,6 +180,80 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/settings/preferences', [SettingsController::class, 'updatePreferences'])->name('settings.preferences.update');
     Route::patch('/settings/privacy', [SettingsController::class, 'updatePrivacy'])->name('settings.privacy.update');
     Route::patch('/settings/appearance', [SettingsController::class, 'updateAppearance'])->name('settings.appearance.update');
+});
+
+// =============================================
+// HELPER MODULE ROUTES
+// =============================================
+Route::middleware(['auth', 'role:helper'])->prefix('helper')->name('helper.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [HelperDashboardController::class, 'index'])->name('dashboard');
+
+    // Readiness Check
+    Route::get('/readiness', [HelperReadinessController::class, 'index'])->name('readiness');
+    Route::post('/readiness', [HelperReadinessController::class, 'store'])->name('readiness.store');
+    Route::get('/readiness/history', [HelperReadinessController::class, 'history'])->name('readiness.history');
+
+    // Assigned Cases
+    Route::get('/cases', [HelperCaseController::class, 'index'])->name('cases');
+    Route::get('/cases/{id}', [HelperCaseController::class, 'show'])->name('cases.show');
+    Route::post('/cases/{id}/accept', [HelperCaseController::class, 'accept'])->name('cases.accept');
+    Route::post('/cases/{id}/decline', [HelperCaseController::class, 'decline'])->name('cases.decline');
+
+    // Session Management (Chat / Voice / Notes)
+    Route::get('/session/{id}/chat', [HelperSessionController::class, 'chat'])->name('session.chat');
+    Route::get('/session/{id}/chat/messages', [HelperChatController::class, 'messages'])->name('session.chat.messages');
+    Route::post('/session/{id}/chat/send', [HelperSessionController::class, 'sendMessage'])->name('session.chat.send');
+    Route::get('/session/{id}/voice', [HelperSessionController::class, 'voice'])->name('session.voice');
+    Route::post('/session/{id}/voice/start', [HelperSessionController::class, 'startVoice'])->name('session.voice.start');
+    Route::post('/session/{id}/voice/end', [HelperSessionController::class, 'endVoice'])->name('session.voice.end');
+    Route::get('/session/{id}/notes', [HelperSessionController::class, 'notes'])->name('session.notes');
+    Route::post('/session/{id}/notes', [HelperSessionController::class, 'storeNotes'])->name('session.notes.store');
+    Route::post('/session/{id}/end', [HelperSessionController::class, 'end'])->name('session.end');
+
+    // Calendar
+    Route::get('/calendar', [HelperCalendarController::class, 'index'])->name('calendar');
+
+    // Competency
+    Route::get('/competency', [HelperCompetencyController::class, 'index'])->name('competency');
+
+    // Resources
+    Route::get('/resources', [HelperResourceController::class, 'index'])->name('resources');
+
+    // Notifications
+    Route::get('/notifications', [HelperNotificationController::class, 'index'])->name('notifications');
+    Route::post('/notifications/{id}/read', [HelperNotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [HelperNotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::get('/notifications/unread-count', [HelperNotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+
+    // Profile
+    Route::get('/profile', [HelperProfileController::class, 'index'])->name('profile');
+    Route::put('/profile', [HelperProfileController::class, 'update'])->name('profile.update');
+
+    // Settings
+    Route::get('/settings', [HelperSettingsController::class, 'index'])->name('settings');
+    Route::put('/settings', [HelperSettingsController::class, 'update'])->name('settings.update');
+
+    // Legacy entry points (redirect to the session-based pages above)
+    Route::get('/chat', [HelperChatController::class, 'index'])->name('chat');
+    Route::get('/voice', [HelperVoiceController::class, 'index'])->name('voice');
+    Route::get('/notes', [HelperNotesController::class, 'index'])->name('notes');
+
+    // Friendly chat aliases — static/parameterised routes before /chat/{id}
+    Route::get('/chat/messages/{id}', [HelperChatController::class, 'messages'])->name('chat.messages');
+    Route::post('/chat/send', [HelperChatController::class, 'send'])->name('chat.send');
+    Route::get('/chat/{id}', [HelperChatController::class, 'show'])->name('chat.show');
+
+    // Guard against the old id-less URL (never 404s)
+    Route::get('/session/chat', fn () => redirect()->route('helper.chat'))->name('session.chat.index');
+});
+
+// =============================================
+// CHAT ROUTES (AJAX / Reverb)
+// =============================================
+Route::middleware(['auth'])->prefix('api')->group(function () {
+    Route::post('/chat/send', [App\Http\Controllers\ChatController::class, 'sendMessage'])->name('chat.send');
+    Route::get('/chat/messages/{sessionId}', [App\Http\Controllers\ChatController::class, 'getMessages'])->name('chat.messages');
 });
 
 // =============================================
