@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="user-id" content="{{ auth()->id() }}">
     <title>COMPASS – Finding a Helper</title>
 
     <!-- Tailwind -->
@@ -14,6 +15,9 @@
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Real-time seeker notifications (Echo + Reverb) -->
+    @vite(['resources/js/app.js', 'resources/js/seeker-notifications.js'])
 
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
@@ -433,64 +437,123 @@
         <!-- ─── MATCHING CARD ─── -->
         <div class="form-card">
 
+            <!-- Live reassignment state (filled in real time by seeker-notifications.js) -->
+            <div id="matchingLiveState" class="hidden"></div>
+
             <!-- Risk Summary -->
             <div class="mb-4 p-4 bg-gray-50 rounded-xl flex items-center justify-between flex-wrap gap-3">
                 <div>
                     <span class="text-sm font-medium text-gray-600">Risk Classification:</span>
-                    @php $riskLevel = session('risk_level', 'low'); @endphp
+                    @php $riskLevel = $session->risk_level ?? session('risk_level', 'low'); @endphp
                     <span class="risk-badge {{ $riskLevel }}">{{ ucfirst($riskLevel) }}</span>
                 </div>
                 <span class="text-xs text-gray-400">Updated in real time</span>
             </div>
 
             <!-- ============================================ -->
-            <!-- HELPER AVAILABLE (from database)             -->
+            <!-- SESSION ACTIVE (helper accepted)             -->
             <!-- ============================================ -->
-            @if($availableHelper)
+            @if($session->isActive())
                 <div class="text-center py-4">
                     <div class="text-5xl mb-3">🎉</div>
-                    <h2 class="text-2xl font-bold text-gray-800">A Peer Helper Is Available!</h2>
-                    <p class="text-gray-500 mt-2">Great news! A suitable helper is ready to support you.</p>
+                    <h2 class="text-2xl font-bold text-gray-800">Session started!</h2>
+                    <p class="text-gray-500 mt-2">A helper accepted your request. Your session is now active.</p>
 
-                    <div class="mt-6 p-4 bg-green-50 rounded-xl border border-green-200 max-w-md mx-auto">
-                        <div class="flex items-center gap-4">
-                            <div class="w-14 h-14 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-                                {{ substr($availableHelper->first_name ?? 'H', 0, 1) }}
-                            </div>
-                            <div class="text-left">
-                                <p class="font-semibold text-gray-800">{{ $availableHelper->full_name }}</p>
-                                <p class="text-sm text-gray-500">{{ $availableHelper->specializations ?: 'Peer support' }}</p>
-                                <span class="text-xs text-green-600 font-medium">Level {{ $availableHelper->competency_level }} Peer Helper</span>
+                    <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+                        <a href="{{ route($session->session_type === 'voice' ? 'session.voice' : 'session.chat') }}" class="btn-primary">
+                            <i class="fas fa-comment mr-2"></i> Go to Chat
+                        </a>
+                        <a href="{{ route('seeker.dashboard') }}" class="btn-outline w-full sm:w-auto">
+                            <i class="fas fa-home mr-2"></i> Dashboard
+                        </a>
+                    </div>
+                </div>
+
+            <!-- ============================================ -->
+            <!-- HELPER ASSIGNED (waiting for acceptance)      -->
+            <!-- ============================================ -->
+            @elseif($session->isHelperAssigned())
+                <div class="text-center py-4">
+                    <div class="text-5xl mb-3">⏳</div>
+                    <h2 class="text-2xl font-bold text-gray-800">Waiting for helper to accept</h2>
+                    <p class="text-gray-500 mt-2 max-w-md mx-auto">
+                        A helper has been notified about your request. Please wait while they review it.
+                    </p>
+
+                    @if($availableHelper)
+                        <div class="mt-6 p-4 bg-green-50 rounded-xl border border-green-200 max-w-md mx-auto">
+                            <div class="flex items-center gap-4">
+                                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
+                                    {{ substr($availableHelper->first_name ?? 'H', 0, 1) }}
+                                </div>
+                                <div class="text-left">
+                                    <p class="font-semibold text-gray-800">{{ $availableHelper->full_name }}</p>
+                                    <p class="text-sm text-gray-500">{{ $availableHelper->specializations ?: 'Peer support' }}</p>
+                                    <span class="text-xs text-green-600 font-medium">Level {{ $availableHelper->competency_level }} Peer Helper</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="mt-3 text-sm text-gray-500">
-                            <i class="fas fa-clock mr-1"></i> Estimated session: 45 - 90 minutes
+                    @endif
+
+                    <div class="mt-5 flex justify-center">
+                        <div class="animate-pulse flex space-x-2">
+                            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <div class="w-3 h-3 bg-green-500 rounded-full animation-delay-200"></div>
+                            <div class="w-3 h-3 bg-green-500 rounded-full animation-delay-400"></div>
                         </div>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row gap-3 mt-6 justify-center">
-                        <a href="{{ route('request.voice-consent') }}" class="btn-primary">
-                            <i class="fas fa-play mr-2"></i> Start Session Now
-                        </a>
-                        <form method="POST" action="{{ route('request.matching.decline') }}" onsubmit="return confirm('Are you sure you want to decline this helper? You will be placed back in the queue.')">
+                    <p class="text-sm text-gray-400 mt-4">
+                        📋 Request {{ $session->reference_number }} · Submitted {{ $session->created_at?->diffForHumans() }}
+                    </p>
+                    <p class="text-sm text-gray-400 mt-1">
+                        You can close this page and check back later — your request is saved.
+                    </p>
+
+                    <!-- Resources while waiting -->
+                    <div class="mt-8 pt-6 border-t border-gray-200">
+                        <h3 class="font-semibold text-gray-800 mb-4">While waiting, try these</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            @foreach($resources as $resource)
+                                <div class="resource-card" onclick="window.location.href='{{ $resource['link'] }}'">
+                                    <div class="icon">{{ $resource['icon'] }}</div>
+                                    <h4>{{ $resource['title'] }}</h4>
+                                    <p>{{ $resource['description'] }}</p>
+                                    <span class="duration"><i class="fas fa-clock"></i> {{ $resource['duration'] }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <form method="POST" action="{{ route('request.matching.decline') }}" onsubmit="return confirm('Decline this helper? You will be placed back in the queue.')">
                             @csrf
-                            <input type="hidden" name="decline_helper" value="1">
                             <button type="submit" class="btn-outline w-full">
-                                Decline &amp; Stay in Queue
+                                <i class="fas fa-times mr-2"></i> Decline &amp; Stay in Queue
                             </button>
                         </form>
                     </div>
                 </div>
+
+            <!-- ============================================ -->
+            <!-- IN QUEUE (no helper available yet)            -->
+            <!-- ============================================ -->
             @else
-                <!-- ============================================ -->
-                <!-- NO HELPER AVAILABLE (realistic message)      -->
-                <!-- ============================================ -->
                 <div id="noHelperSection" class="text-center py-4">
                     <div class="text-5xl mb-4">🔍</div>
-                    <h2 class="text-xl font-bold text-gray-800">No helpers are available right now</h2>
+                    <h2 class="text-xl font-bold text-gray-800">Looking for a helper...</h2>
                     <p class="text-gray-500 mt-2 max-w-md mx-auto">
-                        You're in the queue and will be notified the moment a trained peer helper becomes available.
+                        You're in the queue. You will be notified the moment a trained peer helper accepts your request.
                     </p>
+
+                    <div class="mt-4 text-sm text-gray-500">
+                        <p>📋 Request {{ $session->reference_number }} · Submitted {{ $session->created_at?->diffForHumans() }}</p>
+                        <p class="mt-1 text-green-600">
+                            🟢 {{ $availableHelperCount }} {{ $availableHelperCount === 1 ? 'helper is' : 'helpers are' }} online now
+                        </p>
+                        <p class="text-gray-400 mt-1">You can close this page. Your request is saved and you can come back anytime.</p>
+                    </div>
+
                     <p class="text-xs text-gray-400 mt-2">
                         <i class="fas fa-info-circle mr-1"></i> This page checks again automatically every 30 seconds.
                     </p>
@@ -520,7 +583,7 @@
                             <i class="fas fa-home mr-2"></i> Return to Dashboard
                         </a>
                         <button class="btn-primary w-full sm:w-auto" onclick="window.location.reload()">
-                            <i class="fas fa-redo mr-2"></i> Wait &amp; Try Again
+                            <i class="fas fa-redo mr-2"></i> Check Status
                         </button>
                     </div>
                     <p class="text-xs text-gray-400 mt-3">

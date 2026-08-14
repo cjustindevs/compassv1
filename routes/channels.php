@@ -24,3 +24,11 @@ Broadcast::channel('session.{sessionId}', function ($user, $sessionId) {
     return ($session->seeker_id && $session->seeker_id === $user->helpSeeker?->id)
         || ($session->helper_id && $session->helper_id === $user->helper?->id);
 });
+
+Broadcast::channel('helper.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId && $user->role === 'helper';
+});
+
+Broadcast::channel('seeker.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});

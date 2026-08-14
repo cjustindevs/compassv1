@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="user-id" content="{{ auth()->id() }}">
     <title>COMPASS – Seeker Dashboard</title>
 
     <!-- Tailwind -->
@@ -14,6 +15,9 @@
 
     <!-- Google Fonts: Inter + Playfair Display -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+    <!-- Real-time seeker notifications (Echo + Reverb) -->
+    @vite(['resources/js/app.js', 'resources/js/seeker-notifications.js'])
 
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
@@ -678,6 +682,48 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ═══════ ACTIVE SESSION / PENDING REQUEST ═══════ -->
+            @if($activeSession)
+                <div class="mb-6 p-5 rounded-2xl bg-white border border-[#04A052] shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4" style="border-left: 6px solid #04A052;">
+                    <div class="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-2xl flex-shrink-0">🎉</div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-bold text-gray-800">Your session is active</h3>
+                        <p class="text-sm text-gray-500">
+                            Session {{ $activeSession->reference_number }} · {{ $activeSession->mode_label }} · Started {{ $activeSession->start_time?->diffForHumans() }}
+                        </p>
+                    </div>
+                    <div class="flex gap-3 flex-shrink-0">
+                        <a href="{{ route($activeSession->session_type === 'voice' ? 'session.voice' : 'session.chat') }}" class="btn-primary" style="text-decoration:none;">
+                            <i class="fas fa-comment mr-2"></i> Go to Chat
+                        </a>
+                        <a href="{{ route('session.evaluation') }}" class="btn-outline" style="text-decoration:none;">End &amp; Evaluate</a>
+                    </div>
+                </div>
+            @elseif($pendingSession)
+                <div class="mb-6 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4" style="border-left: 6px solid #F59E0B;">
+                    <div class="w-12 h-12 rounded-full bg-yellow-50 flex items-center justify-center text-2xl flex-shrink-0">
+                        {{ $pendingSession->isHelperAssigned() ? '⏳' : '🔍' }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-bold text-gray-800">
+                            {{ $pendingSession->isHelperAssigned() ? 'Waiting for a helper to accept' : 'Your request is in progress' }}
+                        </h3>
+                        <p class="text-sm text-gray-500">
+                            {{ $pendingSession->reference_number }} · {{ $pendingSession->status_label }} ·
+                            {{ $pendingSession->created_at?->diffForHumans() }}
+                            @if($pendingSession->session_status === \App\Models\Session::STATUS_SCREENING_COMPLETED)
+                                · <span class="text-green-600 font-medium">Continue where you left off</span>
+                            @endif
+                        </p>
+                    </div>
+                    <div class="flex gap-3 flex-shrink-0">
+                        <a href="{{ $pendingSession->session_status === \App\Models\Session::STATUS_SCREENING_COMPLETED ? route('request.preferences') : route('request.matching') }}" class="btn-primary" style="text-decoration:none;">
+                            <i class="fas fa-arrow-right mr-2"></i> Continue
+                        </a>
+                    </div>
+                </div>
+            @endif
 
             <!-- ═══════ PRODUCT CARDS ═══════ -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">

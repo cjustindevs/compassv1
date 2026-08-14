@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\MessageSent;
+use App\Events\SessionEnded;
 use App\Models\Helper;
 use App\Models\HelpSeekerEvaluation;
 use App\Models\Message;
@@ -23,6 +24,11 @@ class SessionController extends Controller
         if (!$session) {
             return redirect()->route('request.screening')
                 ->with('error', 'No active session found.');
+        }
+
+        if ($session->isCompleted()) {
+            return redirect()->route('session.evaluation')
+                ->with('info', 'This session has already ended.');
         }
 
         if (!$session->helper) {
@@ -91,6 +97,11 @@ class SessionController extends Controller
                 ->with('error', 'No active session found.');
         }
 
+        if ($session->isCompleted()) {
+            return redirect()->route('session.evaluation')
+                ->with('info', 'This session has already ended.');
+        }
+
         if (!$session->helper) {
             return redirect()->route('request.matching')
                 ->with('error', 'Your session is still waiting for a helper.');
@@ -127,6 +138,13 @@ class SessionController extends Controller
             'duration' => $durationMinutes,
         ]);
 
+        // Tell the helper (and anyone watching the room) the session has ended.
+        try {
+            broadcast(new SessionEnded($session, 'seeker'));
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         // Free the helper for future matches and notify them
         if ($session->helper_id) {
             Helper::where('id', $session->helper_id)
@@ -156,16 +174,36 @@ class SessionController extends Controller
     }
 
     /**
-     * Show post-session evaluation
+     * Show post-session evaluation.
+     *
+     * Resolves the session from the PHP session first, then falls back to the
+     * latest completed session that still has no evaluation (e.g. the helper
+     * ended the session and the seeker opened the notification link).
+     * If the session was already evaluated, send the seeker to the thank-you page.
      */
     public function evaluation()
     {
         $session = $this->activeSession();
 
         if (!$session) {
+            $session = Session::with(['helper', 'seeker'])
+                ->where('seeker_id', Auth::user()->helpSeeker?->id)
+                ->where('session_status', 'completed')
+                ->whereDoesntHave('evaluation')
+                ->orderByDesc('end_time')
+                ->first();
+        }
+
+        if (!$session) {
             return redirect()->route('request.screening')
                 ->with('error', 'No session found to evaluate.');
         }
+
+        if ($session->evaluation) {
+            return redirect()->route('session.thank-you');
+        }
+
+        session(['session_id' => $session->id]);
 
         $sessionId = $session->id;
         $helperName = $session->helper->full_name ?? 'Peer Helper';
@@ -203,6 +241,15 @@ class SessionController extends Controller
 
         $session = $this->activeSession();
 
+        if (!$session) {
+            $session = Session::with(['helper', 'seeker'])
+                ->where('seeker_id', Auth::user()->helpSeeker?->id)
+                ->where('session_status', 'completed')
+                ->whereDoesntHave('evaluation')
+                ->orderByDesc('end_time')
+                ->first();
+        }
+
         if ($session) {
             HelpSeekerEvaluation::updateOrCreate(
                 ['session_id' => $session->id],
@@ -216,6 +263,21 @@ class SessionController extends Controller
                     'comments' => $validated['comments'] ?? null,
                 ]
             );
+
+            if ($session->session_status !== 'completed') {
+                $session->update([
+                    'session_status' => 'completed',
+                    'completion_status' => 'completed',
+                    'end_time' => $session->end_time ?? now(),
+                    'duration' => $session->duration ?? ($session->start_time
+                        ? max(1, (int) $session->start_time->diffInMinutes(now()))
+                        : 0),
+                ]);
+
+                Helper::where('id', $session->helper_id)
+                    ->where('status', 'busy')
+                    ->update(['status' => 'available']);
+            }
         }
 
         session([
@@ -232,8 +294,15 @@ class SessionController extends Controller
             'voice_consent'
         ]);
 
-        return redirect()->route('seeker.dashboard')
-            ->with('success', 'Thank you for your feedback! Your session has been recorded.');
+        return redirect()->route('session.thank-you');
+    }
+
+    /**
+     * Show the thank-you page after a completed evaluation.
+     */
+    public function thankYou()
+    {
+        return view('session.thank-you');
     }
 
     /**
@@ -288,18 +357,26 @@ class SessionController extends Controller
     }
 
     /**
-     * Load the ongoing session for the current seeker
+     * Load the ongoing session for the current seeker.
+     *
+     * Fast path: the session id stored in the PHP session. Fallback: the latest
+     * active session row in the database so the flow survives refreshes and
+     * browser closes. Never returns a session that belongs to another seeker.
      */
     private function activeSession(): ?Session
     {
         $sessionId = session('session_id');
+        $session = $sessionId ? Session::with(['helper', 'seeker'])->find($sessionId) : null;
 
-        if (!$sessionId) {
-            return null;
+        if ($session && $session->seeker_id === Auth::user()->helpSeeker?->id) {
+            return $session;
         }
 
         return Session::with(['helper', 'seeker'])
-            ->find($sessionId);
+            ->where('seeker_id', Auth::user()->helpSeeker?->id)
+            ->where('session_status', Session::STATUS_ACTIVE)
+            ->orderByDesc('start_time')
+            ->first();
     }
 
     // Score mapping helpers

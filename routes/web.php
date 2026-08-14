@@ -19,6 +19,7 @@ use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RequestSupportController;
+use App\Http\Controllers\SeekerDashboardController;
 use App\Http\Controllers\SelfHelpController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SettingsController;
@@ -58,9 +59,7 @@ Route::get('/dashboard', function () {
 // ROLE-BASED DASHBOARDS
 // =============================================
 Route::middleware('auth')->group(function () {
-    Route::get('/seeker/dashboard', function () {
-        return view('dashboard.seeker');
-    })->name('seeker.dashboard');
+    Route::get('/seeker/dashboard', [SeekerDashboardController::class, 'index'])->name('seeker.dashboard');
 
     Route::get('/helper/dashboard', [HelperDashboardController::class, 'index'])->name('helper.dashboard');
 
@@ -134,6 +133,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/session/end', [SessionController::class, 'endSession'])->name('session.end');
     Route::get('/session/evaluation', [SessionController::class, 'evaluation'])->name('session.evaluation');
     Route::post('/session/evaluation', [SessionController::class, 'processEvaluation'])->name('session.evaluation.process');
+    Route::get('/session/thank-you', [SessionController::class, 'thankYou'])->name('session.thank-you');
     Route::get('/session/history', [SessionController::class, 'history'])->name('session.history');
 
     // Additional Seeker Pages
@@ -210,6 +210,8 @@ Route::middleware(['auth', 'role:helper'])->prefix('helper')->name('helper.')->g
     Route::get('/session/{id}/notes', [HelperSessionController::class, 'notes'])->name('session.notes');
     Route::post('/session/{id}/notes', [HelperSessionController::class, 'storeNotes'])->name('session.notes.store');
     Route::post('/session/{id}/end', [HelperSessionController::class, 'end'])->name('session.end');
+    Route::post('/session/{id}/emergency', [HelperSessionController::class, 'flagEmergency'])->name('session.emergency');
+    Route::post('/session/{id}/referral', [HelperSessionController::class, 'recommendReferral'])->name('session.referral');
 
     // Calendar
     Route::get('/calendar', [HelperCalendarController::class, 'index'])->name('calendar');

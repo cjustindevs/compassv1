@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             SelfHelpResourceSeeder::class,
             NotificationSeeder::class,
             HelperModuleSeeder::class,
+            HelperSeeder::class,
         ]);
     }
 }

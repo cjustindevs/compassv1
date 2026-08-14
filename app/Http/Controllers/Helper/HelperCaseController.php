@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers\Helper;
 
+use App\Events\CaseAccepted;
+use App\Events\CaseDeclined;
+use App\Events\NewCaseAssigned;
+use App\Events\NewHelperAssigned;
 use App\Http\Controllers\Controller;
 use App\Models\Helper;
 use App\Models\Notification;
+use App\Models\QueueRequest;
 use App\Models\Session;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -82,7 +87,7 @@ class HelperCaseController extends Controller
     {
         $helper = Auth::user()->helper;
 
-        $session = Session::with(['seeker'])
+        $session = Session::with(['seeker', 'helper'])
             ->where('helper_id', $helper->id)
             ->findOrFail($id);
 
@@ -107,6 +112,13 @@ class HelperCaseController extends Controller
                 'type_icon' => '💬',
                 'link' => '/session/chat',
             ]);
+
+            // Real-time push to the seeker's browser
+            try {
+                broadcast(new CaseAccepted($session, $session->seeker->user_account_id));
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
         return redirect()
@@ -115,7 +127,8 @@ class HelperCaseController extends Controller
     }
 
     /**
-     * Decline a pending case — release it back to the queue.
+     * Decline a pending case — release it back to the queue and try to
+     * match another available helper right away.
      */
     public function decline(Request $request, int $id)
     {
@@ -128,6 +141,8 @@ class HelperCaseController extends Controller
         if ($session->session_status !== 'helper_assigned') {
             return back()->with('error', 'This case can no longer be declined.');
         }
+
+        $seekerUserId = $session->seeker?->user_account_id;
 
         if ($session->seeker) {
             Notification::create([
@@ -147,6 +162,66 @@ class HelperCaseController extends Controller
         ]);
 
         Helper::where('id', $helper->id)->update(['status' => 'available']);
+
+        QueueRequest::where('seeker_id', $session->seeker_id)
+            ->where('request_status', 'assigned')
+            ->update([
+                'request_status' => 'waiting',
+                'assigned_helper_id' => null,
+                'matched_date' => null,
+            ]);
+
+        // Tell the seeker (in real time) that the helper declined
+        if ($seekerUserId) {
+            try {
+                broadcast(new CaseDeclined($session, $seekerUserId));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        // Try to hand the case to the next available helper immediately
+        $nextHelper = Helper::findAvailableForRisk($session->risk_level, $helper->id);
+
+        if ($nextHelper) {
+            $session->update([
+                'helper_id' => $nextHelper->id,
+                'session_status' => 'helper_assigned',
+                'scheduled_start' => now(),
+            ]);
+
+            $nextHelper->update(['status' => 'busy']);
+
+            Notification::create([
+                'user_account_id' => $nextHelper->user_account_id,
+                'title' => 'New case assigned',
+                'message' => 'You have been assigned a new case. Please review and accept it.',
+                'notification_type' => 'assignment',
+                'type_icon' => '📋',
+                'link' => '/helper/cases',
+            ]);
+
+            try {
+                broadcast(new NewCaseAssigned($session, $nextHelper->user_account_id));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+
+            // Tell the seeker (in real time) that a new helper is on the case
+            try {
+                broadcast(new NewHelperAssigned(
+                    $session,
+                    $session->seeker->user_account_id,
+                    $nextHelper->full_name,
+                    $nextHelper->competency_level
+                ));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+
+            return redirect()->route('helper.cases')
+                ->with('success', 'Case declined. Another available helper has been matched to it.');
+        }
 
         return redirect()->route('helper.cases')->with('success', 'Case declined and returned to the queue.');
     }

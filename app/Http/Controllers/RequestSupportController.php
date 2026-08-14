@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\NewCaseAssigned;
 use App\Models\ConcernCategory;
 use App\Models\Helper;
 use App\Models\Message;
@@ -14,10 +15,24 @@ use Illuminate\Support\Facades\Auth;
 class RequestSupportController extends Controller
 {
     /**
-     * Show the screening form (Step 1)
+     * Show the screening form (Step 1).
+     * If the seeker already has an in-progress request in the database
+     * (e.g. they logged out mid-flow), resume it instead of starting over.
      */
     public function screening()
     {
+        $pending = $this->currentPendingSession();
+
+        if ($pending) {
+            if ($pending->session_status === Session::STATUS_SCREENING_COMPLETED) {
+                return redirect()->route('request.preferences')
+                    ->with('info', 'You have a pending request. Continue where you left off.');
+            }
+
+            return redirect()->route('request.matching')
+                ->with('info', 'You have a pending request. Continue where you left off.');
+        }
+
         $concerns = ConcernCategory::all();
         return view('request.screening', compact('concerns'));
     }
@@ -70,9 +85,16 @@ class RequestSupportController extends Controller
      */
     public function preferences()
     {
-        if (!session('screening_data')) {
+        $session = $this->currentPendingSession();
+
+        if (!$session) {
             return redirect()->route('request.screening')
                 ->with('error', 'Please complete the screening first.');
+        }
+
+        if ($session->session_status !== Session::STATUS_SCREENING_COMPLETED) {
+            return redirect()->route('request.matching')
+                ->with('info', 'You already have a pending request. Continue where you left off.');
         }
 
         return view('request.preferences');
@@ -89,15 +111,7 @@ class RequestSupportController extends Controller
             'additional_notes' => 'nullable|string|max:500'
         ]);
 
-        $sessionId = session('session_id');
-        $helpSeeker = Auth::user()->helpSeeker;
-
-        if (!$sessionId || !$helpSeeker) {
-            return redirect()->route('request.screening')
-                ->with('error', 'Your request could not be found. Please start over.');
-        }
-
-        $session = Session::find($sessionId);
+        $session = $this->currentPendingSession();
 
         if (!$session) {
             return redirect()->route('request.screening')
@@ -107,16 +121,16 @@ class RequestSupportController extends Controller
         // Update the counseling session with the chosen support mode
         $session->update([
             'session_type' => $validated['support_mode'] === 'voice' ? 'voice' : 'chat',
-            'session_status' => 'preferences_set',
+            'session_status' => Session::STATUS_PREFERENCES_SET,
         ]);
 
         // Place the seeker in the queue (one active waiting request per seeker)
-        QueueRequest::where('seeker_id', $helpSeeker->id)
+        QueueRequest::where('seeker_id', $session->seeker_id)
             ->where('request_status', 'waiting')
             ->delete();
 
         QueueRequest::create([
-            'seeker_id' => $helpSeeker->id,
+            'seeker_id' => $session->seeker_id,
             'request_date' => now(),
             'request_status' => 'waiting',
             'priority_level' => session('risk_level', 'low'),
@@ -136,24 +150,21 @@ class RequestSupportController extends Controller
      */
     public function matching()
     {
-        if (!session('screening_data') || !session('preferences_data')) {
+        $session = $this->currentRequestSession();
+
+        if (!$session) {
             return redirect()->route('request.screening')
                 ->with('error', 'Please complete all steps first.');
         }
 
-        $sessionId = session('session_id');
-        $session = $sessionId ? Session::with('helper')->find($sessionId) : null;
-
-        if (!$session) {
-            return redirect()->route('request.screening')
-                ->with('error', 'Your request could not be found. Please start over.');
-        }
+        session(['session_id' => $session->id]);
+        $session->load('helper');
 
         // If a helper was already assigned (e.g. page refresh), keep showing them
         $availableHelper = $session->helper;
 
         if (!$availableHelper) {
-            $availableHelper = $this->findAvailableHelper();
+            $availableHelper = Helper::findAvailableForRisk($session->risk_level);
 
             if ($availableHelper) {
                 // Assign the helper and mark the helper as busy
@@ -181,6 +192,14 @@ class RequestSupportController extends Controller
                     'type_icon' => '📋',
                     'link' => '/helper/cases',
                 ]);
+
+                // Real-time push to the helper's browser (badge + toast).
+                // Never let a brief websocket outage break the seeker flow.
+                try {
+                    broadcast(new NewCaseAssigned($session, $availableHelper->user_account_id));
+                } catch (\Throwable $e) {
+                    report($e);
+                }
             } else {
                 // No helper online — keep the session waiting in the queue
                 $session->update(['session_status' => 'waiting']);
@@ -189,7 +208,14 @@ class RequestSupportController extends Controller
 
         $resources = $this->getRecommendedResources();
 
-        return view('request.matching', compact('availableHelper', 'resources'));
+        $availableHelperCount = Helper::available()
+            ->ready()
+            ->withCount('activeSessions as active_sessions_count')
+            ->get()
+            ->filter(fn (Helper $h) => $h->active_sessions_count < (int) $h->max_concurrent_sessions)
+            ->count();
+
+        return view('request.matching', compact('availableHelper', 'resources', 'session', 'availableHelperCount'));
     }
 
     /**
@@ -197,7 +223,7 @@ class RequestSupportController extends Controller
      */
     public function declineHelper(Request $request)
     {
-        $session = Session::with('helper')->find(session('session_id'));
+        $session = $this->currentPendingSession();
 
         if ($session && $session->helper_id) {
             Helper::where('id', $session->helper_id)
@@ -224,51 +250,20 @@ class RequestSupportController extends Controller
     }
 
     /**
-     * Find an available helper that is: online, competent enough for the
-     * risk level, and not already at their concurrent session limit.
-     */
-    private function findAvailableHelper(): ?Helper
-    {
-        $requiredCompetency = match (session('risk_level', 'low')) {
-            'emergency', 'high' => 3,
-            'moderate' => 2,
-            default => 1,
-        };
-
-        $candidates = Helper::query()
-            ->where('status', 'available')
-            ->where('competency_level', '>=', $requiredCompetency)
-            ->withCount('activeSessions as active_sessions_count')
-            ->orderBy('active_sessions_count')
-            ->get();
-
-        foreach ($candidates as $helper) {
-            if ($helper->active_sessions_count < (int) $helper->max_concurrent_sessions) {
-                return $helper;
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * Voice recording consent step after matching
      */
     public function voiceConsent()
     {
-        if (!session('preferences_data')) {
-            return redirect()->route('request.screening');
-        }
-
-        $preferences = session('preferences_data', []);
-        $session = Session::with('helper')->find(session('session_id'));
+        $session = $this->currentPendingSession();
 
         if (!$session) {
             return redirect()->route('request.screening');
         }
 
+        $session->load('helper');
+
         // If the seeker chose chat-only, skip consent and go straight to chat
-        if (($preferences['support_mode'] ?? 'chat') === 'chat') {
+        if ($session->session_type !== 'voice') {
             return redirect()->route('session.chat');
         }
 
@@ -306,14 +301,14 @@ class RequestSupportController extends Controller
      */
     private function startSession(array $attributes = []): void
     {
-        $session = Session::with('helper')->find(session('session_id'));
+        $session = $this->currentPendingSession();
 
         if (!$session || !$session->helper) {
             return;
         }
 
         $session->update(array_merge([
-            'session_status' => 'active',
+            'session_status' => Session::STATUS_ACTIVE,
             'start_time' => now(),
         ], $attributes));
 
@@ -364,6 +359,76 @@ class RequestSupportController extends Controller
                 'link' => route('selfhelp')
             ]
         ];
+    }
+
+    /**
+     * Resolve the seeker's current in-progress request from the database.
+     *
+     * Prefers the request stored in the PHP session (fast path during the
+     * active flow), then falls back to the latest pending session row so the
+     * flow survives logout / login / browser closes. Never returns a session
+     * that belongs to another seeker.
+     */
+    /**
+     * Resolve the seeker's current request from the database.
+     *
+     * Fast path: the request stored in the PHP session (pending OR already
+     * active — the helper may have accepted while the seeker was away).
+     * Resume path: the latest pending session row, falling back to the latest
+     * active session, so the flow survives logout / login / browser closes.
+     * Never returns a session that belongs to another seeker.
+     */
+    private function currentRequestSession(): ?Session
+    {
+        $helpSeeker = Auth::user()->helpSeeker;
+
+        if (!$helpSeeker) {
+            return null;
+        }
+
+        // Kill stale requests (>24h, never accepted) so they cannot resurrect.
+        Session::where('seeker_id', $helpSeeker->id)
+            ->abandoned()
+            ->markAbandoned();
+
+        $sessionId = session('session_id');
+        $session = $sessionId ? Session::find($sessionId) : null;
+
+        if ($session && $session->seeker_id === $helpSeeker->id && ($session->isPending() || $session->isActive())) {
+            return $session;
+        }
+
+        return Session::pendingForSeeker($helpSeeker->id)->first()
+            ?? Session::where('seeker_id', $helpSeeker->id)
+                ->where('session_status', Session::STATUS_ACTIVE)
+                ->orderByDesc('start_time')
+                ->first();
+    }
+
+    /**
+     * The seeker's latest in-progress (pending) request, if any.
+     */
+    private function currentPendingSession(): ?Session
+    {
+        $helpSeeker = Auth::user()->helpSeeker;
+
+        if (!$helpSeeker) {
+            return null;
+        }
+
+        // Kill stale requests (>24h, never accepted) so they cannot resurrect.
+        Session::where('seeker_id', $helpSeeker->id)
+            ->abandoned()
+            ->markAbandoned();
+
+        $sessionId = session('session_id');
+        $session = $sessionId ? Session::find($sessionId) : null;
+
+        if ($session && $session->seeker_id === $helpSeeker->id && $session->isPending()) {
+            return $session;
+        }
+
+        return Session::pendingForSeeker($helpSeeker->id)->first();
     }
 
     /**

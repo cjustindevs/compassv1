@@ -86,6 +86,73 @@ class Helper extends Model
         return $query->where('status', 'available');
     }
 
+    /**
+     * Helpers whose latest readiness check resulted in 'ready'.
+     */
+    public function scopeReady($query)
+    {
+        return $query->whereHas('latestReadiness', function ($q) {
+            $q->where('assessment_result', 'ready');
+        });
+    }
+
+    /**
+     * Find the most suitable available helper for the given risk level:
+     * online, passed their latest readiness check, competent enough,
+     * and not at their concurrent session limit.
+     */
+    public static function findAvailableForRisk(?string $riskLevel, ?int $excludeHelperId = null): ?Helper
+    {
+        $requiredCompetency = match ($riskLevel) {
+            'emergency', 'high' => 3,
+            'moderate' => 2,
+            default => 1,
+        };
+
+        $query = self::query()
+            ->where('status', 'available')
+            ->whereHas('latestReadiness', function ($q) {
+                $q->where('assessment_result', 'ready');
+            })
+            ->where('competency_level', '>=', $requiredCompetency)
+            ->withCount('activeSessions as active_sessions_count')
+            ->orderBy('active_sessions_count');
+
+        if ($excludeHelperId) {
+            $query->where('id', '!=', $excludeHelperId);
+        }
+
+        return $query->get()
+            ->first(fn (Helper $helper) => $helper->active_sessions_count < (int) $helper->max_concurrent_sessions);
+    }
+
+    public function getActiveSessionsCount(): int
+    {
+        return $this->activeSessions()->count();
+    }
+
+    public function hasCapacity(): bool
+    {
+        return $this->getActiveSessionsCount() < (int) $this->max_concurrent_sessions;
+    }
+
+    public function isReady(): bool
+    {
+        $readiness = $this->latestReadiness;
+
+        return $readiness && $readiness->assessment_result === 'ready';
+    }
+
+    public function isOnline(): bool
+    {
+        return $this->status === 'available';
+    }
+
+    public function canAcceptSessions(): bool
+    {
+        return $this->isOnline() && $this->isReady() && $this->hasCapacity();
+    }
+
     public function getAvailabilityLabelAttribute(): string
     {
         return ucfirst($this->status ?? 'offline');

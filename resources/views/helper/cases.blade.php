@@ -14,7 +14,7 @@
                 <span class="stat-label">Awaiting Action</span>
                 <span class="stat-icon">📋</span>
             </div>
-            <div class="stat-number" style="{{ $stats['pending'] > 0 ? 'color:var(--yellow-500);' : '' }}">{{ $stats['pending'] }}</div>
+            <div class="stat-number" id="pendingCount" style="{{ $stats['pending'] > 0 ? 'color:var(--yellow-500);' : '' }}">{{ $stats['pending'] }}</div>
             <span class="text-xs text-gray-400">Accept or decline</span>
         </div>
         <div class="stat-card">

@@ -43,6 +43,7 @@ class MessageSent implements ShouldBroadcastNow
             'sender_role' => $this->message->sender_role,
             'sender_name' => $this->message->senderName(),
             'sent_datetime' => $this->message->time_formatted,
+            'sent_datetime_iso' => ($this->message->sent_datetime ?? now())->toIso8601String(),
         ];
     }
 }

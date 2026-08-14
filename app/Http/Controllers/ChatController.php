@@ -65,6 +65,7 @@ class ChatController extends Controller
                 'sender_role' => $message->sender_role,
                 'sender_name' => $user->displayName(),
                 'sent_datetime' => $message->time_formatted,
+                'sent_datetime_iso' => ($message->sent_datetime ?? now())->toIso8601String(),
             ],
         ]);
     }
@@ -93,6 +94,7 @@ class ChatController extends Controller
                 'sender_role' => $message->sender_role,
                 'sender_name' => $message->senderName(),
                 'sent_datetime' => $message->time_formatted,
+                'sent_datetime_iso' => ($message->sent_datetime ?? now())->toIso8601String(),
             ]);
 
         return response()->json([

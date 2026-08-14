@@ -28,7 +28,7 @@ class HelperChatController extends Controller
             return redirect()->route('helper.session.chat', ['id' => $active->id]);
         }
 
-        $sessions = Session::with(['seeker', 'concern'])
+        $sessions = Session::with(['seeker', 'concern', 'messages'])
             ->where('helper_id', $helper->id)
             ->whereIn('session_status', ['helper_assigned', 'active'])
             ->orderByDesc('created_date')
@@ -36,7 +36,6 @@ class HelperChatController extends Controller
 
         return view('helper.chat', [
             'sessions' => $sessions,
-            'activeSession' => null,
         ]);
     }
 
@@ -56,20 +55,29 @@ class HelperChatController extends Controller
                 ->with('info', 'That session is no longer available. Select an active session below.');
         }
 
+        if ($session->isCompleted()) {
+            return redirect()->route('helper.session.notes', ['id' => $session->id])
+                ->with('info', 'This session has ended. Please complete your session notes.');
+        }
+
         $messages = $session->messages
             ->sortBy('sent_datetime')
             ->map(fn (Message $m) => [
                 'id' => $m->id,
                 'sender' => $m->is_helper ? 'helper' : 'seeker',
+                'sender_role' => $m->is_helper ? 'helper' : 'seeker',
+                'sender_id' => $m->sender_id,
+                'sender_name' => $m->senderName(),
                 'message' => $m->message_text,
                 'time' => $m->time_formatted,
-                'date' => $m->date_formatted,
+                'sent_datetime' => $m->time_formatted,
+                'sent_datetime_iso' => ($m->sent_datetime ?? now())->toIso8601String(),
             ])
             ->values();
 
         $seekerName = $session->seeker->generated_alias ?? 'Seeker';
 
-        return view('helper.chat', [
+        return view('helper.chat.show', [
             'session' => $session,
             'activeSession' => $session,
             'messages' => $messages,
@@ -93,12 +101,17 @@ class HelperChatController extends Controller
             ->map(fn (Message $m) => [
                 'id' => $m->id,
                 'sender' => $m->is_helper ? 'helper' : 'seeker',
+                'sender_role' => $m->is_helper ? 'helper' : 'seeker',
+                'sender_id' => $m->sender_id,
+                'sender_name' => $m->senderName(),
                 'message' => $m->message_text,
                 'time' => $m->time_formatted,
+                'sent_datetime' => $m->time_formatted,
+                'sent_datetime_iso' => ($m->sent_datetime ?? now())->toIso8601String(),
             ])
             ->values();
 
-        return response()->json(['messages' => $messages]);
+        return response()->json(['success' => true, 'messages' => $messages]);
     }
 
     /**
@@ -151,10 +164,18 @@ class HelperChatController extends Controller
 
         if ($request->wantsJson() || $request->expectsJson()) {
             return response()->json([
+                'success' => true,
                 'id' => $message->id,
-                'sender' => 'helper',
-                'message' => $message->message_text,
-                'time' => $message->time_formatted,
+                'message' => [
+                    'id' => $message->id,
+                    'message' => $message->message_text,
+                    'sender_id' => $message->sender_id,
+                    'sender' => 'helper',
+                    'sender_role' => 'helper',
+                    'sender_name' => $message->senderName(),
+                    'sent_datetime' => $message->time_formatted,
+                    'sent_datetime_iso' => ($message->sent_datetime ?? now())->toIso8601String(),
+                ],
             ]);
         }
 

@@ -57,16 +57,26 @@ class HelperReadinessController extends Controller
             'breathing_exercise' => $validated['exercise_completed']
         ]);
 
+        // Flip the helper's availability so the matching engine can find them.
+        // A helper is matchable only when they passed the assessment AND
+        // explicitly chose to be available. Otherwise they stay offline.
+        $isAvailable = $passed && $validated['availability_status'] === 'available';
+        $helper->update([
+            'status' => $isAvailable ? 'available' : 'offline',
+        ]);
+
         session([
             'helper_readiness' => $status,
-            'helper_readiness_id' => $readiness->readiness_id
+            'helper_readiness_id' => $readiness->id
         ]);
 
         return redirect()->route('helper.dashboard')
             ->with('readiness_status', $status)
-            ->with('success', $passed 
-                ? 'You are ready to accept sessions. Stay safe and take care!' 
-                : 'You are not ready to accept sessions. Please take time to rest and recharge.');
+            ->with('success', match (true) {
+                $isAvailable => 'You are now available to accept sessions. Stay safe and take care!',
+                $passed => 'You are ready, but you chose not to be available right now. You can check in again whenever you are ready to help.',
+                default => 'You are not ready to accept sessions. Please take time to rest and recharge.',
+            });
     }
 
     /**

@@ -1,17 +1,41 @@
+/**
+ * Consolidated chat logic for both the Seeker and Helper chat rooms.
+ *
+ * Expects these hidden inputs on the page:
+ *   #sessionId        – the counseling session id
+ *   #currentUserId    – auth()->id()
+ *   #currentUserRole  – auth()->user()->role ('seeker' | 'helper')
+ *   #peerName         – display name of the other party
+ *
+ * Renders message bubbles into #chatMessages, listens on the private
+ * `session.{id}` Echo channel, shows a typing indicator via whispers,
+ * and falls back to polling when the websocket is unavailable.
+ */
 class ChatApp {
-    constructor(sessionId, currentUserId, currentUserRole) {
+    constructor(sessionId, currentUserId, currentUserRole, peerName) {
         this.sessionId = sessionId;
-        this.currentUserId = currentUserId;
+        this.currentUserId = String(currentUserId);
         this.currentUserRole = currentUserRole;
-        this.messageContainer = document.getElementById('chatMessages');
+        this.peerName = peerName || 'Peer';
+
+        this.messagesContainer = document.getElementById('chatMessages');
         this.messageInput = document.getElementById('messageInput');
         this.sendButton = document.getElementById('sendButton');
+        this.emptyState = document.getElementById('emptyChat');
+        this.typingIndicator = document.getElementById('typingIndicator');
+        this.typingLabel = document.getElementById('typingLabel');
+
         this.renderedIds = new Set();
+        this.lastRenderedDay = null;
+        this.typingTimeout = null;
+        this.channel = null;
 
         this.initEcho();
         this.loadMessages();
         this.bindEvents();
     }
+
+    // ─────────────────────────── Websocket ───────────────────────────
 
     initEcho() {
         if (!window.Echo) {
@@ -19,9 +43,18 @@ class ChatApp {
             return;
         }
 
-        window.Echo.private(`session.${this.sessionId}`)
+        // The backend broadcasts MessageSent on a PRIVATE channel.
+        this.channel = window.Echo.private(`session.${this.sessionId}`);
+
+        this.channel
             .listen('MessageSent', (event) => {
                 this.appendMessage(event);
+            })
+            .listenForWhisper('typing', (event) => {
+                this.showTyping(!!event.typing);
+            })
+            .listen('SessionEnded', (event) => {
+                this.handleSessionEnded(event);
             });
 
         // Safety net: if the websocket ever drops, keep the conversation flowing.
@@ -37,19 +70,76 @@ class ChatApp {
         }, interval);
     }
 
+    // ─────────────────────────── Messages ───────────────────────────
+
     loadMessages(initial = true) {
         fetch(`/api/chat/messages/${this.sessionId}`, {
-            headers: { 'Accept': 'application/json' }
+            headers: { 'Accept': 'application/json' },
         })
             .then((response) => response.json())
             .then((data) => {
                 if (!data.success) return;
+                this.removeEmptyState();
                 data.messages.forEach((msg) => this.renderMessage(msg));
                 if (initial || this.renderedIds.size > 0) {
                     this.scrollToBottom();
                 }
             })
             .catch(() => { /* transient network errors are fine */ });
+    }
+
+    appendMessage(event) {
+        this.removeEmptyState();
+        this.renderMessage({
+            id: event.id,
+            message: event.message,
+            sender_id: event.sender_id,
+            sender_role: event.sender_role,
+            sender_name: event.sender_name,
+            sent_datetime: event.sent_datetime,
+            sent_datetime_iso: event.sent_datetime_iso,
+        });
+    }
+
+    renderMessage(msg) {
+        if (!msg || msg.id == null || this.renderedIds.has(msg.id)) return;
+        this.renderedIds.add(msg.id);
+
+        const isCurrentUser = this.isCurrentUser(msg);
+        const role = this.roleFor(msg, isCurrentUser);
+        const senderName = isCurrentUser
+            ? 'You'
+            : (msg.sender_name || (role === 'helper' ? 'Peer Helper' : 'Seeker'));
+
+        // Day divider (only when the backend provides a full timestamp)
+        if (msg.sent_datetime_iso) {
+            const day = new Date(msg.sent_datetime_iso).toDateString();
+            if (this.lastRenderedDay !== day) {
+                this.lastRenderedDay = day;
+                this.messagesContainer.appendChild(this.buildDayDivider(msg.sent_datetime_iso));
+            }
+        }
+
+        const div = document.createElement('div');
+        div.className = `message ${role}`;
+        div.dataset.id = msg.id;
+        div.innerHTML = `
+            <strong class="sender-name">${this.escapeHtml(senderName)}</strong>
+            <div class="text">${this.escapeHtml(msg.message)}</div>
+            <span class="time">${this.formatTime(msg)}</span>
+        `;
+        this.messagesContainer.appendChild(div);
+
+        if (this.isNearBottom()) {
+            this.scrollToBottom();
+        }
+    }
+
+    buildDayDivider(iso) {
+        const divider = document.createElement('div');
+        divider.className = 'date-divider';
+        divider.innerHTML = `<span>${this.escapeHtml(this.dayLabel(iso))}</span>`;
+        return divider;
     }
 
     sendMessage() {
@@ -63,20 +153,17 @@ class ChatApp {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
             },
-            body: JSON.stringify({
-                session_id: this.sessionId,
-                message: message
-            })
+            body: JSON.stringify({ session_id: this.sessionId, message }),
         })
             .then((response) => response.json())
             .then((data) => {
                 if (data.success) {
                     this.messageInput.value = '';
-                    // Render locally so the sender gets instant feedback, even if the
-                    // websocket is momentarily unavailable. Echo will re-append the
-                    // same message with the same id, which the dedup guard skips.
+                    // Render locally so the sender gets instant feedback, even if
+                    // the websocket is momentarily unavailable. Echo will re-append
+                    // the same message with the same id, which the dedup guard skips.
                     this.renderMessage(data.message);
                 } else {
                     alert(data.error || 'Could not send the message. Please try again.');
@@ -89,41 +176,105 @@ class ChatApp {
             });
     }
 
-    appendMessage(event) {
-        this.renderMessage({
-            id: event.id,
-            message: event.message,
-            sender_id: event.sender_id,
-            sender_name: event.sender_name,
-            sender_role: event.sender_role,
-            sent_datetime: event.sent_datetime
-        });
+    // ─────────────────────────── Session ended ───────────────────────────
+
+    handleSessionEnded(event) {
+        this.setInputDisabled(true);
+        this.showTyping(false);
+
+        const endedBy = event.ended_by || 'the other party';
+        const message = event.message || `The session has been ended by ${endedBy}.`;
+
+        this.showEndedOverlay(message);
+
+        // Give the user a moment to read the notice, then move them along:
+        // seeker → evaluation page, helper → session notes.
+        const url = this.currentUserRole === 'helper'
+            ? (event.helper_redirect || `/helper/session/${this.sessionId}/notes`)
+            : (event.seeker_redirect || '/session/evaluation');
+
+        setTimeout(() => {
+            window.location.href = url;
+        }, 3000);
     }
 
-    renderMessage(msg) {
-        if (!msg || msg.id == null || this.renderedIds.has(msg.id)) return;
-        this.renderedIds.add(msg.id);
+    showEndedOverlay(message) {
+        const existing = document.getElementById('sessionEndedOverlay');
+        if (existing) existing.remove();
 
-        const isCurrentUser = String(msg.sender_id) === String(this.currentUserId)
-            || (msg.sender_id == null && msg.sender_role === this.currentUserRole);
-        const messageClass = isCurrentUser ? 'seeker' : 'helper';
-        const senderName = isCurrentUser
-            ? 'You'
-            : (msg.sender_name || (msg.sender_role === 'helper' ? 'Peer Helper' : 'Seeker'));
+        const overlay = document.createElement('div');
+        overlay.id = 'sessionEndedOverlay';
+        overlay.style.cssText = [
+            'position:fixed',
+            'inset:0',
+            'z-index:9999',
+            'background:rgba(22,59,45,0.55)',
+            'backdrop-filter:blur(6px)',
+            'display:flex',
+            'align-items:center',
+            'justify-content:center',
+            'padding:20px',
+        ].join(';');
 
-        const empty = this.messageContainer.querySelector('.empty-state, .chat-empty');
-        if (empty) empty.remove();
-
-        const div = document.createElement('div');
-        div.className = `message ${messageClass}`;
-        div.dataset.id = msg.id;
-        div.innerHTML = `
-            <strong class="sender-name">${this.escapeHtml(senderName)}</strong>
-            <p>${this.escapeHtml(msg.message)}</p>
-            <span class="time">${this.escapeHtml(msg.sent_datetime || '')}</span>
+        overlay.innerHTML = `
+            <div style="background:#ffffff;border-radius:20px;padding:32px 28px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+                <div style="width:64px;height:64px;border-radius:50%;background:#FEF2F2;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 16px;">🛑</div>
+                <h3 style="margin:0 0 8px;font-size:18px;font-weight:800;color:#163B2D;">Session Ended</h3>
+                <p style="margin:0 0 20px;font-size:14px;color:#6B7280;line-height:1.6;">${this.escapeHtml(message)}</p>
+                <p style="margin:0;font-size:13px;color:#9CA3AF;">Redirecting you…</p>
+            </div>
         `;
-        this.messageContainer.appendChild(div);
-        this.scrollToBottom();
+
+        document.body.appendChild(overlay);
+    }
+
+    // ─────────────────────────── Typing indicator ───────────────────────────
+
+    emitTyping() {
+        if (!this.channel) return;
+
+        this.channel.whisper('typing', { typing: true });
+
+        clearTimeout(this.typingTimeout);
+        this.typingTimeout = setTimeout(() => {
+            this.channel.whisper('typing', { typing: false });
+        }, 1500);
+    }
+
+    showTyping(visible) {
+        if (!this.typingIndicator) return;
+
+        if (visible) {
+            if (this.typingLabel) {
+                this.typingLabel.textContent = `${this.peerName} is typing`;
+            }
+            // Keep the indicator at the bottom, below the newest messages.
+            this.messagesContainer.appendChild(this.typingIndicator);
+            this.typingIndicator.style.display = 'flex';
+            this.scrollToBottom();
+        } else {
+            this.typingIndicator.style.display = 'none';
+        }
+    }
+
+    // ─────────────────────────── Helpers ───────────────────────────
+
+    isCurrentUser(msg) {
+        return String(msg.sender_id) === this.currentUserId
+            || (msg.sender_id == null && msg.sender_role === this.currentUserRole);
+    }
+
+    roleFor(msg, isCurrentUser) {
+        if (isCurrentUser) return this.currentUserRole;
+        if (msg.sender_role === 'seeker' || msg.sender_role === 'helper') return msg.sender_role;
+        return this.currentUserRole === 'helper' ? 'seeker' : 'helper';
+    }
+
+    removeEmptyState() {
+        if (this.emptyState) {
+            this.emptyState.remove();
+            this.emptyState = null;
+        }
     }
 
     setInputDisabled(disabled) {
@@ -131,8 +282,44 @@ class ChatApp {
         this.sendButton.disabled = disabled;
     }
 
+    isNearBottom() {
+        return this.messagesContainer.scrollHeight
+            - this.messagesContainer.scrollTop
+            - this.messagesContainer.clientHeight < 120;
+    }
+
     scrollToBottom() {
-        this.messageContainer.scrollTop = this.messageContainer.scrollHeight;
+        this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+    }
+
+    formatTime(msg) {
+        if (msg.sent_datetime_iso) {
+            try {
+                return new Date(msg.sent_datetime_iso).toLocaleTimeString([], {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                });
+            } catch (e) { /* fall through */ }
+        }
+        return msg.sent_datetime || msg.time || '';
+    }
+
+    dayLabel(iso) {
+        const date = new Date(iso);
+        const today = new Date();
+        const yesterday = new Date();
+        yesterday.setDate(today.getDate() - 1);
+
+        const same = (a, b) => a.toDateString() === b.toDateString();
+
+        if (same(date, today)) return 'Today';
+        if (same(date, yesterday)) return 'Yesterday';
+
+        return date.toLocaleDateString([], {
+            month: 'short',
+            day: 'numeric',
+            year: date.getFullYear() === today.getFullYear() ? undefined : 'numeric',
+        });
     }
 
     escapeHtml(text) {
@@ -140,6 +327,8 @@ class ChatApp {
         div.textContent = text ?? '';
         return div.innerHTML;
     }
+
+    // ─────────────────────────── Events ───────────────────────────
 
     bindEvents() {
         this.sendButton.addEventListener('click', () => this.sendMessage());
@@ -149,6 +338,12 @@ class ChatApp {
                 this.sendMessage();
             }
         });
+        this.messageInput.addEventListener('input', () => this.emitTyping());
+        this.messageInput.addEventListener('blur', () => {
+            if (this.channel) {
+                this.channel.whisper('typing', { typing: false });
+            }
+        });
     }
 }
 
@@ -156,8 +351,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const sessionId = document.getElementById('sessionId')?.value;
     const currentUserId = document.getElementById('currentUserId')?.value;
     const currentUserRole = document.getElementById('currentUserRole')?.value;
+    const peerName = document.getElementById('peerName')?.value;
 
     if (sessionId && currentUserId) {
-        window.chatApp = new ChatApp(sessionId, currentUserId, currentUserRole);
+        window.chatApp = new ChatApp(sessionId, currentUserId, currentUserRole, peerName);
     }
 });

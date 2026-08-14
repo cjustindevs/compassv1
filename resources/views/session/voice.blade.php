@@ -181,10 +181,14 @@
 
     </main>
 
+    <input type="hidden" id="sessionId" value="{{ $session->id }}">
+
     @include('partials.sidebar', [
         'active' => ['session.voice'],
         'role'   => 'Help Seeker',
     ])
+
+    @vite(['resources/js/app.js'])
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -198,6 +202,17 @@
                     const secs = String(seconds % 60).padStart(2, '0');
                     timerEl.textContent = mins + ':' + secs;
                 }, 1000);
+            }
+
+            // ── Session ended by the helper → go to evaluation ──
+            const sessionId = document.getElementById('sessionId')?.value;
+            if (sessionId && window.Echo) {
+                window.Echo.private('session.' + sessionId)
+                    .listen('SessionEnded', function (event) {
+                        if (event.ended_by === 'helper') {
+                            window.location.href = event.seeker_redirect || '/session/evaluation';
+                        }
+                    });
             }
         });
 

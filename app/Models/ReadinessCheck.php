@@ -35,6 +35,21 @@ class ReadinessCheck extends Model
         return $this->belongsTo(Helper::class, 'helper_id', 'id');
     }
 
+    public function scopeReady($query)
+    {
+        return $query->where('assessment_result', 'ready');
+    }
+
+    public function scopeAvailable($query)
+    {
+        return $query->where('availability_status', 'available');
+    }
+
+    public function isReady(): bool
+    {
+        return $this->assessment_result === 'ready';
+    }
+
     public function getStatusAttribute(): string
     {
         return (string) ($this->availability_status ?? 'available');

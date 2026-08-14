@@ -35,9 +35,7 @@
         </a>
         <a href="{{ route('helper.cases') }}" class="nav-item {{ request()->routeIs('helper.cases*') ? 'active' : '' }}">
             <i class="fas fa-folder-open"></i> Assigned Cases
-            @if($caseBadgeCount > 0)
-                <span class="badge" id="caseBadge">{{ $caseBadgeCount }}</span>
-            @endif
+            <span class="badge" id="caseBadge" style="{{ $caseBadgeCount > 0 ? '' : 'display:none;' }}">{{ $caseBadgeCount }}</span>
         </a>
         <a href="{{ route('helper.chat') }}" class="nav-item {{ request()->routeIs('helper.chat*', 'helper.session.chat*') ? 'active' : '' }}">
             <i class="fas fa-comment-dots"></i> Live Chat
@@ -63,9 +61,7 @@
         <p class="nav-label">Account</p>
         <a href="{{ route('helper.notifications') }}" class="nav-item {{ request()->routeIs('helper.notifications*') ? 'active' : '' }}">
             <i class="fas fa-bell"></i> Notifications
-            @if($notifBadgeCount > 0)
-                <span class="badge danger" id="notifBadge">{{ $notifBadgeCount }}</span>
-            @endif
+            <span class="badge danger" id="notifBadge" style="{{ $notifBadgeCount > 0 ? '' : 'display:none;' }}">{{ $notifBadgeCount }}</span>
         </a>
         <a href="{{ route('helper.profile') }}" class="nav-item {{ request()->routeIs('helper.profile*') ? 'active' : '' }}">
             <i class="fas fa-user-circle"></i> Profile
