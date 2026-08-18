@@ -36,6 +36,11 @@ class Helper extends Model
         return $this->belongsTo(User::class, 'user_account_id', 'id');
     }
 
+    public function adviser(): BelongsTo
+    {
+        return $this->belongsTo(Adviser::class, 'adviser_id', 'id');
+    }
+
     public function sessions(): HasMany
     {
         return $this->hasMany(Session::class, 'helper_id', 'id');

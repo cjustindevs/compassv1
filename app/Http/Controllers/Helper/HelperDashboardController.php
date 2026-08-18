@@ -131,8 +131,8 @@ class HelperDashboardController extends Controller
 
         $quickActions = [
             ['icon' => 'fa-comment-dots', 'label' => 'Open Chat', 'route' => 'helper.chat', 'params' => []],
-            ['icon' => 'fa-phone', 'label' => 'Start Voice Call', 'route' => 'helper.voice', 'params' => []],
-            ['icon' => 'fa-edit', 'label' => 'Log Reflection', 'route' => 'helper.notes', 'params' => []],
+            ['icon' => 'fa-phone', 'label' => 'Start Voice Call', 'route' => $activeSessionData ? 'helper.session.voice' : 'helper.cases', 'params' => $activeSessionData ? ['id' => $activeSessionData['id']] : []],
+            ['icon' => 'fa-edit', 'label' => 'Session Notes', 'route' => $activeSessionData ? 'helper.session.notes' : 'helper.cases', 'params' => $activeSessionData ? ['id' => $activeSessionData['id']] : []],
         ];
 
         $stats = [

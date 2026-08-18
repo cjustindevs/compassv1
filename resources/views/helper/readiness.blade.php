@@ -83,181 +83,462 @@
         }
 
         .btn-outline {
-            background: white; color: var(--gray-600);
-            border: 1px solid var(--gray-300);
+            background: transparent;
+            color: var(--gray-600);
+            font-weight: 600;
+            padding: 14px 28px;
+            border-radius: 50px;
+            border: 1.5px solid var(--gray-200);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-size: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
-        .btn-outline:hover { background: var(--gray-50); color: var(--gray-800); }
 
-        #breath-exercise-ui { display: none; }
+        .btn-outline:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .status-badge.ready {
+            background: var(--green-100);
+            color: var(--green-700);
+        }
+
+        .status-badge.not_ready {
+            background: #FEE2E2;
+            color: #DC2626;
+        }
+
+        .status-badge.available {
+            background: #DBEAFE;
+            color: #1D4ED8;
+        }
+
+        .hamburger {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--gray-700);
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.25);
+            z-index: 99;
+        }
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        .bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid var(--gray-200);
+            padding: 6px 0 env(safe-area-inset-bottom, 6px);
+            z-index: 200;
+            justify-content: space-around;
+        }
+
+        .bottom-nav .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0px;
+            color: var(--gray-400);
+            text-decoration: none;
+            font-size: 10px;
+            font-weight: 500;
+            padding: 4px 12px;
+            transition: all 0.2s ease;
+        }
+
+        .bottom-nav .nav-item i {
+            font-size: 20px;
+        }
+
+        .bottom-nav .nav-item.active {
+            color: var(--green-500);
+        }
+        .bottom-nav .nav-item.active i {
+            color: var(--green-500);
+        }
+
+        @media (min-width: 769px) {
+            .sidebar-overlay {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                padding: 20px 24px 80px;
+            }
+            .form-card {
+                padding: 24px 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 280px;
+                padding: 16px;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 16px 16px 100px;
+            }
+            .hamburger {
+                display: block;
+            }
+            .bottom-nav {
+                display: flex;
+            }
+            .form-card {
+                padding: 20px 16px;
+                border-radius: 16px;
+            }
+            .radio-option {
+                min-width: 100%;
+            }
+            .btn-primary,
+            .btn-outline {
+                padding: 12px 24px;
+                font-size: 14px;
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .form-card {
+                padding: 16px 12px;
+            }
+        }
     </style>
-@endsection
+</head>
+<body>
 
-@section('content')
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SIDEBAR                                      -->
+    <!-- ══════════════════════════════════════════════ -->
 
-    @if(isset($latestCheck) && $latestCheck)
-        <div class="card mb-6">
-            <div class="card-header">
-                <h3>Latest Check-in</h3>
-                <span class="pill {{ $latestCheck->assessment_result === 'ready' ? '' : 'badge danger' }}" style="{{ $latestCheck->assessment_result === 'ready' ? '' : 'background:#FEE2E2;color:var(--red-600);' }}">
-                    {{ $latestCheck->result_label }}
-                </span>
+    @include('layouts.partials.helper-sidebar')
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SIDEBAR OVERLAY                              -->
+    <!-- ══════════════════════════════════════════════ -->
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- MAIN CONTENT                                 -->
+    <!-- ══════════════════════════════════════════════ -->
+
+    <main class="main-content">
+
+        <!-- Top Bar -->
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-4">
+                <button class="hamburger" id="hamburgerBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold text-gray-800">Listener Readiness Check</h1>
+                    <p class="text-sm text-gray-500 hidden sm:block">
+                        Take a moment to check in with yourself before accepting sessions.
+                    </p>
+                </div>
             </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                    <div class="text-xs text-gray-400 mb-1">Checked on</div>
-                    <div class="font-semibold text-gray-800">{{ $latestCheck->assessment_date?->format('M d, Y h:i A') }}</div>
-                </div>
-                <div>
-                    <div class="text-xs text-gray-400 mb-1">Availability</div>
-                    <div class="font-semibold text-gray-800">{{ ucfirst($latestCheck->availability_status ?? 'available') }}</div>
-                </div>
-                <div>
-                    <div class="text-xs text-gray-400 mb-1">Stress level</div>
-                    <div class="font-semibold text-gray-800">{{ ucfirst($latestCheck->stress_level ?? 'low') }}</div>
-                </div>
-                <div>
-                    <div class="text-xs text-gray-400 mb-1">Emotionally ready</div>
-                    <div class="font-semibold text-gray-800">{{ $latestCheck->emotionally_ready ? 'Yes' : 'No' }}</div>
-                </div>
-            </div>
-            <div class="mt-4">
-                <a href="{{ route('helper.readiness.history') }}" class="btn btn-secondary btn-sm">View history</a>
+            <div class="flex items-center gap-3">
+                <span class="text-xs text-gray-400 hidden sm:inline">{{ now()->format('M d, Y') }}</span>
             </div>
         </div>
-    @endif
 
-    {{-- Breathing exercise banner --}}
-    <div class="card mb-6" style="background: linear-gradient(135deg, #F0FDF4, #EAF8F0); border-color: #BBF7D0;">
-        <div class="flex items-center justify-between flex-wrap gap-3">
-            <div>
-                <h4 class="font-semibold text-gray-800" style="font-size:16px;">🧘 Center Yourself</h4>
-                <p class="text-sm text-gray-500" style="max-width:480px;">Complete a short guided breathing exercise before you begin — it only takes about 30 seconds and helps you check in with how you are feeling.</p>
-            </div>
-            <button type="button" id="start-exercise-btn" class="btn btn-primary">
-                <i class="fas fa-play mr-2"></i> Start Breathing Exercise
-            </button>
-        </div>
-        <div id="exercise-status" class="text-sm mt-2 text-gray-400" aria-live="polite">Not started yet</div>
-    </div>
+        <!-- ─── FORM CARD ─── -->
+        <div class="form-card">
 
-    <div class="card">
-        <div class="card-header">
-            <h3>Check-in</h3>
-            <span class="text-xs text-gray-400">Be honest — this keeps everyone safe.</span>
-        </div>
-        <form method="POST" action="{{ route('helper.readiness.store') }}" id="readinessForm">
-            @csrf
+            <!-- Latest Status -->
+            @if(isset($latestCheck))
+                <div class="mb-6 p-4 bg-gray-50 rounded-xl flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                        <span class="text-sm font-medium text-gray-600">Current Status:</span>
+                        <span class="status-badge {{ $latestCheck->assessment_result }}">
+                            {{ ucfirst(str_replace('_', ' ', $latestCheck->assessment_result)) }}
+                        </span>
+                    </div>
+                    <span class="text-xs text-gray-400">
+                        Last checked: {{ $latestCheck->created_at->diffForHumans() }}
+                    </span>
+                </div>
+            @endif
 
-            <input type="hidden" name="exercise_completed" id="exercise-completed" value="">
+            <form id="readinessForm" method="POST" action="{{ route('helper.readiness.store') }}">
+                @csrf
 
-            <div class="form-group">
-                <label class="form-label">Emotionally ready to take sessions right now?</label>
-                <div class="border border-gray-200 rounded-xl p-4 flex items-center justify-between">
-                    <span class="text-sm text-gray-700">I feel emotionally stable and present.</span>
-                    <div class="flex gap-3">
-                        <label class="checkbox-group" style="padding:0;"><input type="radio" name="emotionally_ready" value="1" {{ old('emotionally_ready') === '1' ? 'checked' : '' }}> Yes</label>
-                        <label class="checkbox-group" style="padding:0;"><input type="radio" name="emotionally_ready" value="0" {{ old('emotionally_ready') === '0' ? 'checked' : '' }}> No</label>
+                <!-- ============================================ -->
+                <!-- SECTION 1: EMOTIONAL READINESS              -->
+                <!-- ============================================ -->
+                <div class="mb-6">
+                    <label class="form-label">I feel emotionally ready to listen right now. <span class="text-red-500">*</span></label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="emotionally_ready_yes" name="emotionally_ready" value="1" {{ old('emotionally_ready') == '1' ? 'checked' : '' }}>
+                            <label for="emotionally_ready_yes">Yes</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="emotionally_ready_no" name="emotionally_ready" value="0" {{ old('emotionally_ready') == '0' ? 'checked' : '' }}>
+                            <label for="emotionally_ready_no">No</label>
+                        </div>
+                    </div>
+                    @error('emotionally_ready')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- ============================================ -->
+                <!-- SECTION 2: WILLINGNESS TO LISTEN            -->
+                <!-- ============================================ -->
+                <div class="mb-6">
+                    <label class="form-label">I am willing to listen without judgment. <span class="text-red-500">*</span></label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="willing_yes" name="willing_to_listen" value="1" {{ old('willing_to_listen') == '1' ? 'checked' : '' }}>
+                            <label for="willing_yes">Yes</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="willing_no" name="willing_to_listen" value="0" {{ old('willing_to_listen') == '0' ? 'checked' : '' }}>
+                            <label for="willing_no">No</label>
+                        </div>
+                    </div>
+                    @error('willing_to_listen')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- ============================================ -->
+                <!-- SECTION 3: STRESS LEVEL                     -->
+                <!-- ============================================ -->
+                <div class="mb-6">
+                    <label class="form-label">My current stress level is: <span class="text-red-500">*</span></label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="stress_low" name="stress_level" value="low" {{ old('stress_level') == 'low' ? 'checked' : '' }}>
+                            <label for="stress_low">
+                                Low
+                                <span class="sub-text">Feeling calm and focused</span>
+                            </label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="stress_moderate" name="stress_level" value="moderate" {{ old('stress_level') == 'moderate' ? 'checked' : '' }}>
+                            <label for="stress_moderate">
+                                Moderate
+                                <span class="sub-text">Somewhat stressed but manageable</span>
+                            </label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="stress_high" name="stress_level" value="high" {{ old('stress_level') == 'high' ? 'checked' : '' }}>
+                            <label for="stress_high">
+                                High
+                                <span class="sub-text">Feeling overwhelmed</span>
+                            </label>
+                        </div>
+                    </div>
+                    @error('stress_level')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- ============================================ -->
+                <!-- SECTION 4: AVAILABILITY STATUS              -->
+                <!-- ============================================ -->
+                <div class="mb-6">
+                    <label class="form-label">Availability Status <span class="text-red-500">*</span></label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="avail_available" name="availability_status" value="available" {{ old('availability_status') == 'available' ? 'checked' : '' }}>
+                            <label for="avail_available">
+                                🟢 Available
+                                <span class="sub-text">Ready to accept sessions</span>
+                            </label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="avail_not_ready" name="availability_status" value="not_ready" {{ old('availability_status') == 'not_ready' ? 'checked' : '' }}>
+                            <label for="avail_not_ready">
+                                🔴 Not Ready
+                                <span class="sub-text">Not accepting sessions right now</span>
+                            </label>
+                        </div>
+                    </div>
+                    @error('availability_status')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- ============================================ -->
+                <!-- HELPER MESSAGE                              -->
+                <!-- ============================================ -->
+                <div class="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-info-circle text-green-500 text-lg mt-0.5"></i>
+                        <div>
+                            <p class="text-sm text-gray-700 leading-relaxed">
+                                <span class="font-semibold">💡 You cannot power from an empty cup.</span><br>
+                                Take care of yourself first so you can care for others. If you're not feeling ready, it's okay to take a break.
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label class="form-label">Am I willing to actively listen to a peer today?</label>
-                <div class="border border-gray-200 rounded-xl p-4 flex items-center justify-between">
-                    <span class="text-sm text-gray-700">I can give my full attention to a listener.</span>
-                    <div class="flex gap-3">
-                        <label class="checkbox-group" style="padding:0;"><input type="radio" name="willing_to_listen" value="1" {{ old('willing_to_listen') === '1' ? 'checked' : '' }}> Yes</label>
-                        <label class="checkbox-group" style="padding:0;"><input type="radio" name="willing_to_listen" value="0" {{ old('willing_to_listen') === '0' ? 'checked' : '' }}> No</label>
+                <!-- ============================================ -->
+                <!-- FORM ACTIONS                                -->
+                <!-- ============================================ -->
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-200">
+                    <a href="{{ route('helper.dashboard') }}" class="text-gray-500 hover:text-gray-700 transition font-medium text-sm">
+                        <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+                    </a>
+                    <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                        <button type="submit" class="btn-primary w-full sm:w-auto">
+                            <i class="fas fa-check mr-2"></i> Submit Readiness
+                        </button>
                     </div>
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label class="form-label">What is your current stress level?</label>
-                <select name="stress_level" class="form-control" required>
-                    <option value="">Select stress level...</option>
-                    <option value="low" {{ old('stress_level') === 'low' ? 'selected' : '' }}>Low — feeling calm</option>
-                    <option value="moderate" {{ old('stress_level') === 'moderate' ? 'selected' : '' }}>Moderate — manageable</option>
-                    <option value="high" {{ old('stress_level') === 'high' ? 'selected' : '' }}>High — I need a break</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Availability for new sessions</label>
-                <select name="availability_status" class="form-control" required>
-                    <option value="available" {{ old('availability_status') === 'available' ? 'selected' : '' }}>Available</option>
-                    <option value="not_ready" {{ old('availability_status') === 'not_ready' ? 'selected' : '' }}>Not ready</option>
-                </select>
-            </div>
-
-            <button type="submit" class="btn btn-primary" disabled>
-                <i class="fas fa-check"></i> Submit Check-in
-            </button>
-            <p class="text-xs text-gray-400 mt-2">
-                <i class="fas fa-lock mr-1"></i>
-                Complete the breathing exercise above to unlock the Submit button.
-            </p>
-        </form>
-    </div>
-
-    {{-- Breathing Exercise Modal --}}
-    <div id="exercise-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="breath-modal-title" aria-hidden="true">
-        <div class="modal-box" style="position:relative;">
-            <button type="button" id="close-modal-btn" class="modal-close" aria-label="Close breathing exercise"><i class="fas fa-times"></i></button>
-            <div class="modal-body">
-                <div class="text-center">
-                    <div class="text-5xl mb-3">🌿</div>
-                    <h3 id="breath-modal-title" class="text-xl font-bold text-gray-800">Center Yourself</h3>
-                    <p class="text-sm text-gray-500" id="exercise-modal-status">Take a moment before you begin.</p>
-
-                    {{-- Intro screen --}}
-                    <div id="breath-intro">
-                        <div class="step-card mt-6 text-left">
-                            <p class="text-sm font-semibold text-gray-700 mb-2">You cannot pour from an empty cup. Take care of yourself first so you can care for others.</p>
-                            <ol>
-                                <li>Inhale through your nose</li>
-                                <li>Hold your breath</li>
-                                <li>Exhale slowly through your mouth</li>
-                            </ol>
-                        </div>
-                        <div class="mt-5 flex justify-center gap-3 flex-wrap">
-                            <button type="button" id="begin-lesson-btn" class="btn btn-primary">Begin Exercise</button>
-                        </div>
-                    </div>
-
-                    {{-- Exercise screen --}}
-                    <div id="breath-exercise-ui">
-                        <h4 class="text-lg font-bold text-gray-700 mt-2">🧘 Breathe with me</h4>
-
-                        <div class="mt-6">
-                            <div id="breath-circle" class="breath-circle">
-                                <span id="breath-icon" aria-hidden="true">⬆️</span>
-                            </div>
-                            <h4 id="breath-text" class="text-2xl font-bold text-gray-800 mt-4">Inhale...</h4>
-                            <p id="breath-instruction" class="text-sm text-gray-500">Inhale through your nose</p>
-                            <p id="breath-timer" class="text-xs text-gray-400">4s</p>
-                        </div>
-
-                        <div class="mt-4">
-                            <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden" role="progressbar" aria-label="Breathing exercise progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                                <div id="breath-progress" class="h-full bg-green-500 transition-all duration-500" style="width: 0%;"></div>
-                            </div>
-                            <p id="step-indicator" class="text-xs text-gray-400 mt-2">Step 1 of 3 · Cycle 1 of 3</p>
-                        </div>
-                    </div>
-
-                    {{-- Footer actions (visible on both screens) --}}
-                    <div class="mt-5 flex justify-center gap-3 flex-wrap">
-                        <button type="button" id="skip-btn" class="btn btn-outline text-sm py-2 px-4">Skip Exercise</button>
-                        <button type="button" id="continue-btn" class="btn btn-primary text-sm py-2 px-4" disabled>Continue to Form</button>
-                    </div>
-                </div>
-            </div>
+            </form>
         </div>
-    </div>
 
-@endsection
+        <!-- Footer -->
+        <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
+            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+            Your well-being matters. Take care of yourself first.
+        </div>
 
-@section('scripts')
-    @vite('resources/js/breathing-exercise.js')
-@endsection
+    </main>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- BOTTOM NAVIGATION                            -->
+    <!-- ══════════════════════════════════════════════ -->
+
+    <nav class="bottom-nav" id="bottomNav">
+        <a href="{{ route('helper.dashboard') }}" class="nav-item">
+            <i class="fas fa-th-large"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-item active">
+            <i class="fas fa-heartbeat"></i>
+            <span>Readiness</span>
+        </a>
+        <a href="{{ route('helper.cases') }}" class="nav-item">
+            <i class="fas fa-folder-open"></i>
+            <span>Cases</span>
+        </a>
+        <a href="{{ route('helper.notifications') }}" class="nav-item">
+            <i class="fas fa-bell"></i>
+            <span>Alerts</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- JAVASCRIPT                                   -->
+    <!-- ══════════════════════════════════════════════ -->
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // ── Sidebar Toggle ──
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const hamburger = document.getElementById('hamburgerBtn');
+
+            function toggleSidebar() {
+                sidebar.classList.toggle('closed');
+                overlay.classList.toggle('active');
+            }
+
+            function closeSidebar() {
+                sidebar.classList.add('closed');
+                overlay.classList.remove('active');
+            }
+
+            hamburger.addEventListener('click', toggleSidebar);
+            overlay.addEventListener('click', closeSidebar);
+
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) closeSidebar();
+            });
+
+            // ── Bottom Nav Active State ──
+            document.querySelectorAll('.bottom-nav .nav-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.querySelectorAll('.bottom-nav .nav-item').forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // ── Sidebar Nav Active State ──
+            document.querySelectorAll('.sidebar .nav .nav-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.querySelectorAll('.sidebar .nav .nav-item').forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                    if (window.innerWidth <= 768) closeSidebar();
+                });
+            });
+
+            // ── Form Auto-submit prevention ──
+            const form = document.getElementById('readinessForm');
+
+            form.addEventListener('submit', function(e) {
+                const emotionallyReady = document.querySelector('input[name="emotionally_ready"]:checked');
+                const willingListen = document.querySelector('input[name="willing_to_listen"]:checked');
+                const stressLevel = document.querySelector('input[name="stress_level"]:checked');
+                const availability = document.querySelector('input[name="availability_status"]:checked');
+
+                if (!emotionallyReady || !willingListen || !stressLevel || !availability) {
+                    e.preventDefault();
+                    alert('Please answer all questions before submitting.');
+                    return false;
+                }
+
+                // If high stress or not emotionally ready, show warning
+                if (stressLevel.value === 'high' || emotionallyReady.value === '0') {
+                    if (!confirm('You indicated high stress or not being emotionally ready. Are you sure you want to submit this?')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+        });
+    </script>
+
+</body>
+</html>

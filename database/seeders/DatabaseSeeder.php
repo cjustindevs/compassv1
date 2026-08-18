@@ -16,21 +16,45 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // One test user per role, all with password: "password"
-        foreach (['seeker', 'helper', 'adviser', 'moderator', 'professional', 'admin'] as $role) {
-            User::factory()->create([
-                'name' => ucfirst($role) . ' User',
-                'email' => $role . '@example.com',
-                'password' => Hash::make('password'),
-                'role' => $role,
-            ]);
+        // One base user per role (password: "password"). The dedicated
+        // seeders below create the real profile rows for each role.
+        foreach (['seeker', 'helper', 'moderator', 'admin'] as $role) {
+            User::firstOrCreate(
+                ['email' => $role . '@example.com'],
+                [
+                    'name' => ucfirst($role) . ' User',
+                    'password' => Hash::make('password'),
+                    'role' => $role,
+                ]
+            );
+        }
+
+        // Base users for the main demo accounts (password: "password123")
+        foreach (['seeker', 'helper', 'adviser', 'professional'] as $role) {
+            User::firstOrCreate(
+                ['email' => $role . '@compass.edu.ph'],
+                [
+                    'name' => ucfirst($role) . ' User',
+                    'password' => Hash::make('password123'),
+                    'role' => $role,
+                ]
+            );
         }
 
         $this->call([
-            SelfHelpResourceSeeder::class,
-            NotificationSeeder::class,
+            AdviserSeeder::class,
+            ProfessionalSeeder::class,
             HelperModuleSeeder::class,
             HelperSeeder::class,
+            SeekerSeeder::class,
+            SessionSeeder::class,
+            ReferralSeeder::class,
+            EvaluationSeeder::class,
+            EmergencyResourceSeeder::class,
+            SelfHelpResourceSeeder::class,
+            NotificationSeeder::class,
+            CalendarEventSeeder::class,
+            ModeratorSeeder::class,
         ]);
     }
 }

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -99,6 +100,8 @@
             100% Confidential · Anonymous · Secure
         </p>
     </div>
+
+    @include('layouts.partials.pwa-banner')
 
 </body>
 </html>

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -837,45 +838,41 @@
                         <span class="stat-label">Total Sessions</span>
                         <span class="text-2xl">📊</span>
                     </div>
-                    <div class="stat-number">12</div>
+                    <div class="stat-number">{{ $totalSessions }}</div>
                     <div class="flex items-center gap-2 mt-1">
-                        <span class="stat-change positive">+3</span>
-                        <span class="text-xs text-gray-400">this month</span>
+                        <span class="text-xs text-gray-400">All time</span>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="flex items-center justify-between">
-                        <span class="stat-label">Wellness Streak</span>
-                        <span class="text-2xl">🔥</span>
+                        <span class="stat-label">Completed</span>
+                        <span class="text-2xl">✅</span>
                     </div>
-                    <div class="stat-number">12 <span class="text-sm font-normal text-gray-400">days</span></div>
+                    <div class="stat-number">{{ $completedSessions }}</div>
                     <div class="flex items-center gap-2 mt-1">
-                        <span class="stat-change positive">+8%</span>
-                        <span class="text-xs text-gray-400">better than last month</span>
+                        <span class="text-xs text-gray-400">Sessions finished</span>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="flex items-center justify-between">
-                        <span class="stat-label">Mood Average</span>
-                        <span class="text-2xl">😊</span>
+                        <span class="stat-label">Evaluations</span>
+                        <span class="text-2xl">⭐</span>
                     </div>
-                    <div class="stat-number">4.3 <span class="text-sm font-normal text-gray-400">/ 5</span></div>
+                    <div class="stat-number">{{ $totalEvaluations }}</div>
                     <div class="flex items-center gap-2 mt-1">
-                        <span class="stat-change positive">+5%</span>
-                        <span class="text-xs text-gray-400">vs last week</span>
+                        <span class="text-xs text-gray-400">Feedback given</span>
                     </div>
                 </div>
-                <a href="{{ route('session.chat') }}" class="stat-card block hover:border-[#04A052] transition" style="display:block;text-decoration:none;">
+                <div class="stat-card">
                     <div class="flex items-center justify-between">
                         <span class="stat-label">Active Sessions</span>
                         <span class="text-2xl">🟢</span>
                     </div>
-                    <div class="stat-number">0</div>
+                    <div class="stat-number">{{ $activeSession ? 1 : 0 }}</div>
                     <div class="flex items-center gap-2 mt-1">
-                        <span class="stat-change negative">-2</span>
-                        <span class="text-xs text-gray-400">this week</span>
+                        <span class="text-xs text-gray-400">Currently ongoing</span>
                     </div>
-                </a>
+                </div>
             </div>
 
             <!-- Recent Sessions -->
@@ -897,38 +894,26 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td class="font-medium">S-2231</td>
-                                <td>Maya C.</td>
-                                <td class="hidden sm:table-cell">Chat</td>
-                                <td class="hidden sm:table-cell">42m</td>
-                                <td><span class="stars">★★★★☆</span></td>
-                                <td><span class="status-badge completed">Completed</span></td>
-                            </tr>
-                            <tr>
-                                <td class="font-medium">S-2229</td>
-                                <td>Kai D.</td>
-                                <td class="hidden sm:table-cell">Voice</td>
-                                <td class="hidden sm:table-cell">31m</td>
-                                <td><span class="stars">★★★★☆</span></td>
-                                <td><span class="status-badge completed">Completed</span></td>
-                            </tr>
-                            <tr>
-                                <td class="font-medium">S-2224</td>
-                                <td>Rina A.</td>
-                                <td class="hidden sm:table-cell">Chat</td>
-                                <td class="hidden sm:table-cell">55m</td>
-                                <td><span class="stars">★★★★★</span></td>
-                                <td><span class="status-badge completed">Completed</span></td>
-                            </tr>
-                            <tr>
-                                <td class="font-medium">S-2218</td>
-                                <td>Noel V.</td>
-                                <td class="hidden sm:table-cell">Chat</td>
-                                <td class="hidden sm:table-cell">27m</td>
-                                <td><span class="stars">★★★★☆</span></td>
-                                <td><span class="status-badge completed">Completed</span></td>
-                            </tr>
+                            @forelse($recentSessions as $session)
+                                <tr>
+                                    <td class="font-medium">{{ $session->reference_number }}</td>
+                                    <td>{{ $session->helper?->full_name ?? '—' }}</td>
+                                    <td class="hidden sm:table-cell">{{ $session->mode_label }}</td>
+                                    <td class="hidden sm:table-cell">{{ $session->start_time ? $session->start_time->diff($session->end_time ?? now())->format('%Hh %Im') : '—' }}</td>
+                                    <td>
+                                        @if($session->evaluation)
+                                            <span class="stars">{{ str_repeat('★', min(5, max(0, (int) round($session->evaluation->overall_score)))) }}<span class="text-gray-300">{{ str_repeat('★', 5 - min(5, max(0, (int) round($session->evaluation->overall_score)))) }}</span></span>
+                                        @else
+                                            <span class="text-gray-400">—</span>
+                                        @endif
+                                    </td>
+                                    <td><span class="status-badge {{ $session->isCompleted() ? 'completed' : ($session->isActive() ? 'active' : 'pending') }}">{{ $session->status_label }}</span></td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-center text-gray-400 py-6">No sessions yet. Start your first session to see it here.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -1009,6 +994,8 @@
 
         });
     </script>
+
+    @include('layouts.partials.pwa-banner')
 
 </body>
 </html>

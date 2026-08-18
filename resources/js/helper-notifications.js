@@ -41,6 +41,24 @@ document.addEventListener('DOMContentLoaded', function () {
                     window.location.href = event.helper_redirect || `/helper/session/${event.session_id}/notes`;
                 }, 2500);
             }
+        })
+        .listen('ReferralApproved', (event) => {
+            incrementBadge('notifBadge');
+
+            showToast(
+                'Referral Approved',
+                event.message || 'Your referral has been approved by the adviser.',
+                event.link || '/helper/cases'
+            );
+        })
+        .listen('EvaluationCompleted', (event) => {
+            incrementBadge('notifBadge');
+
+            showToast(
+                'Evaluation Ready',
+                event.message || 'Your competency evaluation is ready.',
+                event.link || '/helper/competency'
+            );
         });
 
     // Fallback: if the websocket is down, keep the unread notification

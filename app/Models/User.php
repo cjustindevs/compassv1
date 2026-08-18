@@ -90,6 +90,16 @@ class User extends Authenticatable
         return $this->hasOne(Adviser::class, 'user_account_id', 'id');
     }
 
+    public function moderator()
+    {
+        return $this->hasOne(Moderator::class, 'user_account_id', 'id');
+    }
+
+    public function psychologyProfessional()
+    {
+        return $this->hasOne(PsychologyProfessional::class, 'user_account_id', 'id');
+    }
+
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class, 'user_account_id', 'id');

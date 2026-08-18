@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
+    @include('layouts.partials.pwa-meta')
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -28,5 +29,6 @@
     <div class="w-full max-w-md px-4">
         {{ $slot }}
     </div>
+    @include('layouts.partials.pwa-banner')
 </body>
 </html>

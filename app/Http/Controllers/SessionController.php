@@ -188,7 +188,7 @@ class SessionController extends Controller
         if (!$session) {
             $session = Session::with(['helper', 'seeker'])
                 ->where('seeker_id', Auth::user()->helpSeeker?->id)
-                ->where('session_status', 'completed')
+                ->whereIn('session_status', ['completed', 'evaluated'])
                 ->whereDoesntHave('evaluation')
                 ->orderByDesc('end_time')
                 ->first();
@@ -244,7 +244,7 @@ class SessionController extends Controller
         if (!$session) {
             $session = Session::with(['helper', 'seeker'])
                 ->where('seeker_id', Auth::user()->helpSeeker?->id)
-                ->where('session_status', 'completed')
+                ->whereIn('session_status', ['completed', 'evaluated'])
                 ->whereDoesntHave('evaluation')
                 ->orderByDesc('end_time')
                 ->first();
@@ -278,6 +278,10 @@ class SessionController extends Controller
                     ->where('status', 'busy')
                     ->update(['status' => 'available']);
             }
+
+            // Mark the session as evaluated so the workflow can distinguish
+            // "ended" from "ended + seeker feedback submitted".
+            $session->update(['session_status' => Session::STATUS_EVALUATED]);
         }
 
         session([
@@ -322,6 +326,7 @@ class SessionController extends Controller
                 ->map(function (Session $session) {
                     $statusLabels = [
                         'completed' => 'Completed',
+                        'evaluated' => 'Evaluated',
                         'cancelled' => 'Cancelled',
                         'active' => 'Active',
                         'scheduled' => 'Scheduled',

@@ -29,6 +29,14 @@ Broadcast::channel('helper.{userId}', function ($user, $userId) {
     return (int) $user->id === (int) $userId && $user->role === 'helper';
 });
 
+Broadcast::channel('adviser.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId && $user->role === 'adviser';
+});
+
+Broadcast::channel('moderator.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId && $user->role === 'moderator';
+});
+
 Broadcast::channel('seeker.{userId}', function ($user, $userId) {
     return (int) $user->id === (int) $userId;
 });

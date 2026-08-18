@@ -17,6 +17,15 @@
             ->count()
         : 0;
     $notifBadgeCount = optional(auth()->user())->unreadNotifications()->count();
+
+    $activeSession = $helper
+        ? \App\Models\Session::where('helper_id', $helper->id)
+            ->whereIn('session_status', ['active', 'helper_assigned'])
+            ->latest('created_date')
+            ->first()
+        : null;
+    $voiceUrl = $activeSession ? route('helper.session.voice', ['id' => $activeSession->id]) : route('helper.cases');
+    $notesUrl = $activeSession ? route('helper.session.notes', ['id' => $activeSession->id]) : route('helper.cases');
 @endphp
 
 <aside class="sidebar" id="sidebar">
@@ -40,10 +49,10 @@
         <a href="{{ route('helper.chat') }}" class="nav-item {{ request()->routeIs('helper.chat*', 'helper.session.chat*') ? 'active' : '' }}">
             <i class="fas fa-comment-dots"></i> Live Chat
         </a>
-        <a href="{{ route('helper.voice') }}" class="nav-item {{ request()->routeIs('helper.voice', 'helper.session.voice*') ? 'active' : '' }}">
+        <a href="{{ $voiceUrl }}" class="nav-item {{ request()->routeIs('helper.voice', 'helper.session.voice*') ? 'active' : '' }}">
             <i class="fas fa-phone"></i> Voice Call
         </a>
-        <a href="{{ route('helper.notes') }}" class="nav-item {{ request()->routeIs('helper.notes', 'helper.session.notes*') ? 'active' : '' }}">
+        <a href="{{ $notesUrl }}" class="nav-item {{ request()->routeIs('helper.notes', 'helper.session.notes*') ? 'active' : '' }}">
             <i class="fas fa-edit"></i> Session Notes
         </a>
         <a href="{{ route('helper.calendar') }}" class="nav-item {{ request()->routeIs('helper.calendar*') ? 'active' : '' }}">

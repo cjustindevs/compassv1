@@ -1,21 +1,37 @@
 <?php
 
+use App\Http\Controllers\Adviser\AdviserCalendarController;
+use App\Http\Controllers\Adviser\AdviserDashboardController;
+use App\Http\Controllers\Adviser\AdviserEvaluationController;
+use App\Http\Controllers\Adviser\AdviserHelperController;
+use App\Http\Controllers\Adviser\AdviserNotificationController;
+use App\Http\Controllers\Adviser\AdviserReferralController;
+use App\Http\Controllers\Adviser\AdviserReportController;
+use App\Http\Controllers\Adviser\AdviserResourceController;
+use App\Http\Controllers\Adviser\AdviserSettingsController;
 use App\Http\Controllers\Auth\HelpSeekerRegisterController;
 use App\Http\Controllers\Auth\OTPController;
-use App\Http\Controllers\Helper\HelperCalendarController;
 use App\Http\Controllers\Helper\HelperCaseController;
-use App\Http\Controllers\Helper\HelperChatController;
-use App\Http\Controllers\Helper\HelperCompetencyController;
 use App\Http\Controllers\Helper\HelperDashboardController;
+use App\Http\Controllers\Helper\HelperCompetencyController;
 use App\Http\Controllers\Helper\HelperNotificationController;
-use App\Http\Controllers\Helper\HelperNotesController;
-use App\Http\Controllers\Helper\HelperProfileController;
 use App\Http\Controllers\Helper\HelperReadinessController;
-use App\Http\Controllers\Helper\HelperResourceController;
 use App\Http\Controllers\Helper\HelperSessionController;
-use App\Http\Controllers\Helper\HelperSettingsController;
-use App\Http\Controllers\Helper\HelperVoiceController;
 use App\Http\Controllers\LandingPageController;
+use App\Http\Controllers\Moderator\ModeratorAnalyticsController;
+use App\Http\Controllers\Moderator\ModeratorDashboardController;
+use App\Http\Controllers\Moderator\ModeratorEmergencyController;
+use App\Http\Controllers\Moderator\ModeratorManageController;
+use App\Http\Controllers\Moderator\ModeratorNotificationController;
+use App\Http\Controllers\Moderator\ModeratorQueueController;
+use App\Http\Controllers\Moderator\ModeratorReportController;
+use App\Http\Controllers\Moderator\ModeratorSessionController;
+use App\Http\Controllers\Moderator\ModeratorSettingsController;
+use App\Http\Controllers\Professional\ProfessionalCaseController;
+use App\Http\Controllers\Professional\ProfessionalDashboardController;
+use App\Http\Controllers\Professional\ProfessionalProfileController;
+use App\Http\Controllers\Professional\ProfessionalReferralController;
+use App\Http\Controllers\Professional\ProfessionalReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RequestSupportController;
@@ -23,6 +39,7 @@ use App\Http\Controllers\SeekerDashboardController;
 use App\Http\Controllers\SelfHelpController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\ChatController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -60,20 +77,8 @@ Route::get('/dashboard', function () {
 // =============================================
 Route::middleware('auth')->group(function () {
     Route::get('/seeker/dashboard', [SeekerDashboardController::class, 'index'])->name('seeker.dashboard');
-
     Route::get('/helper/dashboard', [HelperDashboardController::class, 'index'])->name('helper.dashboard');
-
-    Route::get('/adviser/dashboard', function () {
-        return view('dashboard.adviser');
-    })->name('adviser.dashboard');
-
-    Route::get('/moderator/dashboard', function () {
-        return view('dashboard.moderator');
-    })->name('moderator.dashboard');
-
-    Route::get('/professional/dashboard', function () {
-        return view('dashboard.professional');
-    })->name('professional.dashboard');
+    Route::get('/adviser/dashboard', [AdviserDashboardController::class, 'index'])->name('adviser.dashboard');
 
     Route::get('/admin/dashboard', function () {
         return view('dashboard.admin');
@@ -202,25 +207,28 @@ Route::middleware(['auth', 'role:helper'])->prefix('helper')->name('helper.')->g
 
     // Session Management (Chat / Voice / Notes)
     Route::get('/session/{id}/chat', [HelperSessionController::class, 'chat'])->name('session.chat');
-    Route::get('/session/{id}/chat/messages', [HelperChatController::class, 'messages'])->name('session.chat.messages');
     Route::post('/session/{id}/chat/send', [HelperSessionController::class, 'sendMessage'])->name('session.chat.send');
     Route::get('/session/{id}/voice', [HelperSessionController::class, 'voice'])->name('session.voice');
     Route::post('/session/{id}/voice/start', [HelperSessionController::class, 'startVoice'])->name('session.voice.start');
     Route::post('/session/{id}/voice/end', [HelperSessionController::class, 'endVoice'])->name('session.voice.end');
+    Route::post('/session/{id}/end', [HelperSessionController::class, 'end'])->name('session.end');
     Route::get('/session/{id}/notes', [HelperSessionController::class, 'notes'])->name('session.notes');
     Route::post('/session/{id}/notes', [HelperSessionController::class, 'storeNotes'])->name('session.notes.store');
-    Route::post('/session/{id}/end', [HelperSessionController::class, 'end'])->name('session.end');
     Route::post('/session/{id}/emergency', [HelperSessionController::class, 'flagEmergency'])->name('session.emergency');
     Route::post('/session/{id}/referral', [HelperSessionController::class, 'recommendReferral'])->name('session.referral');
 
     // Calendar
-    Route::get('/calendar', [HelperCalendarController::class, 'index'])->name('calendar');
+    Route::get('/calendar', function () {
+        return view('helper.calendar');
+    })->name('calendar');
 
     // Competency
     Route::get('/competency', [HelperCompetencyController::class, 'index'])->name('competency');
 
     // Resources
-    Route::get('/resources', [HelperResourceController::class, 'index'])->name('resources');
+    Route::get('/resources', function () {
+        return view('helper.resources');
+    })->name('resources');
 
     // Notifications
     Route::get('/notifications', [HelperNotificationController::class, 'index'])->name('notifications');
@@ -229,33 +237,174 @@ Route::middleware(['auth', 'role:helper'])->prefix('helper')->name('helper.')->g
     Route::get('/notifications/unread-count', [HelperNotificationController::class, 'unreadCount'])->name('notifications.unread-count');
 
     // Profile
-    Route::get('/profile', [HelperProfileController::class, 'index'])->name('profile');
-    Route::put('/profile', [HelperProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile', function () {
+        return view('helper.profile');
+    })->name('profile');
 
     // Settings
-    Route::get('/settings', [HelperSettingsController::class, 'index'])->name('settings');
-    Route::put('/settings', [HelperSettingsController::class, 'update'])->name('settings.update');
+    Route::get('/settings', function () {
+        return view('helper.settings');
+    })->name('settings');
 
-    // Legacy entry points (redirect to the session-based pages above)
-    Route::get('/chat', [HelperChatController::class, 'index'])->name('chat');
-    Route::get('/voice', [HelperVoiceController::class, 'index'])->name('voice');
-    Route::get('/notes', [HelperNotesController::class, 'index'])->name('notes');
+    // Chat index (redirects to cases or shows active chats)
+    Route::get('/chat', function () {
+        return redirect()->route('helper.cases');
+    })->name('chat');
+});
 
-    // Friendly chat aliases — static/parameterised routes before /chat/{id}
-    Route::get('/chat/messages/{id}', [HelperChatController::class, 'messages'])->name('chat.messages');
-    Route::post('/chat/send', [HelperChatController::class, 'send'])->name('chat.send');
-    Route::get('/chat/{id}', [HelperChatController::class, 'show'])->name('chat.show');
+// =============================================
+// ADVISER MODULE ROUTES
+// =============================================
+Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [AdviserDashboardController::class, 'index'])->name('dashboard');
 
-    // Guard against the old id-less URL (never 404s)
-    Route::get('/session/chat', fn () => redirect()->route('helper.chat'))->name('session.chat.index');
+    // Pending Evaluations
+    Route::get('/evaluations', [AdviserEvaluationController::class, 'index'])->name('evaluations');
+    Route::get('/evaluate/{id}', [AdviserEvaluationController::class, 'show'])->name('evaluate');
+    Route::post('/evaluate/{id}', [AdviserEvaluationController::class, 'store'])->name('evaluate.store');
+    Route::post('/evaluations/{id}/skip', [AdviserEvaluationController::class, 'skip'])->name('evaluations.skip');
+
+    // Referral Queue
+    Route::get('/referrals', [AdviserReferralController::class, 'index'])->name('referrals');
+    Route::get('/referral/{id}', [AdviserReferralController::class, 'show'])->name('referral.show');
+    Route::post('/referral/{id}/approve', [AdviserReferralController::class, 'approve'])->name('referral.approve');
+    Route::post('/referral/{id}/reject', [AdviserReferralController::class, 'reject'])->name('referral.reject');
+    Route::post('/referral/{id}/request-info', [AdviserReferralController::class, 'requestInfo'])->name('referral.request-info');
+    Route::post('/referral/{id}/assign', [AdviserReferralController::class, 'assignProfessional'])->name('referral.assign');
+
+    // Helper Management
+    Route::get('/helpers', [AdviserHelperController::class, 'index'])->name('helpers');
+    Route::get('/helpers/export', [AdviserHelperController::class, 'export'])->name('helpers.export');
+    Route::get('/helper/{id}', [AdviserHelperController::class, 'show'])->name('helper.show');
+    Route::post('/helper/{id}/assign', [AdviserHelperController::class, 'assign'])->name('helper.assign');
+
+    // Reports
+    Route::get('/reports', [AdviserReportController::class, 'index'])->name('reports');
+    Route::get('/reports/export', [AdviserReportController::class, 'export'])->name('reports.export');
+
+    // Calendar
+    Route::get('/calendar', [AdviserCalendarController::class, 'index'])->name('calendar');
+    Route::post('/calendar/event', [AdviserCalendarController::class, 'store'])->name('calendar.event.store');
+
+    // Resources
+    Route::get('/resources', [AdviserResourceController::class, 'index'])->name('resources');
+    Route::post('/resources', [AdviserResourceController::class, 'store'])->name('resources.store');
+    Route::put('/resources/{id}', [AdviserResourceController::class, 'update'])->name('resources.update');
+    Route::delete('/resources/{id}', [AdviserResourceController::class, 'destroy'])->name('resources.destroy');
+
+    // Notifications
+    Route::get('/notifications', [AdviserNotificationController::class, 'index'])->name('notifications');
+    Route::post('/notifications/{id}/read', [AdviserNotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [AdviserNotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::delete('/notifications/{id}', [AdviserNotificationController::class, 'destroy'])->name('notifications.destroy');
+    Route::get('/notifications/unread-count', [AdviserNotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+
+    // Settings
+    Route::get('/settings', [AdviserSettingsController::class, 'index'])->name('settings');
+    Route::put('/settings/profile', [AdviserSettingsController::class, 'updateProfile'])->name('settings.profile');
+    Route::put('/settings/password', [AdviserSettingsController::class, 'updatePassword'])->name('settings.password');
+    Route::put('/settings/appearance', [AdviserSettingsController::class, 'updateAppearance'])->name('settings.appearance');
+    Route::put('/settings/notifications', [AdviserSettingsController::class, 'updateNotifications'])->name('settings.notifications');
+});
+
+// =============================================
+// PSYCHOLOGY PROFESSIONAL MODULE ROUTES
+// =============================================
+Route::middleware(['auth', 'role:professional'])->prefix('professional')->name('professional.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [ProfessionalDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/stats', [ProfessionalDashboardController::class, 'getStats'])->name('dashboard.stats');
+
+    // Referrals
+    Route::get('/referrals', [ProfessionalReferralController::class, 'index'])->name('referrals');
+    Route::get('/referral/{id}', [ProfessionalReferralController::class, 'show'])->name('referral.show');
+    Route::post('/referral/{id}/accept', [ProfessionalReferralController::class, 'accept'])->name('referral.accept');
+    Route::post('/referral/{id}/decline', [ProfessionalReferralController::class, 'decline'])->name('referral.decline');
+    Route::post('/referral/{id}/start', [ProfessionalReferralController::class, 'startCase'])->name('referral.start');
+
+    // Cases
+    Route::get('/cases', [ProfessionalCaseController::class, 'index'])->name('cases');
+    Route::get('/case/{id}', [ProfessionalCaseController::class, 'show'])->name('cases.show');
+    Route::post('/case/{id}/status', [ProfessionalCaseController::class, 'updateStatus'])->name('cases.status');
+    Route::post('/case/{id}/notes', [ProfessionalCaseController::class, 'addNotes'])->name('cases.notes');
+
+    // Reports
+    Route::get('/reports', [ProfessionalReportController::class, 'index'])->name('reports');
+    Route::get('/reports/export', [ProfessionalReportController::class, 'export'])->name('reports.export');
+
+    // Profile
+    Route::get('/profile', [ProfessionalProfileController::class, 'index'])->name('profile');
+    Route::put('/profile', [ProfessionalProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/availability', [ProfessionalProfileController::class, 'updateAvailability'])->name('profile.availability');
+
+    // Settings
+    Route::get('/settings', function () {
+        return view('professional.settings');
+    })->name('settings');
+});
+
+// =============================================
+// MODERATOR MODULE ROUTES
+// =============================================
+Route::middleware(['auth', 'role:moderator'])->prefix('moderator')->name('moderator.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [ModeratorDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/stats', [ModeratorDashboardController::class, 'stats'])->name('dashboard.stats');
+
+    // Incoming Queue
+    Route::get('/queue', [ModeratorQueueController::class, 'index'])->name('queue');
+    Route::post('/queue/assign', [ModeratorQueueController::class, 'assign'])->name('queue.assign');
+    Route::post('/queue/reassign', [ModeratorQueueController::class, 'reassign'])->name('queue.reassign');
+    Route::get('/queue/stats', [ModeratorQueueController::class, 'stats'])->name('queue.stats');
+
+    // Active Sessions
+    Route::get('/sessions', [ModeratorSessionController::class, 'index'])->name('sessions');
+    Route::get('/sessions/stats', [ModeratorSessionController::class, 'stats'])->name('sessions.stats');
+    Route::get('/sessions/{id}', [ModeratorSessionController::class, 'show'])->name('sessions.show');
+
+    // Manage (Helpers & Advisers)
+    Route::get('/manage', [ModeratorManageController::class, 'index'])->name('manage');
+    Route::post('/manage/assign', [ModeratorManageController::class, 'assignToAdviser'])->name('manage.assign');
+    Route::post('/manage/unassign', [ModeratorManageController::class, 'unassignFromAdviser'])->name('manage.unassign');
+    Route::get('/manage/stats', [ModeratorManageController::class, 'stats'])->name('manage.stats');
+
+    // Emergency Alerts
+    Route::get('/emergency', [ModeratorEmergencyController::class, 'index'])->name('emergency');
+    Route::post('/emergency/{id}/escalate', [ModeratorEmergencyController::class, 'escalate'])->name('emergency.escalate');
+    Route::post('/emergency/{id}/resolve', [ModeratorEmergencyController::class, 'resolve'])->name('emergency.resolve');
+    Route::get('/emergency/stats', [ModeratorEmergencyController::class, 'stats'])->name('emergency.stats');
+
+    // Analytics
+    Route::get('/analytics', [ModeratorAnalyticsController::class, 'index'])->name('analytics');
+    Route::get('/analytics/data', [ModeratorAnalyticsController::class, 'data'])->name('analytics.data');
+    Route::get('/analytics/export', [ModeratorAnalyticsController::class, 'export'])->name('analytics.export');
+
+    // Reports
+    Route::get('/reports', [ModeratorReportController::class, 'index'])->name('reports');
+    Route::get('/reports/export', [ModeratorReportController::class, 'export'])->name('reports.export');
+
+    // Notifications
+    Route::get('/notifications', [ModeratorNotificationController::class, 'index'])->name('notifications');
+    Route::post('/notifications/{id}/read', [ModeratorNotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [ModeratorNotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::delete('/notifications/{id}', [ModeratorNotificationController::class, 'destroy'])->name('notifications.destroy');
+    Route::get('/notifications/unread-count', [ModeratorNotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+
+    // Settings
+    Route::get('/settings', [ModeratorSettingsController::class, 'index'])->name('settings');
+    Route::put('/settings/profile', [ModeratorSettingsController::class, 'updateProfile'])->name('settings.profile');
+    Route::put('/settings/password', [ModeratorSettingsController::class, 'updatePassword'])->name('settings.password');
+    Route::put('/settings/appearance', [ModeratorSettingsController::class, 'updateAppearance'])->name('settings.appearance');
+    Route::put('/settings/notifications', [ModeratorSettingsController::class, 'updateNotifications'])->name('settings.notifications');
 });
 
 // =============================================
 // CHAT ROUTES (AJAX / Reverb)
 // =============================================
 Route::middleware(['auth'])->prefix('api')->group(function () {
-    Route::post('/chat/send', [App\Http\Controllers\ChatController::class, 'sendMessage'])->name('chat.send');
-    Route::get('/chat/messages/{sessionId}', [App\Http\Controllers\ChatController::class, 'getMessages'])->name('chat.messages');
+    Route::post('/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
+    Route::get('/chat/messages/{sessionId}', [ChatController::class, 'getMessages'])->name('chat.messages');
 });
 
 // =============================================

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Helper;
 
+use App\Events\EmergencyTriggered;
+use App\Events\ReferralRecommended;
 use App\Events\SessionEnded;
 use App\Http\Controllers\Controller;
 use App\Models\CallLog;
@@ -203,6 +205,15 @@ class HelperSessionController extends Controller
             '/moderator/dashboard'
         );
 
+        // Real-time alert for advisers
+        foreach (User::where('role', 'adviser')->pluck('id') as $adviserUserId) {
+            try {
+                broadcast(new EmergencyTriggered($session, $incident, $adviserUserId));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
         if ($session->seeker?->user_account_id) {
             Notification::create([
                 'user_account_id' => $session->seeker->user_account_id,
@@ -251,6 +262,15 @@ class HelperSessionController extends Controller
             'referral',
             '/adviser/dashboard'
         );
+
+        // Real-time alert for advisers
+        foreach (User::where('role', 'adviser')->pluck('id') as $adviserUserId) {
+            try {
+                broadcast(new ReferralRecommended($referral, $adviserUserId));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
 
         if ($session->seeker?->user_account_id) {
             Notification::create([

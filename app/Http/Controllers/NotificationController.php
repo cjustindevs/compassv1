@@ -13,6 +13,10 @@ class NotificationController extends Controller
 {
     public const TYPES = [
         'session' => ['label' => 'Sessions', 'icon' => '💬'],
+        'assignment' => ['label' => 'Assignments', 'icon' => '📋'],
+        'referral' => ['label' => 'Referrals', 'icon' => '📝'],
+        'evaluation' => ['label' => 'Evaluations', 'icon' => '📊'],
+        'emergency' => ['label' => 'Emergencies', 'icon' => '🚨'],
         'reminder' => ['label' => 'Reminders', 'icon' => '⏰'],
         'system' => ['label' => 'System', 'icon' => '🔔'],
         'update' => ['label' => 'Updates', 'icon' => '🎉'],

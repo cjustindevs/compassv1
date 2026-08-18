@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#04A052">
+    <title>Offline - COMPASS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #F8FBF9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            background: linear-gradient(135deg, #F0F8F2, #F8FBF9);
+        }
+        .offline-container {
+            max-width: 420px;
+            text-align: center;
+            background: white;
+            padding: 48px 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.06);
+        }
+        .offline-container .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            display: block;
+        }
+        .offline-container .logo {
+            font-size: 28px;
+            font-weight: 800;
+            color: #04A052;
+            margin-bottom: 8px;
+        }
+        .offline-container h1 {
+            color: #163B2D;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .offline-container p {
+            color: #6B7280;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .offline-container .btn {
+            display: inline-block;
+            padding: 12px 32px;
+            background: #04A052;
+            color: white;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .offline-container .btn:hover { background: #038A45; }
+        .offline-container .features {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .offline-container .features .item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #6B7280;
+        }
+        .offline-container .features .item .emoji {
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <span class="icon">📶</span>
+        <div class="logo">COMPASS</div>
+        <h1>You're Offline</h1>
+        <p>Don't worry! Some features are still available. Check your internet connection and try again.</p>
+        <a href="/" class="btn">Try Again</a>
+        <div class="features">
+            <div class="item">
+                <span class="emoji">💬</span>
+                <span>Chat</span>
+            </div>
+            <div class="item">
+                <span class="emoji">📖</span>
+                <span>Resources</span>
+            </div>
+            <div class="item">
+                <span class="emoji">📋</span>
+                <span>History</span>
+            </div>
+        </div>
+        <p style="font-size: 12px; color: #9CA3AF; margin-top: 16px;">
+            &copy; 2026 COMPASS &middot; Project Dial-A-Friend
+        </p>
+    </div>
+</body>
+</html>

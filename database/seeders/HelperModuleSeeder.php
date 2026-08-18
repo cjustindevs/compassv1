@@ -36,15 +36,16 @@ class HelperModuleSeeder extends Seeder
             ['name' => 'Seeker User', 'password' => Hash::make('password'), 'role' => 'seeker', 'email_verified_at' => now()]
         );
 
+        // ── Adviser (canonical account from AdviserSeeder) ────────────────
         $adviserUser = User::firstOrCreate(
-            ['email' => 'adviser@example.com'],
-            ['name' => 'Adviser User', 'password' => Hash::make('password'), 'role' => 'adviser', 'email_verified_at' => now()]
+            ['email' => 'adviser@compass.edu.ph'],
+            ['name' => 'Dr. Elena Cruz', 'password' => Hash::make('password123'), 'role' => 'adviser', 'email_verified_at' => now()]
         );
 
         // ── Profiles ───────────────────────────────────────────────────
         $adviser = Adviser::firstOrCreate(
             ['user_account_id' => $adviserUser->id],
-            ['first_name' => 'Adviser', 'last_name' => 'User', 'email' => 'adviser@example.com']
+            ['first_name' => 'Elena', 'last_name' => 'Cruz', 'email' => 'adviser@compass.edu.ph']
         );
 
         $helper = Helper::firstOrCreate(

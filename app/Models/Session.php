@@ -17,6 +17,7 @@ class Session extends Model
     const STATUS_HELPER_ASSIGNED = 'helper_assigned';
     const STATUS_ACTIVE = 'active';
     const STATUS_COMPLETED = 'completed';
+    const STATUS_EVALUATED = 'evaluated';
     const STATUS_CANCELLED = 'cancelled';
     const STATUS_NO_SHOW = 'no_show';
     const STATUS_SCHEDULED = 'scheduled';
@@ -96,6 +97,11 @@ class Session extends Model
         return $this->hasOne(HelpSeekerEvaluation::class, 'session_id', 'id');
     }
 
+    public function incidents(): HasMany
+    {
+        return $this->hasMany(IncidentReport::class, 'session_id', 'id');
+    }
+
     public function scopeForHelper($query, int $helperId)
     {
         return $query->where('helper_id', $helperId);
@@ -124,7 +130,7 @@ class Session extends Model
 
     public function isCompleted(): bool
     {
-        return in_array($this->session_status, [self::STATUS_COMPLETED, self::STATUS_CANCELLED], true);
+        return in_array($this->session_status, [self::STATUS_COMPLETED, self::STATUS_EVALUATED, self::STATUS_CANCELLED], true);
     }
 
     /**
@@ -174,6 +180,7 @@ class Session extends Model
             'helper_assigned' => 'Helper Assigned',
             'active' => 'Active',
             'completed' => 'Completed',
+            'evaluated' => 'Evaluated',
             'cancelled' => 'Cancelled',
             'no_show' => 'No Show',
             'scheduled' => 'Scheduled',

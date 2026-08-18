@@ -4,67 +4,78 @@ namespace App\Http\Controllers\Helper;
 
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class HelperNotificationController extends Controller
 {
     /**
-     * Show the logged-in user's notifications from the database.
+     * Notification center for the helper workspace.
      */
-    public function index()
+    public function index(): View
     {
-        $user = Auth::user();
+        $notifications = Notification::where('user_account_id', Auth::id())
+            ->latest()
+            ->limit(60)
+            ->get();
 
-        $notifications = Notification::where('user_account_id', $user->id)
-            ->orderByDesc('created_at')
-            ->paginate(20);
-
-        $unreadCount = Notification::where('user_account_id', $user->id)
-            ->where('status', 'unread')
+        $unreadCount = Notification::where('user_account_id', Auth::id())
+            ->unread()
             ->count();
 
-        return view('helper.notifications', [
-            'notifications' => $notifications,
-            'unreadCount' => $unreadCount,
-        ]);
+        return view('helper.notifications', compact('notifications', 'unreadCount'));
     }
 
     /**
      * Mark a single notification as read.
      */
-    public function markAsRead(Request $request, int $id)
+    public function markAsRead(Request $request, int $id): RedirectResponse|JsonResponse
     {
         $notification = Notification::where('user_account_id', Auth::id())
             ->findOrFail($id);
 
         $notification->markAsRead();
 
-        return redirect()->to($notification->link ?: route('helper.notifications'))
-            ->with('success', 'Notification marked as read.');
+        if ($request->expectsJson()) {
+            return response()->json(['read' => true]);
+        }
+
+        return $notification->link
+            ? redirect($notification->link)
+            : back();
     }
 
     /**
      * Mark all notifications as read.
      */
-    public function markAllAsRead(Request $request)
+    public function markAllAsRead(): RedirectResponse|JsonResponse
     {
         Notification::where('user_account_id', Auth::id())
-            ->where('status', 'unread')
-            ->update(['status' => 'read', 'read_at' => now()]);
+            ->unread()
+            ->update([
+                'status' => 'read',
+                'read_at' => now(),
+            ]);
+
+        if (request()->expectsJson()) {
+            return response()->json(['read_all' => true]);
+        }
 
         return back()->with('success', 'All notifications marked as read.');
     }
 
     /**
-     * Unread count for Ajax badge polling.
+     * Unread count for the helper sidebar badge (AJAX polling).
      */
-    public function unreadCount()
+    public function unreadCount(): JsonResponse
     {
-        $count = Notification::where('user_account_id', Auth::id())
-            ->where('status', 'unread')
-            ->count();
-
-        return response()->json(['count' => $count]);
+        return response()->json([
+            'count' => Notification::where('user_account_id', Auth::id())
+                ->unread()
+                ->count(),
+        ]);
     }
 }
