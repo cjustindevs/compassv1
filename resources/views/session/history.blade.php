@@ -346,7 +346,7 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <span class="status-badge {{ strtolower($session['status']) }}">
+                                        <span class="status-badge {{ str_replace('_', '-', strtolower($session['status'])) }}">
                                             {{ $session['status'] }}
                                         </span>
                                     </td>

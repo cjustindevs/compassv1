@@ -107,7 +107,7 @@ class ModeratorQueueController extends Controller
         ]);
 
         NewCaseAssigned::dispatch($session, $helper->user_account_id);
-        ModeratorAlert::dispatch(Auth::id(), 'assignment', 'Helper assigned', $session->seeker?->generated_alias ?? 'A seeker' . ' was matched with ' . $helper->full_name, '/moderator/queue');
+        ModeratorAlert::dispatch(Auth::id(), 'assignment', 'Helper assigned', ($session->seeker?->generated_alias ?? 'A seeker') . ' was matched with ' . $helper->full_name, '/moderator/queue');
 
         return redirect()->route('moderator.queue')
             ->with('success', $helper->full_name . ' assigned to ' . ($session->seeker?->generated_alias ?? 'the seeker') . ' successfully!');
@@ -157,7 +157,7 @@ class ModeratorQueueController extends Controller
     {
         $avg = QueueRequest::where('request_status', 'assigned')
             ->whereNotNull('matched_date')
-            ->selectRaw('AVG(EXTRACT(EPOCH FROM (matched_date - request_date))) as avg_wait')
+            ->selectRaw('AVG(' . \App\Support\DatabaseHelper::secondsBetween('matched_date', 'request_date') . ') as avg_wait')
             ->first();
 
         if ($avg && $avg->avg_wait) {
@@ -175,7 +175,7 @@ class ModeratorQueueController extends Controller
         $avg = QueueRequest::where('request_status', 'assigned')
             ->whereNotNull('matched_date')
             ->whereNotNull('scheduled_date')
-            ->selectRaw('AVG(EXTRACT(EPOCH FROM (scheduled_date - matched_date))) as avg_hold')
+            ->selectRaw('AVG(' . \App\Support\DatabaseHelper::secondsBetween('scheduled_date', 'matched_date') . ') as avg_hold')
             ->first();
 
         if ($avg && $avg->avg_hold) {

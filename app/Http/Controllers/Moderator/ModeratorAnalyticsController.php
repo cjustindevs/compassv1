@@ -140,11 +140,13 @@ class ModeratorAnalyticsController extends Controller
 
     private function getCompetencyTrajectory(string $from, string $to): array
     {
-        $rows = HelperCompetencyHistory::selectRaw("TO_CHAR(evaluation_date, 'YYYY-MM') as month, AVG(overall_score) as avg_score")
+        $monthKey = \App\Support\DatabaseHelper::monthKey('evaluation_date');
+
+        $rows = HelperCompetencyHistory::selectRaw($monthKey . ' as month, AVG(overall_score) as avg_score')
             ->whereNotNull('overall_score')
             ->whereBetween('evaluation_date', [$from . ' 00:00:00', $to . ' 23:59:59'])
-            ->groupBy(DB::raw("TO_CHAR(evaluation_date, 'YYYY-MM')"))
-            ->orderBy(DB::raw("TO_CHAR(evaluation_date, 'YYYY-MM')"))
+            ->groupBy(DB::raw($monthKey))
+            ->orderBy(DB::raw($monthKey))
             ->get();
 
         $labels = [];

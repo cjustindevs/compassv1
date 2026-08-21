@@ -311,7 +311,7 @@
                     </div>
                     <div class="info-row">
                         <span class="label">Area of Concern</span>
-                        <span class="value">{{ optional($case->session->concern)->category_name ?? 'General' }}</span>
+                        <span class="value">{{ optional($case->session->concern)->concern_name ?? 'General' }}</span>
                     </div>
                     <div class="info-row">
                         <span class="label">Referral Date</span>

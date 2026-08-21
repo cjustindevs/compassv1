@@ -89,15 +89,18 @@ class ModeratorReportController extends Controller
 
     private function getMonthlyReport(string $from, string $to): array
     {
-        $rows = Session::selectRaw("TO_CHAR(COALESCE(end_time, created_date), 'YYYY-MM') as month")
+        $monthKey = \App\Support\DatabaseHelper::monthKey('COALESCE(end_time, created_date)');
+        $countFilter = fn (string $cond) => \App\Support\DatabaseHelper::countFilter($cond);
+
+        $rows = Session::selectRaw($monthKey . ' as month')
             ->selectRaw('COUNT(*) as total')
-            ->selectRaw("COUNT(*) FILTER (WHERE session_type = 'chat') as chat")
-            ->selectRaw("COUNT(*) FILTER (WHERE session_type = 'voice') as voice")
-            ->selectRaw("COUNT(*) FILTER (WHERE session_status IN ('completed','evaluated')) as completed")
-            ->selectRaw("COUNT(*) FILTER (WHERE session_status IN ('cancelled','no_show')) as cancelled")
+            ->selectRaw($countFilter("session_type = 'chat'") . ' as chat')
+            ->selectRaw($countFilter("session_type = 'voice'") . ' as voice')
+            ->selectRaw($countFilter("session_status IN ('completed','evaluated')") . ' as completed')
+            ->selectRaw($countFilter("session_status IN ('cancelled','no_show')") . ' as cancelled')
             ->whereBetween(DB::raw('COALESCE(end_time, created_date)'), [$from . ' 00:00:00', $to . ' 23:59:59'])
-            ->groupBy(DB::raw("TO_CHAR(COALESCE(end_time, created_date), 'YYYY-MM')"))
-            ->orderBy(DB::raw("TO_CHAR(COALESCE(end_time, created_date), 'YYYY-MM')"))
+            ->groupBy(DB::raw($monthKey))
+            ->orderBy(DB::raw($monthKey))
             ->get();
 
         return $rows->map(function ($row) {
@@ -160,7 +163,7 @@ class ModeratorReportController extends Controller
         $avgResponse = \App\Models\QueueRequest::where('request_status', 'assigned')
             ->whereNotNull('matched_date')
             ->whereBetween('matched_date', [$from . ' 00:00:00', $to . ' 23:59:59'])
-            ->selectRaw('AVG(EXTRACT(EPOCH FROM (matched_date - request_date))) as avg_wait')
+            ->selectRaw('AVG(' . \App\Support\DatabaseHelper::secondsBetween('matched_date', 'request_date') . ') as avg_wait')
             ->first();
 
         $helpers = Helper::where('status', 'available')->count();

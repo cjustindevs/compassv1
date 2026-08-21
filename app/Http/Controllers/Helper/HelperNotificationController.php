@@ -19,8 +19,7 @@ class HelperNotificationController extends Controller
     {
         $notifications = Notification::where('user_account_id', Auth::id())
             ->latest()
-            ->limit(60)
-            ->get();
+            ->paginate(25);
 
         $unreadCount = Notification::where('user_account_id', Auth::id())
             ->unread()

@@ -764,7 +764,7 @@ class HelperModuleTest extends TestCase
 
         $this->assertDatabaseHas('counseling_sessions', [
             'id' => $session->id,
-            'session_status' => 'completed',
+            'session_status' => 'evaluated',
             'completion_status' => 'completed',
         ]);
 
@@ -924,10 +924,10 @@ class HelperModuleTest extends TestCase
             'overall_score' => 5,
         ]);
 
-        // The session must be marked completed so the dashboard stops
+        // The session must be marked evaluated so the dashboard stops
         // showing the "End & Evaluate" card (this was the evaluation loop).
         $session->refresh();
-        $this->assertSame('completed', $session->session_status);
+        $this->assertSame('evaluated', $session->session_status);
         $this->assertSame('completed', $session->completion_status);
 
         // The helper must be freed so they can take new cases.

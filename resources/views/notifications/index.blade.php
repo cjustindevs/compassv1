@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>COMPASS – Notifications</title>
+    <title>COMPASS â€“ Notifications</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -113,7 +113,7 @@
                         @if($unreadCount > 0)
                             You have <strong class="text-[#04A052]">{{ $unreadCount }}</strong> unread {{ $unreadCount === 1 ? 'notification' : 'notifications' }}.
                         @else
-                            You're all caught up. 🎉
+                            You're all caught up. ðŸŽ‰
                         @endif
                     </p>
                 </div>
@@ -140,7 +140,7 @@
         <!-- Notification list -->
         <div id="notifList" class="space-y-3">
             @forelse($notifications as $notification)
-                <div class="notif-card {{ $notification->is_read ? '' : 'unread' }}" id="notif-{{ $notification->notification_id }}" data-id="{{ $notification->notification_id }}">
+                <div class="notif-card {{ $notification->is_read ? '' : 'unread' }}" id="notif-{{ $notification->id }}" data-id="{{ $notification->id }}">
                     <div class="icon {{ $notification->notification_type === 'session' ? 'blue' : ($notification->notification_type === 'reminder' ? 'amber' : ($notification->notification_type === 'update' ? 'purple' : '')) }}">
                         {{ $notification->type_icon }}
                     </div>
@@ -156,7 +156,7 @@
                         </div>
                         @if(! $notification->is_read && $notification->link)
                             <div class="mt-2">
-                                <button class="link-btn" data-link="{{ $notification->link }}" onclick="markRead({{ $notification->notification_id }}, true)">
+                                <button class="link-btn" data-link="{{ $notification->link }}" onclick="markRead({{ $notification->id }}, true)">
                                     <i class="fas fa-arrow-right mr-1"></i>Open &amp; mark as read
                                 </button>
                             </div>
@@ -164,18 +164,18 @@
                     </div>
                     <div class="flex flex-col items-end gap-2 self-stretch">
                         @if(! $notification->is_read)
-                            <button class="link-btn" onclick="markRead({{ $notification->notification_id }}, false)" title="Mark as read">
+                            <button class="link-btn" onclick="markRead({{ $notification->id }}, false)" title="Mark as read">
                                 <i class="fas fa-check"></i>
                             </button>
                         @endif
-                        <button class="delete-btn" onclick="deleteNotif({{ $notification->notification_id }})" title="Delete">
+                        <button class="delete-btn" onclick="deleteNotif({{ $notification->id }})" title="Delete">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </div>
             @empty
                 <div class="empty-state">
-                    <div class="text-5xl mb-4">{{ $activeType ? $types[$activeType]['icon'] : '🔔' }}</div>
+                    <div class="text-5xl mb-4">{{ $activeType ? $types[$activeType]['icon'] : 'ðŸ””' }}</div>
                     <h3 class="text-lg font-semibold text-gray-800">
                         @if($activeType)
                             No {{ strtolower($types[$activeType]['label']) }} notifications
@@ -243,7 +243,7 @@
             const btn = document.getElementById('markAllBtn');
             if (btn) btn.remove();
             const subtitle = document.querySelector('p.text-sm.text-gray-500');
-            if (subtitle) subtitle.innerHTML = "You're all caught up. 🎉";
+            if (subtitle) subtitle.innerHTML = "You're all caught up. ðŸŽ‰";
             refreshCount();
         }
 
@@ -259,7 +259,7 @@
 
             const list = document.getElementById('notifList');
             if (list && list.children.length === 0) {
-                list.innerHTML = '<div class="empty-state"><div class="text-5xl mb-4">🎉</div><h3 class="text-lg font-semibold text-gray-800">All caught up</h3><p class="text-sm text-gray-500 mt-1">You have no notifications left.</p></div>';
+                list.innerHTML = '<div class="empty-state"><div class="text-5xl mb-4">ðŸŽ‰</div><h3 class="text-lg font-semibold text-gray-800">All caught up</h3><p class="text-sm text-gray-500 mt-1">You have no notifications left.</p></div>';
             }
         }
 

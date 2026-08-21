@@ -7,15 +7,14 @@ use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
-use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    Route::get('register', [RegisteredUserController::class, 'create'])
-        ->name('register');
-
-    Route::post('register', [RegisteredUserController::class, 'store']);
+    // NOTE: Custom OTP-based registration is handled by HelpSeekerRegisterController
+    // in routes/web.php ('register' / 'seeker.register'). Breeze's default register
+    // block is intentionally omitted so the custom flow creates the matching
+    // help_seekers + consent_records rows.
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');

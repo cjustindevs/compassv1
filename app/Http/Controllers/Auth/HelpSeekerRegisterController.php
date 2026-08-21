@@ -93,7 +93,7 @@ class HelpSeekerRegisterController extends Controller
                 'alias' => 'required|string|max:255|unique:help_seekers,generated_alias',
                 'email' => 'required|email|unique:users,email',
                 'age' => 'required|integer|min:13|max:99',
-                'gender' => 'required|string|in:Male,Female,Non-binary,Prefer not to say',
+                'gender' => 'required|string|in:male,female,non-binary,prefer-not-to-say',
                 'password' => 'required|string|min:6|confirmed',
                 'consent' => 'accepted',
                 'verification_token' => 'required|string'

@@ -74,6 +74,14 @@ class AdviserEvaluationController extends Controller
         $report = SessionReport::findOrFail($id);
         $adviser = Auth::user()->adviser;
 
+        // Prevent duplicate evaluations for the same report
+        if (AdviserFeedback::where('report_id', $report->id)
+            ->where('adviser_id', $adviser->id)
+            ->exists()) {
+            return redirect()->route('adviser.evaluations')
+                ->with('info', 'This report has already been evaluated.');
+        }
+
         $validated = $request->validate([
             'active_listening' => 'required|integer|min:1|max:5',
             'empathy' => 'required|integer|min:1|max:5',

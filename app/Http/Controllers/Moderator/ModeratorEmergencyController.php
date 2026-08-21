@@ -120,7 +120,7 @@ class ModeratorEmergencyController extends Controller
     private function getAverageResponseTime(): string
     {
         $avg = IncidentReport::whereNotNull('resolved_at')
-            ->selectRaw('AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))) as avg_response')
+            ->selectRaw('AVG(' . \App\Support\DatabaseHelper::secondsBetween('resolved_at', 'created_at') . ') as avg_response')
             ->first();
 
         if ($avg && $avg->avg_response) {

@@ -11,12 +11,17 @@ use App\Http\Controllers\Adviser\AdviserResourceController;
 use App\Http\Controllers\Adviser\AdviserSettingsController;
 use App\Http\Controllers\Auth\HelpSeekerRegisterController;
 use App\Http\Controllers\Auth\OTPController;
+use App\Http\Controllers\Helper\HelperCalendarController;
 use App\Http\Controllers\Helper\HelperCaseController;
+use App\Http\Controllers\Helper\HelperChatController;
 use App\Http\Controllers\Helper\HelperDashboardController;
 use App\Http\Controllers\Helper\HelperCompetencyController;
 use App\Http\Controllers\Helper\HelperNotificationController;
+use App\Http\Controllers\Helper\HelperProfileController;
 use App\Http\Controllers\Helper\HelperReadinessController;
+use App\Http\Controllers\Helper\HelperResourceController;
 use App\Http\Controllers\Helper\HelperSessionController;
+use App\Http\Controllers\Helper\HelperSettingsController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\Moderator\ModeratorAnalyticsController;
 use App\Http\Controllers\Moderator\ModeratorDashboardController;
@@ -206,6 +211,10 @@ Route::middleware(['auth', 'role:helper'])->prefix('helper')->name('helper.')->g
     Route::post('/cases/{id}/decline', [HelperCaseController::class, 'decline'])->name('cases.decline');
 
     // Session Management (Chat / Voice / Notes)
+    Route::get('/session/chat', function () {
+        return redirect()->route('helper.chat');
+    })->name('session.chat.legacy');
+
     Route::get('/session/{id}/chat', [HelperSessionController::class, 'chat'])->name('session.chat');
     Route::post('/session/{id}/chat/send', [HelperSessionController::class, 'sendMessage'])->name('session.chat.send');
     Route::get('/session/{id}/voice', [HelperSessionController::class, 'voice'])->name('session.voice');
@@ -218,17 +227,13 @@ Route::middleware(['auth', 'role:helper'])->prefix('helper')->name('helper.')->g
     Route::post('/session/{id}/referral', [HelperSessionController::class, 'recommendReferral'])->name('session.referral');
 
     // Calendar
-    Route::get('/calendar', function () {
-        return view('helper.calendar');
-    })->name('calendar');
+    Route::get('/calendar', [HelperCalendarController::class, 'index'])->name('calendar');
 
     // Competency
     Route::get('/competency', [HelperCompetencyController::class, 'index'])->name('competency');
 
     // Resources
-    Route::get('/resources', function () {
-        return view('helper.resources');
-    })->name('resources');
+    Route::get('/resources', [HelperResourceController::class, 'index'])->name('resources');
 
     // Notifications
     Route::get('/notifications', [HelperNotificationController::class, 'index'])->name('notifications');
@@ -237,19 +242,16 @@ Route::middleware(['auth', 'role:helper'])->prefix('helper')->name('helper.')->g
     Route::get('/notifications/unread-count', [HelperNotificationController::class, 'unreadCount'])->name('notifications.unread-count');
 
     // Profile
-    Route::get('/profile', function () {
-        return view('helper.profile');
-    })->name('profile');
+    Route::get('/profile', [HelperProfileController::class, 'index'])->name('profile');
+    Route::put('/profile', [HelperProfileController::class, 'update'])->name('profile.update');
 
     // Settings
-    Route::get('/settings', function () {
-        return view('helper.settings');
-    })->name('settings');
+    Route::get('/settings', [HelperSettingsController::class, 'index'])->name('settings');
+    Route::put('/settings', [HelperSettingsController::class, 'update'])->name('settings.update');
 
-    // Chat index (redirects to cases or shows active chats)
-    Route::get('/chat', function () {
-        return redirect()->route('helper.cases');
-    })->name('chat');
+    // Chat index (shows active chats / redirects to active session)
+    Route::get('/chat', [HelperChatController::class, 'index'])->name('chat');
+    Route::get('/chat/{id}', [HelperChatController::class, 'show'])->name('chat.show');
 });
 
 // =============================================

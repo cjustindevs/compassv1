@@ -147,7 +147,7 @@ class ModeratorDashboardController extends Controller
     {
         $avg = QueueRequest::where('request_status', 'assigned')
             ->whereNotNull('matched_date')
-            ->selectRaw('AVG(EXTRACT(EPOCH FROM (matched_date - request_date))) as avg_wait')
+            ->selectRaw('AVG(' . \App\Support\DatabaseHelper::secondsBetween('matched_date', 'request_date') . ') as avg_wait')
             ->first();
 
         if ($avg && $avg->avg_wait) {

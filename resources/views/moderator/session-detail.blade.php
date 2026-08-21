@@ -190,7 +190,7 @@
                                 <p class="text-[10px] mb-1 {{ $message->is_helper ? 'text-gray-400' : 'text-emerald-700' }}">
                                     {{ $message->is_helper ? ($session->helper?->full_name ?? 'Helper') : ($session->seeker?->generated_alias ?? 'Seeker') }}
                                 </p>
-                                {{ $message->message }}
+                                {{ $message->message_text }}
                             </div>
                         </div>
                     @empty

@@ -565,7 +565,7 @@
                 @foreach($helperRanking->take(10) as $index => $helper)
                     <div class="ranking-item">
                         <span class="rank">#{{ $index + 1 }}</span>
-                        <div class="avatar" style="background: {{ $helper->competency >= 80 ? '#04A052' : ($helper->competency >= 60 ? '#3B82F6' : '#9CA3AF') }};">
+                        <div class="avatar" style="background: {{ $helper->competency >= 4 ? '#04A052' : ($helper->competency >= 3 ? '#3B82F6' : '#9CA3AF') }};">
                             {{ $helper->initials }}
                         </div>
                         <div class="info">
@@ -577,7 +577,7 @@
                                 </span>
                             </div>
                         </div>
-                        <div class="score">{{ $helper->competency }}%</div>
+                        <div class="score">{{ $helper->competency }} / 5</div>
                     </div>
                 @endforeach
             </div>

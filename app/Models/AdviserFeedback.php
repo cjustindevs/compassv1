@@ -25,7 +25,7 @@ class AdviserFeedback extends Model
 
     protected $casts = [
         'created_date' => 'datetime',
-        'competency_rating' => 'float',
+        'competency_rating' => 'integer',
     ];
 
     public function report(): BelongsTo

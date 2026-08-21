@@ -311,7 +311,7 @@
                                     <td><span class="status-badge {{ $row['status'] }}">{{ ucfirst($row['status']) }}</span></td>
                                     <td><span class="level-tag {{ strtolower($row['level']) }}">{{ $row['level'] }}</span></td>
                                     <td class="font-semibold text-gray-700">
-                                        {{ $row['competency_score'] > 0 ? $row['competency_score'] . ' / 100' : '—' }}
+                                        {{ $row['competency_score'] > 0 ? $row['competency_score'] . ' / 5' : '—' }}
                                     </td>
                                     <td>
                                         <span class="font-semibold text-gray-700">{{ $row['active_cases'] }}</span>

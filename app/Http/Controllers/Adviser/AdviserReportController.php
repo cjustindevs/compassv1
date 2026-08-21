@@ -206,7 +206,7 @@ class AdviserReportController extends Controller
         }
 
         $avg = $query->selectRaw(
-            'AVG(EXTRACT(EPOCH FROM (messages.created_at - counseling_sessions.created_date)) / 60) as avg_min'
+            'AVG(' . \App\Support\DatabaseHelper::secondsBetween('messages.created_at', 'counseling_sessions.created_date') . ' / 60) as avg_min'
         )->value('avg_min');
 
         return $avg !== null ? round((float) $avg, 1) . 'm' : '—';
@@ -226,7 +226,7 @@ class AdviserReportController extends Controller
         }
 
         $avg = $query->selectRaw(
-            'AVG(EXTRACT(EPOCH FROM (start_time - created_date)) / 60) as avg_min'
+            'AVG(' . \App\Support\DatabaseHelper::secondsBetween('start_time', 'created_date') . ' / 60) as avg_min'
         )->value('avg_min');
 
         return $avg !== null ? round((float) $avg, 1) . 'm' : '—';
@@ -274,7 +274,7 @@ class AdviserReportController extends Controller
         }
 
         $trends = $query->select(
-            DB::raw('DATE_TRUNC(\'month\', evaluation_date) as month'),
+            DB::raw(\App\Support\DatabaseHelper::monthStart('evaluation_date') . ' as month'),
             DB::raw('AVG(overall_score) as avg_score')
         )
             ->groupBy('month')
