@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\AuditLog;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -32,6 +34,12 @@ class AdminAuthenticationTest extends TestCase
 
         $this->assertAuthenticatedAs($administrator);
         $response->assertRedirect(route('admin.dashboard'));
+        $this->assertDatabaseHas('audit_logs', [
+            'user_account_id' => $administrator->id,
+            'action' => AuditLogger::ADMIN_LOGIN_SUCCEEDED,
+            'module' => 'authentication',
+            'description' => 'Administrator portal',
+        ]);
     }
 
     public function test_administrator_can_log_in_with_an_account_name(): void
@@ -64,6 +72,13 @@ class AdminAuthenticationTest extends TestCase
         $this->assertGuest();
         $response->assertRedirect(route('admin.login'))
             ->assertSessionHasErrors('username');
+        $this->assertDatabaseHas('audit_logs', [
+            'user_account_id' => null,
+            'action' => AuditLogger::ADMIN_LOGIN_FAILED,
+            'module' => 'authentication',
+            'description' => 'Account: '.$helper->email,
+        ]);
+        $this->assertSame(1, AuditLog::count());
     }
 
     public function test_administrator_cannot_log_in_with_an_invalid_password(): void
@@ -80,6 +95,13 @@ class AdminAuthenticationTest extends TestCase
         $this->assertGuest();
         $response->assertRedirect(route('admin.login'))
             ->assertSessionHasErrors('username');
+        $this->assertDatabaseHas('audit_logs', [
+            'user_account_id' => null,
+            'action' => AuditLogger::ADMIN_LOGIN_FAILED,
+            'module' => 'authentication',
+            'description' => 'Account: '.$administrator->email,
+        ]);
+        $this->assertSame(1, AuditLog::count());
     }
 
     public function test_non_administrator_cannot_access_the_admin_dashboard(): void

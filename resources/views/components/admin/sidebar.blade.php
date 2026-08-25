@@ -9,13 +9,13 @@
             ['key' => 'resource-library', 'label' => 'Resource Library', 'icon' => 'book-open', 'href' => route('admin.resource-library')],
         ],
         'System' => [
-            ['key' => 'audit-logs', 'label' => 'Audit Logs', 'icon' => 'file-text', 'path' => '/admin/audit-logs'],
-            ['key' => 'backup-restore', 'label' => 'Backup & Restore', 'icon' => 'backup', 'path' => '/admin/backup-restore'],
-            ['key' => 'system-health', 'label' => 'System Health', 'icon' => 'activity', 'path' => '/admin/system-health'],
-            ['key' => 'reports', 'label' => 'Reports', 'icon' => 'chart-line', 'path' => '/admin/reports'],
+            ['key' => 'audit-logs', 'label' => 'Audit Logs', 'icon' => 'file-text', 'href' => route('admin.audit-logs')],
+            ['key' => 'backup-restore', 'label' => 'Backup & Restore', 'icon' => 'backup', 'href' => route('admin.backup-restore')],
+            ['key' => 'system-health', 'label' => 'System Health', 'icon' => 'activity', 'href' => route('admin.system-health')],
+            ['key' => 'reports', 'label' => 'Reports', 'icon' => 'chart-line', 'href' => route('admin.reports')],
         ],
         'Account' => [
-            ['key' => 'settings', 'label' => 'Settings', 'icon' => 'settings', 'path' => '/admin/settings'],
+            ['key' => 'settings', 'label' => 'Settings', 'icon' => 'settings', 'href' => route('admin.settings')],
         ],
     ];
 

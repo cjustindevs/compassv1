@@ -187,7 +187,7 @@ Users verification:
 - Result: 14 tests passed, 61 assertions.
 - Coverage includes guest redirect, non-admin denial, real user/helper data rendering, active and pending account creation, and invalid/duplicate input.
 - Blade view compilation, Laravel Pint, JavaScript syntax checking, route registration, and `git diff --check` pass.
-- The repository-wide result at this stage was 32 passed and 7 failed (117 assertions). These were the same unrelated failures recorded above: missing Vite output in five guest-auth views, one stale shared-login redirect expectation, and two stale profile redirect expectations.
+- The repository-wide result at this stage was 32 passed and 7 failed (117 assertions). These were the same unrelated failures recorded above: missing Vite output in four guest-auth views, one stale shared-login redirect expectation, and two stale profile redirect expectations.
 
 Remaining Users backend integration:
 
@@ -246,7 +246,7 @@ Roles & Permissions verification:
 - Result: 18 tests passed, 85 assertions.
 - The new coverage verifies guest redirect, non-admin denial, the active protected route, all ten categories, accessible switches, exact initial state counts, and the absence of a fabricated RBAC endpoint.
 - Laravel Pint, Blade compilation, JavaScript syntax, registered route checks, and `git diff --check` pass.
-- Current repository-wide result: 36 passed and 7 failed (141 assertions). The seven unchanged failures are outside the Admin portal: five Vite-manifest-dependent guest-auth screens, one outdated shared-login redirect assertion, and two outdated profile redirect assertions.
+- Current repository-wide result: 36 passed and 7 failed (141 assertions). The seven unchanged failures are outside the Admin portal: four Vite-manifest-dependent guest-auth screens, one outdated shared-login redirect assertion, and two outdated profile redirect assertions.
 
 Remaining RBAC backend integration:
 
@@ -305,7 +305,7 @@ Resource Library verification:
 - Result: 23 tests passed, 114 assertions.
 - New coverage verifies guest redirect, non-admin denial, real published-resource rendering, exclusion of unpublished records, derived category/type metadata, active navigation, real detail links, initial bookmark state, persistent save/unsave JSON behavior, and the empty-library state.
 - Laravel Pint, PHP syntax, Blade compilation, JavaScript syntax, route registration, and `git diff --check` pass.
-- Current repository-wide result: 41 passed and 7 failed (170 assertions). The unchanged failures remain outside the Admin portal: five Vite-manifest-dependent guest-auth screens, one outdated shared-login redirect assertion, and two outdated profile redirect assertions.
+- Current repository-wide result: 41 passed and 7 failed (170 assertions). The unchanged failures remain outside the Admin portal: four Vite-manifest-dependent guest-auth screens, one outdated shared-login redirect assertion, and two outdated profile redirect assertions.
 
 Remaining Resource Library integration:
 
@@ -313,3 +313,333 @@ Remaining Resource Library integration:
 - Add verified Contact resources through the existing content pipeline before displaying any crisis directory or hotline information.
 - Add server-side search/filter pagination if the published library becomes too large for one server-rendered collection.
 - The existing shared save action increments `saved_count` after `firstOrCreate`; a future bookmark hardening pass should only increment when a bookmark was newly created and should consider transaction-safe counter updates.
+
+## Completed: administrator audit logs
+
+The protected `/admin/audit-logs` page now reuses the Admin shell and displays a read-only Recent Events table based on the supplied reference. Audit Logs is a real sidebar destination with the established active treatment.
+
+Route and authorization:
+
+- `GET /admin/audit-logs` (`admin.audit-logs`) is rendered by the invokable `App\Http\Controllers\Admin\AuditLogController`.
+- The route requires the existing `auth` and `admin` middleware. The Roles & Permissions matrix is still local-only UI state, so there is not yet a persistent `audit-logs.read` permission to enforce.
+- No create, update, delete, rewrite, or timestamp mutation route/control was added for audit records.
+
+Current data source:
+
+- The repository already had an `audit_logs` table and placeholder `AuditLog` model. The model now has an actor relationship to `User` for the page query.
+- `App\Services\AuditLogger` is the centralized append-only writer. It persists actor ID, normalized event code, module, target description, request IP, user agent, and timestamps.
+- The controller always reads persisted rows newest-first with eager-loaded actors, server-side filters, and Laravel pagination. There are no controller preview/demo records.
+- A successful dedicated Admin login records `ADMIN_LOGIN_SUCCEEDED`; rejected Admin login attempts record `ADMIN_LOGIN_FAILED` without storing the password; an account created through Admin User Management records `USER_CREATED` inside the same database transaction as the new account.
+- An empty database displays the genuine `No audit events found` state. Existing activity that occurred before the writer was added cannot be reconstructed automatically; subsequent connected actions appear immediately after persistence.
+- For current real rows, `description` is displayed as Target because the schema has no dedicated target fields. Raw action codes are normalized into human-readable labels, and the event category is derived from `module` plus `action`.
+
+Implemented behavior:
+
+- Actor, Action, Target, and Time render from structured records through reusable `x-admin.audit-log-table` markup.
+- Administrator actors display their email; other user actors display role plus name; records without an actor display `system`.
+- Today's records display time, yesterday's display `yesterday`, and older records display a date. Every `<time>` includes ISO datetime data and an exact human-readable tooltip.
+- Search covers action, module, target/description, actor name, and actor email. It combines with actor type, event category, and date filters.
+- Filters and 25/50/100 page sizes use GET query parameters, so filtered views remain linkable. Invalid filter values safely fall back to defaults.
+- Persisted records use `LengthAwarePaginator`; pagination controls appear only when results exceed the selected page size.
+- Empty filtered results show `No matching audit events` with a Clear Filters action. A true empty data source shows `No audit events found`.
+- Database failures are reported internally and produce a contained Retry state without raw exception details.
+- Data is synchronously server-rendered, so no asynchronous skeleton is shown. The table horizontally scrolls on narrow screens while the shared Admin sidebar retains its existing drawer behavior.
+- IP address and user-agent fields are intentionally omitted from the primary table. The page contains no row actions or clickable mutation affordances.
+
+Audit Logs files added:
+
+- `app/Http/Controllers/Admin/AuditLogController.php`
+- `app/Services/AuditLogger.php`
+- `resources/views/admin/audit-logs/index.blade.php`
+- `resources/views/components/admin/audit-log-table.blade.php`
+- `tests/Feature/Admin/AuditLogTest.php`
+
+Audit Logs files updated:
+
+- `app/Models/AuditLog.php`: added the actor relationship.
+- `app/Http/Controllers/Auth/AdminAuthenticatedSessionController.php`: records successful and rejected Admin sign-in attempts.
+- `app/Http/Controllers/Admin/UserController.php`: records Admin-created users transactionally.
+- `routes/web.php`: registered the protected named route.
+- `resources/views/components/admin/sidebar.blade.php`: activated the real Audit Logs link.
+- `public/css/admin-dashboard.css`: added page heading, card, toolbar, table, immutable states, and pagination styling using existing Admin tokens.
+- `codex.md`: recorded the live persisted data path and remaining audit coverage.
+
+Audit Logs verification:
+
+- `php artisan test tests/Feature/Admin/AuditLogTest.php tests/Feature/Admin/ResourceLibraryTest.php tests/Feature/Admin/RolePermissionTest.php tests/Feature/Admin/UserManagementTest.php tests/Feature/Auth/AdminAuthenticationTest.php`
+- Result: 30 tests passed, 162 assertions.
+- New coverage verifies guest redirect, non-admin denial, true empty state, persisted record rendering, actor resolution, action normalization, readable/exact timestamps, combined search/filter/date behavior, pagination, active navigation, live Admin authentication and user-creation writes, and the absence of mutation controls.
+- Laravel Pint, PHP syntax, Blade compilation, JavaScript syntax, route registration, and `git diff --check` pass.
+- Current repository-wide result: 48 passed and 7 failed (218 assertions). The unchanged failures remain outside the Admin portal: four Vite-manifest-dependent guest-auth screens, one outdated shared-login redirect assertion, and two outdated profile redirect assertions.
+
+Remaining audit backend integration:
+
+- Connect `AuditLogger` as later mutation endpoints are implemented for role/permission changes, password reset, deactivation, backups/restores, reports/exports, announcements, and other privileged actions. The current Admin portal only has real server mutations for authentication and user creation.
+- Enforce immutability beyond the UI with database/application policy, restricted update/delete access, retention rules, and appropriate indexes for timestamp/module/actor searches.
+- Persist actor display/role snapshots so deleting a user does not cause their historical row to appear as `system` after the nullable foreign key is cleared.
+- Add structured event code, category, target type, and target ID fields; the current schema requires best-effort category derivation and uses description as Target.
+- Enforce a persistent Audit Logs read permission once the RBAC backend replaces the current local-only matrix.
+
+## Completed: administrator backup and restore interface
+
+The protected `/admin/backup-restore` page now reuses the shared Admin shell and matches the supplied Backup & Restore reference while accurately representing the repository's current backend capabilities.
+
+Repository findings and data source:
+
+- No backup package, controller, database model, queue job, Artisan backup command, restore command, scheduled backup task, dedicated backup disk, or protected download route existed.
+- The only scheduled console definition remains Laravel's default `inspire` command. The default private local filesystem is `storage/app/private`; no public or private backup path was inferred.
+- `App\Services\BackupCatalog` is an explicit unavailable-provider adapter. It currently returns a real empty collection and `create`, `download`, and `restore` capabilities as false. No mock snapshot dates, sizes, files, commands, URLs, or successful operations are presented.
+- `Admin\BackupRestoreController` maps future provider records into newest-first view data, validates supported statuses, formats byte sizes and timestamps, and suppresses download URLs unless the provider explicitly reports protected-download capability.
+- The page is synchronously server-rendered, so no asynchronous skeleton is necessary. Catalog exceptions are reported internally and render a contained Retry state without revealing paths or exception details.
+
+Implemented behavior:
+
+- `GET /admin/backup-restore` (`admin.backup-restore`) uses the existing `auth` and `admin` middleware, Admin layout, dynamic authenticated profile, and responsive sidebar. Backup & Restore is now a real active sidebar destination.
+- The page includes the COMPASS/Admin/Backup breadcrumb, requested heading/actions, Recent Snapshots card, completed/running/failed/restoring row variants, exact timestamp tooltips, byte-size formatting, responsive rows, true empty state, and error state.
+- The reusable snapshot row only renders a download link when a protected server URL and capability are both supplied. The current adapter therefore renders no file URLs, and no public storage path is constructed.
+- Run Backup opens the requested confirmation dialog, but the final button is disabled and clearly states that no command or request will run while the provider is unavailable. There is no fake POST endpoint and duplicate requests are impossible.
+- Restore opens a completed-snapshot picker. The prepared workflow then shows an impact warning and a second dialog requiring the exact text `RESTORE`; the destructive button also remains disabled unless a future provider enables restoration.
+- No backup, download, restore, retention, maintenance-mode, or shell operation was implemented or simulated. Consequently no backup Audit Log is written yet; `AuditLogger` should be called only by future real operation handlers after their outcome is known.
+- Persistent granular backup permissions do not exist yet, so access uses the current administrator-only middleware rather than inventing RBAC records.
+
+Backup & Restore files added:
+
+- `app/Http/Controllers/Admin/BackupRestoreController.php`
+- `app/Services/BackupCatalog.php`
+- `resources/views/admin/backup-restore/index.blade.php`
+- `resources/views/components/admin/backup-snapshot-row.blade.php`
+- `tests/Feature/Admin/BackupRestoreTest.php`
+
+Backup & Restore files updated:
+
+- `routes/web.php`: registered the protected read-only page route.
+- `resources/views/components/admin/sidebar.blade.php`: replaced the pending item with the named route.
+- `resources/views/components/admin/icon.blade.php`: added the shared download outline icon.
+- `public/css/admin-dashboard.css`: added reference-aligned card, rows, states, dialogs, controls, and responsive behavior.
+- `public/js/admin-dashboard.js`: added snapshot selection, two-stage restore flow, exact confirmation gating, and focus-compatible dialog transitions.
+- `codex.md`: recorded the truthful backend status and future integration requirements.
+
+Backup & Restore verification:
+
+- `php artisan test tests/Feature/Admin tests/Feature/Auth/AdminAuthenticationTest.php`
+- Result: 36 tests passed, 195 assertions.
+- New coverage verifies guest redirect, non-admin denial, active navigation, true unconfigured empty state, absence of fake snapshots, prepared confirmation dialogs, disabled destructive action, data-driven sorting/formatting/statuses, suppression of unprotected download URLs, contained error state, and the absence of mutation endpoints.
+- Laravel Pint, PHP syntax, Blade compilation, JavaScript syntax, route registration, and `git diff --check` pass.
+- Current repository-wide result: 54 passed and 7 failed (251 assertions). The unchanged failures remain outside the Admin portal: four Vite-manifest-dependent guest-auth screens, one outdated shared-login role redirect assertion, and two outdated profile redirect assertions.
+
+Remaining backup backend integration:
+
+- Select and configure a reviewed backup provider/package and a non-public encrypted backup disk with retention, checksum, access-control, and credential-management policies.
+- Implement queued backup generation, protected identifier-based downloads, pre-restore snapshots, backup verification, maintenance-window coordination, restoration validation, concurrency locks, failure recovery, and operation status polling.
+- Add protected CSRF mutation routes/controllers only after that provider exists. Never accept browser-supplied filesystem paths or raw shell arguments.
+- Record real initiation/completion/failure/download/restore outcomes through `AuditLogger`; do not log a successful operation until the backend confirms it.
+- Replace the current administrator-only capability check with persistent read/create/download/restore permission enforcement once the RBAC backend is implemented.
+
+## Completed: administrator system health interface
+
+The protected `/admin/system-health` page now reuses the shared Admin shell and presents the supplied System Health monitoring layout through centralized, data-driven view data.
+
+Repository findings and current data source:
+
+- No system-health controller, monitoring service/model, infrastructure metrics endpoint, monitoring threshold configuration, polling, Laravel Echo, or WebSocket integration existed.
+- No JavaScript chart package is installed. The Admin Dashboard already uses the reusable server-rendered `x-admin.chart-card` SVG component, so System Health reuses and extends that component without adding a dependency.
+- `App\Services\SystemHealthMonitor` is the isolated monitoring-provider integration point. It currently returns explicitly identified preview data for services, charts, storage, uptime history, and incidents; it does not call an invented endpoint or present itself as live infrastructure telemetry.
+- The page shows a visible preview notice. There is no polling or real-time transport. Replacing the provider data with protected monitoring measurements is the remaining backend task.
+- The Roles & Permissions page currently stores only local UI state, so no persistent `system-health.read` permission exists. Access uses the existing `auth` and `admin` middleware.
+
+Implemented behavior:
+
+- `GET /admin/system-health` (`admin.system-health`) uses the existing authenticated Admin layout, profile, logout behavior, mobile sidebar, header, and active navigation treatment.
+- Ten service cards are rendered from structured data with Healthy, Warning, Critical, and Unknown-capable states: Server, Database, Authentication, API, Storage, Memory, CPU, Queue, Notification, and Voice Call.
+- Overall status is calculated in the controller instead of hardcoded: a critical core service is Critical; warnings or a non-core critical service produce Degraded; unknown data produces Unknown; otherwise the result is Operational. The supplied preview data therefore reports Degraded and two active critical incidents.
+- CPU Usage, Memory Usage, and API Response Time reuse the existing responsive SVG chart component. The component now accepts an accessible summary and optional dashed series while remaining backwards-compatible with Dashboard charts.
+- Storage bars calculate their widths from structured usage values. The 90-day uptime card renders data-driven operational/degraded/outage blocks and calculates its SLA state.
+- The recent incident list renders structured warning/critical events and avoids presenting vendor-specific claims such as Twilio when no real provider is configured.
+- The Incidents button and View all action focus the in-page incident section; no unrequested incident-management route was invented.
+- A provider failure renders a contained retry state without leaking the exception. Data is synchronously server-rendered, so no asynchronous loading skeleton is displayed.
+- The service grid responds from five columns to three, two, and one; chart and lower grids stack at existing Admin breakpoints.
+- No restart, database administration, shell execution, or destructive infrastructure controls were added.
+
+System Health files added:
+
+- `app/Http/Controllers/Admin/SystemHealthController.php`
+- `app/Services/SystemHealthMonitor.php`
+- `resources/views/admin/system-health/index.blade.php`
+- `resources/views/components/admin/service-health-card.blade.php`
+- `resources/views/components/admin/health-incident-list.blade.php`
+- `tests/Feature/Admin/SystemHealthTest.php`
+
+System Health files updated:
+
+- `routes/web.php`: registered the protected named route.
+- `resources/views/components/admin/sidebar.blade.php`: activated the System Health destination.
+- `resources/views/components/admin/icon.blade.php`: added lock, memory, and layers outline icons using the established icon component.
+- `resources/views/components/admin/chart-card.blade.php`: added accessible chart summaries and optional dashed series without changing existing Dashboard usage.
+- `public/css/admin-dashboard.css`: added reference-aligned service states, metric grids, progress bars, uptime blocks, incidents, preview/error states, and responsive layouts using existing Admin tokens.
+- `codex.md`: recorded the monitoring source, calculations, limitations, and future integration points.
+
+System Health verification:
+
+- `php artisan test tests/Feature/Admin tests/Feature/Auth/AdminAuthenticationTest.php`
+- Result: 41 tests passed, 229 assertions.
+- New coverage verifies guest redirect, non-admin denial, active navigation, all preview service/metric sections, calculated Degraded and Critical overall states, accessible chart data, two active incidents, contained provider failure, and absence of infrastructure-control actions.
+- Laravel Pint, JavaScript syntax, Blade compilation, route registration, and `git diff --check` pass.
+- Current repository-wide result: 59 tests passed and 7 failed (285 assertions). The unchanged failures remain outside the Admin portal: four Vite-manifest-dependent guest-auth screens, one outdated shared-login role redirect assertion, and two outdated profile redirect assertions.
+
+Remaining System Health backend integration:
+
+- Replace preview measurements in `SystemHealthMonitor` with a protected infrastructure monitoring adapter or persisted time-series source. Server-calculated states and centrally configured thresholds should remain authoritative.
+- Add partial-provider failure mapping so unavailable individual metrics become Unknown without hiding healthy measurements from other sources.
+- Add a protected refresh endpoint and conservative 30–60 second polling only when a real monitoring provider exists; no polling or WebSockets are currently used.
+- Persist incident lifecycle data if acknowledgement/resolution workflows are later required. The current page is read-only and contains no incident-management backend.
+- Enforce a persistent System Health read permission once the local-only RBAC matrix is replaced by backend authorization.
+
+## Completed: administrator reports catalog interface
+
+The protected `/admin/reports` page now reuses the shared Admin shell and presents the supplied six-card Reports catalog with live source-activity metadata and truthful operation capabilities.
+
+Repository findings and current data source:
+
+- `AnalyticsReport`, `SessionReport`, and `IncidentReport` models/tables already existed, but no Admin Reports controller, catalog service, generator, queue job, preview/detail route, print view, protected report download route, or file authorization policy existed.
+- The existing Settings export is a help seeker's personal JSON data export and is not appropriate for aggregated administrator reports.
+- Composer contains no PDF, CSV, or XLSX report-generation package. No file format or successful export/download behavior was invented.
+- `App\Services\ReportCatalog` centralizes the six predefined catalog definitions. Each definition derives its record count and latest update timestamp from real source tables: counseling sessions, referrals, helper competency history, users, and incident reports. The visible dates are therefore dynamic rather than hardcoded reference dates.
+- The existing `HelperCompetencyHistory` model did not map Laravel's pluralized default to the repository's singular `helper_competency_history` table; its table mapping is now explicit so real competency source activity can be queried.
+- The existing `analytics_reports` rows are adviser-scoped generated-report metadata with an unprotected `file_path`; they are intentionally not exposed as downloadable Admin files.
+- The Roles & Permissions matrix remains local-only UI state. Reports uses the existing `auth` and `admin` middleware because persistent Reports Read/Create/Export permissions do not yet exist.
+
+Implemented behavior:
+
+- `GET /admin/reports` (`admin.reports`) uses the existing Admin layout, dynamic profile, logout, responsive sidebar, global search, and active navigation treatment.
+- The catalog renders Monthly session report, Referral outcomes, Helper competency growth, Performance benchmarks, Users & activity, and Emergency incident log from structured service data through reusable `x-admin.report-card` markup.
+- Cards contain the requested icon, category badge, title, description, real source-updated state, and accessible View/Export/Print/Download controls. No card is manually duplicated.
+- Global search filters the catalog client-side by title, category, description, and source. Category, last 7/30/90 days, and output-type filters combine with it. The filter count, visible-result summary, Clear Filters action, and `No reports found` state update immediately.
+- View opens a safe metadata preview with source name, source record count, and latest source activity. It does not expose session narratives, identities, recordings, or incident content.
+- Emergency Incident Log preview displays an additional privacy notice explaining that detailed access needs reviewed backend authorization.
+- Export, Print, and Download controls open a contained unavailable dialog. They do not generate, print, expose, or download a file. No public storage URL is rendered.
+- New Report opens a reusable accessible dialog with report type and date range fields. Because no secure formats/generator exist, the format control and Generate button are disabled with an explicit explanation; no mutation endpoint exists.
+- A true empty catalog and filtered-empty state are separate. Catalog failures render a contained Retry state without leaking exception text. Data is synchronously rendered, so no asynchronous card skeleton is shown.
+- The card grid responds from three columns to two and one using the existing Admin breakpoints and preserves keyboard/focus behavior through the shared dialog implementation.
+- No Audit Log entry is written for metadata previews or unavailable actions. Future real generation/export/download handlers should record their confirmed outcomes through the existing `AuditLogger`.
+
+Reports files added:
+
+- `app/Http/Controllers/Admin/ReportController.php`
+- `app/Services/ReportCatalog.php`
+- `resources/views/admin/reports/index.blade.php`
+- `resources/views/components/admin/report-card.blade.php`
+- `tests/Feature/Admin/ReportTest.php`
+
+Reports files updated:
+
+- `app/Models/HelperCompetencyHistory.php`: mapped the existing model to its actual singular table.
+- `routes/web.php`: registered the protected named Reports route.
+- `resources/views/components/admin/sidebar.blade.php`: replaced the pending Reports item with the named route.
+- `resources/views/components/admin/icon.blade.php`: added spreadsheet and printer outline icons.
+- `public/css/admin-dashboard.css`: added reference-aligned catalog cards, report actions, states, dialogs, privacy notices, and responsive grids.
+- `public/js/admin-dashboard.js`: added combined live filtering, preview population, privacy state, and unavailable-operation dialogs.
+- `codex.md`: recorded the real source mappings, backend limitations, and future integration requirements.
+
+Reports verification:
+
+- `php artisan test tests/Feature/Admin tests/Feature/Auth/AdminAuthenticationTest.php`
+- Result: 48 tests passed, 267 assertions.
+- New coverage verifies guest redirect, non-admin denial, all six catalog definitions, real source counts/timestamps, active navigation, filters/dialogs/actions, privacy-safe capability messaging, true empty and contained failure states, suppression of public file links, and the absence of generation/download endpoints.
+- Laravel Pint, JavaScript syntax, Blade compilation, route registration, and `git diff --check` pass.
+- Current repository-wide result: 66 tests passed and 7 failed (323 assertions). The unchanged failures remain outside the Admin portal: four Vite-manifest-dependent guest-auth screens, one outdated shared-login role redirect assertion, and two outdated profile redirect assertions.
+
+Current report/export status:
+
+- Metadata catalog preview: available and dynamic.
+- PDF export: not implemented.
+- CSV export: not implemented.
+- XLSX export: not implemented.
+- Printable report view: not implemented.
+- Protected generated-file download: not implemented.
+- Report generation queue/job: not implemented.
+
+Remaining Reports backend integration:
+
+- Define aggregated, privacy-reviewed queries for each report and pseudonymize help-seeker data by default. Emergency incident reporting requires stricter explicit authorization and access logging.
+- Implement persistent Reports Read/Create/Export permissions and enforce them in policies/middleware and every report endpoint, not only in the interface.
+- Choose reviewed PDF/CSV/XLSX generators, queued generation jobs, status tracking, retention policy, and a non-public report storage disk.
+- Add identifier-based protected preview/print/download routes. Never accept client-supplied file paths or expose `analytics_reports.file_path` directly.
+- Record confirmed generation, export, download, and sensitive-report access outcomes through `AuditLogger`; do not record unavailable UI interactions as completed operations.
+
+## Completed: administrator settings interface
+
+The protected `/admin/settings` page now reuses the shared Admin shell and implements the supplied Settings layout with device-level appearance controls, persisted account preferences, the real password-update flow, and truthful security capability states.
+
+Repository findings and integration decisions:
+
+- The repository already had account fields for `dark_mode`, `email_notifications`, `show_email`, and `allow_data_research`, plus Laravel's authenticated `PUT /password` flow. There was no Admin Settings route/page, applied Admin theme runtime, accent/reduced-motion implementation, narrow preference endpoint, password-change audit event, authenticator-app 2FA backend, verified Admin phone/SMS preference backend, session revocation endpoint, or installed interface translations.
+- The existing general Settings controller expects section-wide forms, so the Admin page uses a narrow protected preference action that permits only the three known account boolean fields. It does not invent a second general preference model.
+- Device-specific theme, accent, reduced motion, and in-app sound preferences use guarded `localStorage` keys. No passwords, security state, session identifiers, or account-level security preferences are stored there.
+- The existing `users.dark_mode` value seeds the Admin theme only when no device preference exists. Light, Dark, and System then use one Admin runtime and are applied before the stylesheet to avoid a theme flash.
+- Accent choices use dedicated interactive CSS tokens and intentionally do not replace semantic Healthy, Warning, Critical, or Info colors.
+- The existing database session driver and sessions table are used in production to list the current administrator's devices. The view adapter selects only session ID, user agent, and last-activity timestamp, hashes the ID before view use, and never exposes payloads or IP addresses. Tests use the configured array driver and therefore show the current session only unless a provider is injected.
+- Because secure 2FA, SMS, and session-revocation backends do not exist, those actions are shown as disabled/unavailable or read-only rather than as fake toggles.
+- Only English is installed, so the Language section accurately shows a disabled English selection and does not claim Filipino localization.
+
+Implemented behavior:
+
+- `GET /admin/settings` (`admin.settings`) and `PATCH /admin/settings/preferences` (`admin.settings.preference.update`) use the existing `auth` and `admin` middleware. Settings is now a real active sidebar link.
+- The page includes the requested COMPASS/Settings breadcrumb, heading, responsive local section navigation, and Appearance, Notifications, Privacy, Security, and Language cards.
+- Appearance supports Light, Dark, and system-color-scheme modes; five accessible accent choices; and a reduced-motion preference that suppresses non-essential transitions while continuing to respect the operating-system preference.
+- Email notifications, profile-email visibility, and anonymized analytics save immediately to the existing user record. The client optimistically updates a switch, rolls it back on failure, and displays a contained error message. In-app sounds persist locally and do not play audio during setup. Emergency SMS remains unavailable.
+- Privacy explicitly states that mandatory audit, security, emergency, and institutional records cannot be disabled.
+- Change Password opens the shared accessible dialog and submits to Laravel's real current-password/new-password confirmation flow. Successful Admin password changes append the sanitized `PASSWORD_CHANGED` Audit Log event without logging password content.
+- Active Sessions opens a read-only device review derived from actual session storage when available. Provider failure leaves the rest of Settings usable and shows only the current session with a contained warning. No sign-out control is rendered without a protected revocation backend.
+- Local navigation becomes horizontally scrollable on tablet/mobile, cards stack, control rows adapt, and shared dialogs retain focus trapping, Escape handling, and trigger-focus restoration.
+
+Settings files added:
+
+- `app/Http/Controllers/Admin/SettingsController.php`
+- `app/Services/ActiveSessionCatalog.php`
+- `resources/views/admin/settings/index.blade.php`
+- `resources/views/components/admin/settings-switch.blade.php`
+- `tests/Feature/Admin/SettingsTest.php`
+
+Settings files updated:
+
+- `routes/web.php`: registered the protected Settings page and narrow preference route.
+- `resources/views/components/admin/sidebar.blade.php`: activated the real Settings destination.
+- `resources/views/components/admin/layout.blade.php`: added the pre-paint Admin theme/accent/reduced-motion bootstrap.
+- `resources/views/components/admin/icon.blade.php`: added shared sun, moon, monitor, and globe outline icons.
+- `public/css/admin-dashboard.css`: added accent tokens, light/dark theme variables, Settings cards/controls/session UI, reduced-motion rules, and responsive behavior.
+- `public/js/admin-dashboard.js`: added theme, system-theme tracking, accent, local and backend switch persistence, rollback feedback, and section navigation.
+- `app/Http/Controllers/Auth/PasswordController.php`: records confirmed Admin password changes through the existing audit service.
+- `app/Services/AuditLogger.php`: added the `PASSWORD_CHANGED` event constant.
+- `codex.md`: recorded the implementation, truthful security status, and remaining backend work.
+
+Settings verification:
+
+- `php artisan test tests/Feature/Admin tests/Feature/Auth/AdminAuthenticationTest.php tests/Feature/Auth/PasswordUpdateTest.php`
+- Result: 58 tests passed, 326 assertions.
+- New Settings coverage verifies guest redirect, non-admin denial, shared-layout rendering, active navigation, existing preference persistence, unsupported-setting rejection, real password update and sanitized audit entry, non-sensitive session metadata, and contained session-provider failure.
+- Laravel Pint, PHP syntax, JavaScript syntax, Blade compilation, route registration, and `git diff --check` pass.
+- Current repository-wide result: 74 tests passed and 7 failed (374 assertions). The unchanged failures remain outside this Admin Settings work: four Vite-manifest-dependent guest-auth screens, one outdated shared-login role redirect assertion, and two outdated profile redirect assertions.
+
+Current Settings capability status:
+
+- Light theme: functional and device-persisted.
+- Dark theme: functional and device-persisted.
+- System theme: functional, device-persisted, and updates when the operating-system preference changes.
+- Accent color: functional and device-persisted through interactive design tokens; semantic status colors remain stable.
+- Reduced motion: functional and device-persisted; operating-system reduced-motion remains respected.
+- Email notifications: persisted to the existing backend user field.
+- In-app sounds: device-local preference only; no sound is played by this page.
+- Emergency SMS: unavailable; verified Admin phone and SMS backend still required.
+- Profile-email visibility and anonymized analytics: persisted to existing backend fields.
+- Password change: fully connected to Laravel validation/password hashing and Audit Logs.
+- Two-factor authentication: unavailable; no authenticator-app backend exists.
+- Active sessions: connected read-only to database session metadata in production; revocation is not implemented.
+- Interface language: English only; localization infrastructure/content is still required for additional languages.
+
+Remaining Settings backend integration:
+
+- Implement a reviewed authenticator-app 2FA enrollment, verification, recovery-code, and password/2FA-protected disable flow before enabling its control.
+- Add verified administrator phone storage and an authorized SMS preference/delivery provider before enabling Emergency SMS.
+- Add protected current-user session-revocation actions, including a safe `sign out all other sessions` operation, with CSRF protection and Audit Log events.
+- Decide whether device-level appearance/sound preferences should sync to accounts; if so, consolidate them into one authoritative preference store instead of retaining two sources of truth.
+- Add actual localization catalogs and translated Admin UI before enabling any language other than English.

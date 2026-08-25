@@ -18,6 +18,33 @@
 
     <title>{{ $title }} | COMPASS Admin</title>
 
+    <script>
+        (() => {
+            const root = document.documentElement;
+            const fallbackTheme = @js($admin->dark_mode ? 'dark' : 'light');
+            const allowedThemes = ['light', 'dark', 'system'];
+            const allowedAccents = ['green', 'cyan', 'mint', 'orange', 'red'];
+
+            try {
+                const preference = localStorage.getItem('compass-admin-theme') || fallbackTheme;
+                const theme = allowedThemes.includes(preference) ? preference : fallbackTheme;
+                const resolvedTheme = theme === 'system'
+                    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                    : theme;
+                const savedAccent = localStorage.getItem('compass-admin-accent') || 'green';
+
+                root.dataset.adminThemePreference = theme;
+                root.dataset.adminTheme = resolvedTheme;
+                root.dataset.adminAccent = allowedAccents.includes(savedAccent) ? savedAccent : 'green';
+                root.classList.toggle('admin-reduced-motion', localStorage.getItem('compass-admin-reduced-motion') === 'true');
+            } catch (error) {
+                root.dataset.adminThemePreference = fallbackTheme;
+                root.dataset.adminTheme = fallbackTheme;
+                root.dataset.adminAccent = 'green';
+            }
+        })();
+    </script>
+
     <link rel="stylesheet" href="{{ asset('css/admin-dashboard.css') }}">
 </head>
 <body>

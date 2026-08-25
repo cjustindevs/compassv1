@@ -640,4 +640,352 @@
 
         filterResources();
     }
+
+    const backupPage = document.querySelector('[data-backup-page]');
+    if (backupPage) {
+        const restorePickerDialog = document.getElementById('restore-picker-dialog');
+        const restoreWarningDialog = document.getElementById('restore-warning-dialog');
+        const restoreConfirmDialog = document.getElementById('restore-confirm-dialog');
+        const pickedRestoreButton = backupPage.querySelector('[data-continue-picked-restore]');
+        const continueRestoreButton = backupPage.querySelector('[data-continue-restore]');
+        const confirmationInput = backupPage.querySelector('[data-restore-confirmation-input]');
+        const restoreSystemButton = backupPage.querySelector('[data-confirm-system-restore]');
+        const warningSummary = backupPage.querySelector('[data-selected-backup-summary]');
+        const confirmSummary = backupPage.querySelector('[data-confirm-backup-summary]');
+        const canRestore = backupPage.dataset.backupCanRestore === 'true';
+        let selectedSnapshot = null;
+
+        const syncRestoreConfirmation = () => {
+            if (!restoreSystemButton) return;
+            restoreSystemButton.disabled = !canRestore || confirmationInput?.value !== 'RESTORE';
+        };
+
+        const selectSnapshot = (id, summary) => {
+            selectedSnapshot = { id, summary };
+            if (warningSummary) warningSummary.textContent = summary;
+            if (confirmSummary) confirmSummary.textContent = summary;
+        };
+
+        backupPage.querySelectorAll('input[name="restore_snapshot"]').forEach((radio) => {
+            radio.addEventListener('change', () => {
+                selectSnapshot(radio.value, radio.dataset.snapshotSummary);
+                if (pickedRestoreButton) pickedRestoreButton.disabled = false;
+            });
+        });
+
+        backupPage.querySelectorAll('[data-backup-restore]').forEach((button) => {
+            button.addEventListener('click', () => {
+                if (button.disabled) return;
+                selectSnapshot(button.dataset.snapshotId, button.dataset.snapshotSummary);
+                openDialog(restoreWarningDialog, button);
+            });
+        });
+
+        pickedRestoreButton?.addEventListener('click', () => {
+            if (!selectedSnapshot) return;
+            restorePickerDialog?.close();
+            openDialog(restoreWarningDialog, pickedRestoreButton);
+        });
+
+        continueRestoreButton?.addEventListener('click', () => {
+            if (!selectedSnapshot) return;
+            restoreWarningDialog?.close();
+            if (confirmationInput) confirmationInput.value = '';
+            syncRestoreConfirmation();
+            openDialog(restoreConfirmDialog, continueRestoreButton);
+        });
+
+        confirmationInput?.addEventListener('input', syncRestoreConfirmation);
+        restoreConfirmDialog?.addEventListener('close', () => {
+            if (confirmationInput) confirmationInput.value = '';
+            syncRestoreConfirmation();
+        });
+
+        syncRestoreConfirmation();
+    }
+
+    const reportsPage = document.querySelector('[data-reports-page]');
+    if (reportsPage) {
+        const cards = [...reportsPage.querySelectorAll('[data-report-card]')];
+        const search = document.querySelector('[data-admin-search]');
+        const filterDialog = document.getElementById('report-filters-dialog');
+        const filterForm = document.querySelector('[data-report-filter-form]');
+        const categoryFilter = document.querySelector('[data-report-category-filter]');
+        const dateFilter = document.querySelector('[data-report-date-filter]');
+        const outputFilter = document.querySelector('[data-report-output-filter]');
+        const filterCount = reportsPage.querySelector('[data-report-filter-count]');
+        const resultsStatus = reportsPage.querySelector('[data-report-results-status]');
+        const emptyState = reportsPage.querySelector('[data-report-filter-empty]');
+
+        const filterReports = () => {
+            const query = search?.value.trim().toLowerCase() ?? '';
+            const category = categoryFilter?.value ?? 'all';
+            const days = dateFilter?.value ?? 'all';
+            const output = outputFilter?.value ?? 'all';
+            const cutoff = days === 'all'
+                ? null
+                : Math.floor(Date.now() / 1000) - (Number(days) * 24 * 60 * 60);
+            let visibleCount = 0;
+
+            cards.forEach((card) => {
+                const updated = Number(card.dataset.reportUpdated || 0);
+                const matchesSearch = query === '' || card.dataset.reportSearch.includes(query);
+                const matchesCategory = category === 'all' || card.dataset.reportCategory === category;
+                const matchesDate = cutoff === null || (updated > 0 && updated >= cutoff);
+                const matchesOutput = output === 'all'
+                    || card.dataset.reportOutputs.split(' ').includes(output);
+                card.hidden = !(matchesSearch && matchesCategory && matchesDate && matchesOutput);
+                if (!card.hidden) visibleCount += 1;
+            });
+
+            const activeCount = [category !== 'all', days !== 'all', output !== 'all'].filter(Boolean).length;
+            if (filterCount) {
+                filterCount.textContent = String(activeCount);
+                filterCount.hidden = activeCount === 0;
+            }
+            if (resultsStatus) {
+                resultsStatus.textContent = `${visibleCount} ${visibleCount === 1 ? 'report' : 'reports'} shown`;
+            }
+            if (emptyState) emptyState.hidden = visibleCount !== 0;
+        };
+
+        const clearReportFilters = () => {
+            if (search) search.value = '';
+            if (categoryFilter) categoryFilter.value = 'all';
+            if (dateFilter) dateFilter.value = 'all';
+            if (outputFilter) outputFilter.value = 'all';
+            filterReports();
+        };
+
+        search?.addEventListener('input', filterReports);
+        filterForm?.addEventListener('submit', (event) => {
+            event.preventDefault();
+            filterReports();
+            filterDialog?.close();
+        });
+        document.querySelectorAll('[data-clear-report-filters]').forEach((button) => {
+            button.addEventListener('click', clearReportFilters);
+        });
+
+        const previewDialog = document.getElementById('report-preview-dialog');
+        const previewTitle = document.querySelector('[data-report-preview-title]');
+        const previewDescription = document.querySelector('[data-report-preview-description]');
+        const previewCategory = document.querySelector('[data-report-preview-category]');
+        const previewSource = document.querySelector('[data-report-preview-source]');
+        const previewRecords = document.querySelector('[data-report-preview-records]');
+        const previewUpdated = document.querySelector('[data-report-preview-updated]');
+        const privacyNote = document.querySelector('[data-report-privacy-note]');
+
+        reportsPage.querySelectorAll('[data-report-view]').forEach((button) => {
+            button.addEventListener('click', () => {
+                if (previewTitle) previewTitle.textContent = button.dataset.reportTitle;
+                if (previewDescription) previewDescription.textContent = button.dataset.reportDescription;
+                if (previewCategory) previewCategory.textContent = button.dataset.reportCategoryLabel;
+                if (previewSource) previewSource.textContent = button.dataset.reportSource;
+                if (previewRecords) {
+                    const count = Number(button.dataset.reportRecordCount || 0);
+                    previewRecords.textContent = `${count.toLocaleString()} source ${count === 1 ? 'record' : 'records'}`;
+                }
+                if (previewUpdated) previewUpdated.textContent = button.dataset.reportUpdatedLabel;
+                if (privacyNote) privacyNote.hidden = button.dataset.reportSensitive !== 'true';
+                openDialog(previewDialog, button);
+            });
+        });
+
+        const unavailableDialog = document.getElementById('report-unavailable-dialog');
+        const unavailableAction = document.querySelector('[data-report-unavailable-action-label]');
+        const unavailableTitle = document.querySelector('[data-report-unavailable-title]');
+        reportsPage.querySelectorAll('[data-report-unavailable-action]').forEach((button) => {
+            button.addEventListener('click', () => {
+                if (unavailableAction) unavailableAction.textContent = button.dataset.reportUnavailableAction;
+                if (unavailableTitle) unavailableTitle.textContent = button.dataset.reportTitle;
+                openDialog(unavailableDialog, button);
+            });
+        });
+
+        filterReports();
+    }
+
+    const settingsPage = document.querySelector('[data-settings-page]');
+    if (settingsPage) {
+        const root = document.documentElement;
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+        const themeKey = 'compass-admin-theme';
+        const accentKey = 'compass-admin-accent';
+        const localSettingKeys = {
+            reduced_motion: 'compass-admin-reduced-motion',
+            in_app_sounds: 'compass-admin-in-app-sounds',
+        };
+        const themeChoices = [...settingsPage.querySelectorAll('[data-theme-choice]')];
+        const accentChoices = [...settingsPage.querySelectorAll('[data-accent-choice]')];
+        const settingsToast = settingsPage.querySelector('[data-settings-toast]');
+        const settingsToastMessage = settingsPage.querySelector('[data-settings-toast-message]');
+        let settingsToastTimeout = null;
+
+        const readStorage = (key) => {
+            try {
+                return window.localStorage.getItem(key);
+            } catch {
+                return null;
+            }
+        };
+
+        const writeStorage = (key, value) => {
+            try {
+                window.localStorage.setItem(key, value);
+            } catch {
+                // Device preferences remain usable for the current page load.
+            }
+        };
+
+        const setSwitchState = (control, enabled) => {
+            control.classList.toggle('is-enabled', enabled);
+            control.setAttribute('aria-checked', String(enabled));
+            const state = control.querySelector('[data-setting-state]');
+            if (state) state.textContent = enabled ? 'On' : 'Off';
+        };
+
+        const showSettingsError = (message) => {
+            if (!settingsToast || !settingsToastMessage) return;
+            window.clearTimeout(settingsToastTimeout);
+            settingsToastMessage.textContent = message;
+            settingsToast.hidden = false;
+            settingsToastTimeout = window.setTimeout(() => {
+                settingsToast.hidden = true;
+            }, 5500);
+        };
+
+        const resolveTheme = (preference) => (
+            preference === 'system'
+                ? (systemTheme.matches ? 'dark' : 'light')
+                : preference
+        );
+
+        const applyTheme = (preference, persist = true) => {
+            const theme = ['light', 'dark', 'system'].includes(preference) ? preference : 'light';
+            root.dataset.adminThemePreference = theme;
+            root.dataset.adminTheme = resolveTheme(theme);
+            themeChoices.forEach((button) => {
+                button.setAttribute('aria-checked', String(button.dataset.themeChoice === theme));
+            });
+            if (persist) writeStorage(themeKey, theme);
+        };
+
+        const initialTheme = readStorage(themeKey)
+            || root.dataset.adminThemePreference
+            || settingsPage.dataset.settingsDefaultTheme
+            || 'light';
+        applyTheme(initialTheme, false);
+
+        themeChoices.forEach((button) => {
+            button.addEventListener('click', () => applyTheme(button.dataset.themeChoice));
+        });
+
+        const handleSystemThemeChange = () => {
+            if (root.dataset.adminThemePreference === 'system') applyTheme('system', false);
+        };
+        if (typeof systemTheme.addEventListener === 'function') systemTheme.addEventListener('change', handleSystemThemeChange);
+        else if (typeof systemTheme.addListener === 'function') systemTheme.addListener(handleSystemThemeChange);
+
+        const applyAccent = (accent, persist = true) => {
+            const selected = ['green', 'cyan', 'mint', 'orange', 'red'].includes(accent) ? accent : 'green';
+            root.dataset.adminAccent = selected;
+            accentChoices.forEach((button) => {
+                button.setAttribute('aria-checked', String(button.dataset.accentChoice === selected));
+            });
+            if (persist) writeStorage(accentKey, selected);
+        };
+        applyAccent(readStorage(accentKey) || root.dataset.adminAccent || 'green', false);
+        accentChoices.forEach((button) => {
+            button.addEventListener('click', () => applyAccent(button.dataset.accentChoice));
+        });
+
+        settingsPage.querySelectorAll('[data-settings-switch]').forEach((control) => {
+            const key = control.dataset.settingKey;
+            const storage = control.dataset.settingStorage;
+
+            if (storage === 'local' && localSettingKeys[key]) {
+                const stored = readStorage(localSettingKeys[key]);
+                const enabled = stored === null
+                    ? control.getAttribute('aria-checked') === 'true'
+                    : stored === 'true';
+                setSwitchState(control, enabled);
+                if (key === 'reduced_motion') root.classList.toggle('admin-reduced-motion', enabled);
+            }
+
+            control.addEventListener('click', async () => {
+                if (control.disabled || storage === 'unavailable') return;
+                const previous = control.getAttribute('aria-checked') === 'true';
+                const next = !previous;
+                setSwitchState(control, next);
+
+                if (storage === 'local') {
+                    writeStorage(localSettingKeys[key], String(next));
+                    if (key === 'reduced_motion') root.classList.toggle('admin-reduced-motion', next);
+                    return;
+                }
+
+                control.disabled = true;
+                control.setAttribute('aria-busy', 'true');
+
+                try {
+                    const response = await fetch(settingsPage.dataset.settingsPreferenceUrl, {
+                        method: 'PATCH',
+                        credentials: 'same-origin',
+                        headers: {
+                            Accept: 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken || '',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({ setting: key, enabled: next }),
+                    });
+
+                    if (!response.ok) throw new Error('Preference request failed');
+                } catch {
+                    setSwitchState(control, previous);
+                    showSettingsError('Unable to update this setting. Please try again.');
+                } finally {
+                    control.disabled = false;
+                    control.removeAttribute('aria-busy');
+                }
+            });
+        });
+
+        const navigationLinks = [...settingsPage.querySelectorAll('[data-settings-nav]')];
+        const settingsSections = [...settingsPage.querySelectorAll('[data-settings-section]')];
+        const setActiveSettingsSection = (id) => {
+            navigationLinks.forEach((link) => {
+                const active = link.dataset.settingsNav === id;
+                link.classList.toggle('is-active', active);
+                if (active) link.setAttribute('aria-current', 'location');
+                else link.removeAttribute('aria-current');
+            });
+        };
+
+        navigationLinks.forEach((link) => {
+            link.addEventListener('click', (event) => {
+                const section = document.getElementById(link.dataset.settingsNav);
+                if (!section) return;
+                event.preventDefault();
+                setActiveSettingsSection(section.id);
+                section.scrollIntoView({
+                    behavior: root.classList.contains('admin-reduced-motion') ? 'auto' : 'smooth',
+                    block: 'start',
+                });
+                section.focus({ preventScroll: true });
+                history.replaceState(null, '', `#${section.id}`);
+            });
+        });
+
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+                const visible = entries
+                    .filter((entry) => entry.isIntersecting)
+                    .sort((first, second) => second.intersectionRatio - first.intersectionRatio)[0];
+                if (visible) setActiveSettingsSection(visible.target.id);
+            }, { rootMargin: '-18% 0px -62% 0px', threshold: [0, .2, .5] });
+            settingsSections.forEach((section) => observer.observe(section));
+        }
+    }
 })();

@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -31,17 +33,29 @@ class UserController extends Controller
         ]);
     }
 
-    public function store(StoreUserRequest $request): RedirectResponse
+    public function store(StoreUserRequest $request, AuditLogger $auditLogger): RedirectResponse
     {
         $validated = $request->validated();
 
-        User::create([
-            'name' => trim($validated['first_name'].' '.$validated['last_name']),
-            'email' => $validated['email'],
-            'password' => Str::password(40),
-            'role' => $validated['role'],
-            'email_verified_at' => $validated['account_status'] === 'active' ? now() : null,
-        ]);
+        DB::transaction(function () use ($auditLogger, $request, $validated): void {
+            $user = User::create([
+                'name' => trim($validated['first_name'].' '.$validated['last_name']),
+                'email' => $validated['email'],
+                'password' => Str::password(40),
+                'role' => $validated['role'],
+                'email_verified_at' => $validated['account_status'] === 'active' ? now() : null,
+            ]);
+
+            $role = User::ROLE_LABELS[$user->role] ?? Str::headline($user->role);
+
+            $auditLogger->record(
+                $request->user(),
+                AuditLogger::USER_CREATED,
+                'users',
+                $role.': '.$user->name,
+                $request
+            );
+        });
 
         return redirect()->route('admin.users')->with(
             'success',

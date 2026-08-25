@@ -43,6 +43,23 @@
             <path d="M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
             @break
 
+        @case('download')
+            <path d="M12 4v12M7 11l5 5 5-5" />
+            <path d="M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
+            @break
+
+        @case('file-spreadsheet')
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+            <path d="M14 2v6h6" />
+            <path d="M8 13h8M8 17h8M11 13v4" />
+            @break
+
+        @case('printer')
+            <path d="M6 9V2h12v7" />
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+            <path d="M6 14h12v8H6z" />
+            @break
+
         @case('bookmark')
             <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z" />
             @break
@@ -128,6 +145,40 @@
         @case('key')
             <circle cx="8" cy="15" r="4" />
             <path d="m11 12 8-8M16 7l2 2M14 9l2 2" />
+            @break
+
+        @case('lock')
+            <rect x="5" y="10" width="14" height="11" rx="2" />
+            <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+            @break
+
+        @case('sun')
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41" />
+            @break
+
+        @case('moon')
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
+            @break
+
+        @case('monitor')
+            <rect x="2" y="3" width="20" height="14" rx="2" />
+            <path d="M8 21h8M12 17v4" />
+            @break
+
+        @case('globe')
+            <circle cx="12" cy="12" r="9" />
+            <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" />
+            @break
+
+        @case('memory')
+            <rect x="3" y="7" width="18" height="10" rx="2" />
+            <path d="M7 10v4M10 10v4M13 10v4M16 10v4M6 4v3M10 4v3M14 4v3M18 4v3M6 17v3M10 17v3M14 17v3M18 17v3" />
+            @break
+
+        @case('layers')
+            <path d="m12 2 9 5-9 5-9-5Z" />
+            <path d="m3 12 9 5 9-5M3 17l9 5 9-5" />
             @break
 
         @case('user-minus')

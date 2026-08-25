@@ -1,8 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
+use App\Http\Controllers\Admin\BackupRestoreController as AdminBackupRestoreController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\ResourceLibraryController as AdminResourceLibraryController;
 use App\Http\Controllers\Admin\RolePermissionController as AdminRolePermissionController;
+use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
+use App\Http\Controllers\Admin\SystemHealthController as AdminSystemHealthController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\AdminAuthenticatedSessionController;
 use App\Http\Controllers\Auth\HelpSeekerRegisterController;
@@ -93,6 +98,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
     Route::get('/roles-permissions', AdminRolePermissionController::class)->name('roles-permissions');
     Route::get('/resource-library', AdminResourceLibraryController::class)->name('resource-library');
+    Route::get('/audit-logs', AdminAuditLogController::class)->name('audit-logs');
+    Route::get('/backup-restore', AdminBackupRestoreController::class)->name('backup-restore');
+    Route::get('/system-health', AdminSystemHealthController::class)->name('system-health');
+    Route::get('/reports', AdminReportController::class)->name('reports');
+    Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings');
+    Route::patch('/settings/preferences', [AdminSettingsController::class, 'updatePreference'])
+        ->name('settings.preference.update');
 });
 
 // =============================================

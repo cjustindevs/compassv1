@@ -3,6 +3,7 @@
     'subtitle',
     'type' => 'line',
     'chart',
+    'summary' => null,
 ])
 
 @php
@@ -38,6 +39,10 @@
         <h2>{{ $title }}</h2>
         <p>{{ $subtitle }}</p>
     </header>
+
+    @if ($summary)
+        <p class="sr-only">{{ $summary }}</p>
+    @endif
 
     <div class="chart-wrap">
         <svg class="dashboard-chart" viewBox="0 0 {{ $width }} {{ $height }}" role="img" aria-label="{{ $title }} chart">
@@ -114,6 +119,7 @@
                         stroke-width="3"
                         stroke-linecap="round"
                         stroke-linejoin="round"
+                        @if (! empty($series['dash'])) stroke-dasharray="{{ $series['dash'] }}" @endif
                     />
                 @endforeach
 

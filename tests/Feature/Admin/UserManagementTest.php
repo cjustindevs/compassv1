@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\AuditLog;
 use App\Models\Helper;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -79,6 +81,13 @@ class UserManagementTest extends TestCase
             'email' => 'elena.cruz@university.edu',
             'role' => 'adviser',
         ]);
+        $this->assertDatabaseHas('audit_logs', [
+            'user_account_id' => $administrator->id,
+            'action' => AuditLogger::USER_CREATED,
+            'module' => 'users',
+            'description' => 'Adviser: Elena Cruz',
+        ]);
+        $this->assertSame(1, AuditLog::count());
 
         $this->assertNotNull(User::where('email', 'elena.cruz@university.edu')->firstOrFail()->email_verified_at);
     }
