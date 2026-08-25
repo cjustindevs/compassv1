@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureUserIsAdministrator;
+use App\Support\RoleDashboard;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,11 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->redirectGuestsTo(
-            fn (Request $request) => $request->is('admin/*')
-                ? route('admin.login')
-                : route('login')
-        );
+        $middleware->redirectGuestsTo(fn (Request $request) => route('login'));
+        $middleware->redirectUsersTo(fn (Request $request) => RoleDashboard::urlFor($request->user()));
 
         $middleware->alias([
             'admin' => EnsureUserIsAdministrator::class,

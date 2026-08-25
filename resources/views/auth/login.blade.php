@@ -19,6 +19,27 @@
         .btn-primary:hover { transform: scale(1.02); box-shadow: 0 8px 40px rgba(22, 163, 74, 0.4); }
         .input-focus:focus { border-color: #16A34A; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15); }
         .card-shadow { box-shadow: 0 20px 60px rgba(0,0,0,0.06); }
+        .password-control { position: relative; }
+        .password-control input { padding-right: 3.25rem; }
+        .password-toggle {
+            position: absolute;
+            top: 50%;
+            right: .65rem;
+            display: grid;
+            width: 2.25rem;
+            height: 2.25rem;
+            padding: 0;
+            place-items: center;
+            border: 0;
+            border-radius: .65rem;
+            background: transparent;
+            color: #9CA3AF;
+            cursor: pointer;
+            transform: translateY(-50%);
+        }
+        .password-toggle:hover, .password-toggle:focus-visible { background: #F3F4F6; color: #4B5563; outline: none; }
+        .password-toggle:focus-visible { box-shadow: 0 0 0 3px rgba(22,163,74,.15); }
+        .password-toggle svg { width: 1.15rem; height: 1.15rem; }
         @media (max-width: 640px) {
             .p-8 { padding: 1.5rem; }
             .text-2xl { font-size: 1.25rem; }
@@ -37,7 +58,7 @@
                 </div>
                 <span class="text-2xl font-extrabold text-gray-800">COMPASS</span>
             </div>
-            <p class="text-gray-500 text-sm mt-1">Sign in to your account</p>
+            <p class="text-gray-500 text-sm mt-1">One secure sign-in for every COMPASS portal</p>
         </div>
 
         <!-- Login Card -->
@@ -45,7 +66,13 @@
             <div class="p-6 md:p-8">
 
                 <h2 class="text-xl font-bold text-gray-800 mb-2">Welcome Back</h2>
-                <p class="text-gray-500 text-sm mb-6">Enter your credentials to continue.</p>
+                <p class="text-gray-500 text-sm mb-6">Sign in to continue.</p>
+
+                @if (session('status'))
+                    <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm" role="status">
+                        {{ session('status') }}
+                    </div>
+                @endif
 
                 @if ($errors->any())
                     <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
@@ -57,17 +84,25 @@
                     @csrf
 
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-                        <input type="email" name="email" value="{{ old('email') }}"
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+                        <input id="email" type="email" name="email" value="{{ old('email') }}"
                                class="input-focus w-full px-4 py-3 rounded-xl border border-gray-200 outline-none transition-all"
-                               placeholder="you@university.edu" required autofocus>
+                               placeholder="you@university.edu" autocomplete="username" required autofocus>
                     </div>
 
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-                        <input type="password" name="password"
-                               class="input-focus w-full px-4 py-3 rounded-xl border border-gray-200 outline-none transition-all"
-                               placeholder="Enter your password" required>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                        <div class="password-control">
+                            <input id="password" type="password" name="password"
+                                   class="input-focus w-full px-4 py-3 rounded-xl border border-gray-200 outline-none transition-all"
+                                   placeholder="Enter your password" autocomplete="current-password" required>
+                            <button class="password-toggle" type="button" aria-label="Show password" aria-pressed="false" data-password-toggle>
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M2.8 12s3.3-5 9.2-5 9.2 5 9.2 5-3.3 5-9.2 5-9.2-5-9.2-5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="12" cy="12" r="2.4" stroke="currentColor" stroke-width="1.8"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
@@ -89,7 +124,7 @@
             <div class="border-t border-gray-100 px-6 md:px-8 py-4 bg-gray-50/50">
                 <p class="text-center text-sm text-gray-500">
                     Don't have an account?
-                    <a href="{{ route('register') }}" class="text-green-600 font-medium hover:underline">Get Started</a>
+                    <a href="{{ route('register') }}" class="text-green-600 font-medium hover:underline">Create Account</a>
                 </p>
             </div>
         </div>
@@ -99,6 +134,18 @@
             100% Confidential · Anonymous · Secure
         </p>
     </div>
+
+    <script>
+        const passwordInput = document.getElementById('password');
+        const passwordToggle = document.querySelector('[data-password-toggle]');
+
+        passwordToggle?.addEventListener('click', () => {
+            const passwordIsVisible = passwordInput.type === 'text';
+            passwordInput.type = passwordIsVisible ? 'password' : 'text';
+            passwordToggle.setAttribute('aria-label', passwordIsVisible ? 'Show password' : 'Hide password');
+            passwordToggle.setAttribute('aria-pressed', String(!passwordIsVisible));
+        });
+    </script>
 
 </body>
 </html>

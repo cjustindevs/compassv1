@@ -4,9 +4,13 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
+use App\Services\AuditLogger;
+use App\Support\RoleDashboard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
@@ -22,26 +26,44 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request, AuditLogger $auditLogger): RedirectResponse
     {
-        $request->authenticate();
+        $administrator = User::query()
+            ->where('role', 'admin')
+            ->whereRaw('LOWER(email) = ?', [mb_strtolower(trim((string) $request->input('email')))])
+            ->first();
+
+        try {
+            $request->authenticate();
+        } catch (ValidationException $exception) {
+            if ($administrator) {
+                $auditLogger->record(
+                    null,
+                    AuditLogger::ADMIN_LOGIN_FAILED,
+                    'authentication',
+                    'Account: '.$administrator->email,
+                    $request
+                );
+            }
+
+            throw $exception;
+        }
 
         $request->session()->regenerate();
 
-        // Get the authenticated user
         $user = $request->user();
 
-        // Role-based redirection
-        $redirectTo = match ($user->role) {
-            'admin' => route('admin.dashboard'),
-            'adviser' => route('adviser.dashboard'),
-            'helper' => route('helper.dashboard'),
-            'moderator' => route('moderator.dashboard'),
-            'professional' => route('professional.dashboard'),
-            default => route('seeker.dashboard'),
-        };
+        if ($user->role === 'admin') {
+            $auditLogger->record(
+                $user,
+                AuditLogger::ADMIN_LOGIN_SUCCEEDED,
+                'authentication',
+                'Shared COMPASS login',
+                $request
+            );
+        }
 
-        return redirect()->intended($redirectTo);
+        return redirect()->route(RoleDashboard::routeNameFor($user));
     }
 
     /**
@@ -55,6 +77,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect()->route('login');
     }
 }

@@ -29,7 +29,6 @@
             <span class="sidebar-brand-mark" aria-hidden="true">C</span>
             <span class="sidebar-brand-copy">
                 <strong>COMPASS</strong>
-                <small>PDAF PROGRAM</small>
             </span>
         </a>
 
@@ -72,15 +71,24 @@
     </nav>
 
     <div class="sidebar-account">
-        <span class="avatar avatar-green" aria-hidden="true">{{ $adminInitials }}</span>
-        <span class="sidebar-account-copy">
-            <strong>{{ $adminName }}</strong>
-            <small>System Administrator</small>
-        </span>
-        <form method="POST" action="{{ route('logout') }}">
+        <a class="sidebar-account-profile" href="{{ route('admin.settings') }}" aria-label="Open administrator settings">
+            <span class="avatar avatar-green" aria-hidden="true">{{ $adminInitials }}</span>
+            <span class="sidebar-account-copy">
+                <strong>{{ $adminName }}</strong>
+                <small><i aria-hidden="true"></i>System Administrator</small>
+            </span>
+        </a>
+
+        <a class="sidebar-profile-link" href="{{ route('admin.settings') }}">
+            <x-admin.icon name="settings" :size="15" />
+            View Profile &amp; Settings
+        </a>
+
+        <form class="sidebar-logout-form" method="POST" action="{{ route('logout') }}">
             @csrf
-            <button class="icon-button logout-button" type="submit" aria-label="Log out of COMPASS">
+            <button class="sidebar-logout-button" type="submit">
                 <x-admin.icon name="logout" :size="19" />
+                <span>Logout</span>
             </button>
         </form>
     </div>

@@ -1,13 +1,6 @@
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
     @php
-        $dashboardRoute = match (auth()->user()?->role ?? 'seeker') {
-            'admin' => 'admin.dashboard',
-            'adviser' => 'adviser.dashboard',
-            'helper' => 'helper.dashboard',
-            'moderator' => 'moderator.dashboard',
-            'professional' => 'professional.dashboard',
-            default => 'seeker.dashboard',
-        };
+        $dashboardRoute = \App\Support\RoleDashboard::routeNameFor(auth()->user());
     @endphp
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

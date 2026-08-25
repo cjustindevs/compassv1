@@ -17,10 +17,10 @@ class SettingsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_is_redirected_to_the_admin_login(): void
+    public function test_guest_is_redirected_to_the_shared_login(): void
     {
         $this->get(route('admin.settings'))
-            ->assertRedirect(route('admin.login'));
+            ->assertRedirect(route('login'));
     }
 
     public function test_non_administrator_cannot_access_admin_settings(): void
@@ -50,6 +50,10 @@ class SettingsTest extends TestCase
         $response
             ->assertOk()
             ->assertSee('COMPASS')
+            ->assertSee('View Profile &amp; Settings', false)
+            ->assertSee('class="sidebar-logout-button"', false)
+            ->assertSee(route('admin.settings'))
+            ->assertSee(route('logout'))
             ->assertSee('Personalize your workspace and safeguard your account.')
             ->assertSee('Appearance')
             ->assertSee('Notifications')

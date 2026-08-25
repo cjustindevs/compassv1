@@ -16,88 +16,70 @@ The application currently recognizes these five product roles:
 
 Older repository code also contains a `moderator` role. Do not remove or rename it without checking its dashboard, model, migration, and existing data.
 
-Administrator authentication follows the repository's established source of truth: the authenticated record is in `users`, and a system administrator is identified by `users.role = admin`. The separate `system_administrators` table currently represents optional profile data and is not populated by `DatabaseSeeder`, so admin login must not require a row in that table unless the data model and seeding strategy are intentionally changed.
+Authentication uses one `web` session guard, the `users` provider, and `App\Models\User` for every portal. A system administrator is identified by `users.role = admin`; the separate `system_administrators` table is optional profile data and is not part of authentication.
 
-## Completed: dedicated administrator login
+## Current authentication architecture: one shared login
 
-A standalone, responsive administrator portal was added based on the supplied UI reference.
+The dedicated Admin login was retired on 2026-08-14. All roles now authenticate through the existing COMPASS form at `GET/POST /login` using a normalized, case-insensitive email and password. The form keeps remember-me, shared forgot-password, seeker-only public registration, generic credential errors, an accessible password visibility control, and responsive COMPASS styling. There is no frontend role selector.
 
-Routes:
+Role routing is centralized in `App\Support\RoleDashboard` and reads only the authenticated server-side `users.role` value:
 
-- `GET /admin/login` (`admin.login`) renders the form and is guest-only.
-- `POST /admin/login` (`admin.login.store`) validates and authenticates an administrator.
-- `GET /admin/dashboard` (`admin.dashboard`) now requires both `auth` and the new `admin` middleware.
+- `admin` → `admin.dashboard` (`/admin/dashboard`)
+- `moderator` → `moderator.dashboard`
+- `adviser` → `adviser.dashboard`
+- `professional` → `professional.dashboard`
+- `helper` → `helper.dashboard`
+- `seeker` → `seeker.dashboard`
+- Unknown roles fail authorization rather than falling through to a seeker portal.
 
-Authentication behavior:
+The resolver is used by the shared login controller, `/dashboard`, authenticated-user guest redirects, and the shared navigation. Login intentionally ignores a stored `url.intended` value and sends the account to its authorized role portal, preventing a helper who first requested an Admin URL from being redirected back to that URL after sign-in.
 
-- The `Username` field accepts either the user's account name or email, case-insensitively.
-- Only records with `users.role = admin` can authenticate through this portal.
-- Invalid credentials and valid non-admin credentials return the same generic error.
-- Login attempts are limited to five per normalized username/IP key.
-- Successful login regenerates the session before redirecting to `admin.dashboard`.
-- `Remember me for 30 days` configures the web guard's remember duration to 30 days.
-- The existing shared `POST /logout` route remains the logout endpoint.
+Compatibility and security behavior:
 
-UI behavior:
+- `GET /admin/login` (`admin.login`) is retained only as a guest-only redirect to `/login`; it renders no form.
+- There is no `POST /admin/login` or `admin.login.store` route.
+- `AdminAuthenticatedSessionController`, `AdminLoginRequest`, and `resources/views/auth/admin-login.blade.php` were removed after confirming no production references remained.
+- Every Admin page still requires `auth` plus `EnsureUserIsAdministrator`, so authenticated non-Admins receive 403.
+- Every unauthenticated protected route, including `/admin/*`, redirects to `/login` through `bootstrap/app.php`.
+- Authenticated users reopening `/login` are redirected directly to their own portal.
+- Shared logout invalidates the session, regenerates the CSRF token, and redirects to `/login`.
+- Successful Admin sign-ins and failed password attempts against a known Admin email continue to append sanitized Audit Log events. The browser always receives Laravel's generic credential failure response.
+- Login retains Laravel's five-attempt per email/IP rate limiting, session regeneration, remember-me behavior, shared password broker, and `web` guard. No second Admin guard or cookie exists.
+- The user table has no active/suspended/deactivated account field and the repository has no authenticator-app 2FA backend, so no unsupported account-status or 2FA behavior was invented.
+- Public registration stores no role from the request and the database defaults new accounts to `seeker`; privileged roles remain provisioned through authorized Admin user management.
 
-- The page is self-contained in Blade with inline responsive CSS and SVG icons; it does not depend on a compiled Vite manifest.
-- It includes accessible labels, error states, password visibility control, reduced-motion handling, the COMPASS brand link, system status, privacy, and contact links.
-- Administrators are not offered self-registration because the portal is restricted to provisioned accounts.
+Unified authentication files added:
 
-## Files added
+- `app/Support/RoleDashboard.php`
+
+Unified authentication files updated:
+
+- `app/Http/Controllers/Auth/AuthenticatedSessionController.php`
+- `app/Http/Requests/Auth/LoginRequest.php`
+- `bootstrap/app.php`
+- `routes/web.php`
+- `resources/views/auth/login.blade.php`
+- `resources/views/layouts/navigation.blade.php`
+- `tests/Feature/Auth/AdminAuthenticationTest.php`
+- `tests/Feature/Auth/AuthenticationTest.php`
+- Admin feature tests now expect the shared login destination.
+
+Unified authentication files removed:
 
 - `app/Http/Controllers/Auth/AdminAuthenticatedSessionController.php`
 - `app/Http/Requests/Auth/AdminLoginRequest.php`
-- `app/Http/Middleware/EnsureUserIsAdministrator.php`
 - `resources/views/auth/admin-login.blade.php`
-- `tests/Feature/Auth/AdminAuthenticationTest.php`
-- `codex.md`
 
-## Files updated
+Focused authentication/Admin verification covers all six role redirects, old Admin URL compatibility, authenticated `/login` behavior, intended-URL isolation, generic invalid-password handling, Admin login auditing, logout, guest Admin redirects, non-Admin 403 enforcement, five-attempt rate limiting, and session-ID regeneration.
 
-- `routes/web.php`: added the admin login routes and protected the admin dashboard.
-- `bootstrap/app.php`: registered the `admin` middleware alias.
-- `database/migrations/2026_08_12_140000_extend_counseling_sessions_session_status.php`: retained the PostgreSQL constraint implementation and added a schema-builder path for SQLite/other drivers. This allows the existing SQLite in-memory feature tests to migrate successfully.
+Unified authentication verification:
 
-No new database migration was required for admin login. Existing administrator accounts continue to work when their `users.role` value is `admin`.
+- `php artisan test tests/Feature/Auth/AdminAuthenticationTest.php`: 17 tests passed, 78 assertions.
+- Repository-wide result: 84 tests passed and 6 failed (416 assertions after the Admin shell coverage was expanded).
+- The former stale shared-login redirect failure is fixed. The six remaining unrelated failures are four guest-layout screens requiring the missing Vite manifest and two profile tests expecting `/profile` instead of the controller's existing `/profile/edit` redirect.
+- Laravel Pint, PHP syntax, Blade compilation, login route inspection, and `git diff --check` pass.
 
-Local development database state as of 2026-08-13:
-
-- A single administrator account was created directly in `compass_db` with user ID `2`, name `Admin User`, and email `admin@example.com`.
-- Its role is `admin`, its email is marked verified, and its stored password hash was checked successfully against the user-requested development password.
-- The plaintext password is intentionally not recorded in this handoff file. This database-only account creation does not affect fresh installations; use a dedicated idempotent admin seeder or provisioning command if repeatable setup is needed later.
-
-## Verification state
-
-Focused verification is green:
-
-- `php artisan test tests/Feature/Auth/AdminAuthenticationTest.php`
-- Result after the dashboard coverage was added: 8 tests passed, 35 assertions.
-- Covered: rendering, email login, account-name login, rejecting non-admin users, rejecting invalid passwords, denying non-admin dashboard access, and allowing admin dashboard access.
-- PHP syntax checks pass for the new controller, request, and middleware.
-- Laravel registers all three expected admin routes.
-- Laravel Pint passes for the changed PHP implementation.
-- `git diff --check` passes.
-
-Full-suite state after fixing SQLite migration compatibility:
-
-- 25 tests pass and 7 tests fail.
-- Several legacy auth view tests fail because `node_modules` and `public/build/manifest.json` are absent, so views that use `@vite` cannot render.
-- One legacy login test expects `/dashboard`, while the current shared login controller redirects directly to a randomly generated user's role dashboard.
-- Two legacy profile tests expect `/profile`, while the current profile controller redirects to `/profile/edit`.
-- These failures are outside the dedicated admin-login implementation; its focused suite passes completely.
-
-## Existing follow-up concerns
-
-- Install frontend dependencies locally and run `npm run build` before evaluating legacy Vite-backed views. At the time of this handoff, `npm run build` resolves Vite from `/Users/lorraine/node_modules` because this repository has no local `node_modules`, then fails with a permission error.
-- Reconcile the legacy login/profile assertions with current redirect behavior.
-- Only the admin dashboard now has role-specific authorization. The seeker, helper, adviser, moderator, and professional dashboard routes still use authentication without role middleware and should receive equivalent protection in a future authorization pass.
-- The README states MySQL/MariaDB even though the active environment and the PostgreSQL-specific constraint migration target PostgreSQL. The README also ends with an unclosed code fence.
-- Helper matching remains vulnerable to concurrent double-assignment because selection and status updates are not protected by a transaction or row lock.
-
-## Suggested next starting point
-
-For further administrator work, start from `routes/web.php`, `AdminAuthenticatedSessionController`, `AdminLoginRequest`, and `resources/views/auth/admin-login.blade.php`. Preserve `users.role = admin` as the login authorization rule unless an explicit account-model migration is planned. Run the focused admin authentication test after every related change.
+Continue to preserve `users.role` and `EnsureUserIsAdministrator` as the authorization source unless an explicit role-model migration is planned.
 
 ## Completed: system administrator dashboard
 
@@ -120,7 +102,7 @@ Dashboard behavior and scope:
 - Charts are responsive native SVG line/area/bar charts; no chart dependency was added because the repository has none.
 - `Cmd/Ctrl + K` focuses the prepared GET search field. Submitted searches show an explicit integration-ready notice; no backend search endpoint was invented.
 - The non-dashboard sidebar modules display as intentionally inactive prepared destinations with their future paths stored in `data-future-route`; no placeholder routes or pages were created.
-- Guest requests to `/admin/*` are directed to `/admin/login`; authenticated non-admin access remains a 403 through `EnsureUserIsAdministrator`.
+- Guest requests to `/admin/*` are directed to the shared `/login`; authenticated non-admin access remains a 403 through `EnsureUserIsAdministrator`.
 
 Dashboard mock data currently includes primary stats, system statuses, three chart series, six activity events, and six recent audit entries. Actual authenticated administrator name, initials, and email are dynamic.
 
@@ -329,7 +311,7 @@ Current data source:
 - The repository already had an `audit_logs` table and placeholder `AuditLog` model. The model now has an actor relationship to `User` for the page query.
 - `App\Services\AuditLogger` is the centralized append-only writer. It persists actor ID, normalized event code, module, target description, request IP, user agent, and timestamps.
 - The controller always reads persisted rows newest-first with eager-loaded actors, server-side filters, and Laravel pagination. There are no controller preview/demo records.
-- A successful dedicated Admin login records `ADMIN_LOGIN_SUCCEEDED`; rejected Admin login attempts record `ADMIN_LOGIN_FAILED` without storing the password; an account created through Admin User Management records `USER_CREATED` inside the same database transaction as the new account.
+- A successful Admin sign-in through the shared login records `ADMIN_LOGIN_SUCCEEDED`; rejected password attempts against known Admin accounts record `ADMIN_LOGIN_FAILED` without storing the password; an account created through Admin User Management records `USER_CREATED` inside the same database transaction as the new account.
 - An empty database displays the genuine `No audit events found` state. Existing activity that occurred before the writer was added cannot be reconstructed automatically; subsequent connected actions appear immediately after persistence.
 - For current real rows, `description` is displayed as Target because the schema has no dedicated target fields. Raw action codes are normalized into human-readable labels, and the event category is derived from `module` plus `action`.
 
@@ -357,7 +339,7 @@ Audit Logs files added:
 Audit Logs files updated:
 
 - `app/Models/AuditLog.php`: added the actor relationship.
-- `app/Http/Controllers/Auth/AdminAuthenticatedSessionController.php`: records successful and rejected Admin sign-in attempts.
+- `app/Http/Controllers/Auth/AuthenticatedSessionController.php`: records successful and rejected Admin sign-in attempts through the shared login.
 - `app/Http/Controllers/Admin/UserController.php`: records Admin-created users transactionally.
 - `routes/web.php`: registered the protected named route.
 - `resources/views/components/admin/sidebar.blade.php`: activated the real Audit Logs link.
@@ -643,3 +625,40 @@ Remaining Settings backend integration:
 - Add protected current-user session-revocation actions, including a safe `sign out all other sessions` operation, with CSRF protection and Audit Log events.
 - Decide whether device-level appearance/sound preferences should sync to accounts; if so, consolidate them into one authoritative preference store instead of retaining two sources of truth.
 - Add actual localization catalogs and translated Admin UI before enabling any language other than English.
+
+## Completed: Admin visual alignment with the Help Seeker portal
+
+The System Administrator portal shell was restyled on 2026-08-14 to use the existing Help Seeker portal as its visual source of truth. This was a presentation-only refactor: all protected Admin routes, controllers, data sources, authentication, authorization, dialogs, page interactions, and semantic health/status colors remain unchanged.
+
+Repository findings and scope:
+
+- Help Seeker standalone pages use `resources/views/partials/sidebar.blade.php`, a fixed 260px sidebar, Inter typography, `#04A052` branding, `#F8FBF9` page background, pale-green active navigation with a left accent, and a profile/settings plus full destructive logout footer.
+- Every live Admin page already uses `resources/views/components/admin/layout.blade.php`, `sidebar.blade.php`, `header.blade.php`, `public/css/admin-dashboard.css`, and `public/js/admin-dashboard.js`.
+- Directly reusing the Help Seeker sidebar Blade partial would expose Seeker-specific routes and Font Awesome markup in the Admin portal. The safe change was to retain the Admin's data-driven navigation and SVG icon component while aligning its shared visual contract.
+- A full page rewrite was unnecessary. Updating the Admin shell and base component tokens automatically aligned Dashboard, Users, Roles & Permissions, Resource Library, Audit Logs, Backup & Restore, System Health, Reports, and Settings.
+
+Visual changes:
+
+- Admin now uses the Help Seeker's 260px translucent-white sidebar, compact green COMPASS mark, uppercase muted section labels, 42px navigation rows, pale-green active state, green left accent, and restrained hover behavior.
+- The bottom account area now uses dynamic administrator initials/name, the System Administrator role with a green presence dot, a `View Profile & Settings` link to `/admin/settings`, and the existing logout POST flow rendered as a full pale-red/red-bordered Logout button.
+- Default Admin tokens now map to the Help Seeker palette: `#04A052` green, `#027039` dark green, `#EAF8F0` green-soft, `#F8FBF9` page background, `#E5E7EB` border, `#1F2937` text, and `#6B7280` muted text.
+- The existing Admin header remains because it contains global search, help, notifications, and the authenticated profile menu, but it is shorter, lighter, and uses the same subtle border/background treatment. Desktop page-context duplication is hidden; mobile retains the menu control.
+- Page headings, white card surfaces, subtle shadows, buttons, search/filter controls, form inputs, padding, and mobile spacing now use one consistent COMPASS visual language. Semantic Healthy/Warning/Critical/Info colors were not changed.
+- Inter is loaded by the Admin layout to match the Help Seeker screens. The default Admin accent swatch now uses the same COMPASS green while the existing user-selectable accent functionality remains intact.
+- Below 980px, the existing accessible Admin drawer/backdrop/Escape behavior remains. Mobile content uses compact Seeker-like padding and extra bottom breathing room; existing page grids/tables continue using their established responsive rules.
+
+Files updated for this visual refactor:
+
+- `resources/views/components/admin/layout.blade.php`
+- `resources/views/components/admin/sidebar.blade.php`
+- `resources/views/admin/settings/index.blade.php`
+- `public/css/admin-dashboard.css`
+- `tests/Feature/Admin/SettingsTest.php`
+- `codex.md`
+
+Verification:
+
+- `php artisan test tests/Feature/Admin tests/Feature/Auth/AdminAuthenticationTest.php`: 65 tests passed, 356 assertions.
+- `php artisan test tests/Feature/Admin/SettingsTest.php`: 8 tests passed, 55 assertions, including the new profile/settings and logout-shell assertions.
+- Blade view caching, Admin route inspection, and `git diff --check` pass.
+- No routes, middleware, controllers, services, database schema, API behavior, backup/audit/report/monitoring behavior, or non-Admin navigation were changed.

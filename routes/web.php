@@ -9,7 +9,6 @@ use App\Http\Controllers\Admin\RolePermissionController as AdminRolePermissionCo
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\SystemHealthController as AdminSystemHealthController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
-use App\Http\Controllers\Auth\AdminAuthenticatedSessionController;
 use App\Http\Controllers\Auth\HelpSeekerRegisterController;
 use App\Http\Controllers\Auth\OTPController;
 use App\Http\Controllers\LandingPageController;
@@ -19,6 +18,7 @@ use App\Http\Controllers\RequestSupportController;
 use App\Http\Controllers\SelfHelpController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SettingsController;
+use App\Support\RoleDashboard;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -33,14 +33,13 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [LandingPageController::class, 'index'])->name('home');
 
 // =============================================
-// SYSTEM ADMINISTRATOR LOGIN
+// LEGACY SYSTEM ADMINISTRATOR LOGIN URL
 // =============================================
-Route::middleware('guest')->group(function () {
-    Route::get('/admin/login', [AdminAuthenticatedSessionController::class, 'create'])
-        ->name('admin.login');
-    Route::post('/admin/login', [AdminAuthenticatedSessionController::class, 'store'])
-        ->name('admin.login.store');
-});
+// All roles authenticate through /login. Keep the old GET URL only as a
+// bookmark-safe redirect; there is no second form or Admin login POST action.
+Route::get('/admin/login', fn () => redirect()->route('login'))
+    ->middleware('guest')
+    ->name('admin.login');
 
 // =============================================
 // DASHBOARD (Protected Route)
@@ -49,18 +48,7 @@ Route::middleware('guest')->group(function () {
 // navigation both point here — it must NEVER return the bare stub view.
 // =============================================
 Route::get('/dashboard', function () {
-    $role = auth()->user()?->role ?? 'seeker';
-
-    $route = match ($role) {
-        'admin' => 'admin.dashboard',
-        'adviser' => 'adviser.dashboard',
-        'helper' => 'helper.dashboard',
-        'moderator' => 'moderator.dashboard',
-        'professional' => 'professional.dashboard',
-        default => 'seeker.dashboard',
-    };
-
-    return redirect()->route($route);
+    return redirect()->route(RoleDashboard::routeNameFor(auth()->user()));
 })->middleware(['auth'])->name('dashboard');
 
 // =============================================

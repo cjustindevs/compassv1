@@ -12,10 +12,10 @@ class AuditLogTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_is_redirected_to_the_admin_login(): void
+    public function test_guest_is_redirected_to_the_shared_login(): void
     {
         $this->get(route('admin.audit-logs'))
-            ->assertRedirect(route('admin.login'));
+            ->assertRedirect(route('login'));
     }
 
     public function test_non_administrator_cannot_access_audit_logs(): void
