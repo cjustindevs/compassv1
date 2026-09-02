@@ -15,7 +15,7 @@
 
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #F8FBF9; }
+        body { background: var(--bg-primary, #F8FBF9); }
 
         .main-content {
             margin-left: 260px;
@@ -25,11 +25,11 @@
         }
 
         .card {
-            background: white;
+            background: var(--bg-card, white);
             border-radius: 20px;
             padding: 24px;
-            border: 1px solid #E5E7EB;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.01);
+            border: 1px solid var(--border-color, #E5E7EB);
+            box-shadow: var(--card-shadow, 0 4px 20px rgba(0,0,0,0.01));
         }
 
         .notif-item {
@@ -37,11 +37,11 @@
             align-items: flex-start;
             gap: 14px;
             padding: 14px 16px;
-            border-bottom: 1px solid #F3F4F6;
+            border-bottom: 1px solid var(--border-light, #F3F4F6);
             transition: background 0.2s;
         }
         .notif-item:last-child { border-bottom: none; }
-        .notif-item:hover { background: #F9FAFB; }
+        .notif-item:hover { background: var(--bg-hover, #F9FAFB); }
         .notif-item.unread { background: #F0FDF4; }
         .notif-item.unread:hover { background: #EAF8F0; }
         .notif-item .icon {
@@ -58,11 +58,11 @@
         .notif-item .icon.queue { background: #FEF3C7; }
         .notif-item .icon.referral { background: #DBEAFE; }
         .notif-item .icon.assignment { background: #DCFCE7; }
-        .notif-item .icon.system { background: #F3F4F6; }
+        .notif-item .icon.system { background: var(--border-light, #F3F4F6); }
         .notif-item .content { flex: 1; min-width: 0; }
-        .notif-item .content .title { font-weight: 600; font-size: 14px; color: #1F2937; }
-        .notif-item .content .msg { font-size: 13px; color: #6B7280; margin-top: 2px; }
-        .notif-item .content .time { font-size: 11px; color: #9CA3AF; margin-top: 4px; }
+        .notif-item .content .title { font-weight: 600; font-size: 14px; color: var(--text-primary, #1F2937); }
+        .notif-item .content .msg { font-size: 13px; color: var(--text-secondary, #6B7280); margin-top: 2px; }
+        .notif-item .content .time { font-size: 11px; color: var(--text-muted, #9CA3AF); margin-top: 4px; }
         .notif-item .actions { display: flex; gap: 6px; }
         .dot { width: 8px; height: 8px; border-radius: 50%; background: #04A052; flex-shrink: 0; margin-top: 6px; }
 
@@ -71,9 +71,9 @@
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
-            color: #6B7280;
-            background: white;
-            border: 1.5px solid #E5E7EB;
+            color: var(--text-secondary, #6B7280);
+            background: var(--bg-card, white);
+            border: 1.5px solid var(--border-color, #E5E7EB);
             text-decoration: none;
             transition: all 0.2s;
             display: inline-block;
@@ -82,13 +82,13 @@
         .filter-pill.active { background: #EAF8F0; border-color: #04A052; color: #027039; }
 
         .btn-ghost {
-            background: white;
-            color: #6B7280;
+            background: var(--bg-card, white);
+            color: var(--text-secondary, #6B7280);
             padding: 6px 12px;
             border-radius: 16px;
             font-weight: 600;
             font-size: 11px;
-            border: 1.5px solid #E5E7EB;
+            border: 1.5px solid var(--border-color, #E5E7EB);
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -108,7 +108,7 @@
 
         .flash-success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
 
-        .hamburger { display: none; background: none; border: none; font-size: 24px; color: #374151; cursor: pointer; padding: 4px; }
+        .hamburger { display: none; background: none; border: none; font-size: 24px; color: var(--text-primary, #374151); cursor: pointer; padding: 4px; }
         .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 99; }
         .sidebar-overlay.active { display: block; }
 
@@ -118,7 +118,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(255,255,255,0.94);
+            background: var(--navbar-bg, rgba(255,255,255,0.94));
             backdrop-filter: blur(16px);
             border-top: 1px solid #E5E7EB;
             padding: 6px 0 env(safe-area-inset-bottom, 6px);
@@ -129,7 +129,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: #9CA3AF;
+            color: var(--text-muted, #9CA3AF);
             text-decoration: none;
             font-size: 10px;
             font-weight: 500;

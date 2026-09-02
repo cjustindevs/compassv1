@@ -1,0 +1,414 @@
+/* ════════════════════════════════════════════════════════════════════════
+   COMPASS — Theme System (themes.css)
+   ----------------------------------------------------------------------------
+   Single source of truth for light/dark theming.
+
+   • Light is the default palette ( :root / [data-theme="light"] ).
+   • Dark mode is enabled by setting [data-theme="dark"] on <html>.
+   • A no-flash snippet in layouts.partials.pwa-meta applies the saved
+     preference before first paint.
+
+   KEY FIX for "dark text on dark background":
+   Every COMPASS page defines its own `:root { --gray-50 … --gray-900 }`
+   palette in an inline <style> block. Those values would normally defeat a
+   global dark theme. By re-declaring the SAME variable names under
+   `html[data-theme="dark"]` (higher specificity than `:root`) we remap the
+   page palettes to dark-friendly values in one place — no per-page edits.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── LIGHT (default) ───────────────────────────────────────────────────── */
+:root,
+[data-theme="light"] {
+    /* Backgrounds */
+    --bg-primary: #F8FBF9;
+    --bg-secondary: #FFFFFF;
+    --bg-card: #FFFFFF;
+    --bg-input: #FFFFFF;
+    --bg-hover: #F3F4F6;
+    --bg-active: #EAF8F0;
+    --bg-overlay: rgba(0, 0, 0, 0.4);
+
+    /* Text */
+    --text-primary: #1F2937;
+    --text-secondary: #6B7280;
+    --text-muted: #9CA3AF;
+    --text-inverse: #FFFFFF;
+
+    /* Borders */
+    --border-color: #E5E7EB;
+    --border-light: #F3F4F6;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
+    --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.12);
+
+    /* Sidebar */
+    --sidebar-bg: rgba(255, 255, 255, 0.92);
+    --sidebar-border: rgba(4, 160, 82, 0.06);
+    --sidebar-shadow: 4px 0 40px rgba(0, 0, 0, 0.02);
+    --sidebar-text: #4B5563;
+
+    /* Navbar / top bar */
+    --navbar-bg: rgba(255, 255, 255, 0.9);
+    --navbar-border: #E5E7EB;
+
+    /* Cards */
+    --card-bg: #FFFFFF;
+    --card-border: #E5E7EB;
+    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.01);
+
+    /* Buttons */
+    --btn-primary: #04A052;
+    --btn-primary-hover: #038A45;
+    --btn-secondary: #F3F4F6;
+    --btn-secondary-hover: #E5E7EB;
+    --btn-danger: #EF4444;
+    --btn-danger-hover: #DC2626;
+
+    /* Status */
+    --status-success: #10B981;
+    --status-warning: #F59E0B;
+    --status-danger: #EF4444;
+    --status-info: #3B82F6;
+
+    /* Brand */
+    --brand-500: #04A052;
+    --brand-600: #038A45;
+    --brand-700: #027039;
+
+    /* Scrollbar */
+    --scrollbar-track: #F3F4F6;
+    --scrollbar-thumb: #D1D5DB;
+}
+
+/* ── DARK ──────────────────────────────────────────────────────────────── */
+html[data-theme="dark"] {
+    /* Backgrounds */
+    --bg-primary: #0F172A;
+    --bg-secondary: #1E293B;
+    --bg-card: #1E293B;
+    --bg-input: #0F172A;
+    --bg-hover: #334155;
+    --bg-active: rgba(4, 160, 82, 0.18);
+    --bg-overlay: rgba(0, 0, 0, 0.7);
+
+    /* Text */
+    --text-primary: #F1F5F9;
+    --text-secondary: #94A3B8;
+    --text-muted: #64748B;
+    --text-inverse: #1F2937;
+
+    /* Borders */
+    --border-color: #334155;
+    --border-light: #1E293B;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.6);
+
+    /* Sidebar */
+    --sidebar-bg: rgba(15, 23, 42, 0.96);
+    --sidebar-border: rgba(4, 160, 82, 0.15);
+    --sidebar-shadow: 4px 0 40px rgba(0, 0, 0, 0.4);
+    --sidebar-text: #CBD5E1;
+
+    /* Navbar / top bar */
+    --navbar-bg: rgba(15, 23, 42, 0.9);
+    --navbar-border: #334155;
+
+    /* Cards */
+    --card-bg: #1E293B;
+    --card-border: #334155;
+    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+
+    /* Buttons */
+    --btn-primary: #04A052;
+    --btn-primary-hover: #059669;
+    --btn-secondary: #334155;
+    --btn-secondary-hover: #475569;
+    --btn-danger: #EF4444;
+    --btn-danger-hover: #DC2626;
+
+    /* Status */
+    --status-success: #34D399;
+    --status-warning: #FBBF24;
+    --status-danger: #F87171;
+    --status-info: #60A5FA;
+
+    /* Brand */
+    --brand-500: #34D399;
+    --brand-600: #059669;
+    --brand-700: #047857;
+
+    /* Scrollbar */
+    --scrollbar-track: #1E293B;
+    --scrollbar-thumb: #475569;
+
+    /* ── Remap the per-page palettes that pages declare in :root ──
+       Higher specificity than the page's own :root block wins, so every
+       `var(--gray-*)` / `var(--green-*)` reference flips to a dark value
+       automatically. This is what makes dark mode consistent app-wide. */
+    --gray-50: #0B1220;
+    --gray-100: #111C2E;
+    --gray-200: #1E293B;
+    --gray-300: #334155;
+    --gray-400: #64748B;
+    --gray-500: #94A3B8;
+    --gray-600: #CBD5E1;
+    --gray-700: #E2E8F0;
+    --gray-800: #E5E7EB;
+    --gray-900: #F1F5F9;
+
+    --green-50: #06281A;
+    --green-100: #0A3D27;
+    --green-200: #10B981;
+    --green-300: #34D399;
+    --green-400: #6EE7B7;
+    --green-500: #34D399;
+    --green-600: #059669;
+    --green-700: #047857;
+    --green-800: #065F46;
+    --green-900: #022C22;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   GLOBAL APPLICATION
+   ════════════════════════════════════════════════════════════════════════ */
+
+html {
+    color-scheme: light;
+}
+html[data-theme="dark"] {
+    color-scheme: dark;
+}
+
+body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Smooth theme transitions (opt-out via .reduced-motion) */
+.theme-transition,
+.sidebar, .card, .stat-card, .form-card, .modal-box,
+input, select, textarea, .btn, .btn-primary, .btn-outline, .nav-item {
+    transition: background-color 0.25s ease, color 0.25s ease,
+                border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────── */
+.sidebar {
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-border);
+    box-shadow: var(--sidebar-shadow);
+    color: var(--sidebar-text);
+}
+.sidebar .brand-text,
+.sidebar .logo-text,
+.sidebar .user-name { color: var(--text-primary); }
+.sidebar .brand-sub { color: var(--text-muted); }
+.sidebar .user-role,
+.sidebar .nav-label,
+.sidebar .sidebar-footer .label { color: var(--text-muted); }
+.sidebar .nav-item { color: var(--sidebar-text); }
+.sidebar .nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.sidebar .nav-item.active { background: var(--bg-active); color: var(--brand-500); }
+.sidebar .nav-item i { color: var(--text-muted); }
+.sidebar .nav-item.active i { color: var(--brand-500); }
+.sidebar .sidebar-footer { border-color: var(--border-color); }
+.sidebar .sidebar-footer .logout-btn { color: var(--sidebar-text); }
+.sidebar .sidebar-footer .logout-btn:hover { color: var(--text-primary); }
+
+/* ── Cards / surfaces ─────────────────────────────────────────────────── */
+.card,
+.stat-card,
+.form-card,
+.dash-card,
+.modal-box {
+    background: var(--card-bg);
+    border-color: var(--card-border);
+    box-shadow: var(--card-shadow);
+    color: var(--text-primary);
+}
+.card-header h3,
+.card-title,
+.stat-number,
+.card h2,
+.card h3 { color: var(--text-primary); }
+.card .sub,
+.stat-label { color: var(--text-secondary); }
+
+/* ── Tables ───────────────────────────────────────────────────────────── */
+.table-container th,
+th {
+    color: var(--text-muted);
+    border-bottom-color: var(--border-color);
+}
+.table-container td,
+td {
+    color: var(--text-secondary);
+    border-top-color: var(--border-light);
+}
+tr:hover td,
+.table-container tr:hover td { background: var(--bg-hover); }
+
+/* ── Forms ────────────────────────────────────────────────────────────── */
+input,
+select,
+textarea,
+.form-input,
+.form-control {
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+input::placeholder,
+textarea::placeholder { color: var(--text-muted); }
+input:focus,
+select:focus,
+textarea:focus,
+.form-input:focus,
+.form-control:focus {
+    border-color: var(--brand-500);
+    box-shadow: 0 0 0 3px rgba(4, 160, 82, 0.18);
+    outline: none;
+}
+
+/* ── Modals ───────────────────────────────────────────────────────────── */
+.modal-box {
+    background: var(--card-bg);
+    box-shadow: var(--shadow-xl);
+}
+.modal-title { color: var(--text-primary); }
+.modal-message { color: var(--text-secondary); }
+.modal-overlay { background: var(--bg-overlay); }
+
+/* ── Navbar / top bar ─────────────────────────────────────────────────── */
+.navbar {
+    background: var(--navbar-bg);
+    border-bottom: 1px solid var(--navbar-border);
+}
+.navbar .page-title { color: var(--text-primary); }
+.navbar .page-subtitle { color: var(--text-secondary); }
+
+/* ── Badges / pills ───────────────────────────────────────────────────── */
+.badge {
+    background: var(--brand-500);
+    color: #FFFFFF;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--brand-500); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   BROAD DARK OVERRIDES (Tailwind-style utilities & recurring literals)
+   These keep pages that hard-code `bg-white` / `text-gray-800` / plain
+   hex backgrounds readable in dark mode.
+   ════════════════════════════════════════════════════════════════════════ */
+html[data-theme="dark"] .bg-white { background: var(--card-bg) !important; }
+html[data-theme="dark"] .bg-gray-50 { background: var(--bg-secondary) !important; }
+html[data-theme="dark"] .bg-gray-100 { background: var(--bg-secondary) !important; }
+html[data-theme="dark"] .bg-gray-900 { background: #0B1220 !important; }
+
+html[data-theme="dark"] .text-gray-900,
+html[data-theme="dark"] .text-gray-800,
+html[data-theme="dark"] .text-gray-700 { color: var(--text-primary) !important; }
+
+html[data-theme="dark"] .text-gray-600,
+html[data-theme="dark"] .text-gray-500,
+html[data-theme="dark"] .text-gray-400 { color: var(--text-secondary) !important; }
+
+html[data-theme="dark"] .border-gray-100,
+html[data-theme="dark"] .border-gray-200,
+html[data-theme="dark"] .border-gray-300 { border-color: var(--border-color) !important; }
+
+/* Plain-light page backgrounds declared in inline <style> blocks */
+html[data-theme="dark"] body { background: var(--bg-primary); }
+html[data-theme="dark"] .main-content { background: var(--bg-primary); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY HELPERS (toggled by Settings → Appearance)
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* High contrast: stronger borders + brighter text */
+body.high-contrast {
+    --text-primary: #FFFFFF;
+    --text-secondary: #E5E7EB;
+    --border-color: #94A3B8;
+    --card-border: #94A3B8;
+}
+body.high-contrast .card,
+body.high-contrast .sidebar,
+body.high-contrast input,
+body.high-contrast select,
+body.high-contrast textarea {
+    border-width: 2px;
+}
+body.high-contrast a { text-decoration: underline; }
+
+/* Reduced motion */
+body.reduced-motion *,
+body.reduced-motion *::before,
+body.reduced-motion *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+}
+
+/* Font size scaling */
+body.font-small { font-size: 14px; }
+body.font-medium { font-size: 16px; }
+body.font-large { font-size: 18px; }
+body.font-large h1 { font-size: 2rem; }
+body.font-large h2 { font-size: 1.6rem; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   LOADING OVERLAY (used by resources/js/loading.js)
+   ════════════════════════════════════════════════════════════════════════ */
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(3px);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s ease;
+}
+.loading-content {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px 32px;
+    box-shadow: var(--shadow-xl);
+    text-align: center;
+}
+.loading-spinner {
+    width: 42px;
+    height: 42px;
+    margin: 0 auto 12px;
+    border: 4px solid var(--border-color);
+    border-top-color: var(--brand-500);
+    border-radius: 50%;
+    animation: compass-spin 0.8s linear infinite;
+}
+.loading-text {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+}
+@keyframes compass-spin {
+    to { transform: rotate(360deg); }
+}

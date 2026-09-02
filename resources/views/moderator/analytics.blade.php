@@ -16,7 +16,7 @@
 
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #F8FBF9; }
+        body { background: var(--bg-primary, #F8FBF9); }
 
         .main-content {
             margin-left: 260px;
@@ -25,23 +25,23 @@
         }
 
         .stat-card {
-            background: white;
+            background: var(--bg-card, white);
             border-radius: 16px;
             padding: 18px 22px;
-            border: 1px solid #E5E7EB;
+            border: 1px solid var(--border-color, #E5E7EB);
             transition: all 0.3s ease;
         }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.04); }
-        .stat-number { font-size: 26px; font-weight: 800; color: #1F2937; }
-        .stat-label { font-size: 12px; color: #6B7280; }
-        .stat-sub { font-size: 11px; color: #9CA3AF; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.04)); }
+        .stat-number { font-size: 26px; font-weight: 800; color: var(--text-primary, #1F2937); }
+        .stat-label { font-size: 12px; color: var(--text-secondary, #6B7280); }
+        .stat-sub { font-size: 11px; color: var(--text-muted, #9CA3AF); }
 
         .card {
-            background: white;
+            background: var(--bg-card, white);
             border-radius: 20px;
             padding: 24px;
-            border: 1px solid #E5E7EB;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.01);
+            border: 1px solid var(--border-color, #E5E7EB);
+            box-shadow: var(--card-shadow, 0 4px 20px rgba(0,0,0,0.01));
         }
         .card-header {
             display: flex;
@@ -49,15 +49,15 @@
             justify-content: space-between;
             margin-bottom: 16px;
         }
-        .card-header h3 { font-weight: 700; font-size: 16px; color: #1F2937; }
+        .card-header h3 { font-weight: 700; font-size: 16px; color: var(--text-primary, #1F2937); }
 
         .filter-input {
             padding: 8px 12px;
             border-radius: 12px;
-            border: 1.5px solid #E5E7EB;
+            border: 1.5px solid var(--border-color, #E5E7EB);
             font-size: 13px;
             outline: none;
-            background: white;
+            background: var(--bg-card, white);
         }
         .filter-input:focus { border-color: #04A052; box-shadow: 0 0 0 3px rgba(4,160,82,0.08); }
 
@@ -78,13 +78,13 @@
         }
         .btn-primary:hover { background: #027039; }
         .btn-outline {
-            background: white;
-            color: #374151;
+            background: var(--bg-card, white);
+            color: var(--text-primary, #374151);
             padding: 8px 18px;
             border-radius: 20px;
             font-weight: 600;
             font-size: 13px;
-            border: 1.5px solid #E5E7EB;
+            border: 1.5px solid var(--border-color, #E5E7EB);
             cursor: pointer;
             transition: all 0.2s;
             text-decoration: none;
@@ -96,7 +96,7 @@
 
         .chart-box { position: relative; height: 280px; }
 
-        .hamburger { display: none; background: none; border: none; font-size: 24px; color: #374151; cursor: pointer; padding: 4px; }
+        .hamburger { display: none; background: none; border: none; font-size: 24px; color: var(--text-primary, #374151); cursor: pointer; padding: 4px; }
         .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 99; }
         .sidebar-overlay.active { display: block; }
 
@@ -106,7 +106,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(255,255,255,0.94);
+            background: var(--navbar-bg, rgba(255,255,255,0.94));
             backdrop-filter: blur(16px);
             border-top: 1px solid #E5E7EB;
             padding: 6px 0 env(safe-area-inset-bottom, 6px);
@@ -117,7 +117,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: #9CA3AF;
+            color: var(--text-muted, #9CA3AF);
             text-decoration: none;
             font-size: 10px;
             font-weight: 500;

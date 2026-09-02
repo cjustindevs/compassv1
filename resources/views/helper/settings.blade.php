@@ -16,27 +16,7 @@
             @csrf
             @method('PUT')
 
-            <div class="form-group">
-                <label class="form-label">Appearance</label>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <label class="checkbox-group border border-gray-200 rounded-xl p-4">
-                        <input type="checkbox" name="dark_mode" value="1" {{ $preferences['dark_mode'] ? 'checked' : '' }}>
-                        <span><span class="font-semibold text-gray-800" style="font-size:14px;">Dark mode</span><span class="block text-xs text-gray-500">Reduce glare at night</span></span>
-                    </label>
-                    <label class="checkbox-group border border-gray-200 rounded-xl p-4">
-                        <input type="checkbox" name="high_contrast" value="1" {{ $preferences['high_contrast'] ? 'checked' : '' }}>
-                        <span><span class="font-semibold text-gray-800" style="font-size:14px;">High contrast</span><span class="block text-xs text-gray-500">Improve readability</span></span>
-                    </label>
-                    <div class="border border-gray-200 rounded-xl p-4">
-                        <label class="form-label" style="margin-bottom:4px;">Font size</label>
-                        <select name="font_size" class="form-control">
-                            <option value="small" {{ $preferences['font_size'] === 'small' ? 'selected' : '' }}>Small</option>
-                            <option value="medium" {{ $preferences['font_size'] === 'medium' || !$preferences['font_size'] ? 'selected' : '' }}>Medium</option>
-                            <option value="large" {{ $preferences['font_size'] === 'large' ? 'selected' : '' }}>Large</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
+            @include('partials.theme-switcher')
 
             <hr class="divider">
 

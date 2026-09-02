@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
+    @vite(['resources/js/app.js'])
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -216,7 +217,10 @@
             <p class="sub">Deleting your account is permanent and cannot be undone.</p>
             <div class="mt-5">
                 <form method="POST" action="{{ route('profile.delete-account') }}"
-                      onsubmit="return confirm('Are you absolutely sure? Your account, sessions, and all data will be permanently deleted.');">
+                      data-confirm="Delete account?"
+                      data-confirm-message="This is permanent. Your account, sessions, and all data will be erased."
+                      data-confirm-text="Delete account"
+                      data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                     @csrf
                     <label for="password" class="form-label">Enter your password to confirm</label>
                     <div class="flex gap-3 flex-wrap items-start">

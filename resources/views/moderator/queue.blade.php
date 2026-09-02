@@ -15,7 +15,7 @@
 
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #F8FBF9; }
+        body { background: var(--bg-primary, #F8FBF9); }
 
         .main-content {
             margin-left: 260px;
@@ -24,22 +24,22 @@
         }
 
         .stat-card {
-            background: white;
+            background: var(--bg-card, white);
             border-radius: 16px;
             padding: 18px 22px;
-            border: 1px solid #E5E7EB;
+            border: 1px solid var(--border-color, #E5E7EB);
             transition: all 0.3s ease;
         }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.04); }
-        .stat-number { font-size: 26px; font-weight: 800; color: #1F2937; }
-        .stat-label { font-size: 12px; color: #6B7280; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.04)); }
+        .stat-number { font-size: 26px; font-weight: 800; color: var(--text-primary, #1F2937); }
+        .stat-label { font-size: 12px; color: var(--text-secondary, #6B7280); }
 
         .card {
-            background: white;
+            background: var(--bg-card, white);
             border-radius: 20px;
             padding: 24px;
-            border: 1px solid #E5E7EB;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.01);
+            border: 1px solid var(--border-color, #E5E7EB);
+            box-shadow: 0 4px 20px var(--shadow-color, rgba(0,0,0,0.01));
         }
         .card-header {
             display: flex;
@@ -47,17 +47,17 @@
             justify-content: space-between;
             margin-bottom: 16px;
         }
-        .card-header h3 { font-weight: 700; font-size: 16px; color: #1F2937; }
+        .card-header h3 { font-weight: 700; font-size: 16px; color: var(--text-primary, #1F2937); }
 
         .queue-item {
             display: flex;
             align-items: center;
             gap: 16px;
             padding: 14px 16px;
-            border-bottom: 1px solid #F3F4F6;
+            border-bottom: 1px solid var(--border-color, #F3F4F6);
             transition: background 0.2s;
         }
-        .queue-item:hover { background: #F9FAFB; }
+        .queue-item:hover { background: var(--hover-bg, #F9FAFB); }
         .queue-item:last-child { border-bottom: none; }
 
         .priority-badge {
@@ -113,10 +113,11 @@
         .assign-select {
             padding: 8px 12px;
             border-radius: 12px;
-            border: 1.5px solid #E5E7EB;
+            border: 1.5px solid var(--border-color, #E5E7EB);
             font-size: 13px;
             outline: none;
-            background: white;
+            background: var(--bg-input, white);
+            color: var(--text-primary, #1F2937);
             min-width: 170px;
         }
         .assign-select:focus { border-color: #04A052; box-shadow: 0 0 0 3px rgba(4,160,82,0.08); }
@@ -247,7 +248,7 @@
             </div>
             <div>
                 @forelse($queueItems->where('request_status', 'waiting') as $item)
-                    <div class="queue-item">
+                    <div class="queue-item fade-in">
                         <span class="priority-badge {{ $item->priority_level }}">
                             {{ ucfirst($item->priority_level) }}
                         </span>
@@ -261,21 +262,28 @@
                         <span class="wait-chip {{ $item->wait_minutes >= 30 ? 'alert' : ($item->wait_minutes >= 15 ? 'warn' : 'ok') }}">
                             <i class="fas fa-hourglass-half mr-1"></i>{{ $item->wait_minutes }} min
                         </span>
-                        <form method="POST" action="{{ route('moderator.queue.assign') }}" class="flex items-center gap-2">
-                            @csrf
-                            <input type="hidden" name="queue_id" value="{{ $item->id }}">
-                            <select name="helper_id" class="assign-select" required>
-                                <option value="">Select helper...</option>
-                                @foreach($availableHelpers as $helper)
-                                    <option value="{{ $helper->id }}">
-                                        {{ $helper->full_name }} · {{ $helper->competency_level }}/5
-                                    </option>
-                                @endforeach
-                            </select>
-                            <button type="submit" class="btn-primary">
-                                <i class="fas fa-user-check"></i> Assign
+                        <div class="flex items-center gap-2">
+                            <form method="POST" action="{{ route('moderator.queue.assign') }}" class="flex items-center gap-2">
+                                @csrf
+                                <input type="hidden" name="queue_id" value="{{ $item->id }}">
+                                <select name="helper_id" class="assign-select" required>
+                                    <option value="">Select helper...</option>
+                                    @foreach($availableHelpers as $helper)
+                                        <option value="{{ $helper->id }}">
+                                            {{ $helper->full_name }} · {{ $helper->competency_level }}/5
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <button type="submit" class="btn-primary">
+                                    <i class="fas fa-user-check"></i> Assign
+                                </button>
+                            </form>
+                            <button type="button"
+                                    class="btn-outline text-red-600 hover:border-red-500 hover:text-red-600"
+                                    data-remove-url="{{ route('moderator.queue.remove', $item->id) }}">
+                                <i class="fas fa-times"></i> Remove
                             </button>
-                        </form>
+                        </div>
                     </div>
                 @empty
                     <div class="text-center py-10 text-gray-400">
@@ -294,7 +302,7 @@
             </div>
             <div>
                 @forelse($queueItems->where('request_status', 'assigned') as $item)
-                    <div class="queue-item">
+                    <div class="queue-item fade-in">
                         <span class="priority-badge {{ $item->priority_level }}">
                             {{ ucfirst($item->priority_level) }}
                         </span>
@@ -390,6 +398,44 @@
                     })
                     .catch(() => {});
             }, 30000);
+
+            // ── Real-time: remove a request from the queue ──
+            const csrfToken = () => document.querySelector('meta[name="csrf-token"]').content;
+
+            document.querySelectorAll('[data-remove-url]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const ok = await confirmAction({
+                        title: 'Remove from queue?',
+                        message: 'This will remove the help seeker from the incoming queue.',
+                        confirmText: 'Remove',
+                        confirmClass: 'bg-red-600 hover:bg-red-700 focus:ring-red-600',
+                    });
+                    if (!ok) return;
+
+                    setButtonLoading(btn, 'Removing…');
+                    fetch(btn.dataset.removeUrl, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken(),
+                            'Accept': 'application/json',
+                        },
+                    })
+                        .then((r) => r.json())
+                        .then((data) => {
+                            if (data.success) {
+                                showToast(data.message, 'success');
+                                btn.closest('.queue-item')?.remove();
+                            } else {
+                                showToast(data.message || 'Could not remove request.', 'error');
+                                resetButton(btn);
+                            }
+                        })
+                        .catch(() => {
+                            showToast('Network error — please try again.', 'error');
+                            resetButton(btn);
+                        });
+                });
+            });
         });
     </script>
 

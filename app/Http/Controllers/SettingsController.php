@@ -60,6 +60,8 @@ class SettingsController extends Controller
         return view('settings.appearance', [
             'user' => Auth::user(),
             'fontSizes' => static::FONT_SIZES,
+            'currentTheme' => Auth::user()->theme_preference
+                ?? (Auth::user()->dark_mode ? 'dark' : 'light'),
         ]);
     }
 
@@ -153,23 +155,57 @@ class SettingsController extends Controller
     }
 
     /**
-     * Update appearance settings.
+     * Update appearance settings (theme preference, contrast, motion, font).
+     * Accepts both a full form POST and an AJAX JSON payload.
      */
     public function updateAppearance(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'dark_mode' => 'nullable|boolean',
+        $theme = $request->input('theme');
+        $rules = [
             'high_contrast' => 'nullable|boolean',
-            'font_size' => ['required', 'string', 'in:small,medium,large'],
+            'reduced_motion' => 'nullable|boolean',
+            'font_size' => ['nullable', 'string', 'in:small,medium,large'],
+        ];
+        if ($theme !== null) {
+            $rules['theme'] = ['required', 'string', 'in:light,dark,system'];
+        }
+        $validated = $request->validate($rules);
+
+        $update = [
+            'high_contrast' => $request->boolean('high_contrast'),
+            'reduced_motion' => $request->boolean('reduced_motion'),
+            'font_size' => $validated['font_size'] ?? $request->user()->font_size ?? 'medium',
+        ];
+
+        if ($theme !== null) {
+            $update['theme_preference'] = $theme;
+            $update['dark_mode'] = $theme === 'dark';
+        }
+
+        $request->user()->update($update);
+
+        if ($request->expectsJson() || $request->isJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Appearance updated.');
+    }
+
+    /**
+     * AJAX-only endpoint for the quick Light / Dark / System switch.
+     */
+    public function updateTheme(Request $request)
+    {
+        $validated = $request->validate([
+            'theme' => ['required', 'string', 'in:light,dark,system'],
         ]);
 
         $request->user()->update([
-            'dark_mode' => $request->boolean('dark_mode'),
-            'high_contrast' => $request->boolean('high_contrast'),
-            'font_size' => $validated['font_size'],
+            'theme_preference' => $validated['theme'],
+            'dark_mode' => $validated['theme'] === 'dark',
         ]);
 
-        return back()->with('success', 'Appearance updated.');
+        return response()->json(['success' => true, 'theme' => $validated['theme']]);
     }
 
     /**

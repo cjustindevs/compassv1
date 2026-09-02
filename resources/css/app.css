@@ -1,3 +1,35 @@
+@import './responsive.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── COMPASS brand logo (light/dark variants) ──
+   Image-based horizontal wordmark. Swap via theme so the correct
+   variant shows on light vs dark surfaces. */
+.brand-logo {
+    display: inline-block;
+    height: 40px;
+    width: auto;
+}
+.brand-logo--dark {
+    display: none;
+}
+html[data-theme="dark"] .brand-logo--light,
+.dark-mode .brand-logo--light {
+    display: none;
+}
+html[data-theme="dark"] .brand-logo--dark,
+.dark-mode .brand-logo--dark {
+    display: inline-block;
+}
+
+/* Print: always use the light wordmark. */
+@media print {
+    .brand-logo--dark {
+        display: none !important;
+    }
+    .brand-logo--light {
+        display: inline-block !important;
+    }
+}

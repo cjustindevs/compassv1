@@ -6,6 +6,7 @@ use App\Events\CaseAccepted;
 use App\Events\CaseDeclined;
 use App\Events\NewCaseAssigned;
 use App\Events\NewHelperAssigned;
+use App\Events\SessionUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Helper;
 use App\Models\Notification;
@@ -116,6 +117,14 @@ class HelperCaseController extends Controller
             // Real-time push to the seeker's browser
             try {
                 broadcast(new CaseAccepted($session, $session->seeker->user_account_id));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+
+            // Real-time status update for anyone monitoring this session
+            // (seeker, helper, and any supervising adviser on the session channel).
+            try {
+                broadcast(new SessionUpdated($session, $session->seeker->user_account_id));
             } catch (\Throwable $e) {
                 report($e);
             }

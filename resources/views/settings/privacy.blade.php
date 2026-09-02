@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
+    @vite(['resources/js/app.js'])
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -176,7 +177,10 @@
                     <i class="fas fa-download mr-1"></i> Download my data (JSON)
                 </a>
                 <form method="POST" action="{{ route('settings.privacy.update') }}"
-                      onsubmit="return confirm('This will permanently delete ALL your session history. This cannot be undone. Continue?');">
+                      data-confirm="Delete session history?"
+                      data-confirm-message="This will permanently delete ALL your session history. This cannot be undone."
+                      data-confirm-text="Delete all"
+                      data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                     @csrf
                     @method('patch')
                     <input type="hidden" name="clear_sessions" value="1">

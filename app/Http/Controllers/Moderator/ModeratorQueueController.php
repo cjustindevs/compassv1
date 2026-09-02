@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Moderator;
 
 use App\Events\ModeratorAlert;
 use App\Events\NewCaseAssigned;
+use App\Events\QueueUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Helper;
 use App\Models\Notification;
@@ -63,12 +64,19 @@ class ModeratorQueueController extends Controller
         $queue = QueueRequest::findOrFail($request->queue_id);
         $helper = Helper::findOrFail($request->helper_id);
 
+        if (! $helper->hasCapacity()) {
+            return redirect()->route('moderator.queue')
+                ->with('error', $helper->full_name . ' is already at their session capacity and cannot be assigned right now.');
+        }
+
         $queue->update([
             'assigned_helper_id' => $helper->id,
             'request_status' => 'assigned',
             'queue_position' => null,
             'matched_date' => now(),
         ]);
+
+        $helper->update(['status' => 'busy']);
 
         // Link the helper to the seeker's pending session (or create one).
         $session = Session::where('seeker_id', $queue->seeker_id)
@@ -109,6 +117,9 @@ class ModeratorQueueController extends Controller
         NewCaseAssigned::dispatch($session, $helper->user_account_id);
         ModeratorAlert::dispatch(Auth::id(), 'assignment', 'Helper assigned', ($session->seeker?->generated_alias ?? 'A seeker') . ' was matched with ' . $helper->full_name, '/moderator/queue');
 
+        // Real-time: keep the moderator's queue view in sync (private channel).
+        QueueUpdated::dispatch(Auth::id());
+
         return redirect()->route('moderator.queue')
             ->with('success', $helper->full_name . ' assigned to ' . ($session->seeker?->generated_alias ?? 'the seeker') . ' successfully!');
     }
@@ -123,19 +134,60 @@ class ModeratorQueueController extends Controller
         $queue = QueueRequest::findOrFail($request->queue_id);
         $helper = Helper::findOrFail($request->helper_id);
 
+        if (! $helper->hasCapacity()) {
+            return redirect()->route('moderator.queue')
+                ->with('error', $helper->full_name . ' is already at their session capacity and cannot be reassigned right now.');
+        }
+
         $queue->update([
             'assigned_helper_id' => $helper->id,
             'matched_date' => now(),
         ]);
 
-        Session::where('seeker_id', $queue->seeker_id)
+        $session = Session::where('seeker_id', $queue->seeker_id)
             ->where('session_status', Session::STATUS_HELPER_ASSIGNED)
             ->latest('created_date')
-            ->first()
-            ?->update(['helper_id' => $helper->id]);
+            ->first();
+
+        $oldHelperId = $session?->helper_id;
+
+        if ($session) {
+            $session->update(['helper_id' => $helper->id]);
+        }
+
+        $helper->update(['status' => 'busy']);
+
+        // Release the previous helper back to the available pool if they are
+        // no longer connected to this session.
+        if ($oldHelperId && $oldHelperId !== $helper->id) {
+            Helper::where('id', $oldHelperId)->update(['status' => 'available']);
+        }
+
+        QueueUpdated::dispatch(Auth::id());
 
         return redirect()->route('moderator.queue')
             ->with('success', 'Helper reassigned to ' . $helper->full_name . '.');
+    }
+
+    /**
+     * Remove a request from the queue entirely (moderator action).
+     * Returns JSON so the queue UI can update live without a full reload.
+     */
+    public function removeFromQueue(Request $request): JsonResponse
+    {
+        $request->validate([
+            'queue_id' => 'required|exists:queue_requests,id',
+        ]);
+
+        $queue = QueueRequest::findOrFail($request->queue_id);
+        $queue->delete();
+
+        QueueUpdated::dispatch(Auth::id());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Request removed from the queue.',
+        ]);
     }
 
     public function stats(): JsonResponse

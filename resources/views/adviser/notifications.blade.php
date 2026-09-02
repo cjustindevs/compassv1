@@ -308,7 +308,10 @@
                                         </form>
                                     @endif
                                     <form method="POST" action="{{ route('adviser.notifications.destroy', ['id' => $item->id]) }}"
-                                          onsubmit="return confirm('Delete this notification?');">
+                                          data-confirm="Delete notification?"
+                                          data-confirm-message="This notification will be permanently removed."
+                                          data-confirm-text="Delete"
+                                          data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn-outline" style="color:var(--red-500);border-color:#FECACA;">

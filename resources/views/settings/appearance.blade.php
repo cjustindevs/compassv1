@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
+    @vite(['resources/js/app.js'])
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -139,73 +140,7 @@
             <a href="{{ route('settings.appearance') }}" class="tab-link active"><i class="fas fa-palette"></i>Appearance</a>
         </div>
 
-        <form method="POST" action="{{ route('settings.appearance.update') }}">
-            @csrf
-            @method('patch')
-
-            <!-- Theme -->
-            <div class="card">
-                <h2><i class="fas fa-moon text-[#04A052] mr-2"></i>Theme</h2>
-                <p class="sub">Choose a look that feels comfortable to you.</p>
-                <div class="mt-3">
-                    <div class="toggle-row">
-                        <div>
-                            <p class="font-semibold text-sm text-gray-800">Dark mode</p>
-                            <p class="text-xs text-gray-500 mt-0.5">Easier on the eyes in low light</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" name="dark_mode" value="1" @checked($user->dark_mode)>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="toggle-row">
-                        <div>
-                            <p class="font-semibold text-sm text-gray-800">High contrast mode</p>
-                            <p class="text-xs text-gray-500 mt-0.5">Stronger colors and sharper contrast for readability</p>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" name="high_contrast" value="1" @checked($user->high_contrast)>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Font size -->
-            <div class="card">
-                <h2><i class="fas fa-text-height text-[#04A052] mr-2"></i>Font size</h2>
-                <p class="sub">Adjust text size across COMPASS.</p>
-                <div class="grid grid-cols-3 gap-3 mt-5 max-w-xl">
-                    @foreach($fontSizes as $size)
-                        <label class="cursor-pointer">
-                            <input type="radio" name="font_size" value="{{ $size }}" class="hidden"
-                                   @checked($user->font_size === $size)>
-                            <div class="font-option {{ $size }} {{ $user->font_size === $size ? 'selected' : '' }}"
-                                 onclick="this.closest('label').querySelector('input').checked = true; document.querySelectorAll('.font-option').forEach(o => o.classList.remove('selected')); this.classList.add('selected');">
-                                <div class="sample">Aa</div>
-                                <div class="size-name">{{ ucfirst($size) }}</div>
-                            </div>
-                        </label>
-                    @endforeach
-                </div>
-            </div>
-
-            <!-- Accessibility -->
-            <div class="card">
-                <h2><i class="fas fa-universal-access text-[#04A052] mr-2"></i>Accessibility</h2>
-                <p class="sub">COMPASS is designed to be usable by everyone.</p>
-                <ul class="space-y-2 text-sm text-gray-600 mt-3">
-                    <li class="flex items-center gap-2"><i class="fas fa-keyboard text-[#04A052] w-4"></i> Full keyboard navigation supported</li>
-                    <li class="flex items-center gap-2"><i class="fas fa-volume-up text-[#04A052] w-4"></i> Compatible with screen readers</li>
-                    <li class="flex items-center gap-2"><i class="fas fa-text-height text-[#04A052] w-4"></i> Font size options above apply everywhere</li>
-                    <li class="flex items-center gap-2"><i class="fas fa-eye text-[#04A052] w-4"></i> High contrast mode enhances text clarity</li>
-                </ul>
-            </div>
-
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save mr-1"></i> Save appearance
-            </button>
-        </form>
+        @include('partials.theme-switcher')
 
     </main>
 

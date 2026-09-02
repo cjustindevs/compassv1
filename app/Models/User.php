@@ -42,6 +42,8 @@ class User extends Authenticatable
         'dark_mode',
         'font_size',
         'high_contrast',
+        'theme_preference',
+        'reduced_motion',
     ];
 
     /**
@@ -72,6 +74,7 @@ class User extends Authenticatable
             'marketing_emails' => 'boolean',
             'dark_mode' => 'boolean',
             'high_contrast' => 'boolean',
+            'reduced_motion' => 'boolean',
         ];
     }
 

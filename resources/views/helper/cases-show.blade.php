@@ -132,7 +132,10 @@
                             @csrf
                             <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-check"></i> Accept Case</button>
                         </form>
-                        <form method="POST" action="{{ route('helper.cases.decline', ['id' => $session->id]) }}" onsubmit="return confirm('Decline this case? It will return to the queue.');">
+                        <form method="POST" action="{{ route('helper.cases.decline', ['id' => $session->id]) }}"
+                              data-confirm="Decline case?"
+                              data-confirm-message="This case will be returned to the queue and reassigned."
+                              data-confirm-text="Decline"
                             @csrf
                             <button type="submit" class="btn btn-outline-danger btn-block"><i class="fas fa-times"></i> Decline Case</button>
                         </form>
@@ -141,7 +144,11 @@
                         <a href="{{ route('helper.session.voice', ['id' => $session->id]) }}" class="btn btn-secondary btn-block"><i class="fas fa-phone"></i> Voice Call</a>
                         <a href="{{ route('helper.session.notes', ['id' => $session->id]) }}" class="btn btn-secondary btn-block"><i class="fas fa-edit"></i> Session Notes</a>
                         @if($session->session_status !== 'completed')
-                            <form method="POST" action="{{ route('helper.session.end', ['id' => $session->id]) }}" onsubmit="return confirm('End this session? The seeker will be asked to evaluate.');">
+                            <form method="POST" action="{{ route('helper.session.end', ['id' => $session->id]) }}"
+                                  data-confirm="End session?"
+                                  data-confirm-message="The seeker will be asked to evaluate."
+                                  data-confirm-text="End session"
+                                  data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                                 @csrf
                                 <button type="submit" class="btn btn-outline-danger btn-block"><i class="fas fa-stop-circle"></i> End Session</button>
                             </form>

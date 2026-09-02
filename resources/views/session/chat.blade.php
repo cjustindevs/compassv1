@@ -310,7 +310,11 @@
                 </div>
             </div>
             <span class="session-timer" id="sessionTimer">00:00</span>
-            <form method="POST" action="{{ route('session.end') }}" onsubmit="return confirm('End this session?');">
+            <form method="POST" action="{{ route('session.end') }}"
+                  data-confirm="End session?"
+                  data-confirm-message="This will end the session for both you and the helper."
+                  data-confirm-text="End session"
+                  data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                 @csrf
                 <button type="submit" class="end-btn"><i class="fas fa-phone-slash"></i> End</button>
             </form>

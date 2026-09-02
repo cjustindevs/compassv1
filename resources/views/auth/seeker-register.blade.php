@@ -92,13 +92,11 @@
 
         <!-- Logo -->
         <div class="text-center mb-5 md:mb-8">
-            <div class="inline-flex items-center gap-2.5">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/20">
-                    <span class="text-white font-extrabold text-xl">C</span>
-                </div>
-                <span class="text-xl sm:text-2xl font-extrabold text-gray-800">COMPASS</span>
+            <div class="flex justify-center">
+                <img src="{{ asset('images/compass/logo-wordmark.png') }}" alt="COMPASS"
+                     class="h-14 sm:h-16 w-auto max-w-full">
             </div>
-            <p class="text-gray-500 text-xs sm:text-sm mt-1">Create your anonymous account</p>
+            <p class="text-gray-500 text-sm sm:text-base mt-3">Create your anonymous account</p>
         </div>
 
         <!-- Card -->

@@ -82,9 +82,9 @@ document.addEventListener('DOMContentLoaded', function () {
             'z-index:9999',
             'max-width:380px',
             'width:100%',
-            'background:#ffffff',
+            'background:' + getThemeColor('--bg-card', '#ffffff'),
             'border-radius:16px',
-            'box-shadow:0 12px 40px rgba(0,0,0,0.18)',
+            'box-shadow:0 12px 40px ' + getThemeColor('--shadow-lg', 'rgba(0,0,0,0.18)'),
             'border-left:5px solid #04A052',
             'padding:16px 18px',
             'display:flex',
@@ -94,19 +94,24 @@ document.addEventListener('DOMContentLoaded', function () {
         ].join(';');
 
         toast.innerHTML = `
-            <div style="width:40px;height:40px;border-radius:50%;background:#EAF8F0;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📢</div>
+            <div style="width:40px;height:40px;border-radius:50%;background:${getThemeColor('--bg-active', '#EAF8F0')};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📢</div>
             <div style="flex:1;min-width:0;">
-                <p style="margin:0;font-weight:700;font-size:14px;color:#163B2D;">${escapeHtml(title)}</p>
-                <p style="margin:4px 0 0;font-size:13px;color:#6B7280;line-height:1.45;">${escapeHtml(message)}</p>
+                <p style="margin:0;font-weight:700;font-size:14px;color:${getThemeColor('--text-primary', '#163B2D')};">${escapeHtml(title)}</p>
+                <p style="margin:4px 0 0;font-size:13px;color:${getThemeColor('--text-secondary', '#6B7280')};line-height:1.45;">${escapeHtml(message)}</p>
                 ${link ? `<a href="${escapeHtml(link)}" style="display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:#04A052;text-decoration:none;">${escapeHtml(linkLabel || 'View')} →</a>` : ''}
             </div>
-            <button type="button" style="background:none;border:none;color:#9CA3AF;font-size:14px;cursor:pointer;padding:2px;" aria-label="Dismiss">✕</button>
+            <button type="button" style="background:none;border:none;color:${getThemeColor('--text-muted', '#9CA3AF')};font-size:14px;cursor:pointer;padding:2px;" aria-label="Dismiss">✕</button>
         `;
 
         toast.querySelector('button').addEventListener('click', () => dismiss(toast));
         document.body.appendChild(toast);
 
         setTimeout(() => dismiss(toast), 8000);
+    }
+
+    function getThemeColor(varName, fallback) {
+        const val = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+        return val || fallback;
     }
 
     function dismiss(toast) {

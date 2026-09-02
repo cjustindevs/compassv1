@@ -527,7 +527,10 @@
                     </div>
 
                     <div class="mt-6 pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <form method="POST" action="{{ route('request.matching.decline') }}" onsubmit="return confirm('Decline this helper? You will be placed back in the queue.')">
+                        <form method="POST" action="{{ route('request.matching.decline') }}"
+                              data-confirm="Decline helper?"
+                              data-confirm-message="You will be placed back in the queue."
+                              data-confirm-text="Decline"
                             @csrf
                             <button type="submit" class="btn-outline w-full">
                                 <i class="fas fa-times mr-2"></i> Decline &amp; Stay in Queue

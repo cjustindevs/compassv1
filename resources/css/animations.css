@@ -1,0 +1,89 @@
+/* ════════════════════════════════════════════════════════════
+   COMPASS — UI Animations & Motion
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Fade In ──────────────────────────────────────── */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in { animation: fadeIn 0.35s ease forwards; }
+
+/* ── Slide In ─────────────────────────────────────── */
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+.slide-in { animation: slideIn 0.35s ease forwards; }
+
+/* ── Pulse (risk / live indicators) ──────────────── */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.45; }
+}
+
+.pulse { animation: pulse 2s ease-in-out infinite; }
+
+/* ── Spin (spinners) ─────────────────────────────── */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.spin { animation: spin 1s linear infinite; }
+
+/* ── Card hover lift ─────────────────────────────── */
+.card-hover {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px var(--shadow-color);
+}
+
+/* ── Scale-in on appear ──────────────────────────── */
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+.scale-in { animation: scaleIn 0.25s ease forwards; }
+
+/* ── Button ripple ───────────────────────────────── */
+.btn-ripple { position: relative; overflow: hidden; }
+
+.btn-ripple .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.45);
+    transform: scale(0);
+    animation: rippleAnim 0.6s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes rippleAnim {
+    to { transform: scale(4); opacity: 0; }
+}
+
+/* ── Shake (validation / errors) ─────────────────── */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%      { transform: translateX(-6px); }
+    40%      { transform: translateX(6px); }
+    60%      { transform: translateX(-4px); }
+    80%      { transform: translateX(4px); }
+}
+
+.shake { animation: shake 0.4s ease; }
+
+/* ── Respect reduced-motion preferences ──────────── */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+    }
+}

@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Events\NewCaseAssigned;
+use App\Events\QueueUpdated;
 use App\Models\ConcernCategory;
 use App\Models\Helper;
 use App\Models\Message;
 use App\Models\Notification;
 use App\Models\QueueRequest;
 use App\Models\Session;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -46,7 +48,6 @@ class RequestSupportController extends Controller
             'concern_id' => 'required|exists:concern_categories,id',
             'custom_concern' => 'nullable|string|max:255',
             'description' => 'required|string|max:200',
-            'urgency' => 'required|in:low,medium,high',
             'safety_check' => 'required|in:yes,no,prefer_not_to_say'
         ]);
 
@@ -136,6 +137,15 @@ class RequestSupportController extends Controller
             'priority_level' => session('risk_level', 'low'),
             'preferred_session_type' => $validated['support_mode'] === 'voice' ? 'voice' : 'chat',
         ]);
+
+        // Let every moderator know the queue changed so their live badge/stats refresh.
+        foreach (User::where('role', 'moderator')->pluck('id') as $moderatorUserId) {
+            try {
+                QueueUpdated::dispatch($moderatorUserId);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
 
         session([
             'preferences_data' => $validated
@@ -438,14 +448,6 @@ class RequestSupportController extends Controller
     {
         if ($data['safety_check'] === 'yes') {
             return 'emergency';
-        }
-
-        if ($data['urgency'] === 'high') {
-            return 'high';
-        }
-
-        if ($data['urgency'] === 'medium') {
-            return 'moderate';
         }
 
         return 'low';

@@ -98,7 +98,11 @@
                 </div>
                 <hr class="divider">
                 @if($session->session_status !== 'completed')
-                    <form method="POST" action="{{ route('helper.session.end', ['id' => $session->id]) }}" onsubmit="return confirm('End this session and notify the seeker for evaluation?');">
+                    <form method="POST" action="{{ route('helper.session.end', ['id' => $session->id]) }}"
+                          data-confirm="End session?"
+                          data-confirm-message="This will end the session and notify the seeker for evaluation."
+                          data-confirm-text="End session"
+                          data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                         @csrf
                         <button type="submit" class="btn btn-outline-danger btn-block"><i class="fas fa-stop-circle"></i> End Session</button>
                     </form>

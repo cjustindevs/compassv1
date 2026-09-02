@@ -281,46 +281,7 @@
                 <div class="card-header">
                     <h3>Appearance</h3>
                 </div>
-                <form method="POST" action="{{ route('adviser.settings.appearance') }}">
-                    @csrf
-                    @method('PUT')
-
-                    <div class="toggle-row">
-                        <div>
-                            <div class="toggle-label">Dark Mode</div>
-                            <div class="toggle-desc">Reduce glare with a dark color scheme</div>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" name="dark_mode" value="1" {{ $user->dark_mode ? 'checked' : '' }}>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-
-                    <div class="toggle-row">
-                        <div>
-                            <div class="toggle-label">High Contrast</div>
-                            <div class="toggle-desc">Increase contrast for better readability</div>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" name="high_contrast" value="1" {{ $user->high_contrast ? 'checked' : '' }}>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-
-                    <div class="py-4">
-                        <label class="form-label">Font Size</label>
-                        <div class="flex items-center gap-3">
-                            @foreach(['small', 'medium', 'large'] as $size)
-                                <label class="flex items-center gap-2 cursor-pointer">
-                                    <input type="radio" name="font_size" value="{{ $size }}" class="accent-[#04A052]" {{ ($user->font_size ?? 'medium') === $size ? 'checked' : '' }}>
-                                    <span class="text-sm text-gray-600 capitalize">{{ $size }}</span>
-                                </label>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn-primary"><i class="fas fa-palette"></i> Save Appearance</button>
-                </form>
+                @include('partials.theme-switcher')
             </div>
         </div>
 

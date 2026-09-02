@@ -88,11 +88,20 @@ export function showInstallBanner() {
     });
 }
 
-// ── Show the banner on first visit unless already installed ──
+// ── Show the banner ONLY on the landing page, when not already
+//    installed as a standalone PWA and when the user hasn't
+//    dismissed it before. This prevents the intrusive banner
+//    from appearing on every authenticated page. ──
 const isStandalone =
     window.matchMedia('(display-mode: standalone)').matches ||
     window.navigator.standalone === true;
 
-if (!localStorage.getItem('pwaBannerDismissed') && !isStandalone) {
-    setTimeout(showInstallBanner, 3000);
+const isLandingPage =
+    window.location.pathname === '/' || window.location.pathname === '/home';
+
+const bannerDismissed = localStorage.getItem('pwaBannerDismissed') === 'true';
+
+if (!bannerDismissed && !isStandalone && isLandingPage) {
+    // Small delay so it does not pop in before the page settles.
+    setTimeout(showInstallBanner, 2500);
 }

@@ -1,0 +1,147 @@
+/* ══════════════════════════════════════════════════════════════
+   COMPASS — Shared responsive helpers
+   Loaded via app.css (auth / guest / Breeze / landing flows).
+   Role dashboards ship their own inline responsive CSS, but the
+   utilities below are safe to layer on top of any page.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Generic helpers ── */
+img { max-width: 100%; height: auto; }
+* { -webkit-tap-highlight-color: transparent; }
+
+/* ── Responsive table wrapper ── */
+.table-container,
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.table-container table,
+.table-responsive table {
+    min-width: 600px;
+    width: 100%;
+}
+
+/* ── Collapsible sidebar (icon-only mode) ── */
+.sidebar {
+    transition: width 0.3s ease, transform 0.3s ease;
+}
+.sidebar-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: var(--gray-500, #6B7280);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 10px;
+    transition: background 0.2s ease;
+}
+.sidebar-toggle:hover { background: var(--green-50, #EAF8F0); }
+
+.sidebar.collapsed { width: 72px; }
+/* Hide labels across every sidebar variant. Labels are plain text
+   nodes, so we collapse font-size to 0 and restore it on icons. */
+.sidebar.collapsed .nav-label,
+.sidebar.collapsed .logo span,
+.sidebar.collapsed .view-profile,
+.sidebar.collapsed .user-section .info,
+.sidebar.collapsed .user-section .user-stats,
+.sidebar.collapsed .user-info { display: none; }
+
+.sidebar.collapsed .nav-item {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+    font-size: 0;
+}
+.sidebar.collapsed .nav-item i { margin: 0; font-size: 16px; }
+.sidebar.collapsed .nav-item .badge { font-size: 10px; }
+.sidebar.collapsed .logo { justify-content: center; }
+.sidebar.collapsed .logout-btn { font-size: 0; justify-content: center; }
+.sidebar.collapsed .logout-btn i { font-size: 16px; }
+.sidebar.collapsed .user-card { justify-content: center; }
+
+/* Active-state left border indicator (in addition to bg) */
+.sidebar .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 0;
+    background: var(--green-500, #04A052);
+    border-radius: 0 3px 3px 0;
+    transition: height 0.2s ease;
+}
+.sidebar .nav-item.active::before { height: 60%; }
+
+@media (min-width: 1025px) {
+    .sidebar-toggle { display: inline-flex; }
+}
+
+/* ── Mobile sidebar behaviour ──
+   Existing scripts toggle the `.closed` class: base = visible,
+   `.closed` = hidden (translateX(-100%)). The page scripts add
+   `.closed` on mobile load so the drawer starts off-screen and the
+   hamburger reveals it. These rules only reinforce positioning. ── */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        width: 280px;
+        z-index: 100;
+    }
+    .sidebar.closed { transform: translateX(-100%); }
+
+    .hamburger { display: block !important; }
+    .sidebar-overlay.active { display: block; }
+    .bottom-nav { display: flex !important; }
+
+    .main-content {
+        margin-left: 0 !important;
+        padding-bottom: 80px !important;
+    }
+}
+
+/* On desktop the sidebar must never be hidden by a stale `.closed`
+   (e.g. after rotating / resizing from mobile). */
+@media (min-width: 769px) {
+    .sidebar.closed { transform: none; }
+}
+
+/* ── Modals ── */
+@media (max-width: 480px) {
+    .modal-box {
+        width: 92% !important;
+        max-width: 400px;
+        padding: 1.25rem !important;
+        margin: 1rem !important;
+    }
+    .modal-actions { flex-direction: column-reverse; }
+    .btn-modal-cancel,
+    .btn-modal-confirm { width: 100%; }
+}
+
+/* ── Touch targets ── */
+@media (max-width: 768px) {
+    .nav-item,
+    .btn,
+    .btn-action,
+    .mood-btn,
+    .logout-btn,
+    .hamburger { min-height: 40px; }
+}
+
+/* ── Grid stacking already handled in dashboards; reinforce ── */
+@media (max-width: 768px) {
+    .grid-cols-2,
+    .grid-cols-3 { grid-template-columns: 1fr; }
+    .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+    .flex-row { flex-direction: column; }
+}
+@media (max-width: 480px) {
+    .grid-cols-4 { grid-template-columns: 1fr 1fr; }
+}

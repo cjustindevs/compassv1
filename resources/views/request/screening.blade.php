@@ -582,42 +582,7 @@
                 </div>
 
                 <!-- ============================================ -->
-                <!-- SECTION 3: URGENCY                          -->
-                <!-- ============================================ -->
-                <div class="mb-8">
-                    <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Urgency</h3>
-                    <p class="text-sm text-gray-500 mb-4">How urgent is your need for support?</p>
-
-                    <div class="radio-group">
-                        <div class="radio-option">
-                            <input type="radio" id="urgency_low" name="urgency" value="low" required {{ old('urgency') == 'low' ? 'checked' : '' }}>
-                            <label for="urgency_low">
-                                Low
-                                <span class="sub-text">I just need someone to talk to.</span>
-                            </label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="urgency_medium" name="urgency" value="medium" {{ old('urgency') == 'medium' ? 'checked' : '' }}>
-                            <label for="urgency_medium">
-                                Medium
-                                <span class="sub-text">This feeling is overwhelming.</span>
-                            </label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="urgency_high" name="urgency" value="high" {{ old('urgency') == 'high' ? 'checked' : '' }}>
-                            <label for="urgency_high">
-                                High
-                                <span class="sub-text">I need support as soon as possible.</span>
-                            </label>
-                        </div>
-                    </div>
-                    @error('urgency')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- ============================================ -->
-                <!-- SECTION 4: SAFETY CHECK                    -->
+                <!-- SECTION 3: SAFETY CHECK                    -->
                 <!-- ============================================ -->
                 <div class="mb-8">
                     <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Safety Check</h3>
@@ -643,7 +608,7 @@
                 </div>
 
                 <!-- ============================================ -->
-                <!-- SECTION 5: RISK CLASSIFICATION              -->
+                <!-- SECTION 4: RISK CLASSIFICATION              -->
                 <!-- ============================================ -->
                 <div class="mb-8">
                     <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Preliminary Risk Classification</h3>
@@ -730,17 +695,14 @@
             });
 
             // ── Real-time Risk Classification ──
-            const urgencyInputs = document.querySelectorAll('input[name="urgency"]');
             const safetyInputs = document.querySelectorAll('input[name="safety_check"]');
             const riskBadge = document.getElementById('riskBadge');
             const riskDescription = document.getElementById('riskDescription');
             const riskCard = document.getElementById('riskDisplay');
 
             function calculateRisk() {
-                let urgency = document.querySelector('input[name="urgency"]:checked');
                 let safety = document.querySelector('input[name="safety_check"]:checked');
 
-                let urgencyValue = urgency ? urgency.value : 'low';
                 let safetyValue = safety ? safety.value : 'no';
 
                 let risk = 'low';
@@ -749,12 +711,6 @@
                 if (safetyValue === 'yes') {
                     risk = 'emergency';
                     description = 'Immediate support required. Please use emergency resources.';
-                } else if (urgencyValue === 'high') {
-                    risk = 'high';
-                    description = 'High urgency. You will be prioritized.';
-                } else if (urgencyValue === 'medium') {
-                    risk = 'moderate';
-                    description = 'Moderate urgency. Support will be provided soon.';
                 } else {
                     risk = 'low';
                     description = 'No immediate concerns detected.';
@@ -766,11 +722,10 @@
                 riskDescription.textContent = description;
             }
 
-            urgencyInputs.forEach(input => input.addEventListener('change', calculateRisk));
             safetyInputs.forEach(input => input.addEventListener('change', calculateRisk));
 
             // ── Native HTML5 validation covers required fields ──
-            // (concern_id, description, urgency, safety_check all have
+            // (concern_id, description, safety_check all have
             //  `required`; the browser blocks empty submits natively.)
 
         });

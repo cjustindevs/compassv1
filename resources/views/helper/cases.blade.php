@@ -86,7 +86,10 @@
                             <td class="text-right">
                                 @if($case['pending'])
                                     <div style="display:flex;gap:6px;justify-content:flex-end;">
-                                        <form method="POST" action="{{ route('helper.cases.decline', ['id' => $case['id']]) }}" onsubmit="return confirm('Decline this case? It will return to the queue.');">
+                                        <form method="POST" action="{{ route('helper.cases.decline', ['id' => $case['id']]) }}"
+                                              data-confirm="Decline case?"
+                                              data-confirm-message="This case will be returned to the queue and reassigned."
+                                              data-confirm-text="Decline"
                                             @csrf
                                             <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-times"></i> Decline</button>
                                         </form>

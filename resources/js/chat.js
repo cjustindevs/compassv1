@@ -55,6 +55,11 @@ class ChatApp {
             })
             .listen('SessionEnded', (event) => {
                 this.handleSessionEnded(event);
+            })
+            .listen('SessionUpdated', (event) => {
+                if (window.showToast) {
+                    window.showToast(event.message || 'Session updated', 'info');
+                }
             });
 
         // Safety net: if the websocket ever drops, keep the conversation flowing.

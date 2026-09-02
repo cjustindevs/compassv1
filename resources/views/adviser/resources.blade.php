@@ -333,7 +333,10 @@
                                 <i class="fas fa-edit"></i> Edit
                             </button>
                             <form method="POST" action="{{ route('adviser.resources.destroy', ['id' => $resource->id]) }}"
-                                  onsubmit="return confirm('Delete this resource? This cannot be undone.');">
+                                  data-confirm="Delete resource?"
+                                  data-confirm-message="This resource will be permanently removed."
+                                  data-confirm-text="Delete"
+                                  data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-outline" style="color:var(--red-500);border-color:#FECACA;"><i class="fas fa-trash"></i> Delete</button>

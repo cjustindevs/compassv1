@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Events\MessageSent;
+use App\Events\ModeratorAlert;
 use App\Events\SessionEnded;
 use App\Models\Helper;
 use App\Models\HelpSeekerEvaluation;
 use App\Models\Message;
 use App\Models\Notification;
 use App\Models\Session;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -143,6 +145,15 @@ class SessionController extends Controller
             broadcast(new SessionEnded($session, 'seeker'));
         } catch (\Throwable $e) {
             report($e);
+        }
+
+        // Let every moderator know in real time so their live session stats refresh.
+        foreach (User::where('role', 'moderator')->pluck('id') as $moderatorUserId) {
+            try {
+                ModeratorAlert::dispatch($moderatorUserId, 'session', 'Session ended', 'Session #' . $session->id . ' has been completed.', '/moderator/sessions');
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
         // Free the helper for future matches and notify them

@@ -38,18 +38,18 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 48px;
-            height: 48px;
+            width: 60px;
+            height: 60px;
             background: linear-gradient(135deg, #16a34a, #15803d);
-            border-radius: 14px;
+            border-radius: 16px;
             color: #fff;
-            font-size: 24px;
+            font-size: 30px;
             font-weight: 800;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         .header h1 {
-            font-size: 26px;
+            font-size: 30px;
             font-weight: 700;
             color: #0f2e1f;
             letter-spacing: -0.4px;

@@ -74,6 +74,32 @@
         }
         .sidebar .logo span { font-weight: 700; font-size: 20px; color: var(--green-700); }
 
+        .sidebar .sidebar-toggle {
+            position: absolute; top: 28px; right: 14px; z-index: 2;
+            width: 28px; height: 28px; border-radius: 8px;
+            background: var(--green-50); color: var(--green-600);
+            display: none; align-items: center; justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .sidebar .sidebar-toggle:hover { background: var(--green-100); }
+        @media (min-width: 1025px) { .sidebar .sidebar-toggle { display: inline-flex; } }
+        .sidebar.collapsed .sidebar-toggle { right: 50%; transform: translateX(50%); top: 22px; }
+        .sidebar.collapsed .sidebar-toggle i { transform: rotate(180deg); }
+
+        /* Collapsed icon-only layout (labels are plain text → hide via font-size) */
+        .sidebar.collapsed { width: 72px; }
+        .sidebar.collapsed .nav-label,
+        .sidebar.collapsed .logo span,
+        .sidebar.collapsed .view-profile,
+        .sidebar.collapsed .user-section .info,
+        .sidebar.collapsed .user-section .user-stats { display: none; }
+        .sidebar.collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
+        .sidebar.collapsed .nav-item i { margin: 0; font-size: 16px; }
+        .sidebar.collapsed .nav-item .badge { font-size: 10px; }
+        .sidebar.collapsed .logo { justify-content: center; }
+        .sidebar.collapsed .logout-btn i { font-size: 16px; }
+        .sidebar.collapsed .user-card { justify-content: center; }
+
         .sidebar .nav { flex: 1; overflow-y: auto; }
         .sidebar .nav .nav-label {
             font-size: 10px; font-weight: 700; text-transform: uppercase;
@@ -331,22 +357,22 @@
         </div>
 
         @if (session('success'))
-            <div class="alert alert-success"><i class="fas fa-check-circle"></i> {{ session('success') }}</div>
+            <div class="alert alert-success" data-flash><i class="fas fa-check-circle"></i> {{ session('success') }}</div>
         @endif
         @if (session('error'))
-            <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> {{ session('error') }}</div>
+            <div class="alert alert-error" data-flash><i class="fas fa-exclamation-circle"></i> {{ session('error') }}</div>
         @endif
         @if (session('info'))
-            <div class="alert alert-info"><i class="fas fa-info-circle"></i> {{ session('info') }}</div>
+            <div class="alert alert-info" data-flash><i class="fas fa-info-circle"></i> {{ session('info') }}</div>
         @endif
         @if (session('readiness_status'))
-            <div class="alert {{ session('readiness_status') === 'ready' ? 'alert-success' : 'alert-warning' }}">
+            <div class="alert {{ session('readiness_status') === 'ready' ? 'alert-success' : 'alert-warning' }}" data-flash>
                 <i class="fas fa-heartbeat"></i>
                 You are currently marked as <strong>{{ session('readiness_status') === 'ready' ? 'Ready' : 'Not Ready' }}</strong> for sessions.
             </div>
         @endif
         @if ($errors->any())
-            <div class="alert alert-error">
+            <div class="alert alert-error" data-flash>
                 <i class="fas fa-exclamation-triangle"></i>
                 <div>
                     @foreach ($errors->all() as $error)
@@ -371,9 +397,6 @@
     <script>
         @php $u = optional(auth()->user()); @endphp
         (function () {
-            @if($u->dark_mode)
-                document.body.style.filter = 'invert(0.92) hue-rotate(180deg)';
-            @endif
             @if($u->high_contrast)
                 document.body.classList.add('high-contrast');
             @endif
@@ -384,33 +407,6 @@
             @endif
         })();
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            const hamburger = document.getElementById('hamburgerBtn');
-
-            function closeSidebar() {
-                if (sidebar) sidebar.classList.add('closed');
-                if (overlay) overlay.classList.remove('active');
-            }
-
-            if (hamburger) {
-                hamburger.addEventListener('click', function () {
-                    const isOpen = sidebar && !sidebar.classList.contains('closed');
-                    if (sidebar) sidebar.classList.toggle('closed', isOpen);
-                    if (overlay) overlay.classList.toggle('active', isOpen);
-                });
-            }
-            if (overlay) overlay.addEventListener('click', closeSidebar);
-            window.addEventListener('resize', function () { if (window.innerWidth > 768) closeSidebar(); });
-
-            // Close the sidebar automatically when a link inside it is clicked on mobile
-            document.querySelectorAll('.sidebar .nav .nav-item').forEach(function (item) {
-                item.addEventListener('click', function () {
-                    if (window.innerWidth <= 768) closeSidebar();
-                });
-            });
-        });
     </script>
 
     @yield('scripts')

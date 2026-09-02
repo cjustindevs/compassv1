@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Moderator;
 
+use App\Events\EmergencyTriggered;
 use App\Events\ModeratorAlert;
 use App\Http\Controllers\Controller;
 use App\Models\EmergencyResource;
@@ -85,6 +86,15 @@ class ModeratorEmergencyController extends Controller
         }
 
         ModeratorAlert::dispatch(Auth::id(), 'emergency', 'Emergency escalated', 'Case escalated to the adviser for immediate review.', '/moderator/emergency');
+
+        // Notify the adviser in real time so they get an immediate toast.
+        if ($adviserUserId && $incident->session) {
+            try {
+                EmergencyTriggered::dispatch($incident->session, $incident, $adviserUserId);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
 
         return back()->with('success', 'Emergency case #' . $incident->id . ' escalated for immediate review.');
     }

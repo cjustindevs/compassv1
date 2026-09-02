@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Helper;
 
 use App\Events\EmergencyTriggered;
+use App\Events\ModeratorAlert;
 use App\Events\ReferralRecommended;
 use App\Events\SessionEnded;
 use App\Http\Controllers\Controller;
@@ -336,6 +337,15 @@ class HelperSessionController extends Controller
                 broadcast(new SessionEnded($session, 'helper'));
             } catch (\Throwable $e) {
                 report($e);
+            }
+
+            // Let every moderator know in real time so their live session stats refresh.
+            foreach (User::where('role', 'moderator')->pluck('id') as $moderatorUserId) {
+                try {
+                    ModeratorAlert::dispatch($moderatorUserId, 'session', 'Session ended', 'Session #' . $session->id . ' has been completed.', '/moderator/sessions');
+                } catch (\Throwable $e) {
+                    report($e);
+                }
             }
 
             if ($session->seeker) {

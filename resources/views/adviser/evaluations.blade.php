@@ -448,8 +448,8 @@
                             <a href="{{ route('adviser.evaluate', $report->id) }}" class="btn-primary">
                                 <i class="fas fa-check mr-1"></i> Evaluate
                             </a>
-                            <a href="#" class="btn-outline">
-                                <i class="fas fa-eye mr-1"></i> View
+                            <a href="{{ route('adviser.session.show', $report->session_id) }}" class="btn-outline">
+                                <i class="fas fa-eye mr-1"></i> View Session
                             </a>
                             <form method="POST" action="{{ route('adviser.evaluations.skip', $report->id) }}" class="inline">
                                 @csrf

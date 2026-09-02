@@ -15,7 +15,7 @@
 
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #F8FBF9; }
+        body { background: var(--bg-primary, #F8FBF9); }
 
         .main-content {
             margin-left: 260px;
@@ -24,22 +24,22 @@
         }
 
         .stat-card {
-            background: white;
+            background: var(--bg-card, white);
             border-radius: 16px;
             padding: 18px 22px;
-            border: 1px solid #E5E7EB;
+            border: 1px solid var(--border-color, #E5E7EB);
             transition: all 0.3s ease;
         }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.04); }
-        .stat-number { font-size: 26px; font-weight: 800; color: #1F2937; }
-        .stat-label { font-size: 12px; color: #6B7280; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.04)); }
+        .stat-number { font-size: 26px; font-weight: 800; color: var(--text-primary, #1F2937); }
+        .stat-label { font-size: 12px; color: var(--text-secondary, #6B7280); }
 
         .card {
-            background: white;
+            background: var(--bg-card, white);
             border-radius: 20px;
             padding: 24px;
-            border: 1px solid #E5E7EB;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.01);
+            border: 1px solid var(--border-color, #E5E7EB);
+            box-shadow: var(--card-shadow, 0 4px 20px rgba(0,0,0,0.01));
         }
         .card-header {
             display: flex;
@@ -47,7 +47,7 @@
             justify-content: space-between;
             margin-bottom: 16px;
         }
-        .card-header h3 { font-weight: 700; font-size: 16px; color: #1F2937; }
+        .card-header h3 { font-weight: 700; font-size: 16px; color: var(--text-primary, #1F2937); }
 
         .session-row {
             display: grid;
@@ -55,12 +55,12 @@
             align-items: center;
             gap: 10px;
             padding: 13px 16px;
-            border-bottom: 1px solid #F3F4F6;
+            border-bottom: 1px solid var(--border-light, #F3F4F6);
             cursor: pointer;
             transition: background 0.2s;
             font-size: 13px;
         }
-        .session-row:hover { background: #F9FAFB; }
+        .session-row:hover { background: var(--bg-hover, #F9FAFB); }
         .session-row:last-child { border-bottom: none; }
         .session-row.risk-high { background: #FFF7F7; border-left: 3px solid #DC2626; }
         .session-row.risk-emergency { background: #FEF2F2; border-left: 3px solid #DC2626; animation: pulse-row 2s infinite; }
@@ -76,7 +76,7 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.04em;
-            color: #9CA3AF;
+            color: var(--text-muted, #9CA3AF);
             border-bottom: 1px solid #E5E7EB;
         }
 
@@ -93,7 +93,7 @@
         .risk-badge.emergency { background: #FEE2E2; color: #991B1B; animation: pulse-risk 1.5s infinite; }
         @keyframes pulse-risk { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
 
-        .mode-pill { font-size: 11px; color: #6B7280; background: #F3F4F6; padding: 3px 10px; border-radius: 20px; text-align: center; }
+        .mode-pill { font-size: 11px; color: var(--text-secondary, #6B7280); background: var(--border-light, #F3F4F6); padding: 3px 10px; border-radius: 20px; text-align: center; }
         .status-pill { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; text-align: center; }
         .status-pill.active { background: #DBEAFE; color: #1D4ED8; }
         .status-pill.assigned { background: #FEF3C7; color: #92400E; }
@@ -102,7 +102,7 @@
             display: flex;
             gap: 12px;
             padding: 10px 0;
-            border-bottom: 1px solid #F3F4F6;
+            border-bottom: 1px solid var(--border-light, #F3F4F6);
         }
         .activity-item:last-child { border-bottom: none; }
         .activity-item .icon {
@@ -118,8 +118,8 @@
         .activity-item .icon.emergency { background: #FEE2E2; color: #DC2626; }
         .activity-item .icon.assignment { background: #DBEAFE; color: #1D4ED8; }
         .activity-item .icon.session { background: #DCFCE7; color: #166534; }
-        .activity-item .content .message { font-weight: 500; font-size: 13px; color: #1F2937; }
-        .activity-item .content .time { font-size: 11px; color: #9CA3AF; }
+        .activity-item .content .message { font-weight: 500; font-size: 13px; color: var(--text-primary, #1F2937); }
+        .activity-item .content .time { font-size: 11px; color: var(--text-muted, #9CA3AF); }
 
         .btn-primary {
             background: linear-gradient(135deg, #04A052, #038A45);
@@ -138,7 +138,7 @@
         }
         .btn-primary:hover { background: #027039; }
         .btn-outline {
-            background: white;
+            background: var(--bg-card, white);
             color: #DC2626;
             padding: 8px 18px;
             border-radius: 20px;
@@ -154,7 +154,7 @@
         }
         .btn-outline:hover { background: #FEF2F2; }
 
-        .hamburger { display: none; background: none; border: none; font-size: 24px; color: #374151; cursor: pointer; padding: 4px; }
+        .hamburger { display: none; background: none; border: none; font-size: 24px; color: var(--text-primary, #374151); cursor: pointer; padding: 4px; }
         .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 99; }
         .sidebar-overlay.active { display: block; }
 
@@ -164,7 +164,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(255,255,255,0.94);
+            background: var(--navbar-bg, rgba(255,255,255,0.94));
             backdrop-filter: blur(16px);
             border-top: 1px solid #E5E7EB;
             padding: 6px 0 env(safe-area-inset-bottom, 6px);
@@ -175,7 +175,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: #9CA3AF;
+            color: var(--text-muted, #9CA3AF);
             text-decoration: none;
             font-size: 10px;
             font-weight: 500;

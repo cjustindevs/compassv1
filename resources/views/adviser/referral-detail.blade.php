@@ -220,6 +220,9 @@
 
             <!-- Actions -->
             <div class="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
+                <a href="{{ route('adviser.session.show', $referral->session_id) }}" class="btn-outline">
+                    <i class="fas fa-eye mr-2"></i> View Session
+                </a>
                 <a href="{{ route('adviser.referrals') }}" class="btn-outline">
                     <i class="fas fa-arrow-left mr-2"></i> Back
                 </a>

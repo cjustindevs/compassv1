@@ -15,7 +15,7 @@
 
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #F8FBF9; }
+        body { background: var(--bg-primary, #F8FBF9); }
 
         .main-content {
             margin-left: 260px;
@@ -25,36 +25,36 @@
         }
 
         .card {
-            background: white;
+            background: var(--bg-card, white);
             border-radius: 20px;
             padding: 24px;
-            border: 1px solid #E5E7EB;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.01);
+            border: 1px solid var(--border-color, #E5E7EB);
+            box-shadow: var(--card-shadow, 0 4px 20px rgba(0,0,0,0.01));
         }
-        .card h3 { font-weight: 700; font-size: 16px; color: #1F2937; margin-bottom: 16px; }
+        .card h3 { font-weight: 700; font-size: 16px; color: var(--text-primary, #1F2937); margin-bottom: 16px; }
 
         .tab {
             padding: 8px 16px;
             border-radius: 20px;
             font-size: 13px;
             font-weight: 600;
-            color: #6B7280;
-            background: white;
-            border: 1.5px solid #E5E7EB;
+            color: var(--text-secondary, #6B7280);
+            background: var(--bg-card, white);
+            border: 1.5px solid var(--border-color, #E5E7EB);
             cursor: pointer;
             transition: all 0.2s;
         }
         .tab.active { background: #EAF8F0; border-color: #04A052; color: #027039; }
 
-        .form-label { display: block; font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; }
+        .form-label { display: block; font-weight: 600; font-size: 13px; color: var(--text-primary, #374151); margin-bottom: 6px; }
         .form-input {
             width: 100%;
             padding: 10px 14px;
             border-radius: 12px;
-            border: 1.5px solid #E5E7EB;
+            border: 1.5px solid var(--border-color, #E5E7EB);
             outline: none;
             font-size: 14px;
-            background: white;
+            background: var(--bg-card, white);
         }
         .form-input:focus { border-color: #04A052; box-shadow: 0 0 0 3px rgba(4,160,82,0.08); }
         .form-input.error { border-color: #DC2626; }
@@ -78,7 +78,7 @@
             position: absolute;
             cursor: pointer;
             inset: 0;
-            background: #E5E7EB;
+            background: var(--border-color, #E5E7EB);
             border-radius: 24px;
             transition: 0.3s;
         }
@@ -89,18 +89,18 @@
             width: 18px;
             left: 3px;
             bottom: 3px;
-            background: white;
+            background: var(--text-inverse, white);
             border-radius: 50%;
             transition: 0.3s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 3px var(--shadow-color, rgba(0,0,0,0.2));
         }
-        .toggle input:checked + .slider { background: #04A052; }
+        .toggle input:checked + .slider { background: var(--btn-primary, #04A052); }
         .toggle input:checked + .slider:before { transform: translateX(20px); }
 
         .radio-group { display: flex; gap: 10px; }
         .radio-option {
             flex: 1;
-            border: 1.5px solid #E5E7EB;
+            border: 1.5px solid var(--border-color, #E5E7EB);
             border-radius: 14px;
             padding: 12px;
             text-align: center;
@@ -108,7 +108,7 @@
             transition: all 0.2s;
             font-size: 13px;
             font-weight: 600;
-            color: #6B7280;
+            color: var(--text-secondary, #6B7280);
         }
         .radio-option:hover { border-color: #04A052; }
         .radio-option.selected { border-color: #04A052; background: #EAF8F0; color: #027039; }
@@ -117,7 +117,7 @@
         .flash-error { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
         .error-text { font-size: 12px; color: #DC2626; margin-top: 4px; }
 
-        .hamburger { display: none; background: none; border: none; font-size: 24px; color: #374151; cursor: pointer; padding: 4px; }
+        .hamburger { display: none; background: none; border: none; font-size: 24px; color: var(--text-primary, #374151); cursor: pointer; padding: 4px; }
         .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 99; }
         .sidebar-overlay.active { display: block; }
 
@@ -127,7 +127,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(255,255,255,0.94);
+            background: var(--navbar-bg, rgba(255,255,255,0.94));
             backdrop-filter: blur(16px);
             border-top: 1px solid #E5E7EB;
             padding: 6px 0 env(safe-area-inset-bottom, 6px);
@@ -138,7 +138,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: #9CA3AF;
+            color: var(--text-muted, #9CA3AF);
             text-decoration: none;
             font-size: 10px;
             font-weight: 500;
@@ -249,45 +249,7 @@
         <!-- Appearance -->
         <div class="card mb-6 tab-panel" id="panel-appearance" style="display: none;">
             <h3>Appearance</h3>
-            <form method="POST" action="{{ route('moderator.settings.appearance') }}">
-                @csrf
-                @method('PUT')
-                <div class="space-y-5 mb-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="font-semibold text-sm text-gray-700">Dark Mode</p>
-                            <p class="text-xs text-gray-400">Use a dark theme across COMPASS</p>
-                        </div>
-                        <label class="toggle">
-                            <input type="checkbox" name="dark_mode" value="1" {{ $user->dark_mode ? 'checked' : '' }}>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="font-semibold text-sm text-gray-700">High Contrast</p>
-                            <p class="text-xs text-gray-400">Increase contrast for readability</p>
-                        </div>
-                        <label class="toggle">
-                            <input type="checkbox" name="high_contrast" value="1" {{ $user->high_contrast ? 'checked' : '' }}>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div>
-                        <p class="font-semibold text-sm text-gray-700 mb-3">Font Size</p>
-                        <div class="radio-group" id="fontSizeGroup">
-                            @foreach(['small' => 'A', 'medium' => 'A', 'large' => 'A'] as $size => $label)
-                                <button type="button" class="radio-option {{ $user->font_size === $size ? 'selected' : '' }}" data-size="{{ $size }}"
-                                        style="font-size: {{ $size === 'small' ? 13 : ($size === 'large' ? 17 : 15) }}px;">
-                                    {{ $label }} · {{ ucfirst($size) }}
-                                </button>
-                            @endforeach
-                        </div>
-                        <input type="hidden" name="font_size" id="fontSizeInput" value="{{ $user->font_size ?? 'medium' }}">
-                    </div>
-                </div>
-                <button type="submit" class="btn-primary"><i class="fas fa-save mr-1"></i> Save Appearance</button>
-            </form>
+            @include('partials.theme-switcher')
         </div>
 
         <!-- Notifications -->

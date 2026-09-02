@@ -166,7 +166,7 @@
                 <button class="call-btn active" onclick="toggleMute(this)" title="Mute">
                     <i class="fas fa-microphone"></i>
                 </button>
-                <button class="call-btn end" onclick="document.getElementById('endSessionForm').submit()" title="End session">
+                <button class="call-btn end" onclick="document.getElementById('endSessionForm').requestSubmit()" title="End session">
                     <i class="fas fa-phone-slash"></i>
                 </button>
                 <button class="call-btn active" onclick="toggleSpeaker(this)" title="Speaker">
@@ -176,7 +176,11 @@
             <p class="text-xs text-gray-400 mt-4">Tip: find a quiet, private place when you can.</p>
         </div>
 
-        <form id="endSessionForm" method="POST" action="{{ route('session.end') }}" class="hidden">
+        <form id="endSessionForm" method="POST" action="{{ route('session.end') }}" class="hidden"
+              data-confirm="End session?"
+              data-confirm-message="This will end the session for both you and the helper."
+              data-confirm-text="End session"
+              data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
             @csrf
         </form>
 

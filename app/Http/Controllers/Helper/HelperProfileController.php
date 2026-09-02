@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Helper;
 
 use App\Http\Controllers\Controller;
+use App\Models\Helper;
 use App\Models\HelperCompetencyHistory;
 use App\Models\Session;
 use App\Models\SessionReport;
@@ -87,5 +88,55 @@ class HelperProfileController extends Controller
         }
 
         return back()->with('success', 'Profile updated successfully.');
+    }
+
+    /**
+     * First-time helpers with no helper record are sent here to complete their
+     * profile before they can access the rest of the module.
+     */
+    public function onboarding()
+    {
+        $user = Auth::user();
+
+        return view('helper.onboarding', [
+            'firstName' => $user->name ? explode(' ', $user->name)[0] : '',
+            'lastName' => $user->name ? (explode(' ', $user->name, 2)[1] ?? '') : '',
+            'email' => $user->email,
+        ]);
+    }
+
+    /**
+     * Persist the helper's profile from the onboarding form.
+     */
+    public function storeOnboarding(Request $request)
+    {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'email' => 'required|email|max:255|unique:helpers,email',
+            'phone' => 'nullable|string|max:30',
+            'specializations' => 'nullable|string|max:500',
+            'preferred_language' => 'nullable|string|max:50',
+            'bio' => 'nullable|string|max:1000',
+        ]);
+
+        Helper::create([
+            'user_account_id' => $user->id,
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'specializations' => $validated['specializations'] ?? null,
+            'preferred_language' => $validated['preferred_language'] ?? 'English',
+            'bio' => $validated['bio'] ?? null,
+            'status' => 'available',
+            'competency_level' => 1,
+            'max_concurrent_sessions' => 2,
+        ]);
+
+        return redirect()->route('helper.readiness')
+            ->with('success', 'Welcome aboard! Complete a quick readiness check to start taking sessions.');
     }
 }

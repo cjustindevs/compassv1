@@ -1,5 +1,12 @@
 import './bootstrap';
 import './pwa';
+import './toast';
+import './sidebar';
+import './loading';
+
+// Global theme + animation styles (dark mode, motion utilities).
+import '../css/themes.css';
+import '../css/animations.css';
 
 import Alpine from 'alpinejs';
 import { Workbox } from 'workbox-window';
@@ -16,13 +23,25 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// ── PWA install prompt ──
+// ── PWA install prompt (landing page only) ──
 window.deferredPrompt = null;
+
+// The install banner/button is only relevant on the public landing page.
+// Hide it everywhere else so it never disrupts authenticated workflows.
+const isLandingPage = () => window.location.pathname === '/' || window.location.pathname === '/home';
+
+(function hideInstallOffLanding() {
+    if (isLandingPage()) return;
+    const installBtn = document.getElementById('installPwaBtn');
+    if (installBtn) installBtn.style.display = 'none';
+})();
+
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     window.deferredPrompt = e;
     const installBtn = document.getElementById('installPwaBtn');
-    if (installBtn) {
+    // Only surface the prompt on the landing page.
+    if (installBtn && isLandingPage()) {
         installBtn.style.display = 'flex';
     }
 });
@@ -66,3 +85,81 @@ window.addEventListener('offline', () => setOfflineUI(true));
 setOfflineUI(!navigator.onLine);
 
 Alpine.start();
+
+// ── COMPASS Theme controller ──────────────────────────────────────────────
+// Applies, persists (localStorage + DB) and reacts to the OS preference.
+// The Appearance settings page and the theme switcher partial both use this.
+window.CompassTheme = (function () {
+    const THEME_KEY = 'compass_theme';
+    const PREFS_KEY = 'compass_prefs';
+    const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    const systemPref = () =>
+        window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+    const resolve = (theme) => (theme === 'system' ? systemPref() : (theme || 'light'));
+
+    const storedPrefs = () => {
+        try { return JSON.parse(localStorage.getItem(PREFS_KEY) || '{}'); }
+        catch (e) { return {}; }
+    };
+
+    // Apply visual state to <html> + <body> (works for dark-mode class too).
+    function applyClasses(resolved) {
+        const html = document.documentElement;
+        if (resolved === 'dark') html.setAttribute('data-theme', 'dark');
+        else html.removeAttribute('data-theme');
+
+        document.body.classList.toggle('dark-mode', resolved === 'dark');
+
+        const prefs = storedPrefs();
+        document.body.classList.toggle('high-contrast', !!prefs.high_contrast);
+        document.body.classList.toggle('reduced-motion', !!prefs.reduced_motion);
+        document.body.classList.remove('font-small', 'font-medium', 'font-large');
+        if (prefs.font_size) document.body.classList.add('font-' + prefs.font_size);
+    }
+
+    const current = () =>
+        localStorage.getItem(THEME_KEY)
+        || document.querySelector('meta[name="theme-preference"]')?.content
+        || 'system';
+
+    function persistTheme(theme) {
+        fetch('/settings/theme', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf() },
+            body: JSON.stringify({ theme }),
+        }).catch(() => {});
+    }
+
+    function set(theme, persistDb = true) {
+        localStorage.setItem(THEME_KEY, theme);
+        applyClasses(resolve(theme));
+        if (persistDb) persistTheme(theme);
+        document.dispatchEvent(new CustomEvent('compass:theme', { detail: { theme } }));
+    }
+
+    function setAppearance(overrides) {
+        const merged = Object.assign(storedPrefs(), overrides);
+        localStorage.setItem(PREFS_KEY, JSON.stringify(merged));
+        applyClasses(resolve(current()));
+        fetch('/settings/appearance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf() },
+            body: JSON.stringify(merged),
+        }).catch(() => {});
+        document.dispatchEvent(new CustomEvent('compass:appearance', { detail: merged }));
+    }
+
+    function init() {
+        applyClasses(resolve(current()));
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        const onChange = () => { if (current() === 'system') applyClasses(systemPref()); };
+        if (mq.addEventListener) mq.addEventListener('change', onChange);
+        else if (mq.addListener) mq.addListener(onChange);
+    }
+
+    return { init, set, setAppearance, current, resolve, applyClasses };
+})();
+
+document.addEventListener('DOMContentLoaded', () => window.CompassTheme && window.CompassTheme.init());

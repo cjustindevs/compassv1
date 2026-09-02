@@ -13,7 +13,34 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'COMPASS'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Application Branding
+    |--------------------------------------------------------------------------
+    |
+    | COMPASS branding details used across the UI, emails, and PWA metadata.
+    |
+    */
+
+    'brand' => [
+        'full_name' => 'COMPASS',
+        'short_name' => 'COMPASS',
+        'project' => 'Project Dial-A-Friend',
+        'institution' => 'Divine Word College of Calapan',
+        'tagline' => 'Connect. Guide. Support.',
+        'theme_color' => '#04A052',
+        'assets' => [
+            'logo_light' => '/images/compass/logo-light.png',
+            'logo_dark' => '/images/compass/logo-dark.png',
+            'logo_icon' => '/images/compass/logo-icon.png',
+            'logo_wordmark' => '/images/compass/logo-wordmark.png',
+            'apple_touch_icon' => '/images/compass/apple-touch-icon.png',
+            'favicon' => '/favicon.ico',
+            'og_image' => '/images/compass/og-image.png',
+        ],
+    ],
 
     /*
     |--------------------------------------------------------------------------

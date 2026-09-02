@@ -284,11 +284,9 @@
             <div class="flex items-center justify-between h-16 md:h-20">
 
                 <!-- Logo -->
-                <a href="/" class="flex items-center gap-2.5 group">
-                    <div class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/20 transition-transform group-hover:scale-105">
-                        <span class="text-white font-extrabold text-lg md:text-xl tracking-tight">C</span>
-                    </div>
-                    <span class="text-xl md:text-2xl font-extrabold tracking-tight text-gray-800">COMPASS</span>
+                <a href="/" class="inline-flex items-center group">
+                    <img src="{{ asset('images/compass/logo-wordmark.png') }}" alt="COMPASS"
+                         class="h-7 md:h-9 w-auto transition-transform group-hover:scale-105">
                 </a>
 
                 <!-- Desktop Nav -->
@@ -849,12 +847,9 @@
 
                 <!-- Brand -->
                 <div>
-                    <div class="flex items-center gap-2.5 mb-4">
-                        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center">
-                            <span class="text-white font-extrabold text-lg">C</span>
-                        </div>
-                        <span class="text-xl font-extrabold text-white">COMPASS</span>
-                    </div>
+                    <a href="/" class="inline-flex mb-4">
+                        <img src="{{ asset('images/compass/logo-wordmark.png') }}" alt="COMPASS" class="h-7 md:h-8 w-auto">
+                    </a>
                     <p class="text-sm text-gray-400 leading-relaxed max-w-xs">
                         A calm place to talk. A safe place to heal.
                     </p>

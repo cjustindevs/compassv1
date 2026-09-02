@@ -8,6 +8,7 @@ use App\Http\Controllers\Adviser\AdviserNotificationController;
 use App\Http\Controllers\Adviser\AdviserReferralController;
 use App\Http\Controllers\Adviser\AdviserReportController;
 use App\Http\Controllers\Adviser\AdviserResourceController;
+use App\Http\Controllers\Adviser\AdviserSessionController;
 use App\Http\Controllers\Adviser\AdviserSettingsController;
 use App\Http\Controllers\Auth\HelpSeekerRegisterController;
 use App\Http\Controllers\Auth\OTPController;
@@ -45,6 +46,7 @@ use App\Http\Controllers\SelfHelpController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\ChatController;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -52,6 +54,27 @@ use Illuminate\Support\Facades\Route;
 | Web Routes
 |--------------------------------------------------------------------------
 */
+
+// Register the broadcasting auth endpoints (/broadcasting/auth) so Echo can
+// authorize private channels (session.*, helper.*, etc.) for authenticated users.
+Broadcast::routes();
+
+// =============================================
+// PWA — serve manifest + service worker with correct MIME
+// (keeps install / install-prompt / icons working regardless of the
+//  static-file handling of the hosting server).
+// =============================================
+Route::get('/manifest.json', function () {
+    return response()->file(public_path('manifest.json'))
+        ->header('Content-Type', 'application/json')
+        ->header('Cache-Control', 'public, max-age=86400');
+})->name('manifest');
+
+Route::get('/sw.js', function () {
+    return response()->file(public_path('sw.js'))
+        ->header('Content-Type', 'application/javascript')
+        ->header('Cache-Control', 'no-cache');
+})->name('sw');
 
 // =============================================
 // LANDING PAGE
@@ -119,7 +142,7 @@ Route::get('/register-seeker', [HelpSeekerRegisterController::class, 'showRegist
 // REQUEST SUPPORT ROUTES (3-Step Process)
 // =============================================
 Route::middleware(['auth'])->group(function () {
-    // Step 1: Screening (Area of Concern, Description, Urgency, Safety Check)
+    // Step 1: Screening (Area of Concern, Description, Safety Check)
     Route::get('/request/screening', [RequestSupportController::class, 'screening'])->name('request.screening');
     Route::post('/request/screening', [RequestSupportController::class, 'processScreening'])->name('request.screening.process');
 
@@ -190,12 +213,14 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/settings/preferences', [SettingsController::class, 'updatePreferences'])->name('settings.preferences.update');
     Route::patch('/settings/privacy', [SettingsController::class, 'updatePrivacy'])->name('settings.privacy.update');
     Route::patch('/settings/appearance', [SettingsController::class, 'updateAppearance'])->name('settings.appearance.update');
+    Route::post('/settings/appearance', [SettingsController::class, 'updateAppearance'])->name('settings.appearance.store');
+    Route::post('/settings/theme', [SettingsController::class, 'updateTheme'])->name('settings.theme');
 });
 
 // =============================================
 // HELPER MODULE ROUTES
 // =============================================
-Route::middleware(['auth', 'role:helper'])->prefix('helper')->name('helper.')->group(function () {
+Route::middleware(['auth', 'role:helper', 'ensure.helper.profile', 'ensure.helper.readiness'])->prefix('helper')->name('helper.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [HelperDashboardController::class, 'index'])->name('dashboard');
 
@@ -245,6 +270,10 @@ Route::middleware(['auth', 'role:helper'])->prefix('helper')->name('helper.')->g
     Route::get('/profile', [HelperProfileController::class, 'index'])->name('profile');
     Route::put('/profile', [HelperProfileController::class, 'update'])->name('profile.update');
 
+    // Onboarding — first-time helpers with no helper record land here.
+    Route::get('/onboarding', [HelperProfileController::class, 'onboarding'])->name('onboarding');
+    Route::post('/onboarding', [HelperProfileController::class, 'storeOnboarding'])->name('onboarding.store');
+
     // Settings
     Route::get('/settings', [HelperSettingsController::class, 'index'])->name('settings');
     Route::put('/settings', [HelperSettingsController::class, 'update'])->name('settings.update');
@@ -260,6 +289,9 @@ Route::middleware(['auth', 'role:helper'])->prefix('helper')->name('helper.')->g
 Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [AdviserDashboardController::class, 'index'])->name('dashboard');
+
+    // Live session monitoring (read-only supervision)
+    Route::get('/session/{id}', [AdviserSessionController::class, 'show'])->name('session.show');
 
     // Pending Evaluations
     Route::get('/evaluations', [AdviserEvaluationController::class, 'index'])->name('evaluations');
@@ -358,6 +390,7 @@ Route::middleware(['auth', 'role:moderator'])->prefix('moderator')->name('modera
     Route::get('/queue', [ModeratorQueueController::class, 'index'])->name('queue');
     Route::post('/queue/assign', [ModeratorQueueController::class, 'assign'])->name('queue.assign');
     Route::post('/queue/reassign', [ModeratorQueueController::class, 'reassign'])->name('queue.reassign');
+    Route::delete('/queue/{id}/remove', [ModeratorQueueController::class, 'removeFromQueue'])->name('queue.remove');
     Route::get('/queue/stats', [ModeratorQueueController::class, 'stats'])->name('queue.stats');
 
     // Active Sessions

@@ -867,7 +867,7 @@ class HelperModuleTest extends TestCase
 
         $view->assertSee('COMPASS');
         $view->assertSee('Assigned Cases');
-        $view->assertSee('Logout');
+        $view->assertSee('Log out');
     }
 
     // ─────────────────────────────────────────────────────────────

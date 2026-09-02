@@ -16,7 +16,7 @@
 
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #F8FBF9; }
+        body { background: var(--bg-primary, #F8FBF9); }
 
         .main-content {
             margin-left: 260px;
@@ -25,22 +25,22 @@
         }
 
         .stat-card {
-            background: white;
+            background: var(--bg-card, white);
             border-radius: 16px;
             padding: 18px 22px;
-            border: 1px solid #E5E7EB;
+            border: 1px solid var(--border-color, #E5E7EB);
             transition: all 0.3s ease;
         }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.04); }
-        .stat-number { font-size: 26px; font-weight: 800; color: #1F2937; }
-        .stat-label { font-size: 12px; color: #6B7280; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.04)); }
+        .stat-number { font-size: 26px; font-weight: 800; color: var(--text-primary, #1F2937); }
+        .stat-label { font-size: 12px; color: var(--text-secondary, #6B7280); }
 
         .card {
-            background: white;
+            background: var(--bg-card, white);
             border-radius: 20px;
             padding: 24px;
-            border: 1px solid #E5E7EB;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.01);
+            border: 1px solid var(--border-color, #E5E7EB);
+            box-shadow: var(--card-shadow, 0 4px 20px rgba(0,0,0,0.01));
         }
         .card-header {
             display: flex;
@@ -48,7 +48,7 @@
             justify-content: space-between;
             margin-bottom: 16px;
         }
-        .card-header h3 { font-weight: 700; font-size: 16px; color: #1F2937; }
+        .card-header h3 { font-weight: 700; font-size: 16px; color: var(--text-primary, #1F2937); }
 
         .case-row {
             display: grid;
@@ -56,7 +56,7 @@
             align-items: center;
             gap: 12px;
             padding: 14px 16px;
-            border-bottom: 1px solid #F3F4F6;
+            border-bottom: 1px solid var(--border-light, #F3F4F6);
         }
         .case-row:last-child { border-bottom: none; }
         .case-row.emergency { background: #FEF2F2; border-left: 3px solid #DC2626; }
@@ -72,7 +72,7 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.04em;
-            color: #9CA3AF;
+            color: var(--text-muted, #9CA3AF);
             border-bottom: 1px solid #E5E7EB;
         }
 
@@ -119,8 +119,8 @@
             width: 34px;
             height: 34px;
             border-radius: 50%;
-            background: #F3F4F6;
-            color: #9CA3AF;
+            background: var(--border-light, #F3F4F6);
+            color: var(--text-muted, #9CA3AF);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -130,21 +130,21 @@
             z-index: 2;
         }
         .workflow-step.active .dot { background: #04A052; color: white; }
-        .workflow-step .label { font-size: 10px; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.03em; }
-        .workflow-step .count { font-size: 13px; font-weight: 700; color: #1F2937; }
+        .workflow-step .label { font-size: 10px; color: var(--text-muted, #9CA3AF); text-transform: uppercase; letter-spacing: 0.03em; }
+        .workflow-step .count { font-size: 13px; font-weight: 700; color: var(--text-primary, #1F2937); }
         .workflow-connector { position: absolute; top: 17px; left: calc(50% + 18px); right: calc(-50% + 18px); height: 2px; background: #E5E7EB; }
 
         .contact-card {
-            background: #F9FAFB;
+            background: var(--bg-hover, #F9FAFB);
             border: 1px solid #F3F4F6;
             border-radius: 14px;
             padding: 14px 16px;
         }
-        .contact-card .agency { font-weight: 600; font-size: 13px; color: #1F2937; }
+        .contact-card .agency { font-weight: 600; font-size: 13px; color: var(--text-primary, #1F2937); }
         .contact-card .hotline { font-weight: 800; font-size: 16px; color: #DC2626; }
-        .contact-card .desc { font-size: 11px; color: #9CA3AF; }
+        .contact-card .desc { font-size: 11px; color: var(--text-muted, #9CA3AF); }
 
-        .hamburger { display: none; background: none; border: none; font-size: 24px; color: #374151; cursor: pointer; padding: 4px; }
+        .hamburger { display: none; background: none; border: none; font-size: 24px; color: var(--text-primary, #374151); cursor: pointer; padding: 4px; }
         .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 99; }
         .sidebar-overlay.active { display: block; }
 
@@ -154,7 +154,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(255,255,255,0.94);
+            background: var(--navbar-bg, rgba(255,255,255,0.94));
             backdrop-filter: blur(16px);
             border-top: 1px solid #E5E7EB;
             padding: 6px 0 env(safe-area-inset-bottom, 6px);
@@ -165,7 +165,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: #9CA3AF;
+            color: var(--text-muted, #9CA3AF);
             text-decoration: none;
             font-size: 10px;
             font-weight: 500;
@@ -300,13 +300,21 @@
                             </span>
                             <span class="text-xs text-gray-500">{{ $incident->created_at?->diffForHumans() }}</span>
                             <div class="flex items-center gap-2">
-                                <form method="POST" action="{{ route('moderator.emergency.escalate', $incident->id) }}">
+                                <form method="POST" action="{{ route('moderator.emergency.escalate', $incident->id) }}"
+                                      data-confirm="Escalate emergency?"
+                                      data-confirm-message="This will alert higher authorities and cannot be undone lightly."
+                                      data-confirm-text="Escalate"
+                                      data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                                     @csrf
                                     <button type="submit" class="btn-escalate" {{ $incident->status === 'escalated' ? 'disabled style=opacity:.35;cursor:not-allowed' : '' }}>
                                         <i class="fas fa-arrow-up mr-1"></i> Escalate
                                     </button>
                                 </form>
-                                <form method="POST" action="{{ route('moderator.emergency.resolve', $incident->id) }}">
+                                <form method="POST" action="{{ route('moderator.emergency.resolve', $incident->id) }}"
+                                      data-confirm="Resolve emergency?"
+                                      data-confirm-message="Mark this incident as resolved."
+                                      data-confirm-text="Resolve"
+                                      data-confirm-class="bg-green-600 hover:bg-green-700 focus:ring-green-500">
                                     @csrf
                                     <button type="submit" class="btn-resolve" {{ in_array($incident->status, ['resolved', 'closed']) ? 'disabled style=opacity:.35;cursor:not-allowed' : '' }}>
                                         <i class="fas fa-check mr-1"></i> Resolve

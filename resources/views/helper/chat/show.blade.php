@@ -321,7 +321,11 @@
                 @if($session->session_status !== 'completed')
                     <button type="button" class="action-btn referral-btn" id="referralBtn"><i class="fas fa-arrow-right"></i> Referral</button>
                     <button type="button" class="action-btn emergency-btn" id="emergencyBtn"><i class="fas fa-exclamation-triangle"></i> Emergency</button>
-                    <form method="POST" action="{{ route('helper.session.end', ['id' => $session->id]) }}" onsubmit="return confirm('End this session?');">
+                    <form method="POST" action="{{ route('helper.session.end', ['id' => $session->id]) }}"
+                          data-confirm="End session?"
+                          data-confirm-message="This will end the session for both you and the seeker."
+                          data-confirm-text="End session"
+                          data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                         @csrf
                         <button type="submit" class="end-btn"><i class="fas fa-stop-circle"></i> End</button>
                     </form>

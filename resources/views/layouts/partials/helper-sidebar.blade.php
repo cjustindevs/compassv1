@@ -26,66 +26,72 @@
         : null;
     $voiceUrl = $activeSession ? route('helper.session.voice', ['id' => $activeSession->id]) : route('helper.cases');
     $notesUrl = $activeSession ? route('helper.session.notes', ['id' => $activeSession->id]) : route('helper.cases');
+    $initials = \Illuminate\Support\Str::substr($helperName, 0, 2);
 @endphp
 
 <aside class="sidebar" id="sidebar">
-    <div class="logo">
-        <div class="icon">C</div>
-        <span>COMPASS</span>
+    <div class="sidebar-header">
+        <a href="{{ route('helper.dashboard') }}" class="sidebar-brand">
+            <x-brand-mark />
+        </a>
+        <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Collapse sidebar" title="Collapse / expand sidebar">
+            <i class="fas fa-chevron-left" id="toggleIcon"></i>
+        </button>
+        {{-- theme toggle moved to Settings → Appearance --}}
     </div>
 
-    <nav class="nav">
-        <p class="nav-label">Workspace</p>
+    <nav class="sidebar-nav">
+        <div class="nav-section">Workspace</div>
         <a href="{{ route('helper.dashboard') }}" class="nav-item {{ request()->routeIs('helper.dashboard') ? 'active' : '' }}">
-            <i class="fas fa-th-large"></i> Dashboard
+            <i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span>
         </a>
         <a href="{{ route('helper.readiness') }}" class="nav-item {{ request()->routeIs('helper.readiness*') ? 'active' : '' }}">
-            <i class="fas fa-heartbeat"></i> Readiness Check
+            <i class="fas fa-heartbeat"></i><span class="nav-text">Readiness Check</span>
         </a>
         <a href="{{ route('helper.cases') }}" class="nav-item {{ request()->routeIs('helper.cases*') ? 'active' : '' }}">
-            <i class="fas fa-folder-open"></i> Assigned Cases
-            <span class="badge" id="caseBadge" style="{{ $caseBadgeCount > 0 ? '' : 'display:none;' }}">{{ $caseBadgeCount }}</span>
+            <i class="fas fa-folder-open"></i><span class="nav-text">Assigned Cases</span>
+            <span class="nav-badge" id="caseBadge" style="{{ $caseBadgeCount > 0 ? '' : 'display:none;' }}">{{ $caseBadgeCount }}</span>
         </a>
         <a href="{{ route('helper.chat') }}" class="nav-item {{ request()->routeIs('helper.chat*', 'helper.session.chat*') ? 'active' : '' }}">
-            <i class="fas fa-comment-dots"></i> Live Chat
+            <i class="fas fa-comment-dots"></i><span class="nav-text">Live Chat</span>
         </a>
         <a href="{{ $voiceUrl }}" class="nav-item {{ request()->routeIs('helper.voice', 'helper.session.voice*') ? 'active' : '' }}">
-            <i class="fas fa-phone"></i> Voice Call
+            <i class="fas fa-phone"></i><span class="nav-text">Voice Call</span>
         </a>
         <a href="{{ $notesUrl }}" class="nav-item {{ request()->routeIs('helper.notes', 'helper.session.notes*') ? 'active' : '' }}">
-            <i class="fas fa-edit"></i> Session Notes
+            <i class="fas fa-edit"></i><span class="nav-text">Session Notes</span>
         </a>
         <a href="{{ route('helper.calendar') }}" class="nav-item {{ request()->routeIs('helper.calendar*') ? 'active' : '' }}">
-            <i class="fas fa-calendar-alt"></i> Calendar
+            <i class="fas fa-calendar-alt"></i><span class="nav-text">Calendar</span>
         </a>
 
-        <p class="nav-label">Growth</p>
+        <div class="nav-section">Growth</div>
         <a href="{{ route('helper.competency') }}" class="nav-item {{ request()->routeIs('helper.competency*') ? 'active' : '' }}">
-            <i class="fas fa-chart-line"></i> Competency
+            <i class="fas fa-chart-line"></i><span class="nav-text">Competency</span>
         </a>
         <a href="{{ route('helper.resources') }}" class="nav-item {{ request()->routeIs('helper.resources*') ? 'active' : '' }}">
-            <i class="fas fa-book"></i> Resources
+            <i class="fas fa-book"></i><span class="nav-text">Resources</span>
         </a>
 
-        <p class="nav-label">Account</p>
+        <div class="nav-section">Account</div>
         <a href="{{ route('helper.notifications') }}" class="nav-item {{ request()->routeIs('helper.notifications*') ? 'active' : '' }}">
-            <i class="fas fa-bell"></i> Notifications
-            <span class="badge danger" id="notifBadge" style="{{ $notifBadgeCount > 0 ? '' : 'display:none;' }}">{{ $notifBadgeCount }}</span>
+            <i class="fas fa-bell"></i><span class="nav-text">Notifications</span>
+            <span class="nav-badge danger" id="notifBadge" style="{{ $notifBadgeCount > 0 ? '' : 'display:none;' }}">{{ $notifBadgeCount }}</span>
         </a>
         <a href="{{ route('helper.profile') }}" class="nav-item {{ request()->routeIs('helper.profile*') ? 'active' : '' }}">
-            <i class="fas fa-user-circle"></i> Profile
+            <i class="fas fa-user-circle"></i><span class="nav-text">Profile</span>
         </a>
         <a href="{{ route('helper.settings') }}" class="nav-item {{ request()->routeIs('helper.settings*') ? 'active' : '' }}">
-            <i class="fas fa-cog"></i> Settings
+            <i class="fas fa-cog"></i><span class="nav-text">Settings</span>
         </a>
     </nav>
 
-    <div class="user-section">
-        <div class="user-card">
-            <div class="avatar">{{ \Illuminate\Support\Str::substr($helperName, 0, 2) }}</div>
-            <div class="info">
-                <div class="name">{{ $helperName }}</div>
-                <div class="role">Psychology Helper</div>
+    <div class="sidebar-footer">
+        <div class="sidebar-user">
+            <div class="user-avatar">{{ $initials }}</div>
+            <div class="user-info">
+                <div class="user-name">{{ $helperName }}</div>
+                <div class="user-role">Psychology Helper</div>
             </div>
         </div>
         <div class="user-stats">
@@ -102,11 +108,17 @@
                 <span class="label">Status</span>
             </div>
         </div>
-        <form method="POST" action="{{ route('logout') }}">
+        <form method="POST" action="{{ route('logout') }}"
+              data-confirm="Log out?"
+              data-confirm-message="You will be signed out of your COMPASS account."
+              data-confirm-text="Log out"
+              data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
             @csrf
             <button type="submit" class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i> Logout
+                <i class="fas fa-sign-out-alt"></i><span class="logout-text">Log out</span>
             </button>
         </form>
     </div>
 </aside>
+
+@include('components.confirmation-modal')
