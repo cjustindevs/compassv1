@@ -26,6 +26,7 @@ class User extends Authenticatable
         'email_verified_at',
         'password',
         'role',
+        'is_active',
         'verification_token',
         'verification_token_expires_at',
         'avatar_path',
@@ -39,10 +40,8 @@ class User extends Authenticatable
         'preferred_communication_mode',
         'preferred_helper_gender',
         'session_duration_preference',
-        'dark_mode',
         'font_size',
         'high_contrast',
-        'theme_preference',
         'reduced_motion',
     ];
 
@@ -66,13 +65,13 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
             'show_email' => 'boolean',
             'allow_data_research' => 'boolean',
             'email_notifications' => 'boolean',
             'push_notifications' => 'boolean',
             'session_reminders' => 'boolean',
             'marketing_emails' => 'boolean',
-            'dark_mode' => 'boolean',
             'high_contrast' => 'boolean',
             'reduced_motion' => 'boolean',
         ];
@@ -125,7 +124,7 @@ class User extends Authenticatable
 
     public function scopeActive(Builder $query): Builder
     {
-        return $query->whereNotNull('email_verified_at');
+        return $query->where('is_active', true)->whereNotNull('email_verified_at');
     }
 
     public function displayName(): string

@@ -595,7 +595,7 @@
                         <button type="button" class="highlight-btn" data-value="privacy_safety">🔒 Privacy & safety</button>
                         <button type="button" class="highlight-btn" data-value="follow_up_resources">📚 Follow-up resources</button>
                     </div>
-                    <input type="hidden" name="highlights[]" id="highlightsInput" value="">
+                    <input type="hidden" name="highlights" id="highlightsInput" value="">
                 </div>
 
                 <!-- ============================================ -->

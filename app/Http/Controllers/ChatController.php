@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Events\MessageSent;
 use App\Models\Message;
 use App\Models\Session;
+use App\Services\ChatTranscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ChatController extends Controller
 {
+    public function __construct(protected ChatTranscriptionService $transcriptionService) {}
+
     /**
      * Persist a message for the given session and broadcast it to the channel.
      */
@@ -18,6 +21,8 @@ class ChatController extends Controller
         $request->validate([
             'session_id' => 'required|exists:counseling_sessions,id',
             'message' => 'required|string|max:1000',
+            'is_voice' => 'nullable|boolean',
+            'audio_url' => 'nullable|string|max:2048',
         ]);
 
         $session = Session::findOrFail($request->session_id);
@@ -37,7 +42,20 @@ class ChatController extends Controller
             'message_text' => trim($request->message),
             'sent_datetime' => now(),
             'is_reviewed' => false,
+            'is_transcript' => $session->session_type === 'chat' && ! $request->boolean('is_voice'),
+            'transcript' => $session->session_type === 'chat' && ! $request->boolean('is_voice') ? trim($request->message) : null,
+            'transcript_generated_at' => $session->session_type === 'chat' && ! $request->boolean('is_voice') ? now() : null,
         ]);
+
+        if ($request->boolean('is_voice') && $request->filled('audio_url')) {
+            $message->update([
+                'audio_url' => $request->audio_url,
+                'voice_consent_obtained' => (bool) $session->voice_recording_consent,
+                'voice_consent_obtained_at' => $session->voice_recording_consent ? now() : null,
+            ]);
+
+            $this->transcriptionService->generateVoiceTranscript($message, $request->audio_url);
+        }
 
         // The helper's first message moves an assigned session into active.
         if ($isHelper && $session->session_status === 'helper_assigned') {
@@ -66,6 +84,8 @@ class ChatController extends Controller
                 'sender_name' => $user->displayName(),
                 'sent_datetime' => $message->time_formatted,
                 'sent_datetime_iso' => ($message->sent_datetime ?? now())->toIso8601String(),
+                'is_transcript' => (bool) $message->is_transcript,
+                'audio_url' => $message->audio_url,
             ],
         ]);
     }
@@ -95,6 +115,8 @@ class ChatController extends Controller
                 'sender_name' => $message->senderName(),
                 'sent_datetime' => $message->time_formatted,
                 'sent_datetime_iso' => ($message->sent_datetime ?? now())->toIso8601String(),
+                'is_transcript' => (bool) $message->is_transcript,
+                'audio_url' => $message->audio_url,
             ]);
 
         return response()->json([
@@ -115,5 +137,52 @@ class ChatController extends Controller
         $helperId = $user->helper?->id;
 
         return $helperId && (int) $session->helper_id === (int) $helperId;
+    }
+
+    public function getTranscript(int $sessionId)
+    {
+        $user = Auth::user();
+        $session = Session::with(['seeker', 'helper.user'])->findOrFail($sessionId);
+        $transcript = $this->transcriptionService->getTranscriptForUser($session, $user->id, $user->role);
+
+        if (! $transcript) {
+            return response()->json(['success' => false, 'message' => 'You do not have access to this transcript.'], 403);
+        }
+
+        return response()->json(['success' => true, 'transcript' => $transcript]);
+    }
+
+    public function downloadTranscript(int $sessionId)
+    {
+        $user = Auth::user();
+        $session = Session::with(['seeker', 'helper.user'])->findOrFail($sessionId);
+        $transcript = $this->transcriptionService->getTranscriptForUser($session, $user->id, $user->role);
+
+        if (! $transcript) {
+            abort(403, 'You do not have access to this transcript.');
+        }
+
+        $lines = [
+            'COMPASS Session Transcript',
+            'Session: ' . $transcript['reference_number'],
+            'Seeker: ' . $transcript['seeker_alias'],
+            'Helper: ' . $transcript['helper_name'],
+            'Generated: ' . $transcript['generated_at'],
+            '',
+        ];
+
+        foreach ($transcript['messages'] as $message) {
+            $lines[] = '[' . $message['timestamp'] . '] ' . $message['sender'] . ': ' . $message['message'];
+        }
+
+        return response(implode("\n", $lines), 200, [
+            'Content-Type' => 'text/plain',
+            'Content-Disposition' => 'attachment; filename="transcript-' . $session->id . '.txt"',
+        ]);
+    }
+
+    public function typing(Request $request)
+    {
+        return response()->json(['success' => true]);
     }
 }

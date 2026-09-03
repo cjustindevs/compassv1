@@ -27,23 +27,27 @@ class AdviserCalendarController extends Controller
 
         $monthStart = now()->setDate($year, $month, 1)->startOfDay();
         $monthEnd = $monthStart->copy()->endOfMonth()->endOfDay();
+        $helperIds = \App\Models\Helper::where('adviser_id', Auth::user()->adviser?->id)->pluck('id');
 
         // Sessions whose effective date falls within this month
-        $sessions = Session::where(function ($query) use ($monthStart, $monthEnd) {
+        $sessions = Session::whereIn('helper_id', $helperIds)
+            ->where(function ($query) use ($monthStart, $monthEnd) {
             $query->whereBetween('scheduled_start', [$monthStart, $monthEnd])
                 ->orWhereBetween('start_time', [$monthStart, $monthEnd])
                 ->orWhereBetween('created_date', [$monthStart, $monthEnd]);
-        })
+            })
             ->with(['seeker', 'helper'])
             ->get();
 
         // Competency evaluations within this month
         $evaluations = HelperCompetencyHistory::whereBetween('evaluation_date', [$monthStart, $monthEnd])
+            ->whereIn('helper_id', $helperIds)
             ->with(['helper', 'adviser'])
             ->get();
 
         // Custom events within this month
         $customEvents = CalendarEvent::whereBetween('event_date', [$monthStart, $monthEnd])
+            ->where('created_by', Auth::id())
             ->orderBy('event_date')
             ->orderBy('start_time')
             ->get();

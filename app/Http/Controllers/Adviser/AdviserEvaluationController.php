@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Adviser;
 use App\Http\Controllers\Controller;
 use App\Models\SessionReport;
 use App\Models\HelperCompetencyHistory;
+use App\Models\Helper;
 use App\Models\Session;
 use App\Models\AdviserFeedback;
 use App\Models\Notification;
@@ -19,15 +20,19 @@ class AdviserEvaluationController extends Controller
      */
     public function index()
     {
+        $helperIds = Helper::where('adviser_id', Auth::user()->adviser?->id)->pluck('id');
+
         // Get all session reports that haven't been reviewed
         $pendingReports = SessionReport::with(['session', 'session.seeker', 'session.helper', 'session.concern'])
             ->where('adviser_reviewed', false)
+            ->whereHas('session', fn ($query) => $query->whereIn('helper_id', $helperIds))
             ->orderBy('created_at', 'asc')
             ->get();
 
         // Get completed evaluations for reference
         $completedReports = SessionReport::with(['session', 'session.seeker', 'session.helper'])
             ->where('adviser_reviewed', true)
+            ->whereHas('session', fn ($query) => $query->whereIn('helper_id', $helperIds))
             ->orderBy('updated_at', 'desc')
             ->limit(10)
             ->get();
@@ -58,6 +63,8 @@ class AdviserEvaluationController extends Controller
         $report = SessionReport::with(['session', 'session.seeker', 'session.helper', 'session.concern'])
             ->findOrFail($id);
 
+        $this->authorizeReport($report);
+
         // Check if already evaluated
         $existingFeedback = AdviserFeedback::where('report_id', $report->id)
             ->where('adviser_id', Auth::user()->adviser->id)
@@ -73,6 +80,8 @@ class AdviserEvaluationController extends Controller
     {
         $report = SessionReport::findOrFail($id);
         $adviser = Auth::user()->adviser;
+
+        $this->authorizeReport($report);
 
         // Prevent duplicate evaluations for the same report
         if (AdviserFeedback::where('report_id', $report->id)
@@ -194,6 +203,8 @@ class AdviserEvaluationController extends Controller
     {
         $report = SessionReport::findOrFail($id);
 
+        $this->authorizeReport($report);
+
         $report->update([
             'adviser_reviewed' => true,
             'reviewed_date' => now()
@@ -201,5 +212,17 @@ class AdviserEvaluationController extends Controller
 
         return redirect()->route('adviser.evaluations')
             ->with('info', 'Evaluation marked as reviewed.');
+    }
+
+    private function authorizeReport(SessionReport $report): void
+    {
+        $adviserId = Auth::user()->adviser?->id;
+        $helperId = $report->session?->helper_id;
+
+        abort_unless(
+            $helperId && Helper::where('id', $helperId)->where('adviser_id', $adviserId)->exists(),
+            403,
+            'You are not authorized to review this session report.'
+        );
     }
 }

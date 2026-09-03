@@ -9,27 +9,21 @@ use Symfony\Component\HttpFoundation\Response;
 class EnsureHelperReadiness
 {
     /**
-     * Gate a helper who has never submitted a readiness check. They are sent
-     * to the readiness screen before they can use the rest of the module.
-     * Once a readiness check exists (regardless of result) the gate opens.
+     * Gate a helper whose readiness is missing or expired. Readiness is valid
+     * only for the current duty period, represented by the latest check's
+     * valid_until timestamp (or a 4-hour fallback for older records).
+     *
+     * Readiness check / availability / onboarding / self-help routes live in a
+     * separate, ungated group and are intentionally NOT redirected here so a
+     * helper who isn't ready can still reach self-help tools.
      */
     public function handle(Request $request, Closure $next): Response
     {
         $helper = $request->user()?->helper;
 
-        if ($helper && ! $helper->latestReadiness) {
-            if ($request->routeIs(
-                'helper.readiness',
-                'helper.readiness.store',
-                'helper.readiness.history',
-                'helper.onboarding',
-                'helper.onboarding.store'
-            )) {
-                return $next($request);
-            }
-
+        if ($helper && ! $helper->latestReadiness?->isReady()) {
             return redirect()->route('helper.readiness')
-                ->with('info', 'Please complete a quick readiness check before taking sessions.');
+                ->with('info', 'Please complete a current readiness check before taking sessions.');
         }
 
         return $next($request);

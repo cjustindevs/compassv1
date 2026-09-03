@@ -8,8 +8,6 @@
     <meta name="user-id" content="{{ auth()->id() }}">
     <title>@yield('title', 'COMPASS') – Helper</title>
 
-    @vite(['resources/js/app.js', 'resources/js/helper-notifications.js'])
-
     <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -18,6 +16,18 @@
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    @vite(['resources/css/app.css'])
+
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                    document.documentElement.classList.add('sidebar-collapsed-preload');
+                }
+            } catch (e) {}
+        })();
+    </script>
 
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
@@ -88,6 +98,18 @@
 
         /* Collapsed icon-only layout (labels are plain text → hide via font-size) */
         .sidebar.collapsed { width: 72px; }
+        html.sidebar-collapsed-preload .sidebar { width: 72px; }
+        html.sidebar-collapsed-preload .main-content { margin-left: 72px; }
+        html.sidebar-collapsed-preload .sidebar .nav-label,
+        html.sidebar-collapsed-preload .sidebar .logo span,
+        html.sidebar-collapsed-preload .sidebar .view-profile,
+        html.sidebar-collapsed-preload .sidebar .user-section .info,
+        html.sidebar-collapsed-preload .sidebar .user-section .user-stats,
+        html.sidebar-collapsed-preload .sidebar .brand-text,
+        html.sidebar-collapsed-preload .sidebar .brand-block,
+        html.sidebar-collapsed-preload .sidebar .nav-text,
+        html.sidebar-collapsed-preload .sidebar .user-info,
+        html.sidebar-collapsed-preload .sidebar .logout-text { display: none; }
         .sidebar.collapsed .nav-label,
         .sidebar.collapsed .logo span,
         .sidebar.collapsed .view-profile,
@@ -409,6 +431,7 @@
 
     </script>
 
+    @vite(['resources/js/app.js', 'resources/js/helper-notifications.js'])
     @yield('scripts')
     @include('layouts.partials.pwa-banner')
 </body>

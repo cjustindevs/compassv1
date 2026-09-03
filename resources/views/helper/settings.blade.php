@@ -16,7 +16,7 @@
             @csrf
             @method('PUT')
 
-            @include('partials.theme-switcher')
+            @include('partials.light-mode-notice')
 
             <hr class="divider">
 

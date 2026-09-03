@@ -29,6 +29,8 @@
     $initials = \Illuminate\Support\Str::substr($helperName, 0, 2);
 @endphp
 
+@include('layouts.partials.sidebar-critical')
+
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <a href="{{ route('helper.dashboard') }}" class="sidebar-brand">
@@ -68,6 +70,9 @@
         <div class="nav-section">Growth</div>
         <a href="{{ route('helper.competency') }}" class="nav-item {{ request()->routeIs('helper.competency*') ? 'active' : '' }}">
             <i class="fas fa-chart-line"></i><span class="nav-text">Competency</span>
+        </a>
+        <a href="{{ route('helper.feedback') }}" class="nav-item {{ request()->routeIs('helper.feedback*') ? 'active' : '' }}">
+            <i class="fas fa-star"></i><span class="nav-text">Feedback</span>
         </a>
         <a href="{{ route('helper.resources') }}" class="nav-item {{ request()->routeIs('helper.resources*') ? 'active' : '' }}">
             <i class="fas fa-book"></i><span class="nav-text">Resources</span>

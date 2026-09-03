@@ -24,7 +24,7 @@ class AdviserSessionController extends Controller
             'helper',
             'concern',
             'messages' => fn ($query) => $query->orderBy('sent_datetime', 'asc'),
-            'sessionReport',
+            'report',
         ])->findOrFail($id);
 
         // Authorization: only advisers who supervise this session may view it.

@@ -11,6 +11,7 @@ use App\Models\IncidentReport;
 use App\Models\Notification;
 use App\Models\Session;
 use App\Models\Referral;
+use App\Traits\BroadcastsSafely;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,8 @@ use Illuminate\Support\Facades\Auth;
 
 class ModeratorEmergencyController extends Controller
 {
+    use BroadcastsSafely;
+
     public function index()
     {
         $openIncidents = IncidentReport::with(['session', 'session.seeker', 'session.helper', 'user'])
@@ -85,12 +88,12 @@ class ModeratorEmergencyController extends Controller
             ]);
         }
 
-        ModeratorAlert::dispatch(Auth::id(), 'emergency', 'Emergency escalated', 'Case escalated to the adviser for immediate review.', '/moderator/emergency');
+        $this->broadcastSafely(new ModeratorAlert(Auth::id(), 'emergency', 'Emergency escalated', 'Case escalated to the adviser for immediate review.', '/moderator/emergency'));
 
         // Notify the adviser in real time so they get an immediate toast.
         if ($adviserUserId && $incident->session) {
             try {
-                EmergencyTriggered::dispatch($incident->session, $incident, $adviserUserId);
+                $this->broadcastSafely(new EmergencyTriggered($incident->session, $incident, $adviserUserId));
             } catch (\Throwable $e) {
                 report($e);
             }

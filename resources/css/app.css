@@ -1,12 +1,13 @@
+@import './sidebar.css';
+@import './loading.css';
 @import './responsive.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── COMPASS brand logo (light/dark variants) ──
-   Image-based horizontal wordmark. Swap via theme so the correct
-   variant shows on light vs dark surfaces. */
+
+/* COMPASS brand logo: light mode only. */
 .brand-logo {
     display: inline-block;
     height: 40px;
@@ -14,14 +15,6 @@
 }
 .brand-logo--dark {
     display: none;
-}
-html[data-theme="dark"] .brand-logo--light,
-.dark-mode .brand-logo--light {
-    display: none;
-}
-html[data-theme="dark"] .brand-logo--dark,
-.dark-mode .brand-logo--dark {
-    display: inline-block;
 }
 
 /* Print: always use the light wordmark. */
@@ -31,5 +24,90 @@ html[data-theme="dark"] .brand-logo--dark,
     }
     .brand-logo--light {
         display: inline-block !important;
+    }
+}
+
+body.high-contrast .card,
+body.high-contrast .sidebar,
+body.high-contrast input,
+body.high-contrast select,
+body.high-contrast textarea {
+    border-width: 2px;
+}
+body.high-contrast a { text-decoration: underline; }
+
+body.reduced-motion *,
+body.reduced-motion *::before,
+body.reduced-motion *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+}
+
+body.font-small { font-size: 14px; }
+body.font-medium { font-size: 16px; }
+body.font-large { font-size: 18px; }
+body.font-large h1 { font-size: 2rem; }
+body.font-large h2 { font-size: 1.6rem; }
+
+.main-content {
+    margin-left: var(--sidebar-w, 264px);
+    min-height: 100vh;
+    background: #f3f4f6;
+    transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.adviser-page-content {
+    padding: 24px 32px 80px;
+    min-height: 100vh;
+}
+
+.sidebar.collapsed ~ .main-content {
+    margin-left: var(--sidebar-w-collapsed, 76px);
+}
+
+.stats-card {
+    border-left: 4px solid #04A052;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+}
+
+.stats-card .card-body h6 {
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.stats-card .card-body h2 {
+    color: #111827;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+.stats-card .card-body small {
+    color: #9ca3af;
+    font-size: 0.75rem;
+}
+
+.stats-card.border-danger { border-left-color: #ef4444; }
+.stats-card.border-success { border-left-color: #10b981; }
+.stats-card.border-info { border-left-color: #6366f1; }
+.stats-card.border-warning { border-left-color: #f59e0b; }
+
+@media (max-width: 768px) {
+    .main-content,
+    .sidebar.collapsed ~ .main-content {
+        margin-left: 0;
+    }
+
+    .adviser-page-content {
+        padding: 16px 16px 100px;
     }
 }

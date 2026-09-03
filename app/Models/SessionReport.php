@@ -14,11 +14,16 @@ class SessionReport extends Model
         'help_seeker_condition',
         'referral_recommended',
         'session_summary',
+        'observations',
+        'actions_taken',
+        'risk_level_assessed',
         'personal_reflection',
         'skills_applied',
         'adviser_reviewed',
         'reviewed_date',
         'created_date',
+        'documented_at',
+        'documentation_late',
     ];
 
     protected $casts = [
@@ -26,6 +31,8 @@ class SessionReport extends Model
         'adviser_reviewed' => 'boolean',
         'reviewed_date' => 'datetime',
         'created_date' => 'datetime',
+        'documented_at' => 'datetime',
+        'documentation_late' => 'boolean',
         'skills_applied' => 'array',
     ];
 

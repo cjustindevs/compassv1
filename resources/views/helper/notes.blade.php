@@ -34,6 +34,25 @@
                     </div>
 
                     <div class="form-group">
+                        <label class="form-label">Observations</label>
+                        <textarea name="observations" class="form-control" placeholder="Record objective observations, emotional cues, and relevant context" maxlength="2000">{{ old('observations', $report->observations ?? '') }}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Actions taken</label>
+                        <textarea name="actions_taken" class="form-control" placeholder="Document support actions, grounding exercises, resources shared, or escalation steps" maxlength="2000">{{ old('actions_taken', $report->actions_taken ?? '') }}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Risk level assessed</label>
+                        <select name="risk_level_assessed" class="form-control">
+                            @foreach(['low' => 'Low', 'moderate' => 'Moderate', 'high' => 'High', 'emergency' => 'Emergency'] as $value => $label)
+                                <option value="{{ $value }}" @selected(old('risk_level_assessed', $report->risk_level_assessed ?? $session->risk_level) === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group">
                         <label class="form-label">Personal reflection</label>
                         <textarea name="personal_reflection" class="form-control" placeholder="Your personal reflection on the session (not shared with the seeker)" maxlength="2000">{{ old('personal_reflection', $report->personal_reflection ?? '') }}</textarea>
                     </div>
@@ -97,7 +116,7 @@
                     <div><i class="fas fa-hourglass-end mr-2"></i>Ended {{ $session->end_time?->format('h:i A') ?? '—' }}</div>
                 </div>
                 <hr class="divider">
-                @if($session->session_status !== 'completed')
+                @if(! in_array($session->session_status, ['completed', 'evaluated'], true))
                     <form method="POST" action="{{ route('helper.session.end', ['id' => $session->id]) }}"
                           data-confirm="End session?"
                           data-confirm-message="This will end the session and notify the seeker for evaluation."
@@ -119,6 +138,7 @@
                     <li>Write objectively. Avoid guessing the seeker's identity.</li>
                     <li>Reflections stay private between you and your adviser.</li>
                     <li>Always recommend a referral for high or emergency risk cases.</li>
+                    <li>Complete documentation within 24 hours after the session ends.</li>
                 </ul>
             </div>
         </div>

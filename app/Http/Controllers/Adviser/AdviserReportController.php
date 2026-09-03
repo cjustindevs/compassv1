@@ -32,16 +32,19 @@ class AdviserReportController extends Controller
             [$startDate, $endDate] = $this->getDateRange($period);
         }
 
+        $helperIds = Helper::where('adviser_id', Auth::user()->adviser?->id)->pluck('id');
+        $selectedHelperId = $helperId && $helperIds->contains((int) $helperId) ? (int) $helperId : null;
+
         // Base queries
-        $sessionsQuery = Session::whereBetween('created_at', [$startDate, $endDate]);
+        $sessionsQuery = Session::whereIn('helper_id', $helperIds)->whereBetween('created_at', [$startDate, $endDate]);
         $completedQuery = (clone $sessionsQuery)->where('session_status', 'completed');
         $activeQuery = (clone $sessionsQuery)->where('session_status', 'active');
 
         // Filter by helper if specified
-        if ($helperId) {
-            $sessionsQuery->where('helper_id', $helperId);
-            $completedQuery->where('helper_id', $helperId);
-            $activeQuery->where('helper_id', $helperId);
+        if ($selectedHelperId) {
+            $sessionsQuery->where('helper_id', $selectedHelperId);
+            $completedQuery->where('helper_id', $selectedHelperId);
+            $activeQuery->where('helper_id', $selectedHelperId);
         }
 
         // Statistics
@@ -51,28 +54,29 @@ class AdviserReportController extends Controller
         $completionRate = $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100) : 0;
 
         // Average response time (time from request to first message)
-        $avgResponseTime = $this->calculateAverageResponseTime($startDate, $endDate, $helperId);
+        $avgResponseTime = $this->calculateAverageResponseTime($startDate, $endDate, $helperIds, $selectedHelperId);
 
         // Average waiting time (time from queue to session start)
-        $avgWaitingTime = $this->calculateAverageWaitingTime($startDate, $endDate, $helperId);
+        $avgWaitingTime = $this->calculateAverageWaitingTime($startDate, $endDate, $helperIds, $selectedHelperId);
 
         // Referral statistics
-        $referralStats = $this->getReferralStats($startDate, $endDate);
+        $referralStats = $this->getReferralStats($startDate, $endDate, $helperIds, $selectedHelperId);
 
         // Competency trends
-        $competencyTrends = $this->getCompetencyTrends($helperId);
+        $competencyTrends = $this->getCompetencyTrends($helperIds, $selectedHelperId);
 
         // Monthly session trends (real data, last 6 months within the range)
-        $monthlyTrends = $this->getMonthlyTrends($startDate, $endDate, $helperId);
+        $monthlyTrends = $this->getMonthlyTrends($startDate, $endDate, $helperIds, $selectedHelperId);
 
         // Satisfaction scores
-        $satisfactionScores = $this->getSatisfactionScores($startDate, $endDate);
+        $satisfactionScores = $this->getSatisfactionScores($startDate, $endDate, $helperIds, $selectedHelperId);
 
         // Helper performance ranking
-        $helperRanking = $this->getHelperRanking($startDate, $endDate);
+        $helperRanking = $this->getHelperRanking($startDate, $endDate, $helperIds);
 
         // Get helpers list for filter
-        $helpers = Helper::with('user')->get();
+        $helpers = Helper::with('user')->where('adviser_id', Auth::user()->adviser?->id)->get();
+        $helperId = $selectedHelperId;
 
         return view('adviser.reports', compact(
             'totalSessions',
@@ -89,6 +93,7 @@ class AdviserReportController extends Controller
             'helpers',
             'period',
             'helperId',
+            'selectedHelperId',
             'fromDate',
             'toDate'
         ));
@@ -110,11 +115,14 @@ class AdviserReportController extends Controller
         } else {
             [$startDate, $endDate] = $this->getDateRange($period);
         }
+        $helperIds = Helper::where('adviser_id', Auth::user()->adviser?->id)->pluck('id');
+        $selectedHelperId = $helperId && $helperIds->contains((int) $helperId) ? (int) $helperId : null;
 
         $sessions = Session::with(['seeker', 'helper', 'concern'])
+            ->whereIn('helper_id', $helperIds)
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->when($helperId, function ($query) use ($helperId) {
-                return $query->where('helper_id', $helperId);
+            ->when($selectedHelperId, function ($query) use ($selectedHelperId) {
+                return $query->where('helper_id', $selectedHelperId);
             })
             ->get();
 
@@ -195,9 +203,10 @@ class AdviserReportController extends Controller
     /**
      * Calculate average response time (time from request to first helper message).
      */
-    private function calculateAverageResponseTime($startDate, $endDate, $helperId)
+    private function calculateAverageResponseTime($startDate, $endDate, $helperIds, $helperId)
     {
         $query = \App\Models\Message::join('counseling_sessions', 'messages.session_id', '=', 'counseling_sessions.id')
+            ->whereIn('counseling_sessions.helper_id', $helperIds)
             ->whereBetween('counseling_sessions.created_at', [$startDate, $endDate])
             ->where('messages.created_at', '>=', DB::raw('counseling_sessions.created_date'));
 
@@ -215,9 +224,10 @@ class AdviserReportController extends Controller
     /**
      * Calculate average waiting time (time from request to session start).
      */
-    private function calculateAverageWaitingTime($startDate, $endDate, $helperId)
+    private function calculateAverageWaitingTime($startDate, $endDate, $helperIds, $helperId)
     {
-        $query = Session::whereBetween('created_at', [$startDate, $endDate])
+        $query = Session::whereIn('helper_id', $helperIds)
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->whereNotNull('start_time')
             ->where('start_time', '>=', DB::raw('created_date'));
 
@@ -235,21 +245,19 @@ class AdviserReportController extends Controller
     /**
      * Get referral statistics
      */
-    private function getReferralStats($startDate, $endDate)
+    private function getReferralStats($startDate, $endDate, $helperIds, $helperId)
     {
-        $totalReferrals = Referral::whereBetween('created_at', [$startDate, $endDate])->count();
+        $base = Referral::whereIn('helper_id', $helperIds)
+            ->when($helperId, fn ($query) => $query->where('helper_id', $helperId))
+            ->whereBetween('created_at', [$startDate, $endDate]);
 
-        $approved = Referral::where('status', Referral::STATUS_ACCEPTED)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->count();
+        $totalReferrals = (clone $base)->count();
 
-        $pending = Referral::where('status', Referral::STATUS_PENDING_ADVISER)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->count();
+        $approved = (clone $base)->whereIn('status', [Referral::STATUS_ACCEPTED, Referral::STATUS_COMPLETED, Referral::STATUS_CLOSED])->count();
 
-        $declined = Referral::where('status', Referral::STATUS_DECLINED)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->count();
+        $pending = (clone $base)->where('status', Referral::STATUS_PENDING_ADVISER)->count();
+
+        $declined = (clone $base)->where('status', Referral::STATUS_DECLINED)->count();
 
         $acceptanceRate = $totalReferrals > 0 ? round(($approved / ($approved + $declined)) * 100) : 0;
 
@@ -265,9 +273,9 @@ class AdviserReportController extends Controller
     /**
      * Get competency trends
      */
-    private function getCompetencyTrends($helperId)
+    private function getCompetencyTrends($helperIds, $helperId)
     {
-        $query = HelperCompetencyHistory::with('helper');
+        $query = HelperCompetencyHistory::with('helper')->whereIn('helper_id', $helperIds);
 
         if ($helperId) {
             $query->where('helper_id', $helperId);
@@ -293,7 +301,7 @@ class AdviserReportController extends Controller
     /**
      * Get monthly trends from real session data.
      */
-    private function getMonthlyTrends($startDate, $endDate, $helperId)
+    private function getMonthlyTrends($startDate, $endDate, $helperIds, $helperId)
     {
         $months = collect(range(5, 0))->map(function (int $offset) {
             return now()->startOfMonth()->subMonths($offset);
@@ -301,7 +309,7 @@ class AdviserReportController extends Controller
             return $month->lte($endDate);
         });
 
-        return $months->map(function ($month) use ($startDate, $endDate, $helperId) {
+        return $months->map(function ($month) use ($startDate, $endDate, $helperIds, $helperId) {
             $monthStart = $month->copy()->startOfMonth();
             $monthEnd = $month->copy()->endOfMonth();
 
@@ -312,7 +320,7 @@ class AdviserReportController extends Controller
                 $monthEnd = $endDate->copy();
             }
 
-            $sessionsQuery = Session::whereBetween('created_at', [$monthStart, $monthEnd]);
+            $sessionsQuery = Session::whereIn('helper_id', $helperIds)->whereBetween('created_at', [$monthStart, $monthEnd]);
             if ($helperId) {
                 $sessionsQuery->where('helper_id', $helperId);
             }
@@ -320,8 +328,9 @@ class AdviserReportController extends Controller
             $total = (clone $sessionsQuery)->count();
             $completed = (clone $sessionsQuery)->whereIn('session_status', ['completed', 'evaluated'])->count();
 
-            $satisfaction = HelpSeekerEvaluation::whereHas('session', function ($query) use ($monthStart, $monthEnd, $helperId) {
-                $query->whereBetween('created_at', [$monthStart, $monthEnd]);
+            $satisfaction = HelpSeekerEvaluation::whereHas('session', function ($query) use ($monthStart, $monthEnd, $helperIds, $helperId) {
+                $query->whereIn('helper_id', $helperIds)
+                    ->whereBetween('created_at', [$monthStart, $monthEnd]);
                 if ($helperId) {
                     $query->where('helper_id', $helperId);
                 }
@@ -339,9 +348,15 @@ class AdviserReportController extends Controller
     /**
      * Get satisfaction scores
      */
-    private function getSatisfactionScores($startDate, $endDate)
+    private function getSatisfactionScores($startDate, $endDate, $helperIds, $helperId)
     {
         $scores = HelpSeekerEvaluation::whereBetween('created_at', [$startDate, $endDate])
+            ->whereHas('session', function ($query) use ($helperIds, $helperId) {
+                $query->whereIn('helper_id', $helperIds);
+                if ($helperId) {
+                    $query->where('helper_id', $helperId);
+                }
+            })
             ->get();
 
         $avgHelpfulness = $scores->avg('helpfulness_score') ?? 0;
@@ -360,9 +375,9 @@ class AdviserReportController extends Controller
     /**
      * Get helper ranking
      */
-    private function getHelperRanking($startDate, $endDate)
+    private function getHelperRanking($startDate, $endDate, $helperIds)
     {
-        $helpers = Helper::with('user')->get();
+        $helpers = Helper::with('user')->whereIn('id', $helperIds)->get();
 
         $ranking = $helpers->map(function ($helper) {
             $sessions = Session::where('helper_id', $helper->id)

@@ -34,40 +34,4 @@
 <meta property="og:site_name" content="COMPASS">
 <meta property="og:url" content="{{ url('/') }}">
 
-{{-- No-flash theme application: runs before body paint so the saved theme
-     (or OS preference for "system") is applied immediately. --}}
-<meta name="theme-preference" content="{{ $currentTheme ?? 'system' }}">
 <meta name="theme-prefs" content="{{ json_encode($themePrefs ?? ['high_contrast' => false, 'reduced_motion' => false, 'font_size' => 'medium']) }}">
-
-<script>
-    (function () {
-        try {
-            var THEME_KEY = 'compass_theme';
-            var PREFS_KEY = 'compass_prefs';
-            var stored = localStorage.getItem(THEME_KEY);
-            var theme = stored || document.querySelector('meta[name="theme-preference"]')?.content || 'system';
-            var resolved = (theme === 'system')
-                ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-                : theme;
-
-            if (resolved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-            else document.documentElement.removeAttribute('data-theme');
-            document.body.classList.toggle('dark-mode', resolved === 'dark');
-
-            var prefs = {};
-            try { prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null') || {}; } catch (e) {}
-            if (!prefs.high_contrast) {
-                try {
-                    var mp = JSON.parse(document.querySelector('meta[name="theme-prefs"]')?.content || '{}');
-                    prefs = Object.assign(mp, prefs);
-                } catch (e) {}
-            }
-            document.body.classList.toggle('high-contrast', !!prefs.high_contrast);
-            document.body.classList.toggle('reduced-motion', !!prefs.reduced_motion);
-            if (prefs.font_size) {
-                document.body.classList.remove('font-small', 'font-medium', 'font-large');
-                document.body.classList.add('font-' + prefs.font_size);
-            }
-        } catch (e) {}
-    })();
-</script>

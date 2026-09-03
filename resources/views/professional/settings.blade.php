@@ -252,7 +252,7 @@
             <div class="card-header">
                 <h3>Appearance</h3>
             </div>
-            @include('partials.theme-switcher')
+            @include('partials.light-mode-notice')
         </div>
 
         <!-- Footer -->

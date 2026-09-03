@@ -12,11 +12,14 @@ use App\Models\Helper;
 use App\Models\Notification;
 use App\Models\QueueRequest;
 use App\Models\Session;
+use App\Traits\BroadcastsSafely;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class HelperCaseController extends Controller
 {
+    use BroadcastsSafely;
+
     /**
      * List all sessions assigned to the logged-in helper (from the database).
      */
@@ -96,6 +99,11 @@ class HelperCaseController extends Controller
             return back()->with('error', 'This case can no longer be accepted.');
         }
 
+        if (! $helper->isReady()) {
+            return redirect()->route('helper.readiness')
+                ->with('error', 'Complete a current readiness assessment before accepting a case.');
+        }
+
         $session->update([
             'session_status' => 'active',
             'start_time' => now(),
@@ -168,8 +176,10 @@ class HelperCaseController extends Controller
             'helper_id' => null,
             'session_status' => 'waiting',
             'scheduled_start' => null,
+            'pre_session_brief_expires_at' => null,
         ]);
 
+        $helper->decrementShiftSessions();
         Helper::where('id', $helper->id)->update(['status' => 'available']);
 
         QueueRequest::where('seeker_id', $session->seeker_id)
@@ -197,8 +207,13 @@ class HelperCaseController extends Controller
                 'helper_id' => $nextHelper->id,
                 'session_status' => 'helper_assigned',
                 'scheduled_start' => now(),
+                'pre_session_brief_expires_at' => now()->addMinutes(Helper::PRE_SESSION_BRIEF_MINUTES),
+                'match_method' => 'automatic',
+                'matched_by' => 'system',
+                'matching_details' => $nextHelper->matching_details,
             ]);
 
+            $nextHelper->incrementShiftSessions();
             $nextHelper->update(['status' => 'busy']);
 
             Notification::create([
@@ -210,11 +225,7 @@ class HelperCaseController extends Controller
                 'link' => '/helper/cases',
             ]);
 
-            try {
-                broadcast(new NewCaseAssigned($session, $nextHelper->user_account_id));
-            } catch (\Throwable $e) {
-                report($e);
-            }
+            $this->broadcastSafely(new NewCaseAssigned($session, $nextHelper->user_account_id));
 
             // Tell the seeker (in real time) that a new helper is on the case
             try {

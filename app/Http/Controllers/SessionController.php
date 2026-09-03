@@ -11,11 +11,17 @@ use App\Models\Message;
 use App\Models\Notification;
 use App\Models\Session;
 use App\Models\User;
+use App\Services\ChatTranscriptionService;
+use App\Traits\BroadcastsSafely;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SessionController extends Controller
 {
+    use BroadcastsSafely;
+
+    public function __construct(protected ChatTranscriptionService $transcriptionService) {}
+
     /**
      * Show the live chat session (messages come from the database)
      */
@@ -68,6 +74,9 @@ class SessionController extends Controller
             'sender_id' => Auth::id(),
             'sender' => 'seeker',
             'message_text' => $request->message,
+            'transcript' => $request->message,
+            'is_transcript' => true,
+            'transcript_generated_at' => now(),
             'sent_datetime' => now(),
         ]);
 
@@ -111,7 +120,11 @@ class SessionController extends Controller
 
         $helperName = $session->helper->full_name ?: 'Peer Helper';
         $seekerName = $session->seeker->generated_alias ?? Auth::user()->name ?? 'Seeker';
-        $consentGiven = session('voice_consent', true);
+        if ($session->session_type === 'voice' && ! $session->voice_consent_obtained && ! $session->voice_recording_consent) {
+            return redirect()->route('request.voice-consent');
+        }
+
+        $consentGiven = (bool) ($session->voice_consent_obtained || session('voice_consent', false));
 
         return view('session.voice', compact('session', 'helperName', 'seekerName', 'consentGiven'));
     }
@@ -150,7 +163,7 @@ class SessionController extends Controller
         // Let every moderator know in real time so their live session stats refresh.
         foreach (User::where('role', 'moderator')->pluck('id') as $moderatorUserId) {
             try {
-                ModeratorAlert::dispatch($moderatorUserId, 'session', 'Session ended', 'Session #' . $session->id . ' has been completed.', '/moderator/sessions');
+                $this->broadcastSafely(new ModeratorAlert($moderatorUserId, 'session', 'Session ended', 'Session #' . $session->id . ' has been completed.', '/moderator/sessions'));
             } catch (\Throwable $e) {
                 report($e);
             }
@@ -238,6 +251,12 @@ class SessionController extends Controller
      */
     public function processEvaluation(Request $request)
     {
+        if (is_string($request->input('highlights'))) {
+            $request->merge([
+                'highlights' => array_values(array_filter(explode(',', $request->input('highlights')))),
+            ]);
+        }
+
         $validated = $request->validate([
             'helpfulness' => 'required|in:very_helpful,helpful,neutral,not_helpful',
             'comfort' => 'required|in:very_comfortable,comfortable,slightly_comfortable,not_comfortable',

@@ -31,6 +31,8 @@
 <!-- SIDEBAR                                      -->
 <!-- ══════════════════════════════════════════════ -->
 
+@include('layouts.partials.sidebar-critical')
+
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <a href="{{ route('seeker.dashboard') }}" class="sidebar-brand">
@@ -168,11 +170,8 @@
     @php
         $prefs = optional(auth()->user());
     @endphp
-    // ── Apply persisted appearance preferences (dark mode / font size) ──
+    // Apply persisted accessibility preferences.
     (function () {
-        @if($prefs->dark_mode)
-            document.body.classList.add('dark-mode');
-        @endif
         @if($prefs->high_contrast)
             document.body.classList.add('high-contrast');
         @endif

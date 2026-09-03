@@ -1,19 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    @include('layouts.partials.pwa-meta')
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="user-id" content="{{ auth()->id() }}">
-    <title>COMPASS – Resources</title>
+@extends('layouts.app')
 
-    @vite(['resources/js/app.js', 'resources/js/adviser-notifications.js'])
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+@section('title', 'COMPASS – Resources')
 
-    <style>
+@push('styles')
+<style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
@@ -37,26 +27,6 @@
         }
 
         body { background: #F8FBF9; }
-
-        .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 260px;
-            height: 100vh;
-            background: rgba(255,255,255,0.92);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(4,160,82,0.06);
-            box-shadow: 4px 0 40px rgba(0,0,0,0.02);
-            z-index: 100;
-            transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
-            display: flex;
-            flex-direction: column;
-            padding: 24px 16px 20px;
-        }
-        .sidebar.closed { transform: translateX(-100%); }
-
-        .main-content { margin-left: 260px; padding: 24px 32px 80px; min-height: 100vh; }
 
         .stat-card {
             background: white;
@@ -153,61 +123,14 @@
         .modal-box { background: white; border-radius: 20px; padding: 24px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
 
         .flash-success { background: var(--green-50); color: var(--green-700); border: 1px solid var(--green-100); border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
-
-        .hamburger { display: none; background: none; border: none; font-size: 24px; color: var(--gray-700); cursor: pointer; padding: 4px; }
-        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 99; }
-        .sidebar-overlay.active { display: block; }
-
-        .bottom-nav {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(255,255,255,0.94);
-            backdrop-filter: blur(16px);
-            border-top: 1px solid var(--gray-200);
-            padding: 6px 0 env(safe-area-inset-bottom, 6px);
-            z-index: 200;
-            justify-content: space-around;
-        }
-        .bottom-nav .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: var(--gray-400);
-            text-decoration: none;
-            font-size: 10px;
-            font-weight: 500;
-            padding: 4px 12px;
-        }
-        .bottom-nav .nav-item.active { color: var(--green-500); }
-        .bottom-nav .nav-item.active i { color: var(--green-500); }
-
-        @media (min-width: 769px) { .sidebar-overlay { display: none !important; } }
-        @media (max-width: 1024px) { .main-content { padding: 20px 24px 80px; } }
-        @media (max-width: 768px) {
-            .sidebar { width: 280px; padding: 16px; }
-            .main-content { margin-left: 0; padding: 16px 16px 100px; }
-            .hamburger { display: block; }
-            .bottom-nav { display: flex; }
-        }
     </style>
-</head>
-<body>
+@endpush
 
-    @include('layouts.partials.adviser-sidebar')
-
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <main class="main-content">
-
+@section('content')
+<div class="adviser-page-content">
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
-                </button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-800">Resources</h1>
                     <p class="text-sm text-gray-500 hidden sm:block">
@@ -364,18 +287,8 @@
             <i class="fas fa-heart text-[#04A052] mr-1"></i>
             Quality supervision leads to quality support.
         </div>
-
-    </main>
-
+</div>
     <!-- Bottom Navigation -->
-    <nav class="bottom-nav" id="bottomNav">
-        <a href="{{ route('adviser.dashboard') }}" class="nav-item"><i class="fas fa-th-large"></i><span>Dashboard</span></a>
-        <a href="{{ route('adviser.evaluations') }}" class="nav-item"><i class="fas fa-clipboard-list"></i><span>Evaluations</span></a>
-        <a href="{{ route('adviser.referrals') }}" class="nav-item"><i class="fas fa-arrow-right"></i><span>Referrals</span></a>
-        <a href="{{ route('adviser.helpers') }}" class="nav-item"><i class="fas fa-users"></i><span>Helpers</span></a>
-        <a href="{{ route('adviser.notifications') }}" class="nav-item"><i class="fas fa-bell"></i><span>Alerts</span></a>
-    </nav>
-
     <!-- Add / Edit Modal -->
     <div class="modal-backdrop" id="resourceModal">
         <div class="modal-box">
@@ -450,28 +363,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            const hamburger = document.getElementById('hamburgerBtn');
-
-            function toggleSidebar() {
-                sidebar.classList.toggle('closed');
-                overlay.classList.toggle('active');
-            }
-
-            function closeSidebar() {
-                sidebar.classList.add('closed');
-                overlay.classList.remove('active');
-            }
-
-            hamburger.addEventListener('click', toggleSidebar);
-            overlay.addEventListener('click', closeSidebar);
-
-            window.addEventListener('resize', function () {
-                if (window.innerWidth > 768) closeSidebar();
-            });
-
-            // ── Add / Edit modal ──
+// ── Add / Edit modal ──
             const modal = document.getElementById('resourceModal');
             const form = document.getElementById('resourceForm');
             const modalTitle = document.getElementById('modalTitle');
@@ -516,8 +408,4 @@
             });
         });
     </script>
-
-    @include('layouts.partials.pwa-banner')
-
-</body>
-</html>
+@endsection

@@ -15,6 +15,8 @@
     $displayName = optional($user->moderator)->full_name ?? $user->name;
 @endphp
 
+@include('layouts.partials.sidebar-critical')
+
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <a href="{{ route('moderator.dashboard') }}" class="sidebar-brand">
@@ -45,6 +47,9 @@
         </a>
         <a href="{{ route('moderator.manage') }}" class="nav-item {{ request()->routeIs('moderator.manage*') ? 'active' : '' }}">
             <i class="fas fa-users-cog"></i><span class="nav-text">Manage</span>
+        </a>
+        <a href="{{ route('moderator.schedules') }}" class="nav-item {{ request()->routeIs('moderator.schedules*') ? 'active' : '' }}">
+            <i class="fas fa-calendar-alt"></i><span class="nav-text">Schedules</span>
         </a>
         <a href="{{ route('moderator.emergency') }}" class="nav-item {{ request()->routeIs('moderator.emergency*') ? 'active' : '' }}">
             <i class="fas fa-exclamation-triangle"></i><span class="nav-text">Emergency Alerts</span>

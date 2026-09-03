@@ -309,7 +309,7 @@
                     <div class="status"><span class="dot"></span> Online</div>
                 </div>
             </div>
-            <span class="session-timer" id="sessionTimer">00:00</span>
+            <span class="session-timer" id="sessionTimer" data-started-at="{{ optional($session->start_time)->timestamp }}">00:00</span>
             <form method="POST" action="{{ route('session.end') }}"
                   data-confirm="End session?"
                   data-confirm-message="This will end the session for both you and the helper."
@@ -346,10 +346,12 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Session timer
-            let seconds = 0;
             const timerDisplay = document.getElementById('sessionTimer');
+            const startedAt = Number(timerDisplay?.dataset.startedAt || 0);
             setInterval(function () {
-                seconds++;
+                const seconds = startedAt > 0
+                    ? Math.max(0, Math.floor(Date.now() / 1000) - startedAt)
+                    : 0;
                 const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
                 const secs = String(seconds % 60).padStart(2, '0');
                 if (timerDisplay) timerDisplay.textContent = mins + ':' + secs;

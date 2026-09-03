@@ -12,22 +12,7 @@
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
-            <div class="flex">
-                <!-- Logo -->
-                <div class="shrink-0 flex items-center">
-                    <a href="{{ route($dashboardRoute) }}" class="flex items-center">
-                        <img src="{{ asset('images/compass/logo-wordmark.png') }}" alt="COMPASS"
-                             class="h-8 md:h-10 w-auto">
-                    </a>
-                </div>
-
-                <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route($dashboardRoute)" :active="request()->routeIs('seeker.dashboard', 'helper.dashboard', 'adviser.dashboard', 'moderator.dashboard', 'professional.dashboard', 'admin.dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
-                </div>
-            </div>
+            <div></div>
 
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">

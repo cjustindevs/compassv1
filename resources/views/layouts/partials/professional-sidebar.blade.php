@@ -18,6 +18,8 @@
     $isAvailable = optional($professionalProfile)->is_available;
 @endphp
 
+@include('layouts.partials.sidebar-critical')
+
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <a href="{{ route('professional.dashboard') }}" class="sidebar-brand">

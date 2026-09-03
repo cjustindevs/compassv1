@@ -11,8 +11,6 @@ use Illuminate\Http\Request;
 
 class ModeratorManageController extends Controller
 {
-    private const ADVISER_CAPACITY = 5;
-
     public function index(Request $request)
     {
         $search = trim($request->get('search', ''));
@@ -45,8 +43,8 @@ class ModeratorManageController extends Controller
             ->get()
             ->map(function (Adviser $adviser) {
                 $adviser->assigned_helpers = Helper::where('adviser_id', $adviser->id)->count();
-                $adviser->capacity = self::ADVISER_CAPACITY;
-                $adviser->remaining_slots = max(0, self::ADVISER_CAPACITY - $adviser->assigned_helpers);
+                $adviser->capacity = Helper::MAX_HELPERS_PER_ADVISER;
+                $adviser->remaining_slots = Helper::getRemainingSlotsForAdviser($adviser->id);
 
                 return $adviser;
             });
@@ -67,10 +65,8 @@ class ModeratorManageController extends Controller
         ]);
 
         $adviser = Adviser::findOrFail($request->adviser_id);
-        $assigned = Helper::where('adviser_id', $adviser->id)->count();
-
-        if ($assigned >= self::ADVISER_CAPACITY) {
-            return back()->with('error', $adviser->full_name . ' is at full capacity (' . self::ADVISER_CAPACITY . ' helpers).');
+        if (! Helper::canAddHelperToAdviser($adviser->id)) {
+            return back()->with('error', $adviser->full_name . ' is at full capacity (' . Helper::MAX_HELPERS_PER_ADVISER . ' helpers).');
         }
 
         $helper = Helper::findOrFail($request->helper_id);
@@ -98,7 +94,7 @@ class ModeratorManageController extends Controller
             'unassigned_helpers' => Helper::whereNull('adviser_id')->count(),
             'total_advisers' => Adviser::count(),
             'slots_taken' => Helper::whereNotNull('adviser_id')->count(),
-            'slots_total' => self::ADVISER_CAPACITY * Adviser::count(),
+            'slots_total' => Helper::MAX_HELPERS_PER_ADVISER * Adviser::count(),
         ]);
     }
 }

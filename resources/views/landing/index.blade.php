@@ -38,7 +38,7 @@
         /* ──────────────── COLORS ──────────────── */
         :root {
             --green-primary: #16A34A;
-            --green-dark: #14532D;
+            --green-deep: #14532D;
             --green-light: #DCFCE7;
             --green-mint: #ECFDF5;
             --green-gradient: linear-gradient(135deg, #16A34A, #22C55E);
@@ -136,7 +136,7 @@
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: var(--green-dark);
+            background: var(--green-deep);
         }
 
         /* ──────────────── ANIMATIONS ──────────────── */

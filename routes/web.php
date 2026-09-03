@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Adviser\AdviserCalendarController;
 use App\Http\Controllers\Adviser\AdviserDashboardController;
+use App\Http\Controllers\Adviser\AdviserEmergencyController;
 use App\Http\Controllers\Adviser\AdviserEvaluationController;
 use App\Http\Controllers\Adviser\AdviserHelperController;
 use App\Http\Controllers\Adviser\AdviserNotificationController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Adviser\AdviserReportController;
 use App\Http\Controllers\Adviser\AdviserResourceController;
 use App\Http\Controllers\Adviser\AdviserSessionController;
 use App\Http\Controllers\Adviser\AdviserSettingsController;
+use App\Http\Controllers\Adviser\AdviserTranscriptController;
 use App\Http\Controllers\Auth\HelpSeekerRegisterController;
 use App\Http\Controllers\Auth\OTPController;
 use App\Http\Controllers\Helper\HelperCalendarController;
@@ -21,6 +23,7 @@ use App\Http\Controllers\Helper\HelperNotificationController;
 use App\Http\Controllers\Helper\HelperProfileController;
 use App\Http\Controllers\Helper\HelperReadinessController;
 use App\Http\Controllers\Helper\HelperResourceController;
+use App\Http\Controllers\Helper\HelperSelfHelpController;
 use App\Http\Controllers\Helper\HelperSessionController;
 use App\Http\Controllers\Helper\HelperSettingsController;
 use App\Http\Controllers\LandingPageController;
@@ -31,6 +34,7 @@ use App\Http\Controllers\Moderator\ModeratorManageController;
 use App\Http\Controllers\Moderator\ModeratorNotificationController;
 use App\Http\Controllers\Moderator\ModeratorQueueController;
 use App\Http\Controllers\Moderator\ModeratorReportController;
+use App\Http\Controllers\Moderator\ModeratorScheduleController;
 use App\Http\Controllers\Moderator\ModeratorSessionController;
 use App\Http\Controllers\Moderator\ModeratorSettingsController;
 use App\Http\Controllers\Professional\ProfessionalCaseController;
@@ -40,7 +44,10 @@ use App\Http\Controllers\Professional\ProfessionalReferralController;
 use App\Http\Controllers\Professional\ProfessionalReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\IncidentReportController;
+use App\Http\Controllers\ReferralWorkflowController;
 use App\Http\Controllers\RequestSupportController;
+use App\Http\Controllers\RiskClassificationController;
 use App\Http\Controllers\SeekerDashboardController;
 use App\Http\Controllers\SelfHelpController;
 use App\Http\Controllers\SessionController;
@@ -214,26 +221,28 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/settings/privacy', [SettingsController::class, 'updatePrivacy'])->name('settings.privacy.update');
     Route::patch('/settings/appearance', [SettingsController::class, 'updateAppearance'])->name('settings.appearance.update');
     Route::post('/settings/appearance', [SettingsController::class, 'updateAppearance'])->name('settings.appearance.store');
-    Route::post('/settings/theme', [SettingsController::class, 'updateTheme'])->name('settings.theme');
 });
 
 // =============================================
 // HELPER MODULE ROUTES
 // =============================================
+// Helper routes that can only be accessed once the helper has a valid,
+// current readiness check. Anything gated in here is off-limits to helpers
+// who are not ready.
 Route::middleware(['auth', 'role:helper', 'ensure.helper.profile', 'ensure.helper.readiness'])->prefix('helper')->name('helper.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [HelperDashboardController::class, 'index'])->name('dashboard');
 
-    // Readiness Check
-    Route::get('/readiness', [HelperReadinessController::class, 'index'])->name('readiness');
-    Route::post('/readiness', [HelperReadinessController::class, 'store'])->name('readiness.store');
-    Route::get('/readiness/history', [HelperReadinessController::class, 'history'])->name('readiness.history');
-
     // Assigned Cases
     Route::get('/cases', [HelperCaseController::class, 'index'])->name('cases');
+    Route::get('/sessions', [HelperCaseController::class, 'index'])->name('sessions');
     Route::get('/cases/{id}', [HelperCaseController::class, 'show'])->name('cases.show');
+    Route::get('/session/{id}', [HelperCaseController::class, 'show'])->whereNumber('id')->name('session.view');
     Route::post('/cases/{id}/accept', [HelperCaseController::class, 'accept'])->name('cases.accept');
     Route::post('/cases/{id}/decline', [HelperCaseController::class, 'decline'])->name('cases.decline');
+
+    Route::get('/session/{id}/pre-assessment', [HelperSessionController::class, 'preSessionAssessment'])->name('session.pre-assessment');
+    Route::post('/session/{id}/start', [HelperSessionController::class, 'startSessionFromPreAssessment'])->name('session.start');
 
     // Session Management (Chat / Voice / Notes)
     Route::get('/session/chat', function () {
@@ -248,14 +257,22 @@ Route::middleware(['auth', 'role:helper', 'ensure.helper.profile', 'ensure.helpe
     Route::post('/session/{id}/end', [HelperSessionController::class, 'end'])->name('session.end');
     Route::get('/session/{id}/notes', [HelperSessionController::class, 'notes'])->name('session.notes');
     Route::post('/session/{id}/notes', [HelperSessionController::class, 'storeNotes'])->name('session.notes.store');
+    Route::get('/documentation/{id}', [HelperSessionController::class, 'notes'])->name('documentation');
+    Route::post('/documentation/{id}', [HelperSessionController::class, 'storeNotes'])->name('documentation.submit');
+    Route::get('/reflection/{id}', [HelperSessionController::class, 'notes'])->name('reflection');
+    Route::post('/reflection/{id}', [HelperSessionController::class, 'storeNotes'])->name('reflection.submit');
     Route::post('/session/{id}/emergency', [HelperSessionController::class, 'flagEmergency'])->name('session.emergency');
     Route::post('/session/{id}/referral', [HelperSessionController::class, 'recommendReferral'])->name('session.referral');
+    Route::get('/referral/status/{id}', [HelperSessionController::class, 'referralStatus'])->name('referral.status');
 
     // Calendar
     Route::get('/calendar', [HelperCalendarController::class, 'index'])->name('calendar');
 
     // Competency
     Route::get('/competency', [HelperCompetencyController::class, 'index'])->name('competency');
+    Route::get('/competency/{id}', [HelperCompetencyController::class, 'show'])->name('competency.view');
+    Route::get('/feedback', [HelperCompetencyController::class, 'feedback'])->name('feedback');
+    Route::get('/feedback/{id}', [HelperCompetencyController::class, 'feedbackShow'])->name('feedback.view');
 
     // Resources
     Route::get('/resources', [HelperResourceController::class, 'index'])->name('resources');
@@ -270,10 +287,6 @@ Route::middleware(['auth', 'role:helper', 'ensure.helper.profile', 'ensure.helpe
     Route::get('/profile', [HelperProfileController::class, 'index'])->name('profile');
     Route::put('/profile', [HelperProfileController::class, 'update'])->name('profile.update');
 
-    // Onboarding — first-time helpers with no helper record land here.
-    Route::get('/onboarding', [HelperProfileController::class, 'onboarding'])->name('onboarding');
-    Route::post('/onboarding', [HelperProfileController::class, 'storeOnboarding'])->name('onboarding.store');
-
     // Settings
     Route::get('/settings', [HelperSettingsController::class, 'index'])->name('settings');
     Route::put('/settings', [HelperSettingsController::class, 'update'])->name('settings.update');
@@ -283,6 +296,32 @@ Route::middleware(['auth', 'role:helper', 'ensure.helper.profile', 'ensure.helpe
     Route::get('/chat/{id}', [HelperChatController::class, 'show'])->name('chat.show');
 });
 
+// Helper routes that must be reachable regardless of readiness: the readiness
+// assessment, availability, onboarding, and self-help tools. These come first
+// so a helper who just logged in (and isn't ready) can always reach them.
+Route::middleware(['auth', 'role:helper', 'ensure.helper.profile'])->prefix('helper')->name('helper.')->group(function () {
+    // Availability (documentation-compatible aliases backed by readiness/status)
+    Route::get('/availability', [HelperReadinessController::class, 'index'])->name('availability');
+    Route::post('/availability/update', [HelperReadinessController::class, 'updateAvailability'])->name('availability.update');
+
+    // Readiness Check
+    Route::get('/readiness', [HelperReadinessController::class, 'index'])->name('readiness');
+    Route::get('/readiness/status', [HelperReadinessController::class, 'status'])->name('readiness.status');
+    Route::post('/readiness', [HelperReadinessController::class, 'store'])->name('readiness.store');
+    Route::get('/readiness/history', [HelperReadinessController::class, 'history'])->name('readiness.history');
+
+    // Self-help tools (usable while not ready)
+    Route::get('/self-help', [HelperSelfHelpController::class, 'index'])->name('self-help');
+    Route::get('/self-help/breathing', [HelperSelfHelpController::class, 'breathing'])->name('self-help.breathing');
+    Route::get('/self-help/grounding', [HelperSelfHelpController::class, 'grounding'])->name('self-help.grounding');
+    Route::get('/self-help/journal', [HelperSelfHelpController::class, 'journal'])->name('self-help.journal');
+    Route::post('/self-help/journal', [HelperSelfHelpController::class, 'storeJournal'])->name('self-help.journal.store');
+    Route::get('/self-help/hotlines', [HelperSelfHelpController::class, 'hotlines'])->name('self-help.hotlines');
+
+    // Onboarding — first-time helpers with no helper record land here.
+    Route::get('/onboarding', [HelperProfileController::class, 'onboarding'])->name('onboarding');
+    Route::post('/onboarding', [HelperProfileController::class, 'storeOnboarding'])->name('onboarding.store');
+});
 // =============================================
 // ADVISER MODULE ROUTES
 // =============================================
@@ -310,12 +349,29 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
     // Helper Management
     Route::get('/helpers', [AdviserHelperController::class, 'index'])->name('helpers');
     Route::get('/helpers/export', [AdviserHelperController::class, 'export'])->name('helpers.export');
+    Route::post('/helpers/reassign', [AdviserHelperController::class, 'reassignHelpers'])->name('helpers.reassign');
+    Route::get('/helpers/availability', [AdviserHelperController::class, 'availability'])->name('helpers.availability');
     Route::get('/helper/{id}', [AdviserHelperController::class, 'show'])->name('helper.show');
+    Route::get('/helper/{id}/matching', [AdviserHelperController::class, 'matching'])->name('helper.matching');
+    Route::post('/helper/{id}/competency', [AdviserHelperController::class, 'updateCompetency'])->name('helper.competency.update');
     Route::post('/helper/{id}/assign', [AdviserHelperController::class, 'assign'])->name('helper.assign');
+
+    // Schedule Management
+    Route::get('/schedule', [AdviserHelperController::class, 'manageSchedule'])->name('schedule');
+    Route::post('/schedule/update', [AdviserHelperController::class, 'updateSchedule'])->name('schedule.update');
+
+    // Transcript Review
+    Route::get('/transcripts', [AdviserTranscriptController::class, 'index'])->name('transcripts');
+    Route::post('/transcript/{sessionId}/verify', [AdviserTranscriptController::class, 'verify'])->name('transcript.verify');
 
     // Reports
     Route::get('/reports', [AdviserReportController::class, 'index'])->name('reports');
     Route::get('/reports/export', [AdviserReportController::class, 'export'])->name('reports.export');
+
+    // Emergency Management
+    Route::get('/emergencies', [AdviserEmergencyController::class, 'index'])->name('emergencies');
+    Route::get('/emergencies/{id}', [AdviserEmergencyController::class, 'show'])->name('emergencies.show');
+    Route::post('/emergencies/{id}/resolve', [AdviserEmergencyController::class, 'resolve'])->name('emergencies.resolve');
 
     // Calendar
     Route::get('/calendar', [AdviserCalendarController::class, 'index'])->name('calendar');
@@ -398,6 +454,10 @@ Route::middleware(['auth', 'role:moderator'])->prefix('moderator')->name('modera
     Route::get('/sessions/stats', [ModeratorSessionController::class, 'stats'])->name('sessions.stats');
     Route::get('/sessions/{id}', [ModeratorSessionController::class, 'show'])->name('sessions.show');
 
+    // Schedule Management
+    Route::get('/schedules', [ModeratorScheduleController::class, 'index'])->name('schedules');
+    Route::post('/schedules', [ModeratorScheduleController::class, 'store'])->name('schedules.store');
+
     // Manage (Helpers & Advisers)
     Route::get('/manage', [ModeratorManageController::class, 'index'])->name('manage');
     Route::post('/manage/assign', [ModeratorManageController::class, 'assignToAdviser'])->name('manage.assign');
@@ -439,7 +499,25 @@ Route::middleware(['auth', 'role:moderator'])->prefix('moderator')->name('modera
 // =============================================
 Route::middleware(['auth'])->prefix('api')->group(function () {
     Route::post('/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
+    Route::post('/chat/typing', [ChatController::class, 'typing'])->name('chat.typing');
     Route::get('/chat/messages/{sessionId}', [ChatController::class, 'getMessages'])->name('chat.messages');
+    Route::get('/chat/transcript/{sessionId}', [ChatController::class, 'getTranscript'])->name('chat.transcript');
+    Route::get('/transcript/{sessionId}/download', [ChatController::class, 'downloadTranscript'])->name('api.transcript.download');
+
+    Route::post('/risk/classify', [RiskClassificationController::class, 'classify'])->name('risk.classify');
+    Route::patch('/risk/classification', [RiskClassificationController::class, 'updateRiskClassification'])->name('risk.update');
+
+    Route::post('/referrals', [ReferralWorkflowController::class, 'store'])->name('referrals.store');
+    Route::post('/referrals/{referral}/review', [ReferralWorkflowController::class, 'review'])->name('referrals.review');
+    Route::post('/referrals/{referral}/consent', [ReferralWorkflowController::class, 'consent'])->name('referrals.consent');
+    Route::post('/referrals/{referral}/accept', [ReferralWorkflowController::class, 'accept'])->name('referrals.accept');
+    Route::patch('/referrals/{referral}/outcome', [ReferralWorkflowController::class, 'outcome'])->name('referrals.outcome');
+
+    Route::post('/incidents', [IncidentReportController::class, 'store'])->name('incidents.store');
+    Route::post('/incidents/{incident}/review', [IncidentReportController::class, 'review'])->name('incidents.review');
+    Route::post('/incidents/{incident}/escalate', [IncidentReportController::class, 'escalate'])->name('incidents.escalate');
+    Route::post('/incidents/{incident}/resolve', [IncidentReportController::class, 'resolve'])->name('incidents.resolve');
+    Route::post('/incidents/{incident}/close', [IncidentReportController::class, 'close'])->name('incidents.close');
 });
 
 // =============================================

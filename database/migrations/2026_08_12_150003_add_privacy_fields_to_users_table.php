@@ -29,8 +29,7 @@ return new class extends Migration
             $table->string('session_duration_preference')->default('30')->after('preferred_helper_gender'); // minutes
 
             // Appearance
-            $table->boolean('dark_mode')->default(false)->after('session_duration_preference');
-            $table->string('font_size')->default('medium')->after('dark_mode'); // small, medium, large
+            $table->string('font_size')->default('medium')->after('session_duration_preference'); // small, medium, large
             $table->boolean('high_contrast')->default(false)->after('font_size');
         });
     }
@@ -50,7 +49,6 @@ return new class extends Migration
                 'preferred_communication_mode',
                 'preferred_helper_gender',
                 'session_duration_preference',
-                'dark_mode',
                 'font_size',
                 'high_contrast',
             ]);

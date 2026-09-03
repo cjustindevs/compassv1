@@ -1,28 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    @include('layouts.partials.pwa-meta')
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="user-id" content="{{ auth()->id() }}">
-    <title>COMPASS – Evaluate Helper</title>
+@extends('layouts.app')
 
-    @vite(['resources/js/app.js', 'resources/js/adviser-notifications.js'])
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+@section('title', 'COMPASS – Evaluate Helper')
 
-    <style>
+@push('styles')
+<style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #F8FBF9; }
-
-        .main-content {
-            margin-left: 260px;
-            max-width: 900px;
-            padding: 24px 32px 80px;
-            min-height: 100vh;
-        }
 
         .form-card {
             background: white;
@@ -141,36 +124,23 @@
         .risk-badge.emergency { background: #fee2e2; color: #991b1b; }
 
         @media (max-width: 768px) {
-            .main-content { padding: 16px 16px 100px; }
             .form-card { padding: 20px 16px; border-radius: 16px; }
             .btn-primary, .btn-outline { padding: 12px 24px; font-size: 14px; width: 100%; justify-content: center; }
             .rating-btn { width: 38px; height: 38px; font-size: 14px; }
         }
         .flash-success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
         .flash-error { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
-
-        @media (max-width: 768px) {
-            .main-content { margin-left: 0; padding: 16px 16px 100px; }
-        }
         @media (max-width: 480px) {
             .form-card { padding: 16px 12px; }
             .rating-btn { width: 34px; height: 34px; font-size: 13px; }
         }
     </style>
-</head>
-<body>
+@endpush
 
-    @include('layouts.partials.adviser-sidebar')
-
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <main class="main-content">
-
+@section('content')
+<div class="adviser-page-content">
         <!-- Top Bar -->
         <div class="flex items-center gap-4 mb-6">
-            <button class="hamburger" id="hamburgerBtn">
-                <i class="fas fa-bars"></i>
-            </button>
             <div>
                 <h1 class="text-xl md:text-2xl font-bold text-gray-800">Evaluate Helper</h1>
                 <p class="text-sm text-gray-500 hidden sm:block">
@@ -366,9 +336,7 @@
             </form>
 
         </div>
-
-    </main>
-
+</div>
     <script>
         let ratings = {};
 
@@ -415,72 +383,10 @@
             else { level = 'Unsatisfactory'; className = 'competency-level unsatisfactory'; }
             return `<span class="${className}">${level}</span>`;
         }
-    </script>
-
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav" id="bottomNav">
-        <a href="{{ route('adviser.dashboard') }}" class="nav-item"><i class="fas fa-th-large"></i><span>Dashboard</span></a>
-        <a href="{{ route('adviser.evaluations') }}" class="nav-item active"><i class="fas fa-clipboard-list"></i><span>Evaluations</span></a>
-        <a href="{{ route('adviser.referrals') }}" class="nav-item"><i class="fas fa-arrow-right"></i><span>Referrals</span></a>
-        <a href="{{ route('adviser.helpers') }}" class="nav-item"><i class="fas fa-users"></i><span>Helpers</span></a>
-        <a href="{{ route('adviser.notifications') }}" class="nav-item"><i class="fas fa-bell"></i><span>Alerts</span></a>
-    </nav>
-
-    <style>
-        .bottom-nav {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(255,255,255,0.94);
-            backdrop-filter: blur(16px);
-            border-top: 1px solid #E5E7EB;
-            padding: 6px 0 env(safe-area-inset-bottom, 6px);
-            z-index: 200;
-            justify-content: space-around;
-        }
-        .bottom-nav .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: #9CA3AF;
-            text-decoration: none;
-            font-size: 10px;
-            font-weight: 500;
-            padding: 4px 12px;
-        }
-        .bottom-nav .nav-item.active { color: #04A052; }
-        .bottom-nav .nav-item.active i { color: #04A052; }
-        @media (max-width: 768px) { .bottom-nav { display: flex; } }
     </style>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            const hamburger = document.getElementById('hamburgerBtn');
-
-            function toggleSidebar() {
-                sidebar.classList.toggle('closed');
-                overlay.classList.toggle('active');
-            }
-
-            function closeSidebar() {
-                sidebar.classList.add('closed');
-                overlay.classList.remove('active');
-            }
-
-            hamburger.addEventListener('click', toggleSidebar);
-            overlay.addEventListener('click', closeSidebar);
-
-            window.addEventListener('resize', function () {
-                if (window.innerWidth > 768) closeSidebar();
-            });
-        });
+});
     </script>
-
-    @include('layouts.partials.pwa-banner')
-
-</body>
-</html>
+@endsection

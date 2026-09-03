@@ -26,17 +26,6 @@
 
         body { background: var(--page-bg); font-family: 'Inter', sans-serif; }
 
-        body.dark-mode {
-            --page-bg: #0F1D17; --card-bg: #16261E;
-            --gray-100: #1B2E24; --gray-200: #24402F; --gray-300: #3A5A45;
-        }
-        body.dark-mode .resource-card, body.dark-mode .card,
-        body.dark-mode .progress-card, body.dark-mode .quick-exercise,
-        body.dark-mode .category-card, body.dark-mode .settings-card {
-            background: var(--card-bg); border-color: var(--gray-200);
-        }
-        body.dark-mode body { background: var(--page-bg); }
-
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: var(--gray-100); }
         ::-webkit-scrollbar-thumb { background: var(--green-500); border-radius: 4px; }

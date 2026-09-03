@@ -3,7 +3,6 @@
 use App\Http\Middleware\EnsureUserRole;
 use App\Http\Middleware\EnsureHelperProfile;
 use App\Http\Middleware\EnsureHelperReadiness;
-use App\Http\Middleware\ApplyTheme;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,10 +15,6 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->appendToGroup('web', [
-            ApplyTheme::class,
-        ]);
-
         $middleware->alias([
             'role' => EnsureUserRole::class,
             'ensure.helper.profile' => EnsureHelperProfile::class,

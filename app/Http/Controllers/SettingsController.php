@@ -60,8 +60,6 @@ class SettingsController extends Controller
         return view('settings.appearance', [
             'user' => Auth::user(),
             'fontSizes' => static::FONT_SIZES,
-            'currentTheme' => Auth::user()->theme_preference
-                ?? (Auth::user()->dark_mode ? 'dark' : 'light'),
         ]);
     }
 
@@ -155,20 +153,16 @@ class SettingsController extends Controller
     }
 
     /**
-     * Update appearance settings (theme preference, contrast, motion, font).
+     * Update appearance settings (contrast, motion, font).
      * Accepts both a full form POST and an AJAX JSON payload.
      */
     public function updateAppearance(Request $request): RedirectResponse
     {
-        $theme = $request->input('theme');
         $rules = [
             'high_contrast' => 'nullable|boolean',
             'reduced_motion' => 'nullable|boolean',
             'font_size' => ['nullable', 'string', 'in:small,medium,large'],
         ];
-        if ($theme !== null) {
-            $rules['theme'] = ['required', 'string', 'in:light,dark,system'];
-        }
         $validated = $request->validate($rules);
 
         $update = [
@@ -177,11 +171,6 @@ class SettingsController extends Controller
             'font_size' => $validated['font_size'] ?? $request->user()->font_size ?? 'medium',
         ];
 
-        if ($theme !== null) {
-            $update['theme_preference'] = $theme;
-            $update['dark_mode'] = $theme === 'dark';
-        }
-
         $request->user()->update($update);
 
         if ($request->expectsJson() || $request->isJson()) {
@@ -189,23 +178,6 @@ class SettingsController extends Controller
         }
 
         return back()->with('success', 'Appearance updated.');
-    }
-
-    /**
-     * AJAX-only endpoint for the quick Light / Dark / System switch.
-     */
-    public function updateTheme(Request $request)
-    {
-        $validated = $request->validate([
-            'theme' => ['required', 'string', 'in:light,dark,system'],
-        ]);
-
-        $request->user()->update([
-            'theme_preference' => $validated['theme'],
-            'dark_mode' => $validated['theme'] === 'dark',
-        ]);
-
-        return response()->json(['success' => true, 'theme' => $validated['theme']]);
     }
 
     /**

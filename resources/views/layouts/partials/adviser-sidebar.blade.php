@@ -1,11 +1,12 @@
 @php
+    $adviserHelperIds = \App\Models\Helper::where('adviser_id', optional(auth()->user()->adviser)->id)->pluck('id');
     $adviserBadges = [
-        'evalBadge' => \App\Models\SessionReport::where('adviser_reviewed', false)->count(),
-        'referralBadge' => \App\Models\Referral::where('status', 'pending_adviser')->count(),
+        'evalBadge' => \App\Models\SessionReport::where('adviser_reviewed', false)->whereHas('session', fn ($query) => $query->whereIn('helper_id', $adviserHelperIds))->count(),
+        'referralBadge' => \App\Models\Referral::where('status', 'pending_adviser')->whereIn('helper_id', $adviserHelperIds)->count(),
         'notifBadge' => optional(auth()->user())->unreadNotifications()->count() ?? 0,
-        'totalHelpers' => \App\Models\Helper::count(),
-        'activeSessions' => \App\Models\Session::where('session_status', 'active')->count(),
-        'pendingReviews' => \App\Models\SessionReport::where('adviser_reviewed', false)->count(),
+        'totalHelpers' => $adviserHelperIds->count(),
+        'activeSessions' => \App\Models\Session::whereIn('helper_id', $adviserHelperIds)->where('session_status', 'active')->count(),
+        'pendingReviews' => \App\Models\SessionReport::where('adviser_reviewed', false)->whereHas('session', fn ($query) => $query->whereIn('helper_id', $adviserHelperIds))->count(),
     ];
     $user = auth()->user();
     $avatarText = optional($user->adviser)->first_name
@@ -13,6 +14,8 @@
         : strtoupper(substr($user->name, 0, 2));
     $displayName = optional($user->adviser)->full_name ?? $user->name;
 @endphp
+
+@include('layouts.partials.sidebar-critical')
 
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
@@ -45,6 +48,9 @@
                 <span class="nav-badge" id="referralBadge">{{ $adviserBadges['referralBadge'] }}</span>
             @endif
         </a>
+        <a href="{{ route('adviser.emergencies') }}" class="nav-item {{ request()->routeIs('adviser.emergencies*') ? 'active' : '' }}">
+            <i class="fas fa-exclamation-triangle"></i><span class="nav-text">Emergencies</span>
+        </a>
 
         <div class="nav-section">Records</div>
         <a href="{{ route('adviser.reports') }}" class="nav-item {{ request()->routeIs('adviser.reports*') ? 'active' : '' }}">
@@ -52,6 +58,12 @@
         </a>
         <a href="{{ route('adviser.calendar') }}" class="nav-item {{ request()->routeIs('adviser.calendar*') ? 'active' : '' }}">
             <i class="fas fa-calendar-alt"></i><span class="nav-text">Calendar</span>
+        </a>
+        <a href="{{ route('adviser.schedule') }}" class="nav-item {{ request()->routeIs('adviser.schedule*') ? 'active' : '' }}">
+            <i class="fas fa-clock"></i><span class="nav-text">Helper Schedules</span>
+        </a>
+        <a href="{{ route('adviser.transcripts') }}" class="nav-item {{ request()->routeIs('adviser.transcripts*', 'adviser.transcript*') ? 'active' : '' }}">
+            <i class="fas fa-file-alt"></i><span class="nav-text">Transcripts</span>
         </a>
         <a href="{{ route('adviser.resources') }}" class="nav-item {{ request()->routeIs('adviser.resources*') ? 'active' : '' }}">
             <i class="fas fa-book"></i><span class="nav-text">Resources</span>
@@ -103,5 +115,3 @@
         </form>
     </div>
 </aside>
-
-@include('components.confirmation-modal')

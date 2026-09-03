@@ -76,10 +76,15 @@
                 <span class="text-xs text-green-600 font-medium">🟢 Live</span>
             </div>
             <div class="active-session-card">
-                <div class="session-info">
-                    <div class="alias">{{ $activeSessionData['alias'] }}</div>
-                    <div class="mode">{{ $activeSessionData['mode'] }} · {{ $activeSessionData['elapsed'] }} elapsed</div>
-                </div>
+                    <div class="session-info">
+                        <div class="alias">{{ $activeSessionData['alias'] }}</div>
+                        <div class="mode">{{ $activeSessionData['mode'] }} · {{ $activeSessionData['elapsed'] }} elapsed</div>
+                        @if(($activeSessionData['elapsed_minutes'] ?? 0) >= 85)
+                            <div class="text-xs {{ $activeSessionData['elapsed_minutes'] >= 90 ? 'text-red-600' : 'text-yellow-600' }} mt-1">
+                                {{ $activeSessionData['elapsed_minutes'] >= 90 ? '90-minute limit exceeded. End and document this session.' : 'Approaching the 90-minute session limit.' }}
+                            </div>
+                        @endif
+                    </div>
                 <a href="{{ route('helper.session.chat', ['id' => $activeSessionData['id']]) }}" class="btn-resume">
                     <i class="fas fa-play mr-1"></i> Resume chat
                 </a>

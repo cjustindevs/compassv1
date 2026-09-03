@@ -140,7 +140,7 @@
             <a href="{{ route('settings.appearance') }}" class="tab-link active"><i class="fas fa-palette"></i>Appearance</a>
         </div>
 
-        @include('partials.theme-switcher')
+        @include('partials.light-mode-notice')
 
     </main>
 

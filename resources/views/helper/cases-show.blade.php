@@ -136,6 +136,7 @@
                               data-confirm="Decline case?"
                               data-confirm-message="This case will be returned to the queue and reassigned."
                               data-confirm-text="Decline"
+                              data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                             @csrf
                             <button type="submit" class="btn btn-outline-danger btn-block"><i class="fas fa-times"></i> Decline Case</button>
                         </form>

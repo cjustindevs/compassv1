@@ -17,9 +17,13 @@ class QueueRequest extends Model
         'request_status',
         'priority_level',
         'preferred_session_type',
+        'voice_consent',
         'assigned_helper_id',
         'queue_position',
         'estimated_wait',
+        'aging_priority_increases',
+        'last_priority_increase_at',
+        'max_wait_reached',
         'matched_date',
     ];
 
@@ -27,6 +31,9 @@ class QueueRequest extends Model
         'request_date' => 'datetime',
         'scheduled_date' => 'datetime',
         'matched_date' => 'datetime',
+        'last_priority_increase_at' => 'datetime',
+        'max_wait_reached' => 'boolean',
+        'voice_consent' => 'boolean',
     ];
 
     public function seeker(): BelongsTo

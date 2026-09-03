@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Helper;
 
 use App\Http\Controllers\Controller;
 use App\Models\Helper;
+use App\Models\AdviserFeedback;
+use App\Models\HelpSeekerEvaluation;
 use App\Models\HelperCompetencyHistory;
 use Illuminate\View\View;
 
@@ -53,5 +55,44 @@ class HelperCompetencyController extends Controller
                 ];
             }),
         ]);
+    }
+
+    public function show(int $id): View
+    {
+        $helper = Helper::where('user_account_id', auth()->id())->firstOrFail();
+
+        $evaluation = HelperCompetencyHistory::with('adviser')
+            ->where('helper_id', $helper->id)
+            ->findOrFail($id);
+
+        return view('helper.competency-detail', compact('evaluation'));
+    }
+
+    public function feedback(): View
+    {
+        $helper = Helper::where('user_account_id', auth()->id())->firstOrFail();
+
+        $adviserFeedback = AdviserFeedback::with(['adviser', 'report.session'])
+            ->whereHas('report.session', fn ($query) => $query->where('helper_id', $helper->id))
+            ->latest('created_date')
+            ->get();
+
+        $seekerFeedback = HelpSeekerEvaluation::with('session.seeker')
+            ->whereHas('session', fn ($query) => $query->where('helper_id', $helper->id))
+            ->latest()
+            ->get();
+
+        return view('helper.feedback', compact('helper', 'adviserFeedback', 'seekerFeedback'));
+    }
+
+    public function feedbackShow(int $id): View
+    {
+        $helper = Helper::where('user_account_id', auth()->id())->firstOrFail();
+
+        $feedback = AdviserFeedback::with(['adviser', 'report.session'])
+            ->whereHas('report.session', fn ($query) => $query->where('helper_id', $helper->id))
+            ->findOrFail($id);
+
+        return view('helper.feedback-detail', compact('feedback'));
     }
 }

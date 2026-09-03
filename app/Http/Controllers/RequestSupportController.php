@@ -11,11 +11,22 @@ use App\Models\Notification;
 use App\Models\QueueRequest;
 use App\Models\Session;
 use App\Models\User;
+use App\Models\ScreeningResponse;
+use App\Services\EmergencyEscalationService;
+use App\Services\RiskClassificationService;
+use App\Traits\BroadcastsSafely;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class RequestSupportController extends Controller
 {
+    use BroadcastsSafely;
+
+    public function __construct(
+        private RiskClassificationService $riskClassification,
+        private EmergencyEscalationService $emergencyEscalation,
+    ) {}
+
     /**
      * Show the screening form (Step 1).
      * If the seeker already has an in-progress request in the database
@@ -57,7 +68,8 @@ class RequestSupportController extends Controller
             return back()->withErrors(['concern_id' => 'Your help seeker profile could not be found. Please complete your registration first.']);
         }
 
-        $riskLevel = $this->calculateRisk($validated);
+        $classification = $this->calculateRisk($validated);
+        $riskLevel = $classification['risk_level'];
 
         // Persist the request in the counseling_sessions table
         $session = Session::create([
@@ -69,6 +81,27 @@ class RequestSupportController extends Controller
             'completion_status' => 'pending',
             'created_date' => now(),
         ]);
+
+        ScreeningResponse::create([
+            'seeker_id' => $helpSeeker->id,
+            'session_id' => $session->id,
+            'responses' => $this->normalizeScreeningResponses($validated),
+            'risk_level' => $riskLevel,
+            'priority' => $classification['priority'],
+            'action' => $classification['action'],
+            'reason' => $classification['reason'],
+            'classified_at' => now(),
+            'classified_by' => 'system',
+        ]);
+
+        $helpSeeker->update([
+            'current_risk_level' => $riskLevel,
+            'risk_last_updated' => now(),
+        ]);
+
+        if ($riskLevel === RiskClassificationService::RISK_EMERGENCY) {
+            $this->emergencyEscalation->escalateEmergency($session, $helpSeeker, ['reason' => $classification['reason']]);
+        }
 
         session([
             'screening_data' => $validated,
@@ -107,9 +140,10 @@ class RequestSupportController extends Controller
     public function processPreferences(Request $request)
     {
         $validated = $request->validate([
-            'support_mode' => 'required|in:chat,voice,both',
+            'support_mode' => 'required|in:chat,voice',
             'preferred_language' => 'required|string|max:50',
-            'additional_notes' => 'nullable|string|max:500'
+            'additional_notes' => 'nullable|string|max:500',
+            'voice_consent' => 'exclude_unless:support_mode,voice|required|accepted',
         ]);
 
         $session = $this->currentPendingSession();
@@ -120,9 +154,19 @@ class RequestSupportController extends Controller
         }
 
         // Update the counseling session with the chosen support mode
+        $voiceConsent = $validated['support_mode'] === 'voice' && $request->boolean('voice_consent');
+
         $session->update([
-            'session_type' => $validated['support_mode'] === 'voice' ? 'voice' : 'chat',
+            'session_type' => $validated['support_mode'],
             'session_status' => Session::STATUS_PREFERENCES_SET,
+            'concern_category' => $session->concern?->concern_name,
+            'voice_recording_consent' => $voiceConsent,
+            'voice_consent_obtained' => $voiceConsent,
+        ]);
+
+        Auth::user()->update([
+            'preferred_language' => $validated['preferred_language'],
+            'preferred_communication_mode' => $validated['support_mode'],
         ]);
 
         // Place the seeker in the queue (one active waiting request per seeker)
@@ -130,18 +174,23 @@ class RequestSupportController extends Controller
             ->where('request_status', 'waiting')
             ->delete();
 
+        $queuePosition = $this->nextQueuePosition($session->risk_level);
+
         QueueRequest::create([
             'seeker_id' => $session->seeker_id,
             'request_date' => now(),
             'request_status' => 'waiting',
-            'priority_level' => session('risk_level', 'low'),
-            'preferred_session_type' => $validated['support_mode'] === 'voice' ? 'voice' : 'chat',
+            'priority_level' => $session->risk_level,
+            'preferred_session_type' => $validated['support_mode'],
+            'voice_consent' => $voiceConsent,
+            'queue_position' => $queuePosition,
+            'estimated_wait' => $this->estimatedWaitMinutes($queuePosition, $session->risk_level),
         ]);
 
         // Let every moderator know the queue changed so their live badge/stats refresh.
         foreach (User::where('role', 'moderator')->pluck('id') as $moderatorUserId) {
             try {
-                QueueUpdated::dispatch($moderatorUserId);
+                $this->broadcastSafely(new QueueUpdated($moderatorUserId));
             } catch (\Throwable $e) {
                 report($e);
             }
@@ -169,6 +218,10 @@ class RequestSupportController extends Controller
 
         session(['session_id' => $session->id]);
         $session->load('helper');
+        $currentQueueRequest = QueueRequest::where('seeker_id', $session->seeker_id)
+            ->whereIn('request_status', ['waiting', 'assigned'])
+            ->latest('request_date')
+            ->first();
 
         // If a helper was already assigned (e.g. page refresh), keep showing them
         $availableHelper = $session->helper;
@@ -182,7 +235,13 @@ class RequestSupportController extends Controller
                     'helper_id' => $availableHelper->id,
                     'session_status' => 'helper_assigned',
                     'scheduled_start' => now(),
+                    'session_type' => $currentQueueRequest?->preferred_session_type ?? $session->session_type,
+                    'match_method' => 'automatic',
+                    'matched_by' => 'system',
+                    'matching_details' => $availableHelper->matching_details,
+                    'pre_session_brief_expires_at' => now()->addMinutes(Helper::PRE_SESSION_BRIEF_MINUTES),
                 ]);
+                $availableHelper->incrementShiftSessions();
                 $availableHelper->update(['status' => 'busy']);
 
                 QueueRequest::where('seeker_id', $session->seeker_id)
@@ -190,8 +249,15 @@ class RequestSupportController extends Controller
                     ->update([
                         'request_status' => 'assigned',
                         'assigned_helper_id' => $availableHelper->id,
+                        'queue_position' => null,
+                        'estimated_wait' => null,
                         'matched_date' => now(),
                     ]);
+
+                $currentQueueRequest = QueueRequest::where('seeker_id', $session->seeker_id)
+                    ->where('request_status', 'assigned')
+                    ->latest('matched_date')
+                    ->first();
 
                 // Notify the helper about the new assignment
                 Notification::create([
@@ -205,11 +271,7 @@ class RequestSupportController extends Controller
 
                 // Real-time push to the helper's browser (badge + toast).
                 // Never let a brief websocket outage break the seeker flow.
-                try {
-                    broadcast(new NewCaseAssigned($session, $availableHelper->user_account_id));
-                } catch (\Throwable $e) {
-                    report($e);
-                }
+                $this->broadcastSafely(new NewCaseAssigned($session, $availableHelper->user_account_id));
             } else {
                 // No helper online — keep the session waiting in the queue
                 $session->update(['session_status' => 'waiting']);
@@ -225,7 +287,7 @@ class RequestSupportController extends Controller
             ->filter(fn (Helper $h) => $h->active_sessions_count < (int) $h->max_concurrent_sessions)
             ->count();
 
-        return view('request.matching', compact('availableHelper', 'resources', 'session', 'availableHelperCount'));
+        return view('request.matching', compact('availableHelper', 'resources', 'session', 'availableHelperCount', 'currentQueueRequest'));
     }
 
     /**
@@ -240,10 +302,15 @@ class RequestSupportController extends Controller
                 ->where('status', 'busy')
                 ->update(['status' => 'available']);
 
+            $session->helper?->decrementShiftSessions();
+
+            $queuePosition = $this->nextQueuePosition($session->risk_level);
+
             $session->update([
                 'helper_id' => null,
                 'session_status' => 'waiting',
                 'scheduled_start' => null,
+                'pre_session_brief_expires_at' => null,
             ]);
 
             QueueRequest::where('seeker_id', $session->seeker_id)
@@ -251,6 +318,8 @@ class RequestSupportController extends Controller
                 ->update([
                     'request_status' => 'waiting',
                     'assigned_helper_id' => null,
+                    'queue_position' => $queuePosition,
+                    'estimated_wait' => $this->estimatedWaitMinutes($queuePosition, $session->risk_level),
                     'matched_date' => null,
                 ]);
         }
@@ -264,7 +333,7 @@ class RequestSupportController extends Controller
      */
     public function voiceConsent()
     {
-        $session = $this->currentPendingSession();
+        $session = $this->currentRequestSession();
 
         if (!$session) {
             return redirect()->route('request.screening');
@@ -291,7 +360,11 @@ class RequestSupportController extends Controller
      */
     public function processVoiceConsent(Request $request)
     {
-        $this->startSession(['voice_recording_consent' => true, 'session_type' => 'voice']);
+        $this->startSession([
+            'voice_recording_consent' => true,
+            'voice_consent_obtained' => true,
+            'session_type' => 'voice',
+        ]);
 
         return redirect()->route('session.voice');
     }
@@ -301,7 +374,11 @@ class RequestSupportController extends Controller
      */
     public function declineVoiceConsent()
     {
-        $this->startSession(['voice_recording_consent' => false, 'session_type' => 'chat']);
+        $this->startSession([
+            'voice_recording_consent' => false,
+            'voice_consent_obtained' => false,
+            'session_type' => 'chat',
+        ]);
 
         return redirect()->route('session.chat');
     }
@@ -311,7 +388,7 @@ class RequestSupportController extends Controller
      */
     private function startSession(array $attributes = []): void
     {
-        $session = $this->currentPendingSession();
+        $session = $this->currentRequestSession();
 
         if (!$session || !$session->helper) {
             return;
@@ -331,14 +408,22 @@ class RequestSupportController extends Controller
                 'session_id' => $session->id,
                 'sender' => 'helper',
                 'message_text' => 'Hi there! Thank you for reaching out. I am here to listen — how are you feeling today?',
+                'transcript' => 'Hi there! Thank you for reaching out. I am here to listen — how are you feeling today?',
+                'is_transcript' => true,
+                'transcript_generated_at' => now(),
                 'sent_datetime' => now(),
             ]);
         }
 
         session([
             'helper_id' => $session->helper_id,
-            'voice_consent' => $attributes['voice_recording_consent'] ?? false,
+            'voice_consent' => $attributes['voice_consent_obtained'] ?? false,
         ]);
+
+        QueueRequest::where('seeker_id', $session->seeker_id)
+            ->whereIn('request_status', ['waiting', 'assigned'])
+            ->latest('request_date')
+            ->first()?->update(['voice_consent' => (bool) ($attributes['voice_consent_obtained'] ?? false)]);
     }
 
     /**
@@ -369,6 +454,25 @@ class RequestSupportController extends Controller
                 'link' => route('selfhelp')
             ]
         ];
+    }
+
+    private function nextQueuePosition(?string $riskLevel): int
+    {
+        return QueueRequest::where('request_status', 'waiting')
+            ->where('priority_level', $riskLevel ?: RiskClassificationService::RISK_LOW)
+            ->count() + 1;
+    }
+
+    private function estimatedWaitMinutes(int $queuePosition, ?string $riskLevel): int
+    {
+        $baseMinutes = match ($riskLevel) {
+            RiskClassificationService::RISK_EMERGENCY => 1,
+            RiskClassificationService::RISK_HIGH => 3,
+            RiskClassificationService::RISK_MODERATE => 5,
+            default => 8,
+        };
+
+        return max($baseMinutes, $baseMinutes + (($queuePosition - 1) * 5));
     }
 
     /**
@@ -444,12 +548,26 @@ class RequestSupportController extends Controller
     /**
      * Calculate risk classification based on answers
      */
-    private function calculateRisk($data)
+    private function calculateRisk($data): array
     {
-        if ($data['safety_check'] === 'yes') {
-            return 'emergency';
-        }
+        return $this->riskClassification->classifyRisk($this->normalizeScreeningResponses($data));
+    }
 
-        return 'low';
+    private function normalizeScreeningResponses(array $data): array
+    {
+        $safetyConcern = ($data['safety_check'] ?? 'no') === 'yes';
+
+        return [
+            'current_suicide_plan' => $safetyConcern,
+            'suicidal_thoughts' => $safetyConcern,
+            'severe_distress' => false,
+            'recurring_distress' => false,
+            'difficulty_coping' => false,
+            'access_to_means' => false,
+            'ongoing_self_harm' => false,
+            'recent_attempt_needs_assistance' => false,
+            'immediate_threat_to_life' => $safetyConcern,
+            'immediate_threat_to_others' => false,
+        ];
     }
 }

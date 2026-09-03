@@ -84,6 +84,7 @@ class HelperModuleSeeder extends Seeder
                 'emotionally_ready' => true,
                 'willing_to_listen' => true,
                 'stress_level' => 'low',
+                'valid_until' => now()->addHours(4),
             ]
         );
 

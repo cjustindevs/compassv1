@@ -31,6 +31,9 @@ class ModuleSmokeTest extends TestCase
             'adviser.helpers',
             'adviser.reports',
             'adviser.calendar',
+            'adviser.schedule',
+            'adviser.transcripts',
+            'adviser.emergencies',
             'adviser.resources',
             'adviser.notifications',
             'adviser.settings',
@@ -38,6 +41,33 @@ class ModuleSmokeTest extends TestCase
 
         foreach ($routes as $route) {
             $this->actingAs($user)->get(route($route))->assertOk();
+        }
+    }
+
+    public function test_adviser_views_render_integrated_sidebar_navigation(): void
+    {
+        $user = User::where('role', 'adviser')->firstOrFail();
+
+        foreach ([
+            'adviser.dashboard',
+            'adviser.evaluations',
+            'adviser.referrals',
+            'adviser.helpers',
+            'adviser.reports',
+            'adviser.calendar',
+            'adviser.schedule',
+            'adviser.transcripts',
+            'adviser.emergencies',
+            'adviser.resources',
+            'adviser.notifications',
+            'adviser.settings',
+        ] as $route) {
+            $this->actingAs($user)->get(route($route))
+                ->assertOk()
+                ->assertSee('Manage Helpers')
+                ->assertSee('Helper Schedules')
+                ->assertSee('Transcripts')
+                ->assertSee('Emergencies');
         }
     }
 

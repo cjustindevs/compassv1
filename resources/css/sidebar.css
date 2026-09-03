@@ -125,10 +125,7 @@
 }
 .sidebar .brand-logo--light { display: block; }
 .sidebar .brand-logo--dark  { display: none; }
-.dark-mode .sidebar .brand-logo--light,
-html[data-theme="dark"] .sidebar .brand-logo--light { display: none; }
-.dark-mode .sidebar .brand-logo--dark,
-html[data-theme="dark"] .sidebar .brand-logo--dark { display: block; }
+.sidebar .brand-logo--dark { display: none; }
 .sidebar-toggle {
     position: relative;
     width: 28px;

@@ -16,7 +16,7 @@
             @vite(['resources/css/app.css', 'resources/js/app.js'])
         @endif
     </head>
-    <body class="font-sans antialiased bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
+    <body class="font-sans antialiased bg-gray-50 text-gray-900 min-h-screen flex flex-col">
         <header class="w-full max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
             <a href="/" class="inline-flex">
                 <img src="{{ asset('images/compass/logo-wordmark.png') }}" alt="COMPASS"
@@ -30,7 +30,7 @@
                             Dashboard
                         </a>
                     @else
-                        <a href="{{ route('login') }}" class="px-4 py-2 rounded-lg text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 text-sm font-medium">
+                        <a href="{{ route('login') }}" class="px-4 py-2 rounded-lg text-emerald-700 hover:bg-emerald-50 text-sm font-medium">
                             Log in
                         </a>
                         @if (Route::has('register'))
@@ -50,10 +50,10 @@
                          class="w-28 h-28 md:w-32 md:h-32 rounded-3xl shadow-xl shadow-green-500/20">
                 </div>
                 <h1 class="text-4xl font-extrabold tracking-tight">Welcome to COMPASS</h1>
-                <p class="mt-3 text-lg text-gray-600 dark:text-gray-400">
+                <p class="mt-3 text-lg text-gray-600">
                     {{ \App\Helpers\BrandingHelper::tagline() }}
                 </p>
-                <p class="mt-2 text-sm text-gray-500 dark:text-gray-500">
+                <p class="mt-2 text-sm text-gray-500">
                     {{ \App\Helpers\BrandingHelper::project() }} &middot; {{ \App\Helpers\BrandingHelper::institution() }}
                 </p>
 
@@ -73,7 +73,7 @@
             </div>
         </main>
 
-        <footer class="w-full max-w-5xl mx-auto px-6 py-6 text-center text-xs text-gray-400 dark:text-gray-600">
+        <footer class="w-full max-w-5xl mx-auto px-6 py-6 text-center text-xs text-gray-400">
             &copy; {{ date('Y') }} {{ \App\Helpers\BrandingHelper::institution() }}. All rights reserved.
         </footer>
 

@@ -249,7 +249,7 @@
         <!-- Appearance -->
         <div class="card mb-6 tab-panel" id="panel-appearance" style="display: none;">
             <h3>Appearance</h3>
-            @include('partials.theme-switcher')
+            @include('partials.light-mode-notice')
         </div>
 
         <!-- Notifications -->

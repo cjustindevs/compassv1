@@ -4,9 +4,7 @@
 //    • desktop collapse (persisted via localStorage)
 //    • mobile drawer (hamburger / overlay / swipe-free)
 //    • close-on-navigate on mobile
-//  Loads its own stylesheet so the sidebar is consistent everywhere.
 // ════════════════════════════════════════════════════════════════
-import '../css/sidebar.css';
 
 const STORAGE_KEY = 'sidebarCollapsed';
 const MOBILE_BREAKPOINT = 768;
@@ -22,6 +20,7 @@ class SidebarController {
         if (!this.sidebar) return;
 
         this.applyCollapsed();
+        document.documentElement.classList.remove('sidebar-collapsed-preload');
         this.bind();
     }
 

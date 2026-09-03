@@ -461,8 +461,8 @@
                     <p class="text-gray-500 mt-2">A helper accepted your request. Your session is now active.</p>
 
                     <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-                        <a href="{{ route($session->session_type === 'voice' ? 'session.voice' : 'session.chat') }}" class="btn-primary">
-                            <i class="fas fa-comment mr-2"></i> Go to Chat
+                        <a href="{{ route($session->session_type === 'voice' && ! $session->voice_consent_obtained ? 'request.voice-consent' : ($session->session_type === 'voice' ? 'session.voice' : 'session.chat')) }}" class="btn-primary">
+                            <i class="fas fa-comment mr-2"></i> {{ $session->session_type === 'voice' ? 'Continue to Voice' : 'Go to Chat' }}
                         </a>
                         <a href="{{ route('seeker.dashboard') }}" class="btn-outline w-full sm:w-auto">
                             <i class="fas fa-home mr-2"></i> Dashboard
@@ -530,7 +530,7 @@
                         <form method="POST" action="{{ route('request.matching.decline') }}"
                               data-confirm="Decline helper?"
                               data-confirm-message="You will be placed back in the queue."
-                              data-confirm-text="Decline"
+                              data-confirm-text="Decline">
                             @csrf
                             <button type="submit" class="btn-outline w-full">
                                 <i class="fas fa-times mr-2"></i> Decline &amp; Stay in Queue
@@ -552,6 +552,11 @@
 
                     <div class="mt-4 text-sm text-gray-500">
                         <p>📋 Request {{ $session->reference_number }} · Submitted {{ $session->created_at?->diffForHumans() }}</p>
+                        @if($currentQueueRequest?->queue_position)
+                            <p class="mt-1 text-gray-600">
+                                Queue position: #{{ $currentQueueRequest->queue_position }} · Estimated wait: {{ $currentQueueRequest->estimated_wait ?? 8 }} min
+                            </p>
+                        @endif
                         <p class="mt-1 text-green-600">
                             🟢 {{ $availableHelperCount }} {{ $availableHelperCount === 1 ? 'helper is' : 'helpers are' }} online now
                         </p>

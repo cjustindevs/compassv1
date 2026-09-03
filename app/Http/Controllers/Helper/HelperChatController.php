@@ -6,11 +6,14 @@ use App\Events\MessageSent;
 use App\Http\Controllers\Controller;
 use App\Models\Message;
 use App\Models\Session;
+use App\Services\ChatTranscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class HelperChatController extends Controller
 {
+    public function __construct(protected ChatTranscriptionService $transcriptionService) {}
+
     /**
      * Live Chat entry point — jump to the most recent session, or show a list.
      */
@@ -145,6 +148,9 @@ class HelperChatController extends Controller
             'sender_id' => Auth::id(),
             'sender' => 'helper',
             'message_text' => trim($request->message),
+            'transcript' => trim($request->message),
+            'is_transcript' => true,
+            'transcript_generated_at' => now(),
             'sent_datetime' => now(),
             'is_reviewed' => false,
         ]);

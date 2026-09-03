@@ -67,13 +67,11 @@ class AdviserSettingsController extends Controller
     public function updateAppearance(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'dark_mode' => 'nullable|boolean',
             'font_size' => 'nullable|in:small,medium,large',
             'high_contrast' => 'nullable|boolean',
         ]);
 
         auth()->user()->update([
-            'dark_mode' => $request->boolean('dark_mode'),
             'font_size' => $validated['font_size'] ?? 'medium',
             'high_contrast' => $request->boolean('high_contrast'),
         ]);

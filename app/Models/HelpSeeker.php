@@ -13,11 +13,18 @@ class HelpSeeker extends Model
         'generated_alias',
         'age',
         'gender',
+        'current_risk_level',
+        'risk_last_updated',
+        'has_emergency',
+        'last_emergency_at',
         'account_created'
     ];
 
     protected $casts = [
-        'account_created' => 'datetime'
+        'account_created' => 'datetime',
+        'risk_last_updated' => 'datetime',
+        'has_emergency' => 'boolean',
+        'last_emergency_at' => 'datetime',
     ];
 
     public function user()
@@ -55,5 +62,15 @@ class HelpSeeker extends Model
     public function queueRequests()
     {
         return $this->hasMany(QueueRequest::class, 'seeker_id', 'id');
+    }
+
+    public function screeningResponses()
+    {
+        return $this->hasMany(ScreeningResponse::class, 'seeker_id', 'id');
+    }
+
+    public function emergencyAlerts()
+    {
+        return $this->hasMany(EmergencyAlert::class, 'seeker_id', 'id');
     }
 }

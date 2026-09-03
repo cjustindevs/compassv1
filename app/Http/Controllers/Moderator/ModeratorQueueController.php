@@ -10,6 +10,7 @@ use App\Models\Helper;
 use App\Models\Notification;
 use App\Models\QueueRequest;
 use App\Models\Session;
+use App\Traits\BroadcastsSafely;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,8 @@ use Illuminate\Support\Facades\Auth;
 
 class ModeratorQueueController extends Controller
 {
+    use BroadcastsSafely;
+
     public function index()
     {
         $queueItems = QueueRequest::with(['seeker', 'assignedHelper'])
@@ -47,9 +50,12 @@ class ModeratorQueueController extends Controller
         ];
 
         $availableHelpers = Helper::where('status', 'available')
+            ->whereHas('latestReadiness', fn ($query) => $query->ready())
             ->with('latestCompetency')
+            ->withCount('activeSessions as active_sessions_count')
             ->orderBy('competency_level', 'desc')
-            ->get();
+            ->get()
+            ->filter(fn (Helper $helper) => $helper->canAcceptSessions());
 
         return view('moderator.queue', compact('queueItems', 'stats', 'availableHelpers'));
     }
@@ -64,7 +70,15 @@ class ModeratorQueueController extends Controller
         $queue = QueueRequest::findOrFail($request->queue_id);
         $helper = Helper::findOrFail($request->helper_id);
 
-        if (! $helper->hasCapacity()) {
+        $override = $request->boolean('emergency_override')
+            && in_array($queue->priority_level, ['emergency', 'high'], true);
+
+        if (! $override && ! $helper->canAcceptSessions()) {
+            return redirect()->route('moderator.queue')
+                ->with('error', $helper->full_name . ' must be available, under capacity, and have a current ready assessment before assignment.');
+        }
+
+        if ($override && ! $helper->hasCapacity()) {
             return redirect()->route('moderator.queue')
                 ->with('error', $helper->full_name . ' is already at their session capacity and cannot be assigned right now.');
         }
@@ -114,11 +128,11 @@ class ModeratorQueueController extends Controller
             'status' => 'unread',
         ]);
 
-        NewCaseAssigned::dispatch($session, $helper->user_account_id);
-        ModeratorAlert::dispatch(Auth::id(), 'assignment', 'Helper assigned', ($session->seeker?->generated_alias ?? 'A seeker') . ' was matched with ' . $helper->full_name, '/moderator/queue');
+        $this->broadcastSafely(new NewCaseAssigned($session, $helper->user_account_id));
+        $this->broadcastSafely(new ModeratorAlert(Auth::id(), 'assignment', 'Helper assigned', ($session->seeker?->generated_alias ?? 'A seeker') . ' was matched with ' . $helper->full_name, '/moderator/queue'));
 
         // Real-time: keep the moderator's queue view in sync (private channel).
-        QueueUpdated::dispatch(Auth::id());
+        $this->broadcastSafely(new QueueUpdated(Auth::id()));
 
         return redirect()->route('moderator.queue')
             ->with('success', $helper->full_name . ' assigned to ' . ($session->seeker?->generated_alias ?? 'the seeker') . ' successfully!');
@@ -134,7 +148,15 @@ class ModeratorQueueController extends Controller
         $queue = QueueRequest::findOrFail($request->queue_id);
         $helper = Helper::findOrFail($request->helper_id);
 
-        if (! $helper->hasCapacity()) {
+        $override = $request->boolean('emergency_override')
+            && in_array($queue->priority_level, ['emergency', 'high'], true);
+
+        if (! $override && ! $helper->canAcceptSessions()) {
+            return redirect()->route('moderator.queue')
+                ->with('error', $helper->full_name . ' must be available, under capacity, and have a current ready assessment before reassignment.');
+        }
+
+        if ($override && ! $helper->hasCapacity()) {
             return redirect()->route('moderator.queue')
                 ->with('error', $helper->full_name . ' is already at their session capacity and cannot be reassigned right now.');
         }
@@ -163,7 +185,7 @@ class ModeratorQueueController extends Controller
             Helper::where('id', $oldHelperId)->update(['status' => 'available']);
         }
 
-        QueueUpdated::dispatch(Auth::id());
+        $this->broadcastSafely(new QueueUpdated(Auth::id()));
 
         return redirect()->route('moderator.queue')
             ->with('success', 'Helper reassigned to ' . $helper->full_name . '.');
@@ -182,7 +204,7 @@ class ModeratorQueueController extends Controller
         $queue = QueueRequest::findOrFail($request->queue_id);
         $queue->delete();
 
-        QueueUpdated::dispatch(Auth::id());
+        $this->broadcastSafely(new QueueUpdated(Auth::id()));
 
         return response()->json([
             'success' => true,

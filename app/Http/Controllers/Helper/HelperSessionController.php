@@ -12,17 +12,161 @@ use App\Models\Helper;
 use App\Models\IncidentReport;
 use App\Models\Notification;
 use App\Models\Referral;
+use App\Models\ScreeningResponse;
 use App\Models\Session;
 use App\Models\SessionReport;
 use App\Models\User;
+use App\Services\HelperMatchingService;
+use App\Traits\BroadcastsSafely;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class HelperSessionController extends Controller
 {
+    use BroadcastsSafely;
+
     public function __construct(
         protected HelperChatController $chat,
     ) {}
+
+    public function preSessionAssessment(int $id)
+    {
+        $helper = Auth::user()->helper;
+
+        $session = Session::with(['seeker', 'seeker.screeningResponses'])
+            ->where('helper_id', $helper->id)
+            ->findOrFail($id);
+
+        if ($session->session_status !== Session::STATUS_HELPER_ASSIGNED) {
+            return redirect()->route('helper.dashboard')
+                ->with('error', 'This session is no longer pending.');
+        }
+
+        if ($session->pre_session_brief_expires_at && now()->gt($session->pre_session_brief_expires_at)) {
+            $session->update([
+                'session_status' => Session::STATUS_ACTIVE,
+                'start_time' => now(),
+            ]);
+
+            return redirect()->route('helper.session.chat', $session->id)
+                ->with('info', 'Pre-session brief time expired. Session has been automatically started.');
+        }
+
+        $screeningSummary = $this->getScreeningSummary($session->seeker);
+        $matchingDetails = app(HelperMatchingService::class)->getMatchingDetails($helper);
+        $timeRemaining = $session->pre_session_brief_expires_at
+            ? max(0, now()->diffInSeconds($session->pre_session_brief_expires_at, false))
+            : Helper::PRE_SESSION_BRIEF_MINUTES * 60;
+
+        return view('helper.pre-session-assessment', compact('session', 'screeningSummary', 'matchingDetails', 'timeRemaining'));
+    }
+
+    public function startSessionFromPreAssessment(int $id)
+    {
+        $helper = Auth::user()->helper;
+
+        $session = Session::where('helper_id', $helper->id)->findOrFail($id);
+
+        if ($session->session_status !== Session::STATUS_HELPER_ASSIGNED) {
+            return redirect()->route('helper.dashboard')
+                ->with('error', 'This session is no longer pending.');
+        }
+
+        $session->update([
+            'session_status' => Session::STATUS_ACTIVE,
+            'start_time' => now(),
+        ]);
+
+        return redirect()->route('helper.session.chat', $session->id)
+            ->with('success', 'Session started. You can now communicate with the help seeker.');
+    }
+
+    private function getScreeningSummary($seeker): array
+    {
+        $screening = ScreeningResponse::where('seeker_id', $seeker->id)
+            ->latest('classified_at')
+            ->first();
+
+        if (! $screening) {
+            return [
+                'risk_level' => $seeker->current_risk_level ?? 'low',
+                'concern_category' => 'Not specified',
+                'summary' => 'No screening data available.',
+                'indicators' => [],
+                'is_emergency' => false,
+            ];
+        }
+
+        $responses = is_array($screening->responses) ? $screening->responses : json_decode($screening->responses, true);
+        $summary = $this->createScreeningSummary($responses ?: []);
+
+        return [
+            'risk_level' => $screening->risk_level,
+            'concern_category' => $responses['concern_category'] ?? 'Not specified',
+            'summary' => $summary['text'],
+            'indicators' => $summary['indicators'],
+            'is_emergency' => $screening->risk_level === 'emergency',
+        ];
+    }
+
+    private function createScreeningSummary(array $responses): array
+    {
+        $indicators = [];
+        $summaryParts = [];
+
+        foreach ([
+            'severe_distress' => 'reports severe emotional distress',
+            'recurring_distress' => 'experiencing recurring emotional distress',
+            'difficulty_coping' => 'reports difficulty coping',
+        ] as $key => $text) {
+            if (($responses[$key] ?? false) === true) {
+                $indicators[] = $key;
+                $summaryParts[] = $text;
+            }
+        }
+
+        $safetyIndicators = [];
+        foreach ([
+            'current_suicide_plan' => 'reports current suicidal thoughts with plan',
+            'suicidal_thoughts' => 'reports suicidal thoughts',
+            'recent_self_harm' => 'has recent self-harm history',
+        ] as $key => $text) {
+            if (($responses[$key] ?? false) === true) {
+                $indicators[] = $key;
+                $safetyIndicators[] = $text;
+            }
+        }
+
+        $functionalImpacts = [];
+        foreach ([
+            'sleep_affected' => 'sleep affected',
+            'concentration_affected' => 'concentration affected',
+            'attendance_affected' => 'attendance affected',
+            'relationships_affected' => 'relationships affected',
+        ] as $key => $text) {
+            if (($responses[$key] ?? false) === true) {
+                $functionalImpacts[] = $text;
+            }
+        }
+
+        $text = '';
+        if ($safetyIndicators !== []) {
+            $text .= 'Safety concern: ' . implode('; ', $safetyIndicators) . '. ';
+        }
+        if ($summaryParts !== []) {
+            $text .= 'The seeker ' . implode('; ', $summaryParts) . '. ';
+        }
+        if ($functionalImpacts !== []) {
+            $text .= 'Affected areas: ' . implode(', ', $functionalImpacts) . '. ';
+        }
+
+        return [
+            'text' => $text !== '' ? $text : 'Seeker completed screening. No major concerns identified.',
+            'indicators' => $indicators,
+            'safety_indicators' => $safetyIndicators,
+            'functional_impacts' => $functionalImpacts,
+        ];
+    }
 
     /**
      * Route: helper.session.chat → delegate to the chat controller.
@@ -149,6 +293,9 @@ class HelperSessionController extends Controller
         $validated = $request->validate([
             'help_seeker_condition' => 'nullable|string|max:500',
             'session_summary' => 'required|string|max:2000',
+            'observations' => 'nullable|string|max:2000',
+            'actions_taken' => 'nullable|string|max:2000',
+            'risk_level_assessed' => 'nullable|in:low,moderate,high,emergency',
             'personal_reflection' => 'nullable|string|max:2000',
             'skills_applied' => 'nullable|array',
             'skills_applied.*' => 'string|max:50',
@@ -160,11 +307,39 @@ class HelperSessionController extends Controller
             [
                 'help_seeker_condition' => $validated['help_seeker_condition'] ?? null,
                 'session_summary' => $validated['session_summary'],
+                'observations' => $validated['observations'] ?? null,
+                'actions_taken' => $validated['actions_taken'] ?? null,
+                'risk_level_assessed' => $validated['risk_level_assessed'] ?? $session->risk_level,
                 'personal_reflection' => $validated['personal_reflection'] ?? null,
                 'skills_applied' => $validated['skills_applied'] ?? [],
                 'referral_recommended' => $request->boolean('referral_recommended'),
+                'documented_at' => now(),
+                'documentation_late' => $session->end_time ? $session->end_time->lt(now()->subHours(24)) : false,
             ]
         );
+
+        if (! empty($validated['risk_level_assessed']) && $validated['risk_level_assessed'] !== $session->risk_level) {
+            $session->update([
+                'risk_level' => $validated['risk_level_assessed'],
+                'risk_updated_at' => now(),
+                'risk_update_reason' => 'Updated from helper session documentation.',
+                'risk_updated_by' => auth()->id(),
+            ]);
+        }
+
+        if (! in_array($session->session_status, [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED], true)) {
+            $endedAt = $session->end_time ?: now();
+
+            $session->update([
+                'session_status' => Session::STATUS_COMPLETED,
+                'completion_status' => 'completed',
+                'end_time' => $endedAt,
+                'duration' => $session->duration ?: ($session->start_time ? max(1, (int) $session->start_time->diffInMinutes($endedAt)) : 0),
+            ]);
+
+            $helper->syncSessionCounters();
+            Helper::where('id', $helper->id)->update(['status' => 'available']);
+        }
 
         return back()->with('success', 'Session notes saved successfully.');
     }
@@ -287,6 +462,17 @@ class HelperSessionController extends Controller
         return back()->with('success', 'Referral recommended. An adviser will review it shortly. Referral #' . $referral->id . ' recorded.');
     }
 
+    public function referralStatus(int $id)
+    {
+        $helper = Auth::user()->helper;
+
+        $referral = Referral::with(['session.seeker', 'adviser', 'professional'])
+            ->where('helper_id', $helper->id)
+            ->findOrFail($id);
+
+        return view('helper.referral-status', compact('referral'));
+    }
+
     /**
      * Notify every user with one of the given roles.
      */
@@ -323,6 +509,15 @@ class HelperSessionController extends Controller
                 ? max(1, (int) $session->start_time->diffInMinutes($now))
                 : 0;
 
+            if ($duration > 90) {
+                \App\Models\AuditLog::create([
+                    'user_account_id' => auth()->id(),
+                    'action' => 'session_duration_limit_exceeded',
+                    'module' => 'helper',
+                    'description' => 'Session #' . $session->id . ' lasted ' . $duration . ' minutes, exceeding the 90-minute helper policy limit.',
+                ]);
+            }
+
             $session->update([
                 'session_status' => 'completed',
                 'completion_status' => 'completed',
@@ -330,6 +525,7 @@ class HelperSessionController extends Controller
                 'duration' => $duration,
             ]);
 
+            $helper->decrementShiftSessions();
             Helper::where('id', $helper->id)->update(['status' => 'available']);
 
             // Tell the seeker (and anyone watching the room) the session has ended.
@@ -342,7 +538,7 @@ class HelperSessionController extends Controller
             // Let every moderator know in real time so their live session stats refresh.
             foreach (User::where('role', 'moderator')->pluck('id') as $moderatorUserId) {
                 try {
-                    ModeratorAlert::dispatch($moderatorUserId, 'session', 'Session ended', 'Session #' . $session->id . ' has been completed.', '/moderator/sessions');
+                    $this->broadcastSafely(new ModeratorAlert($moderatorUserId, 'session', 'Session ended', 'Session #' . $session->id . ' has been completed.', '/moderator/sessions'));
                 } catch (\Throwable $e) {
                     report($e);
                 }

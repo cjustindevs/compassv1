@@ -21,6 +21,8 @@ class Session extends Model
     const STATUS_CANCELLED = 'cancelled';
     const STATUS_NO_SHOW = 'no_show';
     const STATUS_SCHEDULED = 'scheduled';
+    const STATUS_EMERGENCY = 'emergency';
+    const STATUS_PENDING_REVIEW = 'pending_review';
 
     /**
      * Statuses that count as an in-progress request (not yet started or finished).
@@ -38,28 +40,71 @@ class Session extends Model
         'seeker_id',
         'helper_id',
         'moderator_id',
+        'queue_request_id',
         'concern_id',
         'scheduled_start',
+        'pre_session_brief_expires_at',
         'session_type',
+        'voice_consent_obtained',
+        'match_method',
+        'matched_by',
+        'matching_details',
         'session_status',
         'voice_recording_consent',
         'risk_level',
+        'concern_category',
         'escalation_required',
+        'requires_immediate_action',
+        'requires_adviser_review',
+        'elevated_priority',
+        'requires_closer_monitoring',
+        'emergency_triggered_at',
+        'risk_updated_at',
+        'risk_update_reason',
+        'risk_updated_by',
         'start_time',
         'end_time',
         'duration',
         'created_date',
         'completion_status',
+        'seeker_evaluation_submitted',
+        'auto_completed',
+        'auto_completed_at',
+        'no_show',
+        'abandoned',
+        'abandoned_at',
+        'transcript_verified',
+        'transcript_verified_by',
+        'transcript_verified_at',
+        'transcript_generated_at',
     ];
 
     protected $casts = [
         'scheduled_start' => 'datetime',
+        'pre_session_brief_expires_at' => 'datetime',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
         'created_date' => 'datetime',
         'voice_recording_consent' => 'boolean',
+        'voice_consent_obtained' => 'boolean',
         'escalation_required' => 'boolean',
+        'requires_immediate_action' => 'boolean',
+        'requires_adviser_review' => 'boolean',
+        'elevated_priority' => 'boolean',
+        'requires_closer_monitoring' => 'boolean',
+        'emergency_triggered_at' => 'datetime',
+        'risk_updated_at' => 'datetime',
         'duration' => 'integer',
+        'seeker_evaluation_submitted' => 'boolean',
+        'auto_completed' => 'boolean',
+        'auto_completed_at' => 'datetime',
+        'no_show' => 'boolean',
+        'abandoned' => 'boolean',
+        'abandoned_at' => 'datetime',
+        'matching_details' => 'array',
+        'transcript_verified' => 'boolean',
+        'transcript_verified_at' => 'datetime',
+        'transcript_generated_at' => 'datetime',
     ];
 
     public function seeker(): BelongsTo
@@ -97,9 +142,29 @@ class Session extends Model
         return $this->hasOne(HelpSeekerEvaluation::class, 'session_id', 'id');
     }
 
+    public function queue(): BelongsTo
+    {
+        return $this->belongsTo(QueueRequest::class, 'queue_request_id', 'id');
+    }
+
     public function incidents(): HasMany
     {
         return $this->hasMany(IncidentReport::class, 'session_id', 'id');
+    }
+
+    public function referrals(): HasMany
+    {
+        return $this->hasMany(Referral::class, 'session_id', 'id');
+    }
+
+    public function screeningResponses(): HasMany
+    {
+        return $this->hasMany(ScreeningResponse::class, 'session_id', 'id');
+    }
+
+    public function emergencyAlerts(): HasMany
+    {
+        return $this->hasMany(EmergencyAlert::class, 'session_id', 'id');
     }
 
     public function scopeForHelper($query, int $helperId)
@@ -184,6 +249,8 @@ class Session extends Model
             'cancelled' => 'Cancelled',
             'no_show' => 'No Show',
             'scheduled' => 'Scheduled',
+            'emergency' => 'Emergency',
+            'pending_review' => 'Pending Review',
         ];
 
         return $labels[$this->session_status] ?? ucfirst(str_replace('_', ' ', $this->session_status));

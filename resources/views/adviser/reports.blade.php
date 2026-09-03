@@ -1,163 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    @include('layouts.partials.pwa-meta')
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="user-id" content="{{ auth()->id() }}">
-    <title>COMPASS – Reports & Analytics</title>
+@extends('layouts.app')
 
-    @vite(['resources/js/app.js', 'resources/js/adviser-notifications.js'])
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+@section('title', 'COMPASS – Reports & Analytics')
 
-    <style>
+@push('styles')
+<style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #F8FBF9; }
-
-        .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 260px;
-            height: 100vh;
-            background: rgba(255,255,255,0.92);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(4,160,82,0.06);
-            box-shadow: 4px 0 40px rgba(0,0,0,0.02);
-            z-index: 100;
-            transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
-            display: flex;
-            flex-direction: column;
-            padding: 24px 16px 20px;
-        }
-        .sidebar.closed { transform: translateX(-100%); }
-
-        .sidebar .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding-bottom: 24px;
-            border-bottom: 1px solid rgba(4,160,82,0.06);
-            margin-bottom: 20px;
-        }
-        .sidebar .logo .icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #38C172, #038A45);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 800;
-            font-size: 20px;
-            box-shadow: 0 4px 16px rgba(4,160,82,0.2);
-        }
-        .sidebar .logo span { font-weight: 700; font-size: 20px; color: var(--green-700); }
-
-        .sidebar .nav { flex: 1; overflow-y: auto; }
-        .sidebar .nav .nav-label {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--gray-400);
-            padding: 12px 14px 6px;
-        }
-        .sidebar .nav .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 10px 14px;
-            border-radius: 12px;
-            color: var(--gray-500);
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            text-decoration: none;
-            margin-bottom: 2px;
-        }
-        .sidebar .nav .nav-item i { width: 20px; text-align: center; font-size: 16px; color: var(--gray-400); }
-        .sidebar .nav .nav-item:hover { background: var(--green-50); color: var(--gray-800); }
-        .sidebar .nav .nav-item:hover i { color: var(--green-500); }
-        .sidebar .nav .nav-item.active {
-            background: var(--green-50);
-            color: var(--green-700);
-            font-weight: 600;
-        }
-        .sidebar .nav .nav-item.active i { color: var(--green-500); }
-        .sidebar .nav .nav-item .badge {
-            margin-left: auto;
-            background: var(--green-500);
-            color: white;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 20px;
-        }
-
-        .sidebar .user-section {
-            border-top: 1px solid rgba(4,160,82,0.06);
-            padding-top: 16px;
-            margin-top: auto;
-        }
-        .sidebar .user-section .user-card {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .sidebar .user-section .user-card .avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #38C172, #038A45);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-        .sidebar .user-section .user-card .info .name { font-weight: 600; font-size: 14px; color: var(--gray-800); }
-        .sidebar .user-section .user-card .info .role { font-size: 12px; color: var(--gray-400); }
-        .sidebar .user-section .user-stats {
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(4,160,82,0.06);
-            margin-bottom: 12px;
-        }
-        .sidebar .user-section .user-stats .stat { text-align: center; }
-        .sidebar .user-section .user-stats .stat .value { display: block; font-weight: 700; font-size: 14px; color: var(--gray-800); }
-        .sidebar .user-section .user-stats .stat .label { font-size: 10px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.03em; }
-        .sidebar .user-section .logout-btn {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 12px;
-            border-radius: 10px;
-            color: var(--gray-500);
-            font-size: 13px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            border: none;
-            background: transparent;
-            width: 100%;
-        }
-        .sidebar .user-section .logout-btn:hover { background: #FEE2E2; color: #DC2626; }
-        .sidebar .user-section .logout-btn i { width: 20px; text-align: center; }
-
-        .main-content {
-            margin-left: 260px;
-            padding: 24px 32px 80px;
-            min-height: 100vh;
-        }
 
         .stat-card {
             background: white;
@@ -228,53 +76,6 @@
         }
         .btn-outline:hover { background: var(--gray-50); border-color: var(--gray-300); }
 
-        .hamburger {
-            display: none;
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: var(--gray-700);
-            cursor: pointer;
-            padding: 4px;
-        }
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.25);
-            z-index: 99;
-        }
-        .sidebar-overlay.active { display: block; }
-
-        .bottom-nav {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(255,255,255,0.94);
-            backdrop-filter: blur(16px);
-            border-top: 1px solid var(--gray-200);
-            padding: 6px 0 env(safe-area-inset-bottom, 6px);
-            z-index: 200;
-            justify-content: space-around;
-        }
-        .bottom-nav .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0px;
-            color: var(--gray-400);
-            text-decoration: none;
-            font-size: 10px;
-            font-weight: 500;
-            padding: 4px 12px;
-            transition: all 0.2s ease;
-        }
-        .bottom-nav .nav-item i { font-size: 20px; }
-        .bottom-nav .nav-item.active { color: var(--green-500); }
-        .bottom-nav .nav-item.active i { color: var(--green-500); }
-
         .chart-bar {
             display: flex;
             align-items: flex-end;
@@ -333,14 +134,7 @@
         .competency-level.intermediate { background: #fef3c7; color: #92400e; }
         .competency-level.beginner { background: #fee2e2; color: #991b1b; }
         .competency-level.trainee { background: #e5e7eb; color: #6b7280; }
-
-        @media (min-width: 769px) { .sidebar-overlay { display: none !important; } }
-        @media (max-width: 1024px) { .main-content { padding: 20px 24px 80px; } }
         @media (max-width: 768px) {
-            .sidebar { width: 280px; padding: 16px; }
-            .main-content { margin-left: 0; padding: 16px 16px 100px; }
-            .hamburger { display: block; }
-            .bottom-nav { display: flex; }
             .stat-number { font-size: 22px; }
             .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
             .card { padding: 16px; }
@@ -350,21 +144,13 @@
             .stat-number { font-size: 18px; }
         }
     </style>
-</head>
-<body>
+@endpush
 
-    @include('layouts.partials.adviser-sidebar')
-
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <main class="main-content">
-
+@section('content')
+<div class="adviser-page-content">
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
-                </button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-800">Reports & Analytics</h1>
                     <p class="text-sm text-gray-500 hidden sm:block">
@@ -588,74 +374,5 @@
             <i class="fas fa-heart text-[#04A052] mr-1"></i>
             Data-driven decisions lead to better outcomes.
         </div>
-
-    </main>
-
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav" id="bottomNav">
-        <a href="{{ route('adviser.dashboard') }}" class="nav-item">
-            <i class="fas fa-th-large"></i>
-            <span>Dashboard</span>
-        </a>
-        <a href="{{ route('adviser.evaluations') }}" class="nav-item">
-            <i class="fas fa-clipboard-list"></i>
-            <span>Evaluations</span>
-        </a>
-        <a href="{{ route('adviser.referrals') }}" class="nav-item">
-            <i class="fas fa-arrow-right"></i>
-            <span>Referrals</span>
-        </a>
-        <a href="{{ route('adviser.helpers') }}" class="nav-item">
-            <i class="fas fa-users"></i>
-            <span>Helpers</span>
-        </a>
-        <a href="{{ route('adviser.reports') }}" class="nav-item active">
-            <i class="fas fa-chart-bar"></i>
-            <span>Reports</span>
-        </a>
-    </nav>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            const hamburger = document.getElementById('hamburgerBtn');
-
-            function toggleSidebar() {
-                sidebar.classList.toggle('closed');
-                overlay.classList.toggle('active');
-            }
-
-            function closeSidebar() {
-                sidebar.classList.add('closed');
-                overlay.classList.remove('active');
-            }
-
-            hamburger.addEventListener('click', toggleSidebar);
-            overlay.addEventListener('click', closeSidebar);
-
-            window.addEventListener('resize', function() {
-                if (window.innerWidth > 768) closeSidebar();
-            });
-
-            document.querySelectorAll('.bottom-nav .nav-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    document.querySelectorAll('.bottom-nav .nav-item').forEach(i => i.classList.remove('active'));
-                    this.classList.add('active');
-                });
-            });
-
-            document.querySelectorAll('.sidebar .nav .nav-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    document.querySelectorAll('.sidebar .nav .nav-item').forEach(i => i.classList.remove('active'));
-                    this.classList.add('active');
-                    if (window.innerWidth <= 768) closeSidebar();
-                });
-            });
-        });
-    </script>
-
-    @include('layouts.partials.pwa-banner')
-
-</body>
-</html>
+</div>
+@endsection

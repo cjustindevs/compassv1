@@ -8,8 +8,12 @@ use App\Events\NewCaseAssigned;
 use App\Events\NewHelperAssigned;
 use App\Events\SessionEnded;
 use App\Models\Helper;
+use App\Models\AdviserFeedback;
 use App\Models\HelpSeekerEvaluation;
+use App\Models\HelperJournalEntry;
 use App\Models\Message;
+use App\Models\ReadinessCheck;
+use App\Models\Referral;
 use App\Models\Session;
 use App\Models\SessionReport;
 use App\Models\User;
@@ -60,6 +64,9 @@ class HelperModuleTest extends TestCase
 
     public function test_readiness_page_renders_breathing_exercise_ui(): void
     {
+        // A helper who isn't currently ready (no valid check) sees the form + breathing UI.
+        ReadinessCheck::where('helper_id', $this->helperUser->helper->id)->delete();
+
         $response = $this->actingAs($this->helperUser)
             ->get(route('helper.readiness'));
 
@@ -69,6 +76,50 @@ class HelperModuleTest extends TestCase
         $response->assertSee('begin-lesson-btn');
         $response->assertSee('continue-btn');
         $response->assertSee('breath-circle');
+    }
+
+    public function test_readiness_page_shows_ready_confirmation_when_ready(): void
+    {
+        $helper = $this->helperUser->helper;
+        ReadinessCheck::create([
+            'helper_id' => $helper->id,
+            'availability_status' => 'available',
+            'assessment_result' => 'ready',
+            'emotionally_ready' => true,
+            'willing_to_listen' => true,
+            'stress_level' => 'low',
+            'assessment_date' => now(),
+            'valid_until' => now()->addHours(4),
+        ]);
+
+        $response = $this->actingAs($this->helperUser)
+            ->get(route('helper.readiness'));
+
+        $response->assertOk();
+        $response->assertSee('You\'re all set to help', false);
+        $response->assertDontSee('Start Breathing Exercise');
+    }
+
+    public function test_readiness_page_refresh_param_reshows_form_when_ready(): void
+    {
+        $helper = $this->helperUser->helper;
+        ReadinessCheck::create([
+            'helper_id' => $helper->id,
+            'availability_status' => 'available',
+            'assessment_result' => 'ready',
+            'emotionally_ready' => true,
+            'willing_to_listen' => true,
+            'stress_level' => 'low',
+            'assessment_date' => now(),
+            'valid_until' => now()->addHours(4),
+        ]);
+
+        $response = $this->actingAs($this->helperUser)
+            ->get(route('helper.readiness', ['refresh' => 1]));
+
+        $response->assertOk();
+        $response->assertSee('Start Breathing Exercise');
+        $response->assertDontSee('You\'re all set to help', false);
     }
 
     public function test_readiness_submission_requires_the_breathing_exercise(): void
@@ -122,7 +173,7 @@ class HelperModuleTest extends TestCase
                 'exercise_completed' => 'skipped',
             ])
             ->assertSessionHasNoErrors()
-            ->assertRedirect(route('helper.dashboard'));
+            ->assertRedirect(route('helper.self-help'));
 
         $this->assertDatabaseHas('readiness_checks', [
             'helper_id' => $this->helperUser->helper->id,
@@ -167,6 +218,89 @@ class HelperModuleTest extends TestCase
         ]);
     }
 
+    public function test_not_ready_helper_is_redirected_from_gated_dashboard_to_readiness(): void
+    {
+        // Ensure the helper has no valid readiness check (simulates not ready).
+        $helper = $this->helperUser->helper;
+        $helper->update(['status' => 'offline']);
+        ReadinessCheck::where('helper_id', $helper->id)->delete();
+
+        $this->actingAs($this->helperUser)
+            ->get(route('helper.dashboard'))
+            ->assertRedirect(route('helper.readiness'));
+    }
+
+    public function test_ready_helper_can_access_dashboard(): void
+    {
+        $helper = $this->helperUser->helper;
+        ReadinessCheck::create([
+            'helper_id' => $helper->id,
+            'availability_status' => 'available',
+            'assessment_result' => 'ready',
+            'emotionally_ready' => true,
+            'willing_to_listen' => true,
+            'stress_level' => 'low',
+            'assessment_date' => now(),
+            'valid_until' => now()->addHours(4),
+        ]);
+
+        $this->actingAs($this->helperUser)
+            ->get(route('helper.dashboard'))
+            ->assertOk();
+    }
+
+    public function test_self_help_pages_are_accessible_when_not_ready(): void
+    {
+        $helper = $this->helperUser->helper;
+        $helper->update(['status' => 'offline']);
+
+        $this->actingAs($this->helperUser)
+            ->get(route('helper.self-help'))
+            ->assertOk()
+            ->assertSee('Breathing Exercise');
+
+        $this->actingAs($this->helperUser)
+            ->get(route('helper.self-help.breathing'))
+            ->assertOk();
+
+        $this->actingAs($this->helperUser)
+            ->get(route('helper.self-help.grounding'))
+            ->assertOk();
+
+        $this->actingAs($this->helperUser)
+            ->get(route('helper.self-help.hotlines'))
+            ->assertOk();
+    }
+
+    public function test_helper_journal_entry_can_be_created_and_listed(): void
+    {
+        $helper = $this->helperUser->helper;
+        $helper->update(['status' => 'offline']);
+
+        $this->actingAs($this->helperUser)
+            ->post(route('helper.self-help.journal.store'), [
+                'content' => 'Today I felt a bit overwhelmed but took a walk.',
+                'mood' => 'anxious',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('helper_journal_entries', [
+            'helper_id' => $helper->id,
+            'mood' => 'anxious',
+        ]);
+    }
+
+    public function test_readiness_status_endpoint_returns_json(): void
+    {
+        $helper = $this->helperUser->helper;
+        $helper->update(['status' => 'offline']);
+
+        $this->actingAs($this->helperUser)
+            ->getJson(route('helper.readiness.status'))
+            ->assertOk()
+            ->assertJsonStructure(['status', 'ready']);
+    }
+
     public function test_decline_reassigns_to_the_next_available_helper_and_broadcasts_to_seeker(): void
     {
         Event::fake([CaseDeclined::class, NewCaseAssigned::class, NewHelperAssigned::class]);
@@ -192,7 +326,8 @@ class HelperModuleTest extends TestCase
 
         \App\Models\ReadinessCheck::create([
             'helper_id' => $backupHelper->id,
-            'assessment_date' => now()->subDay(),
+            'assessment_date' => now(),
+            'valid_until' => now()->addHours(4),
             'availability_status' => 'available',
             'assessment_result' => 'ready',
             'emotionally_ready' => true,
@@ -440,6 +575,73 @@ class HelperModuleTest extends TestCase
         ]);
     }
 
+    public function test_matching_skips_helpers_with_expired_readiness_check(): void
+    {
+        $expiredUser = User::create([
+            'name' => 'Expired Helper',
+            'email' => 'expired@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'helper',
+            'email_verified_at' => now(),
+        ]);
+
+        $expiredHelper = Helper::create([
+            'user_account_id' => $expiredUser->id,
+            'first_name' => 'Expired',
+            'last_name' => 'Helper',
+            'email' => 'expired@example.com',
+            'status' => 'available',
+            'competency_level' => 2,
+            'max_concurrent_sessions' => 2,
+        ]);
+
+        ReadinessCheck::create([
+            'helper_id' => $expiredHelper->id,
+            'assessment_date' => now()->subHours(5),
+            'valid_until' => now()->subHour(),
+            'availability_status' => 'available',
+            'assessment_result' => 'ready',
+            'emotionally_ready' => true,
+            'willing_to_listen' => true,
+            'stress_level' => 'low',
+        ]);
+
+        $seekerUser = User::where('role', 'seeker')->firstOrFail();
+        $session = Session::create([
+            'seeker_id' => $seekerUser->helpSeeker->id,
+            'concern_id' => \App\Models\ConcernCategory::first()->id,
+            'risk_level' => 'low',
+            'session_type' => 'chat',
+            'session_status' => 'preferences_set',
+            'completion_status' => 'pending',
+            'created_date' => now(),
+        ]);
+
+        session(['session_id' => $session->id, 'risk_level' => 'low']);
+
+        $this->actingAs($seekerUser)->get(route('request.matching'));
+
+        $session->refresh();
+        $this->assertNotSame($expiredHelper->id, $session->helper_id);
+    }
+
+    public function test_availability_requires_current_ready_assessment(): void
+    {
+        $helper = $this->helperUser->helper;
+        $helper->latestReadiness->update(['valid_until' => now()->subMinute()]);
+        $helper->update(['status' => 'offline']);
+
+        $this->actingAs($this->helperUser)
+            ->from(route('helper.availability'))
+            ->post(route('helper.availability.update'), ['status' => 'available'])
+            ->assertRedirect(route('helper.readiness'));
+
+        $this->assertDatabaseMissing('helpers', [
+            'id' => $helper->id,
+            'status' => 'available',
+        ]);
+    }
+
     public function test_seeker_resumes_pending_request_after_login(): void
     {
         $seekerUser = User::where('role', 'seeker')->firstOrFail();
@@ -594,6 +796,9 @@ class HelperModuleTest extends TestCase
             ->post(route('helper.session.notes.store', ['id' => $session->id]), [
                 'help_seeker_condition' => 'Anxious but cooperative.',
                 'session_summary' => 'We discussed grounding techniques.',
+                'observations' => 'Seeker sounded calmer after grounding.',
+                'actions_taken' => 'Used validation and box breathing.',
+                'risk_level_assessed' => 'moderate',
                 'personal_reflection' => 'Went well.',
                 'skills_applied' => ['active_listening', 'validation'],
                 'referral_recommended' => 0,
@@ -603,6 +808,96 @@ class HelperModuleTest extends TestCase
         $this->assertDatabaseHas('session_reports', [
             'session_id' => $session->id,
             'session_summary' => 'We discussed grounding techniques.',
+            'observations' => 'Seeker sounded calmer after grounding.',
+            'actions_taken' => 'Used validation and box breathing.',
+            'risk_level_assessed' => 'moderate',
+        ]);
+
+        $this->assertDatabaseHas('counseling_sessions', [
+            'id' => $session->id,
+            'session_status' => 'completed',
+            'completion_status' => 'completed',
+        ]);
+
+        $this->assertDatabaseHas('helpers', [
+            'id' => $this->helperUser->helper->id,
+            'status' => 'available',
+            'active_sessions_count' => 0,
+            'current_shift_sessions' => 0,
+        ]);
+    }
+
+    public function test_completed_sessions_do_not_block_helper_capacity(): void
+    {
+        $helper = $this->helperUser->helper;
+        $seeker = User::where('role', 'seeker')->firstOrFail()->helpSeeker;
+        Session::where('helper_id', $helper->id)->delete();
+
+        foreach (range(1, 2) as $index) {
+            Session::create([
+                'seeker_id' => $seeker->id,
+                'helper_id' => $helper->id,
+                'session_type' => 'chat',
+                'session_status' => Session::STATUS_COMPLETED,
+                'risk_level' => 'low',
+                'completion_status' => 'completed',
+                'end_time' => now(),
+                'created_date' => now()->subMinutes($index),
+            ]);
+        }
+
+        $helper->update([
+            'active_sessions_count' => 2,
+            'current_shift_sessions' => 2,
+        ]);
+
+        $this->assertTrue($helper->fresh()->hasCapacity());
+
+        $this->assertDatabaseHas('helpers', [
+            'id' => $helper->id,
+            'active_sessions_count' => 0,
+            'current_shift_sessions' => 0,
+        ]);
+    }
+
+    public function test_late_documentation_is_flagged_after_24_hours(): void
+    {
+        $session = Session::where('helper_id', $this->helperUser->helper->id)
+            ->where('session_status', 'active')
+            ->firstOrFail();
+
+        $session->update(['end_time' => now()->subHours(25)]);
+
+        $this->actingAs($this->helperUser)
+            ->post(route('helper.session.notes.store', ['id' => $session->id]), [
+                'session_summary' => 'Late documentation after the session ended.',
+                'observations' => 'Late observation.',
+                'actions_taken' => 'Late action.',
+                'referral_recommended' => 0,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('session_reports', [
+            'session_id' => $session->id,
+            'documentation_late' => true,
+        ]);
+    }
+
+    public function test_ending_session_over_90_minutes_writes_audit_log(): void
+    {
+        $session = Session::where('helper_id', $this->helperUser->helper->id)
+            ->where('session_status', 'active')
+            ->firstOrFail();
+
+        $session->update(['start_time' => now()->subMinutes(95)]);
+
+        $this->actingAs($this->helperUser)
+            ->post(route('helper.session.end', ['id' => $session->id]))
+            ->assertRedirect(route('helper.session.notes', ['id' => $session->id]));
+
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'session_duration_limit_exceeded',
+            'module' => 'helper',
         ]);
     }
 
@@ -790,6 +1085,39 @@ class HelperModuleTest extends TestCase
         $response->assertSee('Skill Breakdown');
     }
 
+    public function test_competency_detail_and_feedback_pages_render(): void
+    {
+        $history = $this->helperUser->helper->latestCompetency;
+
+        $this->actingAs($this->helperUser)
+            ->get(route('helper.competency.view', ['id' => $history->id]))
+            ->assertOk()
+            ->assertSee('Overall Score');
+
+        $report = SessionReport::firstOrFail();
+        $feedback = AdviserFeedback::create([
+            'report_id' => $report->id,
+            'adviser_id' => \App\Models\Adviser::first()->id,
+            'status' => 'reviewed',
+            'feedback_text' => 'Strong active listening.',
+            'competency_rating' => 5,
+            'competency_level' => 'advanced',
+            'training_recommendation' => 'Continue reflective practice.',
+            'created_date' => now(),
+        ]);
+
+        $this->actingAs($this->helperUser)
+            ->get(route('helper.feedback'))
+            ->assertOk()
+            ->assertSee('Adviser Feedback')
+            ->assertSee('Help-Seeker Feedback');
+
+        $this->actingAs($this->helperUser)
+            ->get(route('helper.feedback.view', ['id' => $feedback->id]))
+            ->assertOk()
+            ->assertSee('Strong active listening.');
+    }
+
     public function test_resources_page_renders_from_database(): void
     {
         $this->actingAs($this->helperUser)
@@ -848,7 +1176,6 @@ class HelperModuleTest extends TestCase
 
         $this->actingAs($this->helperUser)
             ->put(route('helper.settings.update'), [
-                'dark_mode' => 1,
                 'font_size' => 'large',
                 'email_notifications' => 0,
             ])
@@ -856,7 +1183,7 @@ class HelperModuleTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'id' => $this->helperUser->id,
-            'dark_mode' => true,
+            'font_size' => 'large',
         ]);
     }
 
@@ -1045,5 +1372,12 @@ class HelperModuleTest extends TestCase
             'user_account_id' => User::where('role', 'adviser')->first()->id,
             'notification_type' => 'referral',
         ]);
+
+        $referral = Referral::where('session_id', $session->id)->firstOrFail();
+
+        $this->actingAs($this->helperUser)
+            ->get(route('helper.referral.status', ['id' => $referral->id]))
+            ->assertOk()
+            ->assertSee('Referral Status');
     }
 }

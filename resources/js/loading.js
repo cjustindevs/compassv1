@@ -45,3 +45,36 @@ window.showLoading = showLoading;
 window.hideLoading = hideLoading;
 window.setButtonLoading = setButtonLoading;
 window.resetButton = resetButton;
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.documentElement.classList.add('app-ready');
+
+    document.addEventListener('click', (event) => {
+        const link = event.target.closest('a[href]');
+
+        if (!link || event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+            return;
+        }
+
+        if (link.target && link.target !== '_self') {
+            return;
+        }
+
+        const href = link.getAttribute('href') || '';
+
+        if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) {
+            return;
+        }
+
+        const destination = new URL(href, window.location.href);
+
+        if (destination.origin !== window.location.origin || destination.href === window.location.href) {
+            return;
+        }
+
+        showLoading('Loading page...');
+    }, { capture: true });
+});
+
+window.addEventListener('pageshow', hideLoading);
+window.addEventListener('load', () => window.setTimeout(hideLoading, 150));

@@ -438,6 +438,52 @@
             </div>
         </div>
 
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div class="card lg:col-span-2">
+                <div class="card-header">
+                    <h3>Matching Oversight</h3>
+                    <a href="{{ route('adviser.schedule') }}">Manage schedules</a>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    <div class="p-3 bg-gray-50 rounded-xl"><div class="text-xs text-gray-400">Helpers</div><div class="font-bold text-gray-800">{{ $matchingStats['total_helpers'] }}</div></div>
+                    <div class="p-3 bg-gray-50 rounded-xl"><div class="text-xs text-gray-400">Available</div><div class="font-bold text-gray-800">{{ $matchingStats['available_helpers'] }}</div></div>
+                    <div class="p-3 bg-gray-50 rounded-xl"><div class="text-xs text-gray-400">Avg Competency</div><div class="font-bold text-gray-800">{{ $matchingStats['average_competency'] }}</div></div>
+                    <div class="p-3 bg-gray-50 rounded-xl"><div class="text-xs text-gray-400">Avg Match</div><div class="font-bold text-gray-800">{{ $matchingStats['avg_matching_score'] }}%</div></div>
+                </div>
+                <div class="space-y-2">
+                    @foreach($helpers->take(6) as $helper)
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                            <div>
+                                <p class="font-medium text-gray-800">{{ $helper->user?->name ?? $helper->full_name }}</p>
+                                <p class="text-xs text-gray-500">{{ ucfirst($helper->availability ?? $helper->status) }} · {{ str_replace('_', ' ', $helper->getReadinessStatus()) }}</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs text-gray-500">{{ $helper->current_shift_sessions }}/{{ \App\Models\Helper::MAX_SESSIONS_PER_SHIFT }}</span>
+                                <a class="text-sm text-green-600 hover:underline" href="{{ route('adviser.helper.matching', $helper->id) }}">Details</a>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>Matching Alerts</h3>
+                    <a href="{{ route('adviser.transcripts') }}">Transcripts</a>
+                </div>
+                <div class="space-y-3 text-sm">
+                    <div class="p-3 rounded-xl {{ $helpersAtCapacity->isEmpty() ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700' }}">
+                        {{ $helpersAtCapacity->count() }} helper(s) at shift capacity
+                    </div>
+                    <div class="p-3 rounded-xl {{ $helpersExpiredReadiness->isEmpty() ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700' }}">
+                        {{ $helpersExpiredReadiness->count() }} helper(s) need readiness refresh
+                    </div>
+                    <div class="p-3 rounded-xl bg-blue-50 text-blue-700">
+                        {{ $assignedQueueCount }} assigned queue request(s)
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- ─── HIGH RISK ALERT ─── -->
         @if($highRiskCases->isNotEmpty())
             <div class="mb-6 p-4 bg-red-50 rounded-xl border border-red-200">

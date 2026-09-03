@@ -18,7 +18,6 @@ class HelperSettingsController extends Controller
 
         return view('helper.settings', [
             'preferences' => $user->only([
-                'dark_mode',
                 'high_contrast',
                 'font_size',
                 'show_email',
@@ -40,7 +39,6 @@ class HelperSettingsController extends Controller
         $user = Auth::user();
 
         $validated = $request->validate([
-            'dark_mode' => 'nullable|boolean',
             'high_contrast' => 'nullable|boolean',
             'font_size' => ['nullable', Rule::in(['small', 'medium', 'large'])],
             'show_email' => 'nullable|boolean',
@@ -53,7 +51,6 @@ class HelperSettingsController extends Controller
         ]);
 
         $user->update([
-            'dark_mode' => $request->boolean('dark_mode'),
             'high_contrast' => $request->boolean('high_contrast'),
             'font_size' => $validated['font_size'] ?? 'medium',
             'show_email' => $request->boolean('show_email'),

@@ -82,6 +82,7 @@ class HelperDashboardController extends Controller
             'elapsed' => $activeSession->start_time
                 ? sprintf('%dm', max(1, (int) $activeSession->start_time->diffInMinutes(now())))
                 : '0m',
+            'elapsed_minutes' => $activeSession->start_time ? max(1, (int) $activeSession->start_time->diffInMinutes(now())) : 0,
         ] : null;
 
         // ── EMERGENCY CASES FROM DATABASE ────────────────────────────────
