@@ -18,12 +18,15 @@ class DatabaseSeeder extends Seeder
     {
         // One test user per role, all with password: "password"
         foreach (['seeker', 'helper', 'adviser', 'moderator', 'professional', 'admin'] as $role) {
-            User::factory()->create([
-                'name' => ucfirst($role) . ' User',
-                'email' => $role . '@example.com',
-                'password' => Hash::make('password'),
-                'role' => $role,
-            ]);
+            User::updateOrCreate(
+                ['email' => $role . '@example.com'],
+                [
+                    'name' => ucfirst($role) . ' User',
+                    'password' => Hash::make('password'),
+                    'role' => $role,
+                    'email_verified_at' => now(),
+                ]
+            );
         }
 
         $this->call([

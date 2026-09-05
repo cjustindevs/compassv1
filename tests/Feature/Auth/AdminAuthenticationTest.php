@@ -204,6 +204,19 @@ class AdminAuthenticationTest extends TestCase
             ->assertSee(route('logout'));
     }
 
+    public function test_database_seeder_is_idempotent(): void
+    {
+        $seeder = new \Database\Seeders\DatabaseSeeder();
+
+        $seeder->run();
+        $seeder->run();
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'admin@example.com',
+            'role' => 'admin',
+        ]);
+    }
+
     private function assertRoleRedirect(string $role, string $routeName): void
     {
         $user = User::factory()->create(['role' => $role]);
