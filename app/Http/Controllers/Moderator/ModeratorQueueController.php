@@ -26,17 +26,21 @@ class ModeratorQueueController extends Controller
             ->whereIn('request_status', ['waiting', 'assigned'])
             ->orderByRaw("CASE priority_level WHEN 'emergency' THEN 0 WHEN 'high' THEN 1 WHEN 'moderate' THEN 2 ELSE 3 END")
             ->orderBy('request_date')
+            ->get();
+
+        $seekerIds = $queueItems->pluck('seeker_id')->filter()->unique()->values()->all();
+        $latestSessions = Session::whereIn('seeker_id', $seekerIds)
+            ->with('concern:id,concern_name')
+            ->latest('created_date')
             ->get()
-            ->map(function (QueueRequest $queue) {
-                $session = Session::where('seeker_id', $queue->seeker_id)
-                    ->latest('created_date')
-                    ->first();
+            ->unique('seeker_id')
+            ->keyBy('seeker_id');
 
-                $queue->concern_name = $session?->concern?->concern_name ?? 'General Concern';
-                $queue->wait_minutes = (int) floor(now()->diffInSeconds($queue->request_date) / 60);
-
-                return $queue;
-            });
+        $queueItems->each(function (QueueRequest $queue) use ($latestSessions) {
+            $session = $latestSessions->get($queue->seeker_id);
+            $queue->concern_name = $session?->concern?->concern_name ?? 'General Concern';
+            $queue->wait_minutes = (int) floor(now()->diffInSeconds($queue->request_date) / 60);
+        });
 
         $stats = [
             'waiting' => $queueItems->where('request_status', 'waiting')->count(),

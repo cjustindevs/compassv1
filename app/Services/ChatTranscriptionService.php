@@ -28,7 +28,7 @@ class ChatTranscriptionService
             'session_id' => $session->id,
             'reference_number' => $session->reference_number,
             'seeker_alias' => $session->seeker?->generated_alias ?? 'Anonymous',
-            'helper_name' => $session->helper?->user?->name ?? $session->helper?->full_name ?? 'Peer Helper',
+            'helper_name' => $session->helper?->public_alias ?? 'Peer Helper',
             'session_date' => ($session->created_date ?? $session->created_at)?->toDateTimeString(),
             'session_type' => $session->session_type,
             'duration' => $session->duration ?? 'N/A',
@@ -185,7 +185,7 @@ class ChatTranscriptionService
                 return [
                     'session_id' => $session->id,
                     'seeker_alias' => $session->seeker?->generated_alias ?? 'Anonymous',
-                    'helper_name' => $session->helper?->user?->name ?? $session->helper?->full_name ?? 'Peer Helper',
+                    'helper_name' => $session->helper?->public_alias ?? 'Peer Helper',
                     'session_date' => $session->created_date ?? $session->created_at,
                     'message_count' => $messages->count(),
                     'messages' => $messages,

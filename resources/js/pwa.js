@@ -1,18 +1,13 @@
 // ── Offline Queue: queue actions while offline, replay them when back online ──
 class OfflineQueue {
     constructor() {
-        this.queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+        this.queue = [];
+        localStorage.removeItem('offlineQueue');
         this.processQueue();
     }
 
     add(action) {
-        this.queue.push({
-            ...action,
-            timestamp: Date.now(),
-            id: Math.random().toString(36).substr(2, 9)
-        });
-        localStorage.setItem('offlineQueue', JSON.stringify(this.queue));
-        this.processQueue();
+        console.warn('Offline queue disabled for protected COMPASS actions.', action?.url || 'unknown action');
     }
 
     processQueue() {
@@ -22,7 +17,6 @@ class OfflineQueue {
         this.sendAction(item)
             .then(() => {
                 this.queue.shift();
-                localStorage.setItem('offlineQueue', JSON.stringify(this.queue));
                 this.processQueue();
             })
             .catch(() => {

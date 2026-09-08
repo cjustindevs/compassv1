@@ -1,6 +1,6 @@
 import { precacheAndRoute } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
-import { CacheFirst, NetworkFirst } from 'workbox-strategies';
+import { CacheFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 
 // Precache all build assets (injected by vite-plugin-pwa at build time).
@@ -10,16 +10,8 @@ precacheAndRoute(self.__WB_MANIFEST);
 // Cache-first for previously visited pages, network otherwise,
 // and /offline.html as the graceful fallback when there is no connection.
 const offlinePageHandler = async ({ event }) => {
-    const cache = await caches.open('pages-cache');
-    const cached = await cache.match(event.request);
-    if (cached) return cached;
-
     try {
-        const response = await fetch(event.request);
-        if (response && response.ok) {
-            cache.put(event.request, response.clone());
-        }
-        return response;
+        return await fetch(event.request);
     } catch (error) {
         return caches.match('/offline.html');
     }
@@ -74,19 +66,6 @@ registerRoute(
             new ExpirationPlugin({
                 maxEntries: 5,
                 maxAgeSeconds: 60 * 60 * 24 * 7,
-            }),
-        ],
-    })
-);
-
-registerRoute(
-    /\/api\/.*/i,
-    new NetworkFirst({
-        cacheName: 'api-cache',
-        plugins: [
-            new ExpirationPlugin({
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60,
             }),
         ],
     })

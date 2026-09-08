@@ -1,6 +1,6 @@
 @import './sidebar.css';
-@import './loading.css';
 @import './responsive.css';
+@import './compact.css';
 
 @tailwind base;
 @tailwind components;

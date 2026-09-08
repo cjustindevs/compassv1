@@ -383,7 +383,7 @@
             else { level = 'Unsatisfactory'; className = 'competency-level unsatisfactory'; }
             return `<span class="${className}">${level}</span>`;
         }
-    </style>
+    </script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {

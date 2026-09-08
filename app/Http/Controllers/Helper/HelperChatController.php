@@ -7,11 +7,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Message;
 use App\Models\Session;
 use App\Services\ChatTranscriptionService;
+use App\Traits\BroadcastsSafely;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class HelperChatController extends Controller
 {
+    use BroadcastsSafely;
+
     public function __construct(protected ChatTranscriptionService $transcriptionService) {}
 
     /**
@@ -31,7 +34,7 @@ class HelperChatController extends Controller
             return redirect()->route('helper.session.chat', ['id' => $active->id]);
         }
 
-        $sessions = Session::with(['seeker', 'concern', 'messages'])
+        $sessions = Session::with(['seeker', 'concern'])
             ->where('helper_id', $helper->id)
             ->whereIn('session_status', ['helper_assigned', 'active'])
             ->orderByDesc('created_date')
@@ -49,7 +52,7 @@ class HelperChatController extends Controller
     {
         $helper = Auth::user()->helper;
 
-        $session = Session::with(['seeker', 'seeker.user', 'messages'])
+        $session = Session::with(['seeker', 'seeker.user', 'messages' => fn ($q) => $q->orderBy('created_at', 'asc')->limit(50)])
             ->where('helper_id', $helper->id)
             ->find($id);
 
@@ -57,6 +60,8 @@ class HelperChatController extends Controller
             return redirect()->route('helper.chat')
                 ->with('info', 'That session is no longer available. Select an active session below.');
         }
+
+        app(\App\Services\SessionDurationService::class)->expire($session);
 
         if ($session->isCompleted()) {
             return redirect()->route('helper.session.notes', ['id' => $session->id])
@@ -95,11 +100,14 @@ class HelperChatController extends Controller
     {
         $helper = Auth::user()->helper;
 
-        $session = Session::with('messages')
+        $session = Session::with(['messages' => fn ($q) => $q->orderBy('sent_datetime', 'desc')->limit(50)])
             ->where('helper_id', $helper->id)
             ->findOrFail($id);
 
+        $state = app(\App\Services\SessionDurationService::class)->state($session);
+
         $messages = $session->messages
+            ->reverse()
             ->sortBy('sent_datetime')
             ->map(fn (Message $m) => [
                 'id' => $m->id,
@@ -114,7 +122,7 @@ class HelperChatController extends Controller
             ])
             ->values();
 
-        return response()->json(['success' => true, 'messages' => $messages]);
+        return response()->json(['success' => true, 'messages' => $messages, 'session' => $state]);
     }
 
     /**
@@ -139,9 +147,22 @@ class HelperChatController extends Controller
                 ->with('error', 'That session is no longer available.');
         }
 
+        app(\App\Services\SessionDurationService::class)->expire($session);
+
+        if ($session->isCompleted()) {
+            if ($request->wantsJson() || $request->expectsJson()) {
+                return response()->json(['error' => 'This session has already ended.'], 409);
+            }
+
+            return redirect()->route('helper.session.notes', ['id' => $session->id])
+                ->with('info', 'This session has ended. Please complete your session notes.');
+        }
+
         $request->validate([
             'message' => 'required|string|max:1000',
         ]);
+
+        abort_unless($session->isActive() || ($session->isHelperAssigned() && $helper->isReady()), 409, 'This session is not ready for chat.');
 
         $message = Message::create([
             'session_id' => $session->id,
@@ -155,11 +176,7 @@ class HelperChatController extends Controller
             'is_reviewed' => false,
         ]);
 
-        try {
-            broadcast(new MessageSent($message));
-        } catch (\Throwable $e) {
-            report($e);
-        }
+        $this->broadcastSafely(new MessageSent($message));
 
         if ($session->session_status === 'helper_assigned') {
             $session->update([

@@ -23,6 +23,7 @@ class ReferralWorkflowController extends Controller
         ]);
 
         $session = Session::with(['seeker', 'helper'])->findOrFail($validated['session_id']);
+        abort_unless($request->user()?->helper?->id === $session->helper_id, 403);
         $referral = $this->referrals->createReferral($session, $session->seeker, $validated);
 
         return response()->json(['success' => true, 'referral_id' => $referral->id, 'status' => $referral->status], 201);
@@ -43,6 +44,7 @@ class ReferralWorkflowController extends Controller
             : $request->user()?->adviser;
 
         abort_unless($adviser, 403, 'Adviser profile required.');
+        abort_unless($request->user()?->adviser?->id === $adviser->id, 403);
 
         $referral = $this->referrals->reviewReferral($referral, $adviser, $validated);
 
@@ -51,6 +53,8 @@ class ReferralWorkflowController extends Controller
 
     public function consent(Request $request, Referral $referral): JsonResponse
     {
+        abort_unless($request->user()?->helpSeeker?->id === $referral->session?->seeker_id, 403);
+        abort_unless($referral->status === Referral::STATUS_PENDING_CONSENT, 409);
         $validated = $request->validate(['consent_given' => ['required', 'boolean']]);
 
         $referral = $this->referrals->processConsent($referral, (bool) $validated['consent_given']);
@@ -66,6 +70,7 @@ class ReferralWorkflowController extends Controller
             : $request->user()?->psychologyProfessional;
 
         abort_unless($professional, 403, 'Professional profile required.');
+        abort_unless($request->user()?->psychologyProfessional?->id === $professional->id && $referral->professional_id === $professional->id, 403);
 
         $referral = $this->referrals->acceptReferral($referral, $professional);
 
@@ -74,6 +79,7 @@ class ReferralWorkflowController extends Controller
 
     public function outcome(Request $request, Referral $referral): JsonResponse
     {
+        abort_unless($request->user()?->psychologyProfessional?->id === $referral->professional_id && $referral->professional_id !== null, 403);
         $validated = $request->validate([
             'status' => ['required', 'in:accepted,in_progress,completed,closed'],
             'outcome' => ['nullable', 'string', 'max:2000'],

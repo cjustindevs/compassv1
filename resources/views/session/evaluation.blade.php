@@ -377,7 +377,7 @@
         .tab-content.active { display: block; }
     </style>
 </head>
-<body>
+<body class="compass-compact">
 
     @include('partials.sidebar', [
         'active' => ['session.evaluation*'],
@@ -431,197 +431,23 @@
                 </div>
             </div>
 
-            <form id="evaluationForm" method="POST" action="{{ route('session.evaluation.process') }}">
+            <form id="evaluationForm" class="form-container" method="POST" action="{{ route('session.evaluation.process') }}">
                 @csrf
-
-                <!-- ============================================ -->
-                <!-- SECTION 1: HELPFULNESS                      -->
-                <!-- ============================================ -->
-                <div class="mb-6">
-                    <label class="form-label">How helpful was the listener during your session? <span class="text-red-500">*</span></label>
-                    <div class="radio-group">
-                        <div class="radio-option">
-                            <input type="radio" id="helpful_very" name="helpfulness" value="very_helpful">
-                            <label for="helpful_very">Very Helpful</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="helpful_helpful" name="helpfulness" value="helpful">
-                            <label for="helpful_helpful">Helpful</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="helpful_neutral" name="helpfulness" value="neutral">
-                            <label for="helpful_neutral">Neutral</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="helpful_not" name="helpfulness" value="not_helpful">
-                            <label for="helpful_not">Not Helpful</label>
-                        </div>
-                    </div>
-                    @error('helpfulness')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- ============================================ -->
-                <!-- SECTION 2: COMFORT                          -->
-                <!-- ============================================ -->
-                <div class="mb-6">
-                    <label class="form-label">How comfortable did you feel during the conversation? <span class="text-red-500">*</span></label>
-                    <div class="radio-group">
-                        <div class="radio-option">
-                            <input type="radio" id="comfort_very" name="comfort" value="very_comfortable">
-                            <label for="comfort_very">Very Comfortable</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="comfort_comfortable" name="comfort" value="comfortable">
-                            <label for="comfort_comfortable">Comfortable</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="comfort_slightly" name="comfort" value="slightly_comfortable">
-                            <label for="comfort_slightly">Slightly Comfortable</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="comfort_not" name="comfort" value="not_comfortable">
-                            <label for="comfort_not">Not Comfortable</label>
-                        </div>
-                    </div>
-                    @error('comfort')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- ============================================ -->
-                <!-- SECTION 3: FEELING AFTER                    -->
-                <!-- ============================================ -->
-                <div class="mb-6">
-                    <label class="form-label">How do you feel after the session? <span class="text-red-500">*</span></label>
-                    <div class="radio-group">
-                        <div class="radio-option">
-                            <input type="radio" id="feeling_better" name="feeling" value="better">
-                            <label for="feeling_better">Better</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="feeling_slightly" name="feeling" value="slightly_better">
-                            <label for="feeling_slightly">Slightly Better</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="feeling_same" name="feeling" value="same">
-                            <label for="feeling_same">The Same</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="feeling_worse" name="feeling" value="worse">
-                            <label for="feeling_worse">Worse</label>
-                        </div>
-                    </div>
-                    @error('feeling')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- ============================================ -->
-                <!-- SECTION 4: UNDERSTOOD                       -->
-                <!-- ============================================ -->
-                <div class="mb-6">
-                    <label class="form-label">Did you feel that the listener understood you? <span class="text-red-500">*</span></label>
-                    <div class="radio-group">
-                        <div class="radio-option">
-                            <input type="radio" id="understood_yes" name="understood" value="yes">
-                            <label for="understood_yes">Yes</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="understood_no" name="understood" value="no">
-                            <label for="understood_no">No</label>
-                        </div>
-                    </div>
-                    @error('understood')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- ============================================ -->
-                <!-- SECTION 5: REUSE                            -->
-                <!-- ============================================ -->
-                <div class="mb-6">
-                    <label class="form-label">Would you use this service again? <span class="text-red-500">*</span></label>
-                    <div class="radio-group">
-                        <div class="radio-option">
-                            <input type="radio" id="reuse_yes" name="reuse" value="yes">
-                            <label for="reuse_yes">Yes</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="reuse_no" name="reuse" value="no">
-                            <label for="reuse_no">No</label>
-                        </div>
-                    </div>
-                    @error('reuse')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- ============================================ -->
-                <!-- SECTION 6: STAR RATING                      -->
-                <!-- ============================================ -->
-                <div class="mb-6">
-                    <label class="form-label text-center block">Overall, how would you rate this session? <span class="text-red-500">*</span></label>
-                    <div class="star-rating" id="starRating">
-                        <input type="radio" id="star5" name="rating" value="5">
-                        <label for="star5" title="5 stars"><i class="fas fa-star"></i></label>
-                        <input type="radio" id="star4" name="rating" value="4">
-                        <label for="star4" title="4 stars"><i class="fas fa-star"></i></label>
-                        <input type="radio" id="star3" name="rating" value="3">
-                        <label for="star3" title="3 stars"><i class="fas fa-star"></i></label>
-                        <input type="radio" id="star2" name="rating" value="2">
-                        <label for="star2" title="2 stars"><i class="fas fa-star"></i></label>
-                        <input type="radio" id="star1" name="rating" value="1">
-                        <label for="star1" title="1 star"><i class="fas fa-star"></i></label>
-                    </div>
-                    @error('rating')
-                        <p class="text-red-500 text-sm mt-1 text-center">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- ============================================ -->
-                <!-- SECTION 7: HIGHLIGHTS                       -->
-                <!-- ============================================ -->
-                <div class="mb-6">
-                    <label class="form-label">What stood out? <span class="text-gray-400 text-sm font-normal">(optional)</span></label>
-                    <p class="text-sm text-gray-500 mb-2">Pick any that apply.</p>
-                    <div class="flex flex-wrap gap-2">
-                        <button type="button" class="highlight-btn" data-value="response_time">⏱ Response time</button>
-                        <button type="button" class="highlight-btn" data-value="energy">⚡ Energy</button>
-                        <button type="button" class="highlight-btn" data-value="active_listening">👂 Active listening</button>
-                        <button type="button" class="highlight-btn" data-value="advice_quality">💡 Advice quality</button>
-                        <button type="button" class="highlight-btn" data-value="session_length">📏 Session length</button>
-                        <button type="button" class="highlight-btn" data-value="privacy_safety">🔒 Privacy & safety</button>
-                        <button type="button" class="highlight-btn" data-value="follow_up_resources">📚 Follow-up resources</button>
-                    </div>
-                    <input type="hidden" name="highlights" id="highlightsInput" value="">
-                </div>
-
-                <!-- ============================================ -->
-                <!-- SECTION 8: COMMENTS                         -->
-                <!-- ============================================ -->
-                <div class="mb-6">
-                    <label class="form-label" for="comments">Additional comments or suggestions <span class="text-gray-400 text-sm font-normal">(optional)</span></label>
-                    <textarea id="comments" name="comments" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all" rows="4" maxlength="500" placeholder="Anything else you'd like to share with us?"></textarea>
-                    <div class="text-right text-xs text-gray-400 mt-1" id="commentCount">0 / 500</div>
-                    @error('comments')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- ============================================ -->
-                <!-- SUBMIT                                      -->
-                <!-- ============================================ -->
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-200">
-                    <a href="{{ route('seeker.dashboard') }}" class="text-gray-500 hover:text-gray-700 transition font-medium text-sm">
-                        <i class="fas fa-arrow-left mr-2"></i> Skip & Go to Dashboard
-                    </a>
-                    <button type="submit" class="btn-primary w-full sm:w-auto">
-                        <i class="fas fa-paper-plane mr-2"></i> Submit Feedback
-                    </button>
-                </div>
-
+                <input type="hidden" name="session_id" value="{{ $sessionId }}">
+                <p class="mb-4">Rate each item from 1 (lowest) to 10 (highest).</p>
+                @foreach(['helpfulness_score' => 'How helpful was the session?', 'comfort_score' => 'How comfortable did you feel?', 'feeling_after_score' => 'How do you feel after the session?', 'understood_score' => 'How well did you feel understood?', 'reuse_score' => 'How likely are you to use this service again?'] as $field => $label)
+                    <label class="block mb-4" for="{{ $field }}">{{ $label }}
+                        <select id="{{ $field }}" name="{{ $field }}" class="form-input" required>
+                            <option value="">Select a rating</option>
+                            @for($score = 1; $score <= 10; $score++)
+                                <option value="{{ $score }}" @selected(old($field) == $score)>{{ $score }}</option>
+                            @endfor
+                        </select>
+                        @error($field)<span class="text-red-600">{{ $message }}</span>@enderror
+                    </label>
+                @endforeach
+                <label class="block mb-4">Comments (optional)<textarea name="comments" class="form-input" maxlength="500">{{ old('comments') }}</textarea></label>
+                <button type="submit" class="btn-primary">Submit feedback</button>
             </form>
         </div>
 
@@ -637,61 +463,7 @@
     <!-- JAVASCRIPT                                   -->
     <!-- ══════════════════════════════════════════════ -->
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
 
-            // ── Star Rating ──
-            const starInputs = document.querySelectorAll('.star-rating input');
-
-            // ── Highlights ──
-            const highlightBtns = document.querySelectorAll('.highlight-btn');
-            const highlightsInput = document.getElementById('highlightsInput');
-            let selectedHighlights = [];
-
-            highlightBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    this.classList.toggle('active');
-                    const value = this.dataset.value;
-                    if (this.classList.contains('active')) {
-                        if (!selectedHighlights.includes(value)) {
-                            selectedHighlights.push(value);
-                        }
-                    } else {
-                        selectedHighlights = selectedHighlights.filter(v => v !== value);
-                    }
-                    highlightsInput.value = selectedHighlights.join(',');
-                });
-            });
-
-            // ── Comment Counter ──
-            const comments = document.getElementById('comments');
-            const commentCount = document.getElementById('commentCount');
-
-            comments.addEventListener('input', function() {
-                const length = this.value.length;
-                commentCount.textContent = length + ' / 500';
-            });
-
-            // ── Form Validation ──
-            const form = document.getElementById('evaluationForm');
-
-            form.addEventListener('submit', function(e) {
-                const helpfulness = document.querySelector('input[name="helpfulness"]:checked');
-                const comfort = document.querySelector('input[name="comfort"]:checked');
-                const feeling = document.querySelector('input[name="feeling"]:checked');
-                const understood = document.querySelector('input[name="understood"]:checked');
-                const reuse = document.querySelector('input[name="reuse"]:checked');
-                const rating = document.querySelector('input[name="rating"]:checked');
-
-                if (!helpfulness || !comfort || !feeling || !understood || !reuse || !rating) {
-                    e.preventDefault();
-                    alert('Please answer all required questions before submitting.');
-                    return;
-                }
-            });
-
-        });
-    </script>
 
     @include('layouts.partials.pwa-banner')
 

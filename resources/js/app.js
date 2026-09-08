@@ -1,5 +1,5 @@
 import '../css/sidebar.css';
-import '../css/loading.css';
+import '../css/compact.css';
 import './bootstrap';
 import './pwa';
 import './toast';

@@ -17,9 +17,13 @@ class ScreeningResponse extends Model
         'reason',
         'classified_at',
         'classified_by',
+        'is_active',
+        'is_complete',
     ];
 
     protected $casts = [
+        'is_active' => 'boolean',
+        'is_complete' => 'boolean',
         'responses' => 'array',
         'classified_at' => 'datetime',
         'priority' => 'integer',

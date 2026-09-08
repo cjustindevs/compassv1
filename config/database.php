@@ -32,6 +32,20 @@ return [
 
     'connections' => [
 
+        'identity_vault' => [
+            'driver' => env('DB_IDENTITY_CONNECTION', 'pgsql'),
+            'host' => env('DB_IDENTITY_HOST', '127.0.0.1'),
+            'port' => env('DB_IDENTITY_PORT', '5432'),
+            'database' => env('DB_IDENTITY_DATABASE', 'compass_identity_vault'),
+            'username' => env('DB_IDENTITY_USERNAME', 'compass_identity_user'),
+            'password' => env('DB_IDENTITY_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'search_path' => 'public',
+            'sslmode' => env('DB_IDENTITY_SSLMODE', 'prefer'),
+            'foreign_key_constraints' => true,
+        ],
+
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DB_URL'),

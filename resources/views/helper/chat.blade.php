@@ -41,7 +41,7 @@
         <div class="card">
             <div class="empty-state">
                 <i class="fas fa-comment-slash"></i>
-                <h3 style="font-size:16px;font-weight:700;color:var(--gray-800);margin-bottom:6px;">No active sessions</h3>
+                <h3>No active sessions</h3>
                 <p>No active sessions. Please check your assigned cases.</p>
                 <a href="{{ route('helper.cases') }}" class="btn btn-primary btn-sm" style="margin-top:14px;">
                     <i class="fas fa-folder-open mr-1"></i> View Assigned Cases

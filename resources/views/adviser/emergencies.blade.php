@@ -35,7 +35,7 @@
         </div>
         <div class="flex items-center gap-2">
             <span class="px-3 py-1 rounded-full text-sm font-semibold bg-red-50 text-red-700">
-                <i class="fas fa-circle text-[8px] mr-2"></i>{{ $openAlerts->count() }} Active
+                <i class="fas fa-circle text-[8px] mr-2"></i>{{ $openAlerts->total() }} Active
             </span>
         </div>
     </div>
@@ -50,12 +50,12 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div class="stat-card border-l-4 border-l-red-500">
             <span class="stat-label">Active Emergencies</span>
-            <div class="stat-number text-red-600">{{ $openAlerts->count() }}</div>
+            <div class="stat-number text-red-600">{{ $openAlerts->total() }}</div>
             <span class="text-xs text-gray-400">Requires immediate attention</span>
         </div>
         <div class="stat-card border-l-4 border-l-green-500">
             <span class="stat-label">Resolved</span>
-            <div class="stat-number text-green-600">{{ $resolvedAlerts->count() }}</div>
+            <div class="stat-number text-green-600">{{ $resolvedAlerts->total() }}</div>
             <span class="text-xs text-gray-400">Successfully handled</span>
         </div>
         <div class="stat-card border-l-4 border-l-blue-500">
@@ -69,7 +69,7 @@
     <section class="card mb-6">
         <div class="card-header">
             <h3><i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>Open Emergency Cases</h3>
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700">{{ $openAlerts->count() }}</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700">{{ $openAlerts->total() }}</span>
         </div>
         @forelse($openAlerts as $alert)
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 bg-gray-50 rounded-xl mb-3 last:mb-0">
@@ -94,13 +94,14 @@
                 <p class="text-sm text-gray-500">All emergencies have been resolved.</p>
             </div>
         @endforelse
+        {{ $openAlerts->links() }}
     </section>
 
     <!-- Resolved Cases -->
     <section class="card">
         <div class="card-header">
             <h3><i class="fas fa-check-circle text-green-500 mr-2"></i>Resolved Cases</h3>
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700">{{ $resolvedAlerts->count() }}</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700">{{ $resolvedAlerts->total() }}</span>
         </div>
         @forelse($resolvedAlerts as $alert)
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 py-3 border-b border-gray-100 last:border-0 text-sm">
@@ -121,6 +122,7 @@
                 <p class="text-sm text-gray-500">No resolved emergency cases yet.</p>
             </div>
         @endforelse
+        {{ $resolvedAlerts->links() }}
     </section>
 </div>
 @endsection

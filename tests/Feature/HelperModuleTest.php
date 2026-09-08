@@ -324,6 +324,8 @@ class HelperModuleTest extends TestCase
             'max_concurrent_sessions' => 2,
         ]);
 
+        $this->prepareMatchingHelper($backupHelper);
+
         \App\Models\ReadinessCheck::create([
             'helper_id' => $backupHelper->id,
             'assessment_date' => now(),
@@ -370,7 +372,7 @@ class HelperModuleTest extends TestCase
         Event::assertDispatched(NewHelperAssigned::class, function (NewHelperAssigned $event) use ($session) {
             return $event->session->id === $session->id
                 && $event->userId === $session->seeker->user_account_id
-                && $event->helperName === 'Backup Helper';
+                && str_starts_with($event->helperName, 'Peer Helper ');
         });
 
         $this->assertDatabaseHas('notifications', [
@@ -485,6 +487,8 @@ class HelperModuleTest extends TestCase
     {
         Event::fake([NewCaseAssigned::class]);
 
+        $this->prepareMatchingHelper($this->helperUser->helper);
+        $this->helperUser->helper->sessions()->update(['session_status' => 'completed']);
         $seekerUser = User::where('role', 'seeker')->firstOrFail();
         $seeker = $seekerUser->helpSeeker;
 
@@ -497,6 +501,8 @@ class HelperModuleTest extends TestCase
             'completion_status' => 'pending',
             'created_date' => now(),
         ]);
+
+        \App\Models\QueueRequest::create(['seeker_id' => $seeker->id, 'request_status' => 'waiting', 'priority_level' => 'low', 'preferred_session_type' => 'chat']);
 
         session([
             'screening_data' => ['concern_id' => $session->concern_id, 'description' => 'Test request.', 'urgency' => 'low', 'safety_check' => 'no'],
@@ -543,6 +549,8 @@ class HelperModuleTest extends TestCase
             'max_concurrent_sessions' => 2,
         ]);
 
+        $this->prepareMatchingHelper($this->helperUser->helper);
+        $this->helperUser->helper->sessions()->update(['session_status' => 'completed']);
         $seekerUser = User::where('role', 'seeker')->firstOrFail();
         $seeker = $seekerUser->helpSeeker;
 
@@ -555,6 +563,8 @@ class HelperModuleTest extends TestCase
             'completion_status' => 'pending',
             'created_date' => now(),
         ]);
+
+        \App\Models\QueueRequest::create(['seeker_id' => $seeker->id, 'request_status' => 'waiting', 'priority_level' => 'low', 'preferred_session_type' => 'chat']);
 
         session([
             'screening_data' => ['concern_id' => $session->concern_id, 'description' => 'Test request.', 'urgency' => 'low', 'safety_check' => 'no'],
@@ -687,7 +697,8 @@ class HelperModuleTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Waiting for helper to accept');
-        $response->assertSee($this->helperUser->helper->full_name);
+        $response->assertSee($this->helperUser->helper->public_alias);
+        $response->assertDontSee($this->helperUser->helper->full_name);
     }
 
     public function test_matching_page_shows_active_session_state(): void
@@ -822,7 +833,7 @@ class HelperModuleTest extends TestCase
         $this->assertDatabaseHas('helpers', [
             'id' => $this->helperUser->helper->id,
             'status' => 'available',
-            'active_sessions_count' => 0,
+            'active_sessions_count' => 1,
             'current_shift_sessions' => 0,
         ]);
     }
@@ -874,6 +885,7 @@ class HelperModuleTest extends TestCase
                 'observations' => 'Late observation.',
                 'actions_taken' => 'Late action.',
                 'referral_recommended' => 0,
+                'personal_reflection' => 'I will follow up promptly and document earlier next time.',
             ])
             ->assertRedirect();
 
@@ -1052,6 +1064,8 @@ class HelperModuleTest extends TestCase
 
         $seekerUser = User::where('role', 'seeker')->firstOrFail();
         $session = $this->makeActiveSession();
+        $this->actingAs($seekerUser)->post(route('session.end'));
+        $session->refresh();
 
         $this->actingAs($seekerUser)
             ->post(route('session.evaluation.process'), $this->validEvaluationPayload())
@@ -1226,13 +1240,9 @@ class HelperModuleTest extends TestCase
     private function validEvaluationPayload(): array
     {
         return [
-            'helpfulness' => 'very_helpful',
-            'comfort' => 'comfortable',
-            'feeling' => 'better',
-            'understood' => 'yes',
-            'reuse' => 'yes',
-            'rating' => 5,
-            'highlights' => ['active_listening', 'advice_quality'],
+            'session_id' => Session::latest('id')->value('id'),
+            'helpfulness_score' => 5, 'comfort_score' => 5, 'feeling_after_score' => 5,
+            'understood_score' => 5, 'reuse_score' => 5,
             'comments' => 'The session really helped me calm down.',
         ];
     }
@@ -1241,6 +1251,8 @@ class HelperModuleTest extends TestCase
     {
         $seekerUser = User::where('role', 'seeker')->firstOrFail();
         $session = $this->makeActiveSession();
+        $this->actingAs($seekerUser)->post(route('session.end'));
+        $session->refresh();
 
         $this->actingAs($seekerUser)
             ->post(route('session.evaluation.process'), $this->validEvaluationPayload())
@@ -1264,7 +1276,7 @@ class HelperModuleTest extends TestCase
         ]);
     }
 
-    public function test_evaluation_page_resumes_an_active_session_from_the_database(): void
+    public function test_evaluation_page_redirects_active_session_to_chat(): void
     {
         // Simulate a seeker who opened the evaluation link after a refresh
         // (no session_id in the PHP session) — the controller must fall back
@@ -1274,9 +1286,7 @@ class HelperModuleTest extends TestCase
 
         $this->actingAs($seekerUser)
             ->get(route('session.evaluation'))
-            ->assertOk()
-            ->assertSee('Post-Session Evaluation')
-            ->assertSee('Submit Feedback');
+            ->assertRedirect(route('session.chat'));
     }
 
     public function test_thank_you_page_renders(): void
@@ -1294,6 +1304,7 @@ class HelperModuleTest extends TestCase
     {
         $seekerUser = User::where('role', 'seeker')->firstOrFail();
         $session = $this->makeActiveSession();
+        $session->update(['session_status' => 'evaluated']);
 
         \App\Models\HelpSeekerEvaluation::create([
             'session_id' => $session->id,
@@ -1306,6 +1317,7 @@ class HelperModuleTest extends TestCase
         ]);
 
         $this->actingAs($seekerUser)
+            ->withSession(['session_id' => $session->id])
             ->from(route('session.evaluation'))
             ->get(route('session.evaluation'))
             ->assertRedirect(route('session.thank-you'));
@@ -1380,4 +1392,13 @@ class HelperModuleTest extends TestCase
             ->assertOk()
             ->assertSee('Referral Status');
     }
+    private function prepareMatchingHelper(Helper $helper): void
+    {
+        $helper->update(['availability' => 'available', 'status' => 'available']);
+        \App\Models\HelperSchedule::updateOrCreate(['helper_id' => $helper->id, 'date' => today()], [
+            'shift_start' => '00:00:00', 'shift_end' => '23:59:59', 'is_active' => true,
+            'created_by' => $helper->user_account_id,
+        ]);
+    }
+
 }

@@ -42,7 +42,7 @@ class HelperSelfHelpController extends Controller
         $helper = Auth::user()->helper;
         $entries = HelperJournalEntry::where('helper_id', $helper->id)
             ->orderByDesc('created_at')
-            ->get();
+            ->paginate(20);
 
         return view('helper.self-help.journal', compact('entries'));
     }

@@ -26,7 +26,7 @@
         }
     </style>
 </head>
-<body class="gradient-bg min-h-screen flex items-center justify-center py-12">
+<body class="compass-compact gradient-bg min-h-screen flex items-center justify-center py-12">
 
     <div class="w-full max-w-md mx-4">
 
@@ -56,10 +56,10 @@
                     @csrf
 
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-                        <input type="email" name="email" value="{{ old('email') }}"
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Email or alias</label>
+                        <input type="text" name="email" value="{{ old('email') }}"
                                class="input-focus w-full px-4 py-3 rounded-xl border border-gray-200 outline-none transition-all"
-                               placeholder="you@university.edu" required autofocus>
+                               placeholder="Your email or COMPASS alias" required autofocus>
                     </div>
 
                     <div class="mb-4">

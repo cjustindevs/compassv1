@@ -135,7 +135,7 @@ class Message extends Model
         }
 
         return $this->is_helper
-            ? ($this->session?->helper?->full_name ?: 'Peer Helper')
+            ? ($this->session?->helper?->public_alias ?: 'Peer Helper')
             : ($this->session?->seeker?->generated_alias ?: 'Seeker');
     }
 }

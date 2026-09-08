@@ -208,13 +208,23 @@
         }
     </style>
 </head>
-<body>
+<body class="compass-compact">
 
     @include('layouts.partials.professional-sidebar')
 
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <main class="main-content">
+        @if ($referral->identity_disclosed && $referral->help_seeker_consent)
+            <a href="{{ route('identity.show', $referral) }}" class="inline-block bg-green-700 text-white p-3 rounded mb-4">View released identity</a>
+        @endif
+        @if ($referral->session?->risk_level === 'emergency' && in_array(auth()->id(), config('identity_vault.emergency_responder_ids'), true))
+            <form method="POST" action="{{ route('identity.emergency', $referral->session) }}" class="mb-4">
+                @csrf
+                <label>Life-threatening emergency justification <textarea name="reason" required minlength="20" maxlength="1000" class="block w-full"></textarea></label>
+                <button class="bg-red-700 text-white p-3 rounded">Open emergency identity (audited)</button>
+            </form>
+        @endif
 
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6 flex-wrap gap-3">

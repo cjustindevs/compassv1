@@ -425,7 +425,7 @@
         }
     </style>
 </head>
-<body>
+<body class="compass-compact">
 
     @include('partials.sidebar', [
         'active' => ['request.preferences*'],
@@ -436,7 +436,7 @@
     <!-- MAIN CONTENT                                 -->
     <!-- ══════════════════════════════════════════════ -->
 
-    <main class="main-content">
+    <main class="main-content request-flow-compact">
 
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
@@ -457,7 +457,7 @@
         </div>
 
         <!-- Step Indicator -->
-        <div class="step-indicator">
+        <div class="step-indicator steps-compact">
             <div class="step-dot done">✓</div>
             <div class="step-line done"></div>
             <div class="step-dot active">2</div>
@@ -468,24 +468,15 @@
         <!-- ─── FORM CARD ─── -->
         <div class="form-card">
 
-            <!-- Risk Summary -->
-            <div class="mb-6 p-4 bg-gray-50 rounded-xl flex items-center justify-between flex-wrap gap-3">
-                <div>
-                    <span class="text-sm font-medium text-gray-600">Risk Classification:</span>
-                    <span class="risk-badge {{ session('risk_level', 'low') }}">{{ ucfirst(session('risk_level', 'low')) }}</span>
-                </div>
-                <span class="text-xs text-gray-400">Updated in real time</span>
-            </div>
-
             <form id="preferencesForm" method="POST" action="{{ route('request.preferences.process') }}">
                 @csrf
 
                 <!-- ============================================ -->
                 <!-- SECTION 1: SUPPORT MODE                     -->
                 <!-- ============================================ -->
-                <div class="mb-8">
+                <div class="form-section-compact">
                     <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Screening</h3>
-                    <p class="text-sm text-gray-500 mb-4">Choose chat or voice support. Voice sessions require recording consent before matching.</p>
+                    <p class="text-sm text-gray-500 mb-4">Choose your language for a private chat session.</p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <label class="mode-card">
@@ -497,53 +488,16 @@
                                 <div class="checkmark"><i class="fas fa-check-circle"></i></div>
                             </div>
                         </label>
-                        <label class="mode-card">
-                            <input type="radio" name="support_mode" value="voice" {{ old('support_mode') === 'voice' ? 'checked' : '' }}>
-                            <div class="mode-content">
-                                <div class="icon">🎙️</div>
-                                <div class="label">Voice</div>
-                                <div class="sub">Real-time voice call with consent controls</div>
-                                <div class="checkmark"><i class="fas fa-check-circle"></i></div>
-                            </div>
-                        </label>
                     </div>
                     @error('support_mode')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
-
-                    <div id="voiceConsentSection" class="mt-5 p-4 rounded-xl border border-amber-200 bg-amber-50 {{ old('support_mode') === 'voice' ? '' : 'hidden' }}">
-                        <div class="flex items-start gap-3">
-                            <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-microphone"></i>
-                            </div>
-                            <div class="flex-1">
-                                <div class="flex items-center justify-between gap-3 flex-wrap">
-                                    <h4 class="font-semibold text-gray-800">Voice Recording Consent</h4>
-                                    <span class="text-xs font-semibold text-amber-700 bg-white border border-amber-200 rounded-full px-3 py-1">Required for voice</span>
-                                </div>
-                                <p class="text-sm text-gray-600 mt-2">
-                                    Voice sessions may be recorded for supervision and quality assurance. Recordings are stored securely and only authorized personnel can access them.
-                                </p>
-                                <label class="mt-4 flex items-start gap-3 cursor-pointer">
-                                    <input id="voiceConsent" name="voice_consent" type="checkbox" value="1" class="mt-1 rounded border-amber-300 text-[#04A052] focus:ring-[#04A052]" {{ old('voice_consent') ? 'checked' : '' }}>
-                                    <span class="text-sm text-gray-700">
-                                        <strong>I consent to recording this voice session.</strong><br>
-                                        <span class="text-gray-500">I understand it will be used only for supervision and quality assurance.</span>
-                                    </span>
-                                </label>
-                                <p id="voiceConsentClientError" class="text-red-500 text-sm mt-2 hidden">Please provide consent to continue with a voice session.</p>
-                                @error('voice_consent')
-                                    <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- ============================================ -->
                 <!-- SECTION 2: PREFERRED LANGUAGE               -->
                 <!-- ============================================ -->
-                <div class="mb-8">
+                <div class="form-section-compact">
                     <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Preferences</h3>
                     <p class="text-sm text-gray-500 mb-4">Select your preferred language.</p>
 
@@ -566,22 +520,9 @@
                 </div>
 
                 <!-- ============================================ -->
-                <!-- SECTION 3: ADDITIONAL NOTES                 -->
-                <!-- ============================================ -->
-                <div class="mb-8">
-                    <label class="form-label" for="additional_notes">Additional Notes <span class="text-gray-400 text-sm font-normal">(optional)</span></label>
-                    <p class="text-sm text-gray-500 mb-2">Anything you want the team to know?</p>
-                    <textarea id="additional_notes" name="additional_notes" class="form-input" rows="3" maxlength="500" placeholder="Any additional information that might help us support you better...">{{ old('additional_notes') }}</textarea>
-                    <div class="char-count text-right text-xs text-gray-400 mt-1" id="noteCount">0 / 500</div>
-                    @error('additional_notes')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- ============================================ -->
                 <!-- FORM ACTIONS                                -->
                 <!-- ============================================ -->
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-200">
+                <div class="actions-compact">
                     <a href="{{ route('request.screening') }}" class="text-gray-500 hover:text-gray-700 transition font-medium text-sm">
                         <i class="fas fa-arrow-left mr-2"></i> Back
                     </a>
@@ -607,77 +548,7 @@
     <!-- JAVASCRIPT                                   -->
     <!-- ══════════════════════════════════════════════ -->
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
 
-            // ── Character Counter ──
-            const noteInput = document.getElementById('additional_notes');
-            const noteCount = document.getElementById('noteCount');
-
-            if (noteInput && noteCount) {
-                noteInput.addEventListener('input', function() {
-                    const length = this.value.length;
-                    noteCount.textContent = length + ' / 500';
-                });
-            }
-
-            // ── Mode Card Selection + Voice Consent ──
-            const form = document.getElementById('preferencesForm');
-            const voiceConsentSection = document.getElementById('voiceConsentSection');
-            const voiceConsent = document.getElementById('voiceConsent');
-            const voiceConsentClientError = document.getElementById('voiceConsentClientError');
-            const submitButton = document.getElementById('preferencesSubmit');
-
-            function updateSupportMode(selectedMode) {
-                document.querySelectorAll('.mode-card').forEach(card => {
-                    const radio = card.querySelector('input[type="radio"]');
-                    const isSelected = radio && radio.value === selectedMode;
-                    card.style.borderColor = isSelected ? '#04A052' : '';
-                    card.style.background = isSelected ? '#EAF8F0' : '';
-                });
-
-                const voiceSelected = selectedMode === 'voice';
-                voiceConsentSection.classList.toggle('hidden', !voiceSelected);
-                voiceConsent.required = voiceSelected;
-
-                if (!voiceSelected) {
-                    voiceConsent.checked = false;
-                    voiceConsentClientError.classList.add('hidden');
-                }
-            }
-
-            document.querySelectorAll('.mode-card input[type="radio"]').forEach(radio => {
-                radio.addEventListener('change', function() {
-                    updateSupportMode(this.value);
-                });
-
-                if (radio.checked) {
-                    updateSupportMode(radio.value);
-                }
-            });
-
-            form.addEventListener('submit', function(event) {
-                const selectedMode = document.querySelector('.mode-card input[name="support_mode"]:checked')?.value;
-
-                if (selectedMode === 'voice' && !voiceConsent.checked) {
-                    event.preventDefault();
-                    voiceConsentClientError.classList.remove('hidden');
-                    voiceConsent.focus();
-                    voiceConsentSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    return;
-                }
-
-                submitButton.disabled = true;
-            });
-
-            voiceConsent.addEventListener('change', function() {
-                if (this.checked) {
-                    voiceConsentClientError.classList.add('hidden');
-                }
-            });
-
-        });
-    </script>
 
     @include('layouts.partials.pwa-banner')
 

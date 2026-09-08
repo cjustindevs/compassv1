@@ -23,7 +23,7 @@ class ProfileTest extends TestCase
 
     public function test_profile_information_can_be_updated(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'adviser']);
 
         $response = $this
             ->actingAs($user)
@@ -45,7 +45,7 @@ class ProfileTest extends TestCase
 
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'adviser']);
 
         $response = $this
             ->actingAs($user)

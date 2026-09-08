@@ -26,8 +26,8 @@ class HelperResourceController extends Controller
         $resources = $query
             ->orderBy('is_featured', 'desc')
             ->orderByDesc('views_count')
-            ->get()
-            ->map(fn (SelfHelpResource $resource) => [
+            ->paginate(12)
+            ->through(fn (SelfHelpResource $resource) => [
                 'id' => $resource->id,
                 'title' => $resource->title,
                 'description' => $resource->description,

@@ -8,7 +8,6 @@ use App\Events\ReferralCreated;
 use App\Models\Adviser;
 use App\Models\AuditLog;
 use App\Models\HelpSeeker;
-use App\Models\IdentityVault;
 use App\Models\Notification;
 use App\Models\PsychologyProfessional;
 use App\Models\Referral;
@@ -47,6 +46,7 @@ class ReferralManagementService
     public function reviewReferral(Referral $referral, Adviser $adviser, array $data): Referral
     {
         $this->validateAdviserAuthorization($adviser, $referral);
+        abort_unless($referral->status === Referral::STATUS_PENDING_ADVISER, 409, 'This referral has already been reviewed.');
 
         $approved = (bool) ($data['approved'] ?? false);
 
@@ -59,10 +59,10 @@ class ReferralManagementService
         if ($approved) {
             $referral->forceFill([
                 'approved_at' => now(),
-                'status' => ($data['consent_obtained'] ?? false) ? Referral::STATUS_PENDING_PROFESSIONAL : Referral::STATUS_PENDING_CONSENT,
-                'help_seeker_consent' => (bool) ($data['consent_obtained'] ?? false),
-                'consent_requested_at' => ($data['consent_obtained'] ?? false) ? null : now(),
-                'consent_obtained_at' => ($data['consent_obtained'] ?? false) ? now() : null,
+                'status' => Referral::STATUS_PENDING_CONSENT,
+                'help_seeker_consent' => false,
+                'consent_requested_at' => now(),
+                'consent_obtained_at' => null,
             ])->save();
 
             if ($referral->help_seeker_consent) {
@@ -91,6 +91,7 @@ class ReferralManagementService
 
     public function processConsent(Referral $referral, bool $consentGiven): Referral
     {
+        abort_unless($referral->approved_at && $referral->status === Referral::STATUS_PENDING_CONSENT, 409, 'Adviser approval is required before consent.');
         if ($consentGiven) {
             $referral->forceFill([
                 'help_seeker_consent' => true,
@@ -98,7 +99,6 @@ class ReferralManagementService
                 'status' => Referral::STATUS_PENDING_PROFESSIONAL,
             ])->save();
 
-            $this->storeIdentityVault($referral);
             $this->forwardToProfessional($referral);
         } else {
             $referral->forceFill([
@@ -192,7 +192,7 @@ class ReferralManagementService
     private function validateAdviserAuthorization(Adviser $adviser, Referral $referral): void
     {
         $helper = $referral->session?->helper;
-        if ($helper?->adviser_id && $helper->adviser_id !== $adviser->id) {
+        if (! $helper?->adviser_id || $helper->adviser_id !== $adviser->id) {
             throw new \RuntimeException('Adviser is not authorized to review this referral.');
         }
     }
@@ -224,28 +224,7 @@ class ReferralManagementService
     private function requestConsent(Referral $referral): void
     {
         $seekerUserId = $referral->session?->seeker?->user_account_id;
-        $this->notifyUser($seekerUserId, 'Referral consent requested', 'An adviser approved a referral recommendation. Please review consent.', '/session/chat', 'referral');
-    }
-
-    private function storeIdentityVault(Referral $referral): void
-    {
-        $seeker = $referral->session?->seeker;
-        if (! $seeker) {
-            return;
-        }
-
-        IdentityVault::updateOrCreate(
-            ['seeker_id' => $seeker->id],
-            [
-                'released_by' => Auth::id(),
-                'released_date' => now(),
-                'released_reason' => 'referral_' . $referral->id,
-                'approved_by' => $referral->adviser_id,
-                'emergency_override' => false,
-            ]
-        );
-
-        $referral->forceFill(['identity_disclosed' => true])->save();
+        $this->notifyUser($seekerUserId, 'Referral consent requested', 'An adviser approved a referral recommendation. Please review consent.', '/referrals/' . $referral->id . '/identity', 'referral');
     }
 
     private function transferResponsibility(Referral $referral, PsychologyProfessional $professional): void

@@ -290,6 +290,7 @@
             .chat-messages .message { max-width: 90%; }
         }
     </style>
+@include('session.referral-prompt')
 @endsection
 
 @section('content')
@@ -374,12 +375,8 @@
                     <option value="high">High</option>
                     <option value="emergency">Emergency</option>
                 </select>
-                <label class="checkbox-row">
-                    <input type="checkbox" name="help_seeker_consent" value="1"> The seeker has consented to this referral
-                </label>
-                <label class="checkbox-row">
-                    <input type="checkbox" name="identity_disclosed" value="1"> The seeker's identity has been disclosed
-                </label>
+
+
                 <div class="modal-actions">
                     <button type="button" class="btn btn-cancel modal-close" data-modal="referralModal">Cancel</button>
                     <button type="submit" class="btn btn-info"><i class="fas fa-paper-plane" style="margin-right:6px;"></i> Submit Referral</button>
@@ -410,21 +407,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // ── Session timer ──
-            const timerDisplay = document.getElementById('sessionTimer');
-            const startedAt = {{ $session->start_time?->timestamp ?? 'null' }};
-            if (timerDisplay) {
-                const tick = function () {
-                    const seconds = startedAt
-                        ? Math.max(0, Math.floor(Date.now() / 1000) - startedAt)
-                        : 0;
-                    const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
-                    const secs = String(seconds % 60).padStart(2, '0');
-                    timerDisplay.textContent = mins + ':' + secs;
-                };
-                tick();
-                setInterval(tick, 1000);
-            }
-
             const openers = {
                 emergencyBtn: 'emergencyModal',
                 referralBtn: 'referralModal',

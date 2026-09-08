@@ -47,7 +47,7 @@ class NewCaseAssigned implements ShouldBroadcastNow
             'case_id' => $this->session->reference_number,
             'seeker_alias' => $this->session->seeker?->generated_alias ?? 'Anonymous',
             'concern' => $this->session->concern?->concern_name ?? 'General',
-            'risk_level' => ucfirst($this->session->risk_level ?? 'Low'),
+            'support_guidance' => 'Follow the assigned support plan and escalate safety concerns.',
             'created_at' => $this->session->created_at?->diffForHumans(),
             'link' => '/helper/cases',
         ];

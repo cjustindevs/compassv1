@@ -80,7 +80,7 @@
         }
     </style>
 </head>
-<body>
+<body class="compass-compact">
 
     <main class="main-content">
 
@@ -131,24 +131,24 @@
             <h2><i class="fas fa-user text-[#04A052] mr-2"></i>Basic information</h2>
             <p class="sub">Your name, alias, and profile details.</p>
 
-            <form method="POST" action="{{ route('settings.account.update') }}" class="mt-5">
+            <form method="POST" action="{{ route('settings.account.update') }}" class="form-container mt-5">
                 @csrf
                 @method('patch')
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="name" class="form-label">Display name</label>
-                        <input id="name" name="name" type="text" class="form-input" value="{{ old('name', $user->name) }}" required>
+                        <input id="name" name="name" type="text" class="form-input" value="{{ $user->role === 'seeker' ? $user->helpSeeker?->generated_alias : old('name', $user->name) }}" @readonly($user->role === 'seeker') required>
                         @error('name') <p class="form-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label for="email" class="form-label">Email address</label>
-                        <input id="email" name="email" type="email" class="form-input" value="{{ old('email', $user->email) }}" required>
+                        <label for="email" class="form-label">{{ $user->role === 'seeker' ? 'Sign-in alias (no email required)' : 'Email address' }}</label>
+                        <input id="email" name="email" type="{{ $user->role === 'seeker' ? 'text' : 'email' }}" class="form-input" value="{{ $user->role === 'seeker' ? $user->helpSeeker?->generated_alias : old('email', $user->email) }}" @readonly($user->role === 'seeker') required>
                         @error('email') <p class="form-error">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label for="alias" class="form-label">Alias (visible to helpers)</label>
-                        <input id="alias" name="alias" type="text" class="form-input" value="{{ old('alias', $user->helpSeeker?->generated_alias ?? '') }}" placeholder="e.g. Kind_Star27">
+                        <input id="alias" name="alias" type="text" class="form-input" value="{{ $user->helpSeeker?->generated_alias ?? '' }}" @readonly($user->role === 'seeker') placeholder="e.g. Kind_Star27">
                         <p class="text-xs text-gray-400 mt-1">Letters, numbers, dashes, and underscores.</p>
                         @error('alias') <p class="form-error">{{ $message }}</p> @enderror
                     </div>
@@ -182,7 +182,7 @@
             <h2><i class="fas fa-key text-[#04A052] mr-2"></i>Change password</h2>
             <p class="sub">Keep your account secure with a strong, unique password.</p>
 
-            <form method="POST" action="{{ route('password.update') }}" class="mt-5">
+            <form method="POST" action="{{ route('password.update') }}" class="form-container mt-5">
                 @csrf
                 @method('put')
 

@@ -7,7 +7,7 @@
 
 @section('content')
 
-    <a href="{{ route('helper.cases') }}" class="btn btn-secondary btn-sm mb-4" style="padding:6px 14px;"><i class="fas fa-arrow-left"></i> Back to cases</a>
+        <a href="{{ route('helper.cases') }}" class="btn btn-secondary btn-sm mb-4"><i class="fas fa-arrow-left"></i> Back to cases</a>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -21,7 +21,7 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     <div>
                         <div class="text-xs text-gray-400 mb-1">Risk level</div>
-                        <span class="risk-badge {{ $session->risk_level ?? 'low' }}">{{ ucfirst($session->risk_level ?? 'Low') }}</span>
+                        <span class="pill">Assigned peer support</span>
                     </div>
                     <div>
                         <div class="text-xs text-gray-400 mb-1">Mode</div>

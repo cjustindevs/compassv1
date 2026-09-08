@@ -23,7 +23,7 @@ class AdviserSessionController extends Controller
             'seeker',
             'helper',
             'concern',
-            'messages' => fn ($query) => $query->orderBy('sent_datetime', 'asc'),
+            'messages' => fn ($query) => $query->orderBy('sent_datetime', 'asc')->limit(100),
             'report',
         ])->findOrFail($id);
 

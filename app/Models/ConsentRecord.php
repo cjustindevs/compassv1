@@ -11,6 +11,9 @@ class ConsentRecord extends Model
     protected $fillable = [
         'seeker_id',
         'document_type',
+        'ip_address',
+        'user_agent',
+        'version',
         'consent_given',
         'consent_date',
         'withdrawn',

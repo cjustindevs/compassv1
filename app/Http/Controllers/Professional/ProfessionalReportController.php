@@ -7,6 +7,7 @@ use App\Models\ProfessionalNote;
 use App\Models\Referral;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ProfessionalReportController extends Controller
 {
@@ -165,37 +166,38 @@ class ProfessionalReportController extends Controller
                 ];
             });
 
-        $rows = Referral::selectRaw('created_at, status')
+        $monthKey = \App\Support\DatabaseHelper::monthKey('created_at');
+
+        $rows = Referral::selectRaw($monthKey . ' as month')
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw(\App\Support\DatabaseHelper::countFilter('status IN (\'' . implode("','", Referral::COMPLETED_STATUSES) . '\')') . ' as completed')
             ->where('professional_id', $professionalId)
             ->where('created_at', '>=', $months->first()['key'] . '-01')
+            ->groupBy(DB::raw($monthKey))
             ->get()
-            ->groupBy(fn (Referral $referral) => $referral->created_at?->format('Y-m'));
+            ->keyBy('month');
 
         return $months->map(function (array $month) use ($rows) {
-            $bucket = $rows->get($month['key'], collect());
+            $row = $rows->get($month['key']);
 
             return [
                 'month' => $month['label'],
-                'referrals' => $bucket->count(),
-                'completed' => $bucket->whereIn('status', Referral::COMPLETED_STATUSES)->count(),
+                'referrals' => $row?->total ?? 0,
+                'completed' => $row?->completed ?? 0,
             ];
         })->all();
     }
 
     private function averageResponseHours(int $professionalId, $startDate, $endDate): int
     {
-        $hours = Referral::where('professional_id', $professionalId)
+        $avg = Referral::where('professional_id', $professionalId)
             ->whereIn('status', [...Referral::ACTIVE_STATUSES, ...Referral::COMPLETED_STATUSES])
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->get()
-            ->filter(fn (Referral $referral) => $referral->created_at && $referral->updated_at)
-            ->filter(fn (Referral $referral) => $referral->updated_at->greaterThan($referral->created_at))
-            ->map(fn (Referral $referral) => $referral->created_at->diffInHours($referral->updated_at));
+            ->whereNotNull('created_at')
+            ->whereNotNull('updated_at')
+            ->selectRaw('AVG(' . \App\Support\DatabaseHelper::secondsBetween('updated_at', 'created_at') . ') / 3600 as avg_hours')
+            ->first();
 
-        if ($hours->isEmpty()) {
-            return 0;
-        }
-
-        return (int) round($hours->avg());
+        return (int) round((float) ($avg->avg_hours ?? 0));
     }
 }

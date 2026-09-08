@@ -16,7 +16,11 @@ class ModeratorManageController extends Controller
         $search = trim($request->get('search', ''));
         $adviserFilter = $request->get('adviser');
 
-        $helpers = Helper::with(['adviser', 'latestCompetency', 'sessions'])
+        $helpers = Helper::with(['adviser', 'latestCompetency'])
+            ->withCount([
+                'sessions as active_cases' => fn ($q) => $q->whereIn('session_status', ['active', 'helper_assigned']),
+                'sessions as total_cases',
+            ])
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('first_name', 'ilike', "%{$search}%")
@@ -29,20 +33,15 @@ class ModeratorManageController extends Controller
             ->orderBy('first_name')
             ->get()
             ->map(function (Helper $helper) {
-                $helper->active_cases = $helper->sessions()
-                    ->whereIn('session_status', ['active', 'helper_assigned'])
-                    ->count();
-                $helper->total_cases = $helper->sessions()->count();
                 $helper->score = (float) ($helper->latestCompetency?->overall_score ?? 0);
 
                 return $helper;
             });
 
-        $advisers = Adviser::with('competencyEvaluations')
-            ->withCount(['competencyEvaluations'])
+        $advisers = Adviser::withCount(['competencyEvaluations'])
+            ->withCount(['helpers as assigned_helpers'])
             ->get()
             ->map(function (Adviser $adviser) {
-                $adviser->assigned_helpers = Helper::where('adviser_id', $adviser->id)->count();
                 $adviser->capacity = Helper::MAX_HELPERS_PER_ADVISER;
                 $adviser->remaining_slots = Helper::getRemainingSlotsForAdviser($adviser->id);
 

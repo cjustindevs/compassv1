@@ -100,12 +100,31 @@ class ModeratorAnalyticsController extends Controller
         $avgGrowth = 0;
         $growthCount = 0;
 
-        foreach ($firstPeriod as $entry) {
-            $first = HelperCompetencyHistory::where('helper_id', $entry->helper_id)->orderBy('evaluation_date')->first();
-            $latest = HelperCompetencyHistory::where('helper_id', $entry->helper_id)->orderByDesc('evaluation_date')->first();
+        $helperIdsInPeriod = $firstPeriod->pluck('helper_id')->all();
 
-            if ($first && $latest && $first->id !== $latest->id) {
-                $avgGrowth += (float) $latest->overall_score - (float) $first->overall_score;
+        $firstScores = [];
+        $latestScores = [];
+
+        if ($helperIdsInPeriod) {
+            $histories = HelperCompetencyHistory::whereIn('helper_id', $helperIdsInPeriod)
+                ->orderBy('helper_id')
+                ->orderBy('evaluation_date')
+                ->orderBy('id')
+                ->get(['helper_id', 'evaluation_date', 'id', 'overall_score'])
+                ->groupBy('helper_id');
+
+            foreach ($histories as $helperId => $items) {
+                $firstScores[$helperId] = $items->first()->overall_score;
+                $latestScores[$helperId] = $items->last()->overall_score;
+            }
+        }
+
+        foreach ($firstPeriod as $entry) {
+            $first = $firstScores[$entry->helper_id] ?? null;
+            $latest = $latestScores[$entry->helper_id] ?? null;
+
+            if ($first !== null && $latest !== null && $first !== $latest) {
+                $avgGrowth += (float) $latest - (float) $first;
                 $growthCount++;
             }
         }
@@ -180,8 +199,9 @@ class ModeratorAnalyticsController extends Controller
 
     private function getWorkloadDistribution(): array
     {
-        return Session::with('helper')
+        $rows = Session::with('helper:id,id,first_name,last_name')
             ->whereIn('session_status', ['active', 'helper_assigned'])
+            ->select('helper_id')
             ->get()
             ->groupBy('helper_id')
             ->map(function ($sessions) {
@@ -194,6 +214,8 @@ class ModeratorAnalyticsController extends Controller
             })
             ->values()
             ->toArray();
+
+        return $rows;
     }
 
     private function csvResponse(string $filename, array $rows)

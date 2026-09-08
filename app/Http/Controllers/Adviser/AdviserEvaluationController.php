@@ -10,11 +10,14 @@ use App\Models\Session;
 use App\Models\AdviserFeedback;
 use App\Models\Notification;
 use App\Events\EvaluationCompleted;
+use App\Traits\BroadcastsSafely;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AdviserEvaluationController extends Controller
 {
+    use BroadcastsSafely;
+
     /**
      * Show all pending evaluations
      */
@@ -27,21 +30,23 @@ class AdviserEvaluationController extends Controller
             ->where('adviser_reviewed', false)
             ->whereHas('session', fn ($query) => $query->whereIn('helper_id', $helperIds))
             ->orderBy('created_at', 'asc')
-            ->get();
+            ->paginate(15);
 
         // Get completed evaluations for reference
         $completedReports = SessionReport::with(['session', 'session.seeker', 'session.helper'])
             ->where('adviser_reviewed', true)
             ->whereHas('session', fn ($query) => $query->whereIn('helper_id', $helperIds))
             ->orderBy('updated_at', 'desc')
-            ->limit(10)
-            ->get();
+            ->paginate(15);
 
         // Get statistics
-        $totalPending = $pendingReports->count();
-        $highRiskPending = $pendingReports->filter(function ($report) {
-            return in_array($report->session->risk_level ?? '', ['high', 'emergency']);
-        })->count();
+        $totalPending = $pendingReports->total();
+        $highRiskPending = SessionReport::where('adviser_reviewed', false)
+            ->whereHas('session', function ($query) use ($helperIds) {
+                $query->whereIn('helper_id', $helperIds)
+                    ->whereIn('risk_level', ['high', 'emergency']);
+            })
+            ->count();
 
         // Get adviser feedback count
         $feedbackCount = AdviserFeedback::where('adviser_id', Auth::user()->adviser->id ?? 0)->count();
@@ -170,11 +175,7 @@ class AdviserEvaluationController extends Controller
                 'competency_level' => max(1, min(5, ceil($overallScore))),
             ]);
 
-            try {
-                broadcast(new EvaluationCompleted($competency, $helperUserId));
-            } catch (\Throwable $e) {
-                report($e);
-            }
+            $this->broadcastSafely(new EvaluationCompleted($competency, $helperUserId));
         }
 
         // Mark the session evaluated so the workflow reflects a completed review

@@ -612,7 +612,7 @@
         .border-green-soft { border-color: var(--green-200); }
     </style>
 </head>
-<body>
+<body class="compass-compact">
 
     @include('partials.sidebar', [
         'active' => ['seeker.dashboard'],
@@ -897,7 +897,7 @@
                             @forelse($recentSessions as $session)
                                 <tr>
                                     <td class="font-medium">{{ $session->reference_number }}</td>
-                                    <td>{{ $session->helper?->full_name ?? '—' }}</td>
+                                    <td>{{ $session->helper?->public_alias ?? '—' }}</td>
                                     <td class="hidden sm:table-cell">{{ $session->mode_label }}</td>
                                     <td class="hidden sm:table-cell">{{ $session->start_time ? $session->start_time->diff($session->end_time ?? now())->format('%Hh %Im') : '—' }}</td>
                                     <td>

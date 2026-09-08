@@ -27,9 +27,10 @@ class HelperCaseController extends Controller
     {
         $helper = Auth::user()->helper;
 
-        $sessions = Session::with(['seeker', 'concern', 'evaluation'])
+        $sessions = Session::with(['seeker:id,id,user_account_id,generated_alias,age,gender', 'seeker.user:id,id,preferred_language', 'concern:id,concern_name', 'evaluation'])
             ->where('helper_id', $helper->id)
             ->orderByDesc('created_date')
+            ->limit(50)
             ->get();
 
         $cases = $sessions->map(fn (Session $session) => [
@@ -38,8 +39,8 @@ class HelperCaseController extends Controller
             'alias' => $session->seeker->generated_alias ?? 'Unknown',
             'status' => $session->session_status,
             'status_label' => $session->status_label,
-            'risk' => ucfirst($session->risk_level ?? 'Low'),
-            'risk_class' => strtolower($session->risk_level ?? 'low'),
+            'risk' => 'Assigned support',
+            'risk_class' => 'assigned',
             'mode' => $session->mode_label,
             'language' => $session->seeker?->user?->preferred_language ?: 'English',
             'concern' => $session->concern->concern_name ?? 'No concern specified',
@@ -123,19 +124,11 @@ class HelperCaseController extends Controller
             ]);
 
             // Real-time push to the seeker's browser
-            try {
-                broadcast(new CaseAccepted($session, $session->seeker->user_account_id));
-            } catch (\Throwable $e) {
-                report($e);
-            }
+            $this->broadcastSafely(new CaseAccepted($session, $session->seeker->user_account_id));
 
             // Real-time status update for anyone monitoring this session
             // (seeker, helper, and any supervising adviser on the session channel).
-            try {
-                broadcast(new SessionUpdated($session, $session->seeker->user_account_id));
-            } catch (\Throwable $e) {
-                report($e);
-            }
+            $this->broadcastSafely(new SessionUpdated($session, $session->seeker->user_account_id));
         }
 
         return redirect()
@@ -192,11 +185,7 @@ class HelperCaseController extends Controller
 
         // Tell the seeker (in real time) that the helper declined
         if ($seekerUserId) {
-            try {
-                broadcast(new CaseDeclined($session, $seekerUserId));
-            } catch (\Throwable $e) {
-                report($e);
-            }
+            $this->broadcastSafely(new CaseDeclined($session, $seekerUserId));
         }
 
         // Try to hand the case to the next available helper immediately
@@ -228,16 +217,12 @@ class HelperCaseController extends Controller
             $this->broadcastSafely(new NewCaseAssigned($session, $nextHelper->user_account_id));
 
             // Tell the seeker (in real time) that a new helper is on the case
-            try {
-                broadcast(new NewHelperAssigned(
-                    $session,
-                    $session->seeker->user_account_id,
-                    $nextHelper->full_name,
-                    $nextHelper->competency_level
-                ));
-            } catch (\Throwable $e) {
-                report($e);
-            }
+            $this->broadcastSafely(new NewHelperAssigned(
+                $session,
+                $session->seeker->user_account_id,
+                $nextHelper->public_alias,
+                $nextHelper->competency_level
+            ));
 
             return redirect()->route('helper.cases')
                 ->with('success', 'Case declined. Another available helper has been matched to it.');

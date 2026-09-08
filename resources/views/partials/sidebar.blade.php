@@ -200,7 +200,7 @@
                 .catch(function () { /* ignore */ });
         }
 
-        setInterval(refreshUnread, 30000);
+        setInterval(refreshUnread, 60000);
     })();
 
     @if($dashboardTabs)

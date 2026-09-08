@@ -272,7 +272,7 @@
             .chat-header { padding: 12px 14px; }
             .chat-header .helper-info .avatar { width: 34px; height: 34px; font-size: 15px; }
             .chat-header .helper-info .name { font-size: 14px; }
-            .chat-header .session-timer { display: none; }
+            .chat-header .session-timer { display: inline; }
             .chat-messages { padding: 14px 14px; }
             .chat-messages .message { max-width: 85%; padding: 8px 12px; }
             .chat-messages .message .text { font-size: 13px; }
@@ -343,23 +343,10 @@
 
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Session timer
-            const timerDisplay = document.getElementById('sessionTimer');
-            const startedAt = Number(timerDisplay?.dataset.startedAt || 0);
-            setInterval(function () {
-                const seconds = startedAt > 0
-                    ? Math.max(0, Math.floor(Date.now() / 1000) - startedAt)
-                    : 0;
-                const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
-                const secs = String(seconds % 60).padStart(2, '0');
-                if (timerDisplay) timerDisplay.textContent = mins + ':' + secs;
-            }, 1000);
-        });
-    </script>
+
 
     @include('layouts.partials.pwa-banner')
 
+@include('session.referral-prompt')
 </body>
 </html>

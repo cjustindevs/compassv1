@@ -89,7 +89,6 @@ class HelperSessionController extends Controller
 
         if (! $screening) {
             return [
-                'risk_level' => $seeker->current_risk_level ?? 'low',
                 'concern_category' => 'Not specified',
                 'summary' => 'No screening data available.',
                 'indicators' => [],
@@ -101,7 +100,6 @@ class HelperSessionController extends Controller
         $summary = $this->createScreeningSummary($responses ?: []);
 
         return [
-            'risk_level' => $screening->risk_level,
             'concern_category' => $responses['concern_category'] ?? 'Not specified',
             'summary' => $summary['text'],
             'indicators' => $summary['indicators'],
@@ -293,14 +291,16 @@ class HelperSessionController extends Controller
         $validated = $request->validate([
             'help_seeker_condition' => 'nullable|string|max:500',
             'session_summary' => 'required|string|max:2000',
-            'observations' => 'nullable|string|max:2000',
-            'actions_taken' => 'nullable|string|max:2000',
+            'observations' => 'required|string|max:2000',
+            'actions_taken' => 'required|string|max:2000',
             'risk_level_assessed' => 'nullable|in:low,moderate,high,emergency',
-            'personal_reflection' => 'nullable|string|max:2000',
+            'personal_reflection' => 'required|string|max:2000',
             'skills_applied' => 'nullable|array',
             'skills_applied.*' => 'string|max:50',
             'referral_recommended' => 'nullable|boolean',
         ]);
+
+        app(\App\Services\SessionDurationService::class)->expire($session);
 
         SessionReport::updateOrCreate(
             ['session_id' => $session->id],
@@ -309,7 +309,7 @@ class HelperSessionController extends Controller
                 'session_summary' => $validated['session_summary'],
                 'observations' => $validated['observations'] ?? null,
                 'actions_taken' => $validated['actions_taken'] ?? null,
-                'risk_level_assessed' => $validated['risk_level_assessed'] ?? $session->risk_level,
+                'risk_level_assessed' => $validated['risk_level_assessed'] ?? null,
                 'personal_reflection' => $validated['personal_reflection'] ?? null,
                 'skills_applied' => $validated['skills_applied'] ?? [],
                 'referral_recommended' => $request->boolean('referral_recommended'),
@@ -318,14 +318,7 @@ class HelperSessionController extends Controller
             ]
         );
 
-        if (! empty($validated['risk_level_assessed']) && $validated['risk_level_assessed'] !== $session->risk_level) {
-            $session->update([
-                'risk_level' => $validated['risk_level_assessed'],
-                'risk_updated_at' => now(),
-                'risk_update_reason' => 'Updated from helper session documentation.',
-                'risk_updated_by' => auth()->id(),
-            ]);
-        }
+        // Helper observations remain in the report for adviser review; they do not overwrite screening classification.
 
         if (! in_array($session->session_status, [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED], true)) {
             $endedAt = $session->end_time ?: now();
@@ -383,11 +376,7 @@ class HelperSessionController extends Controller
 
         // Real-time alert for advisers
         foreach (User::where('role', 'adviser')->pluck('id') as $adviserUserId) {
-            try {
-                broadcast(new EmergencyTriggered($session, $incident, $adviserUserId));
-            } catch (\Throwable $e) {
-                report($e);
-            }
+            $this->broadcastSafely(new EmergencyTriggered($session, $incident, $adviserUserId));
         }
 
         if ($session->seeker?->user_account_id) {
@@ -420,15 +409,20 @@ class HelperSessionController extends Controller
             'priority_level' => 'required|in:low,moderate,high,emergency',
         ]);
 
+        abort_unless($session->isActive() || $session->isCompleted(), 409);
+        abort_if(Referral::where('session_id', $session->id)->whereNotIn('status', ['closed', 'declined'])->exists(), 409, 'A referral already exists.');
+
         $referral = Referral::create([
             'session_id' => $session->id,
             'helper_id' => $helper->id,
             'priority_level' => $validated['priority_level'],
-            'help_seeker_consent' => $request->boolean('help_seeker_consent'),
-            'identity_disclosed' => $request->boolean('identity_disclosed'),
+            'help_seeker_consent' => false,
+            'identity_disclosed' => false,
             'referral_reason' => $validated['referral_reason'],
             'referral_date' => now(),
             'status' => 'pending_adviser',
+            'adviser_id' => $helper->adviser_id,
+            'consent_requested_at' => null,
         ]);
 
         $this->notifyStaff(
@@ -441,11 +435,7 @@ class HelperSessionController extends Controller
 
         // Real-time alert for advisers
         foreach (User::where('role', 'adviser')->pluck('id') as $adviserUserId) {
-            try {
-                broadcast(new ReferralRecommended($referral, $adviserUserId));
-            } catch (\Throwable $e) {
-                report($e);
-            }
+            $this->broadcastSafely(new ReferralRecommended($referral, $adviserUserId));
         }
 
         if ($session->seeker?->user_account_id) {
@@ -503,7 +493,9 @@ class HelperSessionController extends Controller
             ->where('helper_id', $helper->id)
             ->findOrFail($id);
 
-        if ($session->session_status !== 'completed') {
+        app(\App\Services\SessionDurationService::class)->expire($session);
+
+        if (! $session->isCompleted()) {
             $now = now();
             $duration = $session->start_time
                 ? max(1, (int) $session->start_time->diffInMinutes($now))
@@ -529,19 +521,11 @@ class HelperSessionController extends Controller
             Helper::where('id', $helper->id)->update(['status' => 'available']);
 
             // Tell the seeker (and anyone watching the room) the session has ended.
-            try {
-                broadcast(new SessionEnded($session, 'helper'));
-            } catch (\Throwable $e) {
-                report($e);
-            }
+            $this->broadcastSafely(new SessionEnded($session, 'helper'));
 
             // Let every moderator know in real time so their live session stats refresh.
             foreach (User::where('role', 'moderator')->pluck('id') as $moderatorUserId) {
-                try {
-                    $this->broadcastSafely(new ModeratorAlert($moderatorUserId, 'session', 'Session ended', 'Session #' . $session->id . ' has been completed.', '/moderator/sessions'));
-                } catch (\Throwable $e) {
-                    report($e);
-                }
+                $this->broadcastSafely(new ModeratorAlert($moderatorUserId, 'session', 'Session ended', 'Session #' . $session->id . ' has been completed.', '/moderator/sessions'));
             }
 
             if ($session->seeker) {

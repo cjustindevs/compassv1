@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <div style="flex:1;min-width:0;">
                 <p style="margin:0;font-weight:700;font-size:14px;color:${getThemeColor('--text-primary', '#163B2D')};">${escapeHtml(title)}</p>
                 <p style="margin:4px 0 0;font-size:13px;color:${getThemeColor('--text-secondary', '#6B7280')};line-height:1.45;">${escapeHtml(message)}</p>
-                ${link ? `<a href="${escapeHtml(link)}" style="display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:#04A052;text-decoration:none;">${escapeHtml(linkLabel || 'View')} →</a>` : ''}
+                ${safePath(link, '') ? `<a href="${escapeHtml(safePath(link, ''))}" style="display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:#04A052;text-decoration:none;">${escapeHtml(linkLabel || 'View')} →</a>` : ''}
             </div>
             <button type="button" style="background:none;border:none;color:${getThemeColor('--text-muted', '#9CA3AF')};font-size:14px;cursor:pointer;padding:2px;" aria-label="Dismiss">✕</button>
         `;
@@ -124,5 +124,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const div = document.createElement('div');
         div.textContent = text ?? '';
         return div.innerHTML;
+    }
+
+    function safePath(url, fallback = '/') {
+        if (typeof url !== 'string' || !url.startsWith('/') || url.startsWith('//')) {
+            return fallback;
+        }
+
+        return url;
     }
 });

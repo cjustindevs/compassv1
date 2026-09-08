@@ -90,7 +90,7 @@
         }
     </style>
 </head>
-<body>
+<body class="compass-compact">
 
     <main class="main-content">
 

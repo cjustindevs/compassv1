@@ -8,23 +8,31 @@ use App\Models\Referral;
 use App\Models\Session;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ModeratorSessionController extends Controller
 {
     public function index()
     {
-        $sessions = Session::with(['seeker', 'helper', 'concern', 'messages'])
+        $sessions = Session::with(['seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'concern:id,concern_name'])
             ->whereIn('session_status', ['active', 'helper_assigned'])
             ->orderByRaw("CASE WHEN session_status = 'active' THEN 0 ELSE 1 END")
             ->latest('created_date')
-            ->get()
-            ->map(function (Session $session) {
-                $session->elapsed_label = $this->elapsed($session);
-                $session->msg_count = $session->messages->count();
+            ->limit(50)
+            ->get();
 
-                return $session;
-            });
+        $sessionIds = $sessions->pluck('id')->all();
+        $messageCounts = DB::table('messages')
+            ->whereIn('session_id', $sessionIds)
+            ->select('session_id', DB::raw('COUNT(*) as msg_count'))
+            ->groupBy('session_id')
+            ->pluck('msg_count', 'session_id');
+
+        $sessions->each(function (Session $session) use ($messageCounts) {
+            $session->elapsed_label = $this->elapsed($session);
+            $session->msg_count = $messageCounts->get($session->id, 0);
+        });
 
         $stats = [
             'ongoing' => Session::where('session_status', 'active')->count(),
@@ -48,7 +56,7 @@ class ModeratorSessionController extends Controller
             'helper',
             'helper.latestCompetency',
             'concern',
-            'messages' => fn ($q) => $q->orderBy('created_at')->limit(50),
+            'messages' => fn ($q) => $q->orderBy('created_at')->limit(100),
             'callLog',
             'report',
             'evaluation',
@@ -62,19 +70,22 @@ class ModeratorSessionController extends Controller
 
     public function stats(): JsonResponse
     {
-        $sessions = Session::with('helper')
-            ->whereIn('session_status', ['active', 'helper_assigned'])
-            ->orderByRaw("CASE WHEN session_status = 'active' THEN 0 ELSE 1 END")
-            ->latest('created_date')
-            ->get();
+        $activeQuery = Session::where('session_status', 'active');
 
         return response()->json([
-            'ongoing' => $sessions->where('session_status', 'active')->count(),
-            'chat' => $sessions->where('session_status', 'active')->where('session_type', 'chat')->count(),
-            'voice' => $sessions->where('session_status', 'active')->where('session_type', 'voice')->count(),
-            'emergency_flagged' => $sessions->whereIn('risk_level', ['high', 'emergency'])->count(),
-            'sessions' => $sessions->map(function (Session $session) {
-                return [
+            'ongoing' => (clone $activeQuery)->count(),
+            'chat' => (clone $activeQuery)->where('session_type', 'chat')->count(),
+            'voice' => $activeQuery->where('session_type', 'voice')->count(),
+            'emergency_flagged' => Session::whereIn('session_status', ['active', 'helper_assigned'])
+                ->whereIn('risk_level', ['high', 'emergency'])
+                ->count(),
+            'sessions' => Session::with('helper:id,id,first_name,last_name')
+                ->whereIn('session_status', ['active', 'helper_assigned'])
+                ->orderByRaw("CASE WHEN session_status = 'active' THEN 0 ELSE 1 END")
+                ->latest('created_date')
+                ->limit(50)
+                ->get()
+                ->map(fn (Session $session) => [
                     'id' => $session->id,
                     'ref' => $session->reference_number,
                     'alias' => $session->seeker?->generated_alias ?? 'Anonymous',
@@ -83,9 +94,7 @@ class ModeratorSessionController extends Controller
                     'type' => $session->session_type,
                     'status' => $session->session_status,
                     'elapsed' => $this->elapsed($session),
-                    'msg_count' => $session->messages()->count(),
-                ];
-            }),
+                ]),
         ]);
     }
 
@@ -93,7 +102,11 @@ class ModeratorSessionController extends Controller
     {
         $activity = [];
 
-        foreach (Session::where('session_status', 'active')->latest('start_time')->limit(4)->get() as $session) {
+        foreach (Session::with(['seeker:id,generated_alias', 'helper:id,first_name,last_name'])
+            ->where('session_status', 'active')
+            ->latest('start_time')
+            ->limit(4)
+            ->get() as $session) {
             $activity[] = [
                 'type' => 'session',
                 'icon' => 'fas fa-comments',
@@ -102,7 +115,11 @@ class ModeratorSessionController extends Controller
             ];
         }
 
-        foreach (Session::where('session_status', 'helper_assigned')->latest('created_date')->limit(3)->get() as $session) {
+        foreach (Session::with(['seeker:id,generated_alias', 'helper:id,first_name,last_name'])
+            ->where('session_status', 'helper_assigned')
+            ->latest('created_date')
+            ->limit(3)
+            ->get() as $session) {
             $activity[] = [
                 'type' => 'assignment',
                 'icon' => 'fas fa-user-check',

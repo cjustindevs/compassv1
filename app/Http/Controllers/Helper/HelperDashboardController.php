@@ -8,6 +8,7 @@ use App\Models\Notification;
 use App\Models\ReadinessCheck;
 use App\Models\Session;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class HelperDashboardController extends Controller
 {
@@ -24,41 +25,57 @@ class HelperDashboardController extends Controller
                 ->with('helperProfileMissing', true);
         }
 
-        // ── STATS FROM DATABASE ──────────────────────────────────────────
-        $totalSessions = Session::where('helper_id', $helper->id)->count();
-        $activeSessions = Session::where('helper_id', $helper->id)
-            ->where('session_status', 'active')
-            ->count();
-        $pendingRequests = Session::where('helper_id', $helper->id)
-            ->where('session_status', 'helper_assigned')
-            ->count();
+        $helperId = $helper->id;
+
+        // ── CACHED STATS ────────────────────────────────────────────────
+        $stats = Cache::remember('helper_stats_' . $helperId, 60, function () use ($helperId) {
+            return [
+                'total_sessions' => Session::where('helper_id', $helperId)->count(),
+                'active_sessions' => Session::where('helper_id', $helperId)
+                    ->where('session_status', 'active')
+                    ->count(),
+                'pending_requests' => Session::where('helper_id', $helperId)
+                    ->where('session_status', 'helper_assigned')
+                    ->count(),
+            ];
+        });
 
         // ── COMPETENCY FROM DATABASE ─────────────────────────────────────
-        $competency = HelperCompetencyHistory::where('helper_id', $helper->id)
-            ->latest('evaluation_date')
-            ->first();
+        $competency = Cache::remember('helper_competency_' . $helperId, 600, function () use ($helperId) {
+            return HelperCompetencyHistory::where('helper_id', $helperId)
+                ->latest('evaluation_date')
+                ->first();
+        });
         $competencyScore = $competency ? (int) round((float) $competency->overall_score) : 0;
+        $stats['competency_score'] = $competencyScore;
 
         // ── READINESS FROM DATABASE ──────────────────────────────────────
-        $readiness = ReadinessCheck::where('helper_id', $helper->id)
-            ->latest('assessment_date')
-            ->first();
+        $readiness = Cache::remember('helper_readiness_' . $helperId, 300, function () use ($helperId) {
+            return ReadinessCheck::where('helper_id', $helperId)
+                ->latest('assessment_date')
+                ->first();
+        });
         $availabilityStatus = $readiness && $readiness->availability_status
             ? ucfirst($readiness->availability_status)
             : ucfirst($helper->status ?? 'offline');
 
         // ── ACTIVE CASES FROM DATABASE ───────────────────────────────────
-        $activeCases = Session::with(['seeker', 'concern'])
-            ->where('helper_id', $helper->id)
+        $activeCases = Session::with([
+            'seeker:id,id,user_account_id,generated_alias',
+            'seeker.user:id,id,preferred_language',
+            'concern:id,concern_name',
+        ])
+            ->where('helper_id', $helperId)
             ->whereIn('session_status', ['active', 'helper_assigned'])
             ->orderByDesc('created_date')
+            ->limit(20)
             ->get()
             ->map(function (Session $session) {
                 return [
                     'reference' => $session->reference_number,
                     'id' => $session->id,
                     'alias' => $session->seeker->generated_alias ?? 'Unknown',
-                    'risk' => ucfirst($session->risk_level ?? 'Low'),
+                    'risk' => 'Assigned support',
                     'mode' => $session->mode_label,
                     'language' => $session->seeker?->user?->preferred_language ?: 'English',
                     'waiting' => $session->created_at?->diffForHumans(),
@@ -68,8 +85,8 @@ class HelperDashboardController extends Controller
             });
 
         // ── ACTIVE SESSION FROM DATABASE ─────────────────────────────────
-        $activeSession = Session::with(['seeker'])
-            ->where('helper_id', $helper->id)
+        $activeSession = Session::with(['seeker:id,id,generated_alias'])
+            ->where('helper_id', $helperId)
             ->where('session_status', 'active')
             ->orderByDesc('start_time')
             ->first();
@@ -86,10 +103,15 @@ class HelperDashboardController extends Controller
         ] : null;
 
         // ── EMERGENCY CASES FROM DATABASE ────────────────────────────────
-        $emergencyCases = Session::with(['seeker', 'concern'])
-            ->where('helper_id', $helper->id)
+        $emergencyCases = Session::with([
+            'seeker:id,id,generated_alias',
+            'concern:id,concern_name',
+        ])
+            ->where('helper_id', $helperId)
             ->where('risk_level', 'emergency')
             ->whereIn('session_status', ['active', 'helper_assigned', 'waiting'])
+            ->orderByDesc('created_date')
+            ->limit(10)
             ->get()
             ->map(function (Session $session) {
                 return [
@@ -116,8 +138,8 @@ class HelperDashboardController extends Controller
             ]);
 
         if ($recentActivity->isEmpty()) {
-            $recentActivity = Session::with('seeker')
-                ->where('helper_id', $helper->id)
+            $recentActivity = Session::with('seeker:id,id,generated_alias')
+                ->where('helper_id', $helperId)
                 ->orderByDesc('created_date')
                 ->limit(4)
                 ->get()
@@ -134,13 +156,6 @@ class HelperDashboardController extends Controller
             ['icon' => 'fa-comment-dots', 'label' => 'Open Chat', 'route' => 'helper.chat', 'params' => []],
             ['icon' => 'fa-phone', 'label' => 'Start Voice Call', 'route' => $activeSessionData ? 'helper.session.voice' : 'helper.cases', 'params' => $activeSessionData ? ['id' => $activeSessionData['id']] : []],
             ['icon' => 'fa-edit', 'label' => 'Session Notes', 'route' => $activeSessionData ? 'helper.session.notes' : 'helper.cases', 'params' => $activeSessionData ? ['id' => $activeSessionData['id']] : []],
-        ];
-
-        $stats = [
-            'total_sessions' => $totalSessions,
-            'active_sessions' => $activeSessions,
-            'pending_requests' => $pendingRequests,
-            'competency_score' => $competencyScore,
         ];
 
         return view('dashboard.helper', compact(

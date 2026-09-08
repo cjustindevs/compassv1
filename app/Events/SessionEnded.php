@@ -66,7 +66,9 @@ class SessionEnded implements ShouldBroadcastNow
         return [
             'session_id' => $this->session->id,
             'ended_by' => $this->endedBy,
-            'message' => 'The session has been ended by the ' . $this->endedBy . '.',
+            'message' => $this->session->auto_completed
+                ? 'The 90-minute session limit has been reached.'
+                : 'The session has been ended by the ' . $this->endedBy . '.',
             'seeker_redirect' => '/session/evaluation',
             'helper_redirect' => '/helper/session/' . $this->session->id . '/notes',
         ];

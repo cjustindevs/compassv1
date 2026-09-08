@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Referral extends Model
 {
+    public function releaseIdentity(): void
+    {
+        app(\App\Services\IdentityVaultService::class)->releaseForReferral($this);
+    }
+
     protected $table = 'referrals';
 
     protected $fillable = [

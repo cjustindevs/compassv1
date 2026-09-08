@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class ModeratorNotificationController extends Controller
@@ -19,8 +20,7 @@ class ModeratorNotificationController extends Controller
         $notifications = Notification::where('user_account_id', Auth::id())
             ->ofType($typeFilter)
             ->latest()
-            ->limit(100)
-            ->get();
+            ->paginate(25);
 
         $unreadCount = Notification::where('user_account_id', Auth::id())
             ->unread()
@@ -69,11 +69,13 @@ class ModeratorNotificationController extends Controller
 
     public function unreadCount(): JsonResponse
     {
-        return response()->json([
-            'count' => Notification::where('user_account_id', Auth::id())
+        $count = Cache::remember('unread_count_' . auth()->id(), 30, function () {
+            return Notification::where('user_account_id', Auth::id())
                 ->unread()
-                ->count(),
-        ]);
+                ->count();
+        });
+
+        return response()->json(['count' => $count]);
     }
 
     public function destroy(Request $request, int $id): RedirectResponse|JsonResponse

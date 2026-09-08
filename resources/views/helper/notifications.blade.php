@@ -28,27 +28,27 @@
                         $icon = $item->type_icon ?: '🔔';
                         $isUnread = $item->status === 'unread';
                     @endphp
-                    <div style="display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--gray-100);{{ $isUnread ? 'background:var(--green-50);border-radius:12px;padding:14px;margin-bottom:2px;' : '' }}">
-                        <div style="width:40px;height:40px;border-radius:50%;background:white;border:1px solid var(--gray-200);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">{{ $icon }}</div>
+                    <div class="notif-item {{ $isUnread ? 'unread' : '' }}">
+                        <div class="notif-icon">{{ $icon }}</div>
                         <div style="flex:1;min-width:0;">
-                            <div style="display:flex;justify-content:space-between;gap:8px;">
+                            <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
                                 <span class="font-semibold text-gray-800" style="font-size:14px;">
                                     {{ $item->title }}
                                     @if($isUnread)
                                         <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green-500);margin-left:6px;"></span>
                                     @endif
                                 </span>
-                                <span class="text-xs text-gray-400">{{ $item->created_at?->diffForHumans() }}</span>
+                                <span class="text-xs text-gray-400" style="flex-shrink:0;">{{ $item->created_at?->diffForHumans() }}</span>
                             </div>
                             <div class="text-sm text-gray-500 mt-1">{{ $item->message }}</div>
                             <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;">
                                 @if($item->link)
-                                    <a href="{{ $item->link }}" class="btn btn-secondary btn-sm" style="padding:4px 12px;"><i class="fas fa-external-link-alt"></i> View</a>
+                                    <a href="{{ $item->link }}" class="btn btn-secondary btn-sm"><i class="fas fa-external-link-alt"></i> View</a>
                                 @endif
                                 @if($isUnread)
                                     <form method="POST" action="{{ route('helper.notifications.read', ['id' => $item->id]) }}">
                                         @csrf
-                                        <button type="submit" class="btn btn-secondary btn-sm" style="padding:4px 12px;"><i class="fas fa-check"></i> Mark read</button>
+                                        <button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-check"></i> Mark read</button>
                                     </form>
                                 @endif
                             </div>
@@ -58,14 +58,14 @@
             </div>
 
             @if($notifications->hasPages())
-                <div class="mt-4">
+                <div style="margin-top:16px;">
                     {{ $notifications->links() }}
                 </div>
             @endif
         @else
             <div class="empty-state">
                 <i class="fas fa-bell-slash"></i>
-                <h3 style="font-size:16px;font-weight:700;color:var(--gray-800);margin-bottom:6px;">No notifications</h3>
+                <h3>No notifications</h3>
                 <p>New assignments and updates will appear here.</p>
             </div>
         @endif

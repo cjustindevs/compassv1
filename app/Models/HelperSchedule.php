@@ -48,6 +48,9 @@ class HelperSchedule extends Model
 
     public function isWithinShift(): bool
     {
+        if (! $this->is_active || ! $this->date?->isToday()) {
+            return false;
+        }
         $now = now();
         $start = now()->setTimeFromTimeString((string) $this->shift_start);
         $end = now()->setTimeFromTimeString((string) $this->shift_end);

@@ -49,3 +49,12 @@ Schedule::call(function () {
             Log::info('Session auto-completed', ['session_id' => $session->id]);
         });
 })->daily();
+
+Schedule::command('sessions:mark-abandoned')->hourly();
+Schedule::command('identity-vault:purge-expired')->daily()->withoutOverlapping();
+
+\Illuminate\Support\Facades\Schedule::call(function () {
+    \App\Models\Session::where('session_status', 'active')
+        ->where('start_time', '<=', now()->subMinutes(90))
+        ->eachById(fn ($session) => app(\App\Services\SessionDurationService::class)->expire($session));
+})->everyMinute()->name('expire-chat-sessions')->withoutOverlapping();

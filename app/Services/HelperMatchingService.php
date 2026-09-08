@@ -45,17 +45,13 @@ class HelperMatchingService
     protected function getEligibleHelpers(string $riskLevel, ?int $excludeHelperId = null): Collection
     {
         $query = Helper::query()
-            ->where('status', 'available')
+            ->whereIn('status', ['available', 'busy'])
             ->whereHas('currentReadiness', fn ($query) => $query->ready())
             ->with(['currentReadiness', 'schedule', 'helperSpecialties'])
             ->withCount('activeSessions as live_active_sessions_count');
 
         if (Schema::hasColumn('helpers', 'is_under_review')) {
             $query->where('is_under_review', false);
-        }
-
-        if (Schema::hasColumn('helpers', 'current_shift_sessions')) {
-            $query->where('current_shift_sessions', '<', Helper::MAX_SESSIONS_PER_SHIFT);
         }
 
         if ($excludeHelperId) {
@@ -124,6 +120,11 @@ class HelperMatchingService
         }
 
         return DB::transaction(function () use ($queue, $helper, $session) {
+            $queue = QueueRequest::whereKey($queue->id)->lockForUpdate()->firstOrFail();
+            $lockedHelper = Helper::whereKey($helper->id)->lockForUpdate()->firstOrFail();
+            if ($queue->request_status !== 'waiting' || ! $lockedHelper->isAvailable() || ! $lockedHelper->canHandleRiskLevel($queue->priority_level)) {
+                return null;
+            }
             $session = $session ?: Session::create([
                 'seeker_id' => $queue->seeker_id,
                 'moderator_id' => Auth::user()?->moderator?->id,
@@ -259,7 +260,7 @@ class HelperMatchingService
         Notification::create([
             'user_account_id' => $helper->user_account_id,
             'title' => 'New case assigned',
-            'message' => 'You have been assigned to support ' . ($session->seeker?->generated_alias ?? 'a seeker') . ' (' . ucfirst($session->risk_level) . ' risk).',
+            'message' => 'You have been assigned to support ' . ($session->seeker?->generated_alias ?? 'a seeker') . '. Follow the support plan and escalate safety concerns.',
             'notification_type' => 'assignment',
             'type_icon' => '📋',
             'link' => '/helper/session/' . $session->id . '/pre-assessment',
@@ -284,11 +285,7 @@ class HelperMatchingService
     protected function broadcastQueueUpdated(): void
     {
         foreach (User::where('role', 'moderator')->pluck('id') as $moderatorUserId) {
-            try {
-                $this->broadcastSafely(new QueueUpdated($moderatorUserId));
-            } catch (\Throwable $e) {
-                report($e);
-            }
+            $this->broadcastSafely(new QueueUpdated($moderatorUserId));
         }
     }
 }

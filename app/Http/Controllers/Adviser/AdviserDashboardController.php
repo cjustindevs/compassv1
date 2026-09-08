@@ -12,6 +12,7 @@ use App\Models\Notification;
 use App\Models\IncidentReport;
 use App\Models\QueueRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
 
 class AdviserDashboardController extends Controller
@@ -22,72 +23,111 @@ class AdviserDashboardController extends Controller
         $adviser = $user->adviser;
         $helperIds = Helper::where('adviser_id', $adviser?->id)->pluck('id');
 
-        // Get pending evaluations (sessions with reports not yet reviewed)
+        if ($helperIds->isEmpty()) {
+            return view('dashboard.adviser', array_merge([
+                'user' => $user,
+                'adviser' => $adviser,
+                'pendingEvaluations' => collect(),
+                'pendingEvaluationCount' => 0,
+                'highRiskCases' => collect(),
+                'totalHelpers' => 0,
+                'activeHelpers' => 0,
+                'pendingReferrals' => collect(),
+                'pendingReferralCount' => 0,
+                'recentEvaluations' => collect(),
+                'unreadNotifications' => Notification::where('user_account_id', $user->id)->unread()->count(),
+                'totalSessions' => 0,
+                'completedSessions' => 0,
+                'activeSessions' => 0,
+                'waitingTimeStats' => [],
+                'helperProgress' => [],
+                'recentActivity' => [],
+                'openIncidents' => collect(),
+                'helpers' => collect(),
+                'matchingStats' => ['total_helpers' => 0, 'available_helpers' => 0, 'average_competency' => 0, 'total_sessions_today' => 0, 'avg_matching_score' => 0],
+                'helpersAtCapacity' => collect(),
+                'helpersExpiredReadiness' => collect(),
+                'assignedQueueCount' => 0,
+                'recentAssignments' => collect(),
+            ]));
+        }
+
+        // Pending evaluations (small, always fresh)
         $pendingEvaluations = SessionReport::where('adviser_reviewed', false)
             ->whereHas('session', fn ($query) => $query->whereIn('helper_id', $helperIds))
-            ->with(['session', 'session.seeker', 'session.helper'])
+            ->with(['session.seeker:id,id,generated_alias', 'session.helper:id,id,first_name,last_name'])
+            ->latest()
+            ->limit(20)
             ->get();
 
         $pendingEvaluationCount = $pendingEvaluations->count();
 
-        // Get high-risk cases that still need attention (not yet completed)
+        // High-risk cases (small)
         $highRiskCases = Session::whereIn('risk_level', ['high', 'emergency'])
             ->whereIn('helper_id', $helperIds)
             ->whereIn('session_status', ['active', 'helper_assigned', 'waiting', 'screening_completed', 'preferences_set'])
-            ->with(['seeker', 'helper'])
+            ->with(['seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name'])
             ->latest()
             ->limit(5)
             ->get();
 
-        // Get helper stats
+        // Helper stats
         $totalHelpers = $helperIds->count();
         $activeHelpers = Helper::whereIn('id', $helperIds)->where('status', 'available')->count();
 
-        // Get pending referrals
+        // Pending referrals
         $pendingReferrals = Referral::where('status', Referral::STATUS_PENDING_ADVISER)
             ->whereIn('helper_id', $helperIds)
-            ->with(['session', 'session.seeker', 'helper'])
+            ->with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name'])
+            ->latest()
+            ->limit(10)
             ->get();
 
         $pendingReferralCount = $pendingReferrals->count();
 
-        // Get recent competency evaluations
-        $recentEvaluations = HelperCompetencyHistory::with(['helper', 'adviser'])
+        // Recent competency evaluations
+        $recentEvaluations = HelperCompetencyHistory::with(['helper:id,id,first_name,last_name', 'adviser:id,id,first_name,last_name'])
             ->whereIn('helper_id', $helperIds)
             ->latest()
             ->limit(5)
             ->get();
 
-        // Get unread notifications count
+        // Unread notifications
         $unreadNotifications = Notification::where('user_account_id', $user->id)
             ->unread()
             ->count();
 
-        // Get session statistics
-        $totalSessions = Session::whereIn('helper_id', $helperIds)->count();
-        $completedSessions = Session::whereIn('helper_id', $helperIds)->whereIn('session_status', ['completed', 'evaluated'])->count();
-        $activeSessions = Session::whereIn('helper_id', $helperIds)->where('session_status', 'active')->count();
+        // Session statistics (cached 60s)
+        $sessionStats = Cache::remember('adviser_session_stats_' . ($adviser?->id ?? 'none'), 60, function () use ($helperIds) {
+            return [
+                'total' => Session::whereIn('helper_id', $helperIds)->count(),
+                'completed' => Session::whereIn('helper_id', $helperIds)->whereIn('session_status', ['completed', 'evaluated'])->count(),
+                'active' => Session::whereIn('helper_id', $helperIds)->where('session_status', 'active')->count(),
+            ];
+        });
 
-        // Get session waiting time stats
+        // Waiting time stats (small)
         $waitingTimeStats = $this->getWaitingTimeStats($helperIds);
 
-        // Get helper progress
+        // Helper progress
         $helperProgress = $this->getHelperProgress($helperIds);
 
-        // Get recent activity
+        // Recent activity
         $recentActivity = $this->getRecentActivity($helperIds);
 
         $helpers = Helper::whereIn('id', $helperIds)
-            ->with(['user', 'currentReadiness', 'schedule'])
+            ->with(['user:id,id,name', 'currentReadiness', 'schedule'])
+            ->limit(50)
             ->get();
 
         $matchingStats = $this->getMatchingStatistics($helperIds);
         $helpersAtCapacity = $helpers->filter(fn (Helper $helper) => $helper->current_shift_sessions >= Helper::MAX_SESSIONS_PER_SHIFT);
         $helpersExpiredReadiness = $helpers->filter(fn (Helper $helper) => $helper->getReadinessStatus() !== 'ready');
         $assignedQueueCount = QueueRequest::whereIn('assigned_helper_id', $helperIds)->where('request_status', 'assigned')->count();
+
         $recentAssignments = Session::whereIn('helper_id', $helperIds)
             ->where('created_at', '>=', now()->subHours(24))
-            ->with(['seeker', 'helper.user'])
+            ->with(['seeker:id,id,generated_alias', 'helper.user:id,id,name'])
             ->latest()
             ->limit(10)
             ->get();
@@ -100,32 +140,32 @@ class AdviserDashboardController extends Controller
             ->limit(5)
             ->get();
 
-        return view('dashboard.adviser', compact(
-            'user',
-            'adviser',
-            'pendingEvaluations',
-            'pendingEvaluationCount',
-            'highRiskCases',
-            'totalHelpers',
-            'activeHelpers',
-            'pendingReferrals',
-            'pendingReferralCount',
-            'recentEvaluations',
-            'unreadNotifications',
-            'totalSessions',
-            'completedSessions',
-            'activeSessions',
-            'waitingTimeStats',
-            'helperProgress',
-            'recentActivity',
-            'openIncidents',
-            'helpers',
-            'matchingStats',
-            'helpersAtCapacity',
-            'helpersExpiredReadiness',
-            'assignedQueueCount',
-            'recentAssignments'
-        ));
+        return view('dashboard.adviser', [
+            'user' => $user,
+            'adviser' => $adviser,
+            'pendingEvaluations' => $pendingEvaluations,
+            'pendingEvaluationCount' => $pendingEvaluationCount,
+            'highRiskCases' => $highRiskCases,
+            'totalHelpers' => $totalHelpers,
+            'activeHelpers' => $activeHelpers,
+            'pendingReferrals' => $pendingReferrals,
+            'pendingReferralCount' => $pendingReferralCount,
+            'recentEvaluations' => $recentEvaluations,
+            'unreadNotifications' => $unreadNotifications,
+            'totalSessions' => $sessionStats['total'],
+            'completedSessions' => $sessionStats['completed'],
+            'activeSessions' => $sessionStats['active'],
+            'waitingTimeStats' => $waitingTimeStats,
+            'helperProgress' => $helperProgress,
+            'recentActivity' => $recentActivity,
+            'openIncidents' => $openIncidents,
+            'helpers' => $helpers,
+            'matchingStats' => $matchingStats,
+            'helpersAtCapacity' => $helpersAtCapacity,
+            'helpersExpiredReadiness' => $helpersExpiredReadiness,
+            'assignedQueueCount' => $assignedQueueCount,
+            'recentAssignments' => $recentAssignments,
+        ]);
     }
 
     private function getMatchingStatistics($helperIds): array
@@ -159,7 +199,7 @@ class AdviserDashboardController extends Controller
     {
         $stats = [];
 
-        foreach (Session::with(['helper', 'seeker'])
+        foreach (Session::with(['helper:id,id,first_name,last_name', 'seeker:id,id,generated_alias'])
             ->whereIn('helper_id', $helperIds)
             ->whereIn('session_status', ['waiting', 'helper_assigned', 'active'])
             ->latest('created_date')
@@ -190,7 +230,7 @@ class AdviserDashboardController extends Controller
      */
     private function getHelperProgress($helperIds): array
     {
-        return SessionReport::with(['session', 'session.helper'])
+        return SessionReport::with(['session.helper:id,id,first_name,last_name'])
             ->where('adviser_reviewed', false)
             ->whereHas('session', fn ($query) => $query->whereIn('helper_id', $helperIds))
             ->latest()
@@ -214,7 +254,7 @@ class AdviserDashboardController extends Controller
         $activity = [];
 
         // Recent emergency incidents
-        foreach (IncidentReport::with('session')
+        foreach (IncidentReport::with('session.seeker:id,id,generated_alias')
             ->where('risk_level', 'emergency')
             ->whereHas('session', fn ($query) => $query->whereIn('helper_id', $helperIds))
             ->latest()
@@ -229,7 +269,7 @@ class AdviserDashboardController extends Controller
         }
 
         // Recent competency evaluations
-        foreach (HelperCompetencyHistory::with('helper')
+        foreach (HelperCompetencyHistory::with('helper:id,id,first_name,last_name')
             ->whereIn('helper_id', $helperIds)
             ->latest()
             ->limit(2)
@@ -243,7 +283,7 @@ class AdviserDashboardController extends Controller
         }
 
         // Recent referrals
-        foreach (Referral::with(['session', 'session.seeker'])
+        foreach (Referral::with(['session.seeker:id,id,generated_alias'])
             ->whereIn('helper_id', $helperIds)
             ->latest()
             ->limit(2)

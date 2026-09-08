@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class HelperNotificationController extends Controller
@@ -71,10 +72,12 @@ class HelperNotificationController extends Controller
      */
     public function unreadCount(): JsonResponse
     {
-        return response()->json([
-            'count' => Notification::where('user_account_id', Auth::id())
+        $count = Cache::remember('unread_count_' . auth()->id(), 30, function () {
+            return Notification::where('user_account_id', Auth::id())
                 ->unread()
-                ->count(),
-        ]);
+                ->count();
+        });
+
+        return response()->json(['count' => $count]);
     }
 }

@@ -94,7 +94,7 @@ class HelpSeekerRegisterController extends Controller
                 'email' => 'required|email|unique:users,email',
                 'age' => 'required|integer|min:13|max:99',
                 'gender' => 'required|string|in:male,female,non-binary,prefer-not-to-say',
-                'password' => 'required|string|min:6|confirmed',
+                'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
                 'consent' => 'accepted',
                 'verification_token' => 'required|string'
             ]);

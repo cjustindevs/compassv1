@@ -6,7 +6,7 @@
     <title>Moderator Schedules - COMPASS</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-gray-50">
+<body class="compass-compact bg-gray-50">
     @include('layouts.partials.moderator-sidebar')
 
     <main class="main-content p-6">

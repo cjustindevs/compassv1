@@ -32,8 +32,11 @@ class ProfileController extends Controller
     /**
      * Display the user's profile edit form.
      */
-    public function edit(Request $request): View
+    public function edit(Request $request): View|RedirectResponse
     {
+        if ($request->user()->role === 'seeker') {
+            return redirect()->route('settings.account');
+        }
         return view('profile.edit', [
             'user' => $request->user(),
         ]);

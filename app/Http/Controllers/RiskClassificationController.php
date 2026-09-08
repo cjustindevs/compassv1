@@ -28,6 +28,13 @@ class RiskClassificationController extends Controller
             'session_id' => ['nullable', 'exists:counseling_sessions,id'],
         ]);
 
+        $user = $request->user();
+        $seeker = HelpSeeker::findOrFail($validated['seeker_id']);
+        abort_unless($user?->helpSeeker?->id === $seeker->id || in_array($user?->role, ['adviser', 'moderator', 'admin']), 403);
+        if (! empty($validated['session_id'])) {
+            abort_unless(Session::whereKey($validated['session_id'])->where('seeker_id', $seeker->id)->exists(), 403);
+        }
+
         try {
             $result = $this->riskService->classifyRisk($validated['screening_responses']);
             $seeker = HelpSeeker::findOrFail($validated['seeker_id']);
@@ -52,6 +59,9 @@ class RiskClassificationController extends Controller
 
             $this->handleRiskLevel($result, $seeker, $session);
 
+            if ($user->role === 'seeker') {
+                return response()->json(['success' => true, 'redirect' => route($result['risk_level'] === 'emergency' ? 'emergency' : 'request.preferences')]);
+            }
             return response()->json(['success' => true] + $result);
         } catch (\InvalidArgumentException $e) {
             return response()->json(['success' => false, 'error' => 'validation_error', 'message' => $e->getMessage()], 422);
@@ -65,6 +75,7 @@ class RiskClassificationController extends Controller
 
     public function updateRiskClassification(Request $request): JsonResponse
     {
+        abort_unless(in_array($request->user()?->role, ['adviser', 'moderator', 'admin']), 403);
         $validated = $request->validate([
             'session_id' => ['required', 'exists:counseling_sessions,id'],
             'new_risk_level' => ['required', 'in:low,moderate,high,emergency'],

@@ -55,6 +55,7 @@
                     <p>No journal entries yet. Write your first one to get started.</p>
                 </div>
             @endforelse
+            {{ $entries->links() }}
         </div>
     </div>
 

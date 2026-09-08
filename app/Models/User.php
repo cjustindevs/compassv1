@@ -82,6 +82,13 @@ class User extends Authenticatable
         return $this->hasOne(HelpSeeker::class, 'user_account_id', 'id');
     }
 
+    public function isAdmin(): bool { return $this->role === 'admin'; }
+    public function isAdviser(): bool { return $this->role === 'adviser'; }
+    public function isHelper(): bool { return $this->role === 'helper'; }
+    public function isSeeker(): bool { return $this->role === 'seeker'; }
+    public function isModerator(): bool { return $this->role === 'moderator'; }
+    public function isProfessional(): bool { return $this->role === 'professional'; }
+
     public function helper()
     {
         return $this->hasOne(Helper::class, 'user_account_id', 'id');
@@ -129,6 +136,9 @@ class User extends Authenticatable
 
     public function displayName(): string
     {
+        if ($this->role === 'helper') {
+            return $this->helper?->public_alias ?? 'Peer Helper';
+        }
         $alias = $this->helpSeeker?->generated_alias;
 
         return $alias ?: ($this->name ?: 'Seeker');

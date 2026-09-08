@@ -283,7 +283,7 @@
     @else
         {{-- Readiness form --}}
         <div class="form-card">
-            <form id="readinessForm" method="POST" action="{{ route('helper.readiness.store') }}">
+            <form id="readinessForm" class="form-container" method="POST" action="{{ route('helper.readiness.store') }}">
                 @csrf
 
                 {{-- 1. Emotional readiness --}}

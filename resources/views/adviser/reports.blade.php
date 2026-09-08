@@ -147,6 +147,17 @@
 @endpush
 
 @section('content')
+<div class="card mb-6">
+    <h2 class="text-lg font-semibold mb-3">Risk distribution</h2>
+    @foreach(['low', 'moderate', 'high', 'emergency'] as $risk)
+        <div class="flex items-center gap-3 mb-2">
+            <span class="w-24">{{ ucfirst($risk) }}</span>
+            <progress class="flex-1" value="{{ $riskDistribution[$risk] ?? 0 }}" max="{{ max(1, $totalSessions) }}" aria-label="{{ ucfirst($risk) }} sessions"></progress>
+            <span>{{ $riskDistribution[$risk] ?? 0 }}</span>
+        </div>
+    @endforeach
+</div>
+
 <div class="adviser-page-content">
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">

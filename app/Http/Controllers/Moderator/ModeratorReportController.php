@@ -128,25 +128,44 @@ class ModeratorReportController extends Controller
 
     private function getCompetencyGrowth(string $from, string $to): array
     {
-        return Helper::with('latestCompetency')
-            ->get()
-            ->map(function (Helper $helper) {
-                $history = $helper->competencyHistory()
-                    ->orderBy('evaluation_date')
-                    ->get();
+        $helpers = Helper::with('latestCompetency')
+            ->withCount('competencyHistory')
+            ->get();
 
-                $first = $history->first();
-                $latest = $history->last();
+        $helperIds = $helpers->pluck('id');
 
+        $firstScores = HelperCompetencyHistory::whereIn('helper_id', $helperIds)
+            ->selectRaw('helper_id, overall_score')
+            ->orderBy('evaluation_date', 'asc')
+            ->groupBy('helper_id', 'overall_score')
+            ->pluck('overall_score', 'helper_id');
+
+        return $helpers->map(function (Helper $helper) use ($firstScores) {
+            if ($helper->competency_history_count < 2) {
                 return [
                     'helper' => $helper->full_name,
-                    'first_score' => $first ? (float) $first->overall_score : null,
-                    'latest_score' => $latest ? (float) $latest->overall_score : null,
-                    'growth' => $first && $latest
-                        ? round((float) $latest->overall_score - (float) $first->overall_score, 1)
-                        : 0,
+                    'first_score' => null,
+                    'latest_score' => $helper->latestCompetency?->overall_score !== null
+                        ? (float) $helper->latestCompetency->overall_score
+                        : null,
+                    'growth' => 0,
                 ];
-            })
+            }
+
+            $firstScore = $firstScores->has($helper->id) ? (float) $firstScores[$helper->id] : null;
+            $latestScore = $helper->latestCompetency?->overall_score !== null
+                ? (float) $helper->latestCompetency->overall_score
+                : null;
+
+            return [
+                'helper' => $helper->full_name,
+                'first_score' => $firstScore,
+                'latest_score' => $latestScore,
+                'growth' => $firstScore !== null && $latestScore !== null
+                    ? round($latestScore - $firstScore, 1)
+                    : 0,
+            ];
+        })
             ->sortByDesc('growth')
             ->values()
             ->toArray();

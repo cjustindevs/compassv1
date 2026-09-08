@@ -6,11 +6,14 @@ use App\Events\MessageSent;
 use App\Models\Message;
 use App\Models\Session;
 use App\Services\ChatTranscriptionService;
+use App\Traits\BroadcastsSafely;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ChatController extends Controller
 {
+    use BroadcastsSafely;
+
     public function __construct(protected ChatTranscriptionService $transcriptionService) {}
 
     /**
@@ -33,6 +36,16 @@ class ChatController extends Controller
 
         if (! $isSeeker && ! $isHelper) {
             return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        app(\App\Services\SessionDurationService::class)->expire($session);
+
+        if ($session->isCompleted()) {
+            return response()->json(['error' => 'This session has already ended.'], 409);
+        }
+
+        if (! $session->isActive() && ! ($isHelper && $session->isHelperAssigned() && $user->helper->isReady())) {
+            return response()->json(['error' => 'This session is not ready for chat.'], 409);
         }
 
         $message = Message::create([
@@ -67,11 +80,7 @@ class ChatController extends Controller
 
         // Broadcast the message (sync, no queue worker needed). If the
         // websocket server is briefly unreachable, the message is still saved.
-        try {
-            broadcast(new MessageSent($message));
-        } catch (\Throwable $e) {
-            report($e);
-        }
+        $this->broadcastSafely(new MessageSent($message));
 
         return response()->json([
             'success' => true,
@@ -102,6 +111,8 @@ class ChatController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
+        $state = app(\App\Services\SessionDurationService::class)->state($session);
+
         $messages = Message::where('session_id', $sessionId)
             ->orderBy('sent_datetime', 'asc')
             ->orderBy('id', 'asc')
@@ -122,7 +133,19 @@ class ChatController extends Controller
         return response()->json([
             'success' => true,
             'messages' => $messages,
+            'session' => $state,
         ]);
+    }
+
+    public function status(int $sessionId)
+    {
+        $session = Session::findOrFail($sessionId);
+        abort_unless($this->isSeeker($session, Auth::user()) || $this->isHelper($session, Auth::user()), 403);
+
+        return response()->json([
+            'success' => true,
+            'session' => app(\App\Services\SessionDurationService::class)->state($session),
+        ])->header('Cache-Control', 'no-store');
     }
 
     private function isSeeker(Session $session, $user): bool

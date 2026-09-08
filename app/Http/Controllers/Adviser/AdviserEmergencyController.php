@@ -16,17 +16,16 @@ class AdviserEmergencyController extends Controller
     {
         $helperIds = $this->helperIds();
 
-        $alerts = EmergencyAlert::with(['session', 'session.seeker', 'session.helper', 'referral'])
+        $baseQuery = EmergencyAlert::with(['session', 'session.seeker', 'session.helper', 'referral'])
             ->where(function ($query) use ($helperIds) {
                 $query->where('adviser_id', Auth::user()->adviser?->id)
                     ->orWhereHas('session', fn ($session) => $session->whereIn('helper_id', $helperIds));
             })
-            ->latest('triggered_at')
-            ->get();
+            ->latest('triggered_at');
 
-        $openAlerts = $alerts->where('status', '!=', 'resolved');
-        $resolvedAlerts = $alerts->where('status', 'resolved');
-        $totalEmergencies = $alerts->count();
+        $openAlerts = (clone $baseQuery)->where('status', '!=', 'resolved')->paginate(20);
+        $resolvedAlerts = (clone $baseQuery)->where('status', 'resolved')->paginate(20);
+        $totalEmergencies = $baseQuery->count();
 
         return view('adviser.emergencies', compact('openAlerts', 'resolvedAlerts', 'totalEmergencies'));
     }

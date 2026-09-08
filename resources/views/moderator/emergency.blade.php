@@ -189,7 +189,7 @@
         }
     </style>
 </head>
-<body>
+<body class="compass-compact">
 
     @include('layouts.partials.moderator-sidebar')
 
@@ -275,7 +275,7 @@
             <div class="card lg:col-span-2 overflow-x-auto">
                 <div class="card-header">
                     <h3>Active Emergency Cases</h3>
-                    <span class="text-xs text-gray-400">{{ $openIncidents->count() }} active</span>
+                    <span class="text-xs text-gray-400">{{ $openIncidents->total() }} active</span>
                 </div>
                 <div class="min-w-[760px]">
                     <div class="case-head">
@@ -329,6 +329,7 @@
                         </div>
                     @endforelse
                 </div>
+                {{ $openIncidents->links() }}
             </div>
 
             <!-- Side Column -->

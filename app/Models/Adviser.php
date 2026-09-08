@@ -27,6 +27,11 @@ class Adviser extends Model
         return $this->hasMany(HelperCompetencyHistory::class, 'adviser_id', 'id');
     }
 
+    public function helpers(): HasMany
+    {
+        return $this->hasMany(Helper::class, 'adviser_id', 'id');
+    }
+
     public function getFullNameAttribute(): string
     {
         return trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? '')) ?: ($this->email ?? 'Adviser');

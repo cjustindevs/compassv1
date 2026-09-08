@@ -90,6 +90,22 @@
 @endpush
 
 @section('content')
+    @if ($referral->session?->risk_level === 'emergency')
+        <form method="POST" action="{{ route('identity.emergency-review', $referral->session) }}" class="card mb-4">
+            @csrf
+            <label>Emergency identity access review
+                <textarea name="notes" required minlength="20" maxlength="1000" class="block w-full" placeholder="Record your review of the emergency responder's access."></textarea>
+            </label>
+            <button class="btn-primary" type="submit">Record access review</button>
+        </form>
+    @endif
+    @if ($referral->approved_at && $referral->help_seeker_consent && $referral->professional_id)
+        <form method="POST" action="{{ route('identity.release', $referral) }}" class="card mb-4">
+            @csrf
+            <p>Authorize release of the seeker's stored identity to the assigned psychology professional. You will not see the identity fields.</p>
+            <button class="btn-primary" type="submit">Authorize identity release</button>
+        </form>
+    @endif
 <div class="adviser-page-content">
         <!-- Top Bar -->
         <div class="flex items-center gap-4 mb-6">

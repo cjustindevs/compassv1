@@ -7,6 +7,7 @@
 @section('subheading', 'Here is what is happening with your sessions today.')
 
 @section('content')
+    <p class="mb-4">Sessions completed: <strong>{{ $helper?->completedSessions()->count() ?? 0 }}</strong></p>
 
     @if(isset($helperProfileMissing) && $helperProfileMissing)
         <div class="card mb-6">

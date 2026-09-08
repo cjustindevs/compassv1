@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Session;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -69,6 +70,16 @@ class SettingsController extends Controller
     public function updateAccount(Request $request): RedirectResponse
     {
         $user = $request->user();
+
+        if ($user->role === 'seeker') {
+            abort_unless($user->helpSeeker, 403);
+            $data = $request->validate([
+                'gender' => ['nullable', 'in:female,male,non-binary,prefer-not-to-say'],
+                'age' => ['nullable', 'integer', 'min:13', 'max:120'],
+            ]);
+            $user->helpSeeker->update($data);
+            return back()->with('success', 'Account preferences updated. Your generated alias remains your sign-in identity.');
+        }
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -156,7 +167,7 @@ class SettingsController extends Controller
      * Update appearance settings (contrast, motion, font).
      * Accepts both a full form POST and an AJAX JSON payload.
      */
-    public function updateAppearance(Request $request): RedirectResponse
+    public function updateAppearance(Request $request): RedirectResponse|JsonResponse
     {
         $rules = [
             'high_contrast' => 'nullable|boolean',

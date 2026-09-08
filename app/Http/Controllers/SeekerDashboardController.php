@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\HelpSeekerEvaluation;
 use App\Models\Session;
-use App\Models\SessionReport;
 use Illuminate\Support\Facades\Auth;
 
 class SeekerDashboardController extends Controller
@@ -26,12 +25,9 @@ class SeekerDashboardController extends Controller
         $recentSessions = collect();
 
         if ($helpSeeker) {
+            Session::where('seeker_id', $helpSeeker->id)->abandoned()->markAbandoned();
             // Kill stale requests (>24h, never accepted) so the dashboard
             // never shows a phantom "pending request".
-            Session::where('seeker_id', $helpSeeker->id)
-                ->abandoned()
-                ->markAbandoned();
-
             $pendingSession = Session::pendingForSeeker($helpSeeker->id)->first();
 
             $activeSession = Session::where('seeker_id', $helpSeeker->id)
@@ -45,12 +41,11 @@ class SeekerDashboardController extends Controller
                 ->whereIn('session_status', [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED])
                 ->count();
 
-            $totalEvaluations = HelpSeekerEvaluation::whereIn(
-                'session_id',
-                Session::where('seeker_id', $helpSeeker->id)->pluck('id')
-            )->count();
+            $totalEvaluations = HelpSeekerEvaluation::whereHas('session', function ($query) use ($helpSeeker) {
+                $query->where('seeker_id', $helpSeeker->id);
+            })->count();
 
-            $recentSessions = Session::with(['helper', 'concern', 'evaluation'])
+            $recentSessions = Session::with(['helper:id,id,first_name,last_name', 'concern:id,concern_name', 'evaluation'])
                 ->where('seeker_id', $helpSeeker->id)
                 ->latest('created_date')
                 ->limit(5)

@@ -5,7 +5,7 @@
 @section('subheading', $evaluation->evaluation_date?->format('M d, Y') . ' · ' . ($evaluation->evaluation_period ?: 'Evaluation period N/A'))
 
 @section('content')
-    <a href="{{ route('helper.competency') }}" class="btn btn-secondary btn-sm mb-4" style="padding:6px 14px;"><i class="fas fa-arrow-left"></i> Back to competency</a>
+        <a href="{{ route('helper.competency') }}" class="btn btn-secondary btn-sm mb-4"><i class="fas fa-arrow-left"></i> Back to competency</a>
 
     <div class="card">
         <div class="card-header">

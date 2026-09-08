@@ -7,7 +7,6 @@ use App\Models\Adviser;
 use App\Models\AuditLog;
 use App\Models\EmergencyAlert;
 use App\Models\HelpSeeker;
-use App\Models\IdentityVault;
 use App\Models\Notification;
 use App\Models\PsychologyProfessional;
 use App\Models\Referral;
@@ -101,19 +100,7 @@ class EmergencyEscalationService
             'last_emergency_at' => now(),
         ])->save();
 
-        if (($context['disclose_identity'] ?? true) && $seeker->identityVault) {
-            $this->accessIdentityVault($seeker, $session);
-        }
-    }
-
-    private function accessIdentityVault(HelpSeeker $seeker, Session $session): void
-    {
-        IdentityVault::where('seeker_id', $seeker->id)->update([
-            'released_by' => Auth::id(),
-            'released_date' => now(),
-            'released_reason' => 'emergency_escalation_session_' . $session->id,
-            'emergency_override' => true,
-        ]);
+        // Escalation flags the case; only a separately authorized responder may open identity.
     }
 
     private function initiateEmergencyReferral(HelpSeeker $seeker, Session $session, EmergencyAlert $alert, array $context): void
@@ -131,7 +118,7 @@ class EmergencyEscalationService
             'professional_id' => $professional?->id,
             'priority_level' => Referral::PRIORITY_EMERGENCY,
             'help_seeker_consent' => false,
-            'identity_disclosed' => (bool) $seeker->identityVault?->emergency_override,
+            'identity_disclosed' => false,
             'referral_reason' => $context['reason'] ?? 'Emergency escalation referral',
             'referral_date' => now(),
             'status' => $professional ? Referral::STATUS_PENDING_PROFESSIONAL : Referral::STATUS_PENDING_ADVISER,

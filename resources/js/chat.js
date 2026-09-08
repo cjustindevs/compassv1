@@ -29,10 +29,57 @@ class ChatApp {
         this.lastRenderedDay = null;
         this.typingTimeout = null;
         this.channel = null;
+        this.ended = false;
+        this.deadlineReached = false;
+        this.statusPending = false;
+        this.remainingSeconds = null;
+        this.statusReceivedAt = null;
 
         this.initEcho();
         this.loadMessages();
         this.bindEvents();
+        this.checkSessionStatus();
+        this.statusInterval = setInterval(() => this.checkSessionStatus(), 5000);
+        this.timerInterval = setInterval(() => this.updateSessionTimer(), 1000);
+    }
+
+    async checkSessionStatus() {
+        if (this.ended || this.statusPending) return;
+        this.statusPending = true;
+        try {
+            const response = await fetch(`/api/chat/status/${this.sessionId}`, {
+                headers: { 'Accept': 'application/json' }, cache: 'no-store',
+            });
+            if (response.ok) this.applySessionState((await response.json()).session);
+        } catch (_) { /* Keep the composer locked at the deadline and retry. */ }
+        finally { this.statusPending = false; }
+    }
+
+    applySessionState(state) {
+        if (!state || this.ended) return;
+        if (state.ended) {
+            this.handleSessionEnded(state);
+            return;
+        }
+        this.remainingSeconds = state.remaining_seconds;
+        this.statusReceivedAt = performance.now();
+        this.updateSessionTimer();
+    }
+
+    updateSessionTimer() {
+        if (this.ended) return;
+        const timer = document.getElementById('sessionTimer');
+        if (this.remainingSeconds == null) {
+            if (timer) timer.textContent = 'Waiting to start';
+            return;
+        }
+        const remaining = Math.max(0, Math.ceil(this.remainingSeconds - (performance.now() - this.statusReceivedAt) / 1000));
+        if (timer) timer.textContent = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')} remaining`;
+        if (remaining === 0) {
+            this.deadlineReached = true;
+            this.setInputDisabled(true);
+            this.checkSessionStatus();
+        }
     }
 
     // ─────────────────────────── Websocket ───────────────────────────
@@ -84,6 +131,7 @@ class ChatApp {
             .then((response) => response.json())
             .then((data) => {
                 if (!data.success) return;
+                this.applySessionState(data.session);
                 this.removeEmptyState();
                 data.messages.forEach((msg) => this.renderMessage(msg));
                 if (initial || this.renderedIds.size > 0) {
@@ -148,6 +196,7 @@ class ChatApp {
     }
 
     sendMessage() {
+        if (this.ended || this.deadlineReached) return;
         const message = this.messageInput.value.trim();
         if (!message) return;
 
@@ -171,6 +220,7 @@ class ChatApp {
                     // the same message with the same id, which the dedup guard skips.
                     this.renderMessage(data.message);
                 } else {
+                    this.checkSessionStatus();
                     alert(data.error || 'Could not send the message. Please try again.');
                 }
             })
@@ -184,6 +234,10 @@ class ChatApp {
     // ─────────────────────────── Session ended ───────────────────────────
 
     handleSessionEnded(event) {
+        if (this.ended) return;
+        this.ended = true;
+        clearInterval(this.statusInterval);
+        clearInterval(this.timerInterval);
         this.setInputDisabled(true);
         this.showTyping(false);
 
@@ -194,9 +248,9 @@ class ChatApp {
 
         // Give the user a moment to read the notice, then move them along:
         // seeker → evaluation page, helper → session notes.
-        const url = this.currentUserRole === 'helper'
+        const url = this.safePath(this.currentUserRole === 'helper'
             ? (event.helper_redirect || `/helper/session/${this.sessionId}/notes`)
-            : (event.seeker_redirect || '/session/evaluation');
+            : (event.seeker_redirect || '/session/evaluation'));
 
         setTimeout(() => {
             window.location.href = url;
@@ -283,8 +337,8 @@ class ChatApp {
     }
 
     setInputDisabled(disabled) {
-        this.messageInput.disabled = disabled;
-        this.sendButton.disabled = disabled;
+        this.messageInput.disabled = disabled || this.ended || this.deadlineReached;
+        this.sendButton.disabled = disabled || this.ended || this.deadlineReached;
     }
 
     isNearBottom() {
@@ -331,6 +385,14 @@ class ChatApp {
         const div = document.createElement('div');
         div.textContent = text ?? '';
         return div.innerHTML;
+    }
+
+    safePath(url, fallback = '/') {
+        if (typeof url !== 'string' || !url.startsWith('/') || url.startsWith('//')) {
+            return fallback;
+        }
+
+        return url;
     }
 
     // ─────────────────────────── Events ───────────────────────────

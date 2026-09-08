@@ -27,7 +27,7 @@ class ModeratorEmergencyController extends Controller
             ->whereIn('status', ['open', 'under_review', 'escalated'])
             ->orderByRaw("CASE risk_level WHEN 'emergency' THEN 0 WHEN 'high' THEN 1 WHEN 'moderate' THEN 2 ELSE 3 END")
             ->latest('created_at')
-            ->get();
+            ->paginate(20);
 
         $resolved30d = IncidentReport::where('status', 'resolved')
             ->where('resolved_at', '>=', now()->subDays(30))
@@ -36,7 +36,7 @@ class ModeratorEmergencyController extends Controller
         $avgResponse = $this->getAverageResponseTime();
 
         $stats = [
-            'open' => $openIncidents->count(),
+            'open' => $openIncidents->total(),
             'escalated_today' => IncidentReport::where('status', 'escalated')
                 ->where('created_at', '>=', now()->startOfDay())
                 ->count(),
@@ -52,10 +52,10 @@ class ModeratorEmergencyController extends Controller
         $contacts = EmergencyResource::where('status', 'active')->get();
 
         $workflow = [
-            'detected' => $openIncidents->count(),
-            'notified' => $openIncidents->whereIn('status', ['under_review', 'escalated'])->count(),
-            'reviewing' => $openIncidents->where('status', 'under_review')->count(),
-            'referral' => $openIncidents->where('status', 'escalated')->count(),
+            'detected' => $openIncidents->total(),
+            'notified' => $openIncidents->getCollection()->whereIn('status', ['under_review', 'escalated'])->count(),
+            'reviewing' => $openIncidents->getCollection()->where('status', 'under_review')->count(),
+            'referral' => $openIncidents->getCollection()->where('status', 'escalated')->count(),
             'closed' => IncidentReport::whereIn('status', ['resolved', 'closed'])->count(),
         ];
 
@@ -92,11 +92,7 @@ class ModeratorEmergencyController extends Controller
 
         // Notify the adviser in real time so they get an immediate toast.
         if ($adviserUserId && $incident->session) {
-            try {
-                $this->broadcastSafely(new EmergencyTriggered($incident->session, $incident, $adviserUserId));
-            } catch (\Throwable $e) {
-                report($e);
-            }
+            $this->broadcastSafely(new EmergencyTriggered($incident->session, $incident, $adviserUserId));
         }
 
         return back()->with('success', 'Emergency case #' . $incident->id . ' escalated for immediate review.');

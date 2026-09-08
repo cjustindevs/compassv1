@@ -1,19 +1,5 @@
-@php
-    $adviserHelperIds = \App\Models\Helper::where('adviser_id', optional(auth()->user()->adviser)->id)->pluck('id');
-    $adviserBadges = [
-        'evalBadge' => \App\Models\SessionReport::where('adviser_reviewed', false)->whereHas('session', fn ($query) => $query->whereIn('helper_id', $adviserHelperIds))->count(),
-        'referralBadge' => \App\Models\Referral::where('status', 'pending_adviser')->whereIn('helper_id', $adviserHelperIds)->count(),
-        'notifBadge' => optional(auth()->user())->unreadNotifications()->count() ?? 0,
-        'totalHelpers' => $adviserHelperIds->count(),
-        'activeSessions' => \App\Models\Session::whereIn('helper_id', $adviserHelperIds)->where('session_status', 'active')->count(),
-        'pendingReviews' => \App\Models\SessionReport::where('adviser_reviewed', false)->whereHas('session', fn ($query) => $query->whereIn('helper_id', $adviserHelperIds))->count(),
-    ];
-    $user = auth()->user();
-    $avatarText = optional($user->adviser)->first_name
-        ? substr($user->adviser->first_name, 0, 1) . substr($user->adviser->last_name, 0, 1)
-        : strtoupper(substr($user->name, 0, 2));
-    $displayName = optional($user->adviser)->full_name ?? $user->name;
-@endphp
+{{-- Variables provided by SidebarComposer: $evalBadge, $referralBadge, $notifBadge,
+     $totalHelpers, $activeSessions, $pendingReviews, $avatarText, $displayName --}}
 
 @include('layouts.partials.sidebar-critical')
 
@@ -35,8 +21,8 @@
         </a>
         <a href="{{ route('adviser.evaluations') }}" class="nav-item {{ request()->routeIs('adviser.evaluations*', 'adviser.evaluate*') ? 'active' : '' }}">
             <i class="fas fa-clipboard-list"></i><span class="nav-text">Pending Evaluations</span>
-            @if($adviserBadges['evalBadge'] > 0)
-                <span class="nav-badge" id="evalBadge">{{ $adviserBadges['evalBadge'] }}</span>
+            @if($evalBadge > 0)
+                <span class="nav-badge" id="evalBadge">{{ $evalBadge }}</span>
             @endif
         </a>
         <a href="{{ route('adviser.helpers') }}" class="nav-item {{ request()->routeIs('adviser.helpers*', 'adviser.helper*') ? 'active' : '' }}">
@@ -44,8 +30,8 @@
         </a>
         <a href="{{ route('adviser.referrals') }}" class="nav-item {{ request()->routeIs('adviser.referrals*', 'adviser.referral*') ? 'active' : '' }}">
             <i class="fas fa-arrow-right"></i><span class="nav-text">Referral Queue</span>
-            @if($adviserBadges['referralBadge'] > 0)
-                <span class="nav-badge" id="referralBadge">{{ $adviserBadges['referralBadge'] }}</span>
+            @if($referralBadge > 0)
+                <span class="nav-badge" id="referralBadge">{{ $referralBadge }}</span>
             @endif
         </a>
         <a href="{{ route('adviser.emergencies') }}" class="nav-item {{ request()->routeIs('adviser.emergencies*') ? 'active' : '' }}">
@@ -72,8 +58,8 @@
         <div class="nav-section">Account</div>
         <a href="{{ route('adviser.notifications') }}" class="nav-item {{ request()->routeIs('adviser.notifications*') ? 'active' : '' }}">
             <i class="fas fa-bell"></i><span class="nav-text">Notifications</span>
-            @if($adviserBadges['notifBadge'] > 0)
-                <span class="nav-badge" id="notifBadge">{{ $adviserBadges['notifBadge'] }}</span>
+            @if($notifBadge > 0)
+                <span class="nav-badge" id="notifBadge">{{ $notifBadge }}</span>
             @endif
         </a>
         <a href="{{ route('adviser.settings') }}" class="nav-item {{ request()->routeIs('adviser.settings*') ? 'active' : '' }}">
@@ -91,15 +77,15 @@
         </div>
         <div class="user-stats">
             <div class="stat">
-                <span class="value" id="totalHelpers">{{ $adviserBadges['totalHelpers'] }}</span>
+                <span class="value" id="totalHelpers">{{ $totalHelpers }}</span>
                 <span class="label">Helpers</span>
             </div>
             <div class="stat">
-                <span class="value" id="activeSessions">{{ $adviserBadges['activeSessions'] }}</span>
+                <span class="value" id="activeSessions">{{ $activeSessions }}</span>
                 <span class="label">Active</span>
             </div>
             <div class="stat">
-                <span class="value" id="pendingReviews">{{ $adviserBadges['pendingReviews'] }}</span>
+                <span class="value" id="pendingReviews">{{ $pendingReviews }}</span>
                 <span class="label">Pending</span>
             </div>
         </div>

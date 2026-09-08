@@ -7,7 +7,7 @@
 
 @section('content')
 
-    <a href="{{ route('helper.cases.show', ['id' => $session->id]) }}" class="btn btn-secondary btn-sm mb-4" style="padding:6px 14px;"><i class="fas fa-arrow-left"></i> Back to case</a>
+        <a href="{{ route('helper.cases.show', ['id' => $session->id]) }}" class="btn btn-secondary btn-sm mb-4"><i class="fas fa-arrow-left"></i> Back to case</a>
 
     <div class="card" style="text-align:center;padding:48px 24px;">
         <div class="voice-avatar">
@@ -17,7 +17,7 @@
         <div class="mt-4">
             <div class="text-2xl font-bold text-gray-800">{{ $session->seeker->generated_alias ?? 'Seeker' }}</div>
             <div class="text-sm text-gray-500 mt-1">
-                <span class="risk-badge {{ $session->risk_level ?? 'low' }}">{{ ucfirst($session->risk_level ?? 'Low') }}</span>
+                <span class="pill">Assigned peer support</span>
                 Voice session
             </div>
         </div>

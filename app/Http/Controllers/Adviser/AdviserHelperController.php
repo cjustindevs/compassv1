@@ -25,31 +25,29 @@ class AdviserHelperController extends Controller
         $statusFilter = $request->get('status', 'all');
         $adviserId = Auth::user()->adviser?->id;
 
-        $helpers = Helper::with(['user', 'latestReadiness', 'adviser'])
+        $helpers = Helper::with(['user:id,id,name', 'latestReadiness', 'adviser'])
+            ->withCount(['activeSessions as active_cases'])
+            ->withAggregate('latestCompetency', 'overall_score')
             ->where('adviser_id', $adviserId)
             ->get();
 
-        $helperData = $helpers->map(function (Helper $helper) {
-            $activeSessions = Session::where('helper_id', $helper->id)
-                ->where('session_status', 'active')
-                ->count();
+        $helperIds = $helpers->pluck('id');
 
-            $competency = HelperCompetencyHistory::where('helper_id', $helper->id)
-                ->latest('evaluation_date')
-                ->first();
+        $avgScores = HelperCompetencyHistory::whereIn('helper_id', $helperIds)
+            ->selectRaw('helper_id, AVG(overall_score) as avg_score')
+            ->groupBy('helper_id')
+            ->pluck('avg_score', 'helper_id');
 
-            $averageScore = HelperCompetencyHistory::where('helper_id', $helper->id)
-                ->avg('overall_score') ?? 0;
-
+        $helperData = $helpers->map(function (Helper $helper) use ($avgScores) {
             $readiness = $helper->latestReadiness;
 
             return [
                 'helper' => $helper,
                 'initials' => $this->getInitials($helper->first_name, $helper->last_name),
                 'level' => $this->getCompetencyLevel($helper->competency_level),
-                'competency_score' => $competency ? round($competency->overall_score, 1) : 0,
-                'average_rating' => round($averageScore, 1),
-                'active_cases' => $activeSessions,
+                'competency_score' => $helper->latest_competency_overall_score ? round((float) $helper->latest_competency_overall_score, 1) : 0,
+                'average_rating' => round((float) ($avgScores->get($helper->id, 0)), 1),
+                'active_cases' => $helper->active_cases,
                 'status' => $this->getHelperStatus($helper, $readiness),
                 'is_available' => $helper->isOnline(),
                 'readiness' => $readiness,
@@ -261,22 +259,36 @@ class AdviserHelperController extends Controller
 
         $helpers = Helper::with(['adviser'])
             ->where('adviser_id', $adviserId)
-            ->get()
-            ->map(function (Helper $helper) {
-                $competency = HelperCompetencyHistory::where('helper_id', $helper->id)
-                    ->latest('evaluation_date')
-                    ->first();
+            ->get();
 
-                return [
-                    'helper' => $helper,
-                    'status' => $this->getHelperStatus($helper, $helper->latestReadiness),
-                    'competency_score' => $competency ? round($competency->overall_score, 1) : 0,
-                    'active_cases' => Session::where('helper_id', $helper->id)
-                        ->where('session_status', 'active')
-                        ->count(),
-                    'total_sessions' => Session::where('helper_id', $helper->id)->count(),
-                ];
-            });
+        $helperIds = $helpers->pluck('id');
+
+        $latestCompetency = HelperCompetencyHistory::whereIn('helper_id', $helperIds)
+            ->selectRaw('helper_id, overall_score')
+            ->orderBy('evaluation_date', 'desc')
+            ->groupBy('helper_id', 'overall_score')
+            ->pluck('overall_score', 'helper_id');
+
+        $activeCounts = Session::whereIn('helper_id', $helperIds)
+            ->where('session_status', 'active')
+            ->selectRaw('helper_id, COUNT(*) as cnt')
+            ->groupBy('helper_id')
+            ->pluck('cnt', 'helper_id');
+
+        $totalCounts = Session::whereIn('helper_id', $helperIds)
+            ->selectRaw('helper_id, COUNT(*) as cnt')
+            ->groupBy('helper_id')
+            ->pluck('cnt', 'helper_id');
+
+        $helpers = $helpers->map(function (Helper $helper) use ($latestCompetency, $activeCounts, $totalCounts) {
+            return [
+                'helper' => $helper,
+                'status' => $this->getHelperStatus($helper, $helper->latestReadiness),
+                'competency_score' => $latestCompetency->has($helper->id) ? round($latestCompetency[$helper->id], 1) : 0,
+                'active_cases' => $activeCounts->get($helper->id, 0),
+                'total_sessions' => $totalCounts->get($helper->id, 0),
+            ];
+        });
 
         if ($statusFilter !== 'all') {
             $helpers = $helpers->where('status', $statusFilter);

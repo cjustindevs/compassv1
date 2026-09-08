@@ -19,9 +19,10 @@ class ProfessionalReferralController extends Controller
             abort(403, 'No psychology professional profile found for this account.');
         }
 
-        $referrals = Referral::with(['session', 'session.seeker', 'helper', 'adviser'])
+        $referrals = Referral::with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'adviser:id,id,first_name,last_name'])
             ->where('professional_id', $professional->id)
             ->orderByDesc('created_at')
+            ->limit(100)
             ->get();
 
         // Group by pipeline stage

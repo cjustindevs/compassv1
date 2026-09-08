@@ -194,7 +194,7 @@
         }
     </style>
 </head>
-<body>
+<body class="compass-compact">
 
     @include('layouts.partials.moderator-sidebar')
 
@@ -254,15 +254,15 @@
                     <span class="stat-label">Active Sessions</span>
                     <span class="text-2xl">💬</span>
                 </div>
-                <div class="stat-number active" id="statSessions">{{ $activeSessions }}</div>
-                <span class="text-xs text-gray-400">{{ $chatSessions }} chat · {{ $voiceSessions }} voice</span>
+                <div class="stat-number active" id="statSessions">{{ $stats['active_sessions'] }}</div>
+                <span class="text-xs text-gray-400">{{ $stats['chat_sessions'] }} chat · {{ $stats['voice_sessions'] }} voice</span>
             </div>
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Queue</span>
                     <span class="text-2xl">⏳</span>
                 </div>
-                <div class="stat-number queue" id="statQueue">{{ $queueWaiting }}</div>
+                <div class="stat-number queue" id="statQueue">{{ $stats['queue_waiting'] }}</div>
                 <span class="text-xs text-gray-400">Avg wait: <span id="avgWait">{{ $avgWait }}</span></span>
             </div>
             <div class="stat-card">
@@ -270,7 +270,7 @@
                     <span class="stat-label">Emergency</span>
                     <span class="text-2xl">🚨</span>
                 </div>
-                <div class="stat-number emergency" id="statEmergency">{{ $emergencyCount }}</div>
+                <div class="stat-number emergency" id="statEmergency">{{ $stats['emergency_count'] }}</div>
                 <span class="text-xs text-gray-400">Open emergencies</span>
             </div>
             <div class="stat-card">
@@ -278,8 +278,8 @@
                     <span class="stat-label">Helpers</span>
                     <span class="text-2xl">👥</span>
                 </div>
-                <div class="stat-number helper" id="statHelpers">{{ $availableHelpers }}</div>
-                <span class="text-xs text-gray-400">{{ $busyHelpers }} busy</span>
+                <div class="stat-number helper" id="statHelpers">{{ $stats['available_helpers'] }}</div>
+                <span class="text-xs text-gray-400">{{ $stats['busy_helpers'] }} busy</span>
             </div>
         </div>
 
@@ -359,7 +359,7 @@
                         </div>
                         <div class="flex-1">
                             <p class="font-semibold text-gray-800 text-sm">Review Incoming Queue</p>
-                            <p class="text-xs text-gray-500">{{ $queueWaiting }} waiting · {{ $unserved }} waiting 30+ min</p>
+                            <p class="text-xs text-gray-500">{{ $stats['queue_waiting'] }} waiting · {{ $stats['unserved'] }} waiting 30+ min</p>
                         </div>
                         <i class="fas fa-chevron-right text-gray-300"></i>
                     </a>
@@ -369,7 +369,7 @@
                         </div>
                         <div class="flex-1">
                             <p class="font-semibold text-gray-800 text-sm">Emergency Alerts</p>
-                            <p class="text-xs text-gray-500">{{ $emergencyCount }} open cases require review</p>
+                            <p class="text-xs text-gray-500">{{ $stats['emergency_count'] }} open cases require review</p>
                         </div>
                         <i class="fas fa-chevron-right text-gray-300"></i>
                     </a>
@@ -379,7 +379,7 @@
                         </div>
                         <div class="flex-1">
                             <p class="font-semibold text-gray-800 text-sm">Manage Team</p>
-                            <p class="text-xs text-gray-500">{{ $availableHelpers }} helpers available for assignment</p>
+                            <p class="text-xs text-gray-500">{{ $stats['available_helpers'] }} helpers available for assignment</p>
                         </div>
                         <i class="fas fa-chevron-right text-gray-300"></i>
                     </a>

@@ -29,23 +29,26 @@ class HelperCompetencyController extends Controller
         $history = HelperCompetencyHistory::with('adviser')
             ->where('helper_id', $helper->id)
             ->orderBy('evaluation_date', 'desc')
-            ->get();
+            ->paginate(15);
 
-        $trend = $history->sortBy('evaluation_date')
+        $trend = HelperCompetencyHistory::where('helper_id', $helper->id)
+            ->orderBy('evaluation_date', 'asc')
+            ->limit(6)
+            ->get()
             ->map(function (HelperCompetencyHistory $record) {
                 return [
                     'label' => $record->evaluation_date?->format('Y-m'),
                     'score' => max(8, min(100, (int) round($record->overall_score))),
                 ];
             })
-            ->take(6)
             ->values();
 
         return view('helper.competency', [
             'latest' => $latest,
-            'totalEvaluations' => $history->count(),
+            'completedSessions' => $helper->completedSessions()->count(),
+            'totalEvaluations' => $history->total(),
             'trend' => $trend,
-            'history' => $history->map(function (HelperCompetencyHistory $record) {
+            'history' => $history->through(function (HelperCompetencyHistory $record) {
                 return [
                     'date' => $record->evaluation_date?->format('M d, Y') ?: '—',
                     'overall' => $record->overall_score,
@@ -75,12 +78,12 @@ class HelperCompetencyController extends Controller
         $adviserFeedback = AdviserFeedback::with(['adviser', 'report.session'])
             ->whereHas('report.session', fn ($query) => $query->where('helper_id', $helper->id))
             ->latest('created_date')
-            ->get();
+            ->paginate(15);
 
         $seekerFeedback = HelpSeekerEvaluation::with('session.seeker')
             ->whereHas('session', fn ($query) => $query->where('helper_id', $helper->id))
             ->latest()
-            ->get();
+            ->paginate(15);
 
         return view('helper.feedback', compact('helper', 'adviserFeedback', 'seekerFeedback'));
     }

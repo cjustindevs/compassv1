@@ -395,7 +395,7 @@
         }
     </style>
 </head>
-<body>
+<body class="compass-compact">
 
     @include('partials.sidebar', [
         'active' => ['request.matching*'],
@@ -406,7 +406,7 @@
     <!-- MAIN CONTENT                                 -->
     <!-- ══════════════════════════════════════════════ -->
 
-    <main class="main-content">
+    <main class="main-content request-flow-compact">
 
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
@@ -440,16 +440,6 @@
 
             <!-- Live reassignment state (filled in real time by seeker-notifications.js) -->
             <div id="matchingLiveState" class="hidden"></div>
-
-            <!-- Risk Summary -->
-            <div class="mb-4 p-4 bg-gray-50 rounded-xl flex items-center justify-between flex-wrap gap-3">
-                <div>
-                    <span class="text-sm font-medium text-gray-600">Risk Classification:</span>
-                    @php $riskLevel = $session->risk_level ?? session('risk_level', 'low'); @endphp
-                    <span class="risk-badge {{ $riskLevel }}">{{ ucfirst($riskLevel) }}</span>
-                </div>
-                <span class="text-xs text-gray-400">Updated in real time</span>
-            </div>
 
             <!-- ============================================ -->
             <!-- SESSION ACTIVE (helper accepted)             -->
@@ -488,7 +478,7 @@
                                     {{ substr($availableHelper->first_name ?? 'H', 0, 1) }}
                                 </div>
                                 <div class="text-left">
-                                    <p class="font-semibold text-gray-800">{{ $availableHelper->full_name }}</p>
+                                    <p class="font-semibold text-gray-800">{{ $availableHelper->public_alias }}</p>
                                     <p class="text-sm text-gray-500">{{ $availableHelper->specializations ?: 'Peer support' }}</p>
                                     <span class="text-xs text-green-600 font-medium">Level {{ $availableHelper->competency_level }} Peer Helper</span>
                                 </div>

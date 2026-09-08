@@ -6,7 +6,6 @@ use App\Models\Adviser;
 use App\Models\EmergencyAlert;
 use App\Models\HelpSeeker;
 use App\Models\Helper;
-use App\Models\IdentityVault;
 use App\Models\IncidentReport;
 use App\Models\Moderator;
 use App\Models\Notification;
@@ -43,20 +42,20 @@ class EscalationWorkflowTest extends TestCase
         $this->assertSame('emergency', $service->classifyRisk(array_merge($base, ['current_suicide_plan' => true, 'suicidal_thoughts' => true]))['risk_level']);
     }
 
-    public function test_emergency_escalation_flags_case_notifies_staff_and_releases_identity(): void
+    public function test_emergency_escalation_flags_case_without_automatically_releasing_identity(): void
     {
         Event::fake();
 
         [$seeker, $session] = $this->sessionWithAssignedHelper();
         PsychologyProfessional::create($this->profileData('professional', 'pro@example.com'));
-        IdentityVault::create(['seeker_id' => $seeker->id, 'real_name' => 'Test Seeker']);
+        \Illuminate\Support\Facades\DB::table('identity_vault')->insert(['seeker_id' => $seeker->id, 'real_name' => 'Test Seeker']);
 
         $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $seeker, ['reason' => 'Immediate threat']);
 
         $this->assertDatabaseHas('emergency_alerts', ['id' => $alert->id, 'status' => 'referred', 'professional_referred' => true]);
         $this->assertDatabaseHas('counseling_sessions', ['id' => $session->id, 'risk_level' => 'emergency', 'escalation_required' => true]);
         $this->assertDatabaseHas('help_seekers', ['id' => $seeker->id, 'current_risk_level' => 'emergency', 'has_emergency' => true]);
-        $this->assertDatabaseHas('identity_vault', ['seeker_id' => $seeker->id, 'emergency_override' => true]);
+        $this->assertDatabaseHas('identity_vault', ['seeker_id' => $seeker->id, 'emergency_override' => false]);
         $this->assertDatabaseHas('referrals', ['session_id' => $session->id, 'priority_level' => 'emergency']);
         $this->assertGreaterThanOrEqual(2, Notification::where('notification_type', 'emergency')->count());
     }
@@ -77,7 +76,7 @@ class EscalationWorkflowTest extends TestCase
 
         $referral = $service->processConsent($referral, true);
         $this->assertSame(Referral::STATUS_PENDING_PROFESSIONAL, $referral->status);
-        $this->assertTrue($referral->identity_disclosed);
+        $this->assertFalse($referral->identity_disclosed);
 
         $referral = $service->acceptReferral($referral, $professional);
         $this->assertSame(Referral::STATUS_ACCEPTED, $referral->status);

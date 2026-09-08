@@ -9,6 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Helper extends Model
 {
+    public function getPublicAliasAttribute(): string
+    {
+        return 'Peer Helper ' . str_pad((string) $this->id, 4, '0', STR_PAD_LEFT);
+    }
+
     protected $table = 'helpers';
 
     public ?float $matching_score = null;
@@ -91,7 +96,7 @@ class Helper extends Model
     public function activeSessions(): HasMany
     {
         return $this->hasMany(Session::class, 'helper_id', 'id')
-            ->whereIn('session_status', ['scheduled', 'active']);
+            ->whereIn('session_status', ['scheduled', 'helper_assigned', 'active']);
     }
 
     public function pendingSessions(): HasMany
@@ -204,7 +209,7 @@ class Helper extends Model
 
     public function hasCapacity(): bool
     {
-        $limit = (int) ($this->max_concurrent_sessions ?: self::MAX_SESSIONS_PER_SHIFT);
+        $limit = min(self::MAX_SESSIONS_PER_SHIFT, (int) ($this->max_concurrent_sessions ?: self::MAX_SESSIONS_PER_SHIFT));
         $activeSessionCount = $this->activeSessions()->count();
         $currentShiftSessions = $this->currentAssignedSessionsCount();
 
@@ -288,11 +293,11 @@ class Helper extends Model
 
     public function isAvailable(): bool
     {
-        if (! in_array($this->status, ['available'], true)) {
+        if (! in_array($this->status, ['available', 'busy'], true)) {
             return false;
         }
 
-        if ($this->availability === 'break') {
+        if ($this->availability !== 'available') {
             return false;
         }
 
@@ -306,7 +311,7 @@ class Helper extends Model
 
         $schedule = $this->schedule;
 
-        return ! $schedule || $schedule->isWithinShift();
+        return $schedule && $schedule->isOnDuty();
     }
 
     public function canHandleRiskLevel(?string $riskLevel): bool

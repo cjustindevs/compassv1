@@ -37,17 +37,18 @@ class ProfessionalDashboardController extends Controller
         $avgResponseHours = $this->averageResponseHours($professionalId);
 
         // Recent referrals
-        $recentReferrals = Referral::with(['session', 'session.seeker', 'helper', 'adviser'])
+        $recentReferrals = Referral::with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'adviser:id,id,first_name,last_name'])
             ->where('professional_id', $professionalId)
             ->orderByDesc('created_at')
             ->limit(5)
             ->get();
 
         // Active cases (with latest professional note for "last update")
-        $activeCasesList = Referral::with(['session', 'session.seeker', 'professionalNotes'])
+        $activeCasesList = Referral::with(['session.seeker:id,id,generated_alias', 'professionalNotes'])
             ->where('professional_id', $professionalId)
             ->whereIn('status', Referral::ACTIVE_STATUSES)
             ->orderByDesc('updated_at')
+            ->limit(20)
             ->get();
 
         // Recent activity notifications
@@ -95,21 +96,17 @@ class ProfessionalDashboardController extends Controller
 
     /**
      * Average time (hours) between referral assignment and the first status
-     * change, computed from real created_at / updated_at timestamps.
+     * change, computed in SQL rather than in PHP for performance.
      */
     private function averageResponseHours(int $professionalId): int
     {
-        $responded = Referral::where('professional_id', $professionalId)
+        $avg = Referral::where('professional_id', $professionalId)
             ->whereIn('status', [...Referral::ACTIVE_STATUSES, ...Referral::COMPLETED_STATUSES])
-            ->get()
-            ->filter(fn (Referral $referral) => $referral->created_at && $referral->updated_at)
-            ->filter(fn (Referral $referral) => $referral->updated_at->greaterThan($referral->created_at))
-            ->map(fn (Referral $referral) => $referral->created_at->diffInHours($referral->updated_at));
+            ->whereNotNull('created_at')
+            ->whereNotNull('updated_at')
+            ->selectRaw('AVG(' . \App\Support\DatabaseHelper::secondsBetween('updated_at', 'created_at') . ') / 3600 as avg_hours')
+            ->first();
 
-        if ($responded->isEmpty()) {
-            return 0;
-        }
-
-        return (int) round($responded->avg());
+        return (int) round((float) ($avg->avg_hours ?? 0));
     }
 }

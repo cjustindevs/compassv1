@@ -47,11 +47,13 @@
             <div class="card" style="grid-column:1/-1;">
                 <div class="empty-state">
                     <i class="fas fa-book"></i>
-                    <h3 style="font-size:16px;font-weight:700;color:var(--gray-800);margin-bottom:6px;">No resources found</h3>
+                    <h3>No resources found</h3>
                     <p>Try a different category or search term.</p>
                 </div>
             </div>
         @endforelse
     </div>
+
+    {{ $resources->links() }}
 
 @endsection

@@ -9,7 +9,7 @@
         <div class="card">
             <div class="card-header">
                 <h3>Adviser Feedback</h3>
-                <span class="text-xs text-gray-400">{{ $adviserFeedback->count() }} item(s)</span>
+                <span class="text-xs text-gray-400">{{ $adviserFeedback->total() }} item(s)</span>
             </div>
             <div class="table-container">
                 <table>
@@ -39,12 +39,15 @@
                     </tbody>
                 </table>
             </div>
+            @if($adviserFeedback->hasPages())
+                <div style="margin-top:16px;">{{ $adviserFeedback->links() }}</div>
+            @endif
         </div>
 
         <div class="card">
             <div class="card-header">
                 <h3>Help-Seeker Feedback</h3>
-                <span class="text-xs text-gray-400">{{ $seekerFeedback->count() }} evaluation(s)</span>
+                <span class="text-xs text-gray-400">{{ $seekerFeedback->total() }} evaluation(s)</span>
             </div>
             <div class="table-container">
                 <table>
@@ -70,6 +73,9 @@
                     </tbody>
                 </table>
             </div>
+            @if($seekerFeedback->hasPages())
+                <div style="margin-top:16px;">{{ $seekerFeedback->links() }}</div>
+            @endif
         </div>
     </div>
 @endsection

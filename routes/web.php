@@ -1,5 +1,16 @@
 <?php
 
+// Role and record authorization are enforced by the vault gateway and logged there.
+Route::middleware(['auth', 'throttle:20,1'])->group(function () {
+    Route::get('/referrals/{referral}/identity', [\App\Http\Controllers\IdentityVaultController::class, 'form'])->name('identity.form');
+    Route::post('/referrals/{referral}/identity', [\App\Http\Controllers\IdentityVaultController::class, 'store'])->name('identity.store');
+    Route::post('/referrals/{referral}/identity/release', [\App\Http\Controllers\IdentityVaultController::class, 'release'])->name('identity.release');
+    Route::get('/referrals/{referral}/identity/released', [\App\Http\Controllers\IdentityVaultController::class, 'show'])->name('identity.show');
+    Route::post('/referrals/{referral}/identity/acknowledge', [\App\Http\Controllers\IdentityVaultController::class, 'acknowledge'])->name('identity.acknowledge');
+    Route::post('/sessions/{session}/identity/emergency', [\App\Http\Controllers\IdentityVaultController::class, 'emergency'])->name('identity.emergency');
+    Route::post('/sessions/{session}/identity/emergency-review', [\App\Http\Controllers\IdentityVaultController::class, 'reviewEmergency'])->name('identity.emergency-review');
+});
+
 use App\Http\Controllers\Adviser\AdviserCalendarController;
 use App\Http\Controllers\Adviser\AdviserDashboardController;
 use App\Http\Controllers\Adviser\AdviserEmergencyController;
@@ -117,7 +128,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/admin/dashboard', function () {
         return view('dashboard.admin');
-    })->name('admin.dashboard');
+    })->middleware('role:admin')->name('admin.dashboard');
 });
 
 // =============================================
@@ -142,8 +153,8 @@ require __DIR__.'/auth.php';
 // CUSTOM HELP SEEKER REGISTRATION (WITH OTP)
 // MUST BE AFTER require __DIR__.'/auth.php' TO OVERRIDE
 // =============================================
-Route::get('/register', [HelpSeekerRegisterController::class, 'showRegisterForm'])->name('register');
-Route::get('/register-seeker', [HelpSeekerRegisterController::class, 'showRegisterForm'])->name('seeker.register');
+Route::get('/register', [\App\Http\Controllers\SeekerOnboardingController::class, 'create'])->name('register');
+Route::get('/register-seeker', [\App\Http\Controllers\SeekerOnboardingController::class, 'create'])->name('seeker.register');
 
 // =============================================
 // REQUEST SUPPORT ROUTES (3-Step Process)
@@ -501,6 +512,7 @@ Route::middleware(['auth'])->prefix('api')->group(function () {
     Route::post('/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
     Route::post('/chat/typing', [ChatController::class, 'typing'])->name('chat.typing');
     Route::get('/chat/messages/{sessionId}', [ChatController::class, 'getMessages'])->name('chat.messages');
+    Route::get('/chat/status/{sessionId}', [ChatController::class, 'status'])->whereNumber('sessionId')->name('chat.status');
     Route::get('/chat/transcript/{sessionId}', [ChatController::class, 'getTranscript'])->name('chat.transcript');
     Route::get('/transcript/{sessionId}/download', [ChatController::class, 'downloadTranscript'])->name('api.transcript.download');
 
@@ -523,14 +535,29 @@ Route::middleware(['auth'])->prefix('api')->group(function () {
 // =============================================
 // API ROUTES (for AJAX calls)
 // =============================================
-Route::prefix('api')->group(function () {
+Route::prefix('api')->middleware('throttle:10,1')->group(function () {
     // OTP Routes
-    Route::post('/send-otp', [OTPController::class, 'sendOTP']);
-    Route::post('/verify-otp', [OTPController::class, 'verifyOTP']);
-    Route::post('/resend-otp', [OTPController::class, 'resendOTP']);
-    Route::post('/check-email', [OTPController::class, 'checkEmail']);
+    foreach (['send-otp', 'verify-otp', 'resend-otp', 'check-email', 'register-seeker'] as $legacyEndpoint) {
+        Route::post('/' . $legacyEndpoint, fn () => response()->json(['message' => 'Email-based seeker registration has been retired. Use pseudonymous onboarding.', 'registration_url' => route('seeker.register')], 410));
+    }
 
     // Help Seeker Registration
     Route::get('/generate-alias', [HelpSeekerRegisterController::class, 'generateAlias']);
-    Route::post('/register-seeker', [HelpSeekerRegisterController::class, 'register']);
 });
+
+Route::post('/onboarding', [\App\Http\Controllers\SeekerOnboardingController::class, 'store'])->middleware(['guest', 'throttle:5,60'])->name('seeker.onboarding.store');
+Route::middleware(['auth', 'role:seeker'])->group(function () {
+    Route::get('/seeker/consent', [\App\Http\Controllers\SeekerOnboardingController::class, 'consent'])->name('seeker.consent');
+    Route::post('/seeker/consent', [\App\Http\Controllers\SeekerOnboardingController::class, 'accept'])->name('seeker.consent.accept');
+});
+
+Route::get('/session/{session}/referral-prompt', function (\App\Models\Session $session) {
+    $user = auth()->user();
+    abort_unless(($user->helpSeeker && $user->helpSeeker->id === $session->seeker_id) || ($user->helper && $user->helper->id === $session->helper_id), 403);
+    $referral = $session->referrals()->latest('id')->first();
+    return response()->json(['referral' => $referral ? [
+        'id' => $referral->id, 'status' => $referral->status,
+        'consent_url' => route('referrals.consent', $referral),
+        'identity_url' => route('identity.form', $referral),
+    ] : null]);
+})->middleware('auth')->name('session.referral-prompt');

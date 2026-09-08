@@ -18,10 +18,11 @@ class ProfessionalCaseController extends Controller
             abort(403, 'No psychology professional profile found for this account.');
         }
 
-        $cases = Referral::with(['session', 'session.seeker', 'professionalNotes'])
+        $cases = Referral::with(['session.seeker:id,id,generated_alias', 'professionalNotes'])
             ->where('professional_id', $professional->id)
             ->whereIn('status', Referral::ACTIVE_STATUSES)
             ->orderByDesc('updated_at')
+            ->limit(50)
             ->get();
 
         return view('professional.cases', compact('cases'));

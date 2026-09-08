@@ -234,6 +234,7 @@
                         </div>
                     </div>
                 @endforeach
+                {{ $pendingReports->links() }}
             @else
                 <div class="text-center py-12 text-gray-400">
                     <i class="fas fa-check-circle text-5xl mb-3 block text-green-500"></i>
@@ -265,6 +266,7 @@
                         <span class="text-xs text-gray-400">{{ $report->updated_at->diffForHumans() }}</span>
                     </div>
                 @endforeach
+                {{ $completedReports->links() }}
             </div>
         @endif
 

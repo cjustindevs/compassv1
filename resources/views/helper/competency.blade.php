@@ -6,6 +6,7 @@
 @section('subheading', 'Your competency evaluations and growth over time.')
 
 @section('content')
+    <p class="mb-4">Sessions completed: <strong>{{ $completedSessions ?? 0 }}</strong></p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -30,7 +31,7 @@
                 @else
                     <div class="empty-state">
                         <i class="fas fa-chart-line"></i>
-                        <h3 style="font-size:16px;font-weight:700;color:var(--gray-800);margin-bottom:6px;">No evaluations yet</h3>
+                        <h3>No evaluations yet</h3>
                         <p>Your competency score will appear here once your adviser evaluates your sessions.</p>
                     </div>
                 @endif
@@ -110,6 +111,7 @@
                         </tbody>
                     </table>
                 </div>
+                {{ $history->links() }}
             </div>
         </div>
 

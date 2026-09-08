@@ -22,7 +22,7 @@ class HelpSeekerModuleTest extends TestCase
         $this->actingAs($user)->post(route('request.screening.process'), [
             'concern_id' => $concern->id,
             'description' => 'I am overwhelmed by school requirements this week.',
-            'safety_check' => 'no',
+            'current_suicide_plan' => 0, 'suicidal_thoughts' => 0, 'severe_distress' => 0, 'recurring_distress' => 0, 'difficulty_coping' => 0,
         ])->assertRedirect(route('request.preferences'));
 
         $this->actingAs($user)->post(route('request.preferences.process'), [
@@ -71,7 +71,7 @@ class HelpSeekerModuleTest extends TestCase
             ->assertSessionHasErrors('support_mode');
     }
 
-    public function test_voice_preferences_require_recording_consent(): void
+    public function test_voice_preferences_are_rejected(): void
     {
         [$user, $seeker] = $this->seekerUser();
 
@@ -92,10 +92,10 @@ class HelpSeekerModuleTest extends TestCase
                 'preferred_language' => 'English',
             ])
             ->assertRedirect(route('request.preferences'))
-            ->assertSessionHasErrors('voice_consent');
+            ->assertSessionHasErrors('support_mode');
     }
 
-    public function test_voice_preferences_store_recording_consent_and_enter_queue(): void
+    public function test_voice_preferences_are_rejected_even_with_consent(): void
     {
         [$user, $seeker] = $this->seekerUser();
 
@@ -115,19 +115,9 @@ class HelpSeekerModuleTest extends TestCase
                 'preferred_language' => 'English',
                 'voice_consent' => '1',
             ])
-            ->assertRedirect(route('request.matching'));
-
-        $session->refresh();
-
-        $this->assertSame('voice', $session->session_type);
-        $this->assertTrue($session->voice_recording_consent);
-        $this->assertTrue($session->voice_consent_obtained);
-
-        $this->assertDatabaseHas('queue_requests', [
-            'seeker_id' => $seeker->id,
-            'preferred_session_type' => 'voice',
-            'voice_consent' => true,
-        ]);
+            ->assertSessionHasErrors('support_mode');
+        $this->assertDatabaseCount('queue_requests', 0);
+        $this->assertSame('chat', $session->fresh()->session_type);
     }
 
     public function test_matching_page_shows_queue_position_and_estimated_wait(): void
@@ -182,7 +172,7 @@ class HelpSeekerModuleTest extends TestCase
             ->assertSee('data-started-at="' . $session->fresh()->start_time->timestamp . '"', false);
     }
 
-    public function test_completed_session_evaluation_accepts_csv_highlights_from_form(): void
+    public function test_completed_session_evaluation_accepts_ten_point_scores(): void
     {
         [$user, $seeker] = $this->seekerUser();
 
@@ -202,20 +192,16 @@ class HelpSeekerModuleTest extends TestCase
         $this->actingAs($user)
             ->withSession(['session_id' => $session->id])
             ->post(route('session.evaluation.process'), [
-                'helpfulness' => 'very_helpful',
-                'comfort' => 'very_comfortable',
-                'feeling' => 'better',
-                'understood' => 'yes',
-                'reuse' => 'yes',
-                'rating' => 5,
-                'highlights' => 'response_time,privacy_safety',
+                'session_id' => $session->id,
+                'helpfulness_score' => 10, 'comfort_score' => 10, 'feeling_after_score' => 10,
+                'understood_score' => 10, 'reuse_score' => 10,
                 'comments' => 'Thank you.',
             ])
             ->assertRedirect(route('session.thank-you'));
 
         $this->assertDatabaseHas('help_seeker_evaluations', [
             'session_id' => $session->id,
-            'overall_score' => 5,
+            'overall_score' => 10,
             'comments' => 'Thank you.',
         ]);
         $this->assertDatabaseHas('counseling_sessions', [

@@ -486,7 +486,7 @@
         }
     </style>
 </head>
-<body>
+<body class="compass-compact">
 
     @include('partials.sidebar', [
         'active' => ['request.screening*'],
@@ -497,7 +497,7 @@
     <!-- MAIN CONTENT                                 -->
     <!-- ══════════════════════════════════════════════ -->
 
-    <main class="main-content">
+    <main class="main-content request-flow-compact">
 
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
@@ -518,7 +518,7 @@
         </div>
 
         <!-- Step Indicator -->
-        <div class="step-indicator">
+        <div class="step-indicator steps-compact">
             <div class="step-dot active">1</div>
             <div class="step-line"></div>
             <div class="step-dot">2</div>
@@ -535,7 +535,7 @@
                 <!-- ============================================ -->
                 <!-- SECTION 1: AREA OF CONCERN                  -->
                 <!-- ============================================ -->
-                <div class="mb-8">
+                <div class="form-section-compact">
                     <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">General</h3>
                     <p class="text-sm text-gray-500 mb-4">What is your main concern today?</p>
 
@@ -567,69 +567,42 @@
                 <!-- ============================================ -->
                 <!-- SECTION 2: BRIEF DESCRIPTION                -->
                 <!-- ============================================ -->
-                <div class="mb-8">
+                <div class="form-section-compact">
                     <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Brief Description</h3>
                     <p class="text-sm text-gray-500 mb-4">Tell us more about your concern.</p>
 
                     <div>
-                        <label class="form-label" for="description">Description <span class="text-red-500">*</span></label>
-                        <textarea id="description" name="description" class="form-input" maxlength="200" required placeholder="I have several deadlines this week and I'm having trouble sleeping because I feel like I cannot keep up with my classes.">{{ old('description') }}</textarea>
-                        <div class="char-count" id="charCount">0 / 200</div>
+                        <label class="form-label" for="description">Description <span class="text-gray-400">(optional unless Other is selected)</span></label>
+                        <textarea id="description" name="description" class="form-input" maxlength="500" placeholder="I have several deadlines this week and I'm having trouble sleeping because I feel like I cannot keep up with my classes.">{{ old('description') }}</textarea>
+                        <div class="char-count" id="charCount">0 / 500</div>
                         @error('description')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                 </div>
 
-                <!-- ============================================ -->
-                <!-- SECTION 3: SAFETY CHECK                    -->
-                <!-- ============================================ -->
-                <div class="mb-8">
-                    <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Safety Check</h3>
-                    <p class="text-sm text-gray-500 mb-4">We want to support you better. Have you recently had thoughts of harming yourself or ending your life?</p>
-
-                    <div class="safety-buttons">
-                        <div class="safety-btn">
-                            <input type="radio" id="safety_yes" name="safety_check" value="yes" required {{ old('safety_check') == 'yes' ? 'checked' : '' }}>
-                            <label for="safety_yes">Yes</label>
-                        </div>
-                        <div class="safety-btn">
-                            <input type="radio" id="safety_no" name="safety_check" value="no" {{ old('safety_check') == 'no' ? 'checked' : '' }}>
-                            <label for="safety_no">No</label>
-                        </div>
-                        <div class="safety-btn">
-                            <input type="radio" id="safety_prefer_not" name="safety_check" value="prefer_not_to_say" {{ old('safety_check') == 'prefer_not_to_say' ? 'checked' : '' }}>
-                            <label for="safety_prefer_not">Prefer not to say</label>
-                        </div>
-                    </div>
-                    @error('safety_check')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- ============================================ -->
-                <!-- SECTION 4: RISK CLASSIFICATION              -->
-                <!-- ============================================ -->
-                <div class="mb-8">
-                    <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Preliminary Risk Classification</h3>
-                    <p class="text-sm text-gray-500 mb-4">Updated in real time based on your answers.</p>
-
-                    <div id="riskDisplay" class="risk-card low">
-                        <div class="flex items-center gap-3">
-                            <span class="risk-badge low" id="riskBadge">Low</span>
-                            <span class="text-sm text-gray-600" id="riskDescription">No immediate concerns detected.</span>
-                        </div>
-                    </div>
-                    <p class="text-xs text-gray-400 mt-2">
-                        <i class="fas fa-shield-alt text-green-500 mr-1"></i>
-                        Based on your answers, your request will be prioritized based on availability and support needs.
-                    </p>
-                </div>
+                <fieldset class="form-section-compact">
+                    <legend class="font-semibold mb-4">How are you feeling?</legend>
+                    @foreach(['current_suicide_plan' => 'Do you currently have a plan to end your life?', 'suicidal_thoughts' => 'Have you had thoughts of ending your life?', 'severe_distress' => 'Are you experiencing severe emotional distress?', 'recurring_distress' => 'Has your emotional distress been recurring?', 'difficulty_coping' => 'Are you finding it difficult to cope?'] as $field => $question)
+                        <fieldset class="form-group-compact">
+                            <legend class="form-label">{{ $question }} <span class="text-red-500" aria-hidden="true">*</span></legend>
+                            <div class="options-compact">
+                                @foreach(['1' => 'Yes', '0' => 'No'] as $value => $answer)
+                                    <label class="option-btn" for="{{ $field }}_{{ $value }}">
+                                        <input type="radio" id="{{ $field }}_{{ $value }}" name="{{ $field }}" value="{{ $value }}" required @checked((string) old($field, '') === (string) $value) @error($field) aria-invalid="true" aria-describedby="{{ $field }}_error" @enderror>
+                                        <span>{{ $answer }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                            @error($field)<p id="{{ $field }}_error" class="form-error text-red-600">{{ $message }}</p>@enderror
+                        </fieldset>
+                    @endforeach
+                </fieldset>
 
                 <!-- ============================================ -->
                 <!-- FORM ACTIONS                                -->
                 <!-- ============================================ -->
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-200">
+                <div class="actions-compact">
                     <a href="{{ route('seeker.dashboard') }}" class="text-gray-500 hover:text-gray-700 transition font-medium text-sm">
                         <i class="fas fa-arrow-left mr-2"></i> Back
                     </a>
@@ -674,10 +647,10 @@
 
             description.addEventListener('input', function() {
                 const length = this.value.length;
-                charCount.textContent = length + ' / 200';
+                charCount.textContent = length + ' / 500';
                 charCount.classList.remove('warning', 'danger');
-                if (length > 160) charCount.classList.add('warning');
-                if (length >= 200) charCount.classList.add('danger');
+                if (length > 450) charCount.classList.add('warning');
+                if (length >= 500) charCount.classList.add('danger');
             });
 
             // ── Custom Concern Toggle ──
@@ -686,47 +659,16 @@
 
             concernSelect.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
-                if (selectedOption && selectedOption.text === 'Others') {
+                if (selectedOption && ['other', 'others', 'other concerns'].includes(selectedOption.text.trim().toLowerCase())) {
                     customContainer.classList.remove('hidden');
+                    description.required = true;
                 } else {
                     customContainer.classList.add('hidden');
+                    description.required = false;
                     document.getElementById('custom_concern').value = '';
                 }
             });
-
-            // ── Real-time Risk Classification ──
-            const safetyInputs = document.querySelectorAll('input[name="safety_check"]');
-            const riskBadge = document.getElementById('riskBadge');
-            const riskDescription = document.getElementById('riskDescription');
-            const riskCard = document.getElementById('riskDisplay');
-
-            function calculateRisk() {
-                let safety = document.querySelector('input[name="safety_check"]:checked');
-
-                let safetyValue = safety ? safety.value : 'no';
-
-                let risk = 'low';
-                let description = 'No immediate concerns detected.';
-
-                if (safetyValue === 'yes') {
-                    risk = 'emergency';
-                    description = 'Immediate support required. Please use emergency resources.';
-                } else {
-                    risk = 'low';
-                    description = 'No immediate concerns detected.';
-                }
-
-                riskBadge.textContent = risk.charAt(0).toUpperCase() + risk.slice(1);
-                riskBadge.className = 'risk-badge ' + risk;
-                riskCard.className = 'risk-card ' + risk;
-                riskDescription.textContent = description;
-            }
-
-            safetyInputs.forEach(input => input.addEventListener('change', calculateRisk));
-
-            // ── Native HTML5 validation covers required fields ──
-            // (concern_id, description, safety_check all have
-            //  `required`; the browser blocks empty submits natively.)
+            concernSelect.dispatchEvent(new Event('change'));
 
         });
     </script>

@@ -1,33 +1,6 @@
-@php
-    $helper = optional(auth()->user())->helper;
-    $helperName = $helper?->full_name ?: auth()->user()?->name ?: 'Helper';
-
-    $totalSessions = $helper ? \App\Models\Session::where('helper_id', $helper->id)->count() : 0;
-    $competencyScore = $helper
-        ? (int) round((float) optional(\App\Models\HelperCompetencyHistory::where('helper_id', $helper->id)->latest('evaluation_date')->first())->overall_score)
-        : 0;
-    $availabilityStatus = $helper
-        ? ($helper->latestReadiness?->availability_status ?: $helper->status)
-        : 'offline';
-    $availabilityLabel = ucfirst((string) $availabilityStatus);
-
-    $caseBadgeCount = $helper
-        ? \App\Models\Session::where('helper_id', $helper->id)
-            ->whereIn('session_status', ['helper_assigned', 'active'])
-            ->count()
-        : 0;
-    $notifBadgeCount = optional(auth()->user())->unreadNotifications()->count();
-
-    $activeSession = $helper
-        ? \App\Models\Session::where('helper_id', $helper->id)
-            ->whereIn('session_status', ['active', 'helper_assigned'])
-            ->latest('created_date')
-            ->first()
-        : null;
-    $voiceUrl = $activeSession ? route('helper.session.voice', ['id' => $activeSession->id]) : route('helper.cases');
-    $notesUrl = $activeSession ? route('helper.session.notes', ['id' => $activeSession->id]) : route('helper.cases');
-    $initials = \Illuminate\Support\Str::substr($helperName, 0, 2);
-@endphp
+{{-- Variables provided by SidebarComposer: $helper, $helperName, $totalSessions, $competencyScore,
+     $availabilityStatus, $availabilityLabel, $caseBadgeCount, $notifBadgeCount,
+     $activeSession, $voiceUrl, $notesUrl, $initials --}}
 
 @include('layouts.partials.sidebar-critical')
 

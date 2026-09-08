@@ -15,7 +15,7 @@
         <div class="text-lg font-bold text-gray-800">{{ $monthName }}</div>
         <form method="GET" action="{{ route('helper.calendar') }}" style="display:flex;align-items:center;gap:8px;">
             <input type="hidden" name="year" value="{{ $year }}">
-            <select name="month" class="form-control" style="width:auto;padding:8px 12px;" onchange="this.form.submit()">
+            <select name="month" class="form-control form-control-sm" onchange="this.form.submit()">
                 @for($m = 1; $m <= 12; $m++)
                     <option value="{{ $m }}" {{ $m === $month ? 'selected' : '' }}>{{ now()->month($m)->format('F') }}</option>
                 @endfor
@@ -24,7 +24,7 @@
     </div>
 
     <div class="card">
-        <div class="calendar-head" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">
+        <div class="calendar-grid calendar-head">
             @foreach(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] as $day)
                 <div class="day-name">{{ $day }}</div>
             @endforeach
@@ -68,7 +68,7 @@
                     @forelse($sessions as $session)
                         <tr>
                             <td class="font-medium">{{ $session['reference'] }}</td>
-                            <td><a href="{{ route('helper.cases.show', ['id' => $session['id']]) }}" style="color:var(--green-600);font-weight:500;">{{ $session['alias'] }}</a></td>
+                            <td><a href="{{ route('helper.cases.show', ['id' => $session['id']]) }}" class="link">{{ $session['alias'] }}</a></td>
                             <td class="text-sm text-gray-500">{{ Illuminate\Support\Str::limit($session['concern'], 26) }}</td>
                             <td>{{ $session['date'] }}</td>
                             <td>{{ $session['time'] ?? '—' }}</td>

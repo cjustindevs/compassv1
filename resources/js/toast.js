@@ -33,14 +33,29 @@ function showToast(message, type = 'info', duration = 3500) {
         'bg-white rounded-xl shadow-2xl border-l-4 ' + color + ' ' +
         'transform transition-all duration-300 translate-y-2 opacity-0';
 
-    toast.innerHTML =
-        '<div class="p-4 flex items-start gap-3">' +
-            '<div class="flex-shrink-0 mt-0.5"><i class="fas ' + icon + ' text-lg"></i></div>' +
-            '<div class="flex-1 text-sm text-gray-700 leading-snug">' + message + '</div>' +
-            '<button type="button" aria-label="Dismiss" class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition">' +
-                '<i class="fas fa-times"></i>' +
-            '</button>' +
-        '</div>';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'p-4 flex items-start gap-3';
+
+    const iconWrap = document.createElement('div');
+    iconWrap.className = 'flex-shrink-0 mt-0.5';
+    const iconEl = document.createElement('i');
+    iconEl.className = 'fas ' + icon + ' text-lg';
+    iconWrap.appendChild(iconEl);
+
+    const messageEl = document.createElement('div');
+    messageEl.className = 'flex-1 text-sm text-gray-700 leading-snug';
+    messageEl.textContent = message;
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.setAttribute('aria-label', 'Dismiss');
+    closeBtn.className = 'flex-shrink-0 text-gray-400 hover:text-gray-600 transition';
+    const closeIcon = document.createElement('i');
+    closeIcon.className = 'fas fa-times';
+    closeBtn.appendChild(closeIcon);
+
+    wrapper.append(iconWrap, messageEl, closeBtn);
+    toast.appendChild(wrapper);
 
     document.body.appendChild(toast);
 
@@ -54,7 +69,7 @@ function showToast(message, type = 'info', duration = 3500) {
         setTimeout(() => toast.remove(), 300);
     };
 
-    toast.querySelector('button').addEventListener('click', remove);
+    closeBtn.addEventListener('click', remove);
     if (duration > 0) {
         setTimeout(remove, duration);
     }

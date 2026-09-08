@@ -34,6 +34,9 @@ class RequestSupportController extends Controller
      */
     public function screening()
     {
+        if (Auth::user()->helpSeeker?->pseudo_id && ! Auth::user()->helpSeeker->is_verified) {
+            return redirect()->route('seeker.consent');
+        }
         $pending = $this->currentPendingSession();
 
         if ($pending) {
@@ -55,11 +58,18 @@ class RequestSupportController extends Controller
      */
     public function processScreening(Request $request)
     {
+        if (Auth::user()->helpSeeker?->pseudo_id && ! Auth::user()->helpSeeker->is_verified) {
+            return redirect()->route('seeker.consent');
+        }
         $validated = $request->validate([
             'concern_id' => 'required|exists:concern_categories,id',
             'custom_concern' => 'nullable|string|max:255',
-            'description' => 'required|string|max:200',
-            'safety_check' => 'required|in:yes,no,prefer_not_to_say'
+            'description' => [\Illuminate\Validation\Rule::requiredIf(fn () => in_array(strtolower(trim(ConcernCategory::find($request->concern_id)?->concern_name ?? '')), ['other', 'others', 'other concerns'])), 'nullable', 'string', 'max:500'],
+            'current_suicide_plan' => 'required|boolean',
+            'suicidal_thoughts' => 'required|boolean',
+            'severe_distress' => 'required|boolean',
+            'recurring_distress' => 'required|boolean',
+            'difficulty_coping' => 'required|boolean'
         ]);
 
         $helpSeeker = Auth::user()->helpSeeker;
@@ -68,7 +78,15 @@ class RequestSupportController extends Controller
             return back()->withErrors(['concern_id' => 'Your help seeker profile could not be found. Please complete your registration first.']);
         }
 
-        $classification = $this->calculateRisk($validated);
+        if ($this->currentRequestSession()) {
+            return redirect()->route('request.matching');
+        }
+
+        try {
+            $classification = $this->calculateRisk($validated);
+        } catch (\RuntimeException $exception) {
+            return back()->withInput()->withErrors(['current_suicide_plan' => $exception->getMessage()]);
+        }
         $riskLevel = $classification['risk_level'];
 
         // Persist the request in the counseling_sessions table
@@ -82,16 +100,22 @@ class RequestSupportController extends Controller
             'created_date' => now(),
         ]);
 
+        ScreeningResponse::where('seeker_id', $helpSeeker->id)->update(['is_active' => false]);
         ScreeningResponse::create([
             'seeker_id' => $helpSeeker->id,
             'session_id' => $session->id,
-            'responses' => $this->normalizeScreeningResponses($validated),
+            'responses' => $this->normalizeScreeningResponses($validated) + [
+                'concern_category' => ConcernCategory::find($validated['concern_id'])?->concern_name,
+                'description' => $validated['description'] ?? null,
+            ],
             'risk_level' => $riskLevel,
             'priority' => $classification['priority'],
             'action' => $classification['action'],
             'reason' => $classification['reason'],
             'classified_at' => now(),
             'classified_by' => 'system',
+            'is_active' => true,
+            'is_complete' => true,
         ]);
 
         $helpSeeker->update([
@@ -101,16 +125,15 @@ class RequestSupportController extends Controller
 
         if ($riskLevel === RiskClassificationService::RISK_EMERGENCY) {
             $this->emergencyEscalation->escalateEmergency($session, $helpSeeker, ['reason' => $classification['reason']]);
+            return redirect()->route('emergency')->with('info', 'Support is available. Please review these resources.');
         }
 
         session([
             'screening_data' => $validated,
-            'risk_level' => $riskLevel,
             'session_id' => $session->id,
         ]);
 
         return redirect()->route('request.preferences')
-            ->with('risk_level', $riskLevel)
             ->with('success', 'Screening completed. Please set your session preferences.');
     }
 
@@ -140,10 +163,8 @@ class RequestSupportController extends Controller
     public function processPreferences(Request $request)
     {
         $validated = $request->validate([
-            'support_mode' => 'required|in:chat,voice',
+            'support_mode' => 'required|in:chat',
             'preferred_language' => 'required|string|max:50',
-            'additional_notes' => 'nullable|string|max:500',
-            'voice_consent' => 'exclude_unless:support_mode,voice|required|accepted',
         ]);
 
         $session = $this->currentPendingSession();
@@ -189,11 +210,7 @@ class RequestSupportController extends Controller
 
         // Let every moderator know the queue changed so their live badge/stats refresh.
         foreach (User::where('role', 'moderator')->pluck('id') as $moderatorUserId) {
-            try {
-                $this->broadcastSafely(new QueueUpdated($moderatorUserId));
-            } catch (\Throwable $e) {
-                report($e);
-            }
+            $this->broadcastSafely(new QueueUpdated($moderatorUserId));
         }
 
         session([
@@ -226,55 +243,13 @@ class RequestSupportController extends Controller
         // If a helper was already assigned (e.g. page refresh), keep showing them
         $availableHelper = $session->helper;
 
-        if (!$availableHelper) {
-            $availableHelper = Helper::findAvailableForRisk($session->risk_level);
-
-            if ($availableHelper) {
-                // Assign the helper and mark the helper as busy
-                $session->update([
-                    'helper_id' => $availableHelper->id,
-                    'session_status' => 'helper_assigned',
-                    'scheduled_start' => now(),
-                    'session_type' => $currentQueueRequest?->preferred_session_type ?? $session->session_type,
-                    'match_method' => 'automatic',
-                    'matched_by' => 'system',
-                    'matching_details' => $availableHelper->matching_details,
-                    'pre_session_brief_expires_at' => now()->addMinutes(Helper::PRE_SESSION_BRIEF_MINUTES),
-                ]);
-                $availableHelper->incrementShiftSessions();
-                $availableHelper->update(['status' => 'busy']);
-
-                QueueRequest::where('seeker_id', $session->seeker_id)
-                    ->where('request_status', 'waiting')
-                    ->update([
-                        'request_status' => 'assigned',
-                        'assigned_helper_id' => $availableHelper->id,
-                        'queue_position' => null,
-                        'estimated_wait' => null,
-                        'matched_date' => now(),
-                    ]);
-
-                $currentQueueRequest = QueueRequest::where('seeker_id', $session->seeker_id)
-                    ->where('request_status', 'assigned')
-                    ->latest('matched_date')
-                    ->first();
-
-                // Notify the helper about the new assignment
-                Notification::create([
-                    'user_account_id' => $availableHelper->user_account_id,
-                    'title' => 'New case assigned',
-                    'message' => 'You have been assigned a new case. Please review and accept it.',
-                    'notification_type' => 'assignment',
-                    'type_icon' => '📋',
-                    'link' => '/helper/cases',
-                ]);
-
-                // Real-time push to the helper's browser (badge + toast).
-                // Never let a brief websocket outage break the seeker flow.
-                $this->broadcastSafely(new NewCaseAssigned($session, $availableHelper->user_account_id));
-            } else {
-                // No helper online — keep the session waiting in the queue
-                $session->update(['session_status' => 'waiting']);
+        if (! $availableHelper && $currentQueueRequest && $currentQueueRequest->request_status === 'waiting') {
+            $matched = app(\App\Services\HelperMatchingService::class)->processQueueRequest($currentQueueRequest);
+            $session->refresh();
+            $currentQueueRequest->refresh();
+            $availableHelper = $matched?->helper;
+            if (! $availableHelper) {
+                $session->update(['session_status' => Session::STATUS_WAITING]);
             }
         }
 
@@ -555,19 +530,8 @@ class RequestSupportController extends Controller
 
     private function normalizeScreeningResponses(array $data): array
     {
-        $safetyConcern = ($data['safety_check'] ?? 'no') === 'yes';
-
-        return [
-            'current_suicide_plan' => $safetyConcern,
-            'suicidal_thoughts' => $safetyConcern,
-            'severe_distress' => false,
-            'recurring_distress' => false,
-            'difficulty_coping' => false,
-            'access_to_means' => false,
-            'ongoing_self_harm' => false,
-            'recent_attempt_needs_assistance' => false,
-            'immediate_threat_to_life' => $safetyConcern,
-            'immediate_threat_to_others' => false,
-        ];
+        return array_map(fn ($value) => (bool) $value, array_intersect_key($data, array_flip([
+            'current_suicide_plan', 'suicidal_thoughts', 'severe_distress', 'recurring_distress', 'difficulty_coping',
+        ])));
     }
 }

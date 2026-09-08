@@ -7,7 +7,7 @@
 
 @section('content')
 
-    <a href="{{ route('helper.cases.show', ['id' => $session->id]) }}" class="btn btn-secondary btn-sm mb-4" style="padding:6px 14px;"><i class="fas fa-arrow-left"></i> Back to case</a>
+        <a href="{{ route('helper.cases.show', ['id' => $session->id]) }}" class="btn btn-secondary btn-sm mb-4"><i class="fas fa-arrow-left"></i> Back to case</a>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -20,8 +20,11 @@
                     @endif
                 </div>
 
-                <form method="POST" action="{{ route('helper.session.notes.store', ['id' => $session->id]) }}">
+                <form class="form-container" method="POST" action="{{ route('helper.session.notes.store', ['id' => $session->id]) }}">
                     @csrf
+
+                    <fieldset class="form-section-compact">
+                    <legend>Session documentation</legend>
 
                     <div class="form-group">
                         <label class="form-label">Seeker condition</label>
@@ -33,28 +36,33 @@
                         <textarea name="session_summary" class="form-control" placeholder="Summarize what was discussed during the session" required maxlength="2000">{{ old('session_summary', $report->session_summary ?? '') }}</textarea>
                     </div>
 
+                    <div class="form-row-compact">
                     <div class="form-group">
                         <label class="form-label">Observations</label>
-                        <textarea name="observations" class="form-control" placeholder="Record objective observations, emotional cues, and relevant context" maxlength="2000">{{ old('observations', $report->observations ?? '') }}</textarea>
+                        <textarea name="observations" required class="form-control" placeholder="Record objective observations, emotional cues, and relevant context" maxlength="2000">{{ old('observations', $report->observations ?? '') }}</textarea>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Actions taken</label>
-                        <textarea name="actions_taken" class="form-control" placeholder="Document support actions, grounding exercises, resources shared, or escalation steps" maxlength="2000">{{ old('actions_taken', $report->actions_taken ?? '') }}</textarea>
+                        <textarea name="actions_taken" required class="form-control" placeholder="Document support actions, grounding exercises, resources shared, or escalation steps" maxlength="2000">{{ old('actions_taken', $report->actions_taken ?? '') }}</textarea>
                     </div>
 
+                    </div>
                     <div class="form-group">
                         <label class="form-label">Risk level assessed</label>
                         <select name="risk_level_assessed" class="form-control">
                             @foreach(['low' => 'Low', 'moderate' => 'Moderate', 'high' => 'High', 'emergency' => 'Emergency'] as $value => $label)
-                                <option value="{{ $value }}" @selected(old('risk_level_assessed', $report->risk_level_assessed ?? $session->risk_level) === $value)>{{ $label }}</option>
+                                <option value="{{ $value }}" @selected(old('risk_level_assessed', $report->risk_level_assessed) === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
 
+                    </fieldset>
+                    <fieldset class="form-section-compact">
+                    <legend>Reflection and follow-up</legend>
                     <div class="form-group">
                         <label class="form-label">Personal reflection</label>
-                        <textarea name="personal_reflection" class="form-control" placeholder="Your personal reflection on the session (not shared with the seeker)" maxlength="2000">{{ old('personal_reflection', $report->personal_reflection ?? '') }}</textarea>
+                        <textarea name="personal_reflection" required class="form-control" placeholder="Your personal reflection on the session (not shared with the seeker)" maxlength="2000">{{ old('personal_reflection', $report->personal_reflection ?? '') }}</textarea>
                     </div>
 
                     <div class="form-group">
@@ -81,6 +89,7 @@
                         </label>
                     </div>
 
+                    </fieldset>
                     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Notes</button>
                 </form>
             </div>
@@ -102,7 +111,7 @@
                     </div>
                     <div>
                         <div class="text-xs text-gray-400 mb-1">Risk</div>
-                        <span class="risk-badge {{ $session->risk_level ?? 'low' }}">{{ ucfirst($session->risk_level ?? 'Low') }}</span>
+                        <span class="pill">Assigned peer support</span>
                     </div>
                     <div>
                         <div class="text-xs text-gray-400 mb-1">Duration</div>

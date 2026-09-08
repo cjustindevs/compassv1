@@ -10,6 +10,7 @@ use App\Models\Referral;
 use App\Models\HelpSeekerEvaluation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class AdviserReportController extends Controller
@@ -19,6 +20,7 @@ class AdviserReportController extends Controller
      */
     public function index(Request $request)
     {
+        $this->validateFilters($request);
         // Get filter parameters (custom date range takes precedence over presets)
         $period = $request->get('period', 'monthly');
         $helperId = $request->get('helper_id');
@@ -37,7 +39,7 @@ class AdviserReportController extends Controller
 
         // Base queries
         $sessionsQuery = Session::whereIn('helper_id', $helperIds)->whereBetween('created_at', [$startDate, $endDate]);
-        $completedQuery = (clone $sessionsQuery)->where('session_status', 'completed');
+        $completedQuery = (clone $sessionsQuery)->whereIn('session_status', ['completed', 'evaluated']);
         $activeQuery = (clone $sessionsQuery)->where('session_status', 'active');
 
         // Filter by helper if specified
@@ -52,6 +54,7 @@ class AdviserReportController extends Controller
         $completedSessions = $completedQuery->count();
         $activeSessions = $activeQuery->count();
         $completionRate = $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100) : 0;
+        $riskDistribution = (clone $sessionsQuery)->select('risk_level', DB::raw('COUNT(*) as total'))->groupBy('risk_level')->pluck('total', 'risk_level');
 
         // Average response time (time from request to first message)
         $avgResponseTime = $this->calculateAverageResponseTime($startDate, $endDate, $helperIds, $selectedHelperId);
@@ -83,6 +86,7 @@ class AdviserReportController extends Controller
             'completedSessions',
             'activeSessions',
             'completionRate',
+            'riskDistribution',
             'avgResponseTime',
             'avgWaitingTime',
             'referralStats',
@@ -104,6 +108,7 @@ class AdviserReportController extends Controller
      */
     public function export(Request $request)
     {
+        $this->validateFilters($request);
         $period = $request->get('period', 'monthly');
         $helperId = $request->get('helper_id');
         $fromDate = $request->get('from');
@@ -118,13 +123,17 @@ class AdviserReportController extends Controller
         $helperIds = Helper::where('adviser_id', Auth::user()->adviser?->id)->pluck('id');
         $selectedHelperId = $helperId && $helperIds->contains((int) $helperId) ? (int) $helperId : null;
 
-        $sessions = Session::with(['seeker', 'helper', 'concern'])
-            ->whereIn('helper_id', $helperIds)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->when($selectedHelperId, function ($query) use ($selectedHelperId) {
-                return $query->where('helper_id', $selectedHelperId);
-            })
-            ->get();
+        if ($request->input('format', 'pdf') === 'pdf') {
+            $sessions = Session::with(['helper', 'concern', 'evaluation'])
+                ->whereIn('helper_id', $helperIds)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->when($selectedHelperId, fn ($query) => $query->where('helper_id', $selectedHelperId))
+                ->orderBy('created_at')->get();
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('adviser.report-export', compact('sessions', 'startDate', 'endDate'));
+            $pdf->render();
+            $pdf->getDomPDF()->getCanvas()->page_text(490, 810, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 8);
+            return $pdf->download('compass-report-'.now()->format('Y-m-d').'.pdf');
+        }
 
         $filename = 'compass-report-' . now()->format('Y-m-d') . '.csv';
 
@@ -133,39 +142,39 @@ class AdviserReportController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
-        $callback = function () use ($sessions) {
+        $callback = function () use ($helperIds, $startDate, $endDate, $selectedHelperId) {
             $file = fopen('php://output', 'w');
 
-            // Headers
             fputcsv($file, [
-                'Session ID',
-                'Seeker',
-                'Helper',
-                'Concern',
-                'Type',
-                'Risk Level',
-                'Status',
-                'Created',
-                'Duration (min)',
-                'Rating'
+                'Session ID', 'Seeker', 'Helper', 'Concern', 'Type',
+                'Risk Level', 'Status', 'Created', 'Duration (min)', 'Rating',
             ]);
 
-            // Data
-            foreach ($sessions as $session) {
-                $evaluation = $session->evaluation;
-                fputcsv($file, [
-                    $session->id,
-                    $session->seeker->generated_alias ?? 'Anonymous',
-                    $session->helper ? $session->helper->first_name . ' ' . $session->helper->last_name : 'N/A',
-                    $session->concern->concern_name ?? 'General',
-                    $session->session_type ?? 'Chat',
-                    $session->risk_level ?? 'Low',
-                    $session->session_status ?? 'Unknown',
-                    $session->created_at->format('Y-m-d H:i'),
-                    $session->duration ?? 'N/A',
-                    $evaluation ? $evaluation->overall_score : 'N/A'
-                ]);
+            $query = Session::with(['seeker:id,generated_alias', 'helper:id,first_name,last_name', 'concern:id,concern_name', 'evaluation:session_id,overall_score'])
+                ->whereIn('helper_id', $helperIds)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->orderBy('created_at', 'desc');
+
+            if ($selectedHelperId) {
+                $query->where('helper_id', $selectedHelperId);
             }
+
+            $query->chunk(200, function ($sessions) use ($file) {
+                foreach ($sessions as $session) {
+                    fputcsv($file, [
+                        $session->id,
+                        $session->seeker->generated_alias ?? 'Anonymous',
+                        $session->helper ? $session->helper->first_name . ' ' . $session->helper->last_name : 'N/A',
+                        $session->concern->concern_name ?? 'General',
+                        $session->session_type ?? 'Chat',
+                        $session->risk_level ?? 'Low',
+                        $session->session_status ?? 'Unknown',
+                        $session->created_at->format('Y-m-d H:i'),
+                        $session->duration ?? 'N/A',
+                        $session->evaluation?->overall_score ?? 'N/A',
+                    ]);
+                }
+            });
 
             fclose($file);
         };
@@ -176,6 +185,17 @@ class AdviserReportController extends Controller
     /**
      * Get date range based on period
      */
+    private function validateFilters(Request $request): void
+    {
+        $request->validate([
+            'period' => 'nullable|in:weekly,monthly,quarterly,yearly',
+            'from' => 'nullable|required_with:to|date',
+            'to' => 'nullable|required_with:from|date|after_or_equal:from',
+            'helper_id' => 'nullable|integer',
+            'format' => 'nullable|in:pdf,csv',
+        ]);
+    }
+
     private function getDateRange($period)
     {
         $endDate = now();
@@ -299,106 +319,124 @@ class AdviserReportController extends Controller
     }
 
     /**
-     * Get monthly trends from real session data.
+     * Get monthly trends from real session data — batched into fewer queries.
      */
     private function getMonthlyTrends($startDate, $endDate, $helperIds, $helperId)
     {
+        $monthStart = $startDate->copy()->startOfMonth();
+
+        $sessionsByMonth = Session::whereIn('helper_id', $helperIds)
+            ->where('created_at', '>=', $monthStart)
+            ->where('created_at', '<=', $endDate)
+            ->when($helperId, fn ($q) => $q->where('helper_id', $helperId))
+            ->selectRaw(
+                \App\Support\DatabaseHelper::monthStart('created_at') . ' as month, '
+                . 'COUNT(*) as total, '
+                . "SUM(CASE WHEN session_status IN ('completed','evaluated') THEN 1 ELSE 0 END) as completed"
+            )
+            ->groupBy('month')
+            ->get()
+            ->keyBy('month');
+
+        $satisfactionByMonth = HelpSeekerEvaluation::selectRaw(
+            \App\Support\DatabaseHelper::monthStart('counseling_sessions.created_at') . ' as month, '
+            . 'AVG(overall_score) as avg_score'
+        )
+            ->join('counseling_sessions', 'help_seeker_evaluations.session_id', '=', 'counseling_sessions.id')
+            ->whereIn('counseling_sessions.helper_id', $helperIds)
+            ->where('counseling_sessions.created_at', '>=', $monthStart)
+            ->where('counseling_sessions.created_at', '<=', $endDate)
+            ->when($helperId, fn ($q) => $q->where('counseling_sessions.helper_id', $helperId))
+            ->groupBy('month')
+            ->get()
+            ->keyBy('month');
+
         $months = collect(range(5, 0))->map(function (int $offset) {
             return now()->startOfMonth()->subMonths($offset);
-        })->filter(function ($month) use ($startDate, $endDate) {
-            return $month->lte($endDate);
-        });
+        })->filter(fn ($month) => $month->lte($endDate));
 
-        return $months->map(function ($month) use ($startDate, $endDate, $helperIds, $helperId) {
-            $monthStart = $month->copy()->startOfMonth();
-            $monthEnd = $month->copy()->endOfMonth();
-
-            if ($monthStart->lt($startDate)) {
-                $monthStart = $startDate->copy();
-            }
-            if ($monthEnd->gt($endDate)) {
-                $monthEnd = $endDate->copy();
-            }
-
-            $sessionsQuery = Session::whereIn('helper_id', $helperIds)->whereBetween('created_at', [$monthStart, $monthEnd]);
-            if ($helperId) {
-                $sessionsQuery->where('helper_id', $helperId);
-            }
-
-            $total = (clone $sessionsQuery)->count();
-            $completed = (clone $sessionsQuery)->whereIn('session_status', ['completed', 'evaluated'])->count();
-
-            $satisfaction = HelpSeekerEvaluation::whereHas('session', function ($query) use ($monthStart, $monthEnd, $helperIds, $helperId) {
-                $query->whereIn('helper_id', $helperIds)
-                    ->whereBetween('created_at', [$monthStart, $monthEnd]);
-                if ($helperId) {
-                    $query->where('helper_id', $helperId);
-                }
-            })->avg('overall_score') ?? 0;
+        return $months->map(function ($month) use ($sessionsByMonth, $satisfactionByMonth) {
+            $key = \Illuminate\Support\Carbon::parse($month)->format('Y-m-01');
+            $row = $sessionsByMonth->get($key);
+            $total = $row->total ?? 0;
+            $completed = $row->completed ?? 0;
+            $sat = $satisfactionByMonth->get($key)?->avg_score ?? 0;
 
             return [
                 'month' => $month->format('M Y'),
                 'sessions' => $total,
                 'completion_rate' => $total > 0 ? round(($completed / $total) * 100) : 0,
-                'satisfaction' => $satisfaction > 0 ? round($satisfaction, 1) : 0,
+                'satisfaction' => $sat > 0 ? round($sat, 1) : 0,
             ];
         })->values();
     }
 
     /**
-     * Get satisfaction scores
+     * Get satisfaction scores — uses SQL AVG() instead of loading all records.
      */
     private function getSatisfactionScores($startDate, $endDate, $helperIds, $helperId)
     {
-        $scores = HelpSeekerEvaluation::whereBetween('created_at', [$startDate, $endDate])
+        $row = HelpSeekerEvaluation::selectRaw(
+            'AVG(helpfulness_score) as avg_helpfulness, '
+            . 'AVG(comfort_score) as avg_comfort, '
+            . 'AVG(feeling_after_score) as avg_feeling, '
+            . 'AVG(overall_score) as avg_overall'
+        )
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->whereHas('session', function ($query) use ($helperIds, $helperId) {
                 $query->whereIn('helper_id', $helperIds);
                 if ($helperId) {
                     $query->where('helper_id', $helperId);
                 }
             })
-            ->get();
-
-        $avgHelpfulness = $scores->avg('helpfulness_score') ?? 0;
-        $avgComfort = $scores->avg('comfort_score') ?? 0;
-        $avgFeeling = $scores->avg('feeling_after_score') ?? 0;
-        $avgOverall = $scores->avg('overall_score') ?? 0;
+            ->first();
 
         return [
-            'helpfulness' => round($avgHelpfulness, 1),
-            'comfort' => round($avgComfort, 1),
-            'feeling' => round($avgFeeling, 1),
-            'overall' => round($avgOverall, 1)
+            'helpfulness' => round((float) ($row->avg_helpfulness ?? 0), 1),
+            'comfort' => round((float) ($row->avg_comfort ?? 0), 1),
+            'feeling' => round((float) ($row->avg_feeling ?? 0), 1),
+            'overall' => round((float) ($row->avg_overall ?? 0), 1),
         ];
     }
 
     /**
-     * Get helper ranking
+     * Get helper ranking — batched into aggregate queries instead of N+1.
      */
     private function getHelperRanking($startDate, $endDate, $helperIds)
     {
         $helpers = Helper::with('user')->whereIn('id', $helperIds)->get();
 
-        $ranking = $helpers->map(function ($helper) {
-            $sessions = Session::where('helper_id', $helper->id)
-                ->where('session_status', 'completed')
-                ->count();
+        $completedCounts = Session::whereIn('helper_id', $helperIds)
+            ->where('session_status', 'completed')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('helper_id, COUNT(*) as total')
+            ->groupBy('helper_id')
+            ->pluck('total', 'helper_id');
 
-            $competency = HelperCompetencyHistory::where('helper_id', $helper->id)
-                ->latest()
-                ->first();
+        $latestCompetency = HelperCompetencyHistory::whereIn('helper_id', $helperIds)
+            ->selectRaw('helper_id, overall_score, competency_level')
+            ->orderBy('evaluation_date', 'desc')
+            ->groupBy('helper_id', 'overall_score', 'competency_level')
+            ->get()
+            ->keyBy('helper_id');
 
-            $rating = HelpSeekerEvaluation::whereHas('session', function ($query) use ($helper) {
-                $query->where('helper_id', $helper->id);
-            })->avg('overall_score') ?? 0;
+        $avgRatings = \App\Models\HelpSeekerEvaluation::selectRaw('counseling_sessions.helper_id, AVG(help_seeker_evaluations.overall_score) as avg_rating')
+            ->join('counseling_sessions', 'help_seeker_evaluations.session_id', '=', 'counseling_sessions.id')
+            ->whereIn('counseling_sessions.helper_id', $helperIds)
+            ->whereBetween('help_seeker_evaluations.created_at', [$startDate, $endDate])
+            ->groupBy('counseling_sessions.helper_id')
+            ->pluck('avg_rating', 'helper_id');
+
+        $ranking = $helpers->map(function ($helper) use ($completedCounts, $latestCompetency, $avgRatings) {
+            $competency = $latestCompetency->get($helper->id);
 
             return (object) [
                 'name' => $helper->first_name . ' ' . $helper->last_name,
                 'initials' => strtoupper(substr($helper->first_name, 0, 1) . substr($helper->last_name, 0, 1)),
-                'sessions' => $sessions,
+                'sessions' => $completedCounts->get($helper->id, 0),
                 'competency' => $competency ? round($competency->overall_score, 2) : 0,
-                'rating' => round($rating, 1),
-                'level' => $competency ? $competency->competency_level : 'Beginner'
+                'rating' => round((float) ($avgRatings->get($helper->id, 0)), 1),
+                'level' => $competency ? $competency->competency_level : 'Beginner',
             ];
         });
 

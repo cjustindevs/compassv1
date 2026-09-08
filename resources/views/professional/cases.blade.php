@@ -233,7 +233,7 @@
         }
     </style>
 </head>
-<body>
+<body class="compass-compact">
 
     @include('layouts.partials.professional-sidebar')
 

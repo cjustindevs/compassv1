@@ -5,7 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/breathing-exercise.js', 'resources/js/chat.js', 'resources/js/helper-notifications.js', 'resources/js/seeker-notifications.js', 'resources/js/adviser-notifications.js', 'resources/js/moderator-notifications.js'],
+            input: ['resources/css/app.css', 'resources/css/helper-components.css', 'resources/js/app.js', 'resources/js/breathing-exercise.js', 'resources/js/chat.js', 'resources/js/helper-notifications.js', 'resources/js/seeker-notifications.js', 'resources/js/adviser-notifications.js', 'resources/js/moderator-notifications.js'],
             refresh: true,
         }),
         VitePWA({

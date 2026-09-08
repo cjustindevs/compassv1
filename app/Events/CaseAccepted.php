@@ -43,7 +43,7 @@ class CaseAccepted implements ShouldBroadcastNow
     {
         return [
             'session_id' => $this->session->id,
-            'helper_name' => $this->session->helper?->full_name ?: 'Helper',
+            'helper_name' => $this->session->helper?->public_alias ?: 'Peer Helper',
             'message' => 'Your request has been accepted! You can now start chatting.',
             'session_type' => $this->session->session_type,
             'link' => $this->session->session_type === 'voice' ? '/session/voice' : '/session/chat',

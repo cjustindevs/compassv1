@@ -1,22 +1,5 @@
-@php
-    $professionalUser = auth()->user();
-    $professionalProfile = optional($professionalUser)->psychologyProfessional;
-    $professionalId = optional($professionalProfile)->id ?? 0;
-
-    $professionalBadges = [
-        'pending' => \App\Models\Referral::where('professional_id', $professionalId)
-            ->where('status', \App\Models\Referral::STATUS_PENDING_PROFESSIONAL)->count(),
-        'active' => \App\Models\Referral::where('professional_id', $professionalId)
-            ->whereIn('status', \App\Models\Referral::ACTIVE_STATUSES)->count(),
-        'completed' => \App\Models\Referral::where('professional_id', $professionalId)
-            ->whereIn('status', \App\Models\Referral::COMPLETED_STATUSES)->count(),
-        'notifBadge' => optional($professionalUser)->unreadNotifications()->count() ?? 0,
-    ];
-
-    $displayName = optional($professionalProfile)->full_name ?? $professionalUser->name;
-    $avatarText = optional($professionalProfile)->initials ?? strtoupper(substr($professionalUser->name ?? 'PR', 0, 2));
-    $isAvailable = optional($professionalProfile)->is_available;
-@endphp
+{{-- Variables provided by SidebarComposer: $pending, $active, $completed,
+     $notifBadge, $displayName, $avatarText, $isAvailable --}}
 
 @include('layouts.partials.sidebar-critical')
 
@@ -38,14 +21,14 @@
         </a>
         <a href="{{ route('professional.referrals') }}" class="nav-item {{ request()->routeIs('professional.referrals*', 'professional.referral*') ? 'active' : '' }}">
             <i class="fas fa-clipboard-list"></i><span class="nav-text">Referrals</span>
-            @if($professionalBadges['pending'] > 0)
-                <span class="nav-badge warning" id="pendingBadge">{{ $professionalBadges['pending'] }}</span>
+            @if($pending > 0)
+                <span class="nav-badge warning" id="pendingBadge">{{ $pending }}</span>
             @endif
         </a>
         <a href="{{ route('professional.cases') }}" class="nav-item {{ request()->routeIs('professional.cases*') ? 'active' : '' }}">
             <i class="fas fa-folder-open"></i><span class="nav-text">Active Cases</span>
-            @if($professionalBadges['active'] > 0)
-                <span class="nav-badge" id="activeBadge">{{ $professionalBadges['active'] }}</span>
+            @if($active > 0)
+                <span class="nav-badge" id="activeBadge">{{ $active }}</span>
             @endif
         </a>
 
@@ -77,15 +60,15 @@
         </div>
         <div class="user-stats">
             <div class="stat">
-                <span class="value" id="sidePending">{{ $professionalBadges['pending'] }}</span>
+                <span class="value" id="sidePending">{{ $pending }}</span>
                 <span class="label">Pending</span>
             </div>
             <div class="stat">
-                <span class="value" id="sideActive">{{ $professionalBadges['active'] }}</span>
+                <span class="value" id="sideActive">{{ $active }}</span>
                 <span class="label">Active</span>
             </div>
             <div class="stat">
-                <span class="value" id="sideCompleted">{{ $professionalBadges['completed'] }}</span>
+                <span class="value" id="sideCompleted">{{ $completed }}</span>
                 <span class="label">Completed</span>
             </div>
         </div>

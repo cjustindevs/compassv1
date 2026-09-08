@@ -110,7 +110,7 @@
                             <td colspan="9">
                                 <div class="empty-state">
                                     <i class="fas fa-folder-open"></i>
-                                    <h3 style="font-size:16px;font-weight:700;color:var(--gray-800);margin-bottom:6px;">No cases assigned yet</h3>
+                                    <h3>No cases assigned yet</h3>
                                     <p>When a seeker is matched to you, the case will appear here.</p>
                                 </div>
                             </td>

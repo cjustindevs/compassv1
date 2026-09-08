@@ -10,34 +10,35 @@ use App\Models\QueueRequest;
 use App\Models\Session;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class ModeratorDashboardController extends Controller
 {
     public function index(Request $request)
     {
-        $queueWaiting = QueueRequest::where('request_status', 'waiting')->count();
-        $queueAssigned = QueueRequest::where('request_status', 'assigned')->count();
+        $stats = Cache::remember('moderator_dashboard_stats', 60, fn () => [
+            'queue_waiting' => QueueRequest::where('request_status', 'waiting')->count(),
+            'queue_assigned' => QueueRequest::where('request_status', 'assigned')->count(),
+            'active_sessions' => Session::where('session_status', 'active')->count(),
+            'chat_sessions' => Session::where('session_status', 'active')->where('session_type', 'chat')->count(),
+            'voice_sessions' => Session::where('session_status', 'active')->where('session_type', 'voice')->count(),
+            'emergency_count' => IncidentReport::whereIn('status', ['open', 'under_review', 'escalated'])->count(),
+            'available_helpers' => Helper::where('status', 'available')->count(),
+            'busy_helpers' => Helper::where('status', 'busy')->count(),
+            'unserved' => QueueRequest::where('request_status', 'waiting')
+                ->where('request_date', '<', now()->subMinutes(30))
+                ->count(),
+        ]);
+
         $avgWait = $this->getAverageWaitTime();
-        $unserved = QueueRequest::where('request_status', 'waiting')
-            ->where('request_date', '<', now()->subMinutes(30))
-            ->count();
 
-        $activeSessions = Session::where('session_status', 'active')->count();
-        $chatSessions = Session::where('session_status', 'active')->where('session_type', 'chat')->count();
-        $voiceSessions = Session::where('session_status', 'active')->where('session_type', 'voice')->count();
-
-        $emergencyCount = IncidentReport::whereIn('status', ['open', 'under_review', 'escalated'])->count();
-
-        $sessions = Session::with(['seeker', 'helper', 'concern'])
+        $sessions = Session::with(['seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'concern:id,concern_name'])
             ->whereIn('session_status', ['active', 'helper_assigned'])
             ->orderByRaw("CASE WHEN session_status = 'active' THEN 0 ELSE 1 END")
             ->latest('created_date')
             ->limit(10)
             ->get();
-
-        $availableHelpers = Helper::where('status', 'available')->count();
-        $busyHelpers = Helper::where('status', 'busy')->count();
 
         $recentActivity = $this->getRecentActivity();
 
@@ -48,7 +49,7 @@ class ModeratorDashboardController extends Controller
 
         $highRiskSessions = Session::whereIn('risk_level', ['high', 'emergency'])
             ->whereIn('session_status', ['active', 'helper_assigned'])
-            ->with('seeker')
+            ->with('seeker:id,id,generated_alias')
             ->latest('created_date')
             ->limit(5)
             ->get();
@@ -56,17 +57,9 @@ class ModeratorDashboardController extends Controller
         $monitorSession = $request->get('monitor');
 
         return view('moderator.dashboard', compact(
-            'queueWaiting',
-            'queueAssigned',
+            'stats',
             'avgWait',
-            'unserved',
-            'activeSessions',
-            'chatSessions',
-            'voiceSessions',
-            'emergencyCount',
             'sessions',
-            'availableHelpers',
-            'busyHelpers',
             'recentActivity',
             'recentNotifications',
             'highRiskSessions',
@@ -82,7 +75,7 @@ class ModeratorDashboardController extends Controller
     {
         $activity = [];
 
-        foreach (IncidentReport::with(['session', 'session.seeker'])
+        foreach (IncidentReport::with(['session.seeker:id,id,generated_alias'])
             ->latest()
             ->limit(3)
             ->get() as $incident) {
@@ -96,7 +89,7 @@ class ModeratorDashboardController extends Controller
             ];
         }
 
-        foreach (QueueRequest::with('seeker')
+        foreach (QueueRequest::with('seeker:id,id,generated_alias')
             ->latest('updated_at')
             ->limit(4)
             ->get() as $queue) {
@@ -110,7 +103,7 @@ class ModeratorDashboardController extends Controller
             ];
         }
 
-        foreach (\App\Models\HelperCompetencyHistory::with('helper')
+        foreach (\App\Models\HelperCompetencyHistory::with('helper:id,id,first_name,last_name')
             ->latest()
             ->limit(2)
             ->get() as $evaluation) {
