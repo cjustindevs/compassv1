@@ -20,13 +20,14 @@
                     @endif
                 </div>
 
-                <form class="form-container" method="POST" action="{{ route('helper.session.notes.store', ['id' => $session->id]) }}">
+                <form class="form-container form-maximized" method="POST" action="{{ route('helper.session.notes.store', ['id' => $session->id]) }}">
                     @csrf
 
                     <fieldset class="form-section-compact">
                     <legend>Session documentation</legend>
+                    <div class="form-row">
 
-                    <div class="form-group">
+                    <div class="form-group form-span-all">
                         <label class="form-label">Seeker condition</label>
                         <input type="text" name="help_seeker_condition" class="form-control" placeholder="Briefly describe the seeker's condition" value="{{ old('help_seeker_condition', $report->help_seeker_condition ?? '') }}" maxlength="500">
                     </div>
@@ -36,7 +37,6 @@
                         <textarea name="session_summary" class="form-control" placeholder="Summarize what was discussed during the session" required maxlength="2000">{{ old('session_summary', $report->session_summary ?? '') }}</textarea>
                     </div>
 
-                    <div class="form-row-compact">
                     <div class="form-group">
                         <label class="form-label">Observations</label>
                         <textarea name="observations" required class="form-control" placeholder="Record objective observations, emotional cues, and relevant context" maxlength="2000">{{ old('observations', $report->observations ?? '') }}</textarea>
@@ -47,7 +47,6 @@
                         <textarea name="actions_taken" required class="form-control" placeholder="Document support actions, grounding exercises, resources shared, or escalation steps" maxlength="2000">{{ old('actions_taken', $report->actions_taken ?? '') }}</textarea>
                     </div>
 
-                    </div>
                     <div class="form-group">
                         <label class="form-label">Risk level assessed</label>
                         <select name="risk_level_assessed" class="form-control">
@@ -57,9 +56,11 @@
                         </select>
                     </div>
 
+                    </div>
                     </fieldset>
                     <fieldset class="form-section-compact">
                     <legend>Reflection and follow-up</legend>
+                    <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Personal reflection</label>
                         <textarea name="personal_reflection" required class="form-control" placeholder="Your personal reflection on the session (not shared with the seeker)" maxlength="2000">{{ old('personal_reflection', $report->personal_reflection ?? '') }}</textarea>
@@ -67,7 +68,7 @@
 
                     <div class="form-group">
                         <label class="form-label">Skills applied</label>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        <div class="skills-grid-max">
                             @foreach($skills as $key => $label)
                                 <label class="checkbox-group border border-gray-200 rounded-xl p-3">
                                     <input type="checkbox" name="skills_applied[]" value="{{ $key }}"
@@ -78,7 +79,7 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group form-span-all">
                         <label class="checkbox-group border border-gray-200 rounded-xl p-4">
                             <input type="checkbox" name="referral_recommended" value="1"
                                 @if(old('referral_recommended', $report->referral_recommended ?? false)) checked @endif>
@@ -89,6 +90,7 @@
                         </label>
                     </div>
 
+                    </div>
                     </fieldset>
                     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Notes</button>
                 </form>

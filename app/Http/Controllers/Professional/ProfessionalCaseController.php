@@ -87,7 +87,7 @@ class ProfessionalCaseController extends Controller
                 'title' => 'Case ' . ($validated['status'] === Referral::STATUS_COMPLETED ? 'Completed' : 'Closed'),
                 'message' => 'Professional intervention for ' . ($case->session?->seeker?->generated_alias ?? 'Anonymous') . ' has been ' . ($validated['status'] === Referral::STATUS_COMPLETED ? 'completed' : 'closed') . '.',
                 'notification_type' => 'referral',
-                'type_icon' => '🏁',
+                'type_icon' => 'fa-flag-checkered',
                 'link' => '/adviser/referral/' . $case->id,
             ]);
         }

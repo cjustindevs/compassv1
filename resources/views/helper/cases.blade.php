@@ -12,7 +12,7 @@
         <div class="stat-card">
             <div class="flex items-center justify-between">
                 <span class="stat-label">Awaiting Action</span>
-                <span class="stat-icon">📋</span>
+                <span class="stat-icon"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span>
             </div>
             <div class="stat-number" id="pendingCount" style="{{ $stats['pending'] > 0 ? 'color:var(--yellow-500);' : '' }}">{{ $stats['pending'] }}</div>
             <span class="text-xs text-gray-400">Accept or decline</span>
@@ -20,7 +20,7 @@
         <div class="stat-card">
             <div class="flex items-center justify-between">
                 <span class="stat-label">Active</span>
-                <span class="stat-icon">🟢</span>
+                <span class="stat-icon"><i class="fas fa-circle" aria-hidden="true"></i></span>
             </div>
             <div class="stat-number">{{ $stats['active'] }}</div>
             <span class="text-xs text-gray-400">In progress</span>
@@ -28,7 +28,7 @@
         <div class="stat-card">
             <div class="flex items-center justify-between">
                 <span class="stat-label">Completed</span>
-                <span class="stat-icon">✅</span>
+                <span class="stat-icon"><i class="fas fa-circle-check" aria-hidden="true"></i></span>
             </div>
             <div class="stat-number">{{ $stats['completed'] }}</div>
             <span class="text-xs text-gray-400">Finished sessions</span>
@@ -78,7 +78,7 @@
                             </td>
                             <td>
                                 @if($case['rating'])
-                                    <span class="pill" style="background:#FEF3C7;color:#B45309;">★ {{ $case['rating'] }}</span>
+                                    <span class="pill" style="background:#FEF3C7;color:#B45309;"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ $case['rating'] }}</span>
                                 @else
                                     <span class="text-gray-400">—</span>
                                 @endif

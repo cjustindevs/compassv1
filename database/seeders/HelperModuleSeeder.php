@@ -214,10 +214,10 @@ class HelperModuleSeeder extends Seeder
 
         // ── Notifications for the helper ───────────────────────────────
         $notifications = [
-            ['title' => 'New case assigned', 'message' => 'A seeker with high risk has been assigned to you. Please review the case.', 'notification_type' => 'assignment', 'type_icon' => '📋', 'link' => '/helper/cases', 'minutes_ago' => 22],
+            ['title' => 'New case assigned', 'message' => 'A seeker with high risk has been assigned to you. Please review the case.', 'notification_type' => 'assignment', 'type_icon' => 'fa-clipboard-list', 'link' => '/helper/cases', 'minutes_ago' => 22],
             ['title' => 'Adviser feedback received', 'message' => 'Your Q1 competency evaluation is ready. A 92% overall score was recorded.', 'notification_type' => 'evaluation', 'type_icon' => '⭐', 'link' => '/helper/competency', 'minutes_ago' => 150],
-            ['title' => 'Session completed', 'message' => 'A seeker ended the session. Please complete your session notes.', 'notification_type' => 'session', 'type_icon' => '📝', 'link' => '/helper/notes', 'minutes_ago' => 130],
-            ['title' => 'Weekly seminar reminder', 'message' => 'Trauma-informed care - Friday at 4pm.', 'notification_type' => 'reminder', 'type_icon' => '⏰', 'link' => '/helper/calendar', 'minutes_ago' => 2600],
+            ['title' => 'Session completed', 'message' => 'A seeker ended the session. Please complete your session notes.', 'notification_type' => 'session', 'type_icon' => 'fa-pen-to-square', 'link' => '/helper/notes', 'minutes_ago' => 130],
+            ['title' => 'Weekly seminar reminder', 'message' => 'Trauma-informed care - Friday at 4pm.', 'notification_type' => 'reminder', 'type_icon' => 'fa-clock', 'link' => '/helper/calendar', 'minutes_ago' => 2600],
         ];
 
         foreach ($notifications as $notification) {

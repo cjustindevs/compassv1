@@ -79,13 +79,13 @@
                 </div>
                 <div class="p-4 bg-gray-50 rounded-xl text-center">
                     <p class="text-2xl font-bold text-gray-800">
-                        {{ $helper->isOnline() ? '✅' : '❌' }}
+                        <x-ui-icon :value="$helper->isOnline() ? 'fa-circle-check' : 'fa-circle-xmark'" />
                     </p>
                     <p class="text-xs text-gray-400">Available</p>
                 </div>
                 <div class="p-4 bg-gray-50 rounded-xl text-center">
                     <p class="text-2xl font-bold text-gray-800">
-                        {{ $helper->latestReadiness?->assessment_result === 'ready' ? '🟢' : '🔴' }}
+                        <x-ui-icon :value="$helper->latestReadiness?->assessment_result === 'ready' ? 'fa-circle' : 'fa-circle'" />
                     </p>
                     <p class="text-xs text-gray-400">Readiness</p>
                 </div>

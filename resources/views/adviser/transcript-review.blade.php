@@ -67,7 +67,7 @@
                     <h3>Session #{{ $item['session_id'] }}</h3>
                     <p class="text-sm text-gray-500">{{ $item['seeker_alias'] }} to {{ $item['helper_name'] }} &middot; {{ $item['session_date']?->format('M d, Y h:i A') }}</p>
                 </div>
-                <form method="POST" action="{{ route('adviser.transcript.verify', $item['session_id']) }}">
+                <form class="form-maximized" method="POST" action="{{ route('adviser.transcript.verify', $item['session_id']) }}">
                     @csrf
                     <button type="submit" class="btn btn-primary btn-sm">
                         <i class="fas fa-check mr-1"></i>Verify

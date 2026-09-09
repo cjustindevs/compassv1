@@ -79,10 +79,10 @@ class ModeratorEmergencyController extends Controller
         if ($adviserUserId) {
             Notification::create([
                 'user_account_id' => $adviserUserId,
-                'title' => '🚨 Emergency Escalated',
+                'title' => ' Emergency Escalated',
                 'message' => ($session?->seeker?->generated_alias ?? 'A seeker') . ' - escalated by the moderator. Review immediately.',
                 'notification_type' => 'emergency',
-                'type_icon' => '🚨',
+                'type_icon' => 'fa-triangle-exclamation',
                 'link' => '/adviser/dashboard',
                 'status' => 'unread',
             ]);

@@ -23,6 +23,24 @@ class AppServiceProvider extends ServiceProvider
     {
         \Illuminate\Validation\Rules\Password::defaults(fn () => \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->numbers()->symbols());
         $this->registerViewComposers();
+        \Illuminate\Support\Facades\RateLimiter::for('registration-actions', function (\Illuminate\Http\Request $request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(30)
+                ->by($request->path().':'.$request->ip())
+                ->response(fn ($request, $headers) => response()->json([
+                    'message' => 'Please wait a moment before trying this action again.',
+                    'retry_after' => (int) ($headers['Retry-After'] ?? 60),
+                ], 429, $headers));
+        });
+        \Illuminate\Support\Facades\RateLimiter::for('seeker-registration', function (\Illuminate\Http\Request $request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(10)
+                ->by('seeker-registration:'.$request->ip())
+                ->response(function ($request, $headers) {
+                    $seconds = $headers['Retry-After'] ?? 60;
+                    return redirect()->route('register')
+                        ->withInput($request->only(['age', 'gender', 'preferred_language']))
+                        ->withErrors(['registration' => "Please wait {$seconds} seconds before trying again. Your verification and alias are still saved."]);
+                });
+        });
 
         if ($this->app->environment('local')) {
             \Illuminate\Support\Facades\DB::listen(function ($query) {

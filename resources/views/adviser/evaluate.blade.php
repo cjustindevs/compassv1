@@ -203,7 +203,7 @@
             </div>
 
             <!-- Evaluation Form -->
-            <form method="POST" action="{{ route('adviser.evaluate.store', $report->id) }}">
+            <form class="form-maximized" method="POST" action="{{ route('adviser.evaluate.store', $report->id) }}">
                 @csrf
 
                 <div class="space-y-6">

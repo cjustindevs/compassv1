@@ -158,14 +158,14 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Total Notifications</span>
-                    <span class="text-2xl">🔔</span>
+                    <span class="text-2xl"><i class="fas fa-bell" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $notifications->count() }}</div>
             </div>
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Unread</span>
-                    <span class="text-2xl">📬</span>
+                    <span class="text-2xl"><i class="fas fa-envelope-open" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $unreadCount }}</div>
                 <span class="text-xs text-gray-400">Needs your attention</span>
@@ -173,7 +173,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Read</span>
-                    <span class="text-2xl">✅</span>
+                    <span class="text-2xl"><i class="fas fa-circle-check" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $notifications->count() - $unreadCount }}</div>
             </div>
@@ -198,7 +198,7 @@
             <div class="card-header">
                 <h3>All Notifications</h3>
                 @if($unreadCount > 0)
-                    <form method="POST" action="{{ route('adviser.notifications.read-all') }}">
+                    <form class="form-maximized" method="POST" action="{{ route('adviser.notifications.read-all') }}">
                         @csrf
                         <button type="submit" class="btn-outline"><i class="fas fa-check-double"></i> Mark all read</button>
                     </form>
@@ -210,7 +210,7 @@
                     @foreach($notifications as $item)
                         @php $isUnread = $item->status === 'unread'; @endphp
                         <div class="notif-item {{ $isUnread ? 'unread' : '' }}">
-                            <div class="icon">{{ $item->type_icon ?: '🔔' }}</div>
+                            <div class="icon"><x-ui-icon :value="$item->type_icon ?: 'fa-bell'" /></div>
                             <div class="content">
                                 <div class="title-row">
                                     <span class="title">
@@ -227,12 +227,12 @@
                                         <a href="{{ $item->link }}" class="btn-outline"><i class="fas fa-external-link-alt"></i> View</a>
                                     @endif
                                     @if($isUnread)
-                                        <form method="POST" action="{{ route('adviser.notifications.read', ['id' => $item->id]) }}">
+                                        <form class="form-maximized" method="POST" action="{{ route('adviser.notifications.read', ['id' => $item->id]) }}">
                                             @csrf
                                             <button type="submit" class="btn-outline"><i class="fas fa-check"></i> Mark read</button>
                                         </form>
                                     @endif
-                                    <form method="POST" action="{{ route('adviser.notifications.destroy', ['id' => $item->id]) }}"
+                                    <form class="form-maximized" method="POST" action="{{ route('adviser.notifications.destroy', ['id' => $item->id]) }}"
                                           data-confirm="Delete notification?"
                                           data-confirm-message="This notification will be permanently removed."
                                           data-confirm-text="Delete"

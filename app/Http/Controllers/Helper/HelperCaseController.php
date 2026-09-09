@@ -119,7 +119,7 @@ class HelperCaseController extends Controller
                 'title' => 'Your session has started',
                 'message' => 'A helper has accepted your session. You can now start chatting.',
                 'notification_type' => 'session',
-                'type_icon' => '💬',
+                'type_icon' => 'fa-comments',
                 'link' => '/session/chat',
             ]);
 
@@ -160,7 +160,7 @@ class HelperCaseController extends Controller
                 'title' => 'Helper Unavailable',
                 'message' => 'Your assigned helper declined the case. You will be matched with another helper or remain in the queue.',
                 'notification_type' => 'session',
-                'type_icon' => '⚠️',
+                'type_icon' => 'fa-triangle-exclamation',
                 'link' => '/request/matching',
             ]);
         }
@@ -210,7 +210,7 @@ class HelperCaseController extends Controller
                 'title' => 'New case assigned',
                 'message' => 'You have been assigned a new case. Please review and accept it.',
                 'notification_type' => 'assignment',
-                'type_icon' => '📋',
+                'type_icon' => 'fa-clipboard-list',
                 'link' => '/helper/cases',
             ]);
 

@@ -49,7 +49,7 @@ class AdviserResourceController extends Controller
             'description' => $validated['description'] ?? null,
             'category' => $validated['category'],
             'content' => $validated['content'] ?? null,
-            'icon' => $validated['icon'] ?? '📄',
+            'icon' => $validated['icon'] ?? 'fa-file-lines',
             'duration' => $validated['duration'] ?? null,
             'difficulty' => $validated['difficulty'] ?? 'beginner',
             'tags' => !empty($validated['tags']) ? array_map('trim', explode(',', $validated['tags'])) : null,

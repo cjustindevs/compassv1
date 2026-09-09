@@ -21,11 +21,11 @@
     @else
 
     <!-- ─── STATS ─── -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 dashboard-grid-max">
         <div class="stat-card">
             <div class="flex items-center justify-between">
                 <span class="stat-label">Total Sessions</span>
-                <span class="stat-icon">📊</span>
+                <span class="stat-icon"><i class="fas fa-chart-column" aria-hidden="true"></i></span>
             </div>
             <div class="stat-number">{{ $stats['total_sessions'] }}</div>
             <span class="text-xs text-gray-400">All time</span>
@@ -33,7 +33,7 @@
         <div class="stat-card">
             <div class="flex items-center justify-between">
                 <span class="stat-label">Active Sessions</span>
-                <span class="stat-icon">🟢</span>
+                <span class="stat-icon"><i class="fas fa-circle" aria-hidden="true"></i></span>
             </div>
             <div class="stat-number">{{ $stats['active_sessions'] }}</div>
             <span class="text-xs text-gray-400">Currently ongoing</span>
@@ -41,7 +41,7 @@
         <div class="stat-card">
             <div class="flex items-center justify-between">
                 <span class="stat-label">Pending Requests</span>
-                <span class="stat-icon">📋</span>
+                <span class="stat-icon"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span>
             </div>
             <div class="stat-number">{{ $stats['pending_requests'] }}</div>
             <span class="text-xs text-gray-400">Awaiting your action</span>
@@ -74,7 +74,7 @@
         <div class="card mb-6">
             <div class="card-header">
                 <h3>Active Session</h3>
-                <span class="text-xs text-green-600 font-medium">🟢 Live</span>
+                <span class="text-xs text-green-600 font-medium"><i class="fas fa-circle" aria-hidden="true"></i> Live</span>
             </div>
             <div class="active-session-card">
                     <div class="session-info">
@@ -93,7 +93,7 @@
         </div>
     @endif
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 dashboard-grid-max">
 
         <!-- ─── LEFT COLUMN (2/3) ─── -->
         <div class="lg:col-span-2">

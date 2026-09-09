@@ -166,7 +166,7 @@ class AdviserEvaluationController extends Controller
                 'title' => 'Competency Evaluation Completed',
                 'message' => 'Your competency evaluation has been reviewed by your adviser.',
                 'notification_type' => 'evaluation',
-                'type_icon' => '📊',
+                'type_icon' => 'fa-chart-column',
                 'link' => '/helper/competency',
             ]);
 

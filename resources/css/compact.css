@@ -59,9 +59,9 @@ body, body input, body select, body textarea, body button {
 }
 
 /* Bounded forms prevent short answers from stretching across a dashboard. */
-.form-container { width: 100%; max-width: 45rem; margin-inline: auto; min-width: 0; }
+.form-container { width: 100%; max-width: 100%; margin-inline: auto; min-width: 0; }
 .form-container-compact { width: 100%; max-width: 35rem; margin-inline: auto; min-width: 0; }
-.request-flow-compact > :not(.top-bar) { max-width: 45rem; margin-inline: auto; }
+.request-flow-compact > :not(.top-bar) { max-width: 100%; margin-inline: auto; }
 .request-flow-compact .form-card { padding: 1rem; }
 .form-section-compact {
     min-width: 0;
@@ -109,11 +109,46 @@ body, body input, body select, body textarea, body button {
 .steps-compact.step-indicator { gap: 0.5rem; margin-bottom: 1rem; }
 .steps-compact .step-dot { width: 1.75rem; height: 1.75rem; font-size: 0.75rem; }
 .alert-compact { padding: 0.75rem; font-size: 0.8125rem; line-height: 1.5; }
-.compass-compact .form-card { max-width: 45rem; margin-inline: auto; padding: 1rem; }
+.compass-compact .form-card { max-width: 100%; margin-inline: auto; padding: 1rem; }
 .compass-compact .form-group > :is(input.form-control, select.form-control, input.form-input, select.form-input) { max-width: 35rem; }
 @media (max-width: 576px) {
     .form-row-compact { grid-template-columns: minmax(0, 1fr); }
     .form-section-compact { padding: 0.75rem; }
+}
+
+/* Use available content width, accounting for sidebars and nested cards. */
+.form-maximized { width: 100%; max-width: 100%; container-type: inline-size; }
+.form-maximized :is(.form-row, .form-row-3, .form-row-4) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.625rem 1rem;
+    margin-bottom: 0.625rem;
+    align-items: start;
+}
+.form-maximized :is(.form-row, .form-row-3, .form-row-4) > * { min-width: 0; margin-bottom: 0; }
+.form-maximized :is(.form-group, .form-group-compact) { margin-bottom: 0.5rem; }
+.form-maximized .form-section-compact { padding: 0.75rem; margin-bottom: 0.625rem; }
+.form-maximized .form-label { font-size: 0.75rem; margin-bottom: 0.25rem; }
+.form-maximized .form-section-compact > :is(p, legend) { margin-bottom: 0.5rem; }
+.compass-compact .form-maximized textarea:is(.form-input, .form-control) { min-height: 4.5rem; }
+.compass-compact .form-maximized :is(input.form-input, input.form-control, select.form-input, select.form-control) { max-width: 100%; }
+.form-maximized .options-compact { gap: 0.375rem; }
+.form-maximized .options-compact .option-btn { min-width: 4rem; padding: 0.25rem 0.625rem; }
+.form-maximized .form-span-all { grid-column: 1 / -1; }
+.consent-grid > label { padding: 0.75rem; border: 1px solid var(--gray-200, #e5e7eb); border-radius: 8px; line-height: 1.5; }
+.consent-grid input { flex-shrink: 0; margin-top: 0.25rem; }
+.skills-grid-max { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); gap: 0.5rem; }
+.compass-compact .dashboard-grid-max { gap: 1rem; margin-bottom: 1rem; }
+@container (min-width: 34rem) {
+    .form-maximized .form-row, .form-maximized .form-row-3, .form-maximized .form-row-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container (min-width: 52rem) {
+    .form-maximized .form-row-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .form-maximized .form-row-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (min-width: 769px) and (pointer: fine) {
+    .compass-compact .form-maximized { --compact-control-height: 1.875rem; }
+    .compass-compact .form-maximized :is(input.form-input, input.form-control, select.form-input, select.form-control) { padding-block: 0.25rem; font-size: 0.8125rem; }
 }
 
 /* Retain large-font preferences and comfortable mobile touch targets. */

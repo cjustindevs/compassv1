@@ -529,8 +529,10 @@
         <!-- ─── FORM CARD ─── -->
         <div class="form-card">
 
-            <form id="screeningForm" method="POST" action="{{ route('request.screening.process') }}">
+            <form id="screeningForm" class="form-maximized" method="POST" action="{{ route('request.screening.process') }}">
                 @csrf
+
+                <div class="form-row">
 
                 <!-- ============================================ -->
                 <!-- SECTION 1: AREA OF CONCERN                  -->
@@ -581,8 +583,10 @@
                     </div>
                 </div>
 
+                </div>
                 <fieldset class="form-section-compact">
                     <legend class="font-semibold mb-4">How are you feeling?</legend>
+                    <div class="form-row">
                     @foreach(['current_suicide_plan' => 'Do you currently have a plan to end your life?', 'suicidal_thoughts' => 'Have you had thoughts of ending your life?', 'severe_distress' => 'Are you experiencing severe emotional distress?', 'recurring_distress' => 'Has your emotional distress been recurring?', 'difficulty_coping' => 'Are you finding it difficult to cope?'] as $field => $question)
                         <fieldset class="form-group-compact">
                             <legend class="form-label">{{ $question }} <span class="text-red-500" aria-hidden="true">*</span></legend>
@@ -597,6 +601,7 @@
                             @error($field)<p id="{{ $field }}_error" class="form-error text-red-600">{{ $message }}</p>@enderror
                         </fieldset>
                     @endforeach
+                    </div>
                 </fieldset>
 
                 <!-- ============================================ -->

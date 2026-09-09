@@ -398,7 +398,7 @@
 
                         <!-- Mood indicator -->
                         <div class="flex items-center gap-4 p-4 rounded-xl bg-green-50/70 border border-green-100/50">
-                            <div class="text-3xl">😊</div>
+                            <div class="text-3xl"><i class="fas fa-face-laugh" aria-hidden="true"></i></div>
                             <div>
                                 <div class="text-sm font-semibold text-gray-800">Feeling Better</div>
                                 <div class="text-xs text-gray-500">You're doing well today</div>
@@ -759,7 +759,7 @@
                 <!-- Resource 1 -->
                 <a href="#" class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50/50 border border-green-100/50 p-6 md:p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animate-fade-up delay-100">
                     <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">🧘</div>
+                        <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform"><i class="fas fa-spa" aria-hidden="true"></i></div>
                         <div>
                             <h4 class="text-lg font-bold text-gray-800">Breathing Exercises</h4>
                             <p class="text-sm text-gray-500 mt-1">Guided breathing techniques to reduce stress and anxiety.</p>
@@ -771,7 +771,7 @@
                 <!-- Resource 2 -->
                 <a href="#" class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50/50 border border-green-100/50 p-6 md:p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animate-fade-up delay-200">
                     <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">🌿</div>
+                        <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform"><i class="fas fa-leaf" aria-hidden="true"></i></div>
                         <div>
                             <h4 class="text-lg font-bold text-gray-800">Grounding Techniques</h4>
                             <p class="text-sm text-gray-500 mt-1">Simple exercises to stay present and calm.</p>
@@ -783,7 +783,7 @@
                 <!-- Resource 3 -->
                 <a href="#" class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50/50 border border-green-100/50 p-6 md:p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animate-fade-up delay-300">
                     <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">📓</div>
+                        <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform"><i class="fas fa-book" aria-hidden="true"></i></div>
                         <div>
                             <h4 class="text-lg font-bold text-gray-800">Mood Journal</h4>
                             <p class="text-sm text-gray-500 mt-1">Track your emotions and reflect on your day.</p>

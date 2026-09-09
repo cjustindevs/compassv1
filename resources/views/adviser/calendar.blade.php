@@ -158,28 +158,28 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Sessions</span>
-                    <span class="text-2xl">💬</span>
+                    <span class="text-2xl"><i class="fas fa-comments" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $sessions->count() }}</div>
             </div>
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Evaluations</span>
-                    <span class="text-2xl">📊</span>
+                    <span class="text-2xl"><i class="fas fa-chart-column" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $evaluations->count() }}</div>
             </div>
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Events</span>
-                    <span class="text-2xl">📅</span>
+                    <span class="text-2xl"><i class="fas fa-calendar" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $customEvents->count() }}</div>
             </div>
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Days With Activity</span>
-                    <span class="text-2xl">🗓️</span>
+                    <span class="text-2xl"><i class="fas fa-calendar-days" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ count($eventsByDate) }}</div>
             </div>
@@ -249,7 +249,7 @@
                     <button class="btn-outline" id="closeEventModal"><i class="fas fa-times"></i></button>
                 </div>
 
-                <form method="POST" action="{{ route('adviser.calendar.event.store') }}">
+                <form class="form-maximized" method="POST" action="{{ route('adviser.calendar.event.store') }}">
                     @csrf
                     <div class="mb-4">
                         <label class="form-label">Title *</label>

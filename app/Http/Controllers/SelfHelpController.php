@@ -14,11 +14,11 @@ use Illuminate\View\View;
 class SelfHelpController extends Controller
 {
     public const CATEGORIES = [
-        'meditation' => ['label' => 'Meditation', 'icon' => '🧘', 'color' => 'purple'],
-        'exercise' => ['label' => 'Exercises', 'icon' => '🌬️', 'color' => 'blue'],
-        'article' => ['label' => 'Articles', 'icon' => '📖', 'color' => 'green'],
-        'tool' => ['label' => 'Tools', 'icon' => '🧰', 'color' => 'amber'],
-        'video' => ['label' => 'Videos', 'icon' => '🎬', 'color' => 'red'],
+        'meditation' => ['label' => 'Meditation', 'icon' => 'fa-spa', 'color' => 'purple'],
+        'exercise' => ['label' => 'Exercises', 'icon' => 'fa-wind', 'color' => 'blue'],
+        'article' => ['label' => 'Articles', 'icon' => 'fa-book-open', 'color' => 'green'],
+        'tool' => ['label' => 'Tools', 'icon' => 'fa-toolbox', 'color' => 'amber'],
+        'video' => ['label' => 'Videos', 'icon' => 'fa-video', 'color' => 'red'],
     ];
 
     /**

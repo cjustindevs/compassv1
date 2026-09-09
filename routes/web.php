@@ -535,9 +535,13 @@ Route::middleware(['auth'])->prefix('api')->group(function () {
 // =============================================
 // API ROUTES (for AJAX calls)
 // =============================================
-Route::prefix('api')->middleware('throttle:10,1')->group(function () {
-    // OTP Routes
-    foreach (['send-otp', 'verify-otp', 'resend-otp', 'check-email', 'register-seeker'] as $legacyEndpoint) {
+Route::prefix('api')->group(function () {
+    Route::post('/send-otp', [OTPController::class, 'sendOTP'])->middleware(['guest', 'throttle:registration-actions'])->name('registration.otp.send');
+    Route::post('/resend-otp', [OTPController::class, 'sendOTP'])->middleware(['guest', 'throttle:registration-actions']);
+    Route::post('/verify-otp', [OTPController::class, 'verifyOTP'])->middleware(['guest', 'throttle:registration-actions'])->name('registration.otp.verify');
+    Route::post('/shuffle-alias', [\App\Http\Controllers\SeekerOnboardingController::class, 'shuffleAlias'])->middleware(['guest', 'throttle:registration-actions'])->name('registration.alias.shuffle');
+    // Retired legacy account creation routes
+    foreach (['check-email', 'register-seeker'] as $legacyEndpoint) {
         Route::post('/' . $legacyEndpoint, fn () => response()->json(['message' => 'Email-based seeker registration has been retired. Use pseudonymous onboarding.', 'registration_url' => route('seeker.register')], 410));
     }
 
@@ -545,7 +549,7 @@ Route::prefix('api')->middleware('throttle:10,1')->group(function () {
     Route::get('/generate-alias', [HelpSeekerRegisterController::class, 'generateAlias']);
 });
 
-Route::post('/onboarding', [\App\Http\Controllers\SeekerOnboardingController::class, 'store'])->middleware(['guest', 'throttle:5,60'])->name('seeker.onboarding.store');
+Route::post('/onboarding', [\App\Http\Controllers\SeekerOnboardingController::class, 'store'])->middleware(['guest', 'throttle:seeker-registration'])->name('seeker.onboarding.store');
 Route::middleware(['auth', 'role:seeker'])->group(function () {
     Route::get('/seeker/consent', [\App\Http\Controllers\SeekerOnboardingController::class, 'consent'])->name('seeker.consent');
     Route::post('/seeker/consent', [\App\Http\Controllers\SeekerOnboardingController::class, 'accept'])->name('seeker.consent.accept');

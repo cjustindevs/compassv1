@@ -79,7 +79,7 @@
         <div class="card-header">
             <h3><i class="fas fa-calendar-plus text-[#04A052] mr-2"></i>Create or Update Schedule</h3>
         </div>
-        <form method="POST" action="{{ route('adviser.schedule.update') }}" class="grid md:grid-cols-5 gap-3">
+        <form class="form-maximized grid md:grid-cols-5 gap-3" method="POST" action="{{ route('adviser.schedule.update') }}">
             @csrf
             <select name="helper_id" class="form-control" required>
                 <option value="">Select helper...</option>

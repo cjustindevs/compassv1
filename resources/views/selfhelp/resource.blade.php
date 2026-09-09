@@ -147,7 +147,7 @@
 
         <!-- Hero -->
         <div class="hero-card mb-6">
-            <div class="big-icon">{{ $resource->icon }}</div>
+            <div class="big-icon"><x-ui-icon :value="$resource->icon" /></div>
             <h1 class="text-2xl md:text-3xl font-extrabold text-gray-800 leading-tight">{{ $resource->title }}</h1>
             <p class="text-gray-500 text-sm mt-2 max-w-2xl">{{ $resource->description }}</p>
 
@@ -187,7 +187,7 @@
                                 <i class="fas fa-save mr-1"></i>Update
                             </button>
                             <button class="btn btn-primary text-xs px-4 py-2" id="completeBtn" onclick="markComplete()">
-                                <i class="fas fa-check mr-1"></i>{{ $progress->is_completed ? 'Completed ✓' : 'Mark complete' }}
+                                <i class="fas fa-check mr-1"></i><x-ui-icon :value="$progress->is_completed ? 'Completed ' : 'Mark complete'" />
                             </button>
                         </div>
                     </div>
@@ -218,7 +218,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     @foreach($related as $item)
                         <a href="{{ route('selfhelp.show', $item->id) }}" class="related-card">
-                            <div class="icon">{{ $item->icon }}</div>
+                            <div class="icon"><x-ui-icon :value="$item->icon" /></div>
                             <div class="min-w-0">
                                 <h4 class="font-semibold text-sm text-gray-800 truncate">{{ $item->title }}</h4>
                                 <p class="text-xs text-gray-400 mt-0.5">{{ $item->duration }} · {{ ucfirst($item->category) }}</p>
@@ -307,9 +307,9 @@
                     document.getElementById('progressFill').style.width = '100%';
                 }
                 const btn = document.getElementById('completeBtn');
-                btn.innerHTML = '<i class="fas fa-check mr-1"></i>Completed ✓';
+                btn.innerHTML = '<i class="fas fa-check mr-1"></i>Completed ';
                 btn.disabled = true;
-                showToast('Great job! Resource marked as complete. 🎉');
+                showToast('Great job! Resource marked as complete. ');
             } catch (e) {
                 document.getElementById('completeForm').submit();
             }

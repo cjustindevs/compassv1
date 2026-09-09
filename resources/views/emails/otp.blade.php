@@ -215,7 +215,7 @@
         <div class="otp-box">
             <div class="code">{{ $otp }}</div>
             <div class="expiry">
-                ⏱ This code expires in <span>10 minutes</span>
+                 This code expires in <span>10 minutes</span>
             </div>
         </div>
 

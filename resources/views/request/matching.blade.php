@@ -428,9 +428,9 @@
 
         <!-- Step Indicator -->
         <div class="step-indicator">
-            <div class="step-dot done">✓</div>
+            <div class="step-dot done"><i class="fas fa-check" aria-hidden="true"></i></div>
             <div class="step-line done"></div>
-            <div class="step-dot done">✓</div>
+            <div class="step-dot done"><i class="fas fa-check" aria-hidden="true"></i></div>
             <div class="step-line done"></div>
             <div class="step-dot active">3</div>
         </div>
@@ -446,7 +446,7 @@
             <!-- ============================================ -->
             @if($session->isActive())
                 <div class="text-center py-4">
-                    <div class="text-5xl mb-3">🎉</div>
+                    <div class="text-5xl mb-3"><i class="fas fa-star" aria-hidden="true"></i></div>
                     <h2 class="text-2xl font-bold text-gray-800">Session started!</h2>
                     <p class="text-gray-500 mt-2">A helper accepted your request. Your session is now active.</p>
 
@@ -465,7 +465,7 @@
             <!-- ============================================ -->
             @elseif($session->isHelperAssigned())
                 <div class="text-center py-4">
-                    <div class="text-5xl mb-3">⏳</div>
+                    <div class="text-5xl mb-3"><i class="fas fa-hourglass-half" aria-hidden="true"></i></div>
                     <h2 class="text-2xl font-bold text-gray-800">Waiting for helper to accept</h2>
                     <p class="text-gray-500 mt-2 max-w-md mx-auto">
                         A helper has been notified about your request. Please wait while they review it.
@@ -495,7 +495,7 @@
                     </div>
 
                     <p class="text-sm text-gray-400 mt-4">
-                        📋 Request {{ $session->reference_number }} · Submitted {{ $session->created_at?->diffForHumans() }}
+                        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Request {{ $session->reference_number }} · Submitted {{ $session->created_at?->diffForHumans() }}
                     </p>
                     <p class="text-sm text-gray-400 mt-1">
                         You can close this page and check back later — your request is saved.
@@ -507,7 +507,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             @foreach($resources as $resource)
                                 <div class="resource-card" onclick="window.location.href='{{ $resource['link'] }}'">
-                                    <div class="icon">{{ $resource['icon'] }}</div>
+                                    <div class="icon"><x-ui-icon :value="$resource['icon']" /></div>
                                     <h4>{{ $resource['title'] }}</h4>
                                     <p>{{ $resource['description'] }}</p>
                                     <span class="duration"><i class="fas fa-clock"></i> {{ $resource['duration'] }}</span>
@@ -534,21 +534,21 @@
             <!-- ============================================ -->
             @else
                 <div id="noHelperSection" class="text-center py-4">
-                    <div class="text-5xl mb-4">🔍</div>
+                    <div class="text-5xl mb-4"><i class="fas fa-magnifying-glass" aria-hidden="true"></i></div>
                     <h2 class="text-xl font-bold text-gray-800">Looking for a helper...</h2>
                     <p class="text-gray-500 mt-2 max-w-md mx-auto">
                         You're in the queue. You will be notified the moment a trained peer helper accepts your request.
                     </p>
 
                     <div class="mt-4 text-sm text-gray-500">
-                        <p>📋 Request {{ $session->reference_number }} · Submitted {{ $session->created_at?->diffForHumans() }}</p>
+                        <p><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Request {{ $session->reference_number }} · Submitted {{ $session->created_at?->diffForHumans() }}</p>
                         @if($currentQueueRequest?->queue_position)
                             <p class="mt-1 text-gray-600">
                                 Queue position: #{{ $currentQueueRequest->queue_position }} · Estimated wait: {{ $currentQueueRequest->estimated_wait ?? 8 }} min
                             </p>
                         @endif
                         <p class="mt-1 text-green-600">
-                            🟢 {{ $availableHelperCount }} {{ $availableHelperCount === 1 ? 'helper is' : 'helpers are' }} online now
+                            <i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ $availableHelperCount }} {{ $availableHelperCount === 1 ? 'helper is' : 'helpers are' }} online now
                         </p>
                         <p class="text-gray-400 mt-1">You can close this page. Your request is saved and you can come back anytime.</p>
                     </div>
@@ -565,7 +565,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             @foreach($resources as $resource)
                                 <div class="resource-card" onclick="window.location.href='{{ $resource['link'] }}'">
-                                    <div class="icon">{{ $resource['icon'] }}</div>
+                                    <div class="icon"><x-ui-icon :value="$resource['icon']" /></div>
                                     <h4>{{ $resource['title'] }}</h4>
                                     <p>{{ $resource['description'] }}</p>
                                     <span class="duration"><i class="fas fa-clock"></i> {{ $resource['duration'] }}</span>

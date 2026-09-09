@@ -142,7 +142,7 @@
                 <div class="card-header">
                     <h3>Profile Information</h3>
                 </div>
-                <form method="POST" action="{{ route('adviser.settings.profile') }}">
+                <form class="form-maximized" method="POST" action="{{ route('adviser.settings.profile') }}">
                     @csrf
                     @method('PUT')
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -176,7 +176,7 @@
                 <div class="card-header">
                     <h3>Change Password</h3>
                 </div>
-                <form method="POST" action="{{ route('adviser.settings.password') }}">
+                <form class="form-maximized" method="POST" action="{{ route('adviser.settings.password') }}">
                     @csrf
                     @method('PUT')
                     <div class="mb-4">
@@ -214,7 +214,7 @@
                 <div class="card-header">
                     <h3>Notification Preferences</h3>
                 </div>
-                <form method="POST" action="{{ route('adviser.settings.notifications') }}">
+                <form class="form-maximized" method="POST" action="{{ route('adviser.settings.notifications') }}">
                     @csrf
                     @method('PUT')
 

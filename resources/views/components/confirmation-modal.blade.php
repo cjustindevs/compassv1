@@ -3,7 +3,7 @@
     <div class="modal-box">
         <div class="text-center">
             <div class="modal-icon mb-4" id="modalIcon">
-                <i class="fas fa-exclamation-triangle text-yellow-500 text-5xl"></i>
+                <i class="fas fa-exclamation-triangle text-yellow-500 text-2xl"></i>
             </div>
             <h3 class="modal-title text-xl font-semibold text-gray-900 mb-2" id="modalTitle">Are you sure?</h3>
             <p class="modal-message text-gray-600 mb-6" id="modalMessage">This action cannot be undone.</p>
@@ -20,7 +20,7 @@
 </div>
 
 <style>
-    .modal-overlay {
+    #confirmationModal.modal-overlay {
         position: fixed;
         inset: 0;
         background: rgba(0, 0, 0, 0.5);
@@ -34,16 +34,19 @@
         animation: fadeIn 0.2s ease;
     }
     
-    .modal-overlay.active {
+    #confirmationModal.modal-overlay.active {
         display: flex;
     }
     
-    .modal-box {
+    #confirmationModal .modal-box {
         background: white;
         border-radius: 16px;
         padding: 1.5rem;
         width: 100%;
-        max-width: 400px;
+        max-width: 440px;
+        max-height: calc(100dvh - 32px);
+        overflow-y: auto;
+        overflow-wrap: anywhere;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         animation: slideUp 0.2s ease;
     }
@@ -58,7 +61,7 @@
         to { opacity: 1; transform: translateY(0) scale(1); }
     }
     
-    .modal-icon {
+    #confirmationModal .modal-icon {
         width: 64px;
         height: 64px;
         margin: 0 auto 1rem;
@@ -69,60 +72,60 @@
         background: #FEF3C7;
     }
     
-    .modal-icon.success {
+    #confirmationModal .modal-icon.success {
         background: #D1FAE5;
     }
     
-    .modal-icon.success i {
+    #confirmationModal .modal-icon.success i {
         color: #04A052;
     }
     
-    .modal-icon.error {
+    #confirmationModal .modal-icon.error {
         background: #FEE2E2;
     }
     
-    .modal-icon.error i {
+    #confirmationModal .modal-icon.error i {
         color: #DC2626;
     }
     
-    .modal-icon.warning {
+    #confirmationModal .modal-icon.warning {
         background: #FEF3C7;
     }
     
-    .modal-icon.warning i {
+    #confirmationModal .modal-icon.warning i {
         color: #F59E0B;
     }
     
-    .modal-icon.info {
+    #confirmationModal .modal-icon.info {
         background: #DBEAFE;
     }
     
-    .modal-icon.info i {
+    #confirmationModal .modal-icon.info i {
         color: #3B82F6;
     }
     
-    .modal-title {
+    #confirmationModal .modal-title {
         font-size: 1.25rem;
         font-weight: 600;
         color: #111827;
         margin-bottom: 0.5rem;
     }
     
-    .modal-message {
+    #confirmationModal .modal-message {
         font-size: 0.9375rem;
         color: #4B5563;
         line-height: 1.5;
     }
     
-    .modal-actions {
+    #confirmationModal .modal-actions {
         display: flex;
         gap: 0.75rem;
         justify-content: flex-end;
         margin-top: 1.5rem;
     }
     
-    .btn-modal-cancel,
-    .btn-modal-confirm {
+    #confirmationModal .btn-modal-cancel,
+    #confirmationModal .btn-modal-confirm {
         padding: 0.625rem 1.5rem;
         border-radius: 10px;
         font-size: 0.875rem;
@@ -131,62 +134,65 @@
         min-width: 100px;
     }
     
-    .btn-modal-cancel {
+    #confirmationModal .btn-modal-cancel {
         background: #F3F4F6;
         color: #374151;
         border: 1px solid #D1D5DB;
     }
     
-    .btn-modal-cancel:hover {
+    #confirmationModal .btn-modal-cancel:hover {
         background: #E5E7EB;
     }
     
-    .btn-modal-confirm {
+    #confirmationModal .btn-modal-confirm {
         color: white;
         border: none;
     }
     
-    .btn-modal-confirm:hover {
+    #confirmationModal .btn-modal-confirm:hover {
         background: #B91C1C;
     }
     
-    .btn-modal-confirm.danger {
+    #confirmationModal .btn-modal-confirm.danger {
         background: #DC2626;
     }
     
-    .btn-modal-confirm.danger:hover {
+    #confirmationModal .btn-modal-confirm.danger:hover {
         background: #B91C1C;
     }
     
-    .btn-modal-confirm.warning {
+    #confirmationModal .btn-modal-confirm.warning {
         background: #F59E0B;
     }
     
-    .btn-modal-confirm.warning:hover {
+    #confirmationModal .btn-modal-confirm.warning:hover {
         background: #D97706;
     }
     
-    .btn-modal-confirm.primary {
+    #confirmationModal .btn-modal-confirm.primary {
         background: #04A052;
     }
     
-    .btn-modal-confirm.primary:hover {
+    #confirmationModal .btn-modal-confirm.primary:hover {
         background: #038A45;
     }
     
     @media (max-width: 480px) {
-        .modal-box {
+        #confirmationModal .modal-box {
             margin: 1rem;
             padding: 1.25rem;
         }
         
-        .modal-actions {
+        #confirmationModal .modal-actions {
             flex-direction: column-reverse;
         }
         
-        .btn-modal-cancel,
-        .btn-modal-confirm {
+        #confirmationModal .btn-modal-cancel,
+        #confirmationModal .btn-modal-confirm {
             width: 100%;
         }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        #confirmationModal, #confirmationModal .modal-box { animation: none; }
     }
 </style>

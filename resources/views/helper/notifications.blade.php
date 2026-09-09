@@ -25,11 +25,11 @@
             <div style="display:flex;flex-direction:column;">
                 @foreach($notifications as $item)
                     @php
-                        $icon = $item->type_icon ?: '🔔';
+                        $icon = $item->type_icon ?: 'fa-bell';
                         $isUnread = $item->status === 'unread';
                     @endphp
                     <div class="notif-item {{ $isUnread ? 'unread' : '' }}">
-                        <div class="notif-icon">{{ $icon }}</div>
+                        <div class="notif-icon"><x-ui-icon :value="$icon" /></div>
                         <div style="flex:1;min-width:0;">
                             <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
                                 <span class="font-semibold text-gray-800" style="font-size:14px;">

@@ -260,31 +260,31 @@
                     <div class="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
                         <div class="consent-step-text" id="consentTextContainer">
                             <div class="consent-text">
-                                <h3>📋 Privacy Notice</h3>
+                                <h3><i class="fas fa-clipboard-list" aria-hidden="true"></i> Privacy Notice</h3>
                                 <p>COMPASS is committed to protecting your privacy in accordance with the Data Privacy Act of 2012 (Republic Act No. 10173).</p>
                                 <ul>
-                                    <li>✅ Your identity is protected using a <strong>pseudonymous alias</strong>. Helpers only see your alias.</li>
-                                    <li>✅ Your <strong>personal information</strong> (name, email, contact) is stored separately in an <strong>Identity Vault</strong> and only accessed with your consent or in emergencies.</li>
-                                    <li>✅ Session records are <strong>encrypted</strong> and accessible only to authorized personnel.</li>
-                                    <li>✅ Voice recordings require <strong>separate explicit consent</strong> and are deleted after 12 months.</li>
-                                    <li>✅ You may <strong>withdraw consent</strong> at any time.</li>
+                                    <li><i class="fas fa-circle-check" aria-hidden="true"></i> Your identity is protected using a <strong>pseudonymous alias</strong>. Helpers only see your alias.</li>
+                                    <li><i class="fas fa-circle-check" aria-hidden="true"></i> Your <strong>personal information</strong> (name, email, contact) is stored separately in an <strong>Identity Vault</strong> and only accessed with your consent or in emergencies.</li>
+                                    <li><i class="fas fa-circle-check" aria-hidden="true"></i> Session records are <strong>encrypted</strong> and accessible only to authorized personnel.</li>
+                                    <li><i class="fas fa-circle-check" aria-hidden="true"></i> Voice recordings require <strong>separate explicit consent</strong> and are deleted after 12 months.</li>
+                                    <li><i class="fas fa-circle-check" aria-hidden="true"></i> You may <strong>withdraw consent</strong> at any time.</li>
                                 </ul>
 
-                                <h3>📋 Informed Consent</h3>
+                                <h3><i class="fas fa-clipboard-list" aria-hidden="true"></i> Informed Consent</h3>
                                 <p>By proceeding, you agree to participate in COMPASS, a peer-support platform designed to provide emotional support through trained psychology student helpers.</p>
                                 <ul>
-                                    <li>🔹 This service is <strong>NOT</strong> a form of professional counseling, psychotherapy, diagnosis, or treatment.</li>
-                                    <li>🔹 The listener is a <strong>trained psychology student helper</strong> under faculty supervision.</li>
-                                    <li>🔹 Your participation is <strong>voluntary</strong> — you may end the session at any time.</li>
-                                    <li>🔹 All conversations are <strong>confidential</strong>.</li>
-                                    <li>🔹 In emergencies, authorized personnel may access information to <strong>protect life or safety</strong>.</li>
-                                    <li>🔹 Live sessions are available <strong>6:00 PM – 11:00 PM (PHT)</strong>, Monday to Saturday.</li>
-                                    <li>🔹 Sessions are limited to <strong>90 minutes</strong> to ensure equitable access.</li>
-                                    <li>🔹 Abusive, threatening, or harassing behavior may result in <strong>termination of access</strong>.</li>
+                                    <li><i class="fas fa-circle" aria-hidden="true"></i> This service is <strong>NOT</strong> a form of professional counseling, psychotherapy, diagnosis, or treatment.</li>
+                                    <li><i class="fas fa-circle" aria-hidden="true"></i> The listener is a <strong>trained psychology student helper</strong> under faculty supervision.</li>
+                                    <li><i class="fas fa-circle" aria-hidden="true"></i> Your participation is <strong>voluntary</strong> — you may end the session at any time.</li>
+                                    <li><i class="fas fa-circle" aria-hidden="true"></i> All conversations are <strong>confidential</strong>.</li>
+                                    <li><i class="fas fa-circle" aria-hidden="true"></i> In emergencies, authorized personnel may access information to <strong>protect life or safety</strong>.</li>
+                                    <li><i class="fas fa-circle" aria-hidden="true"></i> Live sessions are available <strong>6:00 PM – 11:00 PM (PHT)</strong>, Monday to Saturday.</li>
+                                    <li><i class="fas fa-circle" aria-hidden="true"></i> Sessions are limited to <strong>90 minutes</strong> to ensure equitable access.</li>
+                                    <li><i class="fas fa-circle" aria-hidden="true"></i> Abusive, threatening, or harassing behavior may result in <strong>termination of access</strong>.</li>
                                 </ul>
 
                                 <p style="margin-top: 12px; font-weight: 600; color: #14532D;">
-                                    ⚠️ If you are in immediate danger, please use the Emergency Button or contact local crisis hotlines immediately.
+                                    <i class="fas fa-triangle-exclamation" aria-hidden="true"></i> If you are in immediate danger, please use the Emergency Button or contact local crisis hotlines immediately.
                                 </p>
                             </div>
                             <div id="consentScrollIndicator" class="consent-scroll-indicator">
@@ -406,7 +406,7 @@
                     el.className = 'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-300';
                     if (num < step) {
                         el.classList.add('step-done');
-                        el.textContent = '✓';
+                        el.textContent = '';
                     } else if (num === step) {
                         el.classList.add('step-active');
                         el.textContent = num;

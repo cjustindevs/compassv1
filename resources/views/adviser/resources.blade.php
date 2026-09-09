@@ -152,21 +152,21 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Total Resources</span>
-                    <span class="text-2xl">📚</span>
+                    <span class="text-2xl"><i class="fas fa-book-open" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $stats['total'] }}</div>
             </div>
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Published</span>
-                    <span class="text-2xl">✅</span>
+                    <span class="text-2xl"><i class="fas fa-circle-check" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $stats['published'] }}</div>
             </div>
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Total Views</span>
-                    <span class="text-2xl">👁️</span>
+                    <span class="text-2xl"><i class="fas fa-eye" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ number_format($stats['views']) }}</div>
             </div>
@@ -182,7 +182,7 @@
         <!-- Toolbar -->
         <div class="card mb-6">
             <div class="flex flex-wrap items-center justify-between gap-4">
-                <form method="GET" action="{{ route('adviser.resources') }}" class="flex items-center gap-2 flex-1 min-w-[220px]">
+                <form class="form-maximized flex items-center gap-2 flex-1 min-w-[220px]" method="GET" action="{{ route('adviser.resources') }}">
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Search resources..."
                            class="form-input flex-1">
                     <button type="submit" class="btn-outline"><i class="fas fa-search"></i></button>
@@ -213,7 +213,7 @@
                     <div class="resource-card">
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex items-center gap-3">
-                                <div class="icon-box">{{ $resource->icon ?: '📄' }}</div>
+                                <div class="icon-box"><x-ui-icon :value="$resource->icon ?: 'fa-file-lines'" /></div>
                                 <div>
                                     <p class="category-tag">{{ $resource->category }}</p>
                                     @if($resource->is_featured)
@@ -255,7 +255,7 @@
                                     data-content="{{ $resource->content }}">
                                 <i class="fas fa-edit"></i> Edit
                             </button>
-                            <form method="POST" action="{{ route('adviser.resources.destroy', ['id' => $resource->id]) }}"
+                            <form class="form-maximized" method="POST" action="{{ route('adviser.resources.destroy', ['id' => $resource->id]) }}"
                                   data-confirm="Delete resource?"
                                   data-confirm-message="This resource will be permanently removed."
                                   data-confirm-text="Delete"
@@ -297,7 +297,7 @@
                 <button class="btn-outline" id="closeModal"><i class="fas fa-times"></i></button>
             </div>
 
-            <form method="POST" action="{{ route('adviser.resources.store') }}" id="resourceForm">
+            <form class="form-maximized" method="POST" action="{{ route('adviser.resources.store') }}" id="resourceForm">
                 @csrf
                 <div class="mb-4">
                     <label class="form-label">Title *</label>
@@ -322,8 +322,8 @@
                         </select>
                     </div>
                     <div>
-                        <label class="form-label">Icon (emoji)</label>
-                        <input type="text" name="icon" maxlength="50" class="form-input" placeholder="e.g. 🧘">
+                        <label class="form-label">Icon class</label>
+                        <input type="text" name="icon" maxlength="50" class="form-input" placeholder="e.g. fa-book-open">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4 mb-4">

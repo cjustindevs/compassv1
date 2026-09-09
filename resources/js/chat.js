@@ -277,7 +277,7 @@ class ChatApp {
 
         overlay.innerHTML = `
             <div style="background:#ffffff;border-radius:20px;padding:32px 28px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
-                <div style="width:64px;height:64px;border-radius:50%;background:#FEF2F2;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 16px;">🛑</div>
+                <div style="width:64px;height:64px;border-radius:50%;background:#FEF2F2;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 16px;"><i class="fas fa-hand" aria-hidden="true"></i></div>
                 <h3 style="margin:0 0 8px;font-size:18px;font-weight:800;color:#163B2D;">Session Ended</h3>
                 <p style="margin:0 0 20px;font-size:14px;color:#6B7280;line-height:1.6;">${this.escapeHtml(message)}</p>
                 <p style="margin:0;font-size:13px;color:#9CA3AF;">Redirecting you…</p>

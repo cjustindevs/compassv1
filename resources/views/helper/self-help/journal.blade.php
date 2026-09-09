@@ -18,12 +18,12 @@
                 <div class="form-group">
                     <label class="form-label">How are you feeling right now?</label>
                     <select name="mood" class="form-control">
-                        <option value="good">😊 Good</option>
-                        <option value="okay">😐 Okay</option>
-                        <option value="neutral">😌 Neutral</option>
-                        <option value="anxious">😟 Anxious</option>
-                        <option value="sad">😢 Sad</option>
-                        <option value="tired">😴 Tired</option>
+                        <option value="good"> Good</option>
+                        <option value="okay"> Okay</option>
+                        <option value="neutral"> Neutral</option>
+                        <option value="anxious"> Anxious</option>
+                        <option value="sad"> Sad</option>
+                        <option value="tired"> Tired</option>
                     </select>
                     @error('mood')<p class="text-sm text-red-500 mt-1">{{ $message }}</p>@enderror
                 </div>

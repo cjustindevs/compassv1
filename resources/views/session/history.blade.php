@@ -338,9 +338,9 @@
                                         <span class="stars">
                                             @for($i = 1; $i <= 5; $i++)
                                                 @if($i <= $session['rating'])
-                                                    ★
+                                                    <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
                                                 @else
-                                                    ☆
+                                                    <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
                                                 @endif
                                             @endfor
                                         </span>
@@ -357,7 +357,7 @@
                 </div>
             @else
                 <div class="text-center py-12">
-                    <div class="text-5xl mb-4">📋</div>
+                    <div class="text-5xl mb-4"><i class="fas fa-clipboard-list" aria-hidden="true"></i></div>
                     <h3 class="text-lg font-semibold text-gray-800">No sessions yet</h3>
                     <p class="text-gray-500 text-sm mt-1">Your session history will appear here once you complete a session.</p>
                     <a href="{{ route('request.screening') }}" class="inline-block mt-4 px-6 py-2 bg-green-500 text-white text-sm font-semibold rounded-full hover:bg-green-600 transition">

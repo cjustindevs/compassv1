@@ -193,7 +193,7 @@
                         <span class="dot"></span>
                     @endif
                     <div class="icon {{ $notification->notification_type ?? 'system' }}">
-                        <span>{{ $notification->type_icon }}</span>
+                        <span><x-ui-icon :value="$notification->type_icon" /></span>
                     </div>
                     <div class="content">
                         <p class="title">{{ $notification->title }}</p>
@@ -218,7 +218,7 @@
                 </div>
             @empty
                 <div class="text-center py-12 text-gray-400">
-                    <p class="text-3xl mb-2">🔔</p>
+                    <p class="text-3xl mb-2"><i class="fas fa-bell" aria-hidden="true"></i></p>
                     <p>No notifications</p>
                 </div>
             @endforelse

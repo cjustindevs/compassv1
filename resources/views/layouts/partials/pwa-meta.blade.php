@@ -35,3 +35,5 @@
 <meta property="og:url" content="{{ url('/') }}">
 
 <meta name="theme-prefs" content="{{ json_encode($themePrefs ?? ['high_contrast' => false, 'reduced_motion' => false, 'font_size' => 'medium']) }}">
+
+<script src="{{ asset('js/navigation-loading.js') }}" defer></script>

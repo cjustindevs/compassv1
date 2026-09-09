@@ -196,7 +196,7 @@ class SessionController extends Controller
                     'title' => 'Session completed',
                     'message' => 'The seeker has ended the session. Please complete your session notes.',
                     'notification_type' => 'session',
-                    'type_icon' => '📝',
+                    'type_icon' => 'fa-pen-to-square',
                     'link' => '/helper/session/' . $session->id . '/notes',
                 ]);
             }

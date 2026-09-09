@@ -13,33 +13,56 @@ use Illuminate\Validation\Rules\Password;
 
 class SeekerOnboardingController extends Controller
 {
-    public function create()
+    public function create(Request $request)
     {
+        if (!$request->session()->has('registration_alias')) {
+            $request->session()->put('registration_alias', $this->newAlias());
+        }
         return view('auth.pseudonymous-register');
+    }
+
+    private function newAlias(): string
+    {
+        do {
+            $alias = collect(['Calm', 'Brave', 'Kind', 'Gentle', 'Bright', 'Quiet'])->random()
+                .collect(['Fox', 'Deer', 'Eagle', 'Bear', 'Wolf', 'Owl'])->random().random_int(10, 9999);
+        } while (HelpSeeker::where('generated_alias', $alias)->exists()
+            || User::where('email', strtolower($alias).'@compass.local')->exists()
+            || $alias === session('registration_alias'));
+        return $alias;
+    }
+
+    public function shuffleAlias(Request $request)
+    {
+        $alias = $this->newAlias();
+        $request->session()->put('registration_alias', $alias);
+        return response()->json(['alias' => $alias]);
     }
 
     public function store(Request $request)
     {
+        if ($request->session()->get('registration_verified_until', 0) <= now()->timestamp) {
+            return back()->withInput($request->except(['password', 'password_confirmation']))
+                ->withErrors(['email' => 'Please verify your email before creating an account.']);
+        }
         $data = $request->validate([
+            'alias' => ['required', 'string', 'in:'.$request->session()->get('registration_alias'), 'unique:help_seekers,generated_alias'],
             'age' => 'required|integer|min:13|max:99',
             'gender' => 'required|in:male,female,non-binary,prefer-not-to-say',
             'preferred_language' => 'required|in:English,Tagalog,English/Tagalog',
             'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
         ]);
 
-        if (HelpSeeker::where('registration_ip', $request->ip())->where('created_at', '>', now()->subDay())->exists()) {
-            return back()->withErrors(['age' => 'A recent registration was detected from this location. Please sign in or contact support.']);
-        }
-
         $user = DB::transaction(function () use ($request, $data) {
-            do {
-                $alias = collect(['Calm', 'Brave', 'Kind', 'Gentle', 'Bright', 'Quiet'])->random()
-                    .collect(['Fox', 'Deer', 'Eagle', 'Bear', 'Wolf', 'Owl'])->random().random_int(10, 9999);
-            } while (HelpSeeker::where('generated_alias', $alias)->exists());
+            $alias = $data['alias'];
 
             $user = User::create([
                 'name' => $alias, 'email' => strtolower($alias).'@compass.local',
                 'password' => $data['password'], 'role' => 'seeker',
+                // Older pending sessions stored only the fixed ten-minute expiry.
+                'email_verified_at' => \Illuminate\Support\Carbon::createFromTimestamp(
+                    $request->session()->get('registration_verified_at', $request->session()->get('registration_verified_until') - 600)
+                ),
                 'preferred_language' => $data['preferred_language'],
             ]);
             HelpSeeker::create([
@@ -52,6 +75,7 @@ class SeekerOnboardingController extends Controller
             return $user;
         });
 
+        $request->session()->forget(['registration_otp', 'registration_verified_until', 'registration_verified_at', 'registration_alias']);
         Auth::login($user);
         $request->session()->regenerate();
 

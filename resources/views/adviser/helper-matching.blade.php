@@ -19,7 +19,7 @@
 
     <div class="bg-white rounded-xl shadow p-6">
         <h2 class="font-semibold mb-3">Update Competency</h2>
-        <form method="POST" action="{{ route('adviser.helper.competency.update', $helper->id) }}" class="grid md:grid-cols-3 gap-3">
+        <form class="form-maximized grid md:grid-cols-3 gap-3" method="POST" action="{{ route('adviser.helper.competency.update', $helper->id) }}">
             @csrf
             <input name="competency_score" type="number" step="0.01" min="1" max="5" value="{{ $helper->competency_score }}" class="border rounded px-3 py-2">
             <input name="remarks" type="text" placeholder="Remarks" class="border rounded px-3 py-2 md:col-span-1">

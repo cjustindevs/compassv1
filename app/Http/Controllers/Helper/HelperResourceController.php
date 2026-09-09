@@ -33,7 +33,7 @@ class HelperResourceController extends Controller
                 'description' => $resource->description,
                 'category' => ucfirst($resource->category),
                 'category_slug' => $resource->category,
-                'icon' => $resource->icon ?? '📘',
+                'icon' => $resource->icon ?? 'fa-book',
                 'duration' => $resource->duration,
                 'difficulty' => $resource->difficulty_label,
                 'featured' => $resource->is_featured,

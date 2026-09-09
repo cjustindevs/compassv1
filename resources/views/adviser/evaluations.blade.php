@@ -166,7 +166,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Pending Reviews</span>
-                    <span class="text-2xl">📋</span>
+                    <span class="text-2xl"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $totalPending }}</div>
                 <span class="text-xs text-gray-400">Sessions awaiting review</span>
@@ -174,7 +174,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">High Risk</span>
-                    <span class="text-2xl">⚠️</span>
+                    <span class="text-2xl"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $highRiskPending }}</div>
                 <span class="text-xs text-gray-400">Require immediate attention</span>
@@ -182,7 +182,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Total Feedback Given</span>
-                    <span class="text-2xl">📝</span>
+                    <span class="text-2xl"><i class="fas fa-pen-to-square" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $feedbackCount }}</div>
                 <span class="text-xs text-gray-400">Evaluations completed</span>
@@ -214,7 +214,7 @@
                             <div class="concern">
                                 Concern: {{ $report->session->concern->concern_name ?? 'General' }}
                                 @if($report->referral_recommended)
-                                    <span class="text-yellow-600 font-medium ml-2">⚡ Referral Recommended</span>
+                                    <span class="text-yellow-600 font-medium ml-2"><i class="fas fa-bolt" aria-hidden="true"></i> Referral Recommended</span>
                                 @endif
                             </div>
                         </div>
@@ -225,7 +225,7 @@
                             <a href="{{ route('adviser.session.show', $report->session_id) }}" class="btn-outline">
                                 <i class="fas fa-eye mr-1"></i> View Session
                             </a>
-                            <form method="POST" action="{{ route('adviser.evaluations.skip', $report->id) }}" class="inline">
+                            <form class="inline" method="POST" action="{{ route('adviser.evaluations.skip', $report->id) }}">
                                 @csrf
                                 <button type="submit" class="btn-skip">
                                     <i class="fas fa-forward mr-1"></i> Skip
@@ -256,7 +256,7 @@
                         <div class="seeker-info">
                             <div class="alias text-gray-500">
                                 {{ $report->session->seeker->generated_alias ?? 'Anonymous' }}
-                                <span class="text-xs text-green-600 font-medium ml-2">✓ Reviewed</span>
+                                <span class="text-xs text-green-600 font-medium ml-2"><i class="fas fa-check" aria-hidden="true"></i> Reviewed</span>
                             </div>
                             <div class="details text-gray-400">
                                 {{ $report->session->helper->first_name ?? 'Unknown' }}

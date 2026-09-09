@@ -139,7 +139,7 @@
                 </button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-extrabold text-gray-800">Self-Help Tools</h1>
-                    <p class="text-sm text-gray-500 hidden sm:block">Resources, exercises, and tools to support your wellbeing. 🌿</p>
+                    <p class="text-sm text-gray-500 hidden sm:block">Resources, exercises, and tools to support your wellbeing. <i class="fas fa-leaf" aria-hidden="true"></i></p>
                 </div>
             </div>
             <form method="GET" action="{{ route('selfhelp') }}" class="flex items-center gap-2 w-full md:w-auto" id="searchForm">
@@ -169,7 +169,7 @@
         <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mb-8">
             @foreach($categories as $cat)
                 <a href="{{ route('selfhelp.category', $cat['slug']) }}" class="category-card cat-{{ $cat['color'] }}">
-                    <div class="icon">{{ $cat['icon'] }}</div>
+                    <div class="icon"><x-ui-icon :value="$cat['icon']" /></div>
                     <div>
                         <h3 class="font-bold text-sm text-gray-800">{{ $cat['label'] }}</h3>
                         <p class="count">{{ $cat['count'] }} {{ $cat['count'] === 1 ? 'item' : 'items' }}</p>
@@ -192,7 +192,7 @@
                         @foreach($continueProgress as $entry)
                             @php $r = $entry->resource; @endphp
                             <a href="{{ route('selfhelp.show', $r->id) }}" class="progress-card">
-                                <div class="icon">{{ $r->icon }}</div>
+                                <div class="icon"><x-ui-icon :value="$r->icon" /></div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center justify-between gap-2">
                                         <h4 class="font-semibold text-sm text-gray-800 truncate">{{ $r->title }}</h4>
@@ -221,7 +221,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         @foreach($featured as $resource)
                             <a href="{{ route('selfhelp.show', $resource->id) }}" class="resource-card">
-                                <div class="icon-wrap">{{ $resource->icon }}</div>
+                                <div class="icon-wrap"><x-ui-icon :value="$resource->icon" /></div>
                                 <h3>{{ $resource->title }}</h3>
                                 <p>{{ \Illuminate\Support\Str::limit($resource->description, 90) }}</p>
                                 <div class="meta">
@@ -249,7 +249,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         @foreach($savedResources as $resource)
                             <a href="{{ route('selfhelp.show', $resource->id) }}" class="resource-card">
-                                <div class="icon-wrap">{{ $resource->icon }}</div>
+                                <div class="icon-wrap"><x-ui-icon :value="$resource->icon" /></div>
                                 <h3>{{ \Illuminate\Support\Str::limit($resource->title, 40) }}</h3>
                                 <p>{{ \Illuminate\Support\Str::limit($resource->description, 70) }}</p>
                                 <div class="meta">
@@ -261,7 +261,7 @@
                     </div>
                 @else
                     <div class="bg-white rounded-2xl border border-dashed border-gray-300 p-8 text-center">
-                        <div class="text-4xl mb-3">🔖</div>
+                        <div class="text-4xl mb-3"><i class="fas fa-bookmark" aria-hidden="true"></i></div>
                         <p class="text-sm text-gray-500">You haven't saved any resources yet.</p>
                         <p class="text-xs text-gray-400 mt-1">Tap the bookmark icon on any resource to save it here.</p>
                     </div>
@@ -281,7 +281,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     @foreach($all as $resource)
                         <a href="{{ route('selfhelp.show', $resource->id) }}" class="resource-card">
-                            <div class="icon-wrap">{{ $resource->icon }}</div>
+                            <div class="icon-wrap"><x-ui-icon :value="$resource->icon" /></div>
                             <h3>{{ $resource->title }}</h3>
                             <p>{{ \Illuminate\Support\Str::limit($resource->description, 90) }}</p>
                             <div class="meta">
@@ -297,7 +297,7 @@
                 </div>
             @else
                 <div class="bg-white rounded-2xl border border-dashed border-gray-300 p-10 text-center">
-                    <div class="text-5xl mb-3">🔍</div>
+                    <div class="text-5xl mb-3"><i class="fas fa-magnifying-glass" aria-hidden="true"></i></div>
                     <h3 class="font-semibold text-gray-800">No results found</h3>
                     <p class="text-sm text-gray-500 mt-1">Try a different keyword like "anxiety", "sleep", or "focus".</p>
                 </div>

@@ -91,7 +91,7 @@
 
 @section('content')
     @if ($referral->session?->risk_level === 'emergency')
-        <form method="POST" action="{{ route('identity.emergency-review', $referral->session) }}" class="card mb-4">
+        <form class="form-maximized card mb-4" method="POST" action="{{ route('identity.emergency-review', $referral->session) }}">
             @csrf
             <label>Emergency identity access review
                 <textarea name="notes" required minlength="20" maxlength="1000" class="block w-full" placeholder="Record your review of the emergency responder's access."></textarea>
@@ -100,7 +100,7 @@
         </form>
     @endif
     @if ($referral->approved_at && $referral->help_seeker_consent && $referral->professional_id)
-        <form method="POST" action="{{ route('identity.release', $referral) }}" class="card mb-4">
+        <form class="form-maximized card mb-4" method="POST" action="{{ route('identity.release', $referral) }}">
             @csrf
             <p>Authorize release of the seeker's stored identity to the assigned psychology professional. You will not see the identity fields.</p>
             <button class="btn-primary" type="submit">Authorize identity release</button>
@@ -216,7 +216,7 @@
                 <a href="{{ route('adviser.referrals') }}" class="btn-outline">
                     <i class="fas fa-arrow-left mr-2"></i> Back
                 </a>
-                <form method="POST" action="{{ route('adviser.referral.approve', $referral->id) }}" class="inline">
+                <form class="inline" method="POST" action="{{ route('adviser.referral.approve', $referral->id) }}">
                     @csrf
                     <button type="submit" class="btn-primary">
                         <i class="fas fa-check mr-2"></i> Approve Referral
@@ -240,7 +240,7 @@
             </div>
             <p class="text-gray-500 text-sm mb-4">Provide a reason for rejecting this referral.</p>
 
-            <form id="rejectForm" method="POST" action="{{ route('adviser.referral.reject', $referral->id) }}">
+            <form class="form-maximized" id="rejectForm" method="POST" action="{{ route('adviser.referral.reject', $referral->id) }}">
                 @csrf
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Rejection Reason <span class="text-red-500">*</span></label>

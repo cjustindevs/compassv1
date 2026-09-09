@@ -407,7 +407,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Total Sessions</span>
-                    <span class="stat-icon">📊</span>
+                    <span class="stat-icon"><i class="fas fa-chart-column" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $totalSessions }}</div>
                 <span class="text-xs text-gray-400">All time</span>
@@ -415,7 +415,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Active Sessions</span>
-                    <span class="stat-icon">🟢</span>
+                    <span class="stat-icon"><i class="fas fa-circle" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $activeSessions }}</div>
                 <span class="text-xs text-gray-400">Currently ongoing</span>
@@ -423,7 +423,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Pending Reviews</span>
-                    <span class="stat-icon">📋</span>
+                    <span class="stat-icon"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $pendingEvaluations->count() }}</div>
                 <span class="text-xs text-gray-400">Awaiting your review</span>
@@ -431,7 +431,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Active Helpers</span>
-                    <span class="stat-icon">👥</span>
+                    <span class="stat-icon"><i class="fas fa-users" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $activeHelpers }} / {{ $totalHelpers }}</div>
                 <span class="text-xs text-gray-400">Online now</span>
@@ -578,7 +578,7 @@
                                     <p class="font-medium text-gray-800">{{ $item['session'] }}</p>
                                     <p class="text-sm text-gray-500">{{ $item['feedback'] }}</p>
                                 </div>
-                                <span class="text-xs text-green-600 font-medium">✓ Feedback given</span>
+                                <span class="text-xs text-green-600 font-medium"><i class="fas fa-check" aria-hidden="true"></i> Feedback given</span>
                             </div>
                         @endforeach
                     </div>

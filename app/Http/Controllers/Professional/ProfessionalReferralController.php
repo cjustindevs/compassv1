@@ -92,7 +92,7 @@ class ProfessionalReferralController extends Controller
                 'title' => 'Referral Accepted',
                 'message' => 'A professional has accepted the referral for ' . $alias . '.',
                 'notification_type' => 'referral',
-                'type_icon' => '✅',
+                'type_icon' => 'fa-circle-check',
                 'link' => '/adviser/referral/' . $referral->id,
             ]);
         }
@@ -104,7 +104,7 @@ class ProfessionalReferralController extends Controller
                 'title' => 'Referral Accepted',
                 'message' => 'A psychology professional accepted your referral for ' . $alias . '.',
                 'notification_type' => 'referral',
-                'type_icon' => '✅',
+                'type_icon' => 'fa-circle-check',
                 'link' => '/helper/cases',
             ]);
         }
@@ -140,7 +140,7 @@ class ProfessionalReferralController extends Controller
                 'title' => 'Referral Declined',
                 'message' => 'A professional declined the referral for ' . $alias . ': ' . $validated['decline_reason'],
                 'notification_type' => 'referral',
-                'type_icon' => '❌',
+                'type_icon' => 'fa-circle-xmark',
                 'link' => '/adviser/referral/' . $referral->id,
             ]);
         }

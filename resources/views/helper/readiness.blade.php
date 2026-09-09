@@ -293,14 +293,14 @@
                         <div class="radio-option">
                             <input type="radio" id="emotionally_ready_yes" name="emotionally_ready" value="1" {{ old('emotionally_ready') == '1' ? 'checked' : '' }}>
                             <label for="emotionally_ready_yes">
-                                <span class="opt-icon">💚</span>
+                                <span class="opt-icon"><i class="fas fa-heart" aria-hidden="true"></i></span>
                                 <span>Yes, I'm ready</span>
                             </label>
                         </div>
                         <div class="radio-option negative">
                             <input type="radio" id="emotionally_ready_no" name="emotionally_ready" value="0" {{ old('emotionally_ready') == '0' ? 'checked' : '' }}>
                             <label for="emotionally_ready_no">
-                                <span class="opt-icon">🛑</span>
+                                <span class="opt-icon"><i class="fas fa-hand" aria-hidden="true"></i></span>
                                 <span>No, I need a moment</span>
                             </label>
                         </div>
@@ -315,14 +315,14 @@
                         <div class="radio-option">
                             <input type="radio" id="willing_yes" name="willing_to_listen" value="1" {{ old('willing_to_listen') == '1' ? 'checked' : '' }}>
                             <label for="willing_yes">
-                                <span class="opt-icon">✅</span>
+                                <span class="opt-icon"><i class="fas fa-circle-check" aria-hidden="true"></i></span>
                                 <span>Yes</span>
                             </label>
                         </div>
                         <div class="radio-option negative">
                             <input type="radio" id="willing_no" name="willing_to_listen" value="0" {{ old('willing_to_listen') == '0' ? 'checked' : '' }}>
                             <label for="willing_no">
-                                <span class="opt-icon">🙅</span>
+                                <span class="opt-icon"><i class="fas fa-ban" aria-hidden="true"></i></span>
                                 <span>No</span>
                             </label>
                         </div>
@@ -337,7 +337,7 @@
                         <div class="radio-option">
                             <input type="radio" id="stress_low" name="stress_level" value="low" {{ old('stress_level') == 'low' ? 'checked' : '' }}>
                             <label for="stress_low">
-                                <span class="opt-icon">😌</span>
+                                <span class="opt-icon"><i class="fas fa-face-smile" aria-hidden="true"></i></span>
                                 <span>Low</span>
                                 <span class="sub-text">Calm and focused</span>
                             </label>
@@ -345,7 +345,7 @@
                         <div class="radio-option warn">
                             <input type="radio" id="stress_moderate" name="stress_level" value="moderate" {{ old('stress_level') == 'moderate' ? 'checked' : '' }}>
                             <label for="stress_moderate">
-                                <span class="opt-icon">😐</span>
+                                <span class="opt-icon"><i class="fas fa-face-meh" aria-hidden="true"></i></span>
                                 <span>Moderate</span>
                                 <span class="sub-text">Manageable</span>
                             </label>
@@ -353,7 +353,7 @@
                         <div class="radio-option negative">
                             <input type="radio" id="stress_high" name="stress_level" value="high" {{ old('stress_level') == 'high' ? 'checked' : '' }}>
                             <label for="stress_high">
-                                <span class="opt-icon">😰</span>
+                                <span class="opt-icon"><i class="fas fa-face-frown" aria-hidden="true"></i></span>
                                 <span>High</span>
                                 <span class="sub-text">Feeling overwhelmed</span>
                             </label>
@@ -369,7 +369,7 @@
                         <div class="radio-option">
                             <input type="radio" id="avail_available" name="availability_status" value="available" {{ old('availability_status') == 'available' ? 'checked' : '' }}>
                             <label for="avail_available">
-                                <span class="opt-icon">🟢</span>
+                                <span class="opt-icon"><i class="fas fa-circle" aria-hidden="true"></i></span>
                                 <span>Available</span>
                                 <span class="sub-text">Ready to accept sessions</span>
                             </label>
@@ -377,7 +377,7 @@
                         <div class="radio-option negative">
                             <input type="radio" id="avail_not_ready" name="availability_status" value="not_ready" {{ old('availability_status') == 'not_ready' ? 'checked' : '' }}>
                             <label for="avail_not_ready">
-                                <span class="opt-icon">🔴</span>
+                                <span class="opt-icon"><i class="fas fa-circle" aria-hidden="true"></i></span>
                                 <span>Not Ready</span>
                                 <span class="sub-text">Not accepting right now</span>
                             </label>
@@ -524,7 +524,7 @@
 
                 const cycle = () => {
                     if (round > rounds) {
-                        breathText.textContent = 'Great job! 🎉';
+                        breathText.textContent = 'Great job! ';
                         circle.className = 'breath-circle';
                         continueBtn.style.display = '';
                         continueBtn.focus();

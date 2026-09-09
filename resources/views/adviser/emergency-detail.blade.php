@@ -23,7 +23,7 @@
                 @endforelse
             </div>
             @if($alert->status !== 'resolved')
-                <form method="POST" action="{{ route('adviser.emergencies.resolve', $alert->id) }}">
+                <form class="form-maximized" method="POST" action="{{ route('adviser.emergencies.resolve', $alert->id) }}">
                     @csrf
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Document emergency actions</label>
                     <textarea name="resolution_notes" required rows="4" maxlength="1000" class="w-full rounded-lg border-gray-300 text-sm" placeholder="Actions taken, coordination completed, and follow-up plan"></textarea>

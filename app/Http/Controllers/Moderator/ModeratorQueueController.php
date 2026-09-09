@@ -127,7 +127,7 @@ class ModeratorQueueController extends Controller
             'title' => 'New Case Assigned',
             'message' => 'You have been assigned to support ' . ($session->seeker?->generated_alias ?? 'a seeker') . ' (' . ucfirst($session->risk_level) . ' risk).',
             'notification_type' => 'assignment',
-            'type_icon' => '📋',
+            'type_icon' => 'fa-clipboard-list',
             'link' => '/helper/cases',
             'status' => 'unread',
         ]);

@@ -188,7 +188,7 @@
                     <div class="value">{{ $stats['average_rating'] > 0 ? number_format($stats['average_rating'], 1) : '—' }}</div>
                     <div class="label">Average rating
                         @if($stats['average_rating'] > 0)
-                            <span class="stars ml-1">{{ str_repeat('★', (int) round($stats['average_rating'])) }}</span>
+                            <span class="stars ml-1">@for ($star = 0; $star < ((int) round($stats['average_rating'])); $star++)<i class="fas fa-star" aria-hidden="true"></i>@endfor</span>
                         @endif
                     </div>
                 </div>

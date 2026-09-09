@@ -296,9 +296,9 @@ class ModeratorSeeder extends Seeder
     private function seedNotifications(User $user): void
     {
         $samples = [
-            ['title' => 'Emergency case flagged', 'message' => 'A self-harm risk incident is awaiting review in the emergency queue.', 'notification_type' => 'emergency', 'type_icon' => '🚨', 'link' => '/moderator/emergency'],
-            ['title' => 'New seeker in queue', 'message' => 'A new help seeker joined the incoming queue and is waiting for a helper.', 'notification_type' => 'queue', 'type_icon' => '⏳', 'link' => '/moderator/queue'],
-            ['title' => 'Referral recommended', 'message' => 'A helper recommended a referral for a completed session. Review in the emergency workspace.', 'notification_type' => 'referral', 'type_icon' => '📋', 'link' => '/moderator/emergency'],
+            ['title' => 'Emergency case flagged', 'message' => 'A self-harm risk incident is awaiting review in the emergency queue.', 'notification_type' => 'emergency', 'type_icon' => 'fa-triangle-exclamation', 'link' => '/moderator/emergency'],
+            ['title' => 'New seeker in queue', 'message' => 'A new help seeker joined the incoming queue and is waiting for a helper.', 'notification_type' => 'queue', 'type_icon' => 'fa-hourglass-half', 'link' => '/moderator/queue'],
+            ['title' => 'Referral recommended', 'message' => 'A helper recommended a referral for a completed session. Review in the emergency workspace.', 'notification_type' => 'referral', 'type_icon' => 'fa-clipboard-list', 'link' => '/moderator/emergency'],
         ];
 
         foreach ($samples as $sample) {

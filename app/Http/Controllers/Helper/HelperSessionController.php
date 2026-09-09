@@ -368,7 +368,7 @@ class HelperSessionController extends Controller
 
         $this->notifyStaff(
             ['moderator', 'adviser'],
-            '🚨 Emergency flagged',
+            ' Emergency flagged',
             'Emergency flagged in session #' . $session->id . ' by ' . $helper->full_name . '. ' . $validated['description'],
             'emergency',
             '/moderator/dashboard'
@@ -385,7 +385,7 @@ class HelperSessionController extends Controller
                 'title' => 'Your session has been escalated',
                 'message' => 'A support coordinator has been notified about your session and will reach out.',
                 'notification_type' => 'emergency',
-                'type_icon' => '🛟',
+                'type_icon' => 'fa-life-ring',
                 'link' => '/session/chat',
             ]);
         }
@@ -427,7 +427,7 @@ class HelperSessionController extends Controller
 
         $this->notifyStaff(
             ['adviser'],
-            '📋 New referral request',
+            ' New referral request',
             'Referral #' . $referral->id . ' (' . $validated['priority_level'] . ' priority) for session #' . $session->id . ' from ' . $helper->full_name . '.',
             'referral',
             '/adviser/dashboard'
@@ -444,7 +444,7 @@ class HelperSessionController extends Controller
                 'title' => 'A referral was recommended for you',
                 'message' => 'Your helper has recommended connecting you with a professional. An adviser will follow up.',
                 'notification_type' => 'referral',
-                'type_icon' => '📋',
+                'type_icon' => 'fa-clipboard-list',
                 'link' => '/session/chat',
             ]);
         }
@@ -476,7 +476,7 @@ class HelperSessionController extends Controller
                 'title' => $title,
                 'message' => $message,
                 'notification_type' => $type,
-                'type_icon' => $type === 'emergency' ? '🚨' : '📋',
+                'type_icon' => $type === 'emergency' ? 'fa-triangle-exclamation' : 'fa-clipboard-list',
                 'link' => $link,
             ]);
         }
@@ -534,7 +534,7 @@ class HelperSessionController extends Controller
                     'title' => 'Session completed',
                     'message' => 'Your session has been completed. Please share your feedback to help us improve.',
                     'notification_type' => 'evaluation',
-                    'type_icon' => '📝',
+                    'type_icon' => 'fa-pen-to-square',
                     'link' => '/session/evaluation',
                 ]);
             }

@@ -195,7 +195,7 @@
                         </div>
                     @empty
                         <div class="text-center py-10 text-gray-400">
-                            <p class="text-3xl mb-2">💬</p>
+                            <p class="text-3xl mb-2"><i class="fas fa-comments" aria-hidden="true"></i></p>
                             <p>No messages yet</p>
                         </div>
                     @endforelse
@@ -253,7 +253,7 @@
 
                 @if($session->incidents->isNotEmpty())
                     <div class="card border-red-200">
-                        <h3 class="font-bold text-red-700 mb-4">⚠️ Incidents on this session</h3>
+                        <h3 class="font-bold text-red-700 mb-4"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Incidents on this session</h3>
                         @foreach($session->incidents as $incident)
                             <div class="mb-3 pb-3 border-b border-red-50 last:border-0 last:mb-0 last:pb-0">
                                 <div class="flex items-center gap-2 mb-1">

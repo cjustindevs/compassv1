@@ -341,7 +341,7 @@
             color: var(--green-700);
             box-shadow: 0 4px 16px rgba(4, 160, 82, 0.12);
         }
-        .mood-btn .emoji { display: block; font-size: 28px; margin-bottom: 4px; }
+        .mood-btn .mood-icon { display: block; font-size: 28px; margin-bottom: 4px; }
 
         /* ─── Quote Card ─── */
         .quote-card {
@@ -582,7 +582,7 @@
             .hero-sub { font-size: 0.9rem; }
             .mood-section { padding: 16px 18px; }
             .mood-btn { padding: 10px 14px; font-size: 12px; }
-            .mood-btn .emoji { font-size: 22px; }
+            .mood-btn .mood-icon { font-size: 22px; }
             .quote-card { padding: 20px; }
             .quote-card p { font-size: 0.95rem; padding-left: 20px; }
             .grid-cols-3 { grid-template-columns: 1fr; }
@@ -679,7 +679,7 @@
                                 </a>
                             </div>
                         </div>
-                        <div class="hidden md:block text-6xl opacity-10 mt-4 md:mt-0">🌿</div>
+                        <div class="hidden md:block text-6xl opacity-10 mt-4 md:mt-0"><i class="fas fa-leaf" aria-hidden="true"></i></div>
                     </div>
                 </div>
             </div>
@@ -687,7 +687,7 @@
             <!-- ═══════ ACTIVE SESSION / PENDING REQUEST ═══════ -->
             @if($activeSession)
                 <div class="mb-6 p-5 rounded-2xl bg-white border border-[#04A052] shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4" style="border-left: 6px solid #04A052;">
-                    <div class="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-2xl flex-shrink-0">🎉</div>
+                    <div class="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-2xl flex-shrink-0"><i class="fas fa-star" aria-hidden="true"></i></div>
                     <div class="flex-1 min-w-0">
                         <h3 class="font-bold text-gray-800">Your session is active</h3>
                         <p class="text-sm text-gray-500">
@@ -704,7 +704,7 @@
             @elseif($pendingSession)
                 <div class="mb-6 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4" style="border-left: 6px solid #F59E0B;">
                     <div class="w-12 h-12 rounded-full bg-yellow-50 flex items-center justify-center text-2xl flex-shrink-0">
-                        {{ $pendingSession->isHelperAssigned() ? '⏳' : '🔍' }}
+                        <x-ui-icon :value="$pendingSession->isHelperAssigned() ? 'fa-hourglass-half' : 'fa-magnifying-glass'" />
                     </div>
                     <div class="flex-1 min-w-0">
                         <h3 class="font-bold text-gray-800">
@@ -727,9 +727,9 @@
             @endif
 
             <!-- ═══════ PRODUCT CARDS ═══════ -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6 dashboard-grid-max">
                 <a href="{{ route('request.screening') }}" class="product-card" style="text-decoration: none;">
-                    <div class="icon-wrap">💬</div>
+                    <div class="icon-wrap"><i class="fas fa-comments" aria-hidden="true"></i></div>
                     <h3>Talk to Someone</h3>
                     <p>Connect with a trained peer helper who will listen without judgment.</p>
                     <span class="btn-join">
@@ -737,7 +737,7 @@
                     </span>
                 </a>
                 <a href="{{ route('selfhelp') }}" class="product-card" style="text-decoration: none;">
-                    <div class="icon-wrap">🧘</div>
+                    <div class="icon-wrap"><i class="fas fa-spa" aria-hidden="true"></i></div>
                     <h3>Self-Care Resources</h3>
                     <p>Guided meditations, breathing exercises, and wellness tools to support you.</p>
                     <span class="btn-join">
@@ -745,7 +745,7 @@
                     </span>
                 </a>
                 <a href="{{ route('selfhelp') }}" class="product-card" style="text-decoration: none;">
-                    <div class="icon-wrap">📖</div>
+                    <div class="icon-wrap"><i class="fas fa-book-open" aria-hidden="true"></i></div>
                     <h3>Daily Wellness</h3>
                     <p>Track your mood, journal your thoughts, and build healthy habits.</p>
                     <span class="btn-join">
@@ -763,19 +763,19 @@
                     </div>
                     <div class="flex flex-wrap gap-2" id="moodContainer">
                         <button class="mood-btn" data-mood="great">
-                            <span class="emoji">😊</span> Great
+                            <span class="mood-icon"><i class="fas fa-face-laugh" aria-hidden="true"></i></span> Great
                         </button>
                         <button class="mood-btn" data-mood="good">
-                            <span class="emoji">🙂</span> Good
+                            <span class="mood-icon"><i class="fas fa-face-smile" aria-hidden="true"></i></span> Good
                         </button>
                         <button class="mood-btn" data-mood="okay">
-                            <span class="emoji">😐</span> Okay
+                            <span class="mood-icon"><i class="fas fa-face-meh" aria-hidden="true"></i></span> Okay
                         </button>
                         <button class="mood-btn" data-mood="not-great">
-                            <span class="emoji">😔</span> Not Great
+                            <span class="mood-icon"><i class="fas fa-face-frown" aria-hidden="true"></i></span> Not Great
                         </button>
                         <button class="mood-btn" data-mood="struggling">
-                            <span class="emoji">😢</span> Struggling
+                            <span class="mood-icon"><i class="fas fa-face-sad-tear" aria-hidden="true"></i></span> Struggling
                         </button>
                     </div>
                 </div>
@@ -797,14 +797,14 @@
             <!-- ═══════ QUICK LINKS ═══════ -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <a href="{{ route('selfhelp') }}" class="glass-card p-5 flex items-center gap-4 cursor-pointer hover:border-[#04A052] transition-all" style="text-decoration: none;">
-                    <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-2xl">📖</div>
+                    <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-2xl"><i class="fas fa-book-open" aria-hidden="true"></i></div>
                     <div>
                         <h4 class="font-semibold text-gray-800">Resources</h4>
                         <p class="text-xs text-gray-500">Articles &amp; guides</p>
                     </div>
                 </a>
                 <a href="{{ route('selfhelp') }}" class="glass-card p-5 flex items-center gap-4 cursor-pointer hover:border-[#04A052] transition-all" style="text-decoration: none;">
-                    <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-2xl">🧘</div>
+                    <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-2xl"><i class="fas fa-spa" aria-hidden="true"></i></div>
                     <div>
                         <h4 class="font-semibold text-gray-800">Meditation</h4>
                         <p class="text-xs text-gray-500">Guided sessions</p>
@@ -832,11 +832,11 @@
         <div id="tab-dashboard" class="tab-content">
 
             <!-- Stats -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 dashboard-grid-max">
                 <div class="stat-card">
                     <div class="flex items-center justify-between">
                         <span class="stat-label">Total Sessions</span>
-                        <span class="text-2xl">📊</span>
+                        <span class="text-2xl"><i class="fas fa-chart-column" aria-hidden="true"></i></span>
                     </div>
                     <div class="stat-number">{{ $totalSessions }}</div>
                     <div class="flex items-center gap-2 mt-1">
@@ -846,7 +846,7 @@
                 <div class="stat-card">
                     <div class="flex items-center justify-between">
                         <span class="stat-label">Completed</span>
-                        <span class="text-2xl">✅</span>
+                        <span class="text-2xl"><i class="fas fa-circle-check" aria-hidden="true"></i></span>
                     </div>
                     <div class="stat-number">{{ $completedSessions }}</div>
                     <div class="flex items-center gap-2 mt-1">
@@ -866,7 +866,7 @@
                 <div class="stat-card">
                     <div class="flex items-center justify-between">
                         <span class="stat-label">Active Sessions</span>
-                        <span class="text-2xl">🟢</span>
+                        <span class="text-2xl"><i class="fas fa-circle" aria-hidden="true"></i></span>
                     </div>
                     <div class="stat-number">{{ $activeSession ? 1 : 0 }}</div>
                     <div class="flex items-center gap-2 mt-1">
@@ -902,7 +902,7 @@
                                     <td class="hidden sm:table-cell">{{ $session->start_time ? $session->start_time->diff($session->end_time ?? now())->format('%Hh %Im') : '—' }}</td>
                                     <td>
                                         @if($session->evaluation)
-                                            <span class="stars">{{ str_repeat('★', min(5, max(0, (int) round($session->evaluation->overall_score)))) }}<span class="text-gray-300">{{ str_repeat('★', 5 - min(5, max(0, (int) round($session->evaluation->overall_score)))) }}</span></span>
+                                            <span class="stars">@for ($star = 0; $star < (min(5, max(0, (int) round($session->evaluation->overall_score)))); $star++)<i class="fas fa-star" aria-hidden="true"></i>@endfor<span class="text-gray-300">@for ($star = 0; $star < (5 - min(5, max(0, (int) round($session->evaluation->overall_score)))); $star++)<i class="fas fa-star" aria-hidden="true"></i>@endfor</span></span>
                                         @else
                                             <span class="text-gray-400">—</span>
                                         @endif
@@ -927,28 +927,28 @@
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="resource-card">
-                        <div class="icon text-green-500">🧘</div>
+                        <div class="icon text-green-500"><i class="fas fa-spa" aria-hidden="true"></i></div>
                         <div class="info">
                             <h4>Grounding Techniques for Anxiety</h4>
                             <p>Anxiety · 8 min</p>
                         </div>
                     </div>
                     <div class="resource-card">
-                        <div class="icon text-blue-500">🌬️</div>
+                        <div class="icon text-blue-500"><i class="fas fa-wind" aria-hidden="true"></i></div>
                         <div class="info">
                             <h4>Guided Breathing - 4-7-8</h4>
                             <p>Meditation · 8 min</p>
                         </div>
                     </div>
                     <div class="resource-card">
-                        <div class="icon text-purple-500">📚</div>
+                        <div class="icon text-purple-500"><i class="fas fa-book-open" aria-hidden="true"></i></div>
                         <div class="info">
                             <h4>Understanding Academic Burnout</h4>
                             <p>Stress · 12 min</p>
                         </div>
                     </div>
                     <div class="resource-card">
-                        <div class="icon text-yellow-500">🌙</div>
+                        <div class="icon text-yellow-500"><i class="fas fa-moon" aria-hidden="true"></i></div>
                         <div class="info">
                             <h4>Sleep Hygiene Checklist</h4>
                             <p>Mental Health · 5 min</p>
@@ -973,11 +973,11 @@
             const moodMessage = document.getElementById('moodMessage');
 
             const moodMessages = {
-                'great': "We're so glad you're feeling great! Keep that positive energy going! 🌟",
-                'good': "Good to hear! Remember, we're here if you need anything. 💙",
-                'okay': "It's okay to feel okay. If you want to talk, we're here. 🫂",
-                'not-great': "Thank you for being honest. You're not alone. We're here to listen. 💜",
-                'struggling': "We hear you. You are not alone. Let's talk. 💙 You matter."
+                'great': "We're so glad you're feeling great! Keep that positive energy going! ",
+                'good': "Good to hear! Remember, we're here if you need anything. ",
+                'okay': "It's okay to feel okay. If you want to talk, we're here. ",
+                'not-great': "Thank you for being honest. You're not alone. We're here to listen. ",
+                'struggling': "We hear you. You are not alone. Let's talk.  You matter."
             };
 
             if (moodBtns.length) {

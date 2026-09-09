@@ -431,10 +431,11 @@
                 </div>
             </div>
 
-            <form id="evaluationForm" class="form-container" method="POST" action="{{ route('session.evaluation.process') }}">
+            <form id="evaluationForm" class="form-container form-maximized" method="POST" action="{{ route('session.evaluation.process') }}">
                 @csrf
                 <input type="hidden" name="session_id" value="{{ $sessionId }}">
                 <p class="mb-4">Rate each item from 1 (lowest) to 10 (highest).</p>
+                <div class="form-row-3">
                 @foreach(['helpfulness_score' => 'How helpful was the session?', 'comfort_score' => 'How comfortable did you feel?', 'feeling_after_score' => 'How do you feel after the session?', 'understood_score' => 'How well did you feel understood?', 'reuse_score' => 'How likely are you to use this service again?'] as $field => $label)
                     <label class="block mb-4" for="{{ $field }}">{{ $label }}
                         <select id="{{ $field }}" name="{{ $field }}" class="form-input" required>
@@ -446,6 +447,7 @@
                         @error($field)<span class="text-red-600">{{ $message }}</span>@enderror
                     </label>
                 @endforeach
+                </div>
                 <label class="block mb-4">Comments (optional)<textarea name="comments" class="form-input" maxlength="500">{{ old('comments') }}</textarea></label>
                 <button type="submit" class="btn-primary">Submit feedback</button>
             </form>

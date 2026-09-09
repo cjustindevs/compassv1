@@ -207,7 +207,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Pending Review</span>
-                    <span class="text-2xl">📋</span>
+                    <span class="text-2xl"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $totalPending }}</div>
                 <span class="text-xs text-gray-400">Awaiting your decision</span>
@@ -215,7 +215,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Emergency Cases</span>
-                    <span class="text-2xl">🚨</span>
+                    <span class="text-2xl"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $emergencyCount }}</div>
                 <span class="text-xs text-gray-400">Require immediate attention</span>
@@ -223,7 +223,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Approved</span>
-                    <span class="text-2xl">✅</span>
+                    <span class="text-2xl"><i class="fas fa-circle-check" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $totalApproved }}</div>
                 <span class="text-xs text-gray-400">Waiting for professional</span>
@@ -327,7 +327,7 @@
             </div>
             <p class="text-gray-500 text-sm mb-4">Approve this referral and assign it to a psychology professional.</p>
 
-            <form id="approveForm" method="POST">
+            <form class="form-maximized" id="approveForm" method="POST">
                 @csrf
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Assign to Professional</label>
@@ -364,7 +364,7 @@
             </div>
             <p class="text-gray-500 text-sm mb-4">Provide a reason for rejecting this referral.</p>
 
-            <form id="rejectForm" method="POST">
+            <form class="form-maximized" id="rejectForm" method="POST">
                 @csrf
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Rejection Reason <span class="text-red-500">*</span></label>

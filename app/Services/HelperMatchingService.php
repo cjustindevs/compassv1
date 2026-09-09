@@ -262,7 +262,7 @@ class HelperMatchingService
             'title' => 'New case assigned',
             'message' => 'You have been assigned to support ' . ($session->seeker?->generated_alias ?? 'a seeker') . '. Follow the support plan and escalate safety concerns.',
             'notification_type' => 'assignment',
-            'type_icon' => '📋',
+            'type_icon' => 'fa-clipboard-list',
             'link' => '/helper/session/' . $session->id . '/pre-assessment',
             'status' => 'unread',
         ]);
@@ -273,7 +273,7 @@ class HelperMatchingService
                 'title' => 'Helper matched',
                 'message' => 'A helper has been matched to your request.',
                 'notification_type' => 'assignment',
-                'type_icon' => '🤝',
+                'type_icon' => 'fa-handshake',
                 'link' => '/request/matching',
                 'status' => 'unread',
             ]);

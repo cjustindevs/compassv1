@@ -323,7 +323,7 @@
         <!-- Messages -->
         <div class="chat-messages" id="chatMessages">
             <div class="empty-chat" id="emptyChat">
-                <div class="icon">💬</div>
+                <div class="icon"><i class="fas fa-comments" aria-hidden="true"></i></div>
                 <h3>No messages yet</h3>
                 <p>Say hello to your helper to get started.</p>
             </div>

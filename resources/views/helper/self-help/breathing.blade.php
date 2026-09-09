@@ -58,7 +58,7 @@
 
             function done() {
                 circle.className = 'breath-circle';
-                text.textContent = 'Great job! 🎉';
+                text.textContent = 'Great job! ';
                 beginBtn.style.display = 'none';
                 resetBtn.style.display = '';
             }

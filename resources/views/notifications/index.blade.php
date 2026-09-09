@@ -113,7 +113,7 @@
                         @if($unreadCount > 0)
                             You have <strong class="text-[#04A052]">{{ $unreadCount }}</strong> unread {{ $unreadCount === 1 ? 'notification' : 'notifications' }}.
                         @else
-                            You're all caught up. ðŸŽ‰
+                            You're all caught up.
                         @endif
                     </p>
                 </div>
@@ -132,7 +132,7 @@
             </a>
             @foreach($types as $slug => $meta)
                 <a href="{{ route('notifications', ['type' => $slug]) }}" class="filter-btn {{ $activeType === $slug ? 'active' : '' }}">
-                    <span>{{ $meta['icon'] }}</span> {{ $meta['label'] }}
+                    <span><x-ui-icon :value="$meta['icon']" /></span> {{ $meta['label'] }}
                 </a>
             @endforeach
         </div>
@@ -142,7 +142,7 @@
             @forelse($notifications as $notification)
                 <div class="notif-card {{ $notification->is_read ? '' : 'unread' }}" id="notif-{{ $notification->id }}" data-id="{{ $notification->id }}">
                     <div class="icon {{ $notification->notification_type === 'session' ? 'blue' : ($notification->notification_type === 'reminder' ? 'amber' : ($notification->notification_type === 'update' ? 'purple' : '')) }}">
-                        {{ $notification->type_icon }}
+                        <x-ui-icon :value="$notification->type_icon" />
                     </div>
                     <div class="flex-1 min-w-0">
                         <h4 class="font-semibold text-gray-800 text-sm">{{ $notification->title }}</h4>
@@ -175,7 +175,7 @@
                 </div>
             @empty
                 <div class="empty-state">
-                    <div class="text-5xl mb-4">{{ $activeType ? $types[$activeType]['icon'] : 'ðŸ””' }}</div>
+                    <div class="text-5xl mb-4"><x-ui-icon :value="$activeType ? $types[$activeType]['icon'] : 'fa-bell'" /></div>
                     <h3 class="text-lg font-semibold text-gray-800">
                         @if($activeType)
                             No {{ strtolower($types[$activeType]['label']) }} notifications
@@ -243,7 +243,7 @@
             const btn = document.getElementById('markAllBtn');
             if (btn) btn.remove();
             const subtitle = document.querySelector('p.text-sm.text-gray-500');
-            if (subtitle) subtitle.innerHTML = "You're all caught up. ðŸŽ‰";
+            if (subtitle) subtitle.innerHTML = "You're all caught up. ";
             refreshCount();
         }
 
@@ -259,7 +259,7 @@
 
             const list = document.getElementById('notifList');
             if (list && list.children.length === 0) {
-                list.innerHTML = '<div class="empty-state"><div class="text-5xl mb-4">ðŸŽ‰</div><h3 class="text-lg font-semibold text-gray-800">All caught up</h3><p class="text-sm text-gray-500 mt-1">You have no notifications left.</p></div>';
+                list.innerHTML = '<div class="empty-state"><div class="text-5xl mb-4"><i class="fas fa-circle-check" aria-hidden="true"></i></div><h3 class="text-lg font-semibold text-gray-800">All caught up</h3><p class="text-sm text-gray-500 mt-1">You have no notifications left.</p></div>';
             }
         }
 

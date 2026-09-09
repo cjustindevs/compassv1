@@ -2,7 +2,7 @@ class BreathingExercise {
     constructor(options = {}) {
         this.steps = [
             { name: 'Inhale', duration: 4000, icon: '⬆️', instruction: 'Inhale through your nose' },
-            { name: 'Hold', duration: 2000, icon: '⏸️', instruction: 'Hold your breath' },
+            { name: 'Hold', duration: 2000, icon: 'fa-pause', instruction: 'Hold your breath' },
             { name: 'Exhale', duration: 4000, icon: '⬇️', instruction: 'Exhale slowly through your mouth' },
         ];
         this.totalCycles = options.totalCycles ?? 3;
@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const status = $('exercise-status');
         if (status) {
-            status.textContent = exercise.result === 'skipped' ? '⏭️ Skipped' : '✅ Completed';
+            status.textContent = exercise.result === 'skipped' ? '⏭️ Skipped' : ' Completed';
             status.classList.remove('text-gray-400');
             status.classList.add(exercise.result === 'skipped' ? 'text-amber-600' : 'text-green-600');
         }

@@ -458,7 +458,7 @@
 
         <!-- Step Indicator -->
         <div class="step-indicator steps-compact">
-            <div class="step-dot done">✓</div>
+            <div class="step-dot done"><i class="fas fa-check" aria-hidden="true"></i></div>
             <div class="step-line done"></div>
             <div class="step-dot active">2</div>
             <div class="step-line"></div>
@@ -468,8 +468,10 @@
         <!-- ─── FORM CARD ─── -->
         <div class="form-card">
 
-            <form id="preferencesForm" method="POST" action="{{ route('request.preferences.process') }}">
+            <form id="preferencesForm" class="form-maximized" method="POST" action="{{ route('request.preferences.process') }}">
                 @csrf
+
+                <div class="form-row">
 
                 <!-- ============================================ -->
                 <!-- SECTION 1: SUPPORT MODE                     -->
@@ -482,7 +484,7 @@
                         <label class="mode-card">
                             <input type="radio" name="support_mode" value="chat" {{ old('support_mode', 'chat') === 'chat' ? 'checked' : '' }}>
                             <div class="mode-content">
-                                <div class="icon">💬</div>
+                                <div class="icon"><i class="fas fa-comments" aria-hidden="true"></i></div>
                                 <div class="label">Chat</div>
                                 <div class="sub">Private text-based conversation</div>
                                 <div class="checkmark"><i class="fas fa-check-circle"></i></div>
@@ -522,6 +524,7 @@
                 <!-- ============================================ -->
                 <!-- FORM ACTIONS                                -->
                 <!-- ============================================ -->
+                </div>
                 <div class="actions-compact">
                     <a href="{{ route('request.screening') }}" class="text-gray-500 hover:text-gray-700 transition font-medium text-sm">
                         <i class="fas fa-arrow-left mr-2"></i> Back

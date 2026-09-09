@@ -24,7 +24,7 @@
                 </a>
             </div>
 
-            <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
+            <div @class(['w-full mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg', 'sm:max-w-4xl' => request()->routeIs('register', 'seeker.register', 'seeker.consent'), 'sm:max-w-md' => !request()->routeIs('register', 'seeker.register', 'seeker.consent')])>
                 @hasSection('content')
                     @yield('content')
                 @else

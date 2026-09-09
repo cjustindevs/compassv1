@@ -62,11 +62,11 @@ class Notification extends Model
         }
 
         return match ($this->notification_type) {
-            'session' => '💬',
-            'reminder' => '⏰',
-            'system' => '🔔',
-            'update' => '🎉',
-            default => '🔔',
+            'session' => 'fa-comments',
+            'reminder' => 'fa-clock',
+            'system' => 'fa-bell',
+            'update' => 'fa-star',
+            default => 'fa-bell',
         };
     }
 }

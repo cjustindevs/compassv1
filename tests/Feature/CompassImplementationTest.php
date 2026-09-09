@@ -16,8 +16,9 @@ class CompassImplementationTest extends TestCase
 
     public function test_pseudonymous_registration_consent_and_alias_login(): void
     {
-        $this->get('/register')->assertOk()->assertSee('Create your COMPASS account');
-        $this->post(route('seeker.onboarding.store'), [
+        $this->get('/register')->assertOk()->assertSee('Create Your Account');
+        $this->withSession(['registration_verified_until' => now()->addMinutes(10)->timestamp])->post(route('seeker.onboarding.store'), [
+            'alias' => session('registration_alias'),
             'age' => 20, 'gender' => 'prefer-not-to-say', 'preferred_language' => 'Tagalog',
             'password' => 'StrongPass123!', 'password_confirmation' => 'StrongPass123!',
         ])->assertRedirect(route('seeker.consent'));

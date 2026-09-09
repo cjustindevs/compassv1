@@ -411,21 +411,21 @@ class RequestSupportController extends Controller
                 'title' => 'Guided Breathing Exercise',
                 'description' => 'A short breathing exercise to calm your mind.',
                 'duration' => '3 min',
-                'icon' => '🧘',
+                'icon' => 'fa-spa',
                 'link' => route('selfhelp')
             ],
             [
                 'title' => 'Grounding Techniques',
                 'description' => 'Simple techniques to bring you back to the present moment.',
                 'duration' => '5 min',
-                'icon' => '🌿',
+                'icon' => 'fa-leaf',
                 'link' => route('selfhelp')
             ],
             [
                 'title' => 'Managing Anxiety',
                 'description' => 'Tips and strategies for managing anxious thoughts.',
                 'duration' => '8 min',
-                'icon' => '📘',
+                'icon' => 'fa-book',
                 'link' => route('selfhelp')
             ]
         ];

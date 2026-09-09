@@ -118,18 +118,18 @@
 
         <!-- Step Indicator -->
         <div class="flex items-center justify-center gap-2 mb-6">
-            <div class="w-8 h-8 rounded-full bg-[#04A052] text-white text-sm font-bold flex items-center justify-center">✓</div>
+            <div class="w-8 h-8 rounded-full bg-[#04A052] text-white text-sm font-bold flex items-center justify-center"><i class="fas fa-check" aria-hidden="true"></i></div>
             <div class="w-10 h-0.5 bg-[#04A052]"></div>
-            <div class="w-8 h-8 rounded-full bg-[#04A052] text-white text-sm font-bold flex items-center justify-center">✓</div>
+            <div class="w-8 h-8 rounded-full bg-[#04A052] text-white text-sm font-bold flex items-center justify-center"><i class="fas fa-check" aria-hidden="true"></i></div>
             <div class="w-10 h-0.5 bg-[#04A052]"></div>
-            <div class="w-8 h-8 rounded-full bg-[#04A052] text-white text-sm font-bold flex items-center justify-center">✓</div>
+            <div class="w-8 h-8 rounded-full bg-[#04A052] text-white text-sm font-bold flex items-center justify-center"><i class="fas fa-check" aria-hidden="true"></i></div>
             <div class="w-10 h-0.5 bg-gray-200"></div>
             <div class="w-8 h-8 rounded-full bg-[#04A052] text-white text-sm font-bold flex items-center justify-center">4</div>
         </div>
 
         <div class="consent-card">
             <div class="text-center mb-6">
-                <div class="text-5xl mb-3">🎙️</div>
+                <div class="text-5xl mb-3"><i class="fas fa-microphone" aria-hidden="true"></i></div>
                 <h2 class="text-2xl font-bold text-gray-800">Before we start your voice session</h2>
                 <p class="text-sm text-gray-500 mt-2">
                     You chose a voice session with your peer helper. Here's what that means:

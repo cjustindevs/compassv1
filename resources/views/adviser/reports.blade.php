@@ -170,7 +170,7 @@
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <form action="{{ route('adviser.reports.export') }}" method="GET" class="inline">
+                <form class="inline" action="{{ route('adviser.reports.export') }}" method="GET">
                     <input type="hidden" name="period" value="{{ $period }}">
                     <input type="hidden" name="helper_id" value="{{ $helperId }}">
                     @if(request('from'))
@@ -186,7 +186,7 @@
 
         <!-- Filters -->
         <div class="mb-6 flex flex-wrap items-center gap-4">
-            <form method="GET" action="{{ route('adviser.reports') }}" class="flex flex-wrap items-center gap-3">
+            <form class="form-maximized flex flex-wrap items-center gap-3" method="GET" action="{{ route('adviser.reports') }}">
                 <select name="period" class="filter-select">
                     <option value="weekly" {{ $period == 'weekly' ? 'selected' : '' }}>Last 7 Days</option>
                     <option value="monthly" {{ $period == 'monthly' ? 'selected' : '' }}>Last 30 Days</option>
@@ -217,7 +217,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Total Sessions</span>
-                    <span class="text-2xl">📊</span>
+                    <span class="text-2xl"><i class="fas fa-chart-column" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $totalSessions }}</div>
                 <span class="text-xs text-gray-400">All sessions</span>
@@ -225,7 +225,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Completion Rate</span>
-                    <span class="text-2xl">✅</span>
+                    <span class="text-2xl"><i class="fas fa-circle-check" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $completionRate }}%</div>
                 <span class="text-xs text-gray-400">{{ $completedSessions }} completed</span>
@@ -233,7 +233,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Avg Response</span>
-                    <span class="text-2xl">⏱️</span>
+                    <span class="text-2xl"><i class="fas fa-stopwatch" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $avgResponseTime }}</div>
                 <span class="text-xs text-gray-400">First response</span>
@@ -241,7 +241,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Avg Waiting</span>
-                    <span class="text-2xl">🕐</span>
+                    <span class="text-2xl"><i class="fas fa-clock" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $avgWaitingTime }}</div>
                 <span class="text-xs text-gray-400">Queue to session</span>
@@ -368,7 +368,7 @@
                         <div class="info">
                             <div class="name">{{ $helper->name }}</div>
                             <div class="detail">
-                                {{ $helper->sessions }} sessions · {{ $helper->rating }} ★
+                                {{ $helper->sessions }} sessions · {{ $helper->rating }} <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
                                 <span class="competency-level {{ strtolower($helper->level) }} ml-2">
                                     {{ $helper->level }}
                                 </span>

@@ -252,7 +252,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Active Sessions</span>
-                    <span class="text-2xl">💬</span>
+                    <span class="text-2xl"><i class="fas fa-comments" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number active" id="statSessions">{{ $stats['active_sessions'] }}</div>
                 <span class="text-xs text-gray-400">{{ $stats['chat_sessions'] }} chat · {{ $stats['voice_sessions'] }} voice</span>
@@ -260,7 +260,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Queue</span>
-                    <span class="text-2xl">⏳</span>
+                    <span class="text-2xl"><i class="fas fa-hourglass-half" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number queue" id="statQueue">{{ $stats['queue_waiting'] }}</div>
                 <span class="text-xs text-gray-400">Avg wait: <span id="avgWait">{{ $avgWait }}</span></span>
@@ -268,7 +268,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Emergency</span>
-                    <span class="text-2xl">🚨</span>
+                    <span class="text-2xl"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number emergency" id="statEmergency">{{ $stats['emergency_count'] }}</div>
                 <span class="text-xs text-gray-400">Open emergencies</span>
@@ -276,7 +276,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Helpers</span>
-                    <span class="text-2xl">👥</span>
+                    <span class="text-2xl"><i class="fas fa-users" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number helper" id="statHelpers">{{ $stats['available_helpers'] }}</div>
                 <span class="text-xs text-gray-400">{{ $stats['busy_helpers'] }} busy</span>
@@ -314,7 +314,7 @@
                     </div>
                 @empty
                     <div class="text-center py-8 text-gray-400">
-                        <p class="text-3xl mb-2">💬</p>
+                        <p class="text-3xl mb-2"><i class="fas fa-comments" aria-hidden="true"></i></p>
                         <p>No active sessions right now</p>
                     </div>
                 @endforelse

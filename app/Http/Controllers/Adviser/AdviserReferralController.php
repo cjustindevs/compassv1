@@ -133,10 +133,10 @@ class AdviserReferralController extends Controller
         ]);
         Notification::create([
             'user_account_id' => $referral->helper->user_account_id,
-            'title' => 'Referral Approved ✅',
+            'title' => 'Referral Approved ',
             'message' => 'Your referral has been approved by the adviser.',
             'notification_type' => 'referral',
-            'type_icon' => '✅',
+            'type_icon' => 'fa-circle-check',
             'link' => '/helper/cases'
         ]);
 
@@ -151,7 +151,7 @@ class AdviserReferralController extends Controller
                     'title' => 'New Referral Assigned',
                     'message' => 'A referral has been assigned to you for review.',
                     'notification_type' => 'referral',
-                    'type_icon' => '📋',
+                    'type_icon' => 'fa-clipboard-list',
                     'link' => '/professional/dashboard'
                 ]);
             }
@@ -187,10 +187,10 @@ class AdviserReferralController extends Controller
         // Create notification for helper
         Notification::create([
             'user_account_id' => $referral->helper->user_account_id,
-            'title' => 'Referral Declined ❌',
+            'title' => 'Referral Declined ',
             'message' => 'Your referral has been declined. Reason: ' . $request->rejection_reason,
             'notification_type' => 'referral',
-            'type_icon' => '❌',
+            'type_icon' => 'fa-circle-xmark',
             'link' => '/helper/cases'
         ]);
 
@@ -217,7 +217,7 @@ class AdviserReferralController extends Controller
             'title' => 'Additional Information Requested',
             'message' => 'The adviser needs more information about your referral: ' . $request->info_request,
             'notification_type' => 'referral',
-            'type_icon' => '📝',
+            'type_icon' => 'fa-pen-to-square',
             'link' => '/helper/cases/' . $referral->session_id
         ]);
 
@@ -252,7 +252,7 @@ class AdviserReferralController extends Controller
                 'title' => 'Referral Assigned',
                 'message' => 'A referral has been assigned to you.',
                 'notification_type' => 'referral',
-                'type_icon' => '📋',
+                'type_icon' => 'fa-clipboard-list',
                 'link' => '/professional/dashboard'
             ]);
         }

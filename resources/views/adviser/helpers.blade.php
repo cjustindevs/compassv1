@@ -158,14 +158,14 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Total Helpers</span>
-                    <span class="text-2xl">👥</span>
+                    <span class="text-2xl"><i class="fas fa-users" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $totalHelpers }}</div>
             </div>
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Available</span>
-                    <span class="text-2xl">🟢</span>
+                    <span class="text-2xl"><i class="fas fa-circle" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $availableHelpers }}</div>
             </div>

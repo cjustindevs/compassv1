@@ -255,7 +255,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Total Referrals</span>
-                    <span class="text-2xl">📋</span>
+                    <span class="text-2xl"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $totalReferrals }}</div>
                 <span class="text-xs text-gray-400">In selected period</span>
@@ -263,7 +263,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Acceptance Rate</span>
-                    <span class="text-2xl">✅</span>
+                    <span class="text-2xl"><i class="fas fa-circle-check" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $acceptanceRate }}%</div>
                 <span class="text-xs text-gray-400">{{ $accepted }} accepted of {{ $totalReferrals }}</span>
@@ -271,7 +271,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Avg Cases Completed</span>
-                    <span class="text-2xl">🏁</span>
+                    <span class="text-2xl"><i class="fas fa-flag-checkered" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">{{ $completed }}</div>
                 <span class="text-xs text-gray-400">Completed in period</span>
@@ -279,7 +279,7 @@
             <div class="stat-card">
                 <div class="flex items-center justify-between">
                     <span class="stat-label">Avg Response Time</span>
-                    <span class="text-2xl">⏱️</span>
+                    <span class="text-2xl"><i class="fas fa-stopwatch" aria-hidden="true"></i></span>
                 </div>
                 <div class="stat-number">
                     @if($avgResponseHours > 48)

@@ -20,7 +20,7 @@
         .ground-step p { font-size: 13px; color: var(--gray-500); margin-top: 6px; }
         .ground-step.completed { background: var(--green-50); border-color: var(--green-200); }
         .ground-step.completed::after {
-            content: '✓'; position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+            content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
             font-size: 28px; color: var(--green-600); font-weight: 800;
         }
     </style>

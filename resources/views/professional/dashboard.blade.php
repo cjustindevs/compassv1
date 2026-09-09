@@ -443,7 +443,7 @@
                 <div class="space-y-1">
                     @foreach($notifications as $notification)
                         <div class="notification-item">
-                            <div class="notif-icon">{{ $notification->type_icon }}</div>
+                            <div class="notif-icon"><x-ui-icon :value="$notification->type_icon" /></div>
                             <div class="flex-1 min-w-0">
                                 <div class="notif-title">{{ $notification->title }}</div>
                                 <div class="notif-msg">{{ \Illuminate\Support\Str::limit($notification->message, 90) }}</div>

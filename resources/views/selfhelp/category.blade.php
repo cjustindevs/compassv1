@@ -115,7 +115,7 @@
 
         <!-- Category header -->
         <div class="category-header">
-            <div class="big-icon" style="background: var(--green-50);">{{ $meta['icon'] }}</div>
+            <div class="big-icon" style="background: var(--green-50);"><x-ui-icon :value="$meta['icon']" /></div>
             <div>
                 <h2 class="font-extrabold text-xl text-gray-800">{{ $meta['label'] }}</h2>
                 <p class="text-sm text-gray-500 mt-1">{{ $resources->count() }} {{ $resources->count() === 1 ? 'resource' : 'resources' }} available
@@ -128,7 +128,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 @foreach($resources as $resource)
                     <a href="{{ route('selfhelp.show', $resource->id) }}" class="resource-card">
-                        <div class="icon-wrap">{{ $resource->icon }}</div>
+                        <div class="icon-wrap"><x-ui-icon :value="$resource->icon" /></div>
                         <h3>{{ $resource->title }}</h3>
                         <p>{{ \Illuminate\Support\Str::limit($resource->description, 90) }}</p>
                         <div class="meta">
@@ -146,7 +146,7 @@
             </div>
         @else
             <div class="empty-state">
-                <div class="text-5xl mb-3">{{ $meta['icon'] }}</div>
+                <div class="text-5xl mb-3"><x-ui-icon :value="$meta['icon']" /></div>
                 <h3 class="font-semibold text-gray-800">No resources found</h3>
                 <p class="text-sm text-gray-500 mt-1">Try a different search, or check back soon.</p>
                 <a href="{{ route('selfhelp.category', $category) }}" class="inline-block mt-4 text-sm font-semibold text-[#04A052] hover:underline">
