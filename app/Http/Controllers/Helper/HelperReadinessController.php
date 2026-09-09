@@ -103,6 +103,10 @@ class HelperReadinessController extends Controller
             'last_readiness_at' => now(),
         ]);
 
+        if ($isAvailable) {
+            app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
+        }
+
         session([
             'helper_readiness' => $status,
             'helper_readiness_id' => $readiness->id
@@ -141,6 +145,9 @@ class HelperReadinessController extends Controller
         $availability = $validated['status'] === 'offline' ? 'unavailable' : $validated['status'];
         $helper->setAvailability($availability, $validated['reason'] ?? null);
 
+        if ($availability === 'available') {
+            app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
+        }
         return back()->with('success', 'Availability updated successfully.');
     }
 

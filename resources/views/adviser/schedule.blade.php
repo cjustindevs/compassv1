@@ -54,6 +54,12 @@
         </div>
     @endif
 
+    @if($errors->any())
+        <div role="alert" class="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700 mb-6">
+            @foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach
+        </div>
+    @endif
+    <p class="text-sm text-gray-500 mb-4">Schedule times use {{ config('app.schedule_timezone') }}. Helpers also need a current readiness assessment and available status to receive sessions.</p>
     <!-- Stats Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div class="stat-card border-l-4 border-l-blue-500">
@@ -81,15 +87,15 @@
         </div>
         <form class="form-maximized grid md:grid-cols-5 gap-3" method="POST" action="{{ route('adviser.schedule.update') }}">
             @csrf
-            <select name="helper_id" class="form-control" required>
+            <select aria-label="Helper" name="helper_id" class="form-control" required>
                 <option value="">Select helper...</option>
                 @foreach($helpers as $helper)
-                    <option value="{{ $helper->id }}">{{ $helper->user?->name ?? $helper->full_name }}</option>
+                    <option value="{{ $helper->id }}" @selected((string) old('helper_id') === (string) $helper->id)>{{ $helper->user?->name ?? $helper->full_name }}</option>
                 @endforeach
             </select>
-            <input type="date" name="date" value="{{ $date->toDateString() }}" class="form-control" required>
-            <input type="time" name="shift_start" class="form-control" required>
-            <input type="time" name="shift_end" class="form-control" required>
+            <input type="date" name="date" value="{{ old('date', $date->toDateString()) }}" aria-label="Schedule date" class="form-control" required>
+            <input type="time" name="shift_start" aria-label="Shift start" value="{{ old('shift_start') }}" class="form-control" required>
+            <input type="time" name="shift_end" aria-label="Shift end" value="{{ old('shift_end') }}" class="form-control" required>
             <button type="submit" class="btn btn-primary whitespace-nowrap">
                 <i class="fas fa-save mr-1"></i>Save
             </button>

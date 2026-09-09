@@ -53,13 +53,20 @@ class ModeratorQueueController extends Controller
             'avg_holding' => $this->getAverageHoldingTime(),
         ];
 
-        $availableHelpers = Helper::where('status', 'available')
-            ->whereHas('latestReadiness', fn ($query) => $query->ready())
-            ->with('latestCompetency')
+        $availableHelpers = Helper::with(['currentReadiness', 'schedule', 'latestCompetency'])
             ->withCount('activeSessions as active_sessions_count')
-            ->orderBy('competency_level', 'desc')
-            ->get()
-            ->filter(fn (Helper $helper) => $helper->canAcceptSessions());
+            ->orderBy('competency_level', 'desc')->get();
+        $availableHelpers->each(function (Helper $helper) {
+            $helper->assignment_reason = match (true) {
+                $helper->is_under_review => 'Under review',
+                ! $helper->isReady() => 'Readiness assessment required',
+                $helper->availability !== 'available' => 'Not marked available',
+                ! $helper->schedule?->isOnDuty() => 'Outside schedule or no schedule',
+                ! $helper->hasCapacity() => 'At session capacity',
+                ! $helper->canAcceptSessions() => 'Unavailable',
+                default => null,
+            };
+        });
 
         return view('moderator.queue', compact('queueItems', 'stats', 'availableHelpers'));
     }

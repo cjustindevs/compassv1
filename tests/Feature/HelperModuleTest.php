@@ -36,6 +36,45 @@ class HelperModuleTest extends TestCase
         $this->helperUser = User::where('role', 'helper')->firstOrFail();
     }
 
+    public function test_schedule_uses_philippine_date_across_utc_midnight(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-09-09 16:05:00', 'UTC'));
+        $schedule = new \App\Models\HelperSchedule([
+            'date' => '2026-09-10', 'shift_start' => '00:03', 'shift_end' => '00:10', 'is_active' => true,
+        ]);
+        $this->assertTrue($schedule->isOnDuty());
+        $schedule->date = '2026-09-09';
+        $this->assertFalse($schedule->isOnDuty());
+    }
+
+    public function test_completed_session_without_report_opens_notes(): void
+    {
+        $session = Session::where('helper_id', $this->helperUser->helper->id)->firstOrFail();
+        $session->update(['session_status' => 'completed']);
+        $session->report()->delete();
+        $this->actingAs($this->helperUser)->get(route('helper.session.notes', $session->id))
+            ->assertOk()->assertSee('Session Documentation');
+    }
+
+    public function test_waiting_queue_is_matched_without_seeker_navigation(): void
+    {
+        Event::fake([NewCaseAssigned::class]);
+        $helper = $this->helperUser->helper;
+        $this->prepareMatchingHelper($helper);
+        $helper->sessions()->update(['session_status' => 'completed']);
+        $seeker = User::where('role', 'seeker')->firstOrFail()->helpSeeker;
+        $queue = \App\Models\QueueRequest::create([
+            'seeker_id' => $seeker->id, 'request_status' => 'waiting',
+            'priority_level' => 'low', 'preferred_session_type' => 'chat', 'request_date' => now(),
+        ]);
+        app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
+        $this->assertSame('assigned', $queue->fresh()->request_status);
+        $count = Session::where('queue_request_id', $queue->id)->count();
+        app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
+        $this->assertSame($count, Session::where('queue_request_id', $queue->id)->count());
+        $this->assertSame(1, $count);
+    }
+
     public function test_helper_dashboard_renders_with_database_stats(): void
     {
         $response = $this->actingAs($this->helperUser)->get(route('helper.dashboard'));
@@ -1395,7 +1434,7 @@ class HelperModuleTest extends TestCase
     private function prepareMatchingHelper(Helper $helper): void
     {
         $helper->update(['availability' => 'available', 'status' => 'available']);
-        \App\Models\HelperSchedule::updateOrCreate(['helper_id' => $helper->id, 'date' => today()], [
+        \App\Models\HelperSchedule::updateOrCreate(['helper_id' => $helper->id, 'date' => now(config('app.schedule_timezone'))->startOfDay()], [
             'shift_start' => '00:00:00', 'shift_end' => '23:59:59', 'is_active' => true,
             'created_by' => $helper->user_account_id,
         ]);

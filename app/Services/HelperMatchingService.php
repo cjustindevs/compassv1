@@ -104,6 +104,14 @@ class HelperMatchingService
         ];
     }
 
+    public function matchWaitingRequests(): void
+    {
+        QueueRequest::where('request_status', 'waiting')
+            ->orderByRaw("CASE priority_level WHEN 'emergency' THEN 0 WHEN 'high' THEN 1 WHEN 'moderate' THEN 2 ELSE 3 END")
+            ->orderBy('request_date')->get()
+            ->each(fn (QueueRequest $queue) => $this->processQueueRequest($queue));
+    }
+
     public function processQueueRequest(QueueRequest $queue): ?Session
     {
         if ($queue->request_status !== 'waiting') {

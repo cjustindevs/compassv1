@@ -48,12 +48,12 @@ class HelperSchedule extends Model
 
     public function isWithinShift(): bool
     {
-        if (! $this->is_active || ! $this->date?->isToday()) {
+        $now = now(config('app.schedule_timezone', 'Asia/Manila'));
+        if (! $this->is_active || $this->date?->format('Y-m-d') !== $now->toDateString()) {
             return false;
         }
-        $now = now();
-        $start = now()->setTimeFromTimeString((string) $this->shift_start);
-        $end = now()->setTimeFromTimeString((string) $this->shift_end);
+        $start = $now->copy()->setTimeFromTimeString((string) $this->shift_start);
+        $end = $now->copy()->setTimeFromTimeString((string) $this->shift_end);
 
         return $now->between($start, $end);
     }

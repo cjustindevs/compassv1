@@ -375,6 +375,20 @@
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        .feedback-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 24px; }
+        .feedback-field { min-width: 0; padding: 16px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fafcfb; }
+        .feedback-form label { display: block; color: #374151; font-size: 14px; font-weight: 600; line-height: 1.5; margin-bottom: 10px; }
+        #evaluationForm .feedback-control { display: block; width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 10px; background-color: white; color: #163b2d; font-family: Inter, sans-serif; font-size: 14px; outline: none; }
+        #evaluationForm .feedback-control:focus { border-color: #16a34a; box-shadow: 0 0 0 3px #16a34a22; }
+        #evaluationForm .feedback-control[aria-invalid="true"] { border-color: #dc2626; }
+        .feedback-comments { margin-top: 24px; }
+        #evaluationForm textarea.feedback-control { min-height: 112px; resize: vertical; }
+        .feedback-actions { display: flex; justify-content: flex-end; border-top: 1px solid #e5e7eb; margin-top: 24px; padding-top: 20px; }
+        @media (max-width: 700px) {
+            .feedback-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+            #evaluationForm .feedback-control { font-size: 16px; }
+            .feedback-actions .btn-primary { width: 100%; }
+        }
     </style>
 </head>
 <body class="compass-compact">
@@ -431,25 +445,31 @@
                 </div>
             </div>
 
-            <form id="evaluationForm" class="form-container form-maximized" method="POST" action="{{ route('session.evaluation.process') }}">
+            <form id="evaluationForm" class="feedback-form" method="POST" action="{{ route('session.evaluation.process') }}">
                 @csrf
                 <input type="hidden" name="session_id" value="{{ $sessionId }}">
                 <p class="mb-4">Rate each item from 1 (lowest) to 10 (highest).</p>
-                <div class="form-row-3">
+                <div class="feedback-grid">
                 @foreach(['helpfulness_score' => 'How helpful was the session?', 'comfort_score' => 'How comfortable did you feel?', 'feeling_after_score' => 'How do you feel after the session?', 'understood_score' => 'How well did you feel understood?', 'reuse_score' => 'How likely are you to use this service again?'] as $field => $label)
-                    <label class="block mb-4" for="{{ $field }}">{{ $label }}
-                        <select id="{{ $field }}" name="{{ $field }}" class="form-input" required>
+                    <div class="feedback-field">
+                    <label for="{{ $field }}">{{ $label }} <span class="text-red-500" aria-hidden="true">*</span></label>
+                        <select id="{{ $field }}" name="{{ $field }}" class="feedback-control" aria-invalid="{{ $errors->has($field) ? 'true' : 'false' }}" @error($field) aria-describedby="{{ $field }}-error" @enderror required>
                             <option value="">Select a rating</option>
                             @for($score = 1; $score <= 10; $score++)
                                 <option value="{{ $score }}" @selected(old($field) == $score)>{{ $score }}</option>
                             @endfor
                         </select>
-                        @error($field)<span class="text-red-600">{{ $message }}</span>@enderror
-                    </label>
+                        @error($field)<span id="{{ $field }}-error" class="text-sm text-red-600">{{ $message }}</span>@enderror
+                    </div>
                 @endforeach
                 </div>
-                <label class="block mb-4">Comments (optional)<textarea name="comments" class="form-input" maxlength="500">{{ old('comments') }}</textarea></label>
-                <button type="submit" class="btn-primary">Submit feedback</button>
+                <div class="feedback-comments">
+                    <label for="feedback-comments">Comments <span class="text-gray-400 font-normal">(optional)</span></label>
+                    <textarea id="feedback-comments" name="comments" class="feedback-control" rows="4" maxlength="500" aria-describedby="comments-help" placeholder="What worked well, or what could we improve?">{{ old('comments') }}</textarea>
+                    <p id="comments-help" class="text-xs text-gray-500 mt-2">Up to 500 characters.</p>
+                    @error('comments')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
+                </div>
+                <div class="feedback-actions"><button type="submit" class="btn-primary"><i class="fas fa-paper-plane mr-2" aria-hidden="true"></i>Submit feedback</button></div>
             </form>
         </div>
 

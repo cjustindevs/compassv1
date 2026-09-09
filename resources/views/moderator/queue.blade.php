@@ -269,8 +269,8 @@
                                 <select name="helper_id" class="assign-select" required>
                                     <option value="">Select helper...</option>
                                     @foreach($availableHelpers as $helper)
-                                        <option value="{{ $helper->id }}">
-                                            {{ $helper->full_name }} · {{ $helper->competency_level }}/5
+                                        <option @disabled($helper->assignment_reason) value="{{ $helper->id }}">
+                                            {{ $helper->full_name }}{{ $helper->assignment_reason ? ' - '.$helper->assignment_reason : '' }} · {{ $helper->competency_level }}/5
                                         </option>
                                     @endforeach
                                 </select>
@@ -318,8 +318,8 @@
                             <input type="hidden" name="queue_id" value="{{ $item->id }}">
                             <select name="helper_id" class="assign-select">
                                 @foreach($availableHelpers as $helper)
-                                    <option value="{{ $helper->id }}" {{ $item->assigned_helper_id === $helper->id ? 'selected' : '' }}>
-                                        {{ $helper->full_name }}
+                                    <option @disabled($helper->assignment_reason) value="{{ $helper->id }}" {{ $item->assigned_helper_id === $helper->id ? 'selected' : '' }}>
+                                        {{ $helper->full_name }}{{ $helper->assignment_reason ? ' - '.$helper->assignment_reason : '' }}
                                     </option>
                                 @endforeach
                             </select>

@@ -179,7 +179,8 @@ class AdviserHelperController extends Controller
     public function manageSchedule(Request $request): View
     {
         $helperIds = Helper::where('adviser_id', Auth::user()->adviser?->id)->pluck('id');
-        $date = Carbon::parse($request->get('date', now()->toDateString()))->startOfDay();
+        $request->validate(['date' => 'nullable|date_format:Y-m-d']);
+        $date = Carbon::parse($request->get('date', now(config('app.schedule_timezone'))->toDateString()))->startOfDay();
         $schedules = HelperSchedule::whereIn('helper_id', $helperIds)->whereDate('date', $date->toDateString())->with(['helper.user'])->get();
         $helpers = Helper::whereIn('id', $helperIds)->with(['user', 'latestReadiness'])->orderBy('first_name')->get();
 
@@ -208,7 +209,7 @@ class AdviserHelperController extends Controller
     {
         $validated = $request->validate([
             'helper_id' => 'required|exists:helpers,id',
-            'date' => 'required|date',
+            'date' => 'required|date_format:Y-m-d',
             'shift_start' => 'required|date_format:H:i',
             'shift_end' => 'required|date_format:H:i|after:shift_start',
             'is_recurring' => 'nullable|boolean',
@@ -219,9 +220,10 @@ class AdviserHelperController extends Controller
             ->where('adviser_id', Auth::user()->adviser?->id)
             ->firstOrFail();
 
-        HelperSchedule::updateOrCreate(
-            ['helper_id' => $helper->id, 'date' => $validated['date']],
-            [
+        $schedule = HelperSchedule::where('helper_id', $helper->id)
+            ->whereDate('date', $validated['date'])->first()
+            ?? new HelperSchedule(['helper_id' => $helper->id, 'date' => $validated['date']]);
+        $schedule->fill([
                 'shift_start' => $validated['shift_start'],
                 'shift_end' => $validated['shift_end'],
                 'is_recurring' => (bool) ($validated['is_recurring'] ?? false),
@@ -230,10 +232,12 @@ class AdviserHelperController extends Controller
                 'approved_by' => Auth::user()->adviser?->id,
                 'approved_at' => now(),
                 'is_active' => true,
-            ]
-        );
+        ])->save();
 
-        return back()->with('success', 'Schedule updated successfully.');
+        app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
+
+        return redirect()->route('adviser.schedule', ['date' => $validated['date']])
+            ->with('success', 'Schedule updated successfully.');
     }
 
     public function assign(Request $request, int $id): RedirectResponse

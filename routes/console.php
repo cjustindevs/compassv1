@@ -58,3 +58,6 @@ Schedule::command('identity-vault:purge-expired')->daily()->withoutOverlapping()
         ->where('start_time', '<=', now()->subMinutes(90))
         ->eachById(fn ($session) => app(\App\Services\SessionDurationService::class)->expire($session));
 })->everyMinute()->name('expire-chat-sessions')->withoutOverlapping();
+
+Schedule::call(fn () => app(\App\Services\HelperMatchingService::class)->matchWaitingRequests())
+    ->everyMinute()->name('match-waiting-seekers')->withoutOverlapping();

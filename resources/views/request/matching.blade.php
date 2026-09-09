@@ -633,3 +633,12 @@
 
 </body>
 </html>
+
+@if($session->session_status === \App\Models\Session::STATUS_WAITING)
+<script>
+// Re-enter the server matching check while waiting, including local setups without a scheduler.
+setInterval(() => {
+    if (!document.hidden && !document.querySelector('dialog[open]')) window.location.reload();
+}, 15000);
+</script>
+@endif

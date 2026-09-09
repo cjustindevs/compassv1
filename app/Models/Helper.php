@@ -144,7 +144,7 @@ class Helper extends Model
     public function schedule(): HasOne
     {
         return $this->hasOne(HelperSchedule::class, 'helper_id', 'id')
-            ->whereDate('date', now()->toDateString())
+            ->whereDate('date', now(config('app.schedule_timezone', 'Asia/Manila'))->toDateString())
             ->where('is_active', true);
     }
 

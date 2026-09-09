@@ -16,7 +16,7 @@ class ModeratorScheduleController extends Controller
 {
     public function index(Request $request): View
     {
-        $date = Carbon::parse($request->get('date', now()->toDateString()))->toDateString();
+        $date = Carbon::parse($request->get('date', now(config('app.schedule_timezone'))->toDateString()))->toDateString();
 
         $helpers = Helper::with('latestReadiness')->orderBy('first_name')->get();
 
@@ -76,6 +76,7 @@ class ModeratorScheduleController extends Controller
             return back()->with('error', 'Schedule conflict detected for ' . $helper->full_name . '.');
         }
 
+        \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $helper) {
         CalendarEvent::create([
             'title' => 'Duty: ' . $helper->full_name,
             'description' => $validated['description'] ?? null,
@@ -86,6 +87,14 @@ class ModeratorScheduleController extends Controller
             'created_by' => Auth::id(),
             'color' => '#04A052',
         ]);
+
+        \App\Models\HelperSchedule::create([
+            'helper_id' => $helper->id, 'date' => $validated['event_date'],
+            'shift_start' => $validated['start_time'], 'shift_end' => $validated['end_time'],
+            'is_active' => true, 'created_by' => Auth::id(),
+        ]);
+        });
+        app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
 
         return redirect()->route('moderator.schedules', ['date' => $validated['event_date']])
             ->with('success', 'Helper duty schedule created.');

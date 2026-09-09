@@ -28,7 +28,7 @@
         }
         .sidebar-nav { flex: 1; overflow-y: auto; overflow-x: hidden; }
         .sidebar-overlay { display: none; }
-        .main-content { margin-left: 260px; min-height: 100vh; }
+        .main-content { margin-left: var(--sidebar-w); min-height: 100vh; }
         .sidebar.collapsed,
         html.sidebar-collapsed-preload .sidebar { width: var(--sidebar-w-collapsed); }
         html.sidebar-collapsed-preload .main-content { margin-left: var(--sidebar-w-collapsed); }

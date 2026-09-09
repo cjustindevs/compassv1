@@ -21,6 +21,34 @@ class ModeratorAdviserModuleTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_queue_explains_why_a_created_helper_cannot_be_assigned(): void
+    {
+        [$user] = $this->moderatorUser();
+        $helper = $this->helper();
+        $this->actingAs($user)->get(route('moderator.queue'))->assertOk()
+            ->assertViewHas('availableHelpers', fn ($helpers) => $helpers->contains('id', $helper->id)
+                && $helpers->firstWhere('id', $helper->id)->assignment_reason === 'Readiness assessment required');
+    }
+
+    public function test_adviser_schedule_save_displays_the_saved_date_and_updates_existing_shift(): void
+    {
+        [$user, $adviser] = $this->adviserUser('schedule@example.com');
+        $helper = $this->helper($adviser);
+        $date = now()->addDays(2)->toDateString();
+        $payload = ['helper_id' => $helper->id, 'date' => $date, 'shift_start' => '09:00', 'shift_end' => '12:00'];
+        $this->actingAs($user)->from(route('adviser.schedule'))->post(route('adviser.schedule.update'), $payload)
+            ->assertRedirect(route('adviser.schedule', ['date' => $date]));
+        $this->get(route('adviser.schedule', ['date' => $date]))->assertOk()->assertSee('09:00 AM');
+        $payload['shift_start'] = '10:00';
+        $this->post(route('adviser.schedule.update'), $payload)->assertSessionHasNoErrors();
+        $this->assertSame(1, \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
+        $this->get(route('adviser.schedule', ['date' => $date]))->assertOk()->assertSee('10:00 AM');
+        $payload['shift_end'] = '08:00';
+        $this->from(route('adviser.schedule'))->post(route('adviser.schedule.update'), $payload)
+            ->assertSessionHasErrors('shift_end');
+        $this->get(route('adviser.schedule'))->assertOk()->assertSee('role="alert"', false);
+    }
+
     public function test_moderator_assignment_requires_current_ready_helper_unless_emergency_override(): void
     {
         [$moderatorUser] = $this->moderatorUser();
@@ -76,6 +104,7 @@ class ModeratorAdviserModuleTest extends TestCase
         $this->actingAs($moderatorUser)->post(route('moderator.schedules.store'), $payload)
             ->assertRedirect(route('moderator.schedules', ['date' => $payload['event_date']]));
 
+        $this->assertDatabaseHas('helper_schedules', ['helper_id' => $helper->id, 'shift_start' => '09:00', 'shift_end' => '12:00']);
         $this->assertDatabaseHas('calendar_events', [
             'title' => 'Duty: ' . $helper->full_name,
             'event_type' => CalendarEvent::TYPE_MEETING,

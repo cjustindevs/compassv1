@@ -51,7 +51,7 @@
                         <label class="form-label">Risk level assessed</label>
                         <select name="risk_level_assessed" class="form-control">
                             @foreach(['low' => 'Low', 'moderate' => 'Moderate', 'high' => 'High', 'emergency' => 'Emergency'] as $value => $label)
-                                <option value="{{ $value }}" @selected(old('risk_level_assessed', $report->risk_level_assessed) === $value)>{{ $label }}</option>
+                                <option value="{{ $value }}" @selected(old('risk_level_assessed', $report?->risk_level_assessed) === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>

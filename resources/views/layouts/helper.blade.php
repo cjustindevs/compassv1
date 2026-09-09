@@ -27,8 +27,18 @@
     </script>
 
     @yield('styles')
+    <style>
+        body.helper-layout > .main-content { margin-left: var(--sidebar-w); padding: 24px 28px 40px; min-width: 0; width: auto; }
+        body.helper-layout > .sidebar.collapsed ~ .main-content,
+        html.sidebar-collapsed-preload body.helper-layout > .main-content { margin-left: var(--sidebar-w-collapsed); }
+        .helper-layout .main-content > * { min-width: 0; max-width: 100%; }
+        .helper-layout .top-bar { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+        @media (max-width: 768px) {
+            body.helper-layout > .main-content { margin-left: 0; padding: 20px 16px 88px; }
+        }
+    </style>
 </head>
-<body class="compass-compact font-sans antialiased">
+<body class="helper-layout compass-compact font-sans antialiased">
 
     @include('layouts.partials.helper-sidebar')
 
