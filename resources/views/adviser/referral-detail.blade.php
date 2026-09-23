@@ -90,6 +90,7 @@
 @endpush
 
 @section('content')
+<div class="adviser-page-content">
     @if ($referral->session?->risk_level === 'emergency')
         <form class="form-maximized card mb-4" method="POST" action="{{ route('identity.emergency-review', $referral->session) }}">
             @csrf
@@ -103,10 +104,15 @@
         <form class="form-maximized card mb-4" method="POST" action="{{ route('identity.release', $referral) }}">
             @csrf
             <p>Authorize release of the seeker's stored identity to the assigned psychology professional. You will not see the identity fields.</p>
+            <fieldset class="my-3 space-y-2"><legend class="font-semibold">Select only the necessary information</legend>
+                @foreach(\App\Services\IdentityVaultService::FIELDS as $field)
+                    <label class="flex items-center gap-2"><input type="checkbox" name="fields[]" value="{{ $field }}" @checked(in_array($field,['real_name','phone_number']))> {{ ucwords(str_replace('_',' ',$field)) }}</label>
+                @endforeach
+            </fieldset>
+            <label class="block my-3">Purpose of this disclosure<textarea name="reason" required minlength="20" maxlength="1000" class="block w-full rounded border-gray-300" placeholder="Explain why these fields are needed for this referral."></textarea></label>
             <button class="btn-primary" type="submit">Authorize identity release</button>
         </form>
     @endif
-<div class="adviser-page-content">
         <!-- Top Bar -->
         <div class="flex items-center gap-4 mb-6">
             <div>
@@ -280,4 +286,22 @@
         document.addEventListener('DOMContentLoaded', function () {
 });
     </script>
+
+    @if($referral->clarification_requested_at)
+    <section class="card p-5 my-4" aria-label="Referral clarification">
+        <h3 class="font-semibold">{{ $referral->clarification_received_at ? 'Clarification received' : 'Awaiting Helper clarification' }}</h3>
+        <p class="text-sm mt-2">{{ $referral->clarification_question }}</p>
+        <p class="text-sm mt-2">{{ $referral->clarification_response }}</p>
+    </section>
+    @endif
+    <x-supervision-history :record="$referral" />
+@if($referral->approved_at && $referral->help_seeker_consent && in_array($referral->status,['pending_professional','no_professional_available']))
+<section class="card p-5 my-4"><h3 class="font-semibold">Professional coordination</h3>
+<p class="text-sm text-gray-500 mb-3">Approval and Help Seeker consent are recorded. Choose an available professional.</p>
+<form method="POST" action="{{ route('adviser.referral.assign',$referral->id) }}" class="space-y-3">@csrf
+<label for="professional">Professional</label><select name="professional_id" id="professional" required class="w-full rounded-lg border-gray-300"><option value="">Choose a professional</option>@foreach($professionals as $professional)<option value="{{ $professional->id }}">{{ $professional->full_name }}</option>@endforeach</select>
+<label for="assignmentReason">Assignment reason</label><textarea name="reason" id="assignmentReason" required maxlength="1000" class="w-full rounded-lg border-gray-300">{{ old('reason') }}</textarea>
+<button class="btn btn-primary" @disabled($professionals->isEmpty())>Assign professional</button>
+@if($professionals->isEmpty())<p>No active professional is currently available.</p>@endif
+</form></section>@endif
 @endsection

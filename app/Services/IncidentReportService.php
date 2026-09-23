@@ -30,11 +30,16 @@ class IncidentReportService
 
     public function createIncidentReport(array $data): IncidentReport
     {
+        $actor=Auth::user(); abort_unless($actor && $actor->is_active && in_array($actor->role,['helper','adviser','moderator']),403);
+        if (!empty($data['session_id'])) {
+            $session=\App\Models\Session::findOrFail($data['session_id']);
+            abort_unless(($actor->role==='helper' && $actor->helper?->id===$session->helper_id) || ($actor->role==='adviser' && $actor->adviser?->id===$session->helper?->adviser_id) || $actor->role==='moderator',403);
+        }
         $this->validateIncidentData($data);
 
         $incident = IncidentReport::create([
             'session_id' => $data['session_id'] ?? null,
-            'user_account_id' => $data['user_account_id'] ?? Auth::id(),
+            'user_account_id' => Auth::id(),
             'moderator_id' => $data['moderator_id'] ?? null,
             'incident_category' => $data['category'] ?? $data['incident_category'],
             'description' => $data['description'],
@@ -55,7 +60,7 @@ class IncidentReportService
 
     public function reviewIncident(IncidentReport $incident, array $data): IncidentReport
     {
-        $reviewerId = $data['reviewer_id'] ?? Auth::id();
+        $reviewerId = Auth::id();
         $this->validateReviewerAuthorization($reviewerId);
 
         $incident->forceFill([
@@ -70,6 +75,7 @@ class IncidentReportService
 
     public function escalateIncident(IncidentReport $incident, array $data): IncidentReport
     {
+        abort_unless(in_array(Auth::user()?->role,['adviser','moderator']) && Auth::user()?->is_active,403);
         $incident->forceFill([
             'status' => 'escalated',
             'escalated_at' => now(),
@@ -84,6 +90,7 @@ class IncidentReportService
 
     public function resolveIncident(IncidentReport $incident, array $data): IncidentReport
     {
+        abort_unless(in_array(Auth::user()?->role,['adviser','moderator']) && Auth::user()?->is_active,403);
         $incident->forceFill([
             'status' => 'resolved',
             'resolved_at' => now(),
@@ -100,6 +107,7 @@ class IncidentReportService
 
     public function closeIncident(IncidentReport $incident, array $data): IncidentReport
     {
+        abort_unless(in_array(Auth::user()?->role,['adviser','moderator']) && Auth::user()?->is_active,403);
         $incident->forceFill([
             'status' => 'closed',
             'closed_at' => now(),

@@ -20,6 +20,7 @@ use App\Services\HelperMatchingService;
 use App\Traits\BroadcastsSafely;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class HelperSessionController extends Controller
 {
@@ -42,16 +43,6 @@ class HelperSessionController extends Controller
                 ->with('error', 'This session is no longer pending.');
         }
 
-        if ($session->pre_session_brief_expires_at && now()->gt($session->pre_session_brief_expires_at)) {
-            $session->update([
-                'session_status' => Session::STATUS_ACTIVE,
-                'start_time' => now(),
-            ]);
-
-            return redirect()->route('helper.session.chat', $session->id)
-                ->with('info', 'Pre-session brief time expired. Session has been automatically started.');
-        }
-
         $screeningSummary = $this->getScreeningSummary($session->seeker);
         $matchingDetails = app(HelperMatchingService::class)->getMatchingDetails($helper);
         $timeRemaining = $session->pre_session_brief_expires_at
@@ -72,10 +63,11 @@ class HelperSessionController extends Controller
                 ->with('error', 'This session is no longer pending.');
         }
 
-        $session->update([
-            'session_status' => Session::STATUS_ACTIVE,
-            'start_time' => now(),
-        ]);
+        try {
+            $session = app(\App\Services\SeekerWorkflowService::class)->start(Auth::user(), $session);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            return redirect()->route('helper.session.pre-assessment', $id)->with('error', $e->getMessage());
+        }
 
         return redirect()->route('helper.session.chat', $session->id)
             ->with('success', 'Session started. You can now communicate with the help seeker.');
@@ -187,6 +179,7 @@ class HelperSessionController extends Controller
      */
     public function voice(int $id)
     {
+        abort(503,'Voice service is unavailable.');
         $helper = Auth::user()->helper;
 
         $session = Session::with(['seeker'])
@@ -207,6 +200,7 @@ class HelperSessionController extends Controller
      */
     public function startVoice(Request $request, int $id)
     {
+        abort(503,'Voice service is unavailable.');
         $helper = Auth::user()->helper;
 
         $session = Session::where('helper_id', $helper->id)->findOrFail($id);
@@ -221,6 +215,7 @@ class HelperSessionController extends Controller
      */
     public function endVoice(Request $request, int $id)
     {
+        abort(503,'Voice service is unavailable.');
         $helper = Auth::user()->helper;
 
         $session = Session::with(['seeker'])
@@ -264,6 +259,7 @@ class HelperSessionController extends Controller
             ->findOrFail($id);
 
         $report = $session->report;
+        $revisions = $report ? DB::table('session_report_revisions')->where('report_id', $report->id)->latest('id')->get() : collect();
 
         $skills = [
             'active_listening' => 'Active Listening',
@@ -274,7 +270,7 @@ class HelperSessionController extends Controller
             'referral' => 'Referral',
         ];
 
-        return view('helper.notes', compact('session', 'report', 'skills'));
+        return view('helper.notes', compact('session', 'report', 'skills', 'revisions'));
     }
 
     /**
@@ -282,59 +278,42 @@ class HelperSessionController extends Controller
      */
     public function storeNotes(Request $request, int $id)
     {
-        $helper = Auth::user()->helper;
-
-        $session = Session::with(['seeker'])
-            ->where('helper_id', $helper->id)
-            ->findOrFail($id);
-
         $validated = $request->validate([
             'help_seeker_condition' => 'nullable|string|max:500',
             'session_summary' => 'required|string|max:2000',
             'observations' => 'required|string|max:2000',
             'actions_taken' => 'required|string|max:2000',
             'risk_level_assessed' => 'nullable|in:low,moderate,high,emergency',
-            'personal_reflection' => 'required|string|max:2000',
-            'skills_applied' => 'nullable|array',
-            'skills_applied.*' => 'string|max:50',
-            'referral_recommended' => 'nullable|boolean',
+            'session_result' => 'required|in:stable,needs_follow_up,needs_referral',
+            'follow_up_plan' => ['nullable', 'string', 'max:2000', \Illuminate\Validation\Rule::requiredIf(in_array($request->input('session_result'), ['needs_follow_up', 'needs_referral'], true))],
+            'correction_reason' => 'nullable|string|max:1000',
         ]);
 
-        app(\App\Services\SessionDurationService::class)->expire($session);
+        $session = Session::where('helper_id', Auth::user()->helper->id)->findOrFail($id);
 
-        SessionReport::updateOrCreate(
-            ['session_id' => $session->id],
-            [
-                'help_seeker_condition' => $validated['help_seeker_condition'] ?? null,
-                'session_summary' => $validated['session_summary'],
-                'observations' => $validated['observations'] ?? null,
-                'actions_taken' => $validated['actions_taken'] ?? null,
-                'risk_level_assessed' => $validated['risk_level_assessed'] ?? null,
-                'personal_reflection' => $validated['personal_reflection'] ?? null,
-                'skills_applied' => $validated['skills_applied'] ?? [],
-                'referral_recommended' => $request->boolean('referral_recommended'),
-                'documented_at' => now(),
-                'documentation_late' => $session->end_time ? $session->end_time->lt(now()->subHours(24)) : false,
-            ]
-        );
-
-        // Helper observations remain in the report for adviser review; they do not overwrite screening classification.
-
-        if (! in_array($session->session_status, [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED], true)) {
-            $endedAt = $session->end_time ?: now();
-
-            $session->update([
-                'session_status' => Session::STATUS_COMPLETED,
-                'completion_status' => 'completed',
-                'end_time' => $endedAt,
-                'duration' => $session->duration ?: ($session->start_time ? max(1, (int) $session->start_time->diffInMinutes($endedAt)) : 0),
-            ]);
-
-            $helper->syncSessionCounters();
-            Helper::where('id', $helper->id)->update(['status' => 'available']);
-        }
+        app(\App\Services\HelperDocumentationService::class)->save(Auth::user(), $session, $validated);
 
         return back()->with('success', 'Session notes saved successfully.');
+    }
+
+    /**
+     * Store the helper's personal reflection and applied skills. The reflection
+     * is private between the helper and their adviser.
+     */
+    public function storeReflection(Request $request, int $id)
+    {
+        $validated = $request->validate([
+            'personal_reflection' => 'required|string|max:2000',
+            'skills_applied' => 'required|array|min:1',
+            'skills_applied.*' => 'string|max:50',
+            'correction_reason' => 'nullable|string|max:1000',
+        ]);
+
+        $session = Session::where('helper_id', Auth::user()->helper->id)->findOrFail($id);
+
+        app(\App\Services\HelperDocumentationService::class)->save(Auth::user(), $session, $validated, true);
+
+        return back()->with('success', 'Personal reflection saved.');
     }
 
     /**
@@ -354,17 +333,30 @@ class HelperSessionController extends Controller
             'immediate_action' => 'nullable|string|max:500',
         ]);
 
-        $incident = IncidentReport::create([
-            'session_id' => $session->id,
-            'user_account_id' => $session->seeker?->user_account_id,
-            'incident_category' => 'emergency_flag',
-            'description' => $validated['description'],
-            'immediate_action' => $validated['immediate_action'] ?? null,
-            'risk_level' => 'emergency',
-            'status' => 'open',
-        ]);
+        $incident = IncidentReport::where('session_id', $session->id)
+            ->where('incident_category', 'emergency_flag')
+            ->where('status', 'open')
+            ->lockForUpdate()
+            ->first();
 
-        $session->update(['risk_level' => 'emergency']);
+        if ($incident) {
+            $incident->forceFill([
+                'description' => $validated['description'],
+                'immediate_action' => $validated['immediate_action'] ?? $incident->immediate_action,
+            ])->save();
+        } else {
+            $incident = IncidentReport::create([
+                'session_id' => $session->id,
+                'user_account_id' => $session->seeker?->user_account_id,
+                'incident_category' => 'emergency_flag',
+                'description' => $validated['description'],
+                'immediate_action' => $validated['immediate_action'] ?? null,
+                'risk_level' => 'emergency',
+                'status' => 'open',
+            ]);
+        }
+
+        app(\App\Services\EmergencyEscalationService::class)->escalateEmergency($session,$session->seeker,['reason'=>'Helper reported immediate safety concern','preserve_classification'=>true]);
 
         $this->notifyStaff(
             ['moderator', 'adviser'],
@@ -377,6 +369,23 @@ class HelperSessionController extends Controller
         // Real-time alert for advisers
         foreach (User::where('role', 'adviser')->pluck('id') as $adviserUserId) {
             $this->broadcastSafely(new EmergencyTriggered($session, $incident, $adviserUserId));
+        }
+
+        // Real-time minimal alert for moderators (no clinical/identity data).
+        foreach (User::where('role', 'moderator')->pluck('id') as $moderatorUserId) {
+            $this->broadcastSafely(new ModeratorAlert(
+                $moderatorUserId,
+                'emergency',
+                'Emergency flagged',
+                'Emergency flagged in session #' . $session->id,
+                '/moderator/emergency',
+                [
+                    'session_id' => $session->id,
+                    'alert_id' => $incident->id,
+                    'risk_level' => 'emergency',
+                    'occurred_at' => now()->toIso8601String(),
+                ]
+            ));
         }
 
         if ($session->seeker?->user_account_id) {
@@ -394,7 +403,35 @@ class HelperSessionController extends Controller
     }
 
     /**
-     * Recommend a professional referral for the seeker.
+     * Request seeker consent for a professional referral (consent-first flow).
+     * Creates the referral in the 'consent_requested' state so the seeker can
+     * review and either accept or decline before the full referral is submitted.
+     */
+    public function requestReferralConsent(Request $request, int $id)
+    {
+        $helper = Auth::user()->helper;
+
+        $session = Session::with(['seeker'])
+            ->where('helper_id', $helper->id)
+            ->findOrFail($id);
+
+        abort_unless($session->isActive() || $session->isCompleted(), 409);
+
+        $validated = $request->validate([
+            'summary' => 'required|string|max:500',
+        ]);
+
+        $referral = app(\App\Services\ReferralManagementService::class)->requestConsent($session, ['summary' => $validated['summary']]);
+
+        if (! $request->expectsJson()) {
+            return back()->with('success', 'Referral consent requested. The seeker will be prompted to review it.');
+        }
+
+        return response()->json(['success' => true, 'referral_id' => $referral->id, 'status' => $referral->status]);
+    }
+
+    /**
+     * Submit the full referral once the seeker has accepted referral consent.
      */
     public function recommendReferral(Request $request, int $id)
     {
@@ -405,24 +442,21 @@ class HelperSessionController extends Controller
             ->findOrFail($id);
 
         $validated = $request->validate([
+            'referral_id' => 'required|exists:referrals,id',
             'referral_reason' => 'required|string|max:1000',
             'priority_level' => 'required|in:low,moderate,high,emergency',
         ]);
 
         abort_unless($session->isActive() || $session->isCompleted(), 409);
-        abort_if(Referral::where('session_id', $session->id)->whereNotIn('status', ['closed', 'declined'])->exists(), 409, 'A referral already exists.');
 
-        $referral = Referral::create([
-            'session_id' => $session->id,
-            'helper_id' => $helper->id,
-            'priority_level' => $validated['priority_level'],
-            'help_seeker_consent' => false,
-            'identity_disclosed' => false,
+        $referral = Referral::where('id', $validated['referral_id'])
+            ->where('session_id', $session->id)
+            ->where('helper_id', $helper->id)
+            ->firstOrFail();
+
+        $referral = app(\App\Services\ReferralManagementService::class)->submitAfterConsent($referral, [
             'referral_reason' => $validated['referral_reason'],
-            'referral_date' => now(),
-            'status' => 'pending_adviser',
-            'adviser_id' => $helper->adviser_id,
-            'consent_requested_at' => null,
+            'priority_level' => $validated['priority_level'],
         ]);
 
         $this->notifyStaff(
@@ -450,6 +484,13 @@ class HelperSessionController extends Controller
         }
 
         return back()->with('success', 'Referral recommended. An adviser will review it shortly. Referral #' . $referral->id . ' recorded.');
+    }
+
+    public function clarifyReferral(Request $request, int $id)
+    {
+        $data = $request->validate(['response'=>'required|string|min:10|max:2000']);
+        app(\App\Services\ReferralManagementService::class)->clarify(\App\Models\Referral::findOrFail($id), $data['response'], true);
+        return back()->with('success','Your clarification was sent to the Adviser.');
     }
 
     public function referralStatus(int $id)
@@ -496,29 +537,7 @@ class HelperSessionController extends Controller
         app(\App\Services\SessionDurationService::class)->expire($session);
 
         if (! $session->isCompleted()) {
-            $now = now();
-            $duration = $session->start_time
-                ? max(1, (int) $session->start_time->diffInMinutes($now))
-                : 0;
-
-            if ($duration > 90) {
-                \App\Models\AuditLog::create([
-                    'user_account_id' => auth()->id(),
-                    'action' => 'session_duration_limit_exceeded',
-                    'module' => 'helper',
-                    'description' => 'Session #' . $session->id . ' lasted ' . $duration . ' minutes, exceeding the 90-minute helper policy limit.',
-                ]);
-            }
-
-            $session->update([
-                'session_status' => 'completed',
-                'completion_status' => 'completed',
-                'end_time' => $now,
-                'duration' => $duration,
-            ]);
-
-            $helper->decrementShiftSessions();
-            Helper::where('id', $helper->id)->update(['status' => 'available']);
+            if (!app(\App\Services\SessionDurationService::class)->complete($session)) return redirect()->route('helper.session.notes',$id);
 
             // Tell the seeker (and anyone watching the room) the session has ended.
             $this->broadcastSafely(new SessionEnded($session, 'helper'));

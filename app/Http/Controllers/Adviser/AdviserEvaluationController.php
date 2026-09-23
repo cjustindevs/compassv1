@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers\Adviser;
 
-use App\Http\Controllers\Controller;
-use App\Models\SessionReport;
-use App\Models\HelperCompetencyHistory;
-use App\Models\Helper;
-use App\Models\Session;
-use App\Models\AdviserFeedback;
-use App\Models\Notification;
 use App\Events\EvaluationCompleted;
+use App\Http\Controllers\Controller;
+use App\Models\AdviserFeedback;
+use App\Models\Helper;
+use App\Models\HelperCompetencyHistory;
+use App\Models\Notification;
+use App\Models\Session;
+use App\Models\SessionReport;
+use App\Services\SupportAudit;
 use App\Traits\BroadcastsSafely;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AdviserEvaluationController extends Controller
 {
@@ -30,14 +32,14 @@ class AdviserEvaluationController extends Controller
             ->where('adviser_reviewed', false)
             ->whereHas('session', fn ($query) => $query->whereIn('helper_id', $helperIds))
             ->orderBy('created_at', 'asc')
-            ->paginate(15);
+            ->paginate(15, ['*'], 'pending_page')->withQueryString();
 
         // Get completed evaluations for reference
         $completedReports = SessionReport::with(['session', 'session.seeker', 'session.helper'])
             ->where('adviser_reviewed', true)
             ->whereHas('session', fn ($query) => $query->whereIn('helper_id', $helperIds))
             ->orderBy('updated_at', 'desc')
-            ->paginate(15);
+            ->paginate(15, ['*'], 'completed_page')->withQueryString();
 
         // Get statistics
         $totalPending = $pendingReports->total();
@@ -72,10 +74,16 @@ class AdviserEvaluationController extends Controller
 
         // Check if already evaluated
         $existingFeedback = AdviserFeedback::where('report_id', $report->id)
-            ->where('adviser_id', Auth::user()->adviser->id)
-            ->first();
+            ->latest('id')->first();
 
-        return view('adviser.evaluate', compact('report', 'existingFeedback'));
+        $messages = collect();
+        if (app(\App\Services\AdviserTranscriptAccess::class)->allowed($report->session)) {
+            $messages = $report->session->messages()->orderBy('sent_datetime')->orderBy('id')->limit(500)->get();
+            SupportAudit::record('authorized_conversation_viewed', $report, ['purpose'=>'competency_assessment']);
+        }
+        SupportAudit::record('session_documentation_viewed', $report);
+
+        return view('adviser.evaluate', compact('report', 'existingFeedback', 'messages'));
     }
 
     /**
@@ -88,14 +96,6 @@ class AdviserEvaluationController extends Controller
 
         $this->authorizeReport($report);
 
-        // Prevent duplicate evaluations for the same report
-        if (AdviserFeedback::where('report_id', $report->id)
-            ->where('adviser_id', $adviser->id)
-            ->exists()) {
-            return redirect()->route('adviser.evaluations')
-                ->with('info', 'This report has already been evaluated.');
-        }
-
         $validated = $request->validate([
             'active_listening' => 'required|integer|min:1|max:5',
             'empathy' => 'required|integer|min:1|max:5',
@@ -105,81 +105,12 @@ class AdviserEvaluationController extends Controller
             'strengths' => 'nullable|string|max:1000',
             'improvement_areas' => 'nullable|string|max:1000',
             'recommendations' => 'nullable|string|max:1000',
-            'recommended_action' => 'required|string',
+            'recommended_action' => 'required|string|max:255',
+            'correction_reason' => 'nullable|string|min:10|max:1000',
+            'follow_up_date' => 'nullable|date',
         ]);
 
-        // Calculate overall score
-        $overallScore = (
-            ($validated['active_listening'] * 0.25) +
-            ($validated['empathy'] * 0.25) +
-            ($validated['respect_professionalism'] * 0.20) +
-            ($validated['ethical_practices'] * 0.20) +
-            ($validated['referral_accuracy'] * 0.10)
-        );
-
-        // Determine competency level
-        $level = $this->getCompetencyLevel($overallScore);
-
-        // Save competency history
-        $competency = HelperCompetencyHistory::create([
-            'helper_id' => $report->session->helper_id,
-            'adviser_id' => $adviser->id,
-            'evaluation_date' => now(),
-            'active_listening_score' => $validated['active_listening'],
-            'empathy_score' => $validated['empathy'],
-            'respect_score' => $validated['respect_professionalism'],
-            'ethical_practices_score' => $validated['ethical_practices'],
-            'referral_accuracy_score' => $validated['referral_accuracy'],
-            'overall_score' => round($overallScore, 2),
-            'competency_level' => $level,
-            'evaluation_period' => now()->format('F Y'),
-            'remarks' => $validated['recommendations'] ?? null
-        ]);
-
-        // Save adviser feedback
-        $feedback = AdviserFeedback::create([
-            'report_id' => $report->id,
-            'adviser_id' => $adviser->id,
-            'status' => 'completed',
-            'feedback_text' => $validated['recommendations'] ?? null,
-            'strengths' => $validated['strengths'] ?? null,
-            'improvement_areas' => $validated['improvement_areas'] ?? null,
-            'competency_rating' => round($overallScore, 2),
-            'competency_level' => $level,
-            'training_recommendation' => $validated['recommendations'] ?? null,
-            'follow_up_action' => $validated['recommended_action'],
-            'created_date' => now()
-        ]);
-
-        // Mark report as reviewed
-        $report->update([
-            'adviser_reviewed' => true,
-            'reviewed_date' => now()
-        ]);
-
-        // Create notification for helper
-        if ($report->session->helper?->user_account_id) {
-            $helperUserId = $report->session->helper->user_account_id;
-
-            Notification::create([
-                'user_account_id' => $helperUserId,
-                'title' => 'Competency Evaluation Completed',
-                'message' => 'Your competency evaluation has been reviewed by your adviser.',
-                'notification_type' => 'evaluation',
-                'type_icon' => 'fa-chart-column',
-                'link' => '/helper/competency',
-            ]);
-
-            // Update the helper's competency level from the evaluation
-            $report->session->helper->update([
-                'competency_level' => max(1, min(5, ceil($overallScore))),
-            ]);
-
-            $this->broadcastSafely(new EvaluationCompleted($competency, $helperUserId));
-        }
-
-        // Mark the session evaluated so the workflow reflects a completed review
-        $report->session->update(['session_status' => Session::STATUS_EVALUATED]);
+        app(\App\Services\AdviserEvaluationService::class)->save($report, $validated);
 
         return redirect()->route('adviser.evaluations')
             ->with('success', 'Competency evaluation submitted successfully!');
@@ -190,10 +121,19 @@ class AdviserEvaluationController extends Controller
      */
     private function getCompetencyLevel($score)
     {
-        if ($score >= 4.5) return 'Outstanding';
-        if ($score >= 3.5) return 'Very Good';
-        if ($score >= 2.5) return 'Satisfactory';
-        if ($score >= 1.5) return 'Needs Improvement';
+        if ($score >= 4.5) {
+            return 'Outstanding';
+        }
+        if ($score >= 3.5) {
+            return 'Very Good';
+        }
+        if ($score >= 2.5) {
+            return 'Satisfactory';
+        }
+        if ($score >= 1.5) {
+            return 'Needs Improvement';
+        }
+
         return 'Unsatisfactory';
     }
 
@@ -206,10 +146,9 @@ class AdviserEvaluationController extends Controller
 
         $this->authorizeReport($report);
 
-        $report->update([
-            'adviser_reviewed' => true,
-            'reviewed_date' => now()
-        ]);
+        abort_unless(in_array($report->session->session_status, ['completed', 'evaluated'], true), 409);
+        $report->update(['adviser_reviewed' => true, 'reviewed_date' => now()]);
+        SupportAudit::record('documentation_reviewed_without_new_score', $report);
 
         return redirect()->route('adviser.evaluations')
             ->with('info', 'Evaluation marked as reviewed.');
@@ -217,7 +156,8 @@ class AdviserEvaluationController extends Controller
 
     private function authorizeReport(SessionReport $report): void
     {
-        $adviserId = Auth::user()->adviser?->id;
+        abort_unless(Auth::user()?->role === 'adviser' && Auth::user()?->is_active, 403);
+        $adviserId = app(\App\Services\AdviserScope::class)->actor()->id;
         $helperId = $report->session?->helper_id;
 
         abort_unless(

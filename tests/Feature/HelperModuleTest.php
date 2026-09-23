@@ -24,16 +24,21 @@ use Tests\TestCase;
 class HelperModuleTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\SeekerWorkflowFixtures;
 
     protected User $helperUser;
 
     protected function setUp(): void
     {
         parent::setUp();
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-09-16 19:00','Asia/Manila')->utc());
 
         $this->seed(\Database\Seeders\HelperModuleSeeder::class);
 
         $this->helperUser = User::where('role', 'helper')->firstOrFail();
+        $this->verifiedHelperFixture($this->helperUser->helper);
+        foreach(User::where('role','seeker')->get() as $user) $this->consentFixture($user);
+        Session::where('session_status','active')->update(['helper_accepted_at'=>now()->subMinutes(10)]);
     }
 
     public function test_schedule_uses_philippine_date_across_utc_midnight(): void
@@ -61,12 +66,13 @@ class HelperModuleTest extends TestCase
         Event::fake([NewCaseAssigned::class]);
         $helper = $this->helperUser->helper;
         $this->prepareMatchingHelper($helper);
-        $helper->sessions()->update(['session_status' => 'completed']);
+        $helper->sessions()->update(['session_status' => 'completed','start_time'=>now()->subDay()]);
         $seeker = User::where('role', 'seeker')->firstOrFail()->helpSeeker;
         $queue = \App\Models\QueueRequest::create([
             'seeker_id' => $seeker->id, 'request_status' => 'waiting',
             'priority_level' => 'low', 'preferred_session_type' => 'chat', 'request_date' => now(),
         ]);
+        Session::firstOrCreate(['queue_request_id'=>$queue->id],['seeker_id'=>$seeker->id,'risk_level'=>'low','session_status'=>'waiting','created_date'=>now(),'submitted_at'=>now()]);
         app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
         $this->assertSame('assigned', $queue->fresh()->request_status);
         $count = Session::where('queue_request_id', $queue->id)->count();
@@ -188,6 +194,7 @@ class HelperModuleTest extends TestCase
                 'willing_to_listen' => 1,
                 'stress_level' => 'low',
                 'availability_status' => 'available',
+                'skills_confirmed' => \App\Services\HelperReadinessService::SKILLS,
                 'exercise_completed' => 'completed',
             ])
             ->assertSessionHasNoErrors()
@@ -209,10 +216,11 @@ class HelperModuleTest extends TestCase
                 'willing_to_listen' => 0,
                 'stress_level' => 'high',
                 'availability_status' => 'not_ready',
+                'skills_confirmed' => \App\Services\HelperReadinessService::SKILLS,
                 'exercise_completed' => 'skipped',
             ])
             ->assertSessionHasNoErrors()
-            ->assertRedirect(route('helper.self-help'));
+            ->assertRedirect(route('helper.dashboard'));
 
         $this->assertDatabaseHas('readiness_checks', [
             'helper_id' => $this->helperUser->helper->id,
@@ -223,12 +231,15 @@ class HelperModuleTest extends TestCase
 
     public function test_readiness_submission_marks_helper_available_when_ready(): void
     {
+        $this->prepareMatchingHelper($this->helperUser->helper);
+        $this->helperUser->helper->sessions()->update(['session_status'=>'completed','start_time'=>now()->subDay()]);
         $this->actingAs($this->helperUser)
             ->post(route('helper.readiness.store'), [
                 'emotionally_ready' => 1,
                 'willing_to_listen' => 1,
                 'stress_level' => 'low',
                 'availability_status' => 'available',
+                'skills_confirmed' => \App\Services\HelperReadinessService::SKILLS,
                 'exercise_completed' => 'completed',
             ])
             ->assertSessionHasNoErrors();
@@ -241,12 +252,15 @@ class HelperModuleTest extends TestCase
 
     public function test_readiness_submission_marks_helper_offline_when_not_ready(): void
     {
+        $this->prepareMatchingHelper($this->helperUser->helper);
+        $this->helperUser->helper->sessions()->update(['session_status'=>'completed','start_time'=>now()->subDay()]);
         $this->actingAs($this->helperUser)
             ->post(route('helper.readiness.store'), [
                 'emotionally_ready' => 0,
                 'willing_to_listen' => 0,
                 'stress_level' => 'high',
                 'availability_status' => 'not_ready',
+                'skills_confirmed' => \App\Services\HelperReadinessService::SKILLS,
                 'exercise_completed' => 'completed',
             ])
             ->assertSessionHasNoErrors();
@@ -257,7 +271,7 @@ class HelperModuleTest extends TestCase
         ]);
     }
 
-    public function test_not_ready_helper_is_redirected_from_gated_dashboard_to_readiness(): void
+    public function test_not_ready_helper_can_still_open_dashboard(): void
     {
         // Ensure the helper has no valid readiness check (simulates not ready).
         $helper = $this->helperUser->helper;
@@ -266,7 +280,7 @@ class HelperModuleTest extends TestCase
 
         $this->actingAs($this->helperUser)
             ->get(route('helper.dashboard'))
-            ->assertRedirect(route('helper.readiness'));
+            ->assertOk()->assertSee('Assignment readiness');
     }
 
     public function test_ready_helper_can_access_dashboard(): void
@@ -380,8 +394,10 @@ class HelperModuleTest extends TestCase
             ->where('session_status', 'helper_assigned')
             ->firstOrFail();
 
+        $queue=\App\Models\QueueRequest::create(['seeker_id'=>$session->seeker_id,'request_status'=>'assigned','assigned_helper_id'=>$session->helper_id,'priority_level'=>'low']);
+        $session->update(['queue_request_id'=>$queue->id,'submitted_at'=>now(),'risk_level'=>'low']);
         $this->actingAs($this->helperUser)
-            ->post(route('helper.cases.decline', ['id' => $session->id]))
+            ->post(route('helper.cases.decline', ['id' => $session->id]), ['reason'=>'unavailable'])
             ->assertRedirect(route('helper.cases'));
 
         $session->refresh();
@@ -466,31 +482,18 @@ class HelperModuleTest extends TestCase
             ->assertOk();
     }
 
-    public function test_accept_case_broadcasts_case_accepted_event(): void
+    public function test_accept_case_requires_separate_start(): void
     {
-        Event::fake([CaseAccepted::class]);
-
-        $session = Session::where('helper_id', $this->helperUser->helper->id)
-            ->where('session_status', 'helper_assigned')
-            ->firstOrFail();
-
-        $this->actingAs($this->helperUser)
-            ->post(route('helper.cases.accept', ['id' => $session->id]))
-            ->assertRedirect();
-
-        Event::assertDispatched(CaseAccepted::class, function (CaseAccepted $event) use ($session) {
-            return $event->session->id === $session->id;
-        });
-
-        $this->assertDatabaseHas('counseling_sessions', [
-            'id' => $session->id,
-            'session_status' => 'active',
-        ]);
-
-        $this->assertDatabaseHas('notifications', [
-            'user_account_id' => $session->seeker->user_account_id,
-            'title' => 'Your session has started',
-        ]);
+        $helper=$this->helperUser->helper;
+        $this->prepareMatchingHelper($helper);
+        $session=$helper->sessions()->where('session_status','helper_assigned')->firstOrFail();
+        $session->update(['risk_level'=>'low']);
+        $helper->sessions()->where('id','!=',$session->id)->update(['session_status'=>'completed','start_time'=>now()->subDay()]);
+        $this->actingAs($this->helperUser)->post(route('helper.cases.accept',$session->id))->assertRedirect(route('helper.session.pre-assessment',$session->id));
+        $this->assertSame('helper_assigned',$session->fresh()->session_status);
+        $this->assertNotNull($session->fresh()->helper_accepted_at);
+        $this->post(route('helper.session.start',$session->id))->assertRedirect(route('helper.session.chat',$session->id));
+        $this->assertSame('active',$session->fresh()->session_status);
     }
 
     public function test_decline_case_broadcasts_case_declined_and_returns_to_queue(): void
@@ -502,7 +505,7 @@ class HelperModuleTest extends TestCase
             ->firstOrFail();
 
         $this->actingAs($this->helperUser)
-            ->post(route('helper.cases.decline', ['id' => $session->id]))
+            ->post(route('helper.cases.decline', ['id' => $session->id]), ['reason'=>'unavailable'])
             ->assertRedirect(route('helper.cases'));
 
         Event::assertDispatched(CaseDeclined::class, function (CaseDeclined $event) use ($session) {
@@ -527,7 +530,7 @@ class HelperModuleTest extends TestCase
         Event::fake([NewCaseAssigned::class]);
 
         $this->prepareMatchingHelper($this->helperUser->helper);
-        $this->helperUser->helper->sessions()->update(['session_status' => 'completed']);
+        $this->helperUser->helper->sessions()->update(['session_status' => 'completed','start_time'=>now()->subDay()]);
         $seekerUser = User::where('role', 'seeker')->firstOrFail();
         $seeker = $seekerUser->helpSeeker;
 
@@ -541,7 +544,9 @@ class HelperModuleTest extends TestCase
             'created_date' => now(),
         ]);
 
-        \App\Models\QueueRequest::create(['seeker_id' => $seeker->id, 'request_status' => 'waiting', 'priority_level' => 'low', 'preferred_session_type' => 'chat']);
+        $queue=\App\Models\QueueRequest::create(['seeker_id' => $seeker->id, 'request_status' => 'waiting', 'priority_level' => 'low', 'preferred_session_type' => 'chat']);
+        $session->update(['queue_request_id'=>$queue->id,'submitted_at'=>now()]);
+        app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
 
         session([
             'screening_data' => ['concern_id' => $session->concern_id, 'description' => 'Test request.', 'urgency' => 'low', 'safety_check' => 'no'],
@@ -589,7 +594,7 @@ class HelperModuleTest extends TestCase
         ]);
 
         $this->prepareMatchingHelper($this->helperUser->helper);
-        $this->helperUser->helper->sessions()->update(['session_status' => 'completed']);
+        $this->helperUser->helper->sessions()->update(['session_status' => 'completed','start_time'=>now()->subDay()]);
         $seekerUser = User::where('role', 'seeker')->firstOrFail();
         $seeker = $seekerUser->helpSeeker;
 
@@ -603,7 +608,9 @@ class HelperModuleTest extends TestCase
             'created_date' => now(),
         ]);
 
-        \App\Models\QueueRequest::create(['seeker_id' => $seeker->id, 'request_status' => 'waiting', 'priority_level' => 'low', 'preferred_session_type' => 'chat']);
+        $queue=\App\Models\QueueRequest::create(['seeker_id' => $seeker->id, 'request_status' => 'waiting', 'priority_level' => 'low', 'preferred_session_type' => 'chat']);
+        $session->update(['queue_request_id'=>$queue->id,'submitted_at'=>now()]);
+        app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
 
         session([
             'screening_data' => ['concern_id' => $session->concern_id, 'description' => 'Test request.', 'urgency' => 'low', 'safety_check' => 'no'],
@@ -735,7 +742,7 @@ class HelperModuleTest extends TestCase
             ->get(route('request.matching'));
 
         $response->assertOk();
-        $response->assertSee('Waiting for helper to accept');
+        $response->assertSee('Waiting for helper acceptance');
         $response->assertSee($this->helperUser->helper->public_alias);
         $response->assertDontSee($this->helperUser->helper->full_name);
     }
@@ -755,6 +762,7 @@ class HelperModuleTest extends TestCase
             'completion_status' => 'pending',
             'created_date' => now(),
             'start_time' => now(),
+            'helper_accepted_at' => now(),
         ]);
 
         session(['session_id' => $session->id]);
@@ -763,8 +771,8 @@ class HelperModuleTest extends TestCase
             ->get(route('request.matching'));
 
         $response->assertOk();
-        $response->assertSee('Session started!');
-        $response->assertSee('Go to Chat');
+        $response->assertSee('Your helper accepted');
+        $response->assertSee('Open chat');
     }
 
     public function test_seeker_chat_page_renders_premium_chat_interface(): void
@@ -782,6 +790,7 @@ class HelperModuleTest extends TestCase
             'completion_status' => 'pending',
             'created_date' => now(),
             'start_time' => now(),
+            'helper_accepted_at' => now(),
         ]);
 
         session(['session_id' => $session->id]);
@@ -815,7 +824,7 @@ class HelperModuleTest extends TestCase
         ]);
     }
 
-    public function test_voice_page_and_call_log_are_persisted(): void
+    public function test_voice_endpoints_are_unavailable_without_creating_call_logs(): void
     {
         $session = Session::where('helper_id', $this->helperUser->helper->id)
             ->where('session_status', 'active')
@@ -823,17 +832,17 @@ class HelperModuleTest extends TestCase
 
         $this->actingAs($this->helperUser)
             ->get(route('helper.session.voice', ['id' => $session->id]))
-            ->assertOk();
+            ->assertStatus(503);
 
         $this->actingAs($this->helperUser)
             ->post(route('helper.session.voice.start', ['id' => $session->id]))
-            ->assertOk();
+            ->assertStatus(503);
 
         $this->actingAs($this->helperUser)
             ->post(route('helper.session.voice.end', ['id' => $session->id]))
-            ->assertRedirect();
+            ->assertStatus(503);
 
-        $this->assertDatabaseHas('call_logs', ['session_id' => $session->id]);
+        $this->assertDatabaseMissing('call_logs', ['session_id' => $session->id]);
     }
 
     public function test_session_notes_can_be_stored_in_database(): void
@@ -851,7 +860,7 @@ class HelperModuleTest extends TestCase
                 'risk_level_assessed' => 'moderate',
                 'personal_reflection' => 'Went well.',
                 'skills_applied' => ['active_listening', 'validation'],
-                'referral_recommended' => 0,
+                'session_result'=>'stable',
             ])
             ->assertRedirect();
 
@@ -863,51 +872,19 @@ class HelperModuleTest extends TestCase
             'risk_level_assessed' => 'moderate',
         ]);
 
-        $this->assertDatabaseHas('counseling_sessions', [
-            'id' => $session->id,
-            'session_status' => 'completed',
-            'completion_status' => 'completed',
-        ]);
-
-        $this->assertDatabaseHas('helpers', [
-            'id' => $this->helperUser->helper->id,
-            'status' => 'available',
-            'active_sessions_count' => 1,
-            'current_shift_sessions' => 0,
-        ]);
+        $this->assertSame('active',$session->fresh()->session_status);
+        $this->assertNull($session->fresh()->end_time);
     }
 
-    public function test_completed_sessions_do_not_block_helper_capacity(): void
+    public function test_two_completed_sessions_exhaust_shift_capacity_until_next_day(): void
     {
-        $helper = $this->helperUser->helper;
-        $seeker = User::where('role', 'seeker')->firstOrFail()->helpSeeker;
-        Session::where('helper_id', $helper->id)->delete();
-
-        foreach (range(1, 2) as $index) {
-            Session::create([
-                'seeker_id' => $seeker->id,
-                'helper_id' => $helper->id,
-                'session_type' => 'chat',
-                'session_status' => Session::STATUS_COMPLETED,
-                'risk_level' => 'low',
-                'completion_status' => 'completed',
-                'end_time' => now(),
-                'created_date' => now()->subMinutes($index),
-            ]);
-        }
-
-        $helper->update([
-            'active_sessions_count' => 2,
-            'current_shift_sessions' => 2,
-        ]);
-
+        $helper=$this->helperUser->helper;
+        $helper->sessions()->update(['session_status'=>'completed','start_time'=>now()->subDay()]);
+        $seeker=User::where('role','seeker')->firstOrFail()->helpSeeker;
+        foreach(range(1,2) as $i) Session::create(['seeker_id'=>$seeker->id,'helper_id'=>$helper->id,'session_status'=>'completed','start_time'=>now()->subMinutes(60*$i),'end_time'=>now(),'completion_status'=>'completed']);
+        $this->assertFalse($helper->fresh()->hasCapacity());
+        $this->travel(1)->days();
         $this->assertTrue($helper->fresh()->hasCapacity());
-
-        $this->assertDatabaseHas('helpers', [
-            'id' => $helper->id,
-            'active_sessions_count' => 0,
-            'current_shift_sessions' => 0,
-        ]);
     }
 
     public function test_late_documentation_is_flagged_after_24_hours(): void
@@ -923,7 +900,7 @@ class HelperModuleTest extends TestCase
                 'session_summary' => 'Late documentation after the session ended.',
                 'observations' => 'Late observation.',
                 'actions_taken' => 'Late action.',
-                'referral_recommended' => 0,
+                'session_result'=>'stable',
                 'personal_reflection' => 'I will follow up promptly and document earlier next time.',
             ])
             ->assertRedirect();
@@ -1027,7 +1004,7 @@ class HelperModuleTest extends TestCase
             ->assertSee('Post-Session Evaluation');
     }
 
-    public function test_stale_pending_requests_are_cancelled_on_dashboard(): void
+    public function test_stale_pending_requests_are_cancelled_by_scheduler_not_dashboard(): void
     {
         $seekerUser = User::where('role', 'seeker')->firstOrFail();
         $seeker = $seekerUser->helpSeeker;
@@ -1047,6 +1024,8 @@ class HelperModuleTest extends TestCase
             ->get(route('seeker.dashboard'))
             ->assertOk();
 
+        $stale->refresh();
+        $this->artisan('sessions:mark-abandoned')->assertSuccessful();
         $stale->refresh();
         $this->assertSame('cancelled', $stale->session_status);
         $this->assertSame('cancelled', $stale->completion_status);
@@ -1118,7 +1097,7 @@ class HelperModuleTest extends TestCase
 
         $this->assertDatabaseHas('help_seeker_evaluations', [
             'session_id' => $session->id,
-            'overall_score' => 5,
+            'overall_score' => 10,
         ]);
     }
 
@@ -1268,10 +1247,12 @@ class HelperModuleTest extends TestCase
             'session_status' => 'active',
             'completion_status' => 'pending',
             'start_time' => now()->subMinutes(12),
+            'helper_accepted_at' => now()->subMinutes(12),
             'created_date' => now(),
         ]);
 
         $helper->update(['status' => 'busy']);
+        session(['session_id' => $session->id]);
 
         return $session;
     }
@@ -1280,8 +1261,8 @@ class HelperModuleTest extends TestCase
     {
         return [
             'session_id' => Session::latest('id')->value('id'),
-            'helpfulness_score' => 5, 'comfort_score' => 5, 'feeling_after_score' => 5,
-            'understood_score' => 5, 'reuse_score' => 5,
+            'helpfulness_score' => 'Very Helpful', 'comfort_score' => 'Very Comfortable', 'feeling_after_score' => 'Better',
+            'understood_score' => 'Yes', 'reuse_score' => 'Yes',
             'comments' => 'The session really helped me calm down.',
         ];
     }
@@ -1299,7 +1280,7 @@ class HelperModuleTest extends TestCase
 
         $this->assertDatabaseHas('help_seeker_evaluations', [
             'session_id' => $session->id,
-            'overall_score' => 5,
+            'overall_score' => 10,
         ]);
 
         // The session must be marked evaluated so the dashboard stops
@@ -1388,12 +1369,13 @@ class HelperModuleTest extends TestCase
 
         $this->assertDatabaseHas('counseling_sessions', [
             'id' => $session->id,
-            'risk_level' => 'emergency',
+            'risk_level' => 'low',
+            'escalation_required'=>true,
         ]);
 
         // The adviser must be notified so they can follow up.
         $this->assertDatabaseHas('notifications', [
-            'user_account_id' => User::where('role', 'adviser')->first()->id,
+            'user_account_id' => $this->helperUser->helper->adviser->user_account_id,
             'notification_type' => 'emergency',
         ]);
     }
@@ -1401,17 +1383,34 @@ class HelperModuleTest extends TestCase
     public function test_helper_can_recommend_a_referral(): void
     {
         $session = $this->makeActiveSession();
+        $seekerUser = User::where('role', 'seeker')->firstOrFail();
 
         $this->actingAs($this->helperUser)
             ->from(route('helper.session.chat', ['id' => $session->id]))
-            ->post(route('helper.session.referral', ['id' => $session->id]), [
-                'referral_reason' => 'Seeker may benefit from professional counseling for grief.',
-                'priority_level' => 'moderate',
-                'help_seeker_consent' => 1,
+            ->post(route('helper.session.referral.consent', ['id' => $session->id]), [
+                'summary' => 'Seeker may benefit from professional counseling for grief.',
             ])
             ->assertRedirect(route('helper.session.chat', ['id' => $session->id]))
             ->assertSessionHas('success');
 
+        $referral = Referral::where('session_id', $session->id)->firstOrFail();
+        $this->assertSame(Referral::STATUS_CONSENT_REQUESTED, $referral->status);
+
+        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $referral), ['accepted' => true])
+            ->assertOk()
+            ->assertJson(['status' => Referral::STATUS_CONSENT_REQUESTED]);
+
+        $this->actingAs($this->helperUser)
+            ->from(route('helper.session.chat', ['id' => $session->id]))
+            ->post(route('helper.session.referral', ['id' => $session->id]), [
+                'referral_id' => $referral->id,
+                'referral_reason' => 'Seeker may benefit from professional counseling for grief.',
+                'priority_level' => 'moderate',
+            ])
+            ->assertRedirect(route('helper.session.chat', ['id' => $session->id]))
+            ->assertSessionHas('success');
+
+        $referral->refresh();
         $this->assertDatabaseHas('referrals', [
             'session_id' => $session->id,
             'helper_id' => $this->helperUser->helper->id,
@@ -1420,11 +1419,9 @@ class HelperModuleTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('notifications', [
-            'user_account_id' => User::where('role', 'adviser')->first()->id,
+            'user_account_id' => $this->helperUser->helper->adviser->user_account_id,
             'notification_type' => 'referral',
         ]);
-
-        $referral = Referral::where('session_id', $session->id)->firstOrFail();
 
         $this->actingAs($this->helperUser)
             ->get(route('helper.referral.status', ['id' => $referral->id]))
@@ -1433,6 +1430,7 @@ class HelperModuleTest extends TestCase
     }
     private function prepareMatchingHelper(Helper $helper): void
     {
+        $this->verifiedHelperFixture($helper);
         $helper->update(['availability' => 'available', 'status' => 'available']);
         \App\Models\HelperSchedule::updateOrCreate(['helper_id' => $helper->id, 'date' => now(config('app.schedule_timezone'))->startOfDay()], [
             'shift_start' => '00:00:00', 'shift_end' => '23:59:59', 'is_active' => true,

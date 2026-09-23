@@ -363,9 +363,23 @@
     <div class="modal-overlay" id="referralModal">
         <div class="modal-box">
             <h3><i class="fas fa-arrow-right" style="color:#2563eb;"></i> Recommend a Referral</h3>
-            <p class="modal-sub">Recommend professional support for this seeker. An adviser will review the referral.</p>
-            <form method="POST" action="{{ route('helper.session.referral', ['id' => $session->id]) }}">
+            <p class="modal-sub">Recommend professional support for this seeker. Referral consent is requested from the seeker before an adviser reviews it.</p>
+
+            <div id="referralStateChip" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;"></div>
+
+            <form method="POST" action="{{ route('helper.session.referral.consent', ['id' => $session->id]) }}" id="referralConsentForm">
                 @csrf
+                <label class="form-label" for="referralSummary">Summary the seeker will see</label>
+                <textarea id="referralSummary" name="summary" rows="3" required placeholder="Short summary of why a professional referral may help, written for the seeker."></textarea>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-cancel modal-close" data-modal="referralModal">Cancel</button>
+                    <button type="submit" class="btn btn-info" id="requestConsentBtn"><i class="fas fa-paper-plane" style="margin-right:6px;"></i> Request Consent</button>
+                </div>
+            </form>
+
+            <form method="POST" action="{{ route('helper.session.referral', ['id' => $session->id]) }}" id="referralSubmitForm" style="display:none;">
+                @csrf
+                <input type="hidden" name="referral_id" id="referralId">
                 <label class="form-label" for="referralReason">Reason for referral</label>
                 <textarea id="referralReason" name="referral_reason" rows="4" required placeholder="Describe why a professional referral is recommended..."></textarea>
                 <label class="form-label" style="margin-top:14px;" for="referralPriority">Priority level</label>
@@ -375,8 +389,6 @@
                     <option value="high">High</option>
                     <option value="emergency">Emergency</option>
                 </select>
-
-
                 <div class="modal-actions">
                     <button type="button" class="btn btn-cancel modal-close" data-modal="referralModal">Cancel</button>
                     <button type="submit" class="btn btn-info"><i class="fas fa-paper-plane" style="margin-right:6px;"></i> Submit Referral</button>
@@ -390,12 +402,13 @@
         <div class="modal-box">
             <h3><i class="fas fa-exclamation-triangle" style="color:#dc2626;"></i> Flag as Emergency</h3>
             <p class="modal-sub">This immediately notifies a support coordinator. Use only when the seeker is at immediate risk.</p>
+            <div id="emergencyReferralState" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;background:#fffbeb;color:#92400e;"></div>
             <form method="POST" action="{{ route('helper.session.emergency', ['id' => $session->id]) }}">
                 @csrf
                 <label class="form-label" for="emergencyDesc">What is happening?</label>
                 <textarea id="emergencyDesc" name="description" rows="4" required placeholder="Describe the situation and any immediate risk..."></textarea>
                 <label class="form-label" style="margin-top:14px;" for="emergencyAction">Immediate action taken (optional)</label>
-                <textarea id="emergencyAction" name="immediate_action" rows="2" placeholder="e.g. kept the seeker talking, checked their location, called support..."></textarea>
+                <textarea id="emergencyAction" name="immediate_action" rows="2" placeholder="Record the immediate support or escalation steps you took..."></textarea>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-cancel modal-close" data-modal="emergencyModal">Cancel</button>
                     <button type="submit" class="btn btn-danger"><i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i> Flag Emergency</button>
@@ -430,6 +443,92 @@
                     if (e.target === overlay) overlay.classList.remove('open');
                 });
             });
+
+            // ── Referral consent-first state sync ──
+            const sessionId = document.getElementById('sessionId').value;
+            const stateUrl = '/session/' + sessionId + '/referral-prompt';
+            const chip = document.getElementById('referralStateChip');
+            const consentForm = document.getElementById('referralConsentForm');
+            const submitForm = document.getElementById('referralSubmitForm');
+            const emergencyState = document.getElementById('emergencyReferralState');
+            const CHIP_STYLES = {
+                pending: 'background:#eff6ff;color:#1d4ed8;',
+                granted: 'background:#ecfdf5;color:#047857;',
+                declined: 'background:#fef2f2;color:#b91c1c;',
+                info: 'background:#f8fafc;color:#475569;',
+            };
+
+            function applyReferralState(data) {
+                const referral = data?.referral || null;
+                const emergency = data?.emergency || null;
+
+                // Emergency modal referral section
+                if (emergencyState) {
+                    if (emergency) {
+                        emergencyState.style.display = 'block';
+                        emergencyState.textContent = 'Emergency escalation active. Flagging creates an emergency referral along the consent-first path. Open incident #' + emergency.alert_id + '.';
+                    } else {
+                        emergencyState.style.display = 'none';
+                    }
+                }
+
+                if (!referral) {
+                    if (chip) { chip.style.display = 'none'; }
+                    if (consentForm) consentForm.style.display = 'block';
+                    if (submitForm) submitForm.style.display = 'none';
+                    return;
+                }
+
+                const status = referral.status;
+                const consented = referral.help_seeker_consent;
+
+                if (status === 'consent_requested' && !consented) {
+                    if (chip) { chip.style.display = 'block'; chip.style.cssText = CHIP_STYLES.pending; chip.textContent = '⏳ Awaiting seeker consent…'; }
+                    if (consentForm) consentForm.style.display = 'none';
+                    if (submitForm) submitForm.style.display = 'none';
+                    return;
+                }
+
+                if (status === 'consent_requested' && consented) {
+                    if (chip) { chip.style.display = 'block'; chip.style.cssText = CHIP_STYLES.granted; chip.textContent = '✓ Consent granted — submit the referral details below.'; }
+                    if (consentForm) consentForm.style.display = 'none';
+                    if (submitForm) submitForm.style.display = 'block';
+                    document.getElementById('referralId').value = referral.id;
+                    return;
+                }
+
+                const done = ['completed', 'closed', 'declined'].includes(status);
+                const declined = status === 'declined' || (data.consent?.decision === 'declined');
+                if (chip) {
+                    chip.style.display = 'block';
+                    chip.style.cssText = declined ? CHIP_STYLES.declined : CHIP_STYLES.info;
+                    chip.textContent = declined
+                        ? '✕ Referral was declined. You can request consent again for a new referral.'
+                        : 'Referral ' + status.replaceAll('_', ' ') + (done ? '.' : ' — no action needed right now.');
+                }
+                if (consentForm) consentForm.style.display = 'none';
+                if (submitForm) submitForm.style.display = 'none';
+            }
+
+            async function syncReferralState() {
+                try {
+                    const response = await fetch(stateUrl, {headers: {'Accept': 'application/json'}});
+                    if (!response.ok) return;
+                    applyReferralState(await response.json());
+                } catch (_) { /* Retry when the connection returns. */ }
+            }
+
+            // Keep the helper view live via Echo (session channel) with a poll fallback.
+            if (window.Echo) {
+                const channel = window.Echo.private('session.' + sessionId);
+                channel.listen('.ReferralConsentRequested', () => syncReferralState());
+                channel.listen('.ReferralConsentUpdated', () => syncReferralState());
+            }
+
+            document.getElementById('referralBtn')?.addEventListener('click', syncReferralState);
+            document.getElementById('emergencyBtn')?.addEventListener('click', syncReferralState);
+            syncReferralState();
+            setInterval(syncReferralState, 5000);
         });
     </script>
 

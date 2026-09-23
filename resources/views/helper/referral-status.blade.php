@@ -26,4 +26,21 @@
             <p class="text-sm text-gray-600">{{ $referral->decline_reason }}</p>
         @endif
     </div>
+
+    @if($referral->clarification_requested_at)
+    <section class="card p-5 my-4" aria-label="Referral clarification">
+        <h3 class="font-semibold">{{ $referral->clarification_received_at ? 'Clarification received' : 'Awaiting Helper clarification' }}</h3>
+        <p class="text-sm mt-2">{{ $referral->clarification_question }}</p>
+        <p class="text-sm mt-2">{{ $referral->clarification_response }}</p>
+        @if(!$referral->clarification_received_at && $referral->status === 'pending_adviser')
+        <form method="POST" action="{{ route('helper.referral.clarify',$referral->id) }}">@csrf
+            <label for="clarification">Your response</label>
+            <textarea id="clarification" name="response" required minlength="10" maxlength="2000" class="w-full rounded-lg border-gray-300">{{ old('response') }}</textarea>
+            @error('response')<p class="text-red-700">{{ $message }}</p>@enderror
+            <button class="btn btn-primary mt-3">Send clarification</button>
+        </form>
+        @endif
+    </section>
+    @endif
+    <x-supervision-history :record="$referral" />
 @endsection

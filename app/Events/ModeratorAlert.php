@@ -25,13 +25,16 @@ class ModeratorAlert implements ShouldBroadcastNow
 
     public ?string $link;
 
-    public function __construct(int $userId, string $type, string $title, string $message, ?string $link = null)
+    public readonly array $extra;
+
+    public function __construct(int $userId, string $type, string $title, string $message, ?string $link = null, array $extra = [])
     {
         $this->userId = $userId;
         $this->type = $type;
         $this->title = $title;
         $this->message = $message;
         $this->link = $link;
+        $this->extra = $extra;
     }
 
     public function broadcastOn(): PrivateChannel
@@ -46,11 +49,11 @@ class ModeratorAlert implements ShouldBroadcastNow
 
     public function broadcastWith(): array
     {
-        return [
+        return array_merge([
             'type' => $this->type,
             'title' => $this->title,
             'message' => $this->message,
             'link' => $this->link,
-        ];
+        ], $this->extra);
     }
 }

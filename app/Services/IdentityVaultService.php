@@ -136,13 +136,14 @@ class IdentityVaultService
         return $row;
     }
 
-    public function releaseForReferral(Referral $referral): void
+    public function releaseForReferral(Referral $referral, array $fields = ['real_name', 'phone_number'], string $reason = 'Contact details necessary for approved referral coordination'): void
     {
         $referral->refresh();
         $pseudo = $referral->session->seeker->pseudo_id;
         $allowed = Auth::user()?->role === 'adviser' && Auth::user()?->adviser?->id === $referral->adviser_id
             && $referral->adviser_id !== null && $this->approved($referral) && $referral->professional_id !== null;
-        $this->perform($pseudo, 'release', $allowed, function () use ($pseudo, $referral) {
+        abort_unless($fields && !array_diff($fields,self::FIELDS) && mb_strlen(trim($reason))>=20,422,'Select necessary fields and provide a reason.');
+        $this->perform($pseudo, 'release', $allowed, function () use ($pseudo, $referral, $fields, $reason) {
             $identity = $this->identity($pseudo);
             $db = DB::connection('identity_vault');
             $recipient = $referral->professional->user_account_id;
@@ -152,7 +153,7 @@ class IdentityVaultService
                     'identity_version' => $identity->identity_version,
                     'session_id' => $referral->session_id, 'released_to_user_id' => $recipient, 'released_to_role' => 'professional',
                     'authorized_by_user_id' => Auth::id(), 'authorized_by_role' => 'adviser', 'authorized_at' => now(),
-                    'release_reason' => 'approved_referral', 'information_released' => json_encode(self::FIELDS),
+                    'release_reason' => 'approved_referral', 'release_notes'=>$this->cipher()->encryptString($reason), 'information_released' => json_encode(array_values(array_unique($fields))),
                     'consent_obtained' => true, 'consent_obtained_at' => $referral->consent_obtained_at,
                     'consent_method' => 'authenticated_seeker', 'released_at' => now(), 'created_at' => now(), 'updated_at' => now(),
                 ]);
@@ -178,7 +179,9 @@ class IdentityVaultService
                 ->where('released_to_user_id', Auth::id())->where('release_reason', 'approved_referral')->first();
             abort_unless($release, 403, 'Identity has not been released to you.');
             $result = [];
-            foreach (self::FIELDS as $field) {
+            $fields=array_intersect(json_decode($release->information_released,true) ?: [],self::FIELDS);
+            $this->audit($pseudo,'fields_disclosed','success',json_encode(['purpose'=>'approved_referral','referral_id'=>$referral->id,'approval'=>$release->authorized_by_user_id,'fields'=>$fields,'emergency_override'=>false]));
+            foreach ($fields as $field) {
                 $result[$field] = $identity->$field === null ? null : $this->cipher()->decryptString($identity->$field);
             }
             return $result;

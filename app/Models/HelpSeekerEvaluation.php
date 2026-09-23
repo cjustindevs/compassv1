@@ -9,6 +9,10 @@ class HelpSeekerEvaluation extends Model
     protected $table = 'help_seeker_evaluations';
 
     protected $fillable = [
+        'answers',
+        'instrument_version',
+        'submitted_at',
+
         'session_id',
         'helpfulness_score',
         'comfort_score',
@@ -20,6 +24,7 @@ class HelpSeekerEvaluation extends Model
     ];
 
     protected $casts = [
+        'answers' => 'array', 'submitted_at' => 'datetime',
         'overall_score' => 'float',
     ];
 

@@ -13,10 +13,10 @@ thead { display: table-header-group; } tr { page-break-inside: avoid; }
 </style></head><body>
 <header><img src="{{ public_path('images/compass/logo-wordmark.png') }}" alt="COMPASS"><h1>COMPASS Performance Report</h1><div>Generated {{ now()->format('F d, Y H:i') }}</div><div>{{ $startDate->format('M d, Y') }} – {{ $endDate->format('M d, Y') }}</div></header>
 <footer>Divine Word College of Calapan · Project Dial-A-Friend</footer>
-@php $completed = $sessions->whereIn('session_status', ['completed', 'evaluated'])->count(); @endphp
-<p>Total sessions: {{ $sessions->count() }} | Completed: {{ $completed }} | Completion rate: {{ $sessions->count() ? round($completed / $sessions->count() * 100, 1) : 0 }}%</p>
-<table><thead><tr><th>Session</th><th>Helper</th><th>Concern</th><th>Risk</th><th>Status</th><th>Minutes</th><th>Rating</th></tr></thead><tbody>
+<p>Activity cohort reported in Asia/Manila. No data means the metric has no valid denominator.</p>
+@foreach($metrics as $name=>$value)<span>{{ ucfirst(str_replace('_',' ',$name)) }}: {{ $value ?? 'No data' }} | </span>@endforeach
+<table><thead><tr><th>Session</th><th>Helper</th><th>Concern</th><th>Risk</th><th>Status</th><th>Minutes</th><th>Rating / 5</th></tr></thead><tbody>
 @forelse($sessions as $session)
-<tr><td>{{ $session->reference_number }}</td><td>{{ $session->helper?->full_name }}</td><td>{{ $session->concern?->concern_name }}</td><td>{{ ucfirst($session->risk_level) }}</td><td>{{ $session->status_label }}</td><td>{{ $session->duration }}</td><td>{{ $session->evaluation?->overall_score }}</td></tr>
+<tr><td>{{ $session->reference_number }}</td><td>{{ $session->helper?->public_alias }}</td><td>{{ $session->concern?->concern_name }}</td><td>{{ ucfirst($session->risk_level) }}</td><td>{{ $session->status_label }}</td><td>{{ $session->duration }}</td><td>{{ \App\Services\AdviserAnalytics::rating($session->evaluation?->overall_score) }}</td></tr>
 @empty<tr><td colspan="7">No sessions in this period.</td></tr>@endforelse
 </tbody></table></body></html>

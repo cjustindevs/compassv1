@@ -28,16 +28,16 @@ class ProfessionalReportController extends Controller
         [$startDate, $endDate] = $this->getDateRange($period);
 
         // Metrics for the selected period
-        $totalReferrals = Referral::where('professional_id', $professional->id)
+        $totalReferrals = Referral::professionalAuthorized()->where('professional_id', $professional->id)
             ->whereBetween('created_at', [$startDate, $endDate])
             ->count();
 
-        $accepted = Referral::where('professional_id', $professional->id)
+        $accepted = Referral::professionalAuthorized()->where('professional_id', $professional->id)
             ->whereIn('status', [...Referral::ACTIVE_STATUSES, ...Referral::COMPLETED_STATUSES])
             ->whereBetween('created_at', [$startDate, $endDate])
             ->count();
 
-        $completed = Referral::where('professional_id', $professional->id)
+        $completed = Referral::professionalAuthorized()->where('professional_id', $professional->id)
             ->whereIn('status', Referral::COMPLETED_STATUSES)
             ->whereBetween('created_at', [$startDate, $endDate])
             ->count();
@@ -52,13 +52,13 @@ class ProfessionalReportController extends Controller
 
         // Case outcomes distribution (all-time)
         $outcomes = [
-            'completed' => Referral::where('professional_id', $professional->id)
+            'completed' => Referral::professionalAuthorized()->where('professional_id', $professional->id)
                 ->where('status', Referral::STATUS_COMPLETED)->count(),
-            'closed' => Referral::where('professional_id', $professional->id)
+            'closed' => Referral::professionalAuthorized()->where('professional_id', $professional->id)
                 ->where('status', Referral::STATUS_CLOSED)->count(),
-            'declined' => Referral::where('professional_id', $professional->id)
+            'declined' => Referral::professionalAuthorized()->where('professional_id', $professional->id)
                 ->where('status', Referral::STATUS_DECLINED)->count(),
-            'active' => Referral::where('professional_id', $professional->id)
+            'active' => Referral::professionalAuthorized()->where('professional_id', $professional->id)
                 ->whereIn('status', Referral::ACTIVE_STATUSES)->count(),
         ];
 
@@ -71,7 +71,7 @@ class ProfessionalReportController extends Controller
 
         // Recent activity for the period report
         $recentReferrals = Referral::with(['session', 'session.seeker'])
-            ->where('professional_id', $professional->id)
+            ->professionalAuthorized()->where('professional_id', $professional->id)
             ->whereBetween('created_at', [$startDate, $endDate])
             ->orderByDesc('created_at')
             ->limit(10)
@@ -171,7 +171,7 @@ class ProfessionalReportController extends Controller
         $rows = Referral::selectRaw($monthKey . ' as month')
             ->selectRaw('COUNT(*) as total')
             ->selectRaw(\App\Support\DatabaseHelper::countFilter('status IN (\'' . implode("','", Referral::COMPLETED_STATUSES) . '\')') . ' as completed')
-            ->where('professional_id', $professionalId)
+            ->professionalAuthorized()->where('professional_id', $professionalId)
             ->where('created_at', '>=', $months->first()['key'] . '-01')
             ->groupBy(DB::raw($monthKey))
             ->get()
@@ -190,7 +190,7 @@ class ProfessionalReportController extends Controller
 
     private function averageResponseHours(int $professionalId, $startDate, $endDate): int
     {
-        $avg = Referral::where('professional_id', $professionalId)
+        $avg = Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
             ->whereIn('status', [...Referral::ACTIVE_STATUSES, ...Referral::COMPLETED_STATUSES])
             ->whereBetween('created_at', [$startDate, $endDate])
             ->whereNotNull('created_at')

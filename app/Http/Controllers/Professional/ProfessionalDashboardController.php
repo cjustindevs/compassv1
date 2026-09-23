@@ -22,15 +22,15 @@ class ProfessionalDashboardController extends Controller
         $professionalId = $professional->id;
 
         // Stats
-        $pendingReferrals = Referral::where('professional_id', $professionalId)
+        $pendingReferrals = Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
             ->where('status', Referral::STATUS_PENDING_PROFESSIONAL)
             ->count();
 
-        $activeCases = Referral::where('professional_id', $professionalId)
+        $activeCases = Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
             ->whereIn('status', Referral::ACTIVE_STATUSES)
             ->count();
 
-        $completedCases = Referral::where('professional_id', $professionalId)
+        $completedCases = Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
             ->whereIn('status', Referral::COMPLETED_STATUSES)
             ->count();
 
@@ -38,14 +38,14 @@ class ProfessionalDashboardController extends Controller
 
         // Recent referrals
         $recentReferrals = Referral::with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'adviser:id,id,first_name,last_name'])
-            ->where('professional_id', $professionalId)
+            ->professionalAuthorized()->where('professional_id', $professionalId)
             ->orderByDesc('created_at')
             ->limit(5)
             ->get();
 
         // Active cases (with latest professional note for "last update")
         $activeCasesList = Referral::with(['session.seeker:id,id,generated_alias', 'professionalNotes'])
-            ->where('professional_id', $professionalId)
+            ->professionalAuthorized()->where('professional_id', $professionalId)
             ->whereIn('status', Referral::ACTIVE_STATUSES)
             ->orderByDesc('updated_at')
             ->limit(20)
@@ -85,11 +85,11 @@ class ProfessionalDashboardController extends Controller
         $professionalId = $professional->id;
 
         return response()->json([
-            'pending' => Referral::where('professional_id', $professionalId)
+            'pending' => Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
                 ->where('status', Referral::STATUS_PENDING_PROFESSIONAL)->count(),
-            'active' => Referral::where('professional_id', $professionalId)
+            'active' => Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
                 ->whereIn('status', Referral::ACTIVE_STATUSES)->count(),
-            'completed' => Referral::where('professional_id', $professionalId)
+            'completed' => Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
                 ->whereIn('status', Referral::COMPLETED_STATUSES)->count(),
         ]);
     }
@@ -100,7 +100,7 @@ class ProfessionalDashboardController extends Controller
      */
     private function averageResponseHours(int $professionalId): int
     {
-        $avg = Referral::where('professional_id', $professionalId)
+        $avg = Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
             ->whereIn('status', [...Referral::ACTIVE_STATUSES, ...Referral::COMPLETED_STATUSES])
             ->whereNotNull('created_at')
             ->whereNotNull('updated_at')

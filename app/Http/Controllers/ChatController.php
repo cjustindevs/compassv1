@@ -30,6 +30,7 @@ class ChatController extends Controller
 
         $session = Session::findOrFail($request->session_id);
         $user = Auth::user();
+        \Illuminate\Support\Facades\Gate::authorize('participate',$session);
 
         $isSeeker = $this->isSeeker($session, $user);
         $isHelper = $this->isHelper($session, $user);
@@ -44,10 +45,11 @@ class ChatController extends Controller
             return response()->json(['error' => 'This session has already ended.'], 409);
         }
 
-        if (! $session->isActive() && ! ($isHelper && $session->isHelperAssigned() && $user->helper->isReady())) {
+        if (! $session->isActive() || !$session->helper_accepted_at) {
             return response()->json(['error' => 'This session is not ready for chat.'], 409);
         }
 
+        abort_if($request->boolean('is_voice') || $request->filled('audio_url') || $session->session_type !== 'chat',422,'Voice media is unavailable.');
         $message = Message::create([
             'session_id' => $session->id,
             'sender_id' => $user->id,
@@ -59,24 +61,6 @@ class ChatController extends Controller
             'transcript' => $session->session_type === 'chat' && ! $request->boolean('is_voice') ? trim($request->message) : null,
             'transcript_generated_at' => $session->session_type === 'chat' && ! $request->boolean('is_voice') ? now() : null,
         ]);
-
-        if ($request->boolean('is_voice') && $request->filled('audio_url')) {
-            $message->update([
-                'audio_url' => $request->audio_url,
-                'voice_consent_obtained' => (bool) $session->voice_recording_consent,
-                'voice_consent_obtained_at' => $session->voice_recording_consent ? now() : null,
-            ]);
-
-            $this->transcriptionService->generateVoiceTranscript($message, $request->audio_url);
-        }
-
-        // The helper's first message moves an assigned session into active.
-        if ($isHelper && $session->session_status === 'helper_assigned') {
-            $session->update([
-                'session_status' => 'active',
-                'start_time' => $session->start_time ?? now(),
-            ]);
-        }
 
         // Broadcast the message (sync, no queue worker needed). If the
         // websocket server is briefly unreachable, the message is still saved.
@@ -111,8 +95,10 @@ class ChatController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
+        abort_unless($session->helper_accepted_at && in_array($session->session_status,['active','completed','evaluated']),409);
         $state = app(\App\Services\SessionDurationService::class)->state($session);
 
+        if ($this->isHelper($session,$user) && !$session->isActive()) return response()->json(['success'=>true,'messages'=>[],'session'=>$state]);
         $messages = Message::where('session_id', $sessionId)
             ->orderBy('sent_datetime', 'asc')
             ->orderBy('id', 'asc')
@@ -137,6 +123,13 @@ class ChatController extends Controller
         ]);
     }
 
+    public function expire(int $sessionId) {
+        $session=Session::findOrFail($sessionId);
+        \Illuminate\Support\Facades\Gate::authorize('participate',$session);
+        app(\App\Services\SessionDurationService::class)->expire($session);
+        return response()->json(['session'=>app(\App\Services\SessionDurationService::class)->state($session)]);
+    }
+
     public function status(int $sessionId)
     {
         $session = Session::findOrFail($sessionId);
@@ -152,14 +145,14 @@ class ChatController extends Controller
     {
         $seekerId = $user->helpSeeker?->id;
 
-        return $seekerId && (int) $session->seeker_id === (int) $seekerId;
+        return $user->is_active && $user->role==='seeker' && $seekerId && (int) $session->seeker_id === (int) $seekerId;
     }
 
     private function isHelper(Session $session, $user): bool
     {
         $helperId = $user->helper?->id;
 
-        return $helperId && (int) $session->helper_id === (int) $helperId;
+        return $user->is_active && $user->role==='helper' && $helperId && (int) $session->helper_id === (int) $helperId;
     }
 
     public function getTranscript(int $sessionId)
@@ -206,6 +199,8 @@ class ChatController extends Controller
 
     public function typing(Request $request)
     {
+        $data=$request->validate(['session_id'=>'required|integer']);
+        \Illuminate\Support\Facades\Gate::authorize('participate', Session::findOrFail($data['session_id']));
         return response()->json(['success' => true]);
     }
 }

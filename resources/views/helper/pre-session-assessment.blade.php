@@ -24,7 +24,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div style="border:1px solid var(--gray-200);border-radius:12px;padding:18px;">
-                <h3 style="font-size:14px;font-weight:700;color:var(--gray-800);margin-bottom:10px;"><i class="fas fa-clipboard-list" style="color:var(--green-500);margin-right:6px;"></i> Screening Summary</h3>
+                <h3 style="font-size:14px;font-weight:700;color:var(--gray-800);margin-bottom:10px;"><i class="fas fa-clipboard-list" style="color:var(--green-500);margin-right:6px;"></i> Support brief</h3>
                 <p class="text-sm text-gray-700" style="margin-bottom:8px;">Concern: <strong>{{ $screeningSummary['concern_category'] }}</strong></p>
                 <p class="text-sm text-gray-500">{{ $screeningSummary['summary'] }}</p>
             </div>
@@ -42,10 +42,10 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('helper.session.start', $session->id) }}">
+        <form method="POST" action="{{ $session->helper_accepted_at ? route('helper.session.start', $session->id) : route('helper.cases.accept',$session->id) }}">
             @csrf
             <button type="submit" class="btn btn-primary">
-                <i class="fas fa-play"></i> Start Session
+                <i class="fas fa-play"></i> {{ $session->helper_accepted_at ? 'Start session' : 'Accept assignment' }}
             </button>
         </form>
     </div>

@@ -18,6 +18,7 @@ class HelperNotificationController extends Controller
      */
     public function index(): View
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $notifications = Notification::where('user_account_id', Auth::id())
             ->latest()
             ->paginate(25);
@@ -34,6 +35,7 @@ class HelperNotificationController extends Controller
      */
     public function markAsRead(Request $request, int $id): RedirectResponse|JsonResponse
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $notification = Notification::where('user_account_id', Auth::id())
             ->findOrFail($id);
 
@@ -53,6 +55,7 @@ class HelperNotificationController extends Controller
      */
     public function markAllAsRead(): RedirectResponse|JsonResponse
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         Notification::where('user_account_id', Auth::id())
             ->unread()
             ->update([
@@ -72,7 +75,8 @@ class HelperNotificationController extends Controller
      */
     public function unreadCount(): JsonResponse
     {
-        $count = Cache::remember('unread_count_' . auth()->id(), 30, function () {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
+        $count = Cache::remember('unread_count_'.auth()->id(), 30, function () {
             return Notification::where('user_account_id', Auth::id())
                 ->unread()
                 ->count();

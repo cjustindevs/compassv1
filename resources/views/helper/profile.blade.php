@@ -33,7 +33,7 @@
                         <div class="text-[10px] text-gray-400 uppercase">Docs</div>
                     </div>
                     <div>
-                        <div class="text-2xl font-bold text-green-600">{{ $competencyScore }}%</div>
+                        <div class="text-2xl font-bold text-green-600">{{ $competencyScore !== null ? $competencyScore.'%' : 'Not evaluated' }}</div>
                         <div class="text-[10px] text-gray-400 uppercase">Competency</div>
                     </div>
                 </div>
@@ -95,8 +95,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Specializations</label>
-                        <input type="text" name="specializations" class="form-control" value="{{ old('specializations', $helper->specializations ?? '') }}" placeholder="e.g. Anxiety, Family Stress, Academics">
+                        <label class="form-label">Declared interests (subject to adviser verification)</label>
+                        <input type="text" name="specializations" class="form-control" value="{{ old('specializations', $helper->declared_specializations ?? '') }}" placeholder="e.g. Anxiety, Family Stress, Academics">
                     </div>
 
                     <hr class="divider">

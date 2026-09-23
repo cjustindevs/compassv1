@@ -448,16 +448,16 @@
             <form id="evaluationForm" class="feedback-form" method="POST" action="{{ route('session.evaluation.process') }}">
                 @csrf
                 <input type="hidden" name="session_id" value="{{ $sessionId }}">
-                <p class="mb-4">Rate each item from 1 (lowest) to 10 (highest).</p>
+                <p class="mb-4">Choose the response that best describes your experience.</p>
                 <div class="feedback-grid">
-                @foreach(['helpfulness_score' => 'How helpful was the session?', 'comfort_score' => 'How comfortable did you feel?', 'feeling_after_score' => 'How do you feel after the session?', 'understood_score' => 'How well did you feel understood?', 'reuse_score' => 'How likely are you to use this service again?'] as $field => $label)
+                @foreach(\App\Services\EvaluationInstrument::LABELS as $field => $label)
                     <div class="feedback-field">
                     <label for="{{ $field }}">{{ $label }} <span class="text-red-500" aria-hidden="true">*</span></label>
                         <select id="{{ $field }}" name="{{ $field }}" class="feedback-control" aria-invalid="{{ $errors->has($field) ? 'true' : 'false' }}" @error($field) aria-describedby="{{ $field }}-error" @enderror required>
                             <option value="">Select a rating</option>
-                            @for($score = 1; $score <= 10; $score++)
-                                <option value="{{ $score }}" @selected(old($field) == $score)>{{ $score }}</option>
-                            @endfor
+                            @foreach(\App\Services\EvaluationInstrument::OPTIONS[$field] as $answer)
+<option value="{{ $answer }}" @selected(old($field)===$answer)>{{ $answer }}</option>
+@endforeach
                         </select>
                         @error($field)<span id="{{ $field }}-error" class="text-sm text-red-600">{{ $message }}</span>@enderror
                     </div>

@@ -22,21 +22,20 @@ class RiskClassificationService
     public function classifyRisk(array $screeningResponses): array
     {
         $this->validateResponses($screeningResponses);
-        $this->checkContradictions($screeningResponses);
-
         if ($this->isEmergencyRisk($screeningResponses)) {
-            return $this->result(self::RISK_EMERGENCY, true, true, 'emergency_escalation', 'Immediate safety threat detected');
+            return $this->result(self::RISK_EMERGENCY, true, true, 'emergency_escalation', 'Immediate safety report');
         }
-
+        $this->checkContradictions($screeningResponses);
+        if (in_array('prefer_not_to_say', $screeningResponses, true)) {
+            throw new RuntimeException('Adviser review is needed before completing screening.');
+        }
         if ($this->isHighRisk($screeningResponses)) {
             return $this->result(self::RISK_HIGH, true, false, 'adviser_review_required', 'Serious safety or referral indicators');
         }
-
         if ($this->isModerateRisk($screeningResponses)) {
-            return $this->result(self::RISK_MODERATE, false, false, 'elevated_priority', 'Persistent emotional distress affecting daily functioning');
+            return $this->result(self::RISK_MODERATE, false, false, 'elevated_priority', 'Persistent distress or difficulty coping');
         }
-
-        return $this->result(self::RISK_LOW, false, false, 'normal_queuing', 'Temporary stress or emotional discomfort');
+        return $this->result(self::RISK_LOW, false, false, 'normal_queuing', 'No urgent indicators reported');
     }
 
     public function getRequiredCompetencyLevel(string $riskLevel): int
@@ -56,20 +55,14 @@ class RiskClassificationService
 
     private function isEmergencyRisk(array $responses): bool
     {
-        return $this->anyYes($responses, [
-            'current_suicide_plan',
-            'access_to_means',
-            'ongoing_self_harm',
-            'recent_attempt_needs_assistance',
-            'immediate_threat_to_life',
-            'immediate_threat_to_others',
-        ]);
+        return ($this->isYes($responses['current_suicide_plan'] ?? false) && $this->isYes($responses['access_to_means'] ?? false))
+            || $this->anyYes($responses, ['immediate_intent', 'ongoing_self_harm', 'recent_attempt_needs_assistance', 'immediate_threat_to_life', 'immediate_threat_to_others']);
     }
 
     private function isHighRisk(array $responses): bool
     {
         return ! $this->isEmergencyRisk($responses) && $this->anyYes($responses, [
-            'suicidal_thoughts',
+            'suicidal_thoughts', 'current_suicide_plan',
             'recent_self_harm',
             'severe_distress',
             'suspected_abuse',
@@ -96,8 +89,8 @@ class RiskClassificationService
 
     private function validateResponses(array $responses): void
     {
-        $required = ['current_suicide_plan', 'suicidal_thoughts', 'severe_distress', 'recurring_distress', 'difficulty_coping'];
-        $missing = array_values(array_filter($required, fn (string $field) => ! array_key_exists($field, $responses)));
+        $required = array_keys(ScreeningInstrument::QUESTIONS);
+        $missing = array_values(array_filter($required, fn (string $field) => ! array_key_exists($field, $responses) || !in_array($responses[$field], ['yes','no','prefer_not_to_say'], true)));
 
         if ($missing !== []) {
             throw new InvalidArgumentException('Missing required screening responses: ' . implode(', ', $missing));
@@ -130,6 +123,7 @@ class RiskClassificationService
     private function result(string $riskLevel, bool $immediate, bool $bypassQueue, string $action, string $reason): array
     {
         return [
+            'rule_code' => 'v4_' . $riskLevel,
             'risk_level' => $riskLevel,
             'priority' => $this->getQueuePriority($riskLevel),
             'requires_immediate_action' => $immediate,

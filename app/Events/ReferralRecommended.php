@@ -34,6 +34,7 @@ class ReferralRecommended implements ShouldBroadcastNow
     public function broadcastAs(): string
     {
         return 'ReferralRecommended';
+        
     }
 
     public function broadcastWith(): array

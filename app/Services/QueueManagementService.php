@@ -22,6 +22,13 @@ class QueueManagementService
         'low' => 4,
     ];
 
+    public function prepareQueue(QueueRequest $queue): void
+    {
+        $queue->queue_position = $this->calculateQueuePosition($queue);
+        $queue->estimated_wait = $this->calculateEstimatedWait($queue->priority_level);
+        $queue->save();
+    }
+
     public function addToQueue(QueueRequest $queue): void
     {
         $queue->queue_position = $this->calculateQueuePosition($queue);
@@ -99,22 +106,8 @@ class QueueManagementService
             ->get()
             ->each(function (QueueRequest $queue) {
                 $minutesWaiting = $queue->request_date->diffInMinutes(now());
-                $increments = (int) floor(($minutesWaiting - $this->maxQueueWaitMinutes) / 5);
-                $currentWeight = $this->priorityWeights[$queue->priority_level] ?? 4;
-                $newWeight = max(1, $currentWeight - $increments);
-
-                if ($newWeight >= $currentWeight) {
-                    return;
-                }
-
-                $queue->update([
-                    'priority_level' => array_search($newWeight, $this->priorityWeights, true) ?: $queue->priority_level,
-                    'aging_priority_increases' => (int) $queue->aging_priority_increases + 1,
-                    'last_priority_increase_at' => now(),
-                    'max_wait_reached' => true,
-                ]);
-
-                app(HelperMatchingService::class)->processQueueRequest($queue->refresh());
+                $queue->update(['wait_urgency'=>(int) floor($minutesWaiting / 5), 'max_wait_reached'=>true]);
+                // Wait urgency is operational metadata; clinical risk and FIFO remain unchanged.
             });
 
         $this->broadcastQueueUpdated();

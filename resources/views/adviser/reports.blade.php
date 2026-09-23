@@ -147,243 +147,26 @@
 @endpush
 
 @section('content')
-<div class="card mb-6">
-    <h2 class="text-lg font-semibold mb-3">Risk distribution</h2>
-    @foreach(['low', 'moderate', 'high', 'emergency'] as $risk)
-        <div class="flex items-center gap-3 mb-2">
-            <span class="w-24">{{ ucfirst($risk) }}</span>
-            <progress class="flex-1" value="{{ $riskDistribution[$risk] ?? 0 }}" max="{{ max(1, $totalSessions) }}" aria-label="{{ ucfirst($risk) }} sessions"></progress>
-            <span>{{ $riskDistribution[$risk] ?? 0 }}</span>
-        </div>
-    @endforeach
+<div class="adviser-page-content space-y-5">
+<header class="flex flex-wrap justify-between items-start gap-3"><div><h1 class="text-2xl font-bold text-gray-800">Reports and analytics</h1><p class="text-sm text-gray-500 mt-1">Authorized supervision records. {{ $filters['start']->copy()->timezone('Asia/Manila')->format('M d, Y H:i') }} to {{ $filters['end']->copy()->timezone('Asia/Manila')->format('M d, Y H:i') }} (Asia/Manila).</p></div>
+<div class="flex gap-2"><a class="btn-outline" href="{{ route('adviser.reports.export', array_merge(request()->except('page'),['format'=>'csv'])) }}">Export CSV</a><a class="btn-primary" href="{{ route('adviser.reports.export', array_merge(request()->except('page'),['format'=>'pdf'])) }}">Export PDF</a></div></header>
+@if($errors->any())<p role="alert" class="text-red-700">{{ $errors->first() }}</p>@endif
+<form method="GET" class="card grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+<label class="text-sm">Period<select name="period" class="filter-select w-full mt-1">@foreach(['weekly'=>'Last 7 days','monthly'=>'Last 30 days','quarterly'=>'Last 90 days','yearly'=>'Last year'] as $key=>$label)<option value="{{ $key }}" @selected(($filters['period'] ?? 'monthly')===$key)>{{ $label }}</option>@endforeach</select></label>
+<label class="text-sm">Helper<select name="helper_id" class="filter-select w-full mt-1"><option value="">All supervised Helpers</option>@foreach(\App\Models\Helper::where('adviser_id',auth()->user()->adviser->id)->get() as $helper)<option value="{{ $helper->id }}" @selected(request('helper_id')==$helper->id)>{{ $helper->public_alias }}</option>@endforeach</select></label>
+<label class="text-sm">Concern<select name="concern_id" class="filter-select w-full mt-1"><option value="">All concerns</option>@foreach($categories as $category)<option value="{{ $category->id }}" @selected(request('concern_id')==$category->id)>{{ $category->concern_name }}</option>@endforeach</select></label>
+<label class="text-sm">From (Asia/Manila)<input name="from" type="datetime-local" value="{{ request('from') }}" class="filter-select w-full mt-1"></label>
+<label class="text-sm">To (Asia/Manila)<input name="to" type="datetime-local" value="{{ request('to') }}" class="filter-select w-full mt-1"></label>
+<label class="text-sm">Referral status<select name="referral_status" class="filter-select w-full mt-1"><option value="">All referrals</option>@foreach(['pending_adviser','pending_consent','pending_professional','no_professional_available','accepted','in_progress','completed','closed','declined'] as $status)<option value="{{ $status }}" @selected(request('referral_status')===$status)>{{ ucfirst(str_replace('_',' ',$status)) }}</option>@endforeach</select></label>
+<label class="text-sm">Competency metric<select name="competency_metric" class="filter-select w-full mt-1">@foreach(['overall_score'=>'Overall competency'] + collect(\App\Services\CompetencyRubric::CRITERIA)->mapWithKeys(fn($c)=>[$c[2]=>$c[0]])->all() as $key=>$label)<option value="{{ $key }}" @selected(($filters['competency_metric'] ?? 'overall_score')===$key)>{{ $label }}</option>@endforeach</select></label>
+<div class="flex items-end gap-3"><button class="btn-primary" type="submit">Apply filters</button><a href="{{ route('adviser.reports') }}" class="text-sm text-green-700">Reset</a></div>
+</form>
+<x-adviser-metrics :metrics="$metrics" :definitions="$definitions" />
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+<section class="card"><h2 class="font-semibold mb-4">Monthly session activity</h2>@forelse($trends as $trend)<div class="mb-4 text-sm"><div class="flex justify-between"><span>{{ $trend['month'] }}</span><span>{{ $trend['sessions'] }} sessions ? {{ $trend['completed'] }} completed</span></div><div class="h-3 bg-gray-100 rounded-full mt-2"><div class="h-3 bg-green-600 rounded-full" style="width: {{ 100*$trend['sessions']/max(1,$trends->max('sessions')) }}%"></div></div></div>@empty<p class="text-sm text-gray-500">No session activity in this period.</p>@endforelse</section>
+<section class="card"><h2 class="font-semibold mb-4">Competency trend (1?5)</h2><p class="text-xs text-gray-500 mb-3">{{ $filters['competency_metric'] }} ? scored on the evaluation date in the selected period.</p>@forelse($competency as $trend)<p class="flex justify-between text-sm py-2 border-b"><span>{{ $trend['month'] }}</span><span>{{ $trend['score'] }} / 5</span></p>@empty<p class="text-sm text-gray-500">No competency data in this period.</p>@endforelse</section>
 </div>
-
-<div class="adviser-page-content">
-        <!-- Top Bar -->
-        <div class="flex items-center justify-between mb-6">
-            <div class="flex items-center gap-4">
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-gray-800">Reports & Analytics</h1>
-                    <p class="text-sm text-gray-500 hidden sm:block">
-                        Program performance metrics and helper analytics
-                    </p>
-                </div>
-            </div>
-            <div class="flex items-center gap-3">
-                <form class="inline" action="{{ route('adviser.reports.export') }}" method="GET">
-                    <input type="hidden" name="period" value="{{ $period }}">
-                    <input type="hidden" name="helper_id" value="{{ $helperId }}">
-                    @if(request('from'))
-                        <input type="hidden" name="from" value="{{ request('from') }}">
-                        <input type="hidden" name="to" value="{{ request('to') }}">
-                    @endif
-                    <button type="submit" class="btn-outline">
-                        <i class="fas fa-file-export mr-1"></i> Export
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Filters -->
-        <div class="mb-6 flex flex-wrap items-center gap-4">
-            <form class="form-maximized flex flex-wrap items-center gap-3" method="GET" action="{{ route('adviser.reports') }}">
-                <select name="period" class="filter-select">
-                    <option value="weekly" {{ $period == 'weekly' ? 'selected' : '' }}>Last 7 Days</option>
-                    <option value="monthly" {{ $period == 'monthly' ? 'selected' : '' }}>Last 30 Days</option>
-                    <option value="quarterly" {{ $period == 'quarterly' ? 'selected' : '' }}>Last 90 Days</option>
-                    <option value="yearly" {{ $period == 'yearly' ? 'selected' : '' }}>Last Year</option>
-                </select>
-
-                <select name="helper_id" class="filter-select">
-                    <option value="">All Helpers</option>
-                    @foreach($helpers as $helper)
-                        <option value="{{ $helper->id }}" {{ $helperId == $helper->id ? 'selected' : '' }}>
-                            {{ $helper->first_name }} {{ $helper->last_name }}
-                        </option>
-                    @endforeach
-                </select>
-
-                <input type="date" name="from" value="{{ request('from') }}" class="filter-select" title="From date">
-                <input type="date" name="to" value="{{ request('to') }}" class="filter-select" title="To date">
-
-                <button type="submit" class="btn-primary">
-                    <i class="fas fa-filter mr-1"></i> Apply Filters
-                </button>
-            </form>
-        </div>
-
-        <!-- Stats -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Total Sessions</span>
-                    <span class="text-2xl"><i class="fas fa-chart-column" aria-hidden="true"></i></span>
-                </div>
-                <div class="stat-number">{{ $totalSessions }}</div>
-                <span class="text-xs text-gray-400">All sessions</span>
-            </div>
-            <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Completion Rate</span>
-                    <span class="text-2xl"><i class="fas fa-circle-check" aria-hidden="true"></i></span>
-                </div>
-                <div class="stat-number">{{ $completionRate }}%</div>
-                <span class="text-xs text-gray-400">{{ $completedSessions }} completed</span>
-            </div>
-            <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Avg Response</span>
-                    <span class="text-2xl"><i class="fas fa-stopwatch" aria-hidden="true"></i></span>
-                </div>
-                <div class="stat-number">{{ $avgResponseTime }}</div>
-                <span class="text-xs text-gray-400">First response</span>
-            </div>
-            <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Avg Waiting</span>
-                    <span class="text-2xl"><i class="fas fa-clock" aria-hidden="true"></i></span>
-                </div>
-                <div class="stat-number">{{ $avgWaitingTime }}</div>
-                <span class="text-xs text-gray-400">Queue to session</span>
-            </div>
-        </div>
-
-        <!-- Charts Row -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-
-            <!-- Referral Stats -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Referral Statistics</h3>
-                </div>
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Total Referrals</span>
-                        <span class="font-bold text-gray-800">{{ $referralStats['total'] }}</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Approved</span>
-                        <span class="font-bold text-green-600">{{ $referralStats['approved'] }}</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Pending Review</span>
-                        <span class="font-bold text-yellow-600">{{ $referralStats['pending'] }}</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Declined</span>
-                        <span class="font-bold text-red-600">{{ $referralStats['declined'] }}</span>
-                    </div>
-                    <div class="flex items-center justify-between pt-2 border-t border-gray-200">
-                        <span class="text-sm font-semibold text-gray-700">Acceptance Rate</span>
-                        <span class="font-bold text-gray-800">{{ $referralStats['acceptance_rate'] }}%</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Satisfaction Scores -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Satisfaction Scores</h3>
-                </div>
-                <div class="space-y-3">
-                    <div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Overall Satisfaction</span>
-                            <span class="font-bold text-gray-800">{{ $satisfactionScores['overall'] }} / 5</span>
-                        </div>
-                        <div class="w-full h-2 bg-gray-200 rounded-full mt-1">
-                            <div class="h-full bg-green-500 rounded-full" style="width: {{ ($satisfactionScores['overall'] / 5) * 100 }}%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Helpfulness</span>
-                            <span class="font-bold text-gray-800">{{ $satisfactionScores['helpfulness'] }} / 5</span>
-                        </div>
-                        <div class="w-full h-2 bg-gray-200 rounded-full mt-1">
-                            <div class="h-full bg-green-500 rounded-full" style="width: {{ ($satisfactionScores['helpfulness'] / 5) * 100 }}%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Comfort Level</span>
-                            <span class="font-bold text-gray-800">{{ $satisfactionScores['comfort'] }} / 5</span>
-                        </div>
-                        <div class="w-full h-2 bg-gray-200 rounded-full mt-1">
-                            <div class="h-full bg-green-500 rounded-full" style="width: {{ ($satisfactionScores['comfort'] / 5) * 100 }}%"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Post-Session Feeling</span>
-                            <span class="font-bold text-gray-800">{{ $satisfactionScores['feeling'] }} / 5</span>
-                        </div>
-                        <div class="w-full h-2 bg-gray-200 rounded-full mt-1">
-                            <div class="h-full bg-green-500 rounded-full" style="width: {{ ($satisfactionScores['feeling'] / 5) * 100 }}%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Monthly Trends -->
-        <div class="card mb-6">
-            <div class="card-header">
-                <h3>Monthly Trends</h3>
-                <span class="text-sm text-gray-400">Sessions & performance</span>
-            </div>
-            <div class="overflow-x-auto">
-                <div class="chart-bar" style="height: 180px;">
-                    @foreach($monthlyTrends as $trend)
-                        <div class="flex-1 flex flex-col items-center">
-                            <div class="w-full flex flex-col items-center gap-1">
-                                <span class="text-xs text-gray-600 font-medium">{{ $trend['sessions'] }}</span>
-                                <div class="bar w-full" style="height: {{ ($trend['sessions'] / 60) * 140 }}px; background: linear-gradient(180deg, #04A052, #38C172);"></div>
-                            </div>
-                            <span class="text-xs text-gray-400 mt-2">{{ $trend['month'] }}</span>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-            <div class="flex justify-center gap-6 mt-4 text-xs text-gray-500">
-                <span><span class="inline-block w-3 h-3 bg-green-500 rounded-sm mr-1"></span> Sessions</span>
-                <span><span class="inline-block w-3 h-3 bg-blue-400 rounded-sm mr-1"></span> Completion Rate</span>
-            </div>
-        </div>
-
-        <!-- Helper Ranking -->
-        <div class="card">
-            <div class="card-header">
-                <h3>Helper Performance Ranking</h3>
-                <span class="text-sm text-gray-400">Top performers</span>
-            </div>
-            <div class="space-y-1">
-                @foreach($helperRanking->take(10) as $index => $helper)
-                    <div class="ranking-item">
-                        <span class="rank">#{{ $index + 1 }}</span>
-                        <div class="avatar" style="background: {{ $helper->competency >= 4 ? '#04A052' : ($helper->competency >= 3 ? '#3B82F6' : '#9CA3AF') }};">
-                            {{ $helper->initials }}
-                        </div>
-                        <div class="info">
-                            <div class="name">{{ $helper->name }}</div>
-                            <div class="detail">
-                                {{ $helper->sessions }} sessions · {{ $helper->rating }} <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
-                                <span class="competency-level {{ strtolower($helper->level) }} ml-2">
-                                    {{ $helper->level }}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="score">{{ $helper->competency }} / 5</div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
-            Data-driven decisions lead to better outcomes.
-        </div>
+<section class="card"><h2 class="font-semibold mb-3">Session records</h2><p class="text-xs text-gray-500 mb-4">{{ $definitions['period'] }}</p><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-gray-500 border-b"><th class="p-3">Session</th><th class="p-3">Helper</th><th class="p-3">Concern</th><th class="p-3">Status</th><th class="p-3">Documentation</th></tr></thead><tbody>@forelse($sessions as $session)<tr class="border-b"><td class="p-3">{{ $session->reference_number }}</td><td class="p-3">{{ $session->helper?->public_alias ?? 'Unassigned' }}</td><td class="p-3">{{ $session->concern?->concern_name ?? 'Not recorded' }}</td><td class="p-3">{{ ucfirst(str_replace('_',' ',$session->session_status)) }}</td><td class="p-3"><a class="text-green-700 underline" href="{{ route('adviser.session.show',$session->id) }}">Review</a></td></tr>@empty<tr><td colspan="5" class="p-5 text-gray-500">No records match these filters.</td></tr>@endforelse</tbody></table></div><div class="mt-4">{{ $sessions->links() }}</div></section>
+<details class="card"><summary class="font-semibold cursor-pointer">Metric definitions</summary>@foreach($definitions as $name=>$definition)<p class="text-sm mt-3"><strong>{{ ucfirst(str_replace('_',' ',$name)) }}:</strong> {{ $definition }}</p>@endforeach<p class="text-sm mt-3">Durations use minutes; duty coverage uses hours; rates use percentages. Calculations round to two decimals. Missing or invalid intervals are excluded. Empty denominators show No data.</p></details>
 </div>
 @endsection

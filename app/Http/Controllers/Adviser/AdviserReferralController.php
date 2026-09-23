@@ -4,15 +4,15 @@ namespace App\Http\Controllers\Adviser;
 
 use App\Http\Controllers\Controller;
 use App\Models\Helper;
-use App\Models\Referral;
-use App\Models\Session;
 use App\Models\Notification;
 use App\Models\PsychologyProfessional;
-use App\Events\ReferralApproved;
+use App\Models\Referral;
+use App\Models\Session;
+use App\Services\AdviserScope;
+use App\Services\ReferralManagementService;
 use App\Traits\BroadcastsSafely;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class AdviserReferralController extends Controller
 {
@@ -28,31 +28,28 @@ class AdviserReferralController extends Controller
         // Get pending referrals (awaiting adviser review)
         $pendingReferrals = Referral::with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'helper.user:id,id,name'])
             ->where('status', Referral::STATUS_PENDING_ADVISER)
-            ->whereIn('helper_id', $helperIds)
+            ->where(fn ($q) => $q->whereIn('helper_id', $helperIds)->orWhere('adviser_id', Auth::user()->adviser?->id))
             ->orderBy('priority_level', 'desc')
             ->orderBy('created_at', 'asc')
-            ->limit(50)
-            ->get();
+            ->paginate(15,['*'],'pending_page')->withQueryString();
 
         // Get approved referrals (awaiting professional)
         $approvedReferrals = Referral::with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'professional:id,id,first_name,last_name'])
-            ->where('status', Referral::STATUS_PENDING_PROFESSIONAL)
-            ->whereIn('helper_id', $helperIds)
+            ->whereIn('status', [Referral::STATUS_PENDING_CONSENT,Referral::STATUS_PENDING_PROFESSIONAL,Referral::STATUS_NO_PROFESSIONAL_AVAILABLE,Referral::STATUS_ACCEPTED,Referral::STATUS_IN_PROGRESS])
+            ->where(fn ($q) => $q->whereIn('helper_id', $helperIds)->orWhere('adviser_id', Auth::user()->adviser?->id))
             ->orderBy('created_at', 'asc')
-            ->limit(50)
-            ->get();
+            ->paginate(15,['*'],'approved_page')->withQueryString();
 
         // Get completed referrals
         $completedReferrals = Referral::with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'professional:id,id,first_name,last_name'])
-            ->whereIn('status', [Referral::STATUS_COMPLETED, Referral::STATUS_CLOSED])
-            ->whereIn('helper_id', $helperIds)
+            ->whereIn('status', [Referral::STATUS_COMPLETED, Referral::STATUS_CLOSED,Referral::STATUS_DECLINED])
+            ->where(fn ($q) => $q->whereIn('helper_id', $helperIds)->orWhere('adviser_id', Auth::user()->adviser?->id))
             ->orderBy('updated_at', 'desc')
-            ->limit(10)
-            ->get();
+            ->paginate(15,['*'],'completed_page')->withQueryString();
 
         // Get statistics
-        $totalPending = $pendingReferrals->count();
-        $totalApproved = $approvedReferrals->count();
+        $totalPending = $pendingReferrals->total();
+        $totalApproved = $approvedReferrals->total();
         $emergencyCount = $pendingReferrals->filter(function ($r) {
             return $r->priority_level === Referral::PRIORITY_EMERGENCY;
         })->count();
@@ -84,7 +81,7 @@ class AdviserReferralController extends Controller
             'helper',
             'helper.user',
             'adviser',
-            'professional'
+            'professional',
         ])->findOrFail($id);
 
         $this->authorizeReferral($referral);
@@ -92,7 +89,8 @@ class AdviserReferralController extends Controller
         // Get the session report if exists
         $sessionReport = $referral->session->report ?? null;
 
-        return view('adviser.referral-detail', compact('referral', 'sessionReport'));
+        $professionals = PsychologyProfessional::where('is_available',true)->whereHas('user',fn($q)=>$q->where('is_active',true)->where('role','professional'))->get();
+        return view('adviser.referral-detail', compact('referral', 'sessionReport','professionals'));
     }
 
     /**
@@ -101,64 +99,11 @@ class AdviserReferralController extends Controller
     public function approve(Request $request, $id)
     {
         $referral = Referral::findOrFail($id);
-
         $this->authorizeReferral($referral);
-        abort_unless($referral->status === Referral::STATUS_PENDING_ADVISER, 409, 'This referral has already been reviewed.');
+        $data = $request->validate(['review_notes' => 'required|string|max:1000', 'professional_id' => 'prohibited', 'consent_obtained' => 'prohibited']);
+        app(ReferralManagementService::class)->reviewReferral($referral, Auth::user()->adviser, ['approved' => true, 'notes' => $data['review_notes']]);
 
-        $request->validate([
-            'professional_id' => 'nullable|exists:psychology_professionals,id',
-            'notes' => 'nullable|string|max:500'
-        ]);
-
-        // Update referral status
-        $referral->update([
-            'adviser_id' => Auth::user()->adviser->id ?? null,
-            'status' => Referral::STATUS_PENDING_CONSENT,
-            'help_seeker_consent' => false,
-            'consent_obtained_at' => null,
-            'consent_requested_at' => now(),
-            'professional_id' => $request->professional_id ?? null,
-            'reviewed_at' => now(),
-            'approved_at' => now(),
-            'review_notes' => $request->notes,
-        ]);
-
-        // Create notification for helper
-        Notification::create([
-            'user_account_id' => $referral->session->seeker->user_account_id,
-            'title' => 'Referral consent requested',
-            'message' => 'An adviser approved a referral. Please review consent.',
-            'notification_type' => 'referral',
-            'link' => '/referrals/' . $referral->id . '/identity',
-        ]);
-        Notification::create([
-            'user_account_id' => $referral->helper->user_account_id,
-            'title' => 'Referral Approved ',
-            'message' => 'Your referral has been approved by the adviser.',
-            'notification_type' => 'referral',
-            'type_icon' => 'fa-circle-check',
-            'link' => '/helper/cases'
-        ]);
-
-        $this->broadcastSafely(new ReferralApproved($referral, $referral->helper->user_account_id));
-
-        // If professional assigned, notify them
-        if ($request->professional_id && $referral->help_seeker_consent) {
-            $professional = PsychologyProfessional::find($request->professional_id);
-            if ($professional) {
-                Notification::create([
-                    'user_account_id' => $professional->user_account_id,
-                    'title' => 'New Referral Assigned',
-                    'message' => 'A referral has been assigned to you for review.',
-                    'notification_type' => 'referral',
-                    'type_icon' => 'fa-clipboard-list',
-                    'link' => '/professional/dashboard'
-                ]);
-            }
-        }
-
-        return redirect()->route('adviser.referrals')
-            ->with('success', 'Referral approved successfully!');
+        return redirect()->route('adviser.referrals')->with('success', 'Referral approved. The Help Seeker must decide consent before professional assignment.');
     }
 
     /**
@@ -167,35 +112,11 @@ class AdviserReferralController extends Controller
     public function reject(Request $request, $id)
     {
         $referral = Referral::findOrFail($id);
-
         $this->authorizeReferral($referral);
+        $data = $request->validate(['rejection_reason' => 'required|string|max:1000']);
+        app(ReferralManagementService::class)->reviewReferral($referral, Auth::user()->adviser, ['approved' => false, 'decline_reason' => $data['rejection_reason']]);
 
-        $request->validate([
-            'rejection_reason' => 'required|string|max:500'
-        ]);
-
-        // Update referral status
-        $referral->update([
-            'adviser_id' => Auth::user()->adviser->id ?? null,
-            'status' => Referral::STATUS_DECLINED,
-            'reviewed_at' => now(),
-            'declined_at' => now(),
-            'decline_reason' => $request->rejection_reason,
-            'closed_date' => now(),
-        ]);
-
-        // Create notification for helper
-        Notification::create([
-            'user_account_id' => $referral->helper->user_account_id,
-            'title' => 'Referral Declined ',
-            'message' => 'Your referral has been declined. Reason: ' . $request->rejection_reason,
-            'notification_type' => 'referral',
-            'type_icon' => 'fa-circle-xmark',
-            'link' => '/helper/cases'
-        ]);
-
-        return redirect()->route('adviser.referrals')
-            ->with('info', 'Referral declined.');
+        return redirect()->route('adviser.referrals')->with('info', 'Referral declined.');
     }
 
     /**
@@ -208,18 +129,10 @@ class AdviserReferralController extends Controller
         $this->authorizeReferral($referral);
 
         $request->validate([
-            'info_request' => 'required|string|max:500'
+            'info_request' => 'required|string|min:10|max:2000',
         ]);
 
-        // Create notification for helper
-        Notification::create([
-            'user_account_id' => $referral->helper->user_account_id,
-            'title' => 'Additional Information Requested',
-            'message' => 'The adviser needs more information about your referral: ' . $request->info_request,
-            'notification_type' => 'referral',
-            'type_icon' => 'fa-pen-to-square',
-            'link' => '/helper/cases/' . $referral->session_id
-        ]);
+        app(ReferralManagementService::class)->clarify($referral, $request->info_request);
 
         return redirect()->route('adviser.referrals')
             ->with('info', 'Additional information requested from helper.');
@@ -231,44 +144,15 @@ class AdviserReferralController extends Controller
     public function assignProfessional(Request $request, $id)
     {
         $referral = Referral::findOrFail($id);
-
         $this->authorizeReferral($referral);
-        abort_unless($referral->approved_at && $referral->help_seeker_consent, 409, 'Approval and seeker consent are required.');
+        $data = $request->validate(['professional_id' => 'required|integer|exists:psychology_professionals,id', 'reason' => 'required|string|max:1000']);
+        app(ReferralManagementService::class)->assignProfessional($referral, (int) $data['professional_id'], $data['reason']);
 
-        $request->validate([
-            'professional_id' => 'required|exists:psychology_professionals,id'
-        ]);
-
-        $referral->update([
-            'professional_id' => $request->professional_id,
-            'status' => Referral::STATUS_PENDING_PROFESSIONAL
-        ]);
-
-        // Notify professional
-        $professional = PsychologyProfessional::find($request->professional_id);
-        if ($professional) {
-            Notification::create([
-                'user_account_id' => $professional->user_account_id,
-                'title' => 'Referral Assigned',
-                'message' => 'A referral has been assigned to you.',
-                'notification_type' => 'referral',
-                'type_icon' => 'fa-clipboard-list',
-                'link' => '/professional/dashboard'
-            ]);
-        }
-
-        return redirect()->back()
-            ->with('success', 'Professional assigned successfully.');
+        return back()->with('success', 'Professional assignment recorded.');
     }
 
     private function authorizeReferral(Referral $referral): void
     {
-        $adviserId = Auth::user()->adviser?->id;
-
-        abort_unless($adviserId, 403);
-        $allowed = $referral->adviser_id === $adviserId
-            || ($referral->helper_id && \App\Models\Helper::where('id', $referral->helper_id)->where('adviser_id', $adviserId)->exists());
-
-        abort_unless($allowed, 403, 'You are not authorized to manage this referral.');
+        app(AdviserScope::class)->referral($referral);
     }
 }

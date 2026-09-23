@@ -161,7 +161,8 @@
     document.getElementById('send-code').addEventListener('click', async function () {
         const email = document.getElementById('verification-email');
         if (!email.value || !email.reportValidity()) { email.focus(); return; }
-        const result = await post(@json(route('registration.otp.send')), {email: email.value}, this, status);
+        status.textContent = 'Sending your code. Please wait?';
+        const result = await post(@json(route('registration.otp.send')), {email: email.value.trim()}, this, status);
         if (result) { verifiedUntil = 0; updateSummary(); startCooldown(result.retry_after || 60); }
     });
     document.getElementById('verify-code').addEventListener('click', async function () {

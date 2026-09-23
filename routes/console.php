@@ -61,3 +61,19 @@ Schedule::command('identity-vault:purge-expired')->daily()->withoutOverlapping()
 
 Schedule::call(fn () => app(\App\Services\HelperMatchingService::class)->matchWaitingRequests())
     ->everyMinute()->name('match-waiting-seekers')->withoutOverlapping();
+
+Schedule::call(function () {
+    Session::where('session_status','active')->whereNull('warning_sent_at')->where('start_time','<=',now()->subMinutes(85))->where('start_time','>',now()->subMinutes(90))->eachById(function ($session) {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($session) {
+            $session=Session::lockForUpdate()->findOrFail($session->id);
+            if ($session->warning_sent_at || !$session->isActive()) return;
+            $session->update(['warning_sent_at'=>now()]);
+            foreach (array_filter([$session->seeker?->user_account_id,$session->helper?->user_account_id]) as $id) \App\Models\Notification::create(['user_account_id'=>$id,'title'=>'Five minutes remaining','message'=>'This session will close at the 90-minute limit.','notification_type'=>'session']);
+            \App\Services\SupportAudit::record('session_duration_warning',$session);
+        });
+    });
+})->everyMinute()->name('warn-session-duration')->withoutOverlapping();
+
+Schedule::call(fn () => app(\App\Services\HelperWorkflowMaintenance::class)->run())->everyMinute()->name('maintain-helper-workflow')->withoutOverlapping();
+
+Schedule::call(fn () => app(\App\Services\AdviserSupervisionMaintenance::class)->run())->hourly()->name('adviser-supervision-follow-up')->withoutOverlapping();

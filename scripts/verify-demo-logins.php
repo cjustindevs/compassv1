@@ -25,8 +25,8 @@ foreach ($accounts as [$role, $login, $password]) {
     curl_exec($client);
     $code = curl_getinfo($client, CURLINFO_RESPONSE_CODE);
     $path = parse_url(curl_getinfo($client, CURLINFO_EFFECTIVE_URL), PHP_URL_PATH);
-    $ok = $code === 200 && $path === '/' . $role . '/dashboard';
-    echo $role . ': ' . ($ok ? 'login and dashboard OK' : 'FAILED (HTTP ' . $code . ')') . PHP_EOL;
+    $ok = $code === 200 && ($path === '/' . $role . '/dashboard' || ($role === 'helper' && $path === '/helper/readiness'));
+    echo $role . ': ' . ($ok ? 'login and expected landing page OK' : 'FAILED (HTTP ' . $code . ', path ' . $path . ')') . PHP_EOL;
     $failed = $failed || ! $ok;
     curl_close($client);
 }

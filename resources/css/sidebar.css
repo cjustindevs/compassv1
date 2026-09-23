@@ -353,34 +353,45 @@
 }
 .view-profile:hover { background: var(--green-50); color: var(--green-700); }
 
-/* ───────────── Collapsed (desktop) state ───────────── */
-.sidebar.collapsed { width: var(--sidebar-w-collapsed); }
-.sidebar.collapsed .brand-logo-icon { display: block; }
-.sidebar.collapsed .brand-text,
-.sidebar.collapsed .brand-block,
-.sidebar.collapsed .nav-text,
-.sidebar.collapsed .nav-section,
-.sidebar.collapsed .user-info,
-.sidebar.collapsed .user-stats,
-.sidebar.collapsed .availability-dot,
-.sidebar.collapsed .view-profile,
-.sidebar.collapsed .logout-text { display: none; }
-.sidebar.collapsed .sidebar-header { justify-content: center; padding-bottom: 12px; }
-.sidebar.collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
-.sidebar.collapsed .nav-item i { margin: 0; }
-.sidebar.collapsed .nav-badge {
-    position: absolute;
-    top: 6px;
-    right: 8px;
-    margin: 0;
-    padding: 0;
-    min-width: 16px;
-    height: 16px;
-    line-height: 16px;
+/* ───────────── Collapsed (desktop) state ─────────────
+   Desktop only, so a stored collapse preference never shrinks the mobile drawer. */
+@media (min-width: 769px) {
+    .sidebar.collapsed { width: var(--sidebar-w-collapsed); }
+    .sidebar.collapsed .brand-block,
+    .sidebar.collapsed .nav-text,
+    .sidebar.collapsed .nav-section,
+    .sidebar.collapsed .user-info,
+    .sidebar.collapsed .user-stats,
+    .sidebar.collapsed .availability-dot,
+    .sidebar.collapsed .view-profile,
+    .sidebar.collapsed .logout-text { display: none; }
+    .sidebar.collapsed .brand-logo-icon { display: block; }
+    /* Stack the logo above the collapse toggle so the icon rail still shows a
+       visible expand/collapse control instead of a blank area. */
+    .sidebar.collapsed .sidebar-header {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding-bottom: 12px;
+    }
+    .sidebar.collapsed .sidebar-toggle { display: inline-flex; }
+    .sidebar.collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
+    .sidebar.collapsed .nav-item i { margin: 0; }
+    .sidebar.collapsed .nav-badge {
+        position: absolute;
+        top: 6px;
+        right: 8px;
+        margin: 0;
+        padding: 0;
+        min-width: 16px;
+        height: 16px;
+        line-height: 16px;
+    }
+    .sidebar.collapsed .sidebar-user { justify-content: center; }
+    .sidebar.collapsed .logout-btn { padding: 10px 0; }
+    .sidebar.collapsed ~ .main-content { margin-left: var(--sidebar-w-collapsed); }
 }
-.sidebar.collapsed .sidebar-user { justify-content: center; }
-.sidebar.collapsed .logout-btn { padding: 10px 0; }
-.sidebar.collapsed .sidebar-toggle { display: none; }
 
 /* ───────────── Hamburger + overlay (mobile drawer) ───────────── */
 .hamburger {
@@ -407,7 +418,6 @@
     transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     min-height: 100vh;
 }
-.sidebar.collapsed ~ .main-content { margin-left: var(--sidebar-w-collapsed); }
 
 /* ───────────── Bottom navigation (mobile) ───────────── */
 .bottom-nav {

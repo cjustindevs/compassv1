@@ -82,7 +82,7 @@
                         @endforeach
                     </div>
                 @else
-                    <div class="empty-state"><i class="fas fa-comments"></i><p>No messages yet.</p></div>
+                    <div class="empty-state"><i class="fas fa-comments"></i><p>{{ $session->isActive() ? 'No messages yet.' : 'Conversation is available during an accepted active session. Archived transcripts require adviser authorization.' }}</p></div>
                 @endif
             </div>
 
@@ -126,8 +126,17 @@
                     </div>
                 </div>
                 <hr class="divider">
+                @if($session->session_status === 'helper_assigned' && $session->scheduled_start)
+                    <div style="text-align:center;padding:0 0 10px;">
+                        <div class="text-xs text-gray-500"><i class="fas fa-calendar-check mr-1"></i>Session scheduled</div>
+                        <div class="font-bold text-emerald-600">{{ $session->scheduled_start->setTimezone(config('app.schedule_timezone'))->format('M d, h:i A') }}</div>
+                    </div>
+                    <hr class="divider">
+                @endif
                 <div style="display:flex;flex-direction:column;gap:8px;">
-                    @if($session->session_status === 'helper_assigned')
+                    @if($session->session_status === 'helper_assigned' && $session->helper_accepted_at)
+                        <a class="btn btn-primary btn-block" href="{{ route('helper.session.pre-assessment',$session->id) }}">Prepare and start session</a>
+                    @elseif($session->session_status === 'helper_assigned')
                         <form method="POST" action="{{ route('helper.cases.accept', ['id' => $session->id]) }}">
                             @csrf
                             <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-check"></i> Accept Case</button>
@@ -137,14 +146,14 @@
                               data-confirm-message="This case will be returned to the queue and reassigned."
                               data-confirm-text="Decline"
                               data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
-                            @csrf
+                            @csrf<label class="sr-only" for="decline-{{ $session->id ?? $case['id'] }}">Reason for declining</label><select id="decline-{{ $session->id ?? $case['id'] }}" name="reason" class="form-control" required><option value="">Choose a reason</option>@foreach(['fatigue'=>'Fatigue','illness'=>'Illness','personal_emergency'=>'Personal emergency','academic_conflict'=>'Academic conflict','conflict_of_interest'=>'Conflict of interest','unavailable'=>'Unavailable'] as $value=>$label)<option value="{{ $value }}">{{ $label }}</option>@endforeach</select>
                             <button type="submit" class="btn btn-outline-danger btn-block"><i class="fas fa-times"></i> Decline Case</button>
                         </form>
                     @else
                         <a href="{{ route('helper.session.chat', ['id' => $session->id]) }}" class="btn btn-primary btn-block"><i class="fas fa-comment-dots"></i> Open Chat</a>
-                        <a href="{{ route('helper.session.voice', ['id' => $session->id]) }}" class="btn btn-secondary btn-block"><i class="fas fa-phone"></i> Voice Call</a>
+                        <a href="{{ route('helper.session.voice', ['id' => $session->id]) }}" class="btn btn-secondary btn-block"><i class="fas fa-phone"></i> Voice unavailable</a>
                         <a href="{{ route('helper.session.notes', ['id' => $session->id]) }}" class="btn btn-secondary btn-block"><i class="fas fa-edit"></i> Session Notes</a>
-                        @if($session->session_status !== 'completed')
+                        @if($session->session_status === 'active')
                             <form method="POST" action="{{ route('helper.session.end', ['id' => $session->id]) }}"
                                   data-confirm="End session?"
                                   data-confirm-message="The seeker will be asked to evaluate."

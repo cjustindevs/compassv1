@@ -18,44 +18,32 @@ use Illuminate\Support\Facades\Broadcast;
 Broadcast::channel('session.{sessionId}', function ($user, $sessionId) {
     $session = Session::find($sessionId);
 
-    if (! $session) {
+    if (! $session || !$user->is_active) {
         return false;
     }
 
     // The seeker or helper participating in the session.
-    if (($session->seeker_id && $session->seeker_id === $user->helpSeeker?->id)
-        || ($session->helper_id && $session->helper_id === $user->helper?->id)) {
+    if (($user->role==='seeker' && $session->helper_accepted_at && $session->isActive() && $session->seeker_id && $session->seeker_id === $user->helpSeeker?->id)
+        || ($user->role==='helper' && $session->helper_accepted_at && $session->isActive() && $session->helper_id && $session->helper_id === $user->helper?->id)) {
         return true;
     }
 
-    // A supervising adviser: either they advise the session's helper,
-    // or they are the adviser attached to a referral on this session.
-    if ($user->role === 'adviser' && $user->adviser) {
-        $isHelperAdviser = $session->helper_id
-            && $session->helper?->adviser_id === $user->adviser->id;
-
-        $isReferralAdviser = Referral::where('session_id', $session->id)
-            ->where('adviser_id', $user->adviser->id)
-            ->exists();
-
-        return $isHelperAdviser || $isReferralAdviser;
-    }
-
+    // Conversation broadcasts are restricted to active participants.
     return false;
 });
 
 Broadcast::channel('helper.{userId}', function ($user, $userId) {
-    return (int) $user->id === (int) $userId && $user->role === 'helper';
+    return $user->is_active && (int) $user->id === (int) $userId && $user->role === 'helper';
 });
 
 Broadcast::channel('adviser.{userId}', function ($user, $userId) {
-    return (int) $user->id === (int) $userId && $user->role === 'adviser';
+    return $user->is_active && (int) $user->id === (int) $userId && $user->role === 'adviser';
 });
 
 Broadcast::channel('moderator.{userId}', function ($user, $userId) {
-    return (int) $user->id === (int) $userId && $user->role === 'moderator';
+    return $user->is_active && (int) $user->id === (int) $userId && $user->role === 'moderator';
 });
 
 Broadcast::channel('seeker.{userId}', function ($user, $userId) {
-    return (int) $user->id === (int) $userId;
+    return $user->is_active && $user->role==='seeker' && (int) $user->id === (int) $userId;
 });

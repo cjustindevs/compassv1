@@ -32,6 +32,11 @@ class Adviser extends Model
         return $this->hasMany(Helper::class, 'adviser_id', 'id');
     }
 
+    public function reviewSessions(): HasMany
+    {
+        return $this->hasMany(Session::class, 'review_adviser_id', 'id');
+    }
+
     public function getFullNameAttribute(): string
     {
         return trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? '')) ?: ($this->email ?? 'Adviser');

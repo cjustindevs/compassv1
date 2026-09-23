@@ -15,6 +15,8 @@ class HelperSelfHelpController extends Controller
      */
     public function index()
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
+
         return view('helper.self-help.index');
     }
 
@@ -23,6 +25,8 @@ class HelperSelfHelpController extends Controller
      */
     public function breathing()
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
+
         return view('helper.self-help.breathing');
     }
 
@@ -31,6 +35,8 @@ class HelperSelfHelpController extends Controller
      */
     public function grounding()
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
+
         return view('helper.self-help.grounding');
     }
 
@@ -39,6 +45,7 @@ class HelperSelfHelpController extends Controller
      */
     public function journal()
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $helper = Auth::user()->helper;
         $entries = HelperJournalEntry::where('helper_id', $helper->id)
             ->orderByDesc('created_at')
@@ -52,6 +59,7 @@ class HelperSelfHelpController extends Controller
      */
     public function storeJournal(Request $request)
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $validated = $request->validate([
             'content' => 'required|string|min:3|max:2000',
             'mood' => 'nullable|in:good,okay,neutral,anxious,sad,tired',
@@ -73,7 +81,8 @@ class HelperSelfHelpController extends Controller
      */
     public function hotlines()
     {
-        $hotlines = EmergencyResource::where('status', 'active')->get();
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
+        $hotlines = EmergencyResource::published()->get();
 
         return view('helper.self-help.hotlines', compact('hotlines'));
     }

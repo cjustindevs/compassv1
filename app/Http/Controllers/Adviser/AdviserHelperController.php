@@ -40,6 +40,7 @@ class AdviserHelperController extends Controller
 
         $helperData = $helpers->map(function (Helper $helper) use ($avgScores) {
             $readiness = $helper->latestReadiness;
+            $status = $this->getHelperStatus($helper);
 
             return [
                 'helper' => $helper,
@@ -48,8 +49,8 @@ class AdviserHelperController extends Controller
                 'competency_score' => $helper->latest_competency_overall_score ? round((float) $helper->latest_competency_overall_score, 1) : 0,
                 'average_rating' => round((float) ($avgScores->get($helper->id, 0)), 1),
                 'active_cases' => $helper->active_cases,
-                'status' => $this->getHelperStatus($helper, $readiness),
-                'is_available' => $helper->isOnline(),
+                'status' => $status,
+                'is_available' => $status === 'available',
                 'readiness' => $readiness,
             ];
         });
@@ -95,7 +96,37 @@ class AdviserHelperController extends Controller
             ->limit(10)
             ->get();
 
-        return view('adviser.helper-detail', compact('helper', 'competencyHistory'));
+                $transferAdvisers = \App\Models\Adviser::where('id', '!=', $helper->adviser_id)->whereHas('user', fn ($q) => $q->where('is_active', true))->get();
+        $assignmentHistory = \Illuminate\Support\Facades\DB::table('adviser_helper_assignments')->where('helper_id', $helper->id)->latest('id')->get();
+        return view('adviser.helper-detail', compact('helper', 'competencyHistory', 'transferAdvisers', 'assignmentHistory'));
+    }
+
+    public function verify(Request $request, int $id): RedirectResponse
+    {
+        abort_unless($request->user()?->role==='adviser' && $request->user()?->is_active,403);
+        $helper=Helper::findOrFail($id);
+        $this->authorizeHelper($helper);
+        $data=$request->validate([
+            'currently_enrolled'=>'accepted', 'recognized_member'=>'accepted', 'training_completed'=>'accepted',
+            'qualification_evidence'=>'required|string|max:2000',
+            'verification_expires_at'=>'nullable|date|after:today',
+        ]);
+        \Illuminate\Support\Facades\DB::transaction(function()use($helper,$data,$request){
+            $helper=Helper::lockForUpdate()->findOrFail($helper->id);
+            $this->authorizeHelper($helper);
+            $helper->update(['verification_status'=>'verified','verified_at'=>now(),'verified_by'=>$request->user()->id,'training_verified'=>true,'qualification_evidence'=>$data['qualification_evidence'],'verification_expires_at'=>$data['verification_expires_at']??null]);
+            \App\Services\SupportAudit::record('helper_institutionally_verified',$helper,['verifier_id'=>$request->user()->id]);
+            \App\Models\Notification::create(['user_account_id'=>$helper->user_account_id,'title'=>'Helper verification approved','message'=>'Your adviser verified your institutional eligibility and training. Check your duty schedule and complete readiness before accepting sessions.','notification_type'=>'system','type_icon'=>'fa-user-check','link'=>'/helper/dashboard']);
+        },3);
+
+        // Verification is an eligibility change: reconcile the operational
+        // status so a willing, on-shift, ready helper becomes matchable
+        // immediately instead of waiting for the scheduler.
+        $helper = $helper->fresh();
+        app(\App\Services\HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper);
+        app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
+
+        return back()->with('success','Institutional eligibility and training verification recorded.');
     }
 
     public function matching(int $id): View
@@ -122,40 +153,9 @@ class AdviserHelperController extends Controller
 
     public function updateCompetency(Request $request, int $id): RedirectResponse
     {
-        $validated = $request->validate([
-            'competency_score' => 'required|numeric|min:1|max:5',
-            'remarks' => 'nullable|string|max:1000',
-        ]);
-
-        $helper = Helper::findOrFail($id);
+        $helper=Helper::findOrFail($id);
         $this->authorizeHelper($helper);
-        $adviser = Auth::user()->adviser;
-        $score = (float) $validated['competency_score'];
-
-        $evaluation = HelperCompetencyHistory::create([
-            'helper_id' => $helper->id,
-            'adviser_id' => $adviser->id,
-            'evaluation_date' => now(),
-            'active_listening_score' => $score,
-            'empathy_score' => $score,
-            'respect_score' => $score,
-            'ethical_practices_score' => $score,
-            'referral_accuracy_score' => $score,
-            'overall_score' => $score,
-            'competency_level' => match (true) {
-                $score >= 4.5 => 'Outstanding',
-                $score >= 3.5 => 'Very Good',
-                $score >= 2.5 => 'Satisfactory',
-                $score >= 1.5 => 'Needs Improvement',
-                default => 'Unsatisfactory',
-            },
-            'evaluation_period' => now()->format('F Y'),
-            'remarks' => $validated['remarks'] ?? null,
-        ]);
-
-        $helper->updateCompetency($evaluation);
-
-        return back()->with('success', 'Helper competency updated successfully.');
+        return redirect()->route('adviser.evaluations')->with('info','Use the session evaluation form to rate all five competency criteria separately.');
     }
 
     public function availability()
@@ -166,12 +166,14 @@ class AdviserHelperController extends Controller
             'id' => $helper->id,
             'name' => $helper->user?->name ?? $helper->full_name,
             'availability' => $helper->availability ?? ($helper->status === 'available' ? 'available' : 'unavailable'),
-            'is_ready' => $helper->isReady(),
+            'is_ready' => (bool) $helper->getCurrentReadiness(),
             'current_sessions' => $helper->current_shift_sessions,
             'max_sessions' => Helper::MAX_SESSIONS_PER_SHIFT,
             'competency_score' => $helper->competency_score,
             'competency_level' => $helper->competency_level,
             'status' => $helper->status,
+            'status_label' => app(\App\Services\HelperEligibilityService::class)->status($helper)['label'],
+            'can_accept_sessions' => app(\App\Services\HelperEligibilityService::class)->status($helper)['assignable'],
             'is_under_review' => $helper->is_under_review,
         ]));
     }
@@ -191,12 +193,13 @@ class AdviserHelperController extends Controller
                 'helper_id' => $helper->id,
                 'name' => $helper->user?->name ?? $helper->full_name,
                 'availability' => $helper->availability ?? $helper->status ?? 'offline',
-                'is_ready' => $helper->isReady(),
+                'is_ready' => (bool) $helper->getCurrentReadiness(),
                 'current_sessions' => $helper->current_shift_sessions ?? 0,
                 'max_sessions' => Helper::MAX_SESSIONS_PER_SHIFT,
                 'has_schedule' => $schedule !== null,
                 'is_on_shift' => $schedule?->isWithinShift() ?? false,
-                'can_accept_sessions' => $helper->canAcceptSessions(),
+                'can_accept_sessions' => app(\App\Services\HelperEligibilityService::class)->status($helper)['assignable'],
+                'status_label' => app(\App\Services\HelperEligibilityService::class)->status($helper)['label'],
                 'shift_start' => $schedule?->shift_start,
                 'shift_end' => $schedule?->shift_end,
             ];
@@ -234,6 +237,7 @@ class AdviserHelperController extends Controller
                 'is_active' => true,
         ])->save();
 
+        app(\App\Services\HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh());
         app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
 
         return redirect()->route('adviser.schedule', ['date' => $validated['date']])
@@ -250,7 +254,12 @@ class AdviserHelperController extends Controller
 
     public function reassignHelpers(Request $request): RedirectResponse
     {
-        return back()->with('error', 'Helper reassignment is restricted to moderators and system assignment.');
+        $data = $request->validate([
+            'helper_ids' => 'required|array|min:1', 'helper_ids.*' => 'required|integer|distinct|exists:helpers,id',
+            'adviser_id' => 'required|integer|exists:advisers,id', 'reason' => 'required|string|max:1000',
+        ]);
+        app(\App\Services\AdviserAssignmentService::class)->transfer($data['helper_ids'], (int) $data['adviser_id'], $data['reason']);
+        return redirect()->route('adviser.helpers')->with('success', 'Supervision and active referrals transferred successfully.');
     }
 
     /**
@@ -270,7 +279,7 @@ class AdviserHelperController extends Controller
         $latestCompetency = HelperCompetencyHistory::whereIn('helper_id', $helperIds)
             ->selectRaw('helper_id, overall_score')
             ->orderBy('evaluation_date', 'desc')
-            ->groupBy('helper_id', 'overall_score')
+            ->get()->unique('helper_id')
             ->pluck('overall_score', 'helper_id');
 
         $activeCounts = Session::whereIn('helper_id', $helperIds)
@@ -287,7 +296,7 @@ class AdviserHelperController extends Controller
         $helpers = $helpers->map(function (Helper $helper) use ($latestCompetency, $activeCounts, $totalCounts) {
             return [
                 'helper' => $helper,
-                'status' => $this->getHelperStatus($helper, $helper->latestReadiness),
+                'status' => $this->getHelperStatus($helper),
                 'competency_score' => $latestCompetency->has($helper->id) ? round($latestCompetency[$helper->id], 1) : 0,
                 'active_cases' => $activeCounts->get($helper->id, 0),
                 'total_sessions' => $totalCounts->get($helper->id, 0),
@@ -357,23 +366,22 @@ class AdviserHelperController extends Controller
     }
 
     /**
-     * Get helper status.
+     * Get helper status derived from the single HelperEligibilityService
+     * source so advisers always see the same state the matching engine sees.
      */
-    private function getHelperStatus(Helper $helper, $readiness): string
+    private function getHelperStatus(Helper $helper): string
     {
-        if ($helper->isOnline() && $readiness && $readiness->assessment_result === 'ready') {
-            return 'online';
-        }
+        $status = app(\App\Services\HelperEligibilityService::class)->status($helper);
 
-        if ($readiness && $readiness->assessment_result === 'ready') {
+        if ($status['assignable']) {
             return 'available';
         }
 
-        if ($readiness && $readiness->assessment_result === 'not_ready') {
-            return 'offline';
-        }
-
-        return 'inactive';
+        return match ($status['label']) {
+            'In session', 'At capacity (2/2)' => 'online',
+            'Readiness required', 'Off duty', 'Outside service hours', 'Not available' => 'offline',
+            default => 'inactive',
+        };
     }
 
     /**
@@ -386,6 +394,7 @@ class AdviserHelperController extends Controller
 
     private function authorizeHelper(Helper $helper): void
     {
-        abort_unless($helper->adviser_id === Auth::user()->adviser?->id, 403, 'You are not authorized to manage this helper.');
+        $adviser = app(\App\Services\AdviserScope::class)->actor();
+        abort_unless($helper->adviser_id === $adviser->id, 403, 'You are not authorized to manage this helper.');
     }
 }

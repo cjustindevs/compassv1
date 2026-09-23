@@ -5,7 +5,8 @@
 
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <a href="{{ route('adviser.dashboard') }}" class="sidebar-brand">
+
+<a href="{{ route('adviser.dashboard') }}" class="sidebar-brand">
             <x-brand-mark />
         </a>
         <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Collapse sidebar" title="Collapse / expand sidebar">
@@ -19,6 +20,12 @@
         <a href="{{ route('adviser.dashboard') }}" class="nav-item {{ request()->routeIs('adviser.dashboard') ? 'active' : '' }}">
             <i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span>
         </a>
+        <a href="{{ route('adviser.screenings') }}" class="nav-item {{ request()->routeIs('adviser.screenings*') ? 'active' : '' }}" title="Screening reviews">
+            <i class="fas fa-clipboard-check" aria-hidden="true"></i><span class="nav-text">Screening reviews</span>
+            @if($pendingReviews > 0)
+                <span class="nav-badge" id="pendingReviewsBadge">{{ $pendingReviews }}</span>
+            @endif
+        </a>
         <a href="{{ route('adviser.evaluations') }}" class="nav-item {{ request()->routeIs('adviser.evaluations*', 'adviser.evaluate*') ? 'active' : '' }}">
             <i class="fas fa-clipboard-list"></i><span class="nav-text">Pending Evaluations</span>
             @if($evalBadge > 0)
@@ -27,6 +34,9 @@
         </a>
         <a href="{{ route('adviser.helpers') }}" class="nav-item {{ request()->routeIs('adviser.helpers*', 'adviser.helper*') ? 'active' : '' }}">
             <i class="fas fa-users"></i><span class="nav-text">Manage Helpers</span>
+        </a>
+        <a href="{{ route('adviser.training') }}" class="nav-item {{ request()->routeIs('adviser.training*') ? 'active' : '' }}" title="Training recommendations">
+            <i class="fas fa-graduation-cap" aria-hidden="true"></i><span class="nav-text">Training</span>
         </a>
         <a href="{{ route('adviser.referrals') }}" class="nav-item {{ request()->routeIs('adviser.referrals*', 'adviser.referral*') ? 'active' : '' }}">
             <i class="fas fa-arrow-right"></i><span class="nav-text">Referral Queue</span>

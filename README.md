@@ -1,3 +1,5 @@
+> **2026-09-16 continuation:** See [Help Seeker implementation and verification](HELP_SEEKER_IMPLEMENTATION.md) for current workflow, migration, tests, approval gate and remaining manual checks. Earlier results below are historical.
+
 # COMPASS — Peer Support & Guidance System
 
 > **A secure, supervised, and accessible digital platform for student peer support.**

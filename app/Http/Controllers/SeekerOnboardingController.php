@@ -85,7 +85,7 @@ class SeekerOnboardingController extends Controller
     public function consent()
     {
         abort_unless(Auth::user()->helpSeeker, 403);
-        return view('auth.seeker-consent');
+        return redirect()->route('seeker.privacy')->with('open_consent',true);
     }
 
     public function accept(Request $request)
@@ -96,16 +96,11 @@ class SeekerOnboardingController extends Controller
         ]);
         $seeker = Auth::user()->helpSeeker;
         abort_unless($seeker, 403);
-        DB::transaction(function () use ($seeker, $request) {
-            foreach (['privacy_policy', 'informed_consent'] as $type) {
-                ConsentRecord::create([
-                    'seeker_id' => $seeker->id, 'document_type' => $type,
-                    'consent_given' => true, 'consent_date' => now(),
-                    'ip_address' => $request->ip(), 'user_agent' => $request->userAgent(), 'version' => '1.0',
-                ]);
-            }
-            $seeker->update(['is_verified' => true, 'verified_at' => now()]);
+        DB::transaction(function () use ($request,$seeker) {
+            foreach (['privacy_policy','informed_consent'] as $purpose) app(\App\Services\ConsentService::class)->decide($request->user(),$purpose,'accepted');
+            $seeker->update(['is_verified'=>true,'verified_at'=>now()]);
         });
+        if ($request->expectsJson()) return response()->json(['success'=>true]);
         return redirect()->route('request.screening');
     }
 }

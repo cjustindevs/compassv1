@@ -6,9 +6,20 @@ use Illuminate\Database\Eloquent\Model;
 
 class ConsentRecord extends Model
 {
+    protected static function booted(): void {
+        static::updating(fn()=>throw new \LogicException('Consent events are append-only.'));
+        static::deleting(fn()=>throw new \LogicException('Consent events are append-only.'));
+    }
+
     protected $table = 'consent_records';
 
     protected $fillable = [
+        'purpose',
+        'scope',
+        'decision',
+        'session_id',
+        'referral_id',
+
         'seeker_id',
         'document_type',
         'ip_address',

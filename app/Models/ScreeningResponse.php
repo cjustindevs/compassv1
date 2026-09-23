@@ -8,6 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ScreeningResponse extends Model
 {
     protected $fillable = [
+        'instrument_version',
+        'rule_code',
+        'review_status',
+        'actor_id',
+        'evidence_source',
+
         'seeker_id',
         'session_id',
         'responses',

@@ -15,18 +15,37 @@ class SessionDurationService
 
     public function state(Session $session): array
     {
-        $this->expire($session);
+        $timedOut = $session->isActive() && $session->start_time && now()->gte($session->start_time->copy()->addMinutes(self::MAX_MINUTES));
         $deadline = $session->start_time?->copy()->addMinutes(self::MAX_MINUTES);
 
         return [
-            'status' => $session->session_status,
-            'ended' => $session->isCompleted(),
+            'status' => $timedOut ? 'completed' : $session->session_status,
+            'ended' => $session->isCompleted() || $timedOut,
+            'requires_completion' => (bool) $timedOut,
             'remaining_seconds' => $session->isCompleted() ? 0 : ($deadline ? max(0, now()->diffInSeconds($deadline, false)) : null),
             'limit_seconds' => self::MAX_MINUTES * 60,
             'message' => $session->auto_completed ? 'The 90-minute session limit has been reached.' : 'This session has ended.',
+            'warning' => $session->start_time && now()->gte($session->start_time->copy()->addMinutes(85)),
             'seeker_redirect' => '/session/evaluation',
             'helper_redirect' => '/helper/session/'.$session->id.'/notes',
         ];
+    }
+
+    public function complete(Session $session): bool
+    {
+        \Illuminate\Support\Facades\Gate::authorize('participate',$session);
+        return DB::transaction(function () use ($session) {
+            $locked=Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
+            if ($locked->isCompleted()) return false;
+            abort_unless($locked->isActive() && $locked->helper_accepted_at && $locked->start_time,409,'Only an accepted active session can be completed.');
+            if ($this->expire($locked)) { $session->refresh(); return false; }
+            $locked->update(['session_status'=>'completed','completion_status'=>'completed','completion_reason'=>'participant_ended','end_time'=>now(),
+                'duration'=>min(self::MAX_MINUTES,max(1,(int)$locked->start_time->diffInMinutes(now())))]);
+            $locked->queue?->update(['completed_at'=>now()]);
+            SupportAudit::record('session_completed',$locked);
+            if ($helper=$locked->helper) { $helper->syncSessionCounters(); if (!$helper->activeSessions()->exists()) $helper->update(['status'=>'available']); }
+            $session->refresh(); return true;
+        });
     }
 
     public function expire(Session $session): bool
@@ -44,7 +63,7 @@ class SessionDurationService
                 'session_status' => Session::STATUS_COMPLETED,
                 'completion_status' => 'completed',
                 'end_time' => $locked->start_time->copy()->addMinutes(self::MAX_MINUTES),
-                'duration' => self::MAX_MINUTES, 'auto_completed' => true, 'auto_completed_at' => now(),
+                'duration' => self::MAX_MINUTES, 'completion_reason'=>'duration_limit', 'auto_completed' => true, 'auto_completed_at' => now(),
             ]);
             \App\Models\AuditLog::create([
                 'user_account_id' => auth()->id(),
@@ -52,6 +71,8 @@ class SessionDurationService
                 'module' => auth()->user()?->role === 'helper' ? 'helper' : 'session',
                 'description' => 'Session #'.$locked->id.' automatically closed at the 90-minute limit. Recorded duration capped at 90 minutes.',
             ]);
+            $locked->queue?->update(['completed_at'=>now()]);
+            SupportAudit::record('session_completed',$locked,['reason'=>'duration_limit']);
             if ($helper = $locked->helper) {
                 $helper->syncSessionCounters();
                 if ($helper->status === 'busy' && $helper->activeSessions()->doesntExist()) {

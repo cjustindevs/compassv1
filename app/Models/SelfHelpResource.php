@@ -44,7 +44,7 @@ class SelfHelpResource extends Model
 
     public function scopePublished($query)
     {
-        return $query->where('is_published', true);
+        return $query->where('is_published',true)->where('visibility','public')->whereNull('archived_at')->where(fn($q)=>$q->whereNull('review_date')->orWhereDate('review_date','>=',now('Asia/Manila')->toDateString()));
     }
 
     public function scopeInCategory($query, string $category)

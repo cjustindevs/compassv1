@@ -96,7 +96,7 @@ class IdentityVaultTest extends TestCase
         $this->actingAs($referral->professional->user)->get(route('identity.show', $referral))->assertForbidden();
         $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral))->assertRedirect();
         $this->actingAs($referral->professional->user)->get(route('identity.show', $referral))
-            ->assertOk()->assertSee('Private Test Name')->assertHeader('Cache-Control', 'no-store, private');
+            ->assertOk()->assertSee('Private Test Name')->assertDontSee('private@example.com')->assertHeader('Cache-Control', 'no-store, private');
         $this->post(route('identity.acknowledge', $referral))->assertRedirect();
         $this->assertTrue((bool) DB::connection('identity_vault')->table('idv_release_records')->value('recipient_acknowledged'));
     }

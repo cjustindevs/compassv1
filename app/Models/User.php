@@ -12,6 +12,10 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
+    public const ROLE_LABELS = ['seeker'=>'Help Seeker','helper'=>'Helper','moderator'=>'Moderator','adviser'=>'Adviser','professional'=>'Psychology Professional','admin'=>'Administrator'];
+
+    protected $attributes = ['is_active' => true];
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 

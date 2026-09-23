@@ -6,6 +6,8 @@
     <h1 class="text-xl font-semibold mb-4">Terms, privacy and consent</h1>
     <p class="mb-5 p-4 rounded-xl bg-green-50 border border-green-200 text-sm text-gray-700">Your sign-in alias is <strong>{{ auth()->user()->helpSeeker->generated_alias }}</strong>. Save it before continuing.</p>
     @if($errors->any())<p class="text-red-700 mb-4">Please accept each item to continue.</p>@endif
+    <details class="mb-4 border rounded-lg p-4"><summary class="font-semibold cursor-pointer">Privacy Notice - {{ \App\Services\ConsentService::VERSION }}</summary><div class="space-y-3 mt-3 text-sm"><p>We process your alias, age, gender, screening answers, session records and feedback to provide and supervise peer support. Your account uses a pseudonym. Optional referral contact details are stored separately in the Identity Vault and released only through authorized referral or emergency procedures.</p><p>Chat messages are stored on the server. They are not end-to-end encrypted. HTTPS protects transport only when the deployed site uses HTTPS. Voice calling, recording and automatic transcription are unavailable.</p><p>Authorized advisers may review records for supervision, safety and quality assurance. Referral consent is requested separately. Withdrawal stops future consent-dependent peer support; records may be retained for authorized safety, institutional and referral recordkeeping.</p></div></details>
+    <details class="mb-4 border rounded-lg p-4"><summary class="font-semibold cursor-pointer">Informed Consent - {{ \App\Services\ConsentService::VERSION }}</summary><div class="space-y-3 mt-3 text-sm"><p>COMPASS provides voluntary emotional support from trained student helpers. It is not professional counseling, diagnosis, psychotherapy or treatment. You can end participation without penalty.</p><p>{{ app(\App\Services\OperatingHoursService::class)->message() }} Sessions have a 90-minute maximum. COMPASS does not replace emergency services or promise immediate emergency response.</p><p>Safety concerns may be reviewed by authorized advisers. Referrals require your separate decision. Identity release requires an approved purpose or a restricted, justified emergency override.</p></div></details>
     <form method="POST" action="{{ route('seeker.consent.accept') }}" class="space-y-4">
         @csrf
         <div class="space-y-3">
@@ -16,6 +18,7 @@
         </div>
         <button class="btn-primary w-full rounded-xl text-white font-semibold px-4 py-3">Agree and continue</button>
     </form>
+    <form method="POST" action="{{ route('seeker.privacy.decision') }}" class="mt-4">@csrf<input type="hidden" name="purpose" value="informed_consent"><input type="hidden" name="decision" value="declined"><button type="submit" class="underline text-sm">I do not agree - keep resources accessible</button></form>
 @endsection
 @section('footer')
 <form method="POST" action="{{ route('logout') }}" class="text-center">@csrf<button type="submit" class="text-sm font-medium text-gray-600">Sign out and decide later</button></form>

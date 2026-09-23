@@ -34,14 +34,14 @@ class SessionController extends Controller
                 ->with('error', 'No active session found.');
         }
 
-        app(\App\Services\SessionDurationService::class)->expire($session);
+
 
         if ($session->isCompleted()) {
             return redirect()->route('session.evaluation')
                 ->with('info', 'This session has already ended.');
         }
 
-        if (!$session->helper) {
+        if (!$session->helper || !$session->isActive() || !$session->helper_accepted_at) {
             return redirect()->route('request.matching')
                 ->with('error', 'Your session is still waiting for a helper.');
         }
@@ -77,7 +77,7 @@ class SessionController extends Controller
             return response()->json(['error' => 'This session has already ended.'], 409);
         }
 
-        if (! $session->isActive()) {
+        if (! $session->isActive() || !$session->helper_accepted_at) {
             return response()->json(['error' => 'Please wait for the helper to start the session.'], 409);
         }
 
@@ -107,44 +107,7 @@ class SessionController extends Controller
     /**
      * Show the live voice session
      */
-    public function voice()
-    {
-        $session = $this->activeSession();
-
-        if (!$session) {
-            return redirect()->route('request.screening')
-                ->with('error', 'No active session found.');
-        }
-
-        app(\App\Services\SessionDurationService::class)->expire($session);
-
-        if ($session->isCompleted()) {
-            return redirect()->route('session.evaluation')
-                ->with('info', 'This session has already ended.');
-        }
-
-        app(\App\Services\SessionDurationService::class)->expire($session);
-
-        if ($session->isCompleted()) {
-            return redirect()->route('session.evaluation')
-                ->with('info', 'This session has already ended.');
-        }
-
-        if (!$session->helper) {
-            return redirect()->route('request.matching')
-                ->with('error', 'Your session is still waiting for a helper.');
-        }
-
-        $helperName = $session->helper->public_alias ?: 'Peer Helper';
-        $seekerName = $session->seeker->generated_alias ?? Auth::user()->name ?? 'Seeker';
-        if ($session->session_type === 'voice' && ! $session->voice_consent_obtained && ! $session->voice_recording_consent) {
-            return redirect()->route('request.voice-consent');
-        }
-
-        $consentGiven = (bool) ($session->voice_consent_obtained || session('voice_consent', false));
-
-        return view('session.voice', compact('session', 'helperName', 'seekerName', 'consentGiven'));
-    }
+    public function voice() { abort(503, 'Voice calls, recording and automatic transcription are unavailable. Please use chat.'); }
 
     /**
      * End an active session: persist duration/status and free the helper
@@ -163,18 +126,13 @@ class SessionController extends Controller
             return redirect()->route('session.evaluation');
         }
 
+        abort_unless($session->isActive() && $session->helper_accepted_at,409,'Only an accepted active session can be completed.');
         $now = now();
         $durationMinutes = $session->start_time
             ? max(1, (int) $session->start_time->diffInMinutes($now))
             : 0;
 
-        $session->update([
-            'session_status' => 'completed',
-            'completion_status' => 'completed',
-            'end_time' => $now,
-            'duration' => $durationMinutes,
-        ]);
-
+        if (!app(\App\Services\SessionDurationService::class)->complete($session)) return redirect()->route('session.evaluation');
         // Tell the helper (and anyone watching the room) the session has ended.
         $this->broadcastSafely(new SessionEnded($session, 'seeker'));
 
@@ -219,9 +177,10 @@ class SessionController extends Controller
      * ended the session and the seeker opened the notification link).
      * If the session was already evaluated, send the seeker to the thank-you page.
      */
-    public function evaluation()
+    public function evaluation(Request $request)
     {
-        $session = $this->activeSession();
+        \Illuminate\Support\Facades\Gate::authorize('seeker-workflow');
+        $session = $request->filled('session_id') ? Session::where('seeker_id',$request->user()->helpSeeker->id)->findOrFail($request->integer('session_id')) : $this->activeSession();
 
         if (!$session) {
             $session = Session::with(['helper', 'seeker'])
@@ -269,8 +228,9 @@ class SessionController extends Controller
      */
     public function processEvaluation(Request $request)
     {
-        $fields = ['helpfulness_score', 'comfort_score', 'feeling_after_score', 'understood_score', 'reuse_score'];
-        $rules = array_fill_keys($fields, 'required|integer|min:1|max:10');
+        \Illuminate\Support\Facades\Gate::authorize('seeker-workflow');
+        $fields = array_keys(\App\Services\EvaluationInstrument::OPTIONS);
+        $rules = \App\Services\EvaluationInstrument::rules();
         $validated = $request->validate($rules + ['session_id' => 'required|integer', 'comments' => 'nullable|string|max:500']);
         $session = Session::where('seeker_id', Auth::user()->helpSeeker?->id)->findOrFail($validated['session_id']);
         abort_unless(in_array($session->session_status, [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED]), 409, 'End the session before submitting feedback.');
@@ -278,12 +238,15 @@ class SessionController extends Controller
         \Illuminate\Support\Facades\DB::transaction(function () use ($session, $validated, $fields) {
             $session = Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
             abort_if($session->evaluation()->exists(), 409, 'Feedback has already been submitted.');
-            $scores = array_intersect_key($validated, array_flip($fields));
+            $answers = array_intersect_key($validated, array_flip($fields));
+            $scores = \App\Services\EvaluationInstrument::scores($answers);
             HelpSeekerEvaluation::create($scores + [
+                'answers'=>$answers,'instrument_version'=>'compass-v4-categorical-1','submitted_at'=>now(),
                 'session_id' => $session->id,
                 'overall_score' => round(array_sum($scores) / count($scores), 1),
                 'comments' => $validated['comments'] ?? null,
             ]);
+            \App\Services\SupportAudit::record('evaluation_submitted',$session);
             $session->update(['session_status' => Session::STATUS_EVALUATED, 'seeker_evaluation_submitted' => true]);
         });
         session(['evaluation_completed' => true]);
@@ -304,6 +267,7 @@ class SessionController extends Controller
      */
     public function history()
     {
+        \Illuminate\Support\Facades\Gate::authorize('seeker-workflow');
         $helpSeeker = Auth::user()->helpSeeker;
 
         if (!$helpSeeker) {
@@ -360,6 +324,7 @@ class SessionController extends Controller
      */
     private function activeSession(): ?Session
     {
+        \Illuminate\Support\Facades\Gate::authorize('seeker-workflow');
         $sessionId = session('session_id');
         $session = $sessionId ? Session::with(['helper', 'seeker'])->find($sessionId) : null;
 

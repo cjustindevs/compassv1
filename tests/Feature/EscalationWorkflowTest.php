@@ -28,18 +28,12 @@ class EscalationWorkflowTest extends TestCase
     public function test_risk_classification_identifies_all_levels(): void
     {
         $service = app(RiskClassificationService::class);
-        $base = [
-            'current_suicide_plan' => false,
-            'suicidal_thoughts' => false,
-            'severe_distress' => false,
-            'recurring_distress' => false,
-            'difficulty_coping' => false,
-        ];
+        $base = array_fill_keys(array_keys(\App\Services\ScreeningInstrument::QUESTIONS),'no');
 
         $this->assertSame('low', $service->classifyRisk($base)['risk_level']);
-        $this->assertSame('moderate', $service->classifyRisk(array_merge($base, ['difficulty_coping' => true]))['risk_level']);
-        $this->assertSame('high', $service->classifyRisk(array_merge($base, ['severe_distress' => true]))['risk_level']);
-        $this->assertSame('emergency', $service->classifyRisk(array_merge($base, ['current_suicide_plan' => true, 'suicidal_thoughts' => true]))['risk_level']);
+        $this->assertSame('moderate', $service->classifyRisk(array_merge($base, ['difficulty_coping' => 'yes']))['risk_level']);
+        $this->assertSame('high', $service->classifyRisk(array_merge($base, ['severe_distress' => 'yes']))['risk_level']);
+        $this->assertSame('emergency', $service->classifyRisk(array_merge($base, ['immediate_intent' => 'yes']))['risk_level']);
     }
 
     public function test_emergency_escalation_flags_case_without_automatically_releasing_identity(): void
@@ -52,7 +46,7 @@ class EscalationWorkflowTest extends TestCase
 
         $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $seeker, ['reason' => 'Immediate threat']);
 
-        $this->assertDatabaseHas('emergency_alerts', ['id' => $alert->id, 'status' => 'referred', 'professional_referred' => true]);
+        $this->assertDatabaseHas('emergency_alerts', ['id' => $alert->id, 'status' => 'pending', 'professional_referred' => false]);
         $this->assertDatabaseHas('counseling_sessions', ['id' => $session->id, 'risk_level' => 'emergency', 'escalation_required' => true]);
         $this->assertDatabaseHas('help_seekers', ['id' => $seeker->id, 'current_risk_level' => 'emergency', 'has_emergency' => true]);
         $this->assertDatabaseHas('identity_vault', ['seeker_id' => $seeker->id, 'emergency_override' => false]);
@@ -71,13 +65,16 @@ class EscalationWorkflowTest extends TestCase
         $referral = $service->createReferral($session, $seeker, ['reason' => 'Needs professional intervention', 'urgency' => 'high']);
         $this->assertSame(Referral::STATUS_PENDING_ADVISER, $referral->status);
 
+        $this->actingAs($adviser->user);
         $referral = $service->reviewReferral($referral, $adviser, ['approved' => true, 'notes' => 'Proceed']);
         $this->assertSame(Referral::STATUS_PENDING_CONSENT, $referral->status);
 
+        $this->actingAs($seeker->user);
         $referral = $service->processConsent($referral, true);
         $this->assertSame(Referral::STATUS_PENDING_PROFESSIONAL, $referral->status);
         $this->assertFalse($referral->identity_disclosed);
 
+        $this->actingAs($professional->user);
         $referral = $service->acceptReferral($referral, $professional);
         $this->assertSame(Referral::STATUS_ACCEPTED, $referral->status);
 

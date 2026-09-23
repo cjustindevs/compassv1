@@ -23,6 +23,15 @@ class AppServiceProvider extends ServiceProvider
     {
         \Illuminate\Validation\Rules\Password::defaults(fn () => \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->numbers()->symbols());
         $this->registerViewComposers();
+        \Illuminate\Support\Facades\Gate::define('seeker-workflow', fn ($user) => $user->role === 'seeker' && $user->is_active && $user->helpSeeker);
+        foreach ([\App\Models\Session::class, \App\Models\QueueRequest::class, \App\Models\ScreeningResponse::class, \App\Models\Message::class, \App\Models\HelpSeekerEvaluation::class, \App\Models\Referral::class, \App\Models\IncidentReport::class, \App\Models\EmergencyAlert::class, \App\Models\CallLog::class, \App\Models\ConsentRecord::class] as $model) {
+            \Illuminate\Support\Facades\Gate::policy($model, \App\Policies\SeekerRecordPolicy::class);
+        }
+        \Illuminate\Support\Facades\Gate::define('helper-workflow',fn($user)=>$user->role==='helper' && $user->is_active && $user->helper);
+        foreach ([\App\Models\Helper::class,\App\Models\ReadinessCheck::class,\App\Models\HelperSchedule::class,\App\Models\HelperAvailabilityLog::class,\App\Models\SessionReport::class,\App\Models\HelperCompetencyHistory::class,\App\Models\AdviserFeedback::class,\App\Models\HelperJournalEntry::class] as $model) \Illuminate\Support\Facades\Gate::policy($model,\App\Policies\HelperRecordPolicy::class);
+        \App\Models\Referral::observe(\App\Observers\ReferralAuditObserver::class);
+        \App\Models\Session::observe(\App\Observers\SessionWorkflowObserver::class);
+
         \Illuminate\Support\Facades\RateLimiter::for('registration-actions', function (\Illuminate\Http\Request $request) {
             return \Illuminate\Cache\RateLimiting\Limit::perMinute(30)
                 ->by($request->path().':'.$request->ip())

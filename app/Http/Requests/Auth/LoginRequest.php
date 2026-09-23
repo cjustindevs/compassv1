@@ -49,12 +49,16 @@ class LoginRequest extends FormRequest
         }
         if (! Auth::attempt($credentials, $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
+            $admin = \App\Models\User::where('email',$credentials['email'])->where('role','admin')->first();
+            if ($admin) app(\App\Services\AuditLogger::class)->record($admin,\App\Services\AuditLogger::ADMIN_LOGIN_FAILED,'authentication','Administrator sign-in failed.',$this);
+
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
             ]);
         }
 
+        if (Auth::user()?->role === 'admin') app(\App\Services\AuditLogger::class)->record(Auth::user(),\App\Services\AuditLogger::ADMIN_LOGIN_SUCCEEDED,'authentication','Administrator signed in.',$this);
         RateLimiter::clear($this->throttleKey());
     }
 

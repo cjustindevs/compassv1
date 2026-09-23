@@ -94,6 +94,7 @@ class ModeratorScheduleController extends Controller
             'is_active' => true, 'created_by' => Auth::id(),
         ]);
         });
+        app(\App\Services\HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh());
         app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
 
         return redirect()->route('moderator.schedules', ['date' => $validated['event_date']])

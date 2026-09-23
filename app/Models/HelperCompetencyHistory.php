@@ -26,6 +26,7 @@ class HelperCompetencyHistory extends Model
     ];
 
     protected $casts = [
+        'evidence'=>'array',
         'evaluation_date' => 'datetime',
         'active_listening_score' => 'float',
         'empathy_score' => 'float',
@@ -56,14 +57,19 @@ class HelperCompetencyHistory extends Model
         ];
     }
 
+    public function getNormalizedScoreAttribute(): float
+    {
+        return $this->overall_score > 5 ? $this->overall_score / 20 : (float)$this->overall_score;
+    }
+
     public function getLevelLabelAttribute(): string
     {
-        return ucfirst((string) $this->competency_level)
-            ?: match (true) {
-                ($this->overall_score ?? 0) >= 90 => 'Expert',
-                ($this->overall_score ?? 0) >= 80 => 'Advanced',
-                ($this->overall_score ?? 0) >= 70 => 'Proficient',
-                default => 'Developing',
-            };
+        return match(true) {
+            $this->normalized_score >= 4.5 => 'Outstanding',
+            $this->normalized_score >= 3.5 => 'Very Good',
+            $this->normalized_score >= 2.5 => 'Satisfactory',
+            $this->normalized_score >= 1.5 => 'Needs Improvement',
+            default => 'Unsatisfactory',
+        };
     }
 }

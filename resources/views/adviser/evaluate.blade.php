@@ -169,7 +169,10 @@
                     <h1 class="text-2xl font-bold text-gray-800">Competency Evaluation</h1>
                     <p class="text-sm text-gray-500">Evaluate helper performance using the competency rubric</p>
                 </div>
-                <div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" onclick="openConversation()" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        <i class="fas fa-comments text-green-600" aria-hidden="true"></i> View conversation
+                    </button>
                     <span class="risk-badge {{ $report->session->risk_level ?? 'low' }}">
                         {{ ucfirst($report->session->risk_level ?? 'Low') }} Risk
                     </span>
@@ -202,9 +205,24 @@
                 <p class="text-gray-600 text-sm">{{ $report->session_summary ?? 'No summary available' }}</p>
             </div>
 
+            <div class="mb-6 p-4 bg-gray-50 rounded-xl space-y-3 text-sm">
+                <p><strong>Session result:</strong> {{ ucwords(str_replace('_',' ',$report->session_result ?? 'Not recorded')) }}</p>
+                <p><strong>Follow-up plan:</strong> {{ $report->follow_up_plan ?: 'Not recorded' }}</p>
+                <p><strong>Personal reflection:</strong> {{ $report->personal_reflection ?: 'Not submitted' }}</p>
+                <p><strong>Skills applied:</strong> {{ collect($report->skills)->map(fn($skill)=>ucwords(str_replace('_',' ',$skill)))->join(', ') ?: 'Not recorded' }}</p>
+                @if($report->reassessment_requested_at)<p><strong>Risk reassessment requested:</strong> {{ ucfirst($report->risk_level_assessed) }}. Review through the screening review workflow; this is a helper observation, not an official classification.</p>@endif
+                <p><strong>Documentation:</strong> {{ $report->documentation_late ? 'Submitted after 24 hours' : 'No overdue submission recorded' }}</p>
+            </div>
             <!-- Evaluation Form -->
             <form class="form-maximized" method="POST" action="{{ route('adviser.evaluate.store', $report->id) }}">
                 @csrf
+                <p class="text-sm text-gray-500 my-3">Rubric: {{ \App\Services\CompetencyRubric::VERSION }}. Evidence: submitted session report #{{ $report->id }} and its correction history. Each criterion is rated independently; weighted total is on a 1?5 scale.</p>
+                @if($existingFeedback)
+                    <label class="block text-sm font-semibold my-3">Correction reason<input name="correction_reason" required minlength="10" maxlength="1000" class="form-input mt-1" placeholder="Explain why this evaluation or feedback needs correction."></label>
+                    <x-supervision-history :record="$existingFeedback" />
+                @endif
+                <label class="block text-sm my-3">Feedback follow-up date<input type="date" name="follow_up_date" class="form-input mt-1" value="{{ old('follow_up_date', $existingFeedback?->follow_up_date?->format('Y-m-d')) }}"></label>
+
 
                 <div class="space-y-6">
 
@@ -336,9 +354,73 @@
             </form>
 
         </div>
+
+        <!-- Session conversation window -->
+        <div id="conversationModal" role="dialog" aria-modal="true" aria-labelledby="conversationTitle"
+             class="fixed inset-0 z-50 hidden items-center justify-center p-4"
+             style="background: rgba(15, 23, 42, 0.55);">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col" style="max-height: 85vh;">
+                <div class="flex items-start justify-between gap-3 px-5 py-4 border-b border-gray-200">
+                    <div>
+                        <h3 id="conversationTitle" class="font-bold text-gray-800">Session conversation · {{ $report->session->reference_number }}</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">Read-only record from the session for this evaluation. Access is audited and uses aliases only — it does not use voice transcription.</p>
+                    </div>
+                    <button type="button" onclick="closeConversation()" class="rounded-lg p-2 hover:bg-gray-100 text-gray-500" aria-label="Close conversation window">
+                        <i class="fas fa-xmark" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <div class="overflow-y-auto p-4 space-y-3 divide-y divide-gray-100" style="max-height: 70vh;">
+                    @forelse($messages as $message)
+                        @php($isSeeker = $message->sender === 'seeker')
+                        <div class="flex gap-3 pt-3 {{ $isSeeker ? '' : 'bg-green-50/30 -mx-3 px-3 rounded-xl' }}">
+                            <span class="shrink-0 mt-0.5 h-8 w-8 rounded-full {{ $isSeeker ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-700' }} flex items-center justify-center text-xs font-semibold">
+                                {{ $isSeeker ? mb_substr($report->session->seeker->generated_alias ?? 'S', 0, 1) : mb_substr($report->session->helper->public_alias ?? 'H', 0, 1) }}
+                            </span>
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-baseline gap-2">
+                                    <span class="text-xs font-semibold {{ $isSeeker ? 'text-gray-700' : 'text-green-700' }}">
+                                        {{ $isSeeker ? ($report->session->seeker->generated_alias ?? 'Seeker') : ($report->session->helper->public_alias ?? 'Peer Helper') }}
+                                    </span>
+                                    <span class="text-xs text-gray-400">{{ ($message->sent_datetime ?? $message->created_at)?->timezone('Asia/Manila')->format('M d, Y \a\t g:i A') }}</span>
+                                </div>
+                                <p class="text-sm text-gray-700 whitespace-pre-wrap break-words mt-1">{{ $message->message_text }}</p>
+                            </div>
+                        </div>
+                    @empty
+                        <p class="text-sm text-gray-500">No conversation is disclosed without an authorized access grant. Review the submitted documentation or request access from Transcript Review.</p>
+                    @endforelse
+                </div>
+            </div>
+        </div>
 </div>
     <script>
         let ratings = {};
+
+        function openConversation() {
+            const modal = document.getElementById('conversationModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeConversation() {
+            const modal = document.getElementById('conversationModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const modal = document.getElementById('conversationModal');
+            if (modal) {
+                modal.addEventListener('click', function (e) {
+                    if (e.target === modal) closeConversation();
+                });
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape') closeConversation();
+                });
+            }
+        });
 
         function selectRating(btn, field) {
             const group = btn.closest('.rating-group');

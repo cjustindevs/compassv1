@@ -3,16 +3,18 @@
 namespace App\Http\Controllers\Helper;
 
 use App\Http\Controllers\Controller;
-use App\Models\Helper;
 use App\Models\AdviserFeedback;
-use App\Models\HelpSeekerEvaluation;
+use App\Models\Helper;
 use App\Models\HelperCompetencyHistory;
+use App\Models\HelpSeekerEvaluation;
+use App\Services\SupportAudit;
 use Illuminate\View\View;
 
 class HelperCompetencyController extends Controller
 {
     public function index(): View
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $helper = Helper::where('user_account_id', auth()->id())->first();
 
         if (! $helper) {
@@ -32,13 +34,13 @@ class HelperCompetencyController extends Controller
             ->paginate(15);
 
         $trend = HelperCompetencyHistory::where('helper_id', $helper->id)
-            ->orderBy('evaluation_date', 'asc')
+            ->orderBy('evaluation_date', 'desc')
             ->limit(6)
-            ->get()
+            ->get()->reverse()
             ->map(function (HelperCompetencyHistory $record) {
                 return [
                     'label' => $record->evaluation_date?->format('Y-m'),
-                    'score' => max(8, min(100, (int) round($record->overall_score))),
+                    'score' => round($record->normalized_score * 20, 1),
                 ];
             })
             ->values();
@@ -51,7 +53,7 @@ class HelperCompetencyController extends Controller
             'history' => $history->through(function (HelperCompetencyHistory $record) {
                 return [
                     'date' => $record->evaluation_date?->format('M d, Y') ?: '—',
-                    'overall' => $record->overall_score,
+                    'overall' => $record->normalized_score,
                     'level' => $record->level_label,
                     'adviser' => $record->adviser?->full_name ?: 'Adviser',
                     'remarks' => $record->remarks,
@@ -62,6 +64,7 @@ class HelperCompetencyController extends Controller
 
     public function show(int $id): View
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $helper = Helper::where('user_account_id', auth()->id())->firstOrFail();
 
         $evaluation = HelperCompetencyHistory::with('adviser')
@@ -73,6 +76,7 @@ class HelperCompetencyController extends Controller
 
     public function feedback(): View
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $helper = Helper::where('user_account_id', auth()->id())->firstOrFail();
 
         $adviserFeedback = AdviserFeedback::with(['adviser', 'report.session'])
@@ -88,8 +92,21 @@ class HelperCompetencyController extends Controller
         return view('helper.feedback', compact('helper', 'adviserFeedback', 'seekerFeedback'));
     }
 
+    public function acknowledgeFeedback(int $id)
+    {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
+        $feedback = AdviserFeedback::whereHas('report.session', fn ($q) => $q->where('helper_id', auth()->user()->helper->id))->findOrFail($id);
+        if (! $feedback->acknowledged_at) {
+            $feedback->update(['acknowledged_at' => now()]);
+            SupportAudit::record('training_feedback_acknowledged', $feedback);
+        }
+
+        return back()->with('success', 'Feedback acknowledged. Training completion remains subject to adviser verification.');
+    }
+
     public function feedbackShow(int $id): View
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $helper = Helper::where('user_account_id', auth()->id())->firstOrFail();
 
         $feedback = AdviserFeedback::with(['adviser', 'report.session'])

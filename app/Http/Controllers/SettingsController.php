@@ -11,7 +11,7 @@ use Illuminate\View\View;
 
 class SettingsController extends Controller
 {
-    public const LANGUAGES = ['English', 'Filipino', 'Cebuano', 'Ilocano', 'Hiligaynon', 'Other'];
+    public const LANGUAGES = ['English', 'Tagalog'];
 
     public const DURATIONS = ['15', '30', '45', '60'];
 
@@ -121,7 +121,7 @@ class SettingsController extends Controller
             'push_notifications' => 'nullable|boolean',
             'session_reminders' => 'nullable|boolean',
             'marketing_emails' => 'nullable|boolean',
-            'preferred_language' => ['required', 'string', 'max:40'],
+            'preferred_language' => ['required', 'string', 'in:English,Tagalog'],
             'preferred_communication_mode' => ['required', 'string', 'in:chat,voice'],
             'preferred_helper_gender' => ['nullable', 'string', 'max:20'],
             'session_duration_preference' => ['required', 'string', 'in:15,30,45,60'],
@@ -202,7 +202,7 @@ class SettingsController extends Controller
             return;
         }
 
-        Session::where('seeker_id', $helpSeeker->id)->delete();
+        abort(409,'Session history is retained for authorized institutional recordkeeping. You can withdraw consent from Privacy and consent.');
     }
 
     /**
@@ -254,9 +254,9 @@ class SettingsController extends Controller
                     'started_at' => $session->start_time?->toDateTimeString(),
                     'ended_at' => $session->end_time?->toDateTimeString(),
                     'duration_minutes' => $session->duration,
-                    'risk_level' => $session->risk_level,
+
                     'created_at' => $session->created_date?->toDateTimeString(),
-                    'messages' => $session->messages->pluck('message_text'),
+
                     'evaluation' => $session->evaluation ? [
                         'overall_rating' => $session->evaluation->overall_score,
                         'comments' => $session->evaluation->comments,

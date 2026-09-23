@@ -69,7 +69,16 @@ class ModeratorManageController extends Controller
         }
 
         $helper = Helper::findOrFail($request->helper_id);
+        abort_if($helper->adviser_id && $helper->adviser_id !== $adviser->id,403,'An existing supervision relationship must be transferred through the Adviser reassignment workflow.');
+        abort_unless($adviser->user?->is_active && $adviser->user?->role === 'adviser',422);
+        $helper->assignmentReason = 'Initial supervision assignment by Moderator';
         $helper->update(['adviser_id' => $adviser->id]);
+
+        // Supervision affects eligibility: reconcile availability so a willing
+        // helper already on shift becomes matchable right away.
+        $helper = $helper->fresh();
+        app(\App\Services\HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper);
+        app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
 
         return back()->with('success', $helper->full_name . ' assigned to ' . $adviser->full_name . '.');
     }
@@ -81,7 +90,7 @@ class ModeratorManageController extends Controller
         ]);
 
         $helper = Helper::findOrFail($request->helper_id);
-        $helper->update(['adviser_id' => null]);
+        abort_if($helper->adviser_id,403,'Use the Adviser transfer workflow to preserve supervision and case responsibility.');
 
         return back()->with('success', $helper->full_name . ' moved back to the unassigned pool.');
     }

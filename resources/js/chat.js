@@ -55,8 +55,16 @@ class ChatApp {
         finally { this.statusPending = false; }
     }
 
-    applySessionState(state) {
+    async applySessionState(state) {
         if (!state || this.ended) return;
+        if (state.requires_completion) {
+            this.setInputDisabled(true);
+            try {
+                const response = await fetch(`/api/chat/expire/${this.sessionId}`, {method:'POST',headers:{'Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content}});
+                if (!response.ok) return;
+                const data = await response.json(); state=data.session;
+            } catch (_) { return; }
+        }
         if (state.ended) {
             this.handleSessionEnded(state);
             return;

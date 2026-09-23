@@ -13,6 +13,7 @@ class HelperResourceController extends Controller
      */
     public function index(Request $request)
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $query = SelfHelpResource::query()->published();
 
         if ($request->filled('category')) {

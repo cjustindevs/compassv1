@@ -147,6 +147,7 @@
             <div class="flash-success"><i class="fas fa-check-circle mr-1"></i> {{ session('success') }}</div>
         @endif
 
+        @if($errors->any())<div role="alert" class="rounded-xl bg-red-50 p-4 text-sm text-red-700 mb-4">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
         <!-- Stats -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div class="stat-card">
@@ -179,6 +180,24 @@
             </div>
         </div>
 
+        <details class="card mb-6">
+            <summary class="font-semibold text-gray-800 cursor-pointer">Manage emergency information</summary>
+            <p class="text-sm text-gray-500 my-3">Use agency-verified telephone numbers. Active contacts appear on the emergency resources page.</p>
+            @foreach($hotlines->concat([null]) as $hotline)
+                <form method="POST" action="{{ route('adviser.emergency-resources.save') }}" class="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-gray-200 py-4">
+                    @csrf
+                    @if($hotline)<input type="hidden" name="id" value="{{ $hotline->id }}">@endif
+                    <label class="text-sm font-medium">Agency name<input name="agency_name" value="{{ $hotline?->agency_name }}" required maxlength="255" class="form-input block w-full mt-1"></label>
+                    <label class="text-sm font-medium">Telephone number<input name="hotline" value="{{ $hotline?->hotline }}" required maxlength="50" class="form-input block w-full mt-1"></label>
+                    <label class="text-sm font-medium">Description<input name="description" value="{{ $hotline?->description }}" maxlength="1000" class="form-input block w-full mt-1"></label>
+                    <label class="text-sm font-medium">Publication status<select name="status" class="form-input block w-full mt-1"><option value="active">Active</option><option value="inactive" @selected($hotline?->status === 'inactive')>Inactive</option></select></label>
+                    <label class="text-sm font-medium">Audience<select name="visibility" class="form-input block w-full mt-1"><option value="public">Public</option><option value="internal" @selected($hotline?->visibility === 'internal')>Internal</option></select></label>
+                    <label class="text-sm font-medium">Review due<input type="date" name="review_date" value="{{ $hotline?->review_date }}" class="form-input block w-full mt-1"></label>
+                    <div><button type="submit" class="btn-primary">{{ $hotline ? 'Save contact' : 'Add contact' }}</button></div>                    @if($hotline)<div class="md:col-span-2"><x-supervision-history :record="$hotline" /></div>@endif
+
+                </form>
+            @endforeach
+        </details>
         <!-- Toolbar -->
         <div class="card mb-6">
             <div class="flex flex-wrap items-center justify-between gap-4">
@@ -226,6 +245,7 @@
                             @endif
                         </div>
 
+                        <p class="text-xs text-gray-500">{{ ucfirst($resource->visibility) }} ? {{ $resource->archived_at ? 'Archived' : (($resource->review_date && $resource->review_date < now('Asia/Manila')->toDateString()) ? 'Review overdue' : 'Current') }}</p><x-supervision-history :record="$resource" />
                         <h3 class="font-bold text-gray-800 leading-snug">{{ $resource->title }}</h3>
                         <p class="text-sm text-gray-500 leading-relaxed line-clamp-2">{{ $resource->description }}</p>
 
@@ -252,17 +272,17 @@
                                     data-tags="{{ is_array($resource->tags) ? implode(', ', $resource->tags) : '' }}"
                                     data-featured="{{ $resource->is_featured ? '1' : '0' }}"
                                     data-published="{{ $resource->is_published ? '1' : '0' }}"
-                                    data-content="{{ $resource->content }}">
+                                    data-visibility="{{ $resource->visibility }}" data-review="{{ $resource->review_date }}" data-content="{{ $resource->content }}">
                                 <i class="fas fa-edit"></i> Edit
                             </button>
                             <form class="form-maximized" method="POST" action="{{ route('adviser.resources.destroy', ['id' => $resource->id]) }}"
-                                  data-confirm="Delete resource?"
-                                  data-confirm-message="This resource will be permanently removed."
-                                  data-confirm-text="Delete"
+                                  data-confirm="Archive resource?"
+                                  data-confirm-message="This resource will be hidden; version history will remain available."
+                                  data-confirm-text="Archive"
                                   data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn-outline" style="color:var(--red-500);border-color:#FECACA;"><i class="fas fa-trash"></i> Delete</button>
+                                <button type="submit" class="btn-outline" style="color:var(--red-500);border-color:#FECACA;"><i class="fas fa-trash"></i> Archive</button>
                             </form>
                         </div>
                     </div>
@@ -299,6 +319,10 @@
 
             <form class="form-maximized" method="POST" action="{{ route('adviser.resources.store') }}" id="resourceForm">
                 @csrf
+                <input type="hidden" name="_method" value="POST">
+<label class="block text-sm mb-3">Visibility<select name="visibility" class="form-input"><option value="public">Public resource library</option><option value="internal">Adviser-only reference</option></select></label>
+<label class="block text-sm mb-3">Next review date<input type="date" name="review_date" class="form-input"></label>
+<label class="block text-sm mb-3">Change reason<input name="change_reason" maxlength="1000" class="form-input"></label>
                 <div class="mb-4">
                     <label class="form-label">Title *</label>
                     <input type="text" name="title" required maxlength="255" class="form-input" placeholder="e.g. Breathing exercise guide">
@@ -377,6 +401,7 @@
                 form.method = 'POST';
                 modalTitle.textContent = 'Add Resource';
                 form.reset();
+                form.querySelector('[name="_method"]').value = 'POST';
                 form.querySelector('[name="is_published"]').checked = true;
                 openModal();
             });
@@ -393,6 +418,7 @@
                     const d = btn.dataset;
                     form.action = @json(route('adviser.resources.update', ['id' => '__ID__'])).replace('__ID__', d.id);
                     modalTitle.textContent = 'Edit Resource';
+                    form.querySelector('[name="_method"]').value = 'PUT';
                     form.querySelector('[name="title"]').value = d.title || '';
                     form.querySelector('[name="description"]').value = d.description || '';
                     form.querySelector('[name="category"]').value = d.category || 'article';
@@ -408,4 +434,5 @@
             });
         });
     </script>
+<script>document.querySelectorAll('.edit-resource').forEach(button=>button.addEventListener('click',()=>{const form=document.getElementById('resourceForm');form.elements.visibility.value=button.dataset.visibility||'public';form.elements.review_date.value=button.dataset.review||'';}));</script>
 @endsection

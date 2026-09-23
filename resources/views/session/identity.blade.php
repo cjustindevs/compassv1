@@ -1,7 +1,7 @@
 <x-app-layout>
     <div class="max-w-xl mx-auto p-6 bg-white rounded-xl my-8">
         <h1 class="text-2xl font-bold">Professional referral</h1>
-        <p class="my-4">An adviser approved referral #{{ $referral->id }}. If you agree, your contact details will be encrypted in separate identity storage and released to the assigned psychology professional. Identity information expires after 365 days. Helpers and moderators cannot view it.</p>
+        <p class="my-4">An adviser approved referral #{{ $referral->id }}. If you agree, your contact details will be encrypted in separate identity storage and released to the assigned psychology professional. Identity information expires after {{ config('identity_vault.retention_days') }} days. Helpers and moderators cannot view it.</p>
         @if (!$referral->help_seeker_consent && $referral->status === 'pending_consent')
             <button id="consentYes" class="bg-green-700 text-white p-3 rounded">I consent to this referral and identity release</button>
             <button id="consentNo" class="p-3">Decline referral</button>

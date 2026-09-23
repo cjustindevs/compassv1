@@ -13,6 +13,7 @@ class HelperNotesController extends Controller
      */
     public function index()
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $helper = Auth::user()->helper;
 
         $session = Session::where('helper_id', $helper->id)

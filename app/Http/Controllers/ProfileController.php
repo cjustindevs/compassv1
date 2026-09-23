@@ -98,6 +98,8 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        abort_if($user->helpSeeker && (Session::where('seeker_id', $user->helpSeeker->id)->exists() || \App\Models\ConsentRecord::where('seeker_id', $user->helpSeeker->id)->exists()), 409, 'This account has retained support or consent records. Withdraw consent in Privacy and Consent, and contact the adviser for an account closure review.');
+
         $this->deleteAvatar($user);
 
         Auth::logout();
@@ -120,6 +122,8 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
+
+        abort_if($user->helpSeeker && (Session::where('seeker_id', $user->helpSeeker->id)->exists() || \App\Models\ConsentRecord::where('seeker_id', $user->helpSeeker->id)->exists()), 409, 'This account has retained support or consent records. Withdraw consent in Privacy and Consent, and contact the adviser for an account closure review.');
 
         $this->deleteAvatar($user);
 

@@ -15,6 +15,7 @@ class HelperCalendarController extends Controller
      */
     public function index(Request $request)
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $helper = Auth::user()->helper;
 
         $month = $request->integer('month', now()->month);
@@ -41,7 +42,7 @@ class HelperCalendarController extends Controller
                 'status' => $session->session_status,
                 'status_label' => $session->status_label,
                 'status_class' => str_replace('_', '-', $session->session_status),
-                'risk' => ucfirst($session->risk_level ?? 'Low'),
+                'risk' => 'Assigned support',
                 'concern' => $session->concern->concern_name ?? 'Session',
                 'mode' => $session->mode_label,
                 'date' => ($session->scheduled_start ?? $session->start_time ?? $session->created_date)->format('Y-m-d'),
@@ -54,6 +55,7 @@ class HelperCalendarController extends Controller
         $grid = $this->buildMonthGrid($year, $month, $sessions->groupBy('date'));
 
         return view('helper.calendar', [
+            'schedules' => $helper->schedules()->whereBetween('date', [$firstDay->toDateString(), $lastDay->toDateString()])->orderBy('date')->get(),
             'sessions' => $sessions,
             'grid' => $grid,
             'month' => $month,

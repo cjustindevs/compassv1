@@ -75,29 +75,50 @@
                             <td class="text-sm text-gray-500">
                                 {{ $case['created'] }}
                                 <div class="text-xs text-gray-400">{{ $case['waiting'] }}</div>
+                                @if($case['scheduled_start'])
+                                    <div class="text-xs font-medium text-emerald-600 mt-1"><i class="fas fa-calendar-check"></i> {{ $case['scheduled_start']->setTimezone(config('app.schedule_timezone'))->format('M d, h:i A') }}</div>
+                                @endif
                             </td>
                             <td>
                                 @if($case['rating'])
-                                    <span class="pill" style="background:#FEF3C7;color:#B45309;"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ $case['rating'] }}</span>
+                                    <span class="pill" style="background:#FEF3C7;color:#B45309;"><i class="fas fa-star" aria-hidden="true"></i> {{ $case['rating'] }}</span>
                                 @else
                                     <span class="text-gray-400">—</span>
                                 @endif
                             </td>
                             <td class="text-right">
-                                @if($case['pending'])
-                                    <div style="display:flex;gap:6px;justify-content:flex-end;">
-                                         <form method="POST" action="{{ route('helper.cases.decline', ['id' => $case['id']]) }}"
-                                               data-confirm="Decline case?"
-                                               data-confirm-message="This case will be returned to the queue and reassigned."
-                                               data-confirm-text="Decline">
-                                             @csrf
-                                             <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-times"></i> Decline</button>
-                                         </form>
-                                        <form method="POST" action="{{ route('helper.cases.accept', ['id' => $case['id']]) }}">
+                                @if($case['pending'] && $case['accepted'])
+                                    <a href="{{ route('helper.session.pre-assessment',$case['id']) }}" class="btn btn-primary btn-sm">Prepare session</a>
+                                @elseif($case['pending'])
+                                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+                                        <div style="display:flex;gap:6px;justify-content:flex-end;">
+                                            <button type="button" class="btn btn-secondary btn-sm" data-toggle-decline="{{ $case['id'] }}" aria-expanded="false" aria-controls="decline-form-{{ $case['id'] }}"><i class="fas fa-times"></i> Decline</button>
+                                            <form method="POST" action="{{ route('helper.cases.accept', ['id' => $case['id']]) }}">
+                                                @csrf
+                                                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-check"></i> Accept</button>
+                                            </form>
+                                        </div>
+                                        <form method="POST" action="{{ route('helper.cases.decline', ['id' => $case['id']]) }}"
+                                              data-confirm="Decline case?"
+                                              data-confirm-message="This case will be returned to the queue and reassigned."
+                                              data-confirm-text="Decline"
+                                              id="decline-form-{{ $case['id'] }}"
+                                              class="decline-panel hidden" style="min-width:230px;text-align:left;">
                                             @csrf
-                                            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-check"></i> Accept</button>
+                                            <select name="reason" class="form-control" required aria-label="Reason for declining">
+                                                <option value="">Choose a reason...</option>
+                                                @foreach(['fatigue'=>'Fatigue','illness'=>'Illness','personal_emergency'=>'Personal emergency','academic_conflict'=>'Academic conflict','conflict_of_interest'=>'Conflict of interest','unavailable'=>'Unavailable'] as $value=>$label)
+                                                    <option value="{{ $value }}">{{ $label }}</option>
+                                                @endforeach
+                                            </select>
+                                            <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px;">
+                                                <button type="button" class="btn btn-secondary btn-sm" data-cancel-decline="{{ $case['id'] }}">Cancel</button>
+                                                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-times"></i> Confirm decline</button>
+                                            </div>
                                         </form>
                                     </div>
+                                @elseif($case['expired'])
+                                    <span class="text-gray-400 text-sm"><i class="fas fa-hourglass-end"></i> Expired</span>
                                 @elseif($case['completed'])
                                     <a href="{{ route('helper.session.notes', ['id' => $case['id']]) }}" class="btn btn-secondary btn-sm"><i class="fas fa-file-alt"></i> Notes</a>
                                 @else
@@ -121,4 +142,28 @@
         </div>
     </div>
 
+@endsection
+
+@section('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-toggle-decline]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const panel = document.getElementById('decline-form-' + btn.dataset.toggleDecline);
+                const opening = panel.classList.contains('hidden');
+                panel.classList.toggle('hidden');
+                btn.setAttribute('aria-expanded', opening ? 'true' : 'false');
+            });
+        });
+
+        document.querySelectorAll('[data-cancel-decline]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const panel = document.getElementById('decline-form-' + btn.dataset.cancelDecline);
+                panel.classList.add('hidden');
+                const toggle = document.querySelector('[data-toggle-decline="' + btn.dataset.cancelDecline + '"]');
+                if (toggle) toggle.setAttribute('aria-expanded', 'false');
+            });
+        });
+    });
+</script>
 @endsection

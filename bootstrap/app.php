@@ -16,6 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [\App\Http\Middleware\EnsureActiveAccount::class]);
+        $middleware->prependToPriorityList(\Illuminate\Routing\Middleware\SubstituteBindings::class, \App\Http\Middleware\EnsureUserRole::class);
         $middleware->alias([
             'role' => EnsureUserRole::class,
             'ensure.helper.profile' => EnsureHelperProfile::class,

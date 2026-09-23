@@ -25,5 +25,9 @@
         <p class="text-sm text-gray-600 mb-4">{{ $feedback->improvement_areas ?: 'N/A' }}</p>
         <h4 class="font-semibold text-gray-800 mb-2">Training Recommendation</h4>
         <p class="text-sm text-gray-600">{{ $feedback->training_recommendation ?: 'No training recommendation recorded.' }}</p>
+        <hr class="divider">
+        @if($feedback->acknowledged_at)<p class="text-sm text-gray-500">Acknowledged {{ $feedback->acknowledged_at->timezone('Asia/Manila')->format('M d, Y h:i A') }}</p>
+        @else<form method="POST" action="{{ route('helper.feedback.acknowledge',$feedback->id) }}">@csrf<button class="btn btn-primary" type="submit">Acknowledge feedback</button></form>@endif
     </div>
+<x-supervision-history :record="$feedback" />
 @endsection

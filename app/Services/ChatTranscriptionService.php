@@ -15,7 +15,7 @@ class ChatTranscriptionService
 {
     protected bool $transcriptionEnabled = true;
 
-    public function generateSessionTranscript(Session $session): array
+    protected function generateSessionTranscript(Session $session): array
     {
         $session->loadMissing(['seeker', 'helper.user']);
 
@@ -52,31 +52,12 @@ class ChatTranscriptionService
             ];
         }
 
-        $session->forceFill(['transcript_generated_at' => now()])->save();
+
 
         return $transcript;
     }
 
-    public function generateVoiceTranscript(Message $message, string $audioUrl): ?Message
-    {
-        if (! $this->transcriptionEnabled || ! $message->voice_consent_obtained) {
-            Log::info('Voice transcription skipped', [
-                'message_id' => $message->id,
-                'consent' => (bool) $message->voice_consent_obtained,
-            ]);
-
-            return null;
-        }
-
-        $message->update([
-            'audio_url' => $audioUrl,
-            'transcript' => '[Voice transcription: ' . $audioUrl . ']',
-            'is_transcript' => true,
-            'transcript_generated_at' => now(),
-        ]);
-
-        return $message;
-    }
+    public function generateVoiceTranscript(Message $message, string $audioUrl): ?Message { return null; }
 
     public function storeChatTranscript(Session $session, string $text, string $senderType): Message
     {
@@ -104,11 +85,12 @@ class ChatTranscriptionService
 
     public function getTranscriptForUser(Session $session, int $userId, string $userRole): ?array
     {
+        if ($session->session_type !== 'chat' || !Auth::user()?->is_active || Auth::id() !== $userId || Auth::user()->role !== $userRole) return null;
         $allowed = match ($userRole) {
             'adviser' => $this->adviserCanAccess($session, $userId),
-            'helper' => (int) $session->helper_id === (int) Auth::user()?->helper?->id,
-            'seeker' => (int) $session->seeker_id === (int) Auth::user()?->helpSeeker?->id,
-            'professional' => $this->professionalCanAccess($session, $userId),
+            'helper' => false, // BP-87: use authorized session history; transcript exports are adviser-only.
+            'seeker' => false,
+            'professional' => false, // Explicit transcript-purpose grants are not implemented for this role.
             default => false,
         };
 
@@ -117,6 +99,7 @@ class ChatTranscriptionService
         }
 
         $transcript = $this->generateSessionTranscript($session);
+        SupportAudit::record('transcript_content_viewed', $session, ['purpose' => request()->hasSession() ? request()->session()->get('adviser_transcript.'.$session->id.'.purpose') : 'authorized_referral']);
 
         if ($userRole === 'seeker') {
             foreach ($transcript['messages'] as &$message) {
@@ -146,6 +129,9 @@ class ChatTranscriptionService
             return false;
         }
 
+        abort_unless(Auth::user()?->adviser?->id === $adviserId, 403);
+        SupportAudit::record('transcript_verified', $session);
+
         Message::where('session_id', $sessionId)
             ->where('is_transcript', true)
             ->whereNull('transcript_verified_at')
@@ -163,49 +149,27 @@ class ChatTranscriptionService
 
     public function getUnverifiedTranscripts(int $adviserId): array
     {
-        $helperIds = Helper::where('adviser_id', $adviserId)->pluck('id');
-
-        return Session::whereIn('helper_id', $helperIds)
+        $adviser = app(AdviserScope::class)->actor();
+        abort_unless($adviser->id === $adviserId, 403);
+        return Session::whereHas('helper', fn ($query) => $query->where('adviser_id', $adviserId))
             ->whereIn('session_status', [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED])
-            ->where('transcript_verified', false)
-            ->with(['seeker', 'helper.user'])
-            ->latest('created_date')
-            ->get()
-            ->map(function (Session $session) {
-                $messages = Message::where('session_id', $session->id)
-                    ->where('is_transcript', true)
-                    ->whereNull('transcript_verified_at')
-                    ->orderBy('sent_datetime')
-                    ->get();
-
-                if ($messages->isEmpty()) {
-                    return null;
-                }
-
-                return [
-                    'session_id' => $session->id,
-                    'seeker_alias' => $session->seeker?->generated_alias ?? 'Anonymous',
-                    'helper_name' => $session->helper?->public_alias ?? 'Peer Helper',
-                    'session_date' => $session->created_date ?? $session->created_at,
-                    'message_count' => $messages->count(),
-                    'messages' => $messages,
-                ];
-            })
-            ->filter()
-            ->values()
-            ->all();
+            ->where('transcript_verified', false)->with('helper')->latest('id')->get()
+            ->map(fn (Session $session) => [
+                'session_id' => $session->id,
+                'helper_name' => $session->helper?->public_alias,
+                'session_date' => $session->created_date ?? $session->created_at,
+                'eligible' => app(AdviserTranscriptAccess::class)->eligible($session),
+            ])->all();
     }
 
     private function adviserCanAccess(Session $session, ?int $userId): bool
     {
-        $adviser = Adviser::where('user_account_id', $userId)->first();
-
-        return $adviser && $session->helper && (int) $session->helper->adviser_id === (int) $adviser->id;
+        return Auth::id() === $userId && app(AdviserTranscriptAccess::class)->allowed($session);
     }
 
     private function professionalCanAccess(Session $session, int $userId): bool
     {
-        return Referral::where('session_id', $session->id)
+        return Referral::where('session_id', $session->id)->whereNotNull('approved_at')->where('help_seeker_consent',true)->whereIn('status',['accepted','in_progress'])
             ->whereHas('professional', fn ($query) => $query->where('user_account_id', $userId))
             ->exists();
     }

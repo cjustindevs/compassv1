@@ -115,7 +115,7 @@ class ProfessionalModuleTest extends TestCase
             'adviser_id' => $adviser->id,
             'professional_id' => $this->professional->id,
             'priority_level' => Referral::PRIORITY_HIGH,
-            'help_seeker_consent' => true,
+            'help_seeker_consent' => true, 'approved_at'=>now()->subDays(2), 'consent_obtained_at'=>now()->subDay(),
             'identity_disclosed' => false,
             'referral_reason' => 'Persistent anxiety affecting daily functioning.',
             'referral_date' => now()->subDay(),
@@ -129,7 +129,7 @@ class ProfessionalModuleTest extends TestCase
             'adviser_id' => $adviser->id,
             'professional_id' => $this->professional->id,
             'priority_level' => Referral::PRIORITY_LOW,
-            'help_seeker_consent' => true,
+            'help_seeker_consent' => true, 'approved_at'=>now()->subDays(2), 'consent_obtained_at'=>now()->subDay(),
             'identity_disclosed' => true,
             'referral_reason' => 'Career counseling following academic stress.',
             'referral_date' => now()->subDays(10),
@@ -232,13 +232,13 @@ class ProfessionalModuleTest extends TestCase
 
         $this->assertDatabaseHas('referrals', [
             'id' => $this->pendingReferral->id,
-            'status' => Referral::STATUS_DECLINED,
+            'status' => Referral::STATUS_NO_PROFESSIONAL_AVAILABLE,
             'decline_reason' => 'Case is outside my area of specialization.',
         ]);
 
         $this->assertDatabaseHas('notifications', [
             'user_account_id' => $this->adviserUser->id,
-            'title' => 'Referral Declined',
+            'title' => 'Professional assignment declined',
         ]);
     }
 

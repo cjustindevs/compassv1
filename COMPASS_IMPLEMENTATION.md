@@ -1,3 +1,11 @@
+Adviser implementation checkpoint (18 September 2026, still in progress): [ADVISER_IMPLEMENTATION.md](ADVISER_IMPLEMENTATION.md).
+
+> Helper module update (2026-09-17): see [HELPER_IMPLEMENTATION.md](HELPER_IMPLEMENTATION.md) for the 22-part audit, migration, verification and deployment report. Existing helpers now require assigned-adviser institutional verification before matching. Targeted checks: 96 passed; full suite: 204 passed with one existing seeker-screening privacy assertion failing.
+
+> **OTP follow-up:** SMTP authentication was checked successfully without sending email. Transient connection failures retry once with the same OTP; SMTP connections have a 15-second timeout. Failed sends clear the resend cooldown and preserve previous verification. Error logs now record a safe failure category, never SMTP transcripts or OTPs. Inbox delivery still requires a recipient-authorized test.
+
+> **2026-09-16 continuation:** See [Help Seeker implementation and verification](HELP_SEEKER_IMPLEMENTATION.md) for current workflow, migration, tests, approval gate and remaining manual checks. Earlier results below are historical.
+
 # COMPASS implementation
 
 ## Setup verified on 2026-09-09

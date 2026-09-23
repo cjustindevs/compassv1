@@ -34,7 +34,7 @@ class TestUsersSeeder extends Seeder
             $helper->update(['adviser_id' => $profiles['adviser']->id, 'availability' => 'available', 'status' => 'available',
                 'competency_level' => 3, 'max_concurrent_sessions' => 2, 'preferred_language' => 'English']);
             $profiles['professional']->update(['is_available' => true]);
-            HelperSchedule::updateOrCreate(['helper_id' => $helper->id, 'date' => today()], [
+            HelperSchedule::updateOrCreate(['helper_id' => $helper->id, 'date' => now(config('app.schedule_timezone'))->startOfDay()], [
                 'shift_start' => '00:00:00', 'shift_end' => '23:59:59', 'is_active' => true,
                 'created_by' => $profiles['adviser']->user_account_id, 'approved_by' => $profiles['adviser']->id, 'approved_at' => now(),
             ]);
@@ -51,8 +51,8 @@ class TestUsersSeeder extends Seeder
                 'is_verified' => true, 'verified_at' => now(), 'account_created' => now(),
             ]);
             foreach (['privacy_policy', 'informed_consent'] as $type) {
-                ConsentRecord::updateOrCreate(['seeker_id' => $seeker->id, 'document_type' => $type], [
-                    'consent_given' => true, 'consent_date' => now(), 'version' => '1.0',
+                ConsentRecord::firstOrCreate(['seeker_id' => $seeker->id, 'document_type' => $type], [
+                    'consent_given' => true, 'consent_date' => now(), 'version' => \App\Services\ConsentService::VERSION,
                 ]);
             }
             foreach (['Academic Stress', 'Family Concerns', 'Relationships', 'Anxiety', 'Others'] as $name) {

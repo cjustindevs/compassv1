@@ -12,10 +12,18 @@ class EnsureUserRole
     {
         $user = $request->user();
 
-        if (! $user || ! in_array($user->role, $roles, true)) {
+        if (! $user || !$user->is_active || ! in_array($user->role, $roles, true)) {
             abort(403, 'You do not have permission to access this page.');
         }
 
-        return $next($request);
+        if ($user->role === 'adviser') {
+            app(\App\Services\AdviserScope::class)->actor($user);
+        }
+
+        $response = $next($request);
+        if ($user->role === 'adviser') {
+            $response->headers->set('Cache-Control', 'private, no-store');
+        }
+        return $response;
     }
 }

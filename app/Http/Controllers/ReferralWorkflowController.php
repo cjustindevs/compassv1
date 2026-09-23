@@ -33,33 +33,44 @@ class ReferralWorkflowController extends Controller
     {
         $validated = $request->validate([
             'approved' => ['required', 'boolean'],
-            'adviser_id' => ['nullable', 'exists:advisers,id'],
+            'adviser_id' => ['prohibited'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'decline_reason' => ['nullable', 'string', 'max:1000'],
-            'consent_obtained' => ['nullable', 'boolean'],
+            'consent_obtained' => ['prohibited'],
         ]);
 
-        $adviser = isset($validated['adviser_id'])
-            ? Adviser::findOrFail($validated['adviser_id'])
-            : $request->user()?->adviser;
-
-        abort_unless($adviser, 403, 'Adviser profile required.');
-        abort_unless($request->user()?->adviser?->id === $adviser->id, 403);
+        $adviser = app(\App\Services\AdviserScope::class)->actor();
 
         $referral = $this->referrals->reviewReferral($referral, $adviser, $validated);
 
         return response()->json(['success' => true, 'status' => $referral->status]);
     }
 
-    public function consent(Request $request, Referral $referral): JsonResponse
+    public function consent(Request $request, Referral $referral): JsonResponse|\Illuminate\Http\RedirectResponse
     {
-        abort_unless($request->user()?->helpSeeker?->id === $referral->session?->seeker_id, 403);
+        abort_unless($request->user()?->role==='seeker' && $request->user()?->is_active && $request->user()?->helpSeeker?->id === $referral->session?->seeker_id, 403);
         abort_unless($referral->status === Referral::STATUS_PENDING_CONSENT, 409);
         $validated = $request->validate(['consent_given' => ['required', 'boolean']]);
 
         $referral = $this->referrals->processConsent($referral, (bool) $validated['consent_given']);
 
+        if (!$request->expectsJson()) return redirect()->route('seeker.referrals')->with('success','Referral decision recorded.');
         return response()->json(['success' => true, 'status' => $referral->status]);
+    }
+
+    // Consent-first flow: decide the consent_request of a referral created by a
+    // helper before it is submitted for adviser review. Route: referral.consent-request
+    public function consentRequest(Request $request, Referral $referral): JsonResponse
+    {
+        abort_unless($request->user()?->role === 'seeker' && $request->user()?->is_active && $request->user()?->helpSeeker?->id === $referral->session?->seeker_id, 403);
+
+        $validated = $request->validate([
+            'accepted' => ['required', 'boolean'],
+        ]);
+
+        $referral = $this->referrals->decideConsentRequest($referral, (bool) $validated['accepted']);
+
+        return response()->json(['success' => true, 'status' => $referral->status, 'referral_id' => $referral->id]);
     }
 
     public function accept(Request $request, Referral $referral): JsonResponse

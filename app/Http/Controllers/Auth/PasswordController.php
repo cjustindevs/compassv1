@@ -24,6 +24,7 @@ class PasswordController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
+        if ($request->user()->role === 'admin') app(\App\Services\AuditLogger::class)->record($request->user(),\App\Services\AuditLogger::PASSWORD_CHANGED,'authentication','Administrator password changed.',$request);
         return back()->with('status', 'password-updated');
     }
 }

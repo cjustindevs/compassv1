@@ -14,6 +14,7 @@ class HelperSettingsController extends Controller
      */
     public function index()
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $user = Auth::user();
 
         return view('helper.settings', [
@@ -36,6 +37,7 @@ class HelperSettingsController extends Controller
      */
     public function update(Request $request)
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $user = Auth::user();
 
         $validated = $request->validate([

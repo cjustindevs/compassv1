@@ -17,41 +17,14 @@ use Illuminate\Support\Facades\Auth;
 
 class AdviserDashboardController extends Controller
 {
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
         $user = Auth::user();
         $adviser = $user->adviser;
         $helperIds = Helper::where('adviser_id', $adviser?->id)->pluck('id');
 
-        if ($helperIds->isEmpty()) {
-            return view('dashboard.adviser', array_merge([
-                'user' => $user,
-                'adviser' => $adviser,
-                'pendingEvaluations' => collect(),
-                'pendingEvaluationCount' => 0,
-                'highRiskCases' => collect(),
-                'totalHelpers' => 0,
-                'activeHelpers' => 0,
-                'pendingReferrals' => collect(),
-                'pendingReferralCount' => 0,
-                'recentEvaluations' => collect(),
-                'unreadNotifications' => Notification::where('user_account_id', $user->id)->unread()->count(),
-                'totalSessions' => 0,
-                'completedSessions' => 0,
-                'activeSessions' => 0,
-                'waitingTimeStats' => [],
-                'helperProgress' => [],
-                'recentActivity' => [],
-                'openIncidents' => collect(),
-                'helpers' => collect(),
-                'matchingStats' => ['total_helpers' => 0, 'available_helpers' => 0, 'average_competency' => 0, 'total_sessions_today' => 0, 'avg_matching_score' => 0],
-                'helpersAtCapacity' => collect(),
-                'helpersExpiredReadiness' => collect(),
-                'assignedQueueCount' => 0,
-                'recentAssignments' => collect(),
-            ]));
-        }
-
+        $analytics=app(\App\Services\AdviserAnalytics::class);
+        $reportData=$analytics->report($analytics->filters($request));
         // Pending evaluations (small, always fresh)
         $pendingEvaluations = SessionReport::where('adviser_reviewed', false)
             ->whereHas('session', fn ($query) => $query->whereIn('helper_id', $helperIds))
@@ -60,7 +33,7 @@ class AdviserDashboardController extends Controller
             ->limit(20)
             ->get();
 
-        $pendingEvaluationCount = $pendingEvaluations->count();
+        $pendingEvaluationCount = SessionReport::where('adviser_reviewed',false)->whereHas('session',fn($q)=>$q->whereIn('helper_id',$helperIds)->whereIn('session_status',['completed','evaluated']))->count();
 
         // High-risk cases (small)
         $highRiskCases = Session::whereIn('risk_level', ['high', 'emergency'])
@@ -77,13 +50,13 @@ class AdviserDashboardController extends Controller
 
         // Pending referrals
         $pendingReferrals = Referral::where('status', Referral::STATUS_PENDING_ADVISER)
-            ->whereIn('helper_id', $helperIds)
+            ->where(fn($q)=>$q->whereIn('helper_id',$helperIds)->orWhere('adviser_id',auth()->user()->adviser->id))
             ->with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name'])
             ->latest()
             ->limit(10)
             ->get();
 
-        $pendingReferralCount = $pendingReferrals->count();
+        $pendingReferralCount = Referral::where('status','pending_adviser')->where(fn($q)=>$q->whereIn('helper_id',$helperIds)->orWhere('adviser_id',$adviser->id))->count();
 
         // Recent competency evaluations
         $recentEvaluations = HelperCompetencyHistory::with(['helper:id,id,first_name,last_name', 'adviser:id,id,first_name,last_name'])
@@ -97,14 +70,7 @@ class AdviserDashboardController extends Controller
             ->unread()
             ->count();
 
-        // Session statistics (cached 60s)
-        $sessionStats = Cache::remember('adviser_session_stats_' . ($adviser?->id ?? 'none'), 60, function () use ($helperIds) {
-            return [
-                'total' => Session::whereIn('helper_id', $helperIds)->count(),
-                'completed' => Session::whereIn('helper_id', $helperIds)->whereIn('session_status', ['completed', 'evaluated'])->count(),
-                'active' => Session::whereIn('helper_id', $helperIds)->where('session_status', 'active')->count(),
-            ];
-        });
+        $sessionStats=$reportData['metrics'];
 
         // Waiting time stats (small)
         $waitingTimeStats = $this->getWaitingTimeStats($helperIds);
@@ -121,7 +87,7 @@ class AdviserDashboardController extends Controller
             ->get();
 
         $matchingStats = $this->getMatchingStatistics($helperIds);
-        $helpersAtCapacity = $helpers->filter(fn (Helper $helper) => $helper->current_shift_sessions >= Helper::MAX_SESSIONS_PER_SHIFT);
+        $helpersAtCapacity = $helpers->filter(fn (Helper $helper) => $helper->currentAssignedSessionsCount() >= Helper::MAX_SESSIONS_PER_SHIFT);
         $helpersExpiredReadiness = $helpers->filter(fn (Helper $helper) => $helper->getReadinessStatus() !== 'ready');
         $assignedQueueCount = QueueRequest::whereIn('assigned_helper_id', $helperIds)->where('request_status', 'assigned')->count();
 
@@ -141,6 +107,9 @@ class AdviserDashboardController extends Controller
             ->get();
 
         return view('dashboard.adviser', [
+            'reportData'=>$reportData,
+            'emergencyReviewCount'=>\App\Models\EmergencyAlert::where(fn($q)=>$q->where('adviser_id',$adviser->id)->orWhereHas('session.helper',fn($h)=>$h->where('adviser_id',$adviser->id)))->whereNotIn('status',['resolved','closed'])->count(),
+            'trainingFollowUpCount'=>\App\Models\TrainingRecommendation::whereHas('helper',fn($q)=>$q->where('adviser_id',$adviser->id))->where('status','completed')->count(),
             'user' => $user,
             'adviser' => $adviser,
             'pendingEvaluations' => $pendingEvaluations,
@@ -185,7 +154,7 @@ class AdviserDashboardController extends Controller
 
         return [
             'total_helpers' => (clone $helpers)->count(),
-            'available_helpers' => (clone $helpers)->where('status', 'available')->where('availability', 'available')->count(),
+            'available_helpers' => (clone $helpers)->get()->filter(fn($helper)=>app(\App\Services\HelperEligibilityService::class)->allows($helper))->count(),
             'average_competency' => round((clone $helpers)->avg('competency_score') ?? 0, 2),
             'total_sessions_today' => Session::whereIn('helper_id', $helperIds)->whereDate('created_at', today())->count(),
             'avg_matching_score' => round($matchingScores->avg() ?? 0, 2),
@@ -199,8 +168,7 @@ class AdviserDashboardController extends Controller
     {
         $stats = [];
 
-        foreach (Session::with(['helper:id,id,first_name,last_name', 'seeker:id,id,generated_alias'])
-            ->whereIn('helper_id', $helperIds)
+        foreach (app(\App\Services\AdviserAnalytics::class)->scoped()->with(['queue','helper:id,id,first_name,last_name', 'seeker:id,id,generated_alias'])
             ->whereIn('session_status', ['waiting', 'helper_assigned', 'active'])
             ->latest('created_date')
             ->limit(6)
@@ -211,14 +179,14 @@ class AdviserDashboardController extends Controller
                 default => 'In Queue',
             };
 
-            $start = $session->created_date ?? $session->created_at;
+            $start = $session->queue?->queued_at ? \Illuminate\Support\Carbon::parse($session->queue->queued_at) : null;
 
             $stats[$session->reference_number] = [
                 'reference' => $session->reference_number,
                 'helper' => $session->helper?->full_name ?? '—',
                 'alias' => $session->seeker?->generated_alias ?? 'Anonymous',
                 'status' => $label,
-                'waiting' => $start ? $start->diffForHumans(now(), true) : '—',
+                'waiting' => $start ? $start->diffForHumans($session->start_time ?? now(), true) : '—',
             ];
         }
 
@@ -240,7 +208,7 @@ class AdviserDashboardController extends Controller
                 return [
                     'session' => $report->session?->reference_number ?? 'S-?',
                     'helper' => $report->session?->helper?->full_name ?? 'Unknown',
-                    'feedback' => \Illuminate\Support\Str::limit($report->session_summary ?? 'No summary', 60),
+                    'feedback' => 'Documentation awaiting review',
                 ];
             })
             ->all();
@@ -264,7 +232,7 @@ class AdviserDashboardController extends Controller
                 'type' => 'emergency',
                 'message' => 'Emergency case flagged',
                 'detail' => $incident->session?->seeker?->generated_alias ?? 'A seeker' . ' - ' . \Illuminate\Support\Str::limit($incident->description, 60),
-                'time' => $incident->created_at?->diffForHumans(),
+                'time' => $incident->created_at?->diffForHumans(), 'timestamp' => $incident->created_at?->timestamp ?? 0,
             ];
         }
 
@@ -278,7 +246,7 @@ class AdviserDashboardController extends Controller
                 'type' => 'evaluation',
                 'message' => 'New evaluation submitted',
                 'detail' => ($evaluation->helper?->full_name ?? 'Helper') . ' - ' . ($evaluation->overall_score ? 'Score ' . $evaluation->overall_score . '/5' : 'Reviewed'),
-                'time' => $evaluation->created_at?->diffForHumans(),
+                'time' => $evaluation->created_at?->diffForHumans(), 'timestamp' => $evaluation->created_at?->timestamp ?? 0,
             ];
         }
 
@@ -292,7 +260,7 @@ class AdviserDashboardController extends Controller
                 'type' => 'referral',
                 'message' => 'Referral ' . ucfirst(str_replace('_', ' ', $referral->status)),
                 'detail' => ($referral->session?->seeker?->generated_alias ?? 'A seeker') . ' - ' . \Illuminate\Support\Str::limit($referral->referral_reason, 60),
-                'time' => $referral->created_at?->diffForHumans(),
+                'time' => $referral->created_at?->diffForHumans(), 'timestamp' => $referral->created_at?->timestamp ?? 0,
             ];
         }
 
@@ -302,12 +270,12 @@ class AdviserDashboardController extends Controller
                 'type' => 'helper',
                 'message' => 'Helper availability updated',
                 'detail' => ($helper->full_name ?? 'A helper') . ' is now ' . $helper->status,
-                'time' => $helper->updated_at?->diffForHumans(),
+                'time' => $helper->updated_at?->diffForHumans(), 'timestamp' => $helper->updated_at?->timestamp ?? 0,
             ];
         }
 
         // Most recent first
-        usort($activity, fn ($a, $b) => strcmp($b['time'] ?? '', $a['time'] ?? ''));
+        usort($activity, fn ($a, $b) => $b['timestamp'] <=> $a['timestamp']);
 
         return array_slice($activity, 0, 8);
     }

@@ -531,13 +531,12 @@
 
             <form id="screeningForm" class="form-maximized" method="POST" action="{{ route('request.screening.process') }}">
                 @csrf
-
-                <div class="form-row">
+                <button type="button" data-open-seeker-consent class="text-sm text-green-700 underline mb-4">Terms and Privacy</button>
 
                 <!-- ============================================ -->
                 <!-- SECTION 1: AREA OF CONCERN                  -->
                 <!-- ============================================ -->
-                <div class="form-section-compact">
+                <div class="mb-8">
                     <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">General</h3>
                     <p class="text-sm text-gray-500 mb-4">What is your main concern today?</p>
 
@@ -569,40 +568,54 @@
                 <!-- ============================================ -->
                 <!-- SECTION 2: BRIEF DESCRIPTION                -->
                 <!-- ============================================ -->
-                <div class="form-section-compact">
+                <div class="mb-8">
                     <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Brief Description</h3>
                     <p class="text-sm text-gray-500 mb-4">Tell us more about your concern.</p>
 
                     <div>
-                        <label class="form-label" for="description">Description <span class="text-gray-400">(optional unless Other is selected)</span></label>
-                        <textarea id="description" name="description" class="form-input" maxlength="500" placeholder="I have several deadlines this week and I'm having trouble sleeping because I feel like I cannot keep up with my classes.">{{ old('description') }}</textarea>
-                        <div class="char-count" id="charCount">0 / 500</div>
+                        <label class="form-label" for="description">Description <span class="text-red-500">*</span></label>
+                        <textarea id="description" name="description" class="form-input" maxlength="200" required placeholder="I have several deadlines this week and I'm having trouble sleeping because I feel like I cannot keep up with my classes.">{{ old('description') }}</textarea>
+                        <div class="char-count" id="charCount">0 / 200</div>
                         @error('description')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                 </div>
 
-                </div>
-                <fieldset class="form-section-compact">
-                    <legend class="font-semibold mb-4">How are you feeling?</legend>
-                    <div class="form-row">
-                    @foreach(['current_suicide_plan' => 'Do you currently have a plan to end your life?', 'suicidal_thoughts' => 'Have you had thoughts of ending your life?', 'severe_distress' => 'Are you experiencing severe emotional distress?', 'recurring_distress' => 'Has your emotional distress been recurring?', 'difficulty_coping' => 'Are you finding it difficult to cope?'] as $field => $question)
-                        <fieldset class="form-group-compact">
-                            <legend class="form-label">{{ $question }} <span class="text-red-500" aria-hidden="true">*</span></legend>
-                            <div class="options-compact">
-                                @foreach(['1' => 'Yes', '0' => 'No'] as $value => $answer)
-                                    <label class="option-btn" for="{{ $field }}_{{ $value }}">
-                                        <input type="radio" id="{{ $field }}_{{ $value }}" name="{{ $field }}" value="{{ $value }}" required @checked((string) old($field, '') === (string) $value) @error($field) aria-invalid="true" aria-describedby="{{ $field }}_error" @enderror>
-                                        <span>{{ $answer }}</span>
-                                    </label>
-                                @endforeach
-                            </div>
-                            @error($field)<p id="{{ $field }}_error" class="form-error text-red-600">{{ $message }}</p>@enderror
-                        </fieldset>
-                    @endforeach
+                <!-- ============================================ -->
+                <!-- SECTION 3: SAFETY CHECK                    -->
+                <!-- ============================================ -->
+                <div class="mb-8">
+                    <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Safety Check</h3>
+                    <p class="text-sm text-gray-500 mb-4">We want to support you better. Have you recently had thoughts of harming yourself or ending your life?</p>
+
+                    <div class="safety-buttons">
+                        <div class="safety-btn">
+                            <input type="radio" id="safety_yes" name="safety_check" value="yes" required @checked(old('safety_check') == 'yes')>
+                            <label for="safety_yes">Yes</label>
+                        </div>
+                        <div class="safety-btn">
+                            <input type="radio" id="safety_no" name="safety_check" value="no" @checked(old('safety_check') == 'no')>
+                            <label for="safety_no">No</label>
+                        </div>
+                        <div class="safety-btn">
+                            <input type="radio" id="safety_prefer_not" name="safety_check" value="prefer_not_to_say" @checked(old('safety_check') == 'prefer_not_to_say')>
+                            <label for="safety_prefer_not">Prefer not to say</label>
+                        </div>
                     </div>
-                </fieldset>
+                    @error('safety_check')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Compact screening answers. These hidden fields mirror the
+                     safety answer above so the backend routing and
+                     validation stay unchanged. -->
+                <input type="hidden" name="current_suicide_plan" id="hidden_current_suicide_plan" value="0">
+                <input type="hidden" name="suicidal_thoughts" id="hidden_suicidal_thoughts" value="0">
+                <input type="hidden" name="severe_distress" id="hidden_severe_distress" value="0">
+                <input type="hidden" name="recurring_distress" id="hidden_recurring_distress" value="0">
+                <input type="hidden" name="difficulty_coping" id="hidden_difficulty_coping" value="0">
 
                 <!-- ============================================ -->
                 <!-- FORM ACTIONS                                -->
@@ -652,10 +665,10 @@
 
             description.addEventListener('input', function() {
                 const length = this.value.length;
-                charCount.textContent = length + ' / 500';
+                charCount.textContent = length + ' / 200';
                 charCount.classList.remove('warning', 'danger');
-                if (length > 450) charCount.classList.add('warning');
-                if (length >= 500) charCount.classList.add('danger');
+                if (length > 160) charCount.classList.add('warning');
+                if (length >= 200) charCount.classList.add('danger');
             });
 
             // ── Custom Concern Toggle ──
@@ -664,16 +677,56 @@
 
             concernSelect.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
-                if (selectedOption && ['other', 'others', 'other concerns'].includes(selectedOption.text.trim().toLowerCase())) {
+                if (selectedOption && selectedOption.text === 'Others') {
                     customContainer.classList.remove('hidden');
-                    description.required = true;
                 } else {
                     customContainer.classList.add('hidden');
-                    description.required = false;
                     document.getElementById('custom_concern').value = '';
                 }
             });
             concernSelect.dispatchEvent(new Event('change'));
+
+            // ── Safety answer → compact screening fields ──
+            // The five compact answers are hidden inputs kept in sync with the
+            // safety answer so backend screening validation stays unchanged.
+            const safetyInputs = document.querySelectorAll('input[name="safety_check"]');
+
+            const compactFields = {
+                current_suicide_plan: document.getElementById('hidden_current_suicide_plan'),
+                suicidal_thoughts:    document.getElementById('hidden_suicidal_thoughts'),
+                severe_distress:      document.getElementById('hidden_severe_distress'),
+                recurring_distress:   document.getElementById('hidden_recurring_distress'),
+                difficulty_coping:    document.getElementById('hidden_difficulty_coping')
+            };
+
+            function setCompact(field, value) {
+                if (compactFields[field]) compactFields[field].value = value ? '1' : '0';
+            }
+
+            function syncCompactFields() {
+                const safety = document.querySelector('input[name="safety_check"]:checked');
+                const safetyValue = safety ? safety.value : 'no';
+
+                setCompact('current_suicide_plan', false);
+                setCompact('suicidal_thoughts', false);
+                setCompact('severe_distress', false);
+                setCompact('recurring_distress', false);
+                setCompact('difficulty_coping', false);
+
+                if (safetyValue === 'yes') {
+                    setCompact('current_suicide_plan', true);
+                }
+            }
+
+            safetyInputs.forEach(input => input.addEventListener('change', syncCompactFields));
+
+            // Restore hidden fields when the page reloads after a validation
+            // error (old() restores the radio selection).
+            syncCompactFields();
+
+            // ── Native HTML5 validation covers required fields ──
+            // (concern_id, description, safety_check all have `required`;
+            //  the browser blocks empty submits natively.)
 
         });
     </script>

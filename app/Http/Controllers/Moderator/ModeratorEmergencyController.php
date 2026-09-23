@@ -49,7 +49,7 @@ class ModeratorEmergencyController extends Controller
             ->pluck('total', 'risk_level')
             ->toArray();
 
-        $contacts = EmergencyResource::where('status', 'active')->get();
+        $contacts = EmergencyResource::published()->get();
 
         $workflow = [
             'detected' => $openIncidents->total(),

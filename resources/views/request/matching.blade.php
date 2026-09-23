@@ -447,12 +447,12 @@
             @if($session->isActive())
                 <div class="text-center py-4">
                     <div class="text-5xl mb-3"><i class="fas fa-star" aria-hidden="true"></i></div>
-                    <h2 class="text-2xl font-bold text-gray-800">Session started!</h2>
+                    <h2 class="text-2xl font-bold text-gray-800">Your helper accepted</h2>
                     <p class="text-gray-500 mt-2">A helper accepted your request. Your session is now active.</p>
 
                     <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
                         <a href="{{ route($session->session_type === 'voice' && ! $session->voice_consent_obtained ? 'request.voice-consent' : ($session->session_type === 'voice' ? 'session.voice' : 'session.chat')) }}" class="btn-primary">
-                            <i class="fas fa-comment mr-2"></i> {{ $session->session_type === 'voice' ? 'Continue to Voice' : 'Go to Chat' }}
+                            <i class="fas fa-comment mr-2"></i> {{ $session->session_type === 'voice' ? 'Continue to Voice' : 'Open chat' }}
                         </a>
                         <a href="{{ route('seeker.dashboard') }}" class="btn-outline w-full sm:w-auto">
                             <i class="fas fa-home mr-2"></i> Dashboard
@@ -466,10 +466,19 @@
             @elseif($session->isHelperAssigned())
                 <div class="text-center py-4">
                     <div class="text-5xl mb-3"><i class="fas fa-hourglass-half" aria-hidden="true"></i></div>
-                    <h2 class="text-2xl font-bold text-gray-800">Waiting for helper to accept</h2>
+                    <h2 class="text-2xl font-bold text-gray-800">Waiting for helper acceptance</h2>
                     <p class="text-gray-500 mt-2 max-w-md mx-auto">
                         A helper has been notified about your request. Please wait while they review it.
                     </p>
+
+                    @if($session->scheduled_start)
+                        <div class="mt-4 p-3 bg-blue-50 rounded-xl border border-blue-200 max-w-md mx-auto">
+                            <p class="text-sm text-blue-700"><i class="fas fa-calendar-check mr-1"></i>
+                                Your session is scheduled for
+                                <span class="font-semibold">{{ $session->scheduled_start->setTimezone(config('app.schedule_timezone'))->format('M d, h:i A') }}</span>
+                            </p>
+                        </div>
+                    @endif
 
                     @if($availableHelper)
                         <div class="mt-6 p-4 bg-green-50 rounded-xl border border-green-200 max-w-md mx-auto">
@@ -526,6 +535,15 @@
                                 <i class="fas fa-times mr-2"></i> Decline &amp; Stay in Queue
                             </button>
                         </form>
+                        <form method="POST" action="{{ route('request.cancel', $session) }}"
+                              data-confirm="Cancel this request?"
+                              data-confirm-message="Your request will close and leave the queue. Its history is retained."
+                              data-confirm-text="Cancel request">
+                            @csrf
+                            <button type="submit" class="btn-outline w-full">
+                                <i class="fas fa-ban mr-2"></i> Cancel This Request
+                            </button>
+                        </form>
                     </div>
                 </div>
 
@@ -535,7 +553,7 @@
             @else
                 <div id="noHelperSection" class="text-center py-4">
                     <div class="text-5xl mb-4"><i class="fas fa-magnifying-glass" aria-hidden="true"></i></div>
-                    <h2 class="text-xl font-bold text-gray-800">Looking for a helper...</h2>
+                    <h2 class="text-xl font-bold text-gray-800">Waiting for an available helper</h2>
                     <p class="text-gray-500 mt-2 max-w-md mx-auto">
                         You're in the queue. You will be notified the moment a trained peer helper accepts your request.
                     </p>
@@ -544,12 +562,18 @@
                         <p><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Request {{ $session->reference_number }} · Submitted {{ $session->created_at?->diffForHumans() }}</p>
                         @if($currentQueueRequest?->queue_position)
                             <p class="mt-1 text-gray-600">
-                                Queue position: #{{ $currentQueueRequest->queue_position }} · Estimated wait: {{ $currentQueueRequest->estimated_wait ?? 8 }} min
+                                Queue position: #{{ $currentQueueRequest->queue_position }}
                             </p>
                         @endif
-                        <p class="mt-1 text-green-600">
-                            <i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ $availableHelperCount }} {{ $availableHelperCount === 1 ? 'helper is' : 'helpers are' }} online now
-                        </p>
+                        @if($availableHelperCount > 0)
+                            <p class="mt-1 text-green-600">
+                                <i class="fas fa-user-check" aria-hidden="true"></i> {{ $availableHelperCount }} {{ $availableHelperCount === 1 ? 'helper is' : 'helpers are' }} online now
+                            </p>
+                        @elseif(!empty($matchingReason))
+                            <p class="mt-2 text-left text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 inline-block" role="status">
+                                <i class="fas fa-clock mr-1" aria-hidden="true"></i> {{ $matchingReason }}
+                            </p>
+                        @endif
                         <p class="text-gray-400 mt-1">You can close this page. Your request is saved and you can come back anytime.</p>
                     </div>
 
@@ -584,6 +608,17 @@
                         <button class="btn-primary w-full sm:w-auto" onclick="window.location.reload()">
                             <i class="fas fa-redo mr-2"></i> Check Status
                         </button>
+                    </div>
+                    <div class="mt-4">
+                        <form method="POST" action="{{ route('request.cancel', $session) }}"
+                              data-confirm="Cancel this request?"
+                              data-confirm-message="Your request will close and leave the queue. Its history is retained."
+                              data-confirm-text="Cancel request">
+                            @csrf
+                            <button type="submit" class="text-sm text-red-500 hover:text-red-700 font-medium underline">
+                                <i class="fas fa-ban mr-1"></i> Cancel This Request
+                            </button>
+                        </form>
                     </div>
                     <p class="text-xs text-gray-400 mt-3">
                         Leaving this page keeps your place in the queue — you can come back anytime.

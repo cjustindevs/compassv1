@@ -28,11 +28,11 @@ class SessionDurationTest extends TestCase
             'emotionally_ready' => true, 'willing_to_listen' => true, 'stress_level' => 'low',
             'assessment_date' => now(), 'valid_until' => now()->addHours(4),
         ]);
-        $session = Session::create(['seeker_id' => $profile->id, 'helper_id' => $helper->id, 'session_status' => 'active', 'start_time' => now()->subMinutes(90)->addSecond()]);
+        $session = Session::create(['seeker_id' => $profile->id, 'helper_id' => $helper->id, 'session_status' => 'active', 'helper_accepted_at'=>now()->subMinutes(90), 'start_time' => now()->subMinutes(90)->addSecond()]);
         return [$seeker, $helperUser, $session];
     }
 
-    public function test_status_closes_at_exact_deadline_without_scheduler_and_is_idempotent(): void
+    public function test_status_is_read_only_and_scheduled_expiry_is_idempotent(): void
     {
         [$seeker, $helper, $session] = $this->room();
         $this->actingAs($seeker)->getJson(route('chat.status', $session->id))
@@ -40,6 +40,8 @@ class SessionDurationTest extends TestCase
         $this->travel(1)->seconds();
         $this->getJson(route('chat.status', $session->id))->assertOk()
             ->assertJsonPath('session.ended', true)->assertJsonPath('session.remaining_seconds', 0);
+        $this->assertSame('active',$session->fresh()->session_status);
+        app(\App\Services\SessionDurationService::class)->expire($session);
         $this->assertDatabaseHas('counseling_sessions', ['id' => $session->id, 'duration' => 90, 'auto_completed' => true]);
         $endedAt = $session->fresh()->end_time->toIso8601String();
         $this->travel(10)->minutes();

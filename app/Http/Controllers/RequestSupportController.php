@@ -1,537 +1,119 @@
 <?php
-
 namespace App\Http\Controllers;
-
-use App\Events\NewCaseAssigned;
-use App\Events\QueueUpdated;
-use App\Models\ConcernCategory;
-use App\Models\Helper;
-use App\Models\Message;
-use App\Models\Notification;
-use App\Models\QueueRequest;
-use App\Models\Session;
-use App\Models\User;
-use App\Models\ScreeningResponse;
-use App\Services\EmergencyEscalationService;
-use App\Services\RiskClassificationService;
-use App\Traits\BroadcastsSafely;
+use App\Models\{ConcernCategory, SelfHelpResource, Session};
+use App\Services\{ConsentService, HelperMatchingService, HelperWorkflowMaintenance, OperatingHoursService, ScreeningInstrument, SeekerWorkflowService};
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-
-class RequestSupportController extends Controller
-{
-    use BroadcastsSafely;
-
-    public function __construct(
-        private RiskClassificationService $riskClassification,
-        private EmergencyEscalationService $emergencyEscalation,
-    ) {}
-
-    /**
-     * Show the screening form (Step 1).
-     * If the seeker already has an in-progress request in the database
-     * (e.g. they logged out mid-flow), resume it instead of starting over.
-     */
-    public function screening()
-    {
-        if (Auth::user()->helpSeeker?->pseudo_id && ! Auth::user()->helpSeeker->is_verified) {
-            return redirect()->route('seeker.consent');
-        }
-        $pending = $this->currentPendingSession();
-
-        if ($pending) {
-            if ($pending->session_status === Session::STATUS_SCREENING_COMPLETED) {
-                return redirect()->route('request.preferences')
-                    ->with('info', 'You have a pending request. Continue where you left off.');
-            }
-
-            return redirect()->route('request.matching')
-                ->with('info', 'You have a pending request. Continue where you left off.');
-        }
-
-        $concerns = ConcernCategory::all();
-        return view('request.screening', compact('concerns'));
+use Illuminate\Support\Facades\Gate;
+class RequestSupportController extends Controller {
+    public function __construct(private SeekerWorkflowService $workflow) {}
+    public function screening(Request $request) {
+        Gate::authorize('seeker-workflow');
+        $consents=app(ConsentService::class);
+        // Required consent opens on this page; POST endpoints still enforce it.
+        if ($session=$this->workflow->current($request->user())) return $this->next($session);
+        return view('request.screening',['concerns'=>ConcernCategory::all()]);
     }
-
-    /**
-     * Process the screening form, persist the session, and determine risk
-     */
-    public function processScreening(Request $request)
-    {
-        if (Auth::user()->helpSeeker?->pseudo_id && ! Auth::user()->helpSeeker->is_verified) {
-            return redirect()->route('seeker.consent');
+    public function processScreening(Request $request) {
+        Gate::authorize('seeker-workflow');
+        if ($request->has('immediate_intent')) {
+            $answers=$request->validate(ScreeningInstrument::rules());
+            return $this->next($this->workflow->screen($request->user(),$answers));
         }
-        $validated = $request->validate([
-            'concern_id' => 'required|exists:concern_categories,id',
-            'custom_concern' => 'nullable|string|max:255',
-            'description' => [\Illuminate\Validation\Rule::requiredIf(fn () => in_array(strtolower(trim(ConcernCategory::find($request->concern_id)?->concern_name ?? '')), ['other', 'others', 'other concerns'])), 'nullable', 'string', 'max:500'],
-            'current_suicide_plan' => 'required|boolean',
-            'suicidal_thoughts' => 'required|boolean',
-            'severe_distress' => 'required|boolean',
-            'recurring_distress' => 'required|boolean',
-            'difficulty_coping' => 'required|boolean'
-        ]);
-
-        $helpSeeker = Auth::user()->helpSeeker;
-
-        if (!$helpSeeker) {
-            return back()->withErrors(['concern_id' => 'Your help seeker profile could not be found. Please complete your registration first.']);
-        }
-
-        if ($this->currentRequestSession()) {
-            return redirect()->route('request.matching');
-        }
-
-        try {
-            $classification = $this->calculateRisk($validated);
-        } catch (\RuntimeException $exception) {
-            return back()->withInput()->withErrors(['current_suicide_plan' => $exception->getMessage()]);
-        }
-        $riskLevel = $classification['risk_level'];
-
-        // Persist the request in the counseling_sessions table
-        $session = Session::create([
-            'seeker_id' => $helpSeeker->id,
-            'concern_id' => $validated['concern_id'],
-            'risk_level' => $riskLevel,
-            'session_type' => 'chat',
-            'session_status' => 'screening_completed',
-            'completion_status' => 'pending',
-            'created_date' => now(),
-        ]);
-
-        ScreeningResponse::where('seeker_id', $helpSeeker->id)->update(['is_active' => false]);
-        ScreeningResponse::create([
-            'seeker_id' => $helpSeeker->id,
-            'session_id' => $session->id,
-            'responses' => $this->normalizeScreeningResponses($validated) + [
-                'concern_category' => ConcernCategory::find($validated['concern_id'])?->concern_name,
-                'description' => $validated['description'] ?? null,
-            ],
-            'risk_level' => $riskLevel,
-            'priority' => $classification['priority'],
-            'action' => $classification['action'],
-            'reason' => $classification['reason'],
-            'classified_at' => now(),
-            'classified_by' => 'system',
-            'is_active' => true,
-            'is_complete' => true,
-        ]);
-
-        $helpSeeker->update([
-            'current_risk_level' => $riskLevel,
-            'risk_last_updated' => now(),
-        ]);
-
-        if ($riskLevel === RiskClassificationService::RISK_EMERGENCY) {
-            $this->emergencyEscalation->escalateEmergency($session, $helpSeeker, ['reason' => $classification['reason']]);
-            return redirect()->route('emergency')->with('info', 'Support is available. Please review these resources.');
-        }
-
-        session([
-            'screening_data' => $validated,
-            'session_id' => $session->id,
-        ]);
-
-        return redirect()->route('request.preferences')
-            ->with('success', 'Screening completed. Please set your session preferences.');
+        $data=$request->validate(\App\Services\CompactScreening::rules() + ['concern_id'=>'required|exists:concern_categories,id','description'=>'nullable|string|max:500','custom_concern'=>'nullable|string|max:255']);
+        $answers=array_intersect_key($data,array_flip(\App\Services\CompactScreening::FIELDS));
+        return $this->next($this->workflow->screen($request->user(),$answers,$data));
     }
-
-    /**
-     * Show the preferences form (Step 2)
-     */
-    public function preferences()
-    {
-        $session = $this->currentPendingSession();
-
-        if (!$session) {
-            return redirect()->route('request.screening')
-                ->with('error', 'Please complete the screening first.');
-        }
-
-        if ($session->session_status !== Session::STATUS_SCREENING_COMPLETED) {
-            return redirect()->route('request.matching')
-                ->with('info', 'You already have a pending request. Continue where you left off.');
-        }
-
-        return view('request.preferences');
+    public function concern(Request $request) {
+        app(ConsentService::class)->requireGeneral($request->user());
+        $session=$this->workflow->current($request->user());
+        if (!$session || $session->workflow_state!=='concern_required') return $session?$this->next($session):redirect()->route('request.screening');
+        return view('request.concern',['concerns'=>ConcernCategory::whereIn('concern_name',['Stress','Family','Relationships','Academic','Health','Others'])->get(),'session'=>$session]);
     }
-
-    /**
-     * Process the preferences form, persist them, and place the seeker in the queue
-     */
-    public function processPreferences(Request $request)
-    {
-        $validated = $request->validate([
-            'support_mode' => 'required|in:chat',
-            'preferred_language' => 'required|string|max:50',
-        ]);
-
-        $session = $this->currentPendingSession();
-
-        if (!$session) {
-            return redirect()->route('request.screening')
-                ->with('error', 'Your request could not be found. Please start over.');
-        }
-
-        // Update the counseling session with the chosen support mode
-        $voiceConsent = $validated['support_mode'] === 'voice' && $request->boolean('voice_consent');
-
-        $session->update([
-            'session_type' => $validated['support_mode'],
-            'session_status' => Session::STATUS_PREFERENCES_SET,
-            'concern_category' => $session->concern?->concern_name,
-            'voice_recording_consent' => $voiceConsent,
-            'voice_consent_obtained' => $voiceConsent,
-        ]);
-
-        Auth::user()->update([
-            'preferred_language' => $validated['preferred_language'],
-            'preferred_communication_mode' => $validated['support_mode'],
-        ]);
-
-        // Place the seeker in the queue (one active waiting request per seeker)
-        QueueRequest::where('seeker_id', $session->seeker_id)
-            ->where('request_status', 'waiting')
-            ->delete();
-
-        $queuePosition = $this->nextQueuePosition($session->risk_level);
-
-        QueueRequest::create([
-            'seeker_id' => $session->seeker_id,
-            'request_date' => now(),
-            'request_status' => 'waiting',
-            'priority_level' => $session->risk_level,
-            'preferred_session_type' => $validated['support_mode'],
-            'voice_consent' => $voiceConsent,
-            'queue_position' => $queuePosition,
-            'estimated_wait' => $this->estimatedWaitMinutes($queuePosition, $session->risk_level),
-        ]);
-
-        // Let every moderator know the queue changed so their live badge/stats refresh.
-        foreach (User::where('role', 'moderator')->pluck('id') as $moderatorUserId) {
-            $this->broadcastSafely(new QueueUpdated($moderatorUserId));
-        }
-
-        session([
-            'preferences_data' => $validated
-        ]);
-
-        return redirect()->route('request.matching')
-            ->with('success', 'Preferences saved. Checking for available helpers...');
+    public function processConcern(Request $request) {
+        $data=$request->validate(['concern_id'=>['required',\Illuminate\Validation\Rule::exists('concern_categories','id')->whereIn('concern_name',['Stress','Family','Relationships','Academic','Health','Others'])],'description'=>'nullable|string|max:500']);
+        return $this->next($this->workflow->concern($request->user(),$data));
     }
-
-    /**
-     * Show the matching page — checks real helper availability from the DB
-     */
-    public function matching()
-    {
-        $session = $this->currentRequestSession();
-
-        if (!$session) {
-            return redirect()->route('request.screening')
-                ->with('error', 'Please complete all steps first.');
-        }
-
-        session(['session_id' => $session->id]);
-        $session->load('helper');
-        $currentQueueRequest = QueueRequest::where('seeker_id', $session->seeker_id)
-            ->whereIn('request_status', ['waiting', 'assigned'])
-            ->latest('request_date')
-            ->first();
-
-        // If a helper was already assigned (e.g. page refresh), keep showing them
-        $availableHelper = $session->helper;
-
-        if (! $availableHelper && $currentQueueRequest && $currentQueueRequest->request_status === 'waiting') {
-            $matched = app(\App\Services\HelperMatchingService::class)->processQueueRequest($currentQueueRequest);
-            $session->refresh();
-            $currentQueueRequest->refresh();
-            $availableHelper = $matched?->helper;
-            if (! $availableHelper) {
-                $session->update(['session_status' => Session::STATUS_WAITING]);
-            }
-        }
-
-        $resources = $this->getRecommendedResources();
-
-        $availableHelperCount = Helper::available()
-            ->ready()
-            ->withCount('activeSessions as active_sessions_count')
-            ->get()
-            ->filter(fn (Helper $h) => $h->active_sessions_count < (int) $h->max_concurrent_sessions)
-            ->count();
-
-        return view('request.matching', compact('availableHelper', 'resources', 'session', 'availableHelperCount', 'currentQueueRequest'));
+    public function preferences(Request $request) {
+        app(ConsentService::class)->requireGeneral($request->user());
+        $session=$this->workflow->current($request->user());
+        if (!$session || $session->workflow_state!=='session_preferences_required') return $session?$this->next($session):redirect()->route('request.screening');
+        return view('request.preferences',['session'=>$session]);
     }
-
-    /**
-     * Seeker declines the offered helper — helper is freed, seeker returns to the queue
-     */
-    public function declineHelper(Request $request)
-    {
-        $session = $this->currentPendingSession();
-
-        if ($session && $session->helper_id) {
-            Helper::where('id', $session->helper_id)
-                ->where('status', 'busy')
-                ->update(['status' => 'available']);
-
-            $session->helper?->decrementShiftSessions();
-
-            $queuePosition = $this->nextQueuePosition($session->risk_level);
-
-            $session->update([
-                'helper_id' => null,
-                'session_status' => 'waiting',
-                'scheduled_start' => null,
-                'pre_session_brief_expires_at' => null,
-            ]);
-
-            QueueRequest::where('seeker_id', $session->seeker_id)
-                ->where('request_status', 'assigned')
-                ->update([
-                    'request_status' => 'waiting',
-                    'assigned_helper_id' => null,
-                    'queue_position' => $queuePosition,
-                    'estimated_wait' => $this->estimatedWaitMinutes($queuePosition, $session->risk_level),
-                    'matched_date' => null,
-                ]);
-        }
-
-        return redirect()->route('request.matching')
-            ->with('info', 'You have been placed back in the queue.');
+    public function processPreferences(Request $request) {
+        $data=$request->validate(['support_mode'=>'required|in:chat','preferred_language'=>'required|in:English,Tagalog,English/Tagalog']);
+        return $this->next($this->workflow->submit($request->user(),$data));
     }
-
-    /**
-     * Voice recording consent step after matching
-     */
-    public function voiceConsent()
-    {
-        $session = $this->currentRequestSession();
-
-        if (!$session) {
-            return redirect()->route('request.screening');
-        }
-
-        $session->load('helper');
-
-        // If the seeker chose chat-only, skip consent and go straight to chat
-        if ($session->session_type !== 'voice') {
-            return redirect()->route('session.chat');
-        }
-
-        // Voice chosen but no helper was ever matched — go back to matching
-        if (!$session->helper) {
-            return redirect()->route('request.matching')
-                ->with('error', 'No helper is matched to your request yet.');
-        }
-
-        return view('request.voice-consent');
-    }
-
-    /**
-     * Accept voice recording (or proceed) and start the voice session
-     */
-    public function processVoiceConsent(Request $request)
-    {
-        $this->startSession([
-            'voice_recording_consent' => true,
-            'voice_consent_obtained' => true,
-            'session_type' => 'voice',
-        ]);
-
-        return redirect()->route('session.voice');
-    }
-
-    /**
-     * Decline voice recording, fall back to chat
-     */
-    public function declineVoiceConsent()
-    {
-        $this->startSession([
-            'voice_recording_consent' => false,
-            'voice_consent_obtained' => false,
-            'session_type' => 'chat',
-        ]);
-
-        return redirect()->route('session.chat');
-    }
-
-    /**
-     * Mark the matched session as active and seed the helper's greeting
-     */
-    private function startSession(array $attributes = []): void
-    {
-        $session = $this->currentRequestSession();
-
-        if (!$session || !$session->helper) {
-            return;
-        }
-
-        $session->update(array_merge([
-            'session_status' => Session::STATUS_ACTIVE,
-            'start_time' => now(),
-        ], $attributes));
-
-        $hasGreeting = Message::where('session_id', $session->id)
-            ->where('sender', 'helper')
-            ->exists();
-
-        if (!$hasGreeting) {
-            Message::create([
-                'session_id' => $session->id,
-                'sender' => 'helper',
-                'message_text' => 'Hi there! Thank you for reaching out. I am here to listen — how are you feeling today?',
-                'transcript' => 'Hi there! Thank you for reaching out. I am here to listen — how are you feeling today?',
-                'is_transcript' => true,
-                'transcript_generated_at' => now(),
-                'sent_datetime' => now(),
-            ]);
-        }
-
-        session([
-            'helper_id' => $session->helper_id,
-            'voice_consent' => $attributes['voice_consent_obtained'] ?? false,
-        ]);
-
-        QueueRequest::where('seeker_id', $session->seeker_id)
-            ->whereIn('request_status', ['waiting', 'assigned'])
-            ->latest('request_date')
-            ->first()?->update(['voice_consent' => (bool) ($attributes['voice_consent_obtained'] ?? false)]);
-    }
-
-    /**
-     * Get recommended self-help resources
-     */
-    private function getRecommendedResources()
-    {
-        return [
-            [
-                'title' => 'Guided Breathing Exercise',
-                'description' => 'A short breathing exercise to calm your mind.',
-                'duration' => '3 min',
-                'icon' => 'fa-spa',
-                'link' => route('selfhelp')
-            ],
-            [
-                'title' => 'Grounding Techniques',
-                'description' => 'Simple techniques to bring you back to the present moment.',
-                'duration' => '5 min',
-                'icon' => 'fa-leaf',
-                'link' => route('selfhelp')
-            ],
-            [
-                'title' => 'Managing Anxiety',
-                'description' => 'Tips and strategies for managing anxious thoughts.',
-                'duration' => '8 min',
-                'icon' => 'fa-book',
-                'link' => route('selfhelp')
-            ]
-        ];
-    }
-
-    private function nextQueuePosition(?string $riskLevel): int
-    {
-        return QueueRequest::where('request_status', 'waiting')
-            ->where('priority_level', $riskLevel ?: RiskClassificationService::RISK_LOW)
-            ->count() + 1;
-    }
-
-    private function estimatedWaitMinutes(int $queuePosition, ?string $riskLevel): int
-    {
-        $baseMinutes = match ($riskLevel) {
-            RiskClassificationService::RISK_EMERGENCY => 1,
-            RiskClassificationService::RISK_HIGH => 3,
-            RiskClassificationService::RISK_MODERATE => 5,
-            default => 8,
+    public function matching(Request $request) {
+        Gate::authorize('seeker-workflow'); $session=$this->workflow->current($request->user());
+        if (!$session) return redirect()->route('request.screening');
+        $state=$session->workflow_state ?? match ($session->session_status) {
+            Session::STATUS_ACTIVE => 'session_active',
+            default => 'queued',
         };
+        if (!in_array($state,['session_ready','queued','matching','helper_pending_acceptance','session_active','adviser_review_required','emergency_escalated'])) return $this->next($session);
 
-        return max($baseMinutes, $baseMinutes + (($queuePosition - 1) * 5));
-    }
+        // Automated matching: retry the queue every time the seeker opens this
+        // page, so waiting requests get a helper without a running scheduler.
+        if (in_array($state,['queued','matching'])) {
+            try {
+                app(HelperMatchingService::class)->matchWaitingRequests();
+                $session=$this->workflow->current($request->user());
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('matching auto-match retry failed',['session_id'=>$session->id,'error'=>$e->getMessage()]);
+            }
+        }
+        if (!$session) return redirect()->route('request.screening');
 
-    /**
-     * Resolve the seeker's current in-progress request from the database.
-     *
-     * Prefers the request stored in the PHP session (fast path during the
-     * active flow), then falls back to the latest pending session row so the
-     * flow survives logout / login / browser closes. Never returns a session
-     * that belongs to another seeker.
-     */
-    /**
-     * Resolve the seeker's current request from the database.
-     *
-     * Fast path: the request stored in the PHP session (pending OR already
-     * active — the helper may have accepted while the seeker was away).
-     * Resume path: the latest pending session row, falling back to the latest
-     * active session, so the flow survives logout / login / browser closes.
-     * Never returns a session that belongs to another seeker.
-     */
-    private function currentRequestSession(): ?Session
-    {
-        $helpSeeker = Auth::user()->helpSeeker;
-
-        if (!$helpSeeker) {
-            return null;
+        if (in_array($session->workflow_state,['adviser_review_required','emergency_escalated'])) {
+            return view('request.status',['session'=>$session,'events'=>\Illuminate\Support\Facades\DB::table('request_status_events')->where('session_id',$session->id)->orderBy('id')->get()]);
         }
 
-        // Kill stale requests (>24h, never accepted) so they cannot resurrect.
-        Session::where('seeker_id', $helpSeeker->id)
-            ->abandoned()
-            ->markAbandoned();
+        $resources=SelfHelpResource::published()->orderByDesc('is_featured')->orderByDesc('views_count')->limit(6)->get()->map(fn($r)=>[
+            'link'=>route('selfhelp.show',$r->id),'title'=>$r->title,'description'=>$r->description,
+            'icon'=>($r->icon ?: 'fa-book-open'),'duration'=>$r->duration ? $r->duration.' min' : 'Self-paced',
+        ]);
 
-        $sessionId = session('session_id');
-        $session = $sessionId ? Session::find($sessionId) : null;
-
-        if ($session && $session->seeker_id === $helpSeeker->id && ($session->isPending() || $session->isActive())) {
-            return $session;
+        $availableHelperCount=app(HelperMatchingService::class)->countEligibleHelpers($session->risk_level ?? 'low');
+        $matchingReason=null;
+        if ($availableHelperCount === 0) {
+            if (!app(OperatingHoursService::class)->acceptsAssignments()) {
+                $matchingReason='Peer-helper matching opens daily from 6:00 PM to 10:30 PM (Manila time). Your request stays safely in the queue and will be matched when the service reopens.';
+            } elseif (\App\Models\Helper::where('verification_status','!=','verified')->whereHas('user',fn($q)=>$q->where('is_active',true))->exists()) {
+                $matchingReason='No verified peer helper is on duty right now. Helpers must complete adviser verification before they can accept requests, so this can take a little longer. Your place in the queue is saved.';
+            } else {
+                $matchingReason='No peer helper is on duty right now. Your place in the queue is saved and you will be notified as soon as one becomes available.';
+            }
         }
 
-        return Session::pendingForSeeker($helpSeeker->id)->first()
-            ?? Session::where('seeker_id', $helpSeeker->id)
-                ->where('session_status', Session::STATUS_ACTIVE)
-                ->orderByDesc('start_time')
-                ->first();
+        return view('request.matching',[
+            'session'=>$session,
+            'resources'=>$resources,
+            'availableHelper'=>$session->helper,
+            'availableHelperCount'=>$availableHelperCount,
+            'matchingReason'=>$matchingReason,
+            'currentQueueRequest'=>$session->queue,
+        ]);
     }
-
-    /**
-     * The seeker's latest in-progress (pending) request, if any.
-     */
-    private function currentPendingSession(): ?Session
-    {
-        $helpSeeker = Auth::user()->helpSeeker;
-
-        if (!$helpSeeker) {
-            return null;
-        }
-
-        // Kill stale requests (>24h, never accepted) so they cannot resurrect.
-        Session::where('seeker_id', $helpSeeker->id)
-            ->abandoned()
-            ->markAbandoned();
-
-        $sessionId = session('session_id');
-        $session = $sessionId ? Session::find($sessionId) : null;
-
-        if ($session && $session->seeker_id === $helpSeeker->id && $session->isPending()) {
-            return $session;
-        }
-
-        return Session::pendingForSeeker($helpSeeker->id)->first();
+    public function cancel(Request $request, Session $session) {
+        $this->workflow->cancel($request->user(),$session); return redirect()->route('seeker.requests')->with('success','Request cancelled.');
     }
-
-    /**
-     * Calculate risk classification based on answers
-     */
-    private function calculateRisk($data): array
-    {
-        return $this->riskClassification->classifyRisk($this->normalizeScreeningResponses($data));
+    public function history(Request $request) {
+        Gate::authorize('seeker-workflow');
+        return view('request.history',['requests'=>Session::where('seeker_id',$request->user()->helpSeeker->id)->latest('id')->get()]);
     }
-
-    private function normalizeScreeningResponses(array $data): array
-    {
-        return array_map(fn ($value) => (bool) $value, array_intersect_key($data, array_flip([
-            'current_suicide_plan', 'suicidal_thoughts', 'severe_distress', 'recurring_distress', 'difficulty_coping',
-        ])));
+    public function declineHelper(Request $request) {
+        Gate::authorize('seeker-workflow'); $session=$this->workflow->current($request->user());
+        if (!$session) return redirect()->route('request.screening');
+        if (!$session->isHelperAssigned()) return redirect()->route('request.matching');
+        app(HelperWorkflowMaintenance::class)->releaseRecommendation($session,'declined_by_seeker');
+        return redirect()->route('request.matching')->with('success','Helper declined. You stay in the queue and another available helper will be matched.');
+    }
+    public function voiceConsent() { abort(503,'Voice calls, recording and automatic transcription are unavailable. Please use chat.'); }
+    public function processVoiceConsent() { return $this->voiceConsent(); }
+    public function declineVoiceConsent() { return redirect()->route('request.matching'); }
+    private function next(Session $session) {
+        return redirect()->route(match ($session->workflow_state) {
+            'concern_required'=>'request.concern','session_preferences_required'=>'request.preferences','session_active'=>'session.chat',default=>'request.matching',
+        });
     }
 }

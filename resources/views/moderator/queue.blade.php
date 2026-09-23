@@ -249,9 +249,14 @@
             <div>
                 @forelse($queueItems->where('request_status', 'waiting') as $item)
                     <div class="queue-item fade-in">
-                        <span class="priority-badge {{ $item->priority_level }}">
-                            {{ ucfirst($item->priority_level) }}
-                        </span>
+                        <form method="POST" action="{{ route('moderator.queue.priority', $item) }}" class="flex items-center gap-2">
+                            @csrf @method('PATCH')
+                            <label class="sr-only" for="priority-{{ $item->id }}">Queue priority</label>
+                            <select id="priority-{{ $item->id }}" name="priority_level" class="assign-select">
+                                @foreach(['low', 'moderate', 'high', 'emergency'] as $priority)<option @selected($item->priority_level === $priority)>{{ $priority }}</option>@endforeach
+                            </select>
+                            <button type="submit" class="btn-outline" aria-label="Update queue priority"><i class="fas fa-check" aria-hidden="true"></i></button>
+                        </form>
                         <div class="min-w-0 flex-1">
                             <p class="font-semibold text-gray-800 text-sm">{{ $item->seeker?->generated_alias ?? 'Anonymous' }}</p>
                             <p class="text-xs text-gray-500 truncate">{{ $item->concern_name }}</p>
@@ -263,17 +268,26 @@
                             <i class="fas fa-hourglass-half mr-1"></i>{{ $item->wait_minutes }} min
                         </span>
                         <div class="flex items-center gap-2">
-                            <form method="POST" action="{{ route('moderator.queue.assign') }}" class="flex items-center gap-2">
+                            <form method="POST" action="{{ route('moderator.queue.assign') }}" class="flex flex-wrap items-center gap-2">
                                 @csrf
                                 <input type="hidden" name="queue_id" value="{{ $item->id }}">
                                 <select name="helper_id" class="assign-select" required>
                                     <option value="">Select helper...</option>
                                     @foreach($availableHelpers as $helper)
-                                        <option @disabled($helper->assignment_reason) value="{{ $helper->id }}">
-                                            {{ $helper->full_name }}{{ $helper->assignment_reason ? ' - '.$helper->assignment_reason : '' }} · {{ $helper->competency_level }}/5
+                                        <option @disabled(!$helper->assignable) data-ineligible="{{ $helper->assignable ? '0' : '1' }}" value="{{ $helper->id }}"
+                                            title="{{ $helper->assignment_detail }}">
+                                            {{ $helper->full_name }} · {{ $helper->assignable ? '✓ ' . 'Ready · ' . $helper->remaining_capacity . '/' . \App\Models\Helper::MAX_SESSIONS_PER_SHIFT : $helper->assignment_reason }} · {{ $helper->competency_level }}/5
                                         </option>
                                     @endforeach
                                 </select>
+                                <label class="sr-only" for="scheduled_at-{{ $item->id }}">Appointment time</label>
+                                <input type="datetime-local" id="scheduled_at-{{ $item->id }}" name="scheduled_at" class="assign-select"
+                                       title="Optional appointment time for the session (Asia/Manila). Leave empty to schedule immediately.">
+                                <label class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 cursor-pointer"
+                                       title="Assign even though the helper does not meet normal eligibility rules. This is recorded in the audit log.">
+                                    <input type="checkbox" name="emergency_override" value="1" class="override-toggle rounded border-amber-300 text-amber-600">
+                                    Override eligibility (audited)
+                                </label>
                                 <button type="submit" class="btn-primary">
                                     <i class="fas fa-user-check"></i> Assign
                                 </button>
@@ -303,26 +317,49 @@
             <div>
                 @forelse($queueItems->where('request_status', 'assigned') as $item)
                     <div class="queue-item fade-in">
-                        <span class="priority-badge {{ $item->priority_level }}">
-                            {{ ucfirst($item->priority_level) }}
-                        </span>
+                        <form method="POST" action="{{ route('moderator.queue.priority', $item) }}" class="flex items-center gap-2">
+                            @csrf @method('PATCH')
+                            <label class="sr-only" for="priority-{{ $item->id }}">Queue priority</label>
+                            <select id="priority-{{ $item->id }}" name="priority_level" class="assign-select">
+                                @foreach(['low', 'moderate', 'high', 'emergency'] as $priority)<option @selected($item->priority_level === $priority)>{{ $priority }}</option>@endforeach
+                            </select>
+                            <button type="submit" class="btn-outline" aria-label="Update queue priority"><i class="fas fa-check" aria-hidden="true"></i></button>
+                        </form>
                         <div class="min-w-0 flex-1">
                             <p class="font-semibold text-gray-800 text-sm">{{ $item->seeker?->generated_alias ?? 'Anonymous' }}</p>
                             <p class="text-xs text-gray-500">
                                 Matched {{ $item->matched_date?->diffForHumans() }} with
                                 <span class="font-semibold text-emerald-600">{{ $item->assignedHelper?->full_name ?? '—' }}</span>
+                                @if($item->scheduled_date)<br><span class="text-gray-500"><i class="fas fa-calendar-check mr-1"></i>Scheduled {{ $item->scheduled_date->setTimezone(config('app.schedule_timezone'))->format('M d, h:i A') }}</span>@endif
                             </p>
                         </div>
-                        <form method="POST" action="{{ route('moderator.queue.reassign') }}" class="flex items-center gap-2">
+                        <form method="POST" action="{{ route('moderator.queue.schedule') }}" class="flex flex-wrap items-center gap-2">
+                            @csrf
+                            <label class="sr-only" for="scheduled_at-{{ $item->id }}">Appointment time</label>
+                            <input type="datetime-local" id="scheduled_at-{{ $item->id }}" name="scheduled_at" class="assign-select"
+                                   value="{{ $item->scheduled_date?->setTimezone(config('app.schedule_timezone'))->format('Y-m-d\TH:i') }}"
+                                   title="Set or change the session appointment time (Asia/Manila).">
+                            <input type="hidden" name="queue_id" value="{{ $item->id }}">
+                            <button type="submit" class="btn-outline">
+                                <i class="fas fa-calendar-alt"></i> Schedule
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ route('moderator.queue.reassign') }}" class="flex flex-wrap items-center gap-2">
                             @csrf
                             <input type="hidden" name="queue_id" value="{{ $item->id }}">
                             <select name="helper_id" class="assign-select">
                                 @foreach($availableHelpers as $helper)
-                                    <option @disabled($helper->assignment_reason) value="{{ $helper->id }}" {{ $item->assigned_helper_id === $helper->id ? 'selected' : '' }}>
-                                        {{ $helper->full_name }}{{ $helper->assignment_reason ? ' - '.$helper->assignment_reason : '' }}
+                                    <option @disabled(!$helper->assignable) data-ineligible="{{ $helper->assignable ? '0' : '1' }}" value="{{ $helper->id }}" {{ $item->assigned_helper_id === $helper->id ? 'selected' : '' }}
+                                        title="{{ $helper->assignment_detail }}">
+                                        {{ $helper->full_name }} · {{ $helper->assignable ? '✓ ' . 'Ready · ' . $helper->remaining_capacity . '/' . \App\Models\Helper::MAX_SESSIONS_PER_SHIFT : $helper->assignment_reason }}
                                     </option>
                                 @endforeach
                             </select>
+                            <label class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 cursor-pointer"
+                                   title="Assign even though the helper does not meet normal eligibility rules. This is recorded in the audit log.">
+                                <input type="checkbox" name="emergency_override" value="1" class="override-toggle rounded border-amber-300 text-amber-600">
+                                Override
+                            </label>
                             <button type="submit" class="btn-outline">
                                 <i class="fas fa-sync-alt"></i> Reassign
                             </button>
@@ -398,6 +435,33 @@
                     })
                     .catch(() => {});
             }, 30000);
+
+            // ── Audited override: unlock ineligible helpers and confirm ──
+            document.querySelectorAll('form .override-toggle').forEach((toggle) => {
+                const form = toggle.closest('form');
+                const select = form?.querySelector('select[name="helper_id"]');
+                if (!form || !select) return;
+
+                toggle.addEventListener('change', () => {
+                    select.querySelectorAll('option[data-ineligible="1"]').forEach((option) => {
+                        option.disabled = !toggle.checked;
+                    });
+
+                    if (toggle.checked) {
+                        form.dataset.confirm = 'Override eligibility and assign?';
+                        form.dataset.confirmMessage = 'This helper does not meet the normal verification, shift or readiness rules. The override is recorded in the audit log.';
+                        form.dataset.confirmText = 'Assign with override';
+                        form.dataset.confirmClass = 'bg-amber-600 hover:bg-amber-700 focus:ring-amber-500';
+                        form.dataset.confirmIcon = '<i class="fas fa-triangle-exclamation text-amber-500 text-5xl"></i>';
+                    } else {
+                        delete form.dataset.confirm;
+                        delete form.dataset.confirmMessage;
+                        delete form.dataset.confirmText;
+                        delete form.dataset.confirmClass;
+                        delete form.dataset.confirmIcon;
+                    }
+                });
+            });
 
             // ── Real-time: remove a request from the queue ──
             const csrfToken = () => document.querySelector('meta[name="csrf-token"]').content;

@@ -10,6 +10,13 @@ class SessionReport extends Model
     protected $table = 'session_reports';
 
     protected $fillable = [
+        'session_result',
+        'follow_up_plan',
+        'summary_submitted_at',
+        'reflection_submitted_at',
+        'reassessment_requested_at',
+        'reassessment_reviewed_at',
+
         'session_id',
         'help_seeker_condition',
         'referral_recommended',
@@ -27,6 +34,11 @@ class SessionReport extends Model
     ];
 
     protected $casts = [
+        'summary_submitted_at'=>'datetime',
+        'reflection_submitted_at'=>'datetime',
+        'reassessment_requested_at'=>'datetime',
+        'reassessment_reviewed_at'=>'datetime',
+
         'referral_recommended' => 'boolean',
         'adviser_reviewed' => 'boolean',
         'reviewed_date' => 'datetime',

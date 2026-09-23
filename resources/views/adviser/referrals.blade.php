@@ -325,25 +325,13 @@
                 </div>
                 <h3 class="text-xl font-bold text-gray-800">Approve Referral</h3>
             </div>
-            <p class="text-gray-500 text-sm mb-4">Approve this referral and assign it to a psychology professional.</p>
+            <p class="text-gray-500 text-sm mb-4">Approve this recommendation and request the Help Seeker?s consent. Professional assignment follows their decision.</p>
 
             <form class="form-maximized" id="approveForm" method="POST">
                 @csrf
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Assign to Professional</label>
-                    <select name="professional_id" class="form-input w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none">
-                        <option value="">Select a professional...</option>
-                        @foreach($professionals as $professional)
-                            <option value="{{ $professional->id }}">
-                                {{ $professional->first_name }} {{ $professional->last_name }}
-                                @if($professional->specialization) - {{ $professional->specialization }} @endif
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes (Optional)</label>
-                    <textarea name="notes" class="form-input w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" rows="3" placeholder="Any additional notes..."></textarea>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Review reason</label>
+                    <textarea name="review_notes" required maxlength="1000" class="form-input w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" rows="3" placeholder="Any additional notes..."></textarea>
                 </div>
                 <div class="flex gap-3">
                     <button type="button" class="btn-outline flex-1" onclick="closeApproveModal()">Cancel</button>
@@ -406,4 +394,5 @@
             });
         });
     </script>
+<div class="space-y-3">{{ $pendingReferrals->links() }}{{ $approvedReferrals->links() }}{{ $completedReferrals->links() }}</div>
 @endsection

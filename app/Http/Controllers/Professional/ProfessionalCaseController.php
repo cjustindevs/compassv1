@@ -19,7 +19,7 @@ class ProfessionalCaseController extends Controller
         }
 
         $cases = Referral::with(['session.seeker:id,id,generated_alias', 'professionalNotes'])
-            ->where('professional_id', $professional->id)
+            ->professionalAuthorized()->where('professional_id', $professional->id)
             ->whereIn('status', Referral::ACTIVE_STATUSES)
             ->orderByDesc('updated_at')
             ->limit(50)
@@ -45,7 +45,7 @@ class ProfessionalCaseController extends Controller
             'adviser',
             'professionalNotes',
         ])
-            ->where('professional_id', $professional->id)
+            ->professionalAuthorized()->where('professional_id', $professional->id)
             ->whereIn('status', Referral::ACTIVE_STATUSES)
             ->findOrFail($id);
 
@@ -72,13 +72,10 @@ class ProfessionalCaseController extends Controller
 
         $professional = Auth::user()->psychologyProfessional;
 
-        $case = Referral::where('professional_id', $professional->id)
+        $case = Referral::professionalAuthorized()->where('professional_id', $professional->id)
             ->findOrFail($id);
 
-        $case->update([
-            'status' => $validated['status'],
-            'closed_date' => in_array($validated['status'], Referral::COMPLETED_STATUSES, true) ? now() : null,
-        ]);
+        app(\App\Services\ReferralManagementService::class)->updateReferralOutcome($case,$validated);
 
         // Notify the adviser when a case is finished
         if (in_array($validated['status'], Referral::COMPLETED_STATUSES, true) && $case->adviser?->user_account_id) {
@@ -113,7 +110,7 @@ class ProfessionalCaseController extends Controller
 
         $professional = Auth::user()->psychologyProfessional;
 
-        $case = Referral::where('professional_id', $professional->id)
+        $case = Referral::professionalAuthorized()->where('professional_id', $professional->id)
             ->findOrFail($id);
 
         ProfessionalNote::create([
@@ -128,7 +125,7 @@ class ProfessionalCaseController extends Controller
 
         // Opening a case for the first time moves it to in_progress
         if ($case->status === Referral::STATUS_ACCEPTED) {
-            $case->update(['status' => Referral::STATUS_IN_PROGRESS]);
+            app(\App\Services\ReferralManagementService::class)->updateReferralOutcome($case,['status'=>Referral::STATUS_IN_PROGRESS]);
         }
 
         return redirect()->route('professional.cases.show', $case->id)

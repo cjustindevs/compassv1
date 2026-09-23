@@ -62,6 +62,9 @@
            class="nav-item {{ $anyActive(['request.screening*', 'request.preferences*', 'request.matching*', 'request.voice-consent*']) || $anyActive(['session.chat', 'session.voice', 'session.evaluation*']) ? 'active' : '' }}">
             <i class="fas fa-comment-dots"></i><span class="nav-text">Request Help</span>
         </a>
+        <a href="{{ route('seeker.requests') }}" title="Request history" class="nav-item {{ $isActive('seeker.requests') ? 'active' : '' }}"><i class="fas fa-list-check" aria-hidden="true"></i><span class="nav-text">Request history</span></a>
+        <a href="{{ route('seeker.privacy') }}" title="Privacy and consent" class="nav-item {{ $isActive('seeker.privacy') ? 'active' : '' }}"><i class="fas fa-shield-halved" aria-hidden="true"></i><span class="nav-text">Privacy and consent</span></a>
+        <a href="{{ route('seeker.referrals') }}" title="Referral decisions" class="nav-item {{ $isActive('seeker.referrals') ? 'active' : '' }}"><i class="fas fa-share-nodes" aria-hidden="true"></i><span class="nav-text">Referral decisions</span></a>
         <a href="{{ route('session.history') }}"
            class="nav-item {{ $isActive('session.history') ? 'active' : '' }}">
             <i class="fas fa-list-ul"></i><span class="nav-text">My Sessions</span>
@@ -245,3 +248,5 @@
 </script>
 
 @vite(['resources/js/app.js'])
+
+@include('components.seeker-consent-modal')

@@ -17,12 +17,13 @@ class HelperProfileController extends Controller
      */
     public function index()
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $user = Auth::user();
         $helper = $user->helper;
 
         $totalSessions = Session::where('helper_id', $helper->id)->count();
         $completedSessions = Session::where('helper_id', $helper->id)
-            ->where('session_status', 'completed')
+            ->whereIn('session_status', ['completed','evaluated'])
             ->count();
         $reportsCount = SessionReport::whereIn('session_id', Session::where('helper_id', $helper->id)->pluck('id'))
             ->count();
@@ -30,7 +31,7 @@ class HelperProfileController extends Controller
         $latestCompetency = HelperCompetencyHistory::where('helper_id', $helper->id)
             ->latest('evaluation_date')
             ->first();
-        $competencyScore = $latestCompetency ? (int) round((float) $latestCompetency->overall_score) : 0;
+        $competencyScore = $latestCompetency ? round($latestCompetency->normalized_score * 20, 1) : null;
 
         $recentSessions = Session::with(['seeker', 'concern'])
             ->where('helper_id', $helper->id)
@@ -57,6 +58,7 @@ class HelperProfileController extends Controller
      */
     public function update(Request $request)
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $user = Auth::user();
         $helper = $user->helper;
 
@@ -68,7 +70,7 @@ class HelperProfileController extends Controller
             'specializations' => 'nullable|string|max:500',
             'preferred_language' => 'nullable|string|max:50',
             'name' => 'nullable|string|max:100',
-            'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'nullable|email|max:255|unique:users,email,'.$user->id,
         ]);
 
         $helper->update([
@@ -76,7 +78,7 @@ class HelperProfileController extends Controller
             'last_name' => $validated['last_name'],
             'bio' => $validated['bio'] ?? null,
             'phone' => $validated['phone'] ?? null,
-            'specializations' => $validated['specializations'] ?? null,
+            'declared_specializations' => $validated['specializations'] ?? null,
             'preferred_language' => $validated['preferred_language'] ?? 'English',
         ]);
 
@@ -96,6 +98,7 @@ class HelperProfileController extends Controller
      */
     public function onboarding()
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $user = Auth::user();
 
         return view('helper.onboarding', [
@@ -110,6 +113,7 @@ class HelperProfileController extends Controller
      */
     public function storeOnboarding(Request $request)
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $user = Auth::user();
 
         $validated = $request->validate([
@@ -122,21 +126,23 @@ class HelperProfileController extends Controller
             'bio' => 'nullable|string|max:1000',
         ]);
 
+        abort_if($user->helper, 409, 'Your helper profile already exists.');
         Helper::create([
             'user_account_id' => $user->id,
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
-            'specializations' => $validated['specializations'] ?? null,
+            'declared_specializations' => $validated['specializations'] ?? null,
             'preferred_language' => $validated['preferred_language'] ?? 'English',
             'bio' => $validated['bio'] ?? null,
-            'status' => 'available',
+            'status' => 'offline',
+            'availability' => 'unavailable',
             'competency_level' => 1,
-            'max_concurrent_sessions' => 2,
+            'max_concurrent_sessions' => 1,
         ]);
 
         return redirect()->route('helper.readiness')
-            ->with('success', 'Welcome aboard! Complete a quick readiness check to start taking sessions.');
+            ->with('success', 'Profile saved. Your adviser must verify your institutional eligibility and training before assignments.');
     }
 }

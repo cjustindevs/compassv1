@@ -10,6 +10,8 @@ class AdviserFeedback extends Model
     protected $table = 'adviser_feedback';
 
     protected $fillable = [
+        'acknowledged_at',
+
         'report_id',
         'adviser_id',
         'status',
@@ -24,8 +26,10 @@ class AdviserFeedback extends Model
     ];
 
     protected $casts = [
+        'acknowledged_at'=>'datetime', 'follow_up_date'=>'date', 'acknowledgment_required'=>'boolean',
+
         'created_date' => 'datetime',
-        'competency_rating' => 'integer',
+        'competency_rating' => 'float',
     ];
 
     public function report(): BelongsTo

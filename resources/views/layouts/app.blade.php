@@ -3,7 +3,7 @@
 <head>
         @include('layouts.partials.pwa-meta')
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>@yield('title', config('app.name', 'COMPASS'))</title>
@@ -13,7 +13,7 @@
 
         <!-- Styles / Scripts -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite(['resources/css/app.css', 'resources/css/helper-components.css', 'resources/js/app.js'])
 
         <style>
             body, body input, body select, body button, body textarea { font-family: 'Inter', sans-serif; }

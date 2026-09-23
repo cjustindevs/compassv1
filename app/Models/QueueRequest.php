@@ -10,6 +10,17 @@ class QueueRequest extends Model
     protected $table = 'queue_requests';
 
     protected $fillable = [
+        'wait_urgency',
+        'queued_at',
+        'matching_started_at',
+        'helper_proposed_at',
+        'helper_accepted_at',
+        'helper_declined_at',
+        'assigned_at',
+        'cancelled_at',
+        'expired_at',
+        'completed_at',
+
         'seeker_id',
         'moderator_id',
         'request_date',

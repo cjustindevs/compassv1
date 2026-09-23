@@ -4,8 +4,13 @@ namespace App\Http\Controllers\Helper;
 
 use App\Http\Controllers\Controller;
 use App\Models\ReadinessCheck;
+use App\Services\HelperEligibilityService;
+use App\Services\HelperMatchingService;
+use App\Services\HelperReadinessService;
+use App\Services\HelperWorkflowMaintenance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class HelperReadinessController extends Controller
 {
@@ -16,6 +21,7 @@ class HelperReadinessController extends Controller
      */
     public function index()
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $user = Auth::user();
         $helper = $user->helper;
 
@@ -40,6 +46,7 @@ class HelperReadinessController extends Controller
      */
     public function status()
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $helper = Auth::user()->helper;
 
         return response()->json([
@@ -54,7 +61,11 @@ class HelperReadinessController extends Controller
      */
     public function store(Request $request)
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
+        $request->merge(['skills_confirmed' => $request->input('skills_confirmed', [])]);
         $validated = $request->validate([
+            'skills_confirmed' => 'present|array',
+            'skills_confirmed.*' => ['distinct', Rule::in(HelperReadinessService::SKILLS)],
             'emotionally_ready' => 'required|boolean',
             'willing_to_listen' => 'required|boolean',
             'stress_level' => 'required|in:low,moderate,high',
@@ -63,72 +74,20 @@ class HelperReadinessController extends Controller
             'notes' => 'nullable|string|max:1000',
             'shift_start' => 'nullable|date_format:H:i',
             'shift_end' => 'nullable|date_format:H:i|after:shift_start',
-            'exercise_completed' => 'required|in:completed,skipped'
+            'exercise_completed' => 'required|in:completed,skipped',
         ]);
 
-        $user = Auth::user();
-        $helper = $user->helper;
+        $readiness = app(HelperReadinessService::class)->submit($request->user(), $validated);
+        $helper = $request->user()->helper->fresh();
+        $reasons = app(HelperEligibilityService::class)->reasons($helper);
 
-        $passed = $validated['emotionally_ready'] &&
-                  $validated['willing_to_listen'] &&
-                  $validated['stress_level'] !== 'high';
-
-        $status = $passed ? 'ready' : 'not_ready';
-
-        $readiness = ReadinessCheck::create([
-            'helper_id' => $helper->id,
-            'availability_status' => $validated['availability_status'],
-            'assessment_result' => $status,
-            'emotionally_ready' => $validated['emotionally_ready'],
-            'willing_to_listen' => $validated['willing_to_listen'],
-            'stress_level' => $validated['stress_level'],
-            'physical_condition' => $validated['physical_condition'] ?? null,
-            'notes' => $validated['notes'] ?? null,
-            'assessment_date' => now(),
-            'valid_until' => now()->addHours(self::VALIDITY_HOURS),
-            'shift_start' => isset($validated['shift_start']) ? now()->setTimeFromTimeString($validated['shift_start']) : null,
-            'shift_end' => isset($validated['shift_end']) ? now()->setTimeFromTimeString($validated['shift_end']) : null,
-            'breathing_exercise' => $validated['exercise_completed']
-        ]);
-
-        // Flip the helper's availability so the matching engine can find them.
-        // A helper is matchable only when they passed the assessment AND
-        // explicitly chose to be available. Otherwise they stay offline.
-        $isAvailable = $passed && $validated['availability_status'] === 'available';
-        $helper->update([
-            'status' => $isAvailable ? 'available' : 'offline',
-            'availability' => $isAvailable ? 'available' : 'unavailable',
-            'available_since' => $isAvailable ? now() : null,
-            'is_ready' => $passed,
-            'last_readiness_at' => now(),
-        ]);
-
-        if ($isAvailable) {
-            app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
-        }
-
-        session([
-            'helper_readiness' => $status,
-            'helper_readiness_id' => $readiness->id
-        ]);
-
-        // Helpers who aren't ready should be steered to self-help tools so
-        // they can recharge before trying again.
-        if (! $passed) {
-            return redirect()->route('helper.self-help')
-                ->with('warning', 'You are not ready to accept sessions right now. Take a moment for self-care — these tools can help.');
-        }
-
-        return redirect()->route('helper.dashboard')
-            ->with('readiness_status', $status)
-            ->with('success', match (true) {
-                $isAvailable => 'You are now available to accept sessions. Stay safe and take care!',
-                $passed => 'You are ready, but you chose not to be available right now. You can check in again whenever you are ready to help.',
-            });
+        return redirect()->route('helper.dashboard')->with($readiness->isReady() ? 'success' : 'warning',
+            $readiness->isReady() ? ($reasons ? 'Readiness saved. '.implode(' ', $reasons) : 'Readiness saved. You are available for matching.') : 'You are not ready to take sessions. Self-care, profile, schedule and training remain available.');
     }
 
     public function updateAvailability(Request $request)
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $validated = $request->validate([
             'status' => 'required|in:available,unavailable,break,offline',
             'reason' => 'nullable|string|max:255',
@@ -142,12 +101,21 @@ class HelperReadinessController extends Controller
                 ->with('warning', 'Complete a current readiness assessment before becoming available.');
         }
 
+        if ($validated['status'] === 'available') {
+            app(HelperEligibilityService::class)->requireEligible($helper, null, true);
+        }
         $availability = $validated['status'] === 'offline' ? 'unavailable' : $validated['status'];
         $helper->setAvailability($availability, $validated['reason'] ?? null);
+        if ($availability !== 'available') {
+            foreach ($helper->activeSessions()->whereNull('helper_accepted_at')->get() as $pending) {
+                app(HelperWorkflowMaintenance::class)->releaseRecommendation($pending, 'availability_changed');
+            }
+        }
 
         if ($availability === 'available') {
-            app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
+            app(HelperMatchingService::class)->matchWaitingRequests();
         }
+
         return back()->with('success', 'Availability updated successfully.');
     }
 
@@ -156,6 +124,7 @@ class HelperReadinessController extends Controller
      */
     public function history()
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $user = Auth::user();
         $helper = $user->helper;
 

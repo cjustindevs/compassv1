@@ -1,6 +1,8 @@
 /* ───────────────────────────────────────────────────
-   Helper Module — Component Styles
-   Loaded ONLY in layouts/helper.blade.php.
+   Shared component styles (card, pill, forms, buttons).
+   Loaded globally in layouts/app.blade.php AND in
+   layouts/helper.blade.php so adviser/moderator/seeker
+   pages share the same components as the helper module.
    Sidebar, main-content, bottom-nav, hamburger, overlay
    are defined in sidebar.css — do NOT duplicate here.
    ─────────────────────────────────────────────────── */
@@ -447,6 +449,19 @@ textarea.form-control { min-height: 100px; resize: vertical; }
 }
 .divider { border: none; border-top: 1px solid var(--gray-100, #F3F4F6); margin: 16px 0; }
 .pill { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--green-50, #EAF8F0); color: var(--green-700, #027039); }
+.pill-warning { background: #FEF3C7; color: #92400E; }
+.pill-danger { background: #FEE2E2; color: #991B1B; }
+.requirement-card {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px 16px; border: 1px solid var(--gray-200, #E5E7EB);
+    border-radius: 16px; background: #fff; cursor: pointer;
+}
+.requirement-card .requirement-icon {
+    width: 36px; height: 36px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--green-50, #EAF8F0); color: var(--green-700, #027039);
+    flex-shrink: 0; font-size: 15px;
+}
 .progress-bar { height: 8px; border-radius: 20px; background: var(--gray-100, #F3F4F6); overflow: hidden; }
 .progress-bar > span { display: block; height: 100%; border-radius: 20px; background: linear-gradient(90deg, #38C172, var(--green-500, #04A052)); }
 

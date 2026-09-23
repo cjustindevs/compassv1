@@ -7,8 +7,6 @@
 @section('subheading', 'Here is what is happening with your sessions today.')
 
 @section('content')
-    <p class="mb-4">Sessions completed: <strong>{{ $helper?->completedSessions()->count() ?? 0 }}</strong></p>
-
     @if(isset($helperProfileMissing) && $helperProfileMissing)
         <div class="card mb-6">
             <div class="empty-state">
@@ -51,7 +49,7 @@
                 <span class="stat-label">Competency Score</span>
                 <span class="stat-icon">⭐</span>
             </div>
-            <div class="stat-number">{{ $stats['competency_score'] }}%</div>
+            <div class="stat-number">{{ $stats['competency_score'] !== null ? $stats['competency_score'].'%' : 'Not evaluated' }}</div>
             <span class="text-xs text-gray-400">{{ optional($competency)->level_label ?: 'Not yet evaluated' }}</span>
         </div>
     </div>
@@ -156,6 +154,29 @@
 
         <!-- ─── RIGHT COLUMN (1/3) ─── -->
         <div class="lg:col-span-1">
+
+            <!-- Documentation to complete -->
+            @if(isset($documentationTasks) && $documentationTasks->isNotEmpty())
+                <div class="card mb-6">
+                    <div class="card-header"><h3>Documentation to complete</h3></div>
+                    @foreach($documentationTasks as $task)
+                        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 py-3 text-sm">
+                            <span>{{ $task->reference_number }} &middot; {{ $task->end_time?->lt(now()->subHours(24)) ? 'Overdue' : 'Summary or reflection pending' }}</span>
+                            <a class="btn btn-secondary btn-sm" href="{{ route('helper.session.notes',$task->id) }}">Open documentation</a>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            <!-- Assignment readiness (single source: HelperEligibilityService) -->
+            @if(auth()->user()->helper)
+                @php($eligibility=app(\App\Services\HelperEligibilityService::class)->status(auth()->user()->helper))
+                <div class="card mb-6">
+                    <div class="card-header"><h3>Assignment readiness</h3><span class="pill">{{ $eligibility['assignable'] ? 'Ready for matching' : $eligibility['label'] }}</span></div>
+                    @if(!$eligibility['assignable'])<ul class="text-sm text-gray-600 space-y-2">@foreach($eligibility['reasons'] as $reason)<li><i class="fas fa-circle-info mr-2" aria-hidden="true"></i>{{ $reason }}</li>@endforeach</ul>@else<p class="text-sm text-gray-600">You meet the current requirements for an assignment. Duty-shift capacity: {{ auth()->user()->helper->getRemainingCapacity() }}/{{ \App\Models\Helper::MAX_SESSIONS_PER_SHIFT }} remaining.</p>@endif
+                    <a href="{{ route('helper.readiness') }}" class="btn btn-secondary btn-sm mt-4">Review readiness</a>
+                </div>
+            @endif
 
             <!-- Recent Activity -->
             <div class="card">

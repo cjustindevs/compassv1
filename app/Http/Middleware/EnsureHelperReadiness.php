@@ -21,7 +21,7 @@ class EnsureHelperReadiness
     {
         $helper = $request->user()?->helper;
 
-        if ($helper && ! $helper->latestReadiness?->isReady()) {
+        if ($request->routeIs('helper.cases.accept','helper.session.start') && $helper && ! $helper->isReady()) {
             return redirect()->route('helper.readiness')
                 ->with('info', 'Please complete a current readiness check before taking sessions.');
         }

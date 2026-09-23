@@ -8,7 +8,6 @@ use App\Models\Notification;
 use App\Models\ReadinessCheck;
 use App\Models\Session;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 
 class HelperDashboardController extends Controller
 {
@@ -17,6 +16,7 @@ class HelperDashboardController extends Controller
      */
     public function index()
     {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $user = Auth::user();
         $helper = $user->helper;
 
@@ -28,7 +28,7 @@ class HelperDashboardController extends Controller
         $helperId = $helper->id;
 
         // ── CACHED STATS ────────────────────────────────────────────────
-        $stats = Cache::remember('helper_stats_' . $helperId, 60, function () use ($helperId) {
+        $stats = (function () use ($helperId) {
             return [
                 'total_sessions' => Session::where('helper_id', $helperId)->count(),
                 'active_sessions' => Session::where('helper_id', $helperId)
@@ -38,26 +38,24 @@ class HelperDashboardController extends Controller
                     ->where('session_status', 'helper_assigned')
                     ->count(),
             ];
-        });
+        })();
 
         // ── COMPETENCY FROM DATABASE ─────────────────────────────────────
-        $competency = Cache::remember('helper_competency_' . $helperId, 600, function () use ($helperId) {
+        $competency = (function () use ($helperId) {
             return HelperCompetencyHistory::where('helper_id', $helperId)
                 ->latest('evaluation_date')
                 ->first();
-        });
-        $competencyScore = $competency ? (int) round((float) $competency->overall_score) : 0;
+        })();
+        $competencyScore = $competency ? round($competency->normalized_score * 20, 1) : null;
         $stats['competency_score'] = $competencyScore;
 
         // ── READINESS FROM DATABASE ──────────────────────────────────────
-        $readiness = Cache::remember('helper_readiness_' . $helperId, 300, function () use ($helperId) {
+        $readiness = (function () use ($helperId) {
             return ReadinessCheck::where('helper_id', $helperId)
                 ->latest('assessment_date')
                 ->first();
-        });
-        $availabilityStatus = $readiness && $readiness->availability_status
-            ? ucfirst($readiness->availability_status)
-            : ucfirst($helper->status ?? 'offline');
+        })();
+        $availabilityStatus = ucfirst($helper->availability ?? 'unavailable');
 
         // ── ACTIVE CASES FROM DATABASE ───────────────────────────────────
         $activeCases = Session::with([
@@ -145,20 +143,23 @@ class HelperDashboardController extends Controller
                 ->get()
                 ->map(fn (Session $session) => [
                     'type' => 'assignment',
-                    'message' => 'Session ' . $session->reference_number,
+                    'message' => 'Session '.$session->reference_number,
                     'detail' => ucfirst(str_replace('_', ' ', $session->session_status))
-                        . ' - ' . ($session->seeker->generated_alias ?? 'Seeker'),
+                        .' - '.($session->seeker->generated_alias ?? 'Seeker'),
                     'time' => $session->created_at?->diffForHumans() ?? 'just now',
                 ]);
         }
 
         $quickActions = [
             ['icon' => 'fa-comment-dots', 'label' => 'Open Chat', 'route' => 'helper.chat', 'params' => []],
-            ['icon' => 'fa-phone', 'label' => 'Start Voice Call', 'route' => $activeSessionData ? 'helper.session.voice' : 'helper.cases', 'params' => $activeSessionData ? ['id' => $activeSessionData['id']] : []],
+            ['icon' => 'fa-calendar', 'label' => 'Duty Schedule', 'route' => 'helper.calendar', 'params' => []],
             ['icon' => 'fa-edit', 'label' => 'Session Notes', 'route' => $activeSessionData ? 'helper.session.notes' : 'helper.cases', 'params' => $activeSessionData ? ['id' => $activeSessionData['id']] : []],
         ];
 
+        $documentationTasks = $helper->sessions()->whereNotNull('start_time')->where('documentation_status', '!=', 'submitted')->whereIn('session_status', ['completed', 'evaluated', 'cancelled', 'no_show'])->orderBy('end_time')->limit(8)->get();
+
         return view('dashboard.helper', compact(
+            'documentationTasks',
             'user',
             'helper',
             'stats',

@@ -15,6 +15,7 @@ class SeekerDashboardController extends Controller
      */
     public function index()
     {
+        \Illuminate\Support\Facades\Gate::authorize('seeker-workflow');
         $helpSeeker = Auth::user()->helpSeeker;
 
         $pendingSession = null;
@@ -25,7 +26,7 @@ class SeekerDashboardController extends Controller
         $recentSessions = collect();
 
         if ($helpSeeker) {
-            Session::where('seeker_id', $helpSeeker->id)->abandoned()->markAbandoned();
+
             // Kill stale requests (>24h, never accepted) so the dashboard
             // never shows a phantom "pending request".
             $pendingSession = Session::pendingForSeeker($helpSeeker->id)->first();

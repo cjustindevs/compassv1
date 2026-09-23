@@ -13,17 +13,16 @@ use Tests\TestCase;
 class HelpSeekerModuleTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\SeekerWorkflowFixtures;
 
     public function test_seeker_can_complete_chat_only_screening_preferences_and_enter_queue(): void
     {
         [$user] = $this->seekerUser();
         $concern = ConcernCategory::firstOrCreate(['concern_name' => 'Academic Stress']);
 
-        $this->actingAs($user)->post(route('request.screening.process'), [
-            'concern_id' => $concern->id,
-            'description' => 'I am overwhelmed by school requirements this week.',
-            'current_suicide_plan' => 0, 'suicidal_thoughts' => 0, 'severe_distress' => 0, 'recurring_distress' => 0, 'difficulty_coping' => 0,
-        ])->assertRedirect(route('request.preferences'));
+        $this->approvedScreeningFixture();
+        $this->actingAs($user)->post(route('request.screening.process'), $this->screeningAnswers())->assertRedirect(route('request.concern'));
+        $this->post(route('request.concern.process'),['concern_id'=>ConcernCategory::where('concern_name','Stress')->value('id')])->assertRedirect(route('request.preferences'));
 
         $this->actingAs($user)->post(route('request.preferences.process'), [
             'support_mode' => 'chat',
@@ -34,7 +33,7 @@ class HelpSeekerModuleTest extends TestCase
         $session = Session::where('seeker_id', $user->helpSeeker->id)->firstOrFail();
 
         $this->assertSame('chat', $session->session_type);
-        $this->assertSame(Session::STATUS_PREFERENCES_SET, $session->session_status);
+        $this->assertSame(Session::STATUS_WAITING, $session->session_status);
         $this->assertSame('Tagalog', $user->fresh()->preferred_language);
         $this->assertSame('chat', $user->fresh()->preferred_communication_mode);
 
@@ -42,8 +41,7 @@ class HelpSeekerModuleTest extends TestCase
             'seeker_id' => $user->helpSeeker->id,
             'request_status' => 'waiting',
             'preferred_session_type' => 'chat',
-            'queue_position' => 1,
-            'estimated_wait' => 8,
+
         ]);
     }
 
@@ -146,8 +144,7 @@ class HelpSeekerModuleTest extends TestCase
             ->withSession(['session_id' => $session->id])
             ->get(route('request.matching'))
             ->assertOk()
-            ->assertSee('Queue position: #2')
-            ->assertSee('Estimated wait: 10 min');
+            ->assertSee('Waiting for an available helper')->assertDontSee('Estimated wait:');
     }
 
     public function test_chat_page_uses_persisted_session_start_time_for_timer(): void
@@ -160,7 +157,7 @@ class HelpSeekerModuleTest extends TestCase
             'session_type' => 'chat',
             'session_status' => Session::STATUS_ACTIVE,
             'risk_level' => 'low',
-            'start_time' => now()->subMinutes(7),
+            'start_time' => now()->subMinutes(7), 'helper_accepted_at'=>now()->subMinutes(7),
             'created_date' => now(),
             'completion_status' => 'pending',
         ]);
@@ -172,7 +169,7 @@ class HelpSeekerModuleTest extends TestCase
             ->assertSee('data-started-at="' . $session->fresh()->start_time->timestamp . '"', false);
     }
 
-    public function test_completed_session_evaluation_accepts_ten_point_scores(): void
+    public function test_completed_session_evaluation_maps_documented_answers(): void
     {
         [$user, $seeker] = $this->seekerUser();
 
@@ -193,8 +190,8 @@ class HelpSeekerModuleTest extends TestCase
             ->withSession(['session_id' => $session->id])
             ->post(route('session.evaluation.process'), [
                 'session_id' => $session->id,
-                'helpfulness_score' => 10, 'comfort_score' => 10, 'feeling_after_score' => 10,
-                'understood_score' => 10, 'reuse_score' => 10,
+                'helpfulness_score' => 'Very Helpful', 'comfort_score' => 'Very Comfortable', 'feeling_after_score' => 'Better',
+                'understood_score' => 'Yes', 'reuse_score' => 'Yes',
                 'comments' => 'Thank you.',
             ])
             ->assertRedirect(route('session.thank-you'));
@@ -221,6 +218,7 @@ class HelpSeekerModuleTest extends TestCase
             'account_created' => now(),
         ]);
 
+        $this->consentFixture($user);
         return [$user, $seeker];
     }
 

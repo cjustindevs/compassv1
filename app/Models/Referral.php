@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Referral extends Model
 {
+    public function scopeProfessionalAuthorized($query) {
+        return $query->whereNotNull('approved_at')->where('help_seeker_consent',true)->whereIn('status',['pending_professional','accepted','in_progress','completed']);
+    }
     public function releaseIdentity(): void
     {
         app(\App\Services\IdentityVaultService::class)->releaseForReferral($this);
@@ -63,6 +66,7 @@ class Referral extends Model
     // Status constants
     const STATUS_PENDING_ADVISER = 'pending_adviser';
     const STATUS_PENDING_CONSENT = 'pending_consent';
+    const STATUS_CONSENT_REQUESTED = 'consent_requested';
     const STATUS_PENDING_PROFESSIONAL = 'pending_professional';
     const STATUS_ACCEPTED = 'accepted';
     const STATUS_IN_PROGRESS = 'in_progress';
@@ -118,6 +122,11 @@ class Referral extends Model
     public function professionalNotes()
     {
         return $this->hasMany(ProfessionalNote::class, 'referral_id', 'id')->latest();
+    }
+
+    public function consentRecords()
+    {
+        return $this->hasMany(ConsentRecord::class, 'referral_id', 'id');
     }
 
     // Scopes

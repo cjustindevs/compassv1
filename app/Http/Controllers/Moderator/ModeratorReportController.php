@@ -15,6 +15,7 @@ class ModeratorReportController extends Controller
 {
     public function index(Request $request)
     {
+        $request->validate(['from' => 'nullable|date_format:Y-m-d', 'to' => 'nullable|date_format:Y-m-d|after_or_equal:from']);
         $from = $request->get('from') ?: now()->subMonths(6)->startOfMonth()->toDateString();
         $to = $request->get('to') ?: now()->toDateString();
 
@@ -41,6 +42,7 @@ class ModeratorReportController extends Controller
 
     public function export(Request $request)
     {
+        $request->validate(['from' => 'nullable|date_format:Y-m-d', 'to' => 'nullable|date_format:Y-m-d|after_or_equal:from']);
         $from = $request->get('from') ?: now()->subMonths(6)->startOfMonth()->toDateString();
         $to = $request->get('to') ?: now()->toDateString();
 
@@ -137,7 +139,7 @@ class ModeratorReportController extends Controller
         $firstScores = HelperCompetencyHistory::whereIn('helper_id', $helperIds)
             ->selectRaw('helper_id, overall_score')
             ->orderBy('evaluation_date', 'asc')
-            ->groupBy('helper_id', 'overall_score')
+            ->get()->unique('helper_id')
             ->pluck('overall_score', 'helper_id');
 
         return $helpers->map(function (Helper $helper) use ($firstScores) {

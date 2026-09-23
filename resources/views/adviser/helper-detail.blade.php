@@ -42,6 +42,96 @@
             <i class="fas fa-arrow-left"></i> Back to Helpers
         </a>
 
+        @php($verificationVerified = ($helper->verification_status ?? 'pending') === 'verified')
+        <div class="card mb-6">
+            <div class="card-header">
+                <h3><i class="fas fa-id-card-clip mr-2 text-green-700" aria-hidden="true"></i>Institutional eligibility and training</h3>
+                <span class="pill {{ $verificationVerified ? '' : 'pill-warning' }}">
+                    {{ $verificationVerified ? 'Verified' : 'Pending verification' }}
+                </span>
+            </div>
+            <p class="text-sm text-gray-500 mb-4">
+                Verify current DWCC psychology enrollment, recognized membership and completed orientation or training before this helper can receive assignments.
+            </p>
+
+            @if($verificationVerified)
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    <div class="rounded-xl border border-green-100 bg-green-50 p-3">
+                        <p class="text-xs uppercase tracking-wide text-green-700 font-semibold">Status</p>
+                        <p class="text-sm font-semibold text-gray-800 mt-1"><i class="fas fa-circle-check text-green-600 mr-1" aria-hidden="true"></i>Verified</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Last verified</p>
+                        <p class="text-sm font-semibold text-gray-800 mt-1">{{ $helper->verified_at?->timezone('Asia/Manila')->format('M d, Y h:i A') ?? '—' }}</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Expires</p>
+                        <p class="text-sm font-semibold text-gray-800 mt-1">{{ $helper->verification_expires_at?->timezone('Asia/Manila')->format('M d, Y') ?? 'No expiry set' }}</p>
+                    </div>
+                </div>
+                @if($helper->qualification_evidence)
+                    <p class="text-sm text-gray-600 mb-4"><span class="font-semibold text-gray-700">Evidence on file:</span> {{ $helper->qualification_evidence }}</p>
+                @endif
+            @else
+                <div class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 mb-4" role="status">
+                    <i class="fas fa-triangle-exclamation text-amber-500 mt-0.5" aria-hidden="true"></i>
+                    <p class="text-sm text-amber-800">This helper cannot receive assignments until an adviser records eligibility and training verification.</p>
+                </div>
+            @endif
+
+            @if($errors->any())
+                <p role="alert" class="text-sm text-red-600 mb-3"><i class="fas fa-circle-exclamation mr-1" aria-hidden="true"></i>{{ $errors->first() }}</p>
+            @endif
+
+            <details class="border border-gray-200 rounded-xl p-4" {{ $verificationVerified ? '' : 'open' }}>
+                <summary class="font-semibold text-sm text-gray-700 cursor-pointer">
+                    <i class="fas fa-pen-to-square mr-1" aria-hidden="true"></i>{{ $verificationVerified ? 'Update verification' : 'Record verification' }}
+                </summary>
+                <form method="POST" action="{{ route('adviser.helper.verify', $helper->id) }}" class="form-container mt-4">
+                    @csrf
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                        <label class="checkbox-group requirement-card">
+                            <input type="checkbox" name="currently_enrolled" value="1" required>
+                            <span class="requirement-icon"><i class="fas fa-graduation-cap" aria-hidden="true"></i></span>
+                            <span>
+                                <strong class="block text-sm font-semibold text-gray-800">Current DWCC psychology enrollment</strong>
+                                <span class="text-xs text-gray-500">Enrollment confirmed for this term</span>
+                            </span>
+                        </label>
+                        <label class="checkbox-group requirement-card">
+                            <input type="checkbox" name="recognized_member" value="1" required>
+                            <span class="requirement-icon"><i class="fas fa-id-badge" aria-hidden="true"></i></span>
+                            <span>
+                                <strong class="block text-sm font-semibold text-gray-800">Recognized membership</strong>
+                                <span class="text-xs text-gray-500">Member of a recognized organization</span>
+                            </span>
+                        </label>
+                        <label class="checkbox-group requirement-card">
+                            <input type="checkbox" name="training_completed" value="1" required>
+                            <span class="requirement-icon"><i class="fas fa-clipboard-check" aria-hidden="true"></i></span>
+                            <span>
+                                <strong class="block text-sm font-semibold text-gray-800">Training and orientation</strong>
+                                <span class="text-xs text-gray-500">Completed required orientation or training</span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="qualification_evidence">Verification evidence or institutional reference</label>
+                        <textarea id="qualification_evidence" name="qualification_evidence" class="form-control" maxlength="2000" required>{{ old('qualification_evidence', $helper->qualification_evidence) }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="verification_expires_at">Verification expiry (if applicable)</label>
+                        <input id="verification_expires_at" type="date" name="verification_expires_at" class="form-control" value="{{ old('verification_expires_at', $helper->verification_expires_at?->format('Y-m-d')) }}">
+                    </div>
+                    <div class="flex justify-end">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-user-check" aria-hidden="true"></i> {{ $verificationVerified ? 'Update verification' : 'Record verification' }}
+                        </button>
+                    </div>
+                </form>
+            </details>
+        </div>
+
         <div class="card">
 
             <!-- Header -->
@@ -96,9 +186,38 @@
             <div class="flex flex-wrap items-center gap-3 p-4 bg-gray-50 rounded-xl mb-6">
                 <span class="text-sm text-gray-500">Assigned adviser:</span>
                 <span class="text-sm font-semibold text-gray-700">{{ $helper->adviser?->first_name }} {{ $helper->adviser?->last_name }}</span>
-                <span class="text-xs text-gray-400">Assignment is handled by moderators and the system.</span>
+                <span class="text-xs text-gray-400">Active referrals follow the helper when supervision is transferred.</span>
             </div>
 
+            <details class="mb-6 border border-gray-200 rounded-xl p-4">
+                <summary class="font-semibold text-sm text-gray-700 cursor-pointer">Transfer supervision</summary>
+                <p class="text-sm text-gray-500 my-3">This transfers the helper and their active referrals to another adviser. Completed referral records stay with their original reviewer.</p>
+                @if($errors->any())<p role="alert" class="text-sm text-red-600 mb-3">{{ $errors->first() }}</p>@endif
+                <form method="POST" action="{{ route('adviser.helpers.reassign') }}" class="space-y-3">
+                    @csrf
+                    <input type="hidden" name="helper_ids[]" value="{{ $helper->id }}">
+                    <label class="block text-sm font-medium">Receiving adviser
+                        <select name="adviser_id" required class="block w-full rounded-lg border-gray-300 mt-1 p-2 border">
+                            <option value="">Select adviser</option>
+                            @foreach($transferAdvisers as $adviser)<option value="{{ $adviser->id }}">{{ $adviser->full_name }}</option>@endforeach
+                        </select>
+                    </label>
+                    <label class="block text-sm font-medium">Reason
+                        <textarea name="reason" required maxlength="1000" rows="2" class="block w-full rounded-lg border border-gray-300 mt-1 p-2">{{ old('reason') }}</textarea>
+                    </label>
+                    <button type="submit" class="rounded-lg bg-green-700 text-white px-4 py-2 font-semibold text-sm">Transfer supervision</button>
+                </form>
+            </details>
+            <h3 class="font-semibold text-gray-700 mb-3">Supervision history</h3>
+            @forelse($assignmentHistory as $assignment)
+                <div class="rounded-xl border border-gray-200 p-3 mb-3 text-sm">
+                    <p class="font-semibold">Adviser #{{ $assignment->adviser_id }} ? {{ $assignment->ended_at ? 'Previous' : 'Current' }}</p>
+                    <p class="text-gray-500">{{ $assignment->started_at ?? 'Original start date unknown' }} ? {{ $assignment->ended_at ?? 'Present' }}</p>
+                    <p class="text-gray-600">{{ $assignment->reason }}</p>
+                </div>
+            @empty
+                <p class="text-sm text-gray-500 mb-4">Current supervision is recorded on the Helper profile; historical assignment dates are unavailable.</p>
+            @endforelse
             <!-- Competency History -->
             <h3 class="font-semibold text-gray-700 mb-4">Competency History</h3>
             @if($competencyHistory->isNotEmpty())
@@ -113,10 +232,14 @@
                                 <p class="font-semibold text-gray-800">{{ round($evaluation->overall_score, 2) }} / 5.00</p>
                                 <span class="competency-level {{ strtolower($evaluation->competency_level ?? 'Beginner') }}">
                                     {{ $evaluation->competency_level ?? 'Beginner' }}
-    </style>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-});
-    </script>
+                                </span>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <p class="text-sm text-gray-500">No competency evaluations recorded yet.</p>
+            @endif
+        </div>
+</div>
 @endsection

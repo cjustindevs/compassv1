@@ -13,6 +13,7 @@ use Tests\TestCase;
 class CompassImplementationTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\SeekerWorkflowFixtures;
 
     public function test_pseudonymous_registration_consent_and_alias_login(): void
     {
@@ -25,11 +26,11 @@ class CompassImplementationTest extends TestCase
         $this->assertAuthenticated();
         $seeker = HelpSeeker::firstOrFail();
         $this->assertMatchesRegularExpression('/^[A-Z][a-z]+[A-Z][a-z]+[0-9]+$/', $seeker->generated_alias);
-        $this->get(route('request.screening'))->assertRedirect(route('seeker.consent'));
+        $this->get(route('request.screening'))->assertOk()->assertSee('seekerConsentDialog');
         $this->post(route('seeker.consent.accept'), [
             'agree_privacy' => 1, 'agree_terms' => 1, 'agree_emergency' => 1, 'agree_consent' => 1,
         ])->assertRedirect(route('request.screening'));
-        $this->assertDatabaseHas('consent_records', ['seeker_id' => $seeker->id, 'version' => '1.0', 'ip_address' => '127.0.0.1']);
+        $this->assertDatabaseHas('consent_records', ['seeker_id' => $seeker->id, 'version' => \App\Services\ConsentService::VERSION, 'ip_address' => '127.0.0.1']);
         $this->post('/logout');
         $this->post('/login', ['email' => $seeker->generated_alias, 'password' => 'StrongPass123!'])->assertRedirect();
         $this->assertAuthenticated();
@@ -40,26 +41,27 @@ class CompassImplementationTest extends TestCase
         $user = $this->seeker();
         $this->actingAs($user)->get(route('request.screening'))->assertOk()->assertDontSee('Preliminary Risk Classification');
         $data = $this->screening();
-        $this->post(route('request.screening.process'), $data)->assertRedirect(route('request.preferences'));
+        $this->post(route('request.screening.process'), $data)->assertRedirect(route('request.concern'));
+        $this->post(route('request.concern.process'),['concern_id'=>ConcernCategory::where('concern_name','Others')->value('id')])->assertRedirect(route('request.preferences'));
         $this->get(route('request.preferences'))->assertOk()->assertDontSee('Risk Classification:')->assertDontSee('name="additional_notes"', false)->assertDontSee('value="voice"', false);
         $this->assertDatabaseHas('screening_responses', ['is_active' => true, 'is_complete' => true, 'risk_level' => 'low']);
     }
 
-    public function test_other_requires_description_and_all_screening_answers_are_required(): void
+    public function test_all_screening_answers_are_required(): void
     {
         $this->actingAs($this->seeker());
         $data = $this->screening();
         $data['concern_id'] = ConcernCategory::firstOrCreate(['concern_name' => 'Others'])->id;
         unset($data['difficulty_coping']);
-        $this->post(route('request.screening.process'), $data)->assertSessionHasErrors(['description', 'difficulty_coping']);
+        $this->post(route('request.screening.process'), $data)->assertSessionHasErrors(['difficulty_coping']);
     }
 
     public function test_emergency_redirects_to_resources_without_queuing(): void
     {
         $this->actingAs($this->seeker());
         $data = $this->screening();
-        $data['current_suicide_plan'] = $data['suicidal_thoughts'] = 1;
-        $this->post(route('request.screening.process'), $data)->assertRedirect(route('emergency'));
+        $data['immediate_intent'] = 'yes';
+        $this->post(route('request.screening.process'), $data)->assertRedirect(route('request.matching'));
         $this->assertDatabaseCount('queue_requests', 0);
     }
 
@@ -76,7 +78,7 @@ class CompassImplementationTest extends TestCase
     {
         $user = $this->seeker();
         $session = Session::create(['seeker_id' => $user->helpSeeker->id, 'session_status' => 'active', 'start_time' => now()]);
-        $scores = array_fill_keys(['helpfulness_score', 'comfort_score', 'feeling_after_score', 'understood_score', 'reuse_score'], 10);
+        $scores = $this->evaluationAnswers();
         $data = $scores + ['session_id' => $session->id];
         $this->actingAs($user)->postJson(route('session.evaluation.process'), $data)->assertStatus(409);
         $session->update(['session_status' => 'completed']);
@@ -112,14 +114,17 @@ class CompassImplementationTest extends TestCase
     {
         $user = User::factory()->create(['role' => 'seeker', 'is_active' => true]);
         HelpSeeker::create(['user_account_id' => $user->id, 'generated_alias' => 'CalmFox'.$user->id]);
+        $this->consentFixture($user); $this->approvedScreeningFixture();
         return $user;
     }
 
     public function test_matching_requires_schedule_and_reserves_pending_capacity(): void
     {
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-09-16 19:00','Asia/Manila')->utc());
         $this->seed(\Database\Seeders\HelperModuleSeeder::class);
         $helper = \App\Models\Helper::firstOrFail();
-        $helper->sessions()->update(['session_status' => 'completed']);
+        $this->verifiedHelperFixture($helper);
+        $helper->sessions()->update(['session_status' => 'completed','start_time'=>now()->subDay()]);
         $helper->update(['availability' => 'available', 'status' => 'available']);
         $this->assertFalse($helper->fresh()->isAvailable());
         \App\Models\HelperSchedule::create([
@@ -127,7 +132,7 @@ class CompassImplementationTest extends TestCase
             'shift_end' => '23:59:59', 'created_by' => $helper->user_account_id,
         ]);
         $this->assertTrue($helper->fresh()->isAvailable());
-        for ($i = 0; $i < 2; $i++) {
+        for ($i = 0; $i < 1; $i++) {
             Session::create(['seeker_id' => $this->seeker()->helpSeeker->id, 'helper_id' => $helper->id, 'session_status' => 'helper_assigned']);
         }
         $this->assertFalse($helper->fresh()->isAvailable());
@@ -137,26 +142,23 @@ class CompassImplementationTest extends TestCase
     {
         $this->seed(\Database\Seeders\HelperModuleSeeder::class);
         $helper = \App\Models\Helper::firstOrFail();
+        $this->verifiedHelperFixture($helper);
         $seeker = $this->seeker();
-        $session = Session::create(['seeker_id' => $seeker->helpSeeker->id, 'helper_id' => $helper->id, 'session_status' => 'active']);
-        $this->actingAs($helper->user)->post(route('helper.session.referral', $session->id), [
-            'referral_reason' => 'Additional professional support is recommended.', 'priority_level' => 'low',
-            'help_seeker_consent' => true,
-        ])->assertRedirect();
+        $session = Session::create(['seeker_id' => $seeker->helpSeeker->id, 'helper_id' => $helper->id, 'session_status' => 'active','helper_accepted_at'=>now(),'start_time'=>now()]);
+        $this->actingAs($helper->user)->post(route('helper.session.referral.consent', ['id' => $session->id]), [
+            'summary' => 'Additional professional support is recommended.',
+        ])->assertSessionHasNoErrors();
         $referral = $session->referrals()->firstOrFail();
-        $this->assertSame('pending_adviser', $referral->status);
+        $this->assertSame('consent_requested', $referral->status);
         $this->assertFalse($referral->help_seeker_consent);
-        $this->actingAs($this->seeker())->postJson(route('referrals.consent', $referral), ['consent_given' => true])->assertForbidden();
-        $this->actingAs($seeker)->postJson(route('referrals.consent', $referral), ['consent_given' => true])->assertStatus(409);
-        $referral->update(['approved_at' => now(), 'status' => 'pending_consent']);
-        $this->actingAs($seeker)->postJson(route('referrals.consent', $referral), ['consent_given' => true])->assertOk();
+        $this->actingAs($this->seeker())->postJson(route('referrals.consent-request', $referral), ['accepted' => true])->assertForbidden();
+        $this->actingAs($seeker)->postJson(route('referrals.consent-request', $referral), ['accepted' => true])->assertOk()->assertJson(['status' => 'consent_requested']);
         $this->assertTrue($referral->fresh()->help_seeker_consent);
         $this->assertFalse($referral->fresh()->identity_disclosed);
     }
 
     private function screening(): array
     {
-        return ['concern_id' => ConcernCategory::firstOrCreate(['concern_name' => 'Stress'])->id]
-            + array_fill_keys(['current_suicide_plan', 'suicidal_thoughts', 'severe_distress', 'recurring_distress', 'difficulty_coping'], 0);
+        return $this->screeningAnswers();
     }
 }

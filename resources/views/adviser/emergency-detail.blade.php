@@ -14,15 +14,15 @@
                 <div><span class="text-gray-400">Risk</span><p class="font-semibold text-red-600">{{ ucfirst($alert->risk_level) }}</p></div>
             </div>
             <div class="p-4 rounded-xl bg-red-50 text-red-800 text-sm mb-6">{{ $alert->trigger_reason }}</div>
-            <h2 class="font-semibold text-gray-800 mb-3">Recent Transcript</h2>
-            <div class="rounded-xl border border-gray-100 divide-y mb-6">
-                @forelse($alert->session?->messages ?? [] as $message)
-                    <p class="p-3 text-sm"><span class="font-semibold">{{ ucfirst($message->sender) }}:</span> {{ $message->message_text }}</p>
-                @empty
-                    <p class="p-3 text-sm text-gray-400">No chat messages recorded.</p>
-                @endforelse
-            </div>
-            @if($alert->status !== 'resolved')
+            <h2 class="font-semibold text-gray-800 mb-3">Supporting documentation</h2>
+            <p class="text-sm text-gray-600 whitespace-pre-wrap mb-4">{{ $alert->session?->report?->session_summary ?? 'No session summary submitted yet.' }}</p>
+            @if($alert->session)
+                <a class="text-green-700 underline" href="{{ route('adviser.session.show', $alert->session_id) }}">Review session documentation</a>
+            @endif
+            <section class="my-5"><h2 class="font-semibold">Action history</h2>@forelse(\Illuminate\Support\Facades\DB::table('emergency_review_actions')->where('emergency_alert_id',$alert->id)->orderBy('id')->get() as $action)<div class="border-t py-3 text-sm"><strong>{{ ucfirst($action->action) }}</strong> ? {{ $action->created_at }} ? Account #{{ $action->actor_id }}<p class="whitespace-pre-wrap mt-1">{{ $action->notes }}</p></div>@empty<p class="text-sm text-gray-500">No actions recorded yet.</p>@endforelse</section>
+            @if(!in_array($alert->status,['resolved','closed']))
+                <form method="POST" action="{{ route('adviser.emergencies.action',$alert->id) }}" class="my-4 space-y-3">@csrf<label class="block text-sm">Action<select name="action" class="block w-full rounded-lg border-gray-300">@if(!$alert->acknowledged_at)<option value="acknowledged">Acknowledge escalation</option>@endif<option value="instruction">Document instructions</option><option value="coordination">Document coordination</option></select></label><label class="block text-sm">Notes<textarea name="notes" required maxlength="2000" class="block w-full rounded-lg border-gray-300"></textarea></label><button class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm">Record action</button></form>
+
                 <form class="form-maximized" method="POST" action="{{ route('adviser.emergencies.resolve', $alert->id) }}">
                     @csrf
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Document emergency actions</label>

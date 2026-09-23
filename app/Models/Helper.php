@@ -9,6 +9,29 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Helper extends Model
 {
+    public ?string $assignmentReason = null;
+    public function save(array $options = [])
+    {
+        if (!$this->isDirty('adviser_id') || !\Illuminate\Support\Facades\Schema::hasTable('adviser_helper_assignments')) return parent::save($options);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($options) {
+            $before=$this->getOriginal('adviser_id'); $target=$this->adviser_id;
+            Adviser::whereIn('id',array_filter([$before,$target]))->orderBy('id')->lockForUpdate()->get();
+            if($this->exists) {
+                $actual=\Illuminate\Support\Facades\DB::table('helpers')->where('id',$this->id)->lockForUpdate()->value('adviser_id');
+                abort_unless($actual==$before,409,'Supervision changed. Reload before trying again.');
+            }
+            if($target && self::where('adviser_id',$target)->when($this->exists,fn($q)=>$q->where('id','!=',$this->id))->count() >= self::MAX_HELPERS_PER_ADVISER) throw \Illuminate\Validation\ValidationException::withMessages(['adviser_id'=>'Adviser capacity is 15 Helpers.']);
+            $saved=parent::save($options);
+            $history=\Illuminate\Support\Facades\DB::table('adviser_helper_assignments')->where('helper_id',$this->id)->whereNull('ended_at');
+            if($before && !$history->exists()) \Illuminate\Support\Facades\DB::table('adviser_helper_assignments')->insert(['helper_id'=>$this->id,'adviser_id'=>$before,'started_at'=>null,'ended_at'=>now(),'reason'=>'Legacy relationship; original start unknown','created_at'=>now()]);
+            $history->update(['ended_at'=>now()]);
+            $reason=$this->assignmentReason ?? 'Initial account provisioning or authorized assignment';
+            if($target) \Illuminate\Support\Facades\DB::table('adviser_helper_assignments')->insert(['helper_id'=>$this->id,'adviser_id'=>$target,'actor_id'=>auth()->id(),'started_at'=>now(),'reason'=>$reason,'created_at'=>now()]);
+            \App\Services\SupportAudit::record('supervision_relationship_changed',$this,['previous_adviser_id'=>$before,'adviser_id'=>$target,'reason'=>$reason]);
+            return $saved;
+        },3);
+    }
+
     public function getPublicAliasAttribute(): string
     {
         return 'Peer Helper ' . str_pad((string) $this->id, 4, '0', STR_PAD_LEFT);
@@ -21,6 +44,14 @@ class Helper extends Model
     public ?array $matching_details = null;
 
     protected $fillable = [
+        'verification_status',
+        'verified_by',
+        'verified_at',
+        'verification_expires_at',
+        'training_verified',
+        'qualification_evidence',
+        'declared_specializations',
+
         'user_account_id',
         'adviser_id',
         'first_name',
@@ -55,6 +86,10 @@ class Helper extends Model
     ];
 
     protected $casts = [
+        'verified_at'=>'datetime',
+        'verification_expires_at'=>'datetime',
+        'training_verified'=>'boolean',
+
         'competency_level' => 'integer',
         'competency_score' => 'decimal:2',
         'competency_risk_level' => 'integer',
@@ -209,13 +244,9 @@ class Helper extends Model
 
     public function hasCapacity(): bool
     {
-        $limit = min(self::MAX_SESSIONS_PER_SHIFT, (int) ($this->max_concurrent_sessions ?: self::MAX_SESSIONS_PER_SHIFT));
+        $limit = 1;
         $activeSessionCount = $this->activeSessions()->count();
         $currentShiftSessions = $this->currentAssignedSessionsCount();
-
-        if ((int) $this->active_sessions_count !== $activeSessionCount || (int) $this->current_shift_sessions !== $currentShiftSessions) {
-            $this->syncSessionCounters($activeSessionCount, $currentShiftSessions);
-        }
 
         return $activeSessionCount < $limit
             && $currentShiftSessions < self::MAX_SESSIONS_PER_SHIFT;
@@ -238,7 +269,7 @@ class Helper extends Model
 
     public function isReady(): bool
     {
-        return (bool) ($this->getCurrentReadiness()?->isReady() || $this->latestReadiness?->isReady());
+        return (bool) $this->readinessChecks()->latest('id')->first()?->isReady();
     }
 
     /**
@@ -246,11 +277,8 @@ class Helper extends Model
      */
     public function getCurrentReadiness(): ?ReadinessCheck
     {
-        return $this->readinessChecks()
-            ->where('is_active', true)
-            ->where('valid_until', '>', now())
-            ->latest('assessment_date')
-            ->first();
+        $latest = $this->readinessChecks()->latest('id')->first();
+        return $latest && $latest->is_active && $latest->isCurrentlyValid() ? $latest : null;
     }
 
     /**
@@ -293,25 +321,7 @@ class Helper extends Model
 
     public function isAvailable(): bool
     {
-        if (! in_array($this->status, ['available', 'busy'], true)) {
-            return false;
-        }
-
-        if ($this->availability !== 'available') {
-            return false;
-        }
-
-        if ($this->is_under_review) {
-            return false;
-        }
-
-        if (! $this->isReady() || ! $this->hasCapacity()) {
-            return false;
-        }
-
-        $schedule = $this->schedule;
-
-        return $schedule && $schedule->isOnDuty();
+        return app(\App\Services\HelperEligibilityService::class)->allows($this);
     }
 
     public function canHandleRiskLevel(?string $riskLevel): bool
@@ -378,16 +388,55 @@ class Helper extends Model
     public function syncSessionCounters(?int $activeSessionCount = null, ?int $currentShiftSessions = null): void
     {
         $this->update([
+            'total_sessions_handled' => $this->sessions()->whereNotNull('start_time')->count(),
             'active_sessions_count' => $activeSessionCount ?? $this->activeSessions()->count(),
             'current_shift_sessions' => $currentShiftSessions ?? $this->currentAssignedSessionsCount(),
         ]);
     }
 
-    protected function currentAssignedSessionsCount(): int
+    /**
+     * The two-session duty-shift limit counts sessions whose start_time falls
+     * inside the helper's active shift window for today (schedule timezone),
+     * falling back to the whole day when no official shift is scheduled.
+     */
+    public function currentAssignedSessionsCount(): int
     {
+        $window = $this->currentDutyWindow();
+
         return $this->sessions()
-            ->where('session_status', Session::STATUS_ACTIVE)
+            ->whereNotNull('start_time')
+            ->whereBetween('start_time', [$window['start'], $window['end']])
             ->count();
+    }
+
+    /**
+     * UTC bounds of the helper's current capacity window derived from their
+     * active duty schedule for today, or the whole day as a fallback.
+     */
+    public function currentDutyWindow(): array
+    {
+        $tz = config('app.schedule_timezone', 'Asia/Manila');
+        $today = now($tz)->toDateString();
+        $schedule = $this->schedules()
+            ->whereDate('date', $today)
+            ->where('is_active', true)
+            ->latest('id')
+            ->first();
+
+        if ($schedule && $schedule->shift_start && $schedule->shift_end) {
+            $start = now($tz)->copy()->setTimeFromTimeString((string) $schedule->shift_start);
+            $end = now($tz)->copy()->setTimeFromTimeString((string) $schedule->shift_end);
+            if ($end->lessThanOrEqualTo($start)) {
+                $end = $end->addDay();
+            }
+
+            return ['start' => $start->utc(), 'end' => $end->utc()];
+        }
+
+        return [
+            'start' => now($tz)->startOfDay()->utc(),
+            'end' => now($tz)->addDay()->startOfDay()->utc(),
+        ];
     }
 
     public function setAvailability(string $availability, ?string $reason = null): void
@@ -410,7 +459,9 @@ class Helper extends Model
             $updates['is_ready'] = false;
         }
 
+        if ($availability!=='available') $this->readinessChecks()->where('is_active',true)->update(['is_active'=>false]);
         $this->update($updates);
+        \App\Services\SupportAudit::record('availability_changed',$this,['from'=>$previous,'to'=>$availability]);
 
         HelperAvailabilityLog::create([
             'helper_id' => $this->id,
@@ -439,7 +490,7 @@ class Helper extends Model
             ?? $this->helperSpecialties()->where('category', $category)->first();
 
         if ($specialty) {
-            return min(100, 100 + (((int) $specialty->proficiency_level - 1) * 5));
+            return 100; // Exact adviser-recorded specialty match; this is not a competency rating.
         }
 
         foreach ($this->getRelatedSpecialties($category) as $relatedCategory) {
@@ -469,11 +520,13 @@ class Helper extends Model
 
     public function getLanguageMatchScore(string $preferredLanguage): int
     {
+        $normalize=fn($value)=>match(strtolower(trim($value))) {'english'=>'en','tagalog','filipino'=>'tl','both','english/tagalog'=>'en-tl',default=>strtolower(trim($value))};
+        $preferredLanguage=$normalize($preferredLanguage);
         if ($preferredLanguage === '') {
             return 100;
         }
 
-        $languages = $this->languages ?: array_filter([$this->preferred_language]);
+        $languages = array_map($normalize,$this->languages ?: array_filter([$this->preferred_language]));
 
         if (in_array($preferredLanguage, $languages, true)) {
             return 100;
@@ -510,7 +563,7 @@ class Helper extends Model
 
     public function calculateWorkloadScore(): float
     {
-        $currentSessions = (int) $this->current_shift_sessions;
+        $currentSessions = $this->currentAssignedSessionsCount();
 
         if ($currentSessions >= self::MAX_SESSIONS_PER_SHIFT) {
             return 0;

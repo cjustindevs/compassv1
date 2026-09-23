@@ -10,6 +10,7 @@ use App\Models\Helper;
 use App\Models\Notification;
 use App\Models\QueueRequest;
 use App\Models\Session;
+use App\Services\HelperEligibilityService;
 use App\Traits\BroadcastsSafely;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -39,7 +40,7 @@ class ModeratorQueueController extends Controller
         $queueItems->each(function (QueueRequest $queue) use ($latestSessions) {
             $session = $latestSessions->get($queue->seeker_id);
             $queue->concern_name = $session?->concern?->concern_name ?? 'General Concern';
-            $queue->wait_minutes = (int) floor(now()->diffInSeconds($queue->request_date) / 60);
+            $queue->wait_minutes = (int) floor($queue->request_date->diffInSeconds(now()) / 60);
         });
 
         $stats = [
@@ -53,153 +54,84 @@ class ModeratorQueueController extends Controller
             'avg_holding' => $this->getAverageHoldingTime(),
         ];
 
-        $availableHelpers = Helper::with(['currentReadiness', 'schedule', 'latestCompetency'])
+        $availableHelpers = Helper::with(['user', 'adviser.user', 'currentReadiness', 'schedule', 'latestCompetency'])
             ->withCount('activeSessions as active_sessions_count')
             ->orderBy('competency_level', 'desc')->get();
-        $availableHelpers->each(function (Helper $helper) {
-            $helper->assignment_reason = match (true) {
-                $helper->is_under_review => 'Under review',
-                ! $helper->isReady() => 'Readiness assessment required',
-                $helper->availability !== 'available' => 'Not marked available',
-                ! $helper->schedule?->isOnDuty() => 'Outside schedule or no schedule',
-                ! $helper->hasCapacity() => 'At session capacity',
-                ! $helper->canAcceptSessions() => 'Unavailable',
-                default => null,
-            };
+        // Helper state always derives from HelperEligibilityService so the
+        // moderator sees exactly the same reasons the matching engine applies.
+        $eligibility = app(HelperEligibilityService::class);
+        $availableHelpers->each(function (Helper $helper) use ($eligibility) {
+            $status = $eligibility->status($helper);
+            $helper->assignment_reason = $status['assignable'] ? null : $status['label'];
+            $helper->assignment_detail = $status['reason'];
+            $helper->assignable = $status['assignable'];
+            $helper->remaining_capacity = $helper->getRemainingCapacity();
         });
+        // Eligible, ready helpers appear first so moderators can assign in one glance.
+        $availableHelpers = $availableHelpers->sortBy(fn (Helper $helper) => $helper->assignment_reason !== null)->values();
 
         return view('moderator.queue', compact('queueItems', 'stats', 'availableHelpers'));
     }
 
     public function assign(Request $request): RedirectResponse
     {
-        $request->validate([
-            'queue_id' => 'required|exists:queue_requests,id',
-            'helper_id' => 'required|exists:helpers,id',
-        ]);
-
-        $queue = QueueRequest::findOrFail($request->queue_id);
-        $helper = Helper::findOrFail($request->helper_id);
-
-        $override = $request->boolean('emergency_override')
-            && in_array($queue->priority_level, ['emergency', 'high'], true);
-
-        if (! $override && ! $helper->canAcceptSessions()) {
-            return redirect()->route('moderator.queue')
-                ->with('error', $helper->full_name . ' must be available, under capacity, and have a current ready assessment before assignment.');
-        }
-
-        if ($override && ! $helper->hasCapacity()) {
-            return redirect()->route('moderator.queue')
-                ->with('error', $helper->full_name . ' is already at their session capacity and cannot be assigned right now.');
-        }
-
-        $queue->update([
-            'assigned_helper_id' => $helper->id,
-            'request_status' => 'assigned',
-            'queue_position' => null,
-            'matched_date' => now(),
-        ]);
-
-        $helper->update(['status' => 'busy']);
-
-        // Link the helper to the seeker's pending session (or create one).
-        $session = Session::where('seeker_id', $queue->seeker_id)
-            ->whereIn('session_status', Session::PENDING_STATUSES)
-            ->latest('created_date')
-            ->first();
-
-        if (! $session) {
-            $session = Session::create([
-                'seeker_id' => $queue->seeker_id,
-                'helper_id' => $helper->id,
-                'moderator_id' => Auth::user()->moderator?->id,
-                'session_status' => Session::STATUS_HELPER_ASSIGNED,
-                'session_type' => $queue->preferred_session_type ?? 'chat',
-                'risk_level' => $queue->priority_level ?? 'low',
-                'created_date' => now(),
-            ]);
-        } else {
-            $session->update([
-                'helper_id' => $helper->id,
-                'moderator_id' => Auth::user()->moderator?->id,
-                'session_status' => Session::STATUS_HELPER_ASSIGNED,
-                'session_type' => $queue->preferred_session_type ?? $session->session_type,
-                'risk_level' => $queue->priority_level ?? $session->risk_level,
-            ]);
-        }
-
-        Notification::create([
-            'user_account_id' => $helper->user_account_id,
-            'title' => 'New Case Assigned',
-            'message' => 'You have been assigned to support ' . ($session->seeker?->generated_alias ?? 'a seeker') . ' (' . ucfirst($session->risk_level) . ' risk).',
-            'notification_type' => 'assignment',
-            'type_icon' => 'fa-clipboard-list',
-            'link' => '/helper/cases',
-            'status' => 'unread',
-        ]);
-
-        $this->broadcastSafely(new NewCaseAssigned($session, $helper->user_account_id));
-        $this->broadcastSafely(new ModeratorAlert(Auth::id(), 'assignment', 'Helper assigned', ($session->seeker?->generated_alias ?? 'A seeker') . ' was matched with ' . $helper->full_name, '/moderator/queue'));
-
-        // Real-time: keep the moderator's queue view in sync (private channel).
-        $this->broadcastSafely(new QueueUpdated(Auth::id()));
-
-        return redirect()->route('moderator.queue')
-            ->with('success', $helper->full_name . ' assigned to ' . ($session->seeker?->generated_alias ?? 'the seeker') . ' successfully!');
+        return $this->assignHelper($request, false);
     }
 
     public function reassign(Request $request): RedirectResponse
     {
-        $request->validate([
-            'queue_id' => 'required|exists:queue_requests,id',
-            'helper_id' => 'required|exists:helpers,id',
+        return $this->assignHelper($request, true);
+    }
+
+    /**
+     * Set (or change) the session appointment time for a request that already
+     * has a helper assigned but has not yet started. The helper's acceptance
+     * window follows the newly scheduled start.
+     */
+    public function schedule(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['queue_id' => 'required|exists:queue_requests,id', 'scheduled_at' => 'required|date']);
+        $queue = QueueRequest::findOrFail($data['queue_id']);
+        $session = Session::where('queue_request_id', $queue->id)
+            ->whereIn('session_status', [Session::STATUS_HELPER_ASSIGNED, Session::STATUS_WAITING])
+            ->latest('id')->first();
+        abort_unless($session, 422, 'Only an assigned request awaiting helper acceptance can be scheduled.');
+        $scheduledStart = \Illuminate\Support\Carbon::parse($data['scheduled_at'], config('app.schedule_timezone'))->utc();
+        abort_unless($scheduledStart->isFuture(), 422, 'The scheduled appointment must be in the future.');
+        \Illuminate\Support\Facades\DB::transaction(function () use ($session, $queue, $scheduledStart) {
+            $session = Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
+            if ($session->helper_accepted_at || !in_array($session->session_status, [Session::STATUS_HELPER_ASSIGNED, Session::STATUS_WAITING], true)) {
+                abort(422, 'The scheduled session can no longer be changed.');
+            }
+            $session->update(['scheduled_start' => $scheduledStart, 'pre_session_brief_expires_at' => $scheduledStart]);
+            $queue->update(['scheduled_date' => $scheduledStart]);
+            \App\Services\SupportAudit::record('session_scheduled', $session, ['scheduled_start' => $scheduledStart->toDateTimeString()]);
+        });
+        return back()->with('success', 'Session scheduled for ' . $scheduledStart->setTimezone(config('app.schedule_timezone'))->format('M d, h:i A') . ' (' . $scheduledStart->setTimezone(config('app.schedule_timezone'))->timezoneName . ').');
+    }
+
+    private function assignHelper(Request $request, bool $reassign): RedirectResponse
+    {
+        $data = $request->validate([
+            'queue_id' => 'required|exists:queue_requests,id', 'helper_id' => 'required|exists:helpers,id',
+            'emergency_override' => 'sometimes|boolean',
+            'scheduled_at' => 'nullable|date',
         ]);
-
-        $queue = QueueRequest::findOrFail($request->queue_id);
-        $helper = Helper::findOrFail($request->helper_id);
-
-        $override = $request->boolean('emergency_override')
-            && in_array($queue->priority_level, ['emergency', 'high'], true);
-
-        if (! $override && ! $helper->canAcceptSessions()) {
-            return redirect()->route('moderator.queue')
-                ->with('error', $helper->full_name . ' must be available, under capacity, and have a current ready assessment before reassignment.');
+        $queue = QueueRequest::findOrFail($data['queue_id']);
+        $scheduledStart = null;
+        if (!empty($data['scheduled_at'])) {
+            $scheduledStart = \Illuminate\Support\Carbon::parse($data['scheduled_at'], config('app.schedule_timezone'))->utc();
+            abort_unless($scheduledStart->isFuture(), 422, 'The scheduled appointment must be in the future.');
         }
-
-        if ($override && ! $helper->hasCapacity()) {
-            return redirect()->route('moderator.queue')
-                ->with('error', $helper->full_name . ' is already at their session capacity and cannot be reassigned right now.');
-        }
-
-        $queue->update([
-            'assigned_helper_id' => $helper->id,
-            'matched_date' => now(),
-        ]);
-
-        $session = Session::where('seeker_id', $queue->seeker_id)
-            ->where('session_status', Session::STATUS_HELPER_ASSIGNED)
-            ->latest('created_date')
-            ->first();
-
-        $oldHelperId = $session?->helper_id;
-
-        if ($session) {
-            $session->update(['helper_id' => $helper->id]);
-        }
-
-        $helper->update(['status' => 'busy']);
-
-        // Release the previous helper back to the available pool if they are
-        // no longer connected to this session.
-        if ($oldHelperId && $oldHelperId !== $helper->id) {
-            Helper::where('id', $oldHelperId)->update(['status' => 'available']);
-        }
-
-        $this->broadcastSafely(new QueueUpdated(Auth::id()));
-
-        return redirect()->route('moderator.queue')
-            ->with('success', 'Helper reassigned to ' . $helper->full_name . '.');
+        $result = app(\App\Services\HelperMatchingService::class)->manualAssign(
+            $queue, (int) $data['helper_id'], $request->boolean('emergency_override'), $reassign, $reassign ? 'manual_reassign' : 'manual', $scheduledStart
+        );
+        return redirect()->route('moderator.queue')->with(
+            $result instanceof Session ? 'success' : 'error',
+            $result instanceof Session
+                ? ($reassign ? 'Helper reassigned successfully.' : 'Helper assigned successfully.')
+                : (is_string($result) ? $result : 'Assignment could not be completed. Check the request status, helper readiness, schedule, capacity, and risk competency.')
+        );
     }
 
     /**
@@ -213,7 +145,15 @@ class ModeratorQueueController extends Controller
         ]);
 
         $queue = QueueRequest::findOrFail($request->queue_id);
-        $queue->delete();
+        $session=Session::where('queue_request_id',$queue->id)->first();
+        if ($session) {
+            abort_unless(auth()->user()->role==='moderator',403);
+            \Illuminate\Support\Facades\DB::transaction(function () use ($session,$queue) {
+                $session->update(['session_status'=>'cancelled','completion_status'=>'cancelled','cancelled_at'=>now()]);
+                $queue->update(['request_status'=>'cancelled','cancelled_at'=>now()]);
+                \App\Services\SupportAudit::record('request_cancelled',$session,['reason'=>'moderator_cancelled']);
+            });
+        } else $queue->update(['request_status'=>'cancelled','cancelled_at'=>now()]);
 
         $this->broadcastSafely(new QueueUpdated(Auth::id()));
 
@@ -221,6 +161,26 @@ class ModeratorQueueController extends Controller
             'success' => true,
             'message' => 'Request removed from the queue.',
         ]);
+    }
+
+    public function priority(Request $request, QueueRequest $queue): RedirectResponse
+    {
+        $data = $request->validate(['priority_level' => 'required|in:low,moderate,high,emergency']);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($queue, $data) {
+            $queue = QueueRequest::whereKey($queue->id)->lockForUpdate()->firstOrFail();
+            abort_unless($queue->request_status === 'waiting', 422, 'Only waiting requests can be reprioritized.');
+            $levels = ['low' => 0, 'moderate' => 1, 'high' => 2, 'emergency' => 3];
+            if ($levels[$data['priority_level']] < $levels[$queue->priority_level]) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['priority_level' => 'Queue priority can be raised here; risk review is required before lowering it.']);
+            }
+            $previous = $queue->priority_level;
+            $queue->update(['priority_level' => $data['priority_level']]);
+            \App\Models\AuditLog::create(['user_account_id' => Auth::id(), 'module' => 'moderator',
+                'action' => 'queue_priority_changed', 'description' => json_encode(['queue_id' => $queue->id, 'from' => $previous, 'to' => $data['priority_level']])]);
+        });
+        app(\App\Services\HelperMatchingService::class)->processQueueRequest($queue->fresh());
+        $this->broadcastSafely(new QueueUpdated(Auth::id()));
+        return back()->with('success', 'Queue priority updated.');
     }
 
     public function stats(): JsonResponse

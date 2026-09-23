@@ -53,7 +53,7 @@ class SelfHelpController extends Controller
                 ->where('progress_percentage', '<', 100)
                 ->orderByDesc('last_accessed')
                 ->get()
-                ->filter(fn ($p) => $p->resource?->is_published)
+                ->filter(fn ($p) => $p->resource && SelfHelpResource::published()->whereKey($p->resource->id)->exists())
                 ->take(5);
         } else {
             $savedIds = [];
@@ -67,7 +67,7 @@ class SelfHelpController extends Controller
                 'label' => $meta['label'],
                 'icon' => $meta['icon'],
                 'color' => $meta['color'],
-                'count' => SelfHelpResource::where('category', $slug)->where('is_published', true)->count(),
+                'count' => SelfHelpResource::published()->where('category', $slug)->count(),
             ];
         });
 

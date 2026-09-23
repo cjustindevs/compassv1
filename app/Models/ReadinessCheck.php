@@ -10,6 +10,11 @@ class ReadinessCheck extends Model
     protected $table = 'readiness_checks';
 
     protected $fillable = [
+        'form_version',
+        'skills_confirmed',
+        'helper_schedule_id',
+        'expiry_notified_at',
+
         'helper_id',
         'availability_status',
         'shift_start',
@@ -29,6 +34,9 @@ class ReadinessCheck extends Model
     ];
 
     protected $casts = [
+        'skills_confirmed'=>'array',
+        'expiry_notified_at'=>'datetime',
+
         'shift_start' => 'datetime',
         'shift_end' => 'datetime',
         'assessment_date' => 'datetime',
@@ -59,7 +67,7 @@ class ReadinessCheck extends Model
             return false;
         }
 
-        return $this->assessment_result === 'ready' && $this->isCurrentlyValid();
+        return $this->is_active !== false && $this->assessment_result === 'ready' && $this->isCurrentlyValid();
     }
 
     public function scopeReady($query)
@@ -81,11 +89,12 @@ class ReadinessCheck extends Model
 
     public function isReady(): bool
     {
-        return $this->assessment_result === 'ready' && $this->isCurrentlyValid();
+        return $this->is_active !== false && $this->assessment_result === 'ready' && $this->isCurrentlyValid();
     }
 
     public function isCurrentlyValid(): bool
     {
+        if ($this->helper_schedule_id && !\App\Models\HelperSchedule::find($this->helper_schedule_id)?->isOnDuty()) return false;
         if ($this->valid_until) {
             return $this->valid_until->isFuture();
         }

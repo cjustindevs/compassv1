@@ -37,6 +37,20 @@ class Session extends Model
     protected $table = 'counseling_sessions';
 
     protected $fillable = [
+        'match_status',
+        'documentation_status',
+        'completion_reason',
+        'documentation_notified_at',
+
+        'workflow_state',
+        'helper_accepted_at',
+        'submitted_at',
+        'cancelled_at',
+        'expired_at',
+        'warning_sent_at',
+        'peer_support_approved_at',
+        'review_adviser_id',
+
         'seeker_id',
         'helper_id',
         'moderator_id',
@@ -80,8 +94,11 @@ class Session extends Model
     ];
 
     protected $casts = [
+        'documentation_notified_at'=>'datetime',
+
         'scheduled_start' => 'datetime',
         'pre_session_brief_expires_at' => 'datetime',
+        'submitted_at' => 'datetime',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
         'created_date' => 'datetime',

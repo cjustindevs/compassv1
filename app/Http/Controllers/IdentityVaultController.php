@@ -38,9 +38,10 @@ class IdentityVaultController extends Controller
         return response()->json(['message' => 'Your identity was securely stored. Your adviser can now authorize its release to the assigned professional.']);
     }
 
-    public function release(Referral $referral, IdentityVaultService $vault)
+    public function release(Request $request, Referral $referral, IdentityVaultService $vault)
     {
-        $vault->releaseForReferral($referral);
+        $data=$request->validate(['fields'=>'nullable|array|min:1','fields.*'=>['required',\Illuminate\Validation\Rule::in(IdentityVaultService::FIELDS)],'reason'=>'nullable|string|min:20|max:1000']);
+        $vault->releaseForReferral($referral,$data['fields'] ?? ['real_name','phone_number'],$data['reason'] ?? 'Contact details necessary for approved referral coordination');
         return back()->with('success', 'Identity released to the assigned professional.');
     }
 
