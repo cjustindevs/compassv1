@@ -34,9 +34,12 @@
         <p class="text-sm mt-2">{{ $referral->clarification_response }}</p>
         @if(!$referral->clarification_received_at && $referral->status === 'pending_adviser')
         <form method="POST" action="{{ route('helper.referral.clarify',$referral->id) }}">@csrf
-            <label for="clarification">Your response</label>
+            <label for="referral_reason">Revised recommendation <span class="text-xs text-gray-400">(optional — revise the referral reason when permitted)</span></label>
+            <textarea id="referral_reason" name="referral_reason" maxlength="1000" class="w-full rounded-lg border-gray-300">{{ old('referral_reason', $referral->referral_reason) }}</textarea>
+            <label for="clarification" class="mt-3">Your response to the Adviser</label>
             <textarea id="clarification" name="response" required minlength="10" maxlength="2000" class="w-full rounded-lg border-gray-300">{{ old('response') }}</textarea>
             @error('response')<p class="text-red-700">{{ $message }}</p>@enderror
+            @error('referral_reason')<p class="text-red-700">{{ $message }}</p>@enderror
             <button class="btn btn-primary mt-3">Send clarification</button>
         </form>
         @endif

@@ -54,7 +54,12 @@ class ReferralWorkflowController extends Controller
 
         $referral = $this->referrals->processConsent($referral, (bool) $validated['consent_given']);
 
-        if (!$request->expectsJson()) return redirect()->route('seeker.referrals')->with('success','Referral decision recorded.');
+        if (!$request->expectsJson()) {
+            if ($referral->help_seeker_consent) {
+                return redirect()->route('seeker.referrals')->with('success','Thank you. Your consent is recorded — provide your contact details whenever you are ready for coordination.');
+            }
+            return redirect()->route('seeker.referrals')->with('success','Thank you for letting us know. Your decision is respected.');
+        }
         return response()->json(['success' => true, 'status' => $referral->status]);
     }
 

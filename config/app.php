@@ -36,7 +36,7 @@ return [
     |
     */
 
-    'relax_duty_hours' => env('RELAX_DUTY_HOURS', true),
+    'relax_duty_hours' => env('RELAX_DUTY_HOURS', false),
 
     /*
     |--------------------------------------------------------------------------

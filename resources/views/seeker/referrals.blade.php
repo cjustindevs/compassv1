@@ -210,7 +210,12 @@
                     </div>
 
                     @if($referral->status === \App\Models\Referral::STATUS_PENDING_CONSENT)
-                        <p>Your adviser recommends professional support beyond the scope of peer support. Agreeing allows the assigned professional to review the authorized case records.</p>
+                        <p>Your adviser has reviewed your helper's recommendation and approved professional support beyond the scope of peer support.</p>
+                        <div class="rounded-xl bg-gray-50 p-4 my-3 text-sm space-y-1">
+                            <p><span class="text-gray-400">Recommended by your adviser</span><br><span class="font-medium text-gray-700">{{ $referral->referral_reason }}</span></p>
+                            <p><span class="text-gray-400">Priority</span><br><span class="font-medium text-gray-700">{{ ucfirst($referral->priority_level) }}</span></p>
+                        </div>
+                        <p class="mb-3">Agreeing allows the assigned professional to review the authorized case records and lets you provide contact details for coordination. You may decline at any time — your decision is respected.</p>
                         <form method="POST" action="{{ route('referrals.consent', $referral) }}" class="flex flex-wrap gap-3">
                             @csrf
                             <button class="page-button" type="submit" name="consent_given" value="1">Agree to referral</button>

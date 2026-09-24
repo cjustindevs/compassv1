@@ -62,6 +62,15 @@ class ChatController extends Controller
             'transcript_generated_at' => $session->session_type === 'chat' && ! $request->boolean('is_voice') ? now() : null,
         ]);
 
+        // A helper message marks responsiveness and clears any prior 5-minute
+        // no-response escalation so another silence window is counted afresh.
+        if ($isHelper) {
+            $session->forceFill([
+                'last_helper_message_at' => now(),
+                'no_response_escalated_at' => null,
+            ])->save();
+        }
+
         // Broadcast the message (sync, no queue worker needed). If the
         // websocket server is briefly unreachable, the message is still saved.
         $this->broadcastSafely(new MessageSent($message));

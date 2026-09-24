@@ -9,6 +9,19 @@ class QueueRequest extends Model
 {
     protected $table = 'queue_requests';
 
+    // P1–P4 priority classes. P1 is the most urgent tier.
+    public const PRIORITY_CLASS_LABELS = [
+        'emergency' => 'P1',
+        'high' => 'P2',
+        'moderate' => 'P3',
+        'low' => 'P4',
+    ];
+
+    public static function priorityClass(string $level): string
+    {
+        return self::PRIORITY_CLASS_LABELS[$level] ?? 'P4';
+    }
+
     protected $fillable = [
         'wait_urgency',
         'queued_at',

@@ -240,6 +240,19 @@
             @endforeach
         </div>
 
+        <!-- Priority service targets (P1–P4) -->
+        <div class="bg-white rounded-2xl border border-gray-100 p-4 mb-6">
+            <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+                <span class="font-semibold text-gray-700 uppercase tracking-wider text-[11px]">Service targets by priority class</span>
+                @foreach(['P1'=>'Emergency','P2'=>'High','P3'=>'Moderate','P4'=>'Low'] as $class=>$label)
+                    <span class="inline-flex items-center gap-1.5">
+                        <span class="px-2 py-0.5 rounded-full font-bold text-white {{ $class==='P1'?'bg-red-600':($class==='P2'?'bg-orange-500':($class==='P3'?'bg-amber-500':'bg-gray-400')) }}">{{ $class }}</span>
+                        {{ $label }} · target ≤ {{ ['P1'=>1,'P2'=>3,'P3'=>10,'P4'=>20][$class] }} min
+                    </span>
+                @endforeach
+            </div>
+        </div>
+
         <!-- Waiting Seekers -->
         <div class="card mb-6">
             <div class="card-header">
@@ -249,6 +262,10 @@
             <div>
                 @forelse($queueItems->where('request_status', 'waiting') as $item)
                     <div class="queue-item fade-in">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold text-white {{ $item->priority_level==='emergency'?'bg-red-600':($item->priority_level==='high'?'bg-orange-500':($item->priority_level==='moderate'?'bg-amber-500':'bg-gray-400')) }}"
+                              title="Priority class P{{ [ 'emergency'=>1,'high'=>2,'moderate'=>3,'low'=>4 ][$item->priority_level] ?? 4 }}">
+                            {{ \App\Models\QueueRequest::priorityClass($item->priority_level) }} · {{ ucfirst($item->priority_level) }}
+                        </span>
                         <form method="POST" action="{{ route('moderator.queue.priority', $item) }}" class="flex items-center gap-2">
                             @csrf @method('PATCH')
                             <label class="sr-only" for="priority-{{ $item->id }}">Queue priority</label>
@@ -316,6 +333,10 @@
             <div>
                 @forelse($queueItems->where('request_status', 'assigned') as $item)
                     <div class="queue-item fade-in">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold text-white {{ $item->priority_level==='emergency'?'bg-red-600':($item->priority_level==='high'?'bg-orange-500':($item->priority_level==='moderate'?'bg-amber-500':'bg-gray-400')) }}"
+                              title="Priority class P{{ [ 'emergency'=>1,'high'=>2,'moderate'=>3,'low'=>4 ][$item->priority_level] ?? 4 }}">
+                            {{ \App\Models\QueueRequest::priorityClass($item->priority_level) }} · {{ ucfirst($item->priority_level) }}
+                        </span>
                         <form method="POST" action="{{ route('moderator.queue.priority', $item) }}" class="flex items-center gap-2">
                             @csrf @method('PATCH')
                             <label class="sr-only" for="priority-{{ $item->id }}">Queue priority</label>

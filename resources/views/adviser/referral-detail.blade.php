@@ -214,6 +214,10 @@
                 </div>
             </div>
 
+            @if($referral->clarification_requested_at && !$referral->clarification_received_at && $referral->status === \App\Models\Referral::STATUS_PENDING_ADVISER)
+        <div class="flash-error mb-4"><i class="fas fa-comment-dots mr-1"></i> This referral was returned to the Helper for revision. Approval is blocked until the Helper responds with the requested clarification.</div>
+        @endif
+
             <!-- Actions -->
             <div class="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
                 <a href="{{ route('adviser.session.show', $referral->session_id) }}" class="btn-outline">
@@ -222,12 +226,25 @@
                 <a href="{{ route('adviser.referrals') }}" class="btn-outline">
                     <i class="fas fa-arrow-left mr-2"></i> Back
                 </a>
+                @if($referral->status === \App\Models\Referral::STATUS_PENDING_ADVISER && !($referral->clarification_requested_at && !$referral->clarification_received_at))
+                <button type="button" class="btn-outline" onclick="openReviseModal()">
+                    <i class="fas fa-rotate-left mr-2"></i> Request Revision
+                </button>
                 <button type="button" class="btn-primary" onclick="openApproveModal()">
                     <i class="fas fa-check mr-2"></i> Approve Referral
                 </button>
                 <button class="btn-danger" onclick="openRejectModal({{ $referral->id }})">
                     <i class="fas fa-times mr-2"></i> Reject Referral
                 </button>
+                @endif
+                @if($referral->clarification_requested_at && $referral->clarification_received_at && $referral->status === \App\Models\Referral::STATUS_PENDING_ADVISER)
+                <button type="button" class="btn-primary" onclick="openApproveModal()">
+                    <i class="fas fa-check mr-2"></i> Approve Referral
+                </button>
+                <button class="btn-danger" onclick="openRejectModal({{ $referral->id }})">
+                    <i class="fas fa-times mr-2"></i> Reject Referral
+                </button>
+                @endif
             </div>
 
         </div>
@@ -252,6 +269,31 @@
                 <div class="flex gap-3">
                     <button type="button" class="btn-outline flex-1" onclick="closeApproveModal()">Cancel</button>
                     <button type="submit" class="btn-primary flex-1">Approve Referral</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Request Revision Modal -->
+    <div class="modal-overlay" id="reviseModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 999; align-items: center; justify-content: center;">
+        <div class="modal-box" style="background: white; border-radius: 24px; max-width: 480px; width: 92%; padding: 32px; box-shadow: 0 40px 80px rgba(0,0,0,0.15); animation: modalSlide 0.3s ease-out;">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                    <i class="fas fa-rotate-left text-amber-600"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800">Request Revision</h3>
+            </div>
+            <p class="text-gray-500 text-sm mb-4">Return this referral to the Helper with comments. The Helper can revise the recommendation, and approval stays blocked until they respond.</p>
+
+            <form class="form-maximized" id="reviseForm" method="POST" action="{{ route('adviser.referral.request-info', $referral->id) }}">
+                @csrf
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Comments for the Helper <span class="text-red-500">*</span></label>
+                    <textarea name="info_request" class="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" rows="4" placeholder="Explain what to revise or clarify in the recommendation..." required minlength="10" maxlength="2000"></textarea>
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" class="btn-outline flex-1" onclick="closeReviseModal()">Cancel</button>
+                    <button type="submit" class="btn-primary flex-1" style="background:#f59e0b;">Request Revision</button>
                 </div>
             </form>
         </div>
@@ -303,6 +345,14 @@
 
         function closeRejectModal() {
             document.getElementById('rejectModal').classList.remove('active');
+        }
+
+        function openReviseModal() {
+            document.getElementById('reviseModal').classList.add('active');
+        }
+
+        function closeReviseModal() {
+            document.getElementById('reviseModal').classList.remove('active');
         }
 
         document.getElementById('rejectModal')?.addEventListener('click', function(e) {

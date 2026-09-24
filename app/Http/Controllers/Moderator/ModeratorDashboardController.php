@@ -126,6 +126,7 @@ class ModeratorDashboardController extends Controller
     {
         return response()->json([
             'queue_waiting' => QueueRequest::where('request_status', 'waiting')->count(),
+            'queue_assigned' => QueueRequest::where('request_status', 'assigned')->count(),
             'active_sessions' => Session::where('session_status', 'active')->count(),
             'emergency_open' => IncidentReport::whereIn('status', ['open', 'under_review', 'escalated'])->count(),
             'helpers_available' => Helper::where('status', 'available')->count(),

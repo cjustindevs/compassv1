@@ -7,6 +7,7 @@ use App\Models\Adviser;
 use App\Models\AuditLog;
 use App\Models\EmergencyAlert;
 use App\Models\HelpSeeker;
+use App\Models\IncidentReport;
 use App\Models\Notification;
 use App\Models\PsychologyProfessional;
 use App\Models\Referral;
@@ -110,6 +111,28 @@ class EmergencyEscalationService
 
         $session->queue?->update(['request_status'=>'cancelled','cancelled_at'=>now()]);
         SupportAudit::record('emergency_branch_activated',$session);
+
+        $incident = IncidentReport::lockForUpdate()
+            ->where('session_id', $session->id)
+            ->where('incident_category', 'classification_emergency')
+            ->whereIn('status', ['open', 'under_review', 'escalated'])
+            ->oldest('id')
+            ->first();
+
+        if (! $incident) {
+            IncidentReport::create([
+                'session_id' => $session->id,
+                'user_account_id' => $seeker->user_account_id,
+                'incident_category' => 'classification_emergency',
+                'description' => $context['reason'] ?? 'Emergency risk classification triggered immediate escalation.',
+                'immediate_action' => 'Immediate safety evaluation; urgent human support arranged.',
+                'risk_level' => Referral::PRIORITY_EMERGENCY,
+                'status' => 'open',
+                'reported_at' => now(),
+                'is_confidential' => true,
+            ]);
+            SupportAudit::record('classification_emergency_incident_created', $session, ['incident_category' => 'classification_emergency']);
+        }
         // Escalation flags the case; only a separately authorized responder may open identity.
     }
 

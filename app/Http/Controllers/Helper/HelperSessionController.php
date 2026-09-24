@@ -487,8 +487,11 @@ class HelperSessionController extends Controller
 
     public function clarifyReferral(Request $request, int $id)
     {
-        $data = $request->validate(['response'=>'required|string|min:10|max:2000']);
-        app(\App\Services\ReferralManagementService::class)->clarify(\App\Models\Referral::findOrFail($id), $data['response'], true);
+        $data = $request->validate([
+            'response' => 'required|string|min:10|max:2000',
+            'referral_reason' => 'nullable|string|max:1000',
+        ]);
+        app(\App\Services\ReferralManagementService::class)->clarify(\App\Models\Referral::findOrFail($id), $data['response'], true, $data['referral_reason'] ?? null);
         return back()->with('success','Your clarification was sent to the Adviser.');
     }
 

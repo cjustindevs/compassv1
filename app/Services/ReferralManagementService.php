@@ -22,7 +22,7 @@ class ReferralManagementService
 {
     use BroadcastsSafely;
     private const OPEN_STATUSES = [
-        'status' => [Referral::STATUS_PENDING_ADVISER, Referral::STATUS_PENDING_CONSENT, Referral::STATUS_CONSENT_REQUESTED, Referral::STATUS_PENDING_PROFESSIONAL, Referral::STATUS_ACCEPTED, Referral::STATUS_IN_PROGRESS],
+        'status' => [Referral::STATUS_PENDING_ADVISER, Referral::STATUS_PENDING_CONSENT, Referral::STATUS_CONSENT_REQUESTED, Referral::STATUS_PENDING_PROFESSIONAL, Referral::STATUS_NO_PROFESSIONAL_AVAILABLE, Referral::STATUS_ACCEPTED, Referral::STATUS_IN_PROGRESS],
     ];
 
     public function requestConsent(Session $session, array $summary): Referral
@@ -104,6 +104,7 @@ class ReferralManagementService
                     'closed_date' => now(),
                 ])->save();
                 $this->notifyHelper($referral, 'Referral consent declined', 'The seeker declined the referral consent.');
+                $this->notifySeekerReferralDeclined($referral);
                 if ($this->exceedsPeerSupportScope($referral)) {
                     $this->initiateSafetyProtocol($referral);
                 }
@@ -174,9 +175,9 @@ class ReferralManagementService
         return $referral;
     }
 
-    public function clarify(Referral $referral, string $text, bool $response = false): void
+    public function clarify(Referral $referral, string $text, bool $response = false, ?string $revisedReason = null): void
     {
-        \Illuminate\Support\Facades\DB::transaction(function () use ($referral, $text, $response) {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($referral, $text, $response, $revisedReason) {
             $referral = Referral::lockForUpdate()->findOrFail($referral->id);
             $actor = Auth::user();
             if ($response) {
@@ -187,6 +188,11 @@ class ReferralManagementService
             if ($response) {
                 abort_unless($referral->clarification_requested_at && !$referral->clarification_received_at, 409);
                 $referral->forceFill(['clarification_response'=>$text, 'clarification_received_at'=>now()])->save();
+                if ($revisedReason !== null) {
+                    abort_unless(trim($revisedReason) !== '' && mb_strlen($revisedReason) <= 1000, 422, 'A revised referral reason cannot be empty.');
+                    $referral->forceFill(['referral_reason'=>trim($revisedReason)])->save();
+                    app(SupervisionVersions::class)->record($referral, 'Helper revised the referral recommendation');
+                }
             } else {
                 abort_if($referral->clarification_requested_at && !$referral->clarification_received_at, 409);
                 $referral->forceFill(['clarification_question'=>$text, 'clarification_requested_at'=>now(), 'clarification_received_at'=>null, 'clarification_response'=>null])->save();
@@ -238,6 +244,7 @@ class ReferralManagementService
 
             if ($consentAlreadyGiven) {
                 $this->forwardToProfessional($referral);
+                $this->notifySeekerProvideIdentity($referral);
             } else {
                 $this->notifySeekerPostApprovalConsent($referral);
             }
@@ -282,6 +289,7 @@ class ReferralManagementService
             ])->save();
 
             $this->forwardToProfessional($referral);
+            $this->notifySeekerProvideIdentity($referral);
         } else {
             $referral->forceFill([
                 'help_seeker_consent' => false,
@@ -291,6 +299,7 @@ class ReferralManagementService
                 'closed_date' => now(),
             ])->save();
 
+            $this->notifySeekerReferralDeclined($referral);
             if ($this->exceedsPeerSupportScope($referral)) {
                 $this->initiateSafetyProtocol($referral);
             }
@@ -417,7 +426,7 @@ class ReferralManagementService
     private function checkExistingReferrals(HelpSeeker $seeker): ?Referral
     {
         return Referral::whereHas('session', fn ($query) => $query->where('seeker_id', $seeker->id))
-            ->whereIn('status', [Referral::STATUS_PENDING_ADVISER, Referral::STATUS_PENDING_CONSENT, Referral::STATUS_CONSENT_REQUESTED, Referral::STATUS_PENDING_PROFESSIONAL, Referral::STATUS_ACCEPTED, Referral::STATUS_IN_PROGRESS])
+            ->whereIn('status', [Referral::STATUS_PENDING_ADVISER, Referral::STATUS_PENDING_CONSENT, Referral::STATUS_CONSENT_REQUESTED, Referral::STATUS_PENDING_PROFESSIONAL, Referral::STATUS_NO_PROFESSIONAL_AVAILABLE, Referral::STATUS_ACCEPTED, Referral::STATUS_IN_PROGRESS])
             ->first();
     }
 
@@ -455,7 +464,22 @@ class ReferralManagementService
     private function notifySeekerPostApprovalConsent(Referral $referral): void
     {
         $seekerUserId = $referral->session?->seeker?->user_account_id;
-        $this->notifyUser($seekerUserId, 'Referral consent requested', 'An adviser approved a referral recommendation. Please review consent.', '/referrals/' . $referral->id . '/identity', 'referral');
+        $this->notifyUser($seekerUserId, 'Referral consent requested', 'An adviser approved a referral recommendation. Please review your consent decision.', '/seeker/referrals', 'referral');
+    }
+
+    private function notifySeekerProvideIdentity(Referral $referral): void
+    {
+        $seekerUserId = $referral->session?->seeker?->user_account_id;
+        $this->notifyUser($seekerUserId, 'Referral approved — provide contact details',
+            'Your adviser approved the referral and you have consented. Provide your contact details so the assigned professional can coordinate when needed.',
+            '/referrals/' . $referral->id . '/identity', 'referral');
+    }
+
+    private function notifySeekerReferralDeclined(Referral $referral): void
+    {
+        $this->notifyUser($referral->session?->seeker?->user_account_id, 'Referral declined',
+            'Your decision is respected. You are not alone — rest, self-care tools, and crisis hotlines are always available to you.',
+            '/emergency', 'referral');
     }
 
     private function notifySeekerConsentRequested(Referral $referral): void

@@ -257,7 +257,7 @@
             <div class="stat-card">
                 <span class="stat-label">Queue</span>
                 <div class="stat-number queue" id="statQueue">{{ $stats['queue_waiting'] }}</div>
-                <span class="text-xs text-gray-400">Avg wait: <span id="avgWait">{{ $avgWait }}</span></span>
+                <span class="text-xs text-gray-400">{{ $stats['queue_assigned'] }} assigned · Avg wait: <span id="avgWait">{{ $avgWait }}</span></span>
             </div>
             <div class="stat-card">
                 <span class="stat-label">Emergency</span>

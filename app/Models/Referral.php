@@ -162,6 +162,7 @@ class Referral extends Model
             self::STATUS_PENDING_CONSENT,
             self::STATUS_CONSENT_REQUESTED,
             self::STATUS_PENDING_PROFESSIONAL,
+            self::STATUS_NO_PROFESSIONAL_AVAILABLE,
             self::STATUS_ACCEPTED,
             self::STATUS_IN_PROGRESS,
         ], true);

@@ -482,4 +482,215 @@ class ConsentReferralEmergencyTest extends TestCase
         $this->assertDatabaseHas('emergency_alerts', ['session_id' => $session->id, 'referral_id' => $referral->id]);
         $this->assertDatabaseHas('audit_logs', ['action' => 'referral_consent_declined_safety_protocol']);
     }
+
+    private function pendingAdviserReferral(Session $session, Helper $helper, bool $consent = false): Referral
+    {
+        return Referral::create([
+            'session_id' => $session->id,
+            'helper_id' => $helper->id,
+            'adviser_id' => $helper->adviser->id,
+            'priority_level' => Referral::PRIORITY_HIGH,
+            'help_seeker_consent' => $consent,
+            'consent_obtained_at' => $consent ? now() : null,
+            'identity_disclosed' => false,
+            'referral_reason' => 'Needs professional support.',
+            'referral_date' => now(),
+            'status' => Referral::STATUS_PENDING_ADVISER,
+        ]);
+    }
+
+    public function test_post_approval_consent_notification_leads_to_the_seeker_decision_page(): void
+    {
+        Event::fake();
+
+        [, $helper] = $this->readyHelper();
+        $seekerUser = $this->seekerUser();
+        $session = $this->activeSession($helper, $seekerUser);
+        $referral = $this->pendingAdviserReferral($session, $helper);
+
+        $this->actingAs($helper->adviser->user)->postJson(route('referrals.review', $referral), ['approved' => true, 'notes' => 'Approved after review.'])->assertOk();
+        $referral->refresh();
+        $this->assertSame(Referral::STATUS_PENDING_CONSENT, $referral->status);
+
+        $seekerNotification = Notification::where('user_account_id', $seekerUser->id)->where('title', 'Referral consent requested')->latest('id')->first();
+        $this->assertNotNull($seekerNotification);
+        $this->assertStringContainsString('/seeker/referrals', $seekerNotification->link, 'Post-approval consent must link to the decision page, not an inaccessible identity URL.');
+    }
+
+    public function test_consent_accept_prompts_seeker_to_provide_identity_for_coordination(): void
+    {
+        Event::fake();
+
+        [, $helper] = $this->readyHelper();
+        $this->professional();
+        $seekerUser = $this->seekerUser();
+        $session = $this->activeSession($helper, $seekerUser);
+
+        $this->post(route('helper.session.referral.consent', ['id' => $session->id]), ['summary' => 'Summary.']);
+        $referral = Referral::where('session_id', $session->id)->firstOrFail();
+        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $referral), ['accepted' => true])->assertOk();
+        $this->actingAs($helper->user)->post(route('helper.session.referral', ['id' => $session->id]), [
+            'referral_id' => $referral->id,
+            'referral_reason' => 'Needs professional support.',
+            'priority_level' => 'high',
+        ])->assertStatus(302);
+
+        $referral->refresh();
+        $this->actingAs($helper->adviser->user)->postJson(route('referrals.review', $referral), ['approved' => true, 'notes' => 'Approved.'])->assertOk();
+
+        $referral->refresh();
+        $this->assertSame(Referral::STATUS_PENDING_PROFESSIONAL, $referral->status);
+        $this->assertTrue($referral->canProvideIdentity());
+        $this->assertDatabaseHas('notifications', ['user_account_id' => $seekerUser->id, 'title' => 'Referral approved — provide contact details']);
+
+        $this->actingAs($seekerUser)->get(route('identity.form', $referral))->assertOk();
+        $this->get(route('seeker.referrals'))->assertOk()->assertSee('Provide contact details for coordination');
+    }
+
+    public function test_adviser_approve_then_seeker_consent_prompts_identity(): void
+    {
+        Event::fake();
+
+        [, $helper] = $this->readyHelper();
+        $this->professional();
+        $seekerUser = $this->seekerUser();
+        $session = $this->activeSession($helper, $seekerUser);
+        $referral = $this->pendingAdviserReferral($session, $helper);
+
+        $this->actingAs($helper->adviser->user)->postJson(route('referrals.review', $referral), ['approved' => true, 'notes' => 'Approved after review.'])->assertOk();
+        $referral->refresh();
+        $this->assertSame(Referral::STATUS_PENDING_CONSENT, $referral->status);
+
+        $this->actingAs($seekerUser)->post(route('referrals.consent', $referral), ['consent_given' => 1])->assertRedirect(route('seeker.referrals'));
+        $referral->refresh();
+        $this->assertSame(Referral::STATUS_PENDING_PROFESSIONAL, $referral->status);
+        $this->assertTrue($referral->canProvideIdentity());
+        $this->assertDatabaseHas('notifications', ['user_account_id' => $seekerUser->id, 'title' => 'Referral approved — provide contact details']);
+
+        $this->actingAs($seekerUser)->get(route('identity.form', $referral))->assertOk();
+    }
+
+    public function test_seeker_consent_decline_after_approval_redirects_to_self_help(): void
+    {
+        Event::fake();
+
+        [, $helper] = $this->readyHelper();
+        $this->professional();
+        $seekerUser = $this->seekerUser();
+        $session = $this->activeSession($helper, $seekerUser);
+        $referral = $this->pendingAdviserReferral($session, $helper);
+
+        $this->actingAs($helper->adviser->user)->postJson(route('referrals.review', $referral), ['approved' => true, 'notes' => 'Approved.'])->assertOk();
+        $referral->refresh();
+
+        $this->actingAs($seekerUser)->post(route('referrals.consent', $referral), ['consent_given' => 0])->assertRedirect(route('seeker.referrals'));
+        $referral->refresh();
+        $this->assertSame(Referral::STATUS_CLOSED, $referral->status);
+        $this->assertDatabaseHas('notifications', ['user_account_id' => $seekerUser->id, 'title' => 'Referral declined', 'link' => '/emergency']);
+    }
+
+    public function test_adviser_request_revision_and_helper_revises_recommendation(): void
+    {
+        Event::fake();
+
+        [$helperUser, $helper] = $this->readyHelper();
+        $seekerUser = $this->seekerUser();
+        $session = $this->activeSession($helper, $seekerUser);
+        $referral = $this->pendingAdviserReferral($session, $helper);
+        $adviser = $helper->adviser;
+
+        $this->actingAs($adviser->user)->post(route('adviser.referral.request-info', $referral->id), [
+            'info_request' => 'Please clarify the recommended professional support and revise the scope.',
+        ])->assertSessionHasNoErrors();
+
+        $referral->refresh();
+        $this->assertNotNull($referral->clarification_requested_at);
+        $this->assertNull($referral->clarification_received_at);
+
+        $this->actingAs($adviser->user)->postJson(route('referrals.review', $referral), ['approved' => true, 'notes' => 'Premature.'])->assertStatus(409);
+
+        $this->actingAs($helperUser)->post(route('helper.referral.clarify', $referral->id), [
+            'response' => 'The recommendation stays appropriate with a clearer professional scope.',
+            'referral_reason' => 'Revised recommendation with a clearer professional scope.',
+        ])->assertSessionHasNoErrors();
+
+        $referral->refresh();
+        $this->assertNotNull($referral->clarification_received_at);
+        $this->assertSame('Revised recommendation with a clearer professional scope.', $referral->referral_reason);
+        $this->assertDatabaseHas('supervision_record_versions', ['record_type' => 'referrals', 'reason' => 'Helper revised the referral recommendation']);
+
+        $this->actingAs($adviser->user)->postJson(route('referrals.review', $referral), ['approved' => true, 'notes' => 'Approved after revision.'])->assertOk();
+        $this->assertSame(Referral::STATUS_PENDING_CONSENT, $referral->fresh()->status);
+    }
+
+    public function test_classification_emergency_creates_open_incident_for_moderator_board(): void
+    {
+        $user = User::factory()->create(['role' => 'seeker', 'is_active' => true]);
+        HelpSeeker::create(['user_account_id' => $user->id, 'generated_alias' => 'EmSeeker' . $user->id, 'age' => 20, 'gender' => 'male']);
+        $this->consentFixture($user);
+        $this->actingAs($user);
+
+        $this->post(route('request.screening.process'), array_replace(array_fill_keys(\App\Services\CompactScreening::FIELDS, '0'), ['current_suicide_plan' => '1', 'concern_id' => \App\Models\ConcernCategory::firstOrCreate(['concern_name' => 'Health'])->id]))
+            ->assertRedirect(route('request.matching'));
+
+        $session = Session::where('seeker_id', $user->helpSeeker->id)->firstOrFail();
+        $this->assertSame('emergency_escalated', $session->workflow_state);
+        $this->assertDatabaseCount('emergency_alerts', 1);
+        $this->assertDatabaseHas('incident_reports', [
+            'session_id' => $session->id,
+            'incident_category' => 'classification_emergency',
+            'status' => 'open',
+            'risk_level' => 'emergency',
+        ]);
+
+        $this->assertSame(1, IncidentReport::where('session_id', $session->id)->where('incident_category', 'classification_emergency')->whereIn('status', ['open', 'under_review', 'escalated'])->count());
+    }
+
+    public function test_identity_can_be_stored_while_a_professional_assignment_is_pending(): void
+    {
+        Event::fake();
+
+        // Intentionally no professional exists so assignment pauses.
+        [, $helper] = $this->readyHelper();
+        $seekerUser = $this->seekerUser();
+        $session = $this->activeSession($helper, $seekerUser);
+        $referral = $this->pendingAdviserReferral($session, $helper, true);
+
+        $this->actingAs($helper->adviser->user)->postJson(route('referrals.review', $referral), ['approved' => true, 'notes' => 'Approved.'])->assertOk();
+        $referral->refresh();
+        $this->assertSame(Referral::STATUS_NO_PROFESSIONAL_AVAILABLE, $referral->status);
+        $this->assertTrue($referral->canProvideIdentity(), 'Identity must be collectible while awaiting a professional assignment.');
+
+        $this->actingAs($seekerUser)->get(route('identity.form', $referral))->assertOk();
+        $this->get(route('seeker.referrals'))->assertOk()->assertSee('Provide contact details for coordination')->assertDontSee('no longer an open case');
+    }
+
+    public function test_helper_no_response_escalates_once_and_a_message_clears_it(): void
+    {
+        Event::fake();
+
+        [$helperUser, $helper] = $this->readyHelper();
+        $seekerUser = $this->seekerUser();
+        $session = $this->activeSession($helper, $seekerUser);
+        Moderator::create(['user_account_id' => User::factory()->create(['role' => 'moderator', 'is_active' => true])->id, 'first_name' => 'M', 'last_name' => 'Oder', 'email' => 'mod@example.com']);
+
+        $session->forceFill([
+            'start_time' => now()->subMinutes(30),
+            'last_helper_message_at' => now()->subMinutes(6),
+        ])->save();
+
+        $this->artisan('sessions:check-no-response')->assertSuccessful();
+        $session->refresh();
+        $this->assertNotNull($session->no_response_escalated_at);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'helper_no_response_escalated', 'target_id' => $session->id]);
+        $this->assertGreaterThanOrEqual(1, Notification::where('user_account_id', $helper->adviser->user_account_id)->where('title', 'Helper not responding')->count());
+
+        $this->artisan('sessions:check-no-response')->assertSuccessful();
+        $this->assertSame(1, \Illuminate\Support\Facades\DB::table('audit_logs')->where('action', 'helper_no_response_escalated')->count(), 'Escalation must be idempotent.');
+
+        $this->actingAs($helperUser)->postJson(route('chat.send'), ['session_id' => $session->id, 'message' => 'I am here now.'])->assertOk();
+        $session->refresh();
+        $this->assertNotNull($session->last_helper_message_at);
+        $this->assertNull($session->no_response_escalated_at, 'A helper message must clear the last escalation.');
+    }
 }

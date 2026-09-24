@@ -48,6 +48,8 @@ class Session extends Model
         'cancelled_at',
         'expired_at',
         'warning_sent_at',
+        'last_helper_message_at',
+        'no_response_escalated_at',
         'peer_support_approved_at',
         'review_adviser_id',
 
@@ -102,6 +104,8 @@ class Session extends Model
         'start_time' => 'datetime',
         'end_time' => 'datetime',
         'created_date' => 'datetime',
+        'last_helper_message_at' => 'datetime',
+        'no_response_escalated_at' => 'datetime',
         'voice_recording_consent' => 'boolean',
         'voice_consent_obtained' => 'boolean',
         'escalation_required' => 'boolean',
