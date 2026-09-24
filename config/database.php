@@ -42,7 +42,7 @@ return [
             'charset' => 'utf8',
             'prefix' => '',
             'search_path' => 'public',
-            'sslmode' => env('DB_IDENTITY_SSLMODE', 'prefer'),
+            'sslmode' => env('DB_IDENTITY_SSLMODE', env('DB_SSLMODE', 'prefer')),
             'foreign_key_constraints' => true,
         ],
 
