@@ -315,7 +315,7 @@
             </div>
 
             <!-- Mobile menu -->
-            <div id="mobileMenu" class="hidden lg:hidden pb-4 pt-2 border-t border-gray-200/50">
+            <div id="mobileMenu" class="hidden lg:hidden pb-4 pt-2 border-t border-gray-200/50 bg-white/95 backdrop-blur-lg rounded-b-2xl shadow-lg">
                 <div class="flex flex-col gap-2">
                     <a href="#home" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors px-3 py-2 rounded-lg hover:bg-green-50">Home</a>
                     <a href="#features" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors px-3 py-2 rounded-lg hover:bg-green-50">Features</a>

@@ -43,7 +43,9 @@
         html.sidebar-collapsed-preload .sidebar .logout-text { display: none; }
         @media (max-width: 768px) {
             .sidebar { width: 280px; transform: translateX(-100%); }
-            .sidebar.open { transform: translateX(0); }
+            .sidebar.open,
+            .sidebar.open.closed { transform: translateX(0); }
+            .sidebar.closed { transform: translateX(-100%); }
             .main-content { margin-left: 0 !important; }
         }
     </style>

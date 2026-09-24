@@ -66,7 +66,12 @@ class SidebarController {
 
     bind() {
         if (this.toggle) {
-            this.toggle.addEventListener('click', () => this.toggleCollapse());
+            this.toggle.addEventListener('click', () => {
+                // The sidebar chevron doubles as the drawer opener on mobile,
+                // so the drawer always has a working control on every page.
+                if (this.isMobile()) this.toggleMobile();
+                else this.toggleCollapse();
+            });
         }
 
         // In collapsed desktop state the arrow is hidden, so the logo icon

@@ -42,7 +42,21 @@ class OTPController extends Controller
         $request->session()->put('registration_otp', [
             'hash' => Hash::make($otp), 'expires' => now()->addMinutes(10)->timestamp, 'attempts' => 0,
         ]);
-        return response()->json(['message' => 'Verification code sent. Check your inbox and spam folder. It expires in 10 minutes.', 'retry_after' => 60]);
+
+        $message = 'Verification code sent. Check your inbox and spam folder. It expires in 10 minutes.';
+        $payload = ['message' => $message, 'retry_after' => 60];
+
+        // Demo convenience: when the app is configured with the log mailer
+        // (no real SMTP), no email is delivered anywhere. Surface the code on
+        // screen so the flow remains usable. Never exposed when real SMTP is
+        // configured, because the code is genuinely emailed in that case.
+        if (config('mail.default') === 'log') {
+            $payload['message'] = "Demo mode — your verification code is: {$otp}. It expires in 10 minutes.";
+            $payload['debug_otp'] = $otp;
+            \Illuminate\Support\Facades\Log::info("Registration OTP (log mailer) for {$email}: {$otp}");
+        }
+
+        return response()->json($payload);
     }
 
     public function verifyOTP(Request $request)
