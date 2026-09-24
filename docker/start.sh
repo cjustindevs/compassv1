@@ -76,17 +76,18 @@ migrate_with_retry "identity vault" migrate --database=identity_vault --path=dat
 # --- Optional demo seeding (guarded: requested AND demo accounts missing) -----
 # A freshly provisioned database has NO accounts, so the documented demo logins
 # (admin@example.com / password, seeker|helper|adviser|professional@compass.edu.ph
-# / password123, etc.) do not exist until seeded. Setting RUN_SEED_DEMO=true seeds
-# them once; once the demo admin/seeker exist the seeder is skipped on later
-# boots, so it never duplicates or wipes data.
+# / password123, plus named @compass.local accounts such as rina@compass.local)
+# do not exist until seeded. Setting RUN_SEED_DEMO=true seeds them once; once the
+# demo admin, base seeker AND a @compass.local account exist the seeder is
+# skipped on later boots, so it never duplicates or wipes data.
 seed_demo_if_empty() {
     if [ "${RUN_SEED_DEMO:-false}" != "true" ]; then
         return 0
     fi
     echo "[start] RUN_SEED_DEMO=true -- checking whether demo accounts exist."
-    demo_count="$(php artisan tinker --execute="echo App\\Models\\User::whereIn('email', ['admin@example.com', 'seeker@compass.edu.ph'])->count();" 2>/dev/null | tr -cd '0-9' | tail -c 8)"
-    if [ -z "${demo_count}" ] || [ "${demo_count}" -lt 2 ]; then
-        echo "[start] demo accounts missing (${demo_count:-0} of 2) -- seeding demo data."
+    demo_count="$(php artisan tinker --execute="echo App\\Models\\User::whereIn('email', ['admin@example.com', 'seeker@compass.edu.ph', 'rina@compass.local'])->count();" 2>/dev/null | tr -cd '0-9' | tail -c 8)"
+    if [ -z "${demo_count}" ] || [ "${demo_count}" -lt 3 ]; then
+        echo "[start] some demo accounts missing (${demo_count:-0} of 3) -- seeding demo data."
         php artisan db:seed --force --no-interaction \
             && echo "[start] Demo data seeded." \
             || echo "[start] ERROR: demo seeding failed -- inspect logs above."

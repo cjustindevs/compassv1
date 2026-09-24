@@ -53,6 +53,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             AdviserSeeder::class,
+            DemoAccountsSeeder::class,
             ProfessionalSeeder::class,
             HelperModuleSeeder::class,
             HelperSeeder::class,
