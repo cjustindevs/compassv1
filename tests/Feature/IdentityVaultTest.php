@@ -157,6 +157,84 @@ class IdentityVaultTest extends TestCase
         $this->assertFalse((bool) $row->is_active);
     }
 
+    public function test_release_without_a_stored_identity_fails_cleanly(): void
+    {
+        $referral = $this->referral();
+        $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral))
+            ->assertStatus(422)
+            ->assertSee('has not stored contact details');
+        $this->store($referral);
+        $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral))->assertRedirect();
+    }
+
+    public function test_identity_form_is_gated_on_approval_consent_and_open_status(): void
+    {
+        $referral = $this->referral();
+        $seeker = $referral->session->seeker->user;
+        $this->actingAs($seeker)->get(route('identity.form', $referral))->assertOk();
+        $this->actingAs(User::factory()->create(['role' => 'seeker']))->get(route('identity.form', $referral))->assertForbidden();
+
+        $referral->update(['status' => Referral::STATUS_COMPLETED, 'completed_at' => now()]);
+        $this->actingAs($seeker)->get(route('identity.form', $referral))->assertStatus(409);
+
+        $referral->update(['status' => Referral::STATUS_PENDING_PROFESSIONAL, 'completed_at' => null, 'help_seeker_consent' => false]);
+        $this->actingAs($seeker)->get(route('identity.form', $referral))->assertStatus(409);
+    }
+
+    public function test_seeker_referral_page_hides_identity_actions_until_the_referral_is_approvable(): void
+    {
+        $referral = $this->referral();
+        $seeker = $referral->session->seeker->user;
+
+        $referral->update(['status' => Referral::STATUS_CONSENT_REQUESTED, 'approved_at' => null]);
+        $this->actingAs($seeker)->get(route('seeker.referrals'))
+            ->assertOk()
+            ->assertDontSee('Provide contact details for coordination')
+            ->assertDontSee('Withdraw referral consent');
+
+        $referral->update(['status' => Referral::STATUS_COMPLETED, 'approved_at' => now(), 'completed_at' => now()]);
+        $this->actingAs($seeker)->get(route('seeker.referrals'))
+            ->assertOk()
+            ->assertSee('no longer an open case')
+            ->assertDontSee('Provide contact details for coordination')
+            ->assertDontSee('Withdraw referral consent');
+
+        $this->actingAs($seeker)->get(route('identity.form', $referral))->assertStatus(409);
+    }
+
+    public function test_adviser_review_notes_are_required_and_rendered_on_the_detail_page(): void
+    {
+        $referral = $this->referral();
+        $referral->update(['status' => Referral::STATUS_PENDING_ADVISER, 'approved_at' => null, 'professional_id' => null, 'help_seeker_consent' => false]);
+        $adviser = $referral->adviser->user;
+
+        $this->actingAs($adviser)->get(route('adviser.referral.show', $referral->id))
+            ->assertOk()->assertSee('Review Notes')->assertSee('Record a short review note');
+
+        $this->actingAs($adviser)->post(route('adviser.referral.approve', $referral->id))->assertSessionHasErrors('review_notes');
+        $this->post(route('adviser.referral.approve', $referral->id), ['review_notes' => 'Supporting evidence is consistent and consent is pending.'])
+            ->assertRedirect()->assertSessionHas('success');
+        $this->assertSame(Referral::STATUS_PENDING_CONSENT, $referral->fresh()->status);
+        $this->assertSame('Supporting evidence is consistent and consent is pending.', $referral->fresh()->review_notes);
+    }
+
+    public function test_professional_identity_link_only_on_active_referrals(): void
+    {
+        $referral = $this->referral();
+        $this->store($referral);
+        $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral))->assertRedirect();
+        $professional = $referral->professional->user;
+
+        $referral->update(['status' => Referral::STATUS_COMPLETED, 'completed_at' => now()]);
+        $this->actingAs($professional)->get(route('professional.referral.show', $referral->id))
+            ->assertOk()->assertDontSee('View released identity');
+        $this->actingAs($professional)->get(route('identity.show', $referral))->assertForbidden();
+
+        $referral->update(['status' => Referral::STATUS_IN_PROGRESS, 'completed_at' => null]);
+        $this->actingAs($professional)->get(route('professional.referral.show', $referral->id))
+            ->assertOk()->assertSee('View released identity');
+    }
+
     public function test_emergency_requires_designated_responder_and_active_life_threat(): void
     {
         $referral = $this->referral(); $this->store($referral);

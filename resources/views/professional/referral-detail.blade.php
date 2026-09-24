@@ -215,7 +215,7 @@
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <main class="main-content">
-        @if ($referral->identity_disclosed && $referral->help_seeker_consent)
+        @if ($referral->identity_disclosed && $referral->help_seeker_consent && in_array($referral->status, \App\Models\Referral::ACTIVE_STATUSES, true))
             <a href="{{ route('identity.show', $referral) }}" class="inline-block bg-green-700 text-white p-3 rounded mb-4">View released identity</a>
         @endif
         @if ($referral->session?->risk_level === 'emergency' && in_array(auth()->id(), config('identity_vault.emergency_responder_ids'), true))

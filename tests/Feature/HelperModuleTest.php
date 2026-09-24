@@ -89,6 +89,37 @@ class HelperModuleTest extends TestCase
         $response->assertSee('Total Sessions');
     }
 
+    public function test_helper_sees_assigned_adviser_across_the_module(): void
+    {
+        $adviser = $this->helperUser->helper->adviser;
+        $this->assertNotNull($adviser);
+
+        $this->actingAs($this->helperUser)
+            ->get(route('helper.dashboard'))
+            ->assertOk()
+            ->assertSee('Your Adviser')
+            ->assertSee($adviser->full_name);
+
+        $this->actingAs($this->helperUser)
+            ->get(route('helper.profile'))
+            ->assertOk()
+            ->assertSee($adviser->full_name);
+
+        $this->actingAs($this->helperUser)
+            ->get(route('helper.calendar'))
+            ->assertOk()
+            ->assertSee($adviser->full_name);
+    }
+
+    public function test_sidebar_shows_supervised_by_assigning_adviser(): void
+    {
+        $view = $this->actingAs($this->helperUser)
+            ->view('layouts.partials.helper-sidebar');
+
+        $view->assertSee('Supervised by');
+        $view->assertSee($this->helperUser->helper->adviser->full_name);
+    }
+
     public function test_non_helper_is_blocked_from_helper_pages(): void
     {
         $seeker = User::where('role', 'seeker')->firstOrFail();
@@ -859,7 +890,7 @@ class HelperModuleTest extends TestCase
                 'actions_taken' => 'Used validation and box breathing.',
                 'risk_level_assessed' => 'moderate',
                 'personal_reflection' => 'Went well.',
-                'skills_applied' => ['active_listening', 'validation'],
+                'skills_applied' => ['active_listening', 'summarizing'],
                 'session_result'=>'stable',
             ])
             ->assertRedirect();

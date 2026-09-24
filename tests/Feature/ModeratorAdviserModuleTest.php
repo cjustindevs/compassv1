@@ -262,6 +262,48 @@ class ModeratorAdviserModuleTest extends TestCase
             ->assertSessionHas('error');
     }
 
+    public function test_moderator_can_create_date_only_duty_schedule_without_times(): void
+    {
+        [$moderatorUser] = $this->moderatorUser();
+        $helper = $this->helper();
+        $date = now('Asia/Manila')->toDateString();
+
+        $this->actingAs($moderatorUser)->post(route('moderator.schedules.store'), [
+            'helper_id' => $helper->id,
+            'event_date' => $date,
+            'description' => 'All-day duty date',
+        ])->assertRedirect(route('moderator.schedules', ['date' => $date]));
+
+        $this->assertDatabaseHas('helper_schedules', ['helper_id' => $helper->id, 'shift_start' => null, 'shift_end' => null]);
+        $this->assertSame(1, \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
+        $this->assertDatabaseHas('calendar_events', ['title' => 'Duty: ' . $helper->full_name, 'event_type' => CalendarEvent::TYPE_MEETING, 'start_time' => null, 'end_time' => null]);
+
+        // A date-only schedule counts as whole-day duty for eligibility.
+        $this->assertTrue($helper->fresh()->schedules()->whereDate('date', $date)->first()->isOnDuty());
+
+        // A second schedule for the same helper/date is still rejected.
+        $this->actingAs($moderatorUser)->from(route('moderator.schedules'))->post(route('moderator.schedules.store'), [
+            'helper_id' => $helper->id,
+            'event_date' => $date,
+        ])->assertRedirect(route('moderator.schedules'))->assertSessionHas('error');
+    }
+
+    public function test_adviser_can_save_date_only_schedule_and_sees_all_day(): void
+    {
+        [$user, $adviser] = $this->adviserUser('dateonly@example.com');
+        $helper = $this->helper($adviser);
+        $date = now('Asia/Manila')->addDays(2)->toDateString();
+
+        $this->actingAs($user)->from(route('adviser.schedule'))->post(route('adviser.schedule.update'), [
+            'helper_id' => $helper->id,
+            'date' => $date,
+        ])->assertRedirect(route('adviser.schedule', ['date' => $date]))->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('helper_schedules', ['helper_id' => $helper->id, 'shift_start' => null, 'shift_end' => null]);
+        $this->assertSame(1, \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
+        $this->get(route('adviser.schedule', ['date' => $date]))->assertOk()->assertSee('All day');
+    }
+
     public function test_adviser_session_supervision_loads_report_and_blocks_other_advisers(): void
     {
         [$adviserUser, $adviser] = $this->adviserUser('one@example.com');
@@ -355,6 +397,23 @@ class ModeratorAdviserModuleTest extends TestCase
         $this->assertDatabaseHas('helpers', ['id' => $helper->id, 'adviser_id' => null]);
         $this->assertNotNull(\Illuminate\Support\Facades\DB::table('adviser_helper_assignments')->where('helper_id', $helper->id)->where('adviser_id', $adviser->id)->value('ended_at'));
         $this->assertDatabaseHas('audit_logs', ['action' => 'supervision_relationship_changed', 'target_id' => $helper->id]);
+    }
+
+    public function test_moderator_unassign_records_reason_and_actor_on_the_closed_history(): void
+    {
+        [$user] = $this->moderatorUser();
+        [, $adviser] = $this->adviserUser('unassign-audit@example.com');
+        $helper = $this->helper($adviser);
+
+        $this->actingAs($user)->from(route('moderator.manage'))
+            ->post(route('moderator.manage.unassign'), ['helper_id' => $helper->id])
+            ->assertRedirect(route('moderator.manage'))->assertSessionHas('success');
+
+        $closed = \Illuminate\Support\Facades\DB::table('adviser_helper_assignments')
+            ->where('helper_id', $helper->id)->where('adviser_id', $adviser->id)->first();
+        $this->assertNotNull($closed->ended_at);
+        $this->assertSame($user->id, $closed->actor_id);
+        $this->assertStringContainsString('Supervision ended by Moderator', (string) $closed->reason);
     }
 
     public function test_moderator_cannot_unassign_a_helper_with_open_referrals_or_cases(): void

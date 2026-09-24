@@ -166,6 +166,20 @@
                 </div>
             @endif
 
+            <!-- Your Adviser -->
+            @if($helper && $helper->adviser)
+                <div class="card mb-6">
+                    <div class="card-header"><h3>Your Adviser</h3></div>
+                    <div class="flex items-center gap-3">
+                        <div class="avatar-lg" style="width:44px;height:44px;font-size:16px;">{{ Illuminate\Support\Str::upper(Illuminate\Support\Str::substr(($helper->adviser->first_name ?? 'A'), 0, 1)) }}</div>
+                        <div>
+                            <div class="font-semibold text-gray-800">{{ $helper->adviser->full_name }}</div>
+                            <div class="text-sm text-gray-500"><a class="link" href="mailto:{{ $helper->adviser->email ?? $helper->adviser->user?->email }}">{{ $helper->adviser->email ?? $helper->adviser->user?->email }}</a></div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <!-- Recent Activity -->
             <div class="card">
                 <div class="card-header">

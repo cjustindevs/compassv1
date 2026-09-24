@@ -380,6 +380,12 @@
             <form method="POST" action="{{ route('helper.session.referral', ['id' => $session->id]) }}" id="referralSubmitForm" style="display:none;">
                 @csrf
                 <input type="hidden" name="referral_id" id="referralId">
+                <label class="form-label" style="margin-top:2px;">Indicators (select all that apply)</label>
+                <div class="referral-indicators" style="display:grid;gap:6px;font-size:13px;margin-bottom:12px;">
+                    @foreach(['Concern exceeds the scope of peer support','Persistent or worsening emotional distress','Significant difficulty in daily functioning','Possible self-harm or safety concern','Possible harm to another person','Requires psychological assessment','Requires professional counseling or intervention','Help seeker requested professional assistance'] as $indicator)
+                        <label style="display:flex;gap:8px;align-items:flex-start;"><input type="checkbox" class="referral-indicator" value="{{ $indicator }}"> <span>{{ $indicator }}</span></label>
+                    @endforeach
+                </div>
                 <label class="form-label" for="referralReason">Reason for referral</label>
                 <textarea id="referralReason" name="referral_reason" rows="4" required placeholder="Describe why a professional referral is recommended..."></textarea>
                 <label class="form-label" style="margin-top:14px;" for="referralPriority">Priority level</label>
@@ -529,6 +535,16 @@
             document.getElementById('emergencyBtn')?.addEventListener('click', syncReferralState);
             syncReferralState();
             setInterval(syncReferralState, 5000);
+
+            // Merge selected Appendix O referral indicators into the reason before submit.
+            document.getElementById('referralSubmitForm')?.addEventListener('submit', function () {
+                const reason = document.getElementById('referralReason');
+                const selected = Array.from(document.querySelectorAll('.referral-indicator:checked')).map(c => c.value).filter(Boolean);
+                if (!selected.length) return;
+                const prefix = 'Indicators: ' + selected.join('; ') + ' — ';
+                const existing = reason.value.trim();
+                reason.value = existing ? prefix + existing : prefix.replace(/ — $/, '.');
+            });
         });
     </script>
 

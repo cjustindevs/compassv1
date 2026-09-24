@@ -22,7 +22,7 @@ class HelperReadinessService
             $helper = Helper::whereKey($user->helper->id)->lockForUpdate()->firstOrFail();
             $schedule = $helper->schedules()->whereDate('date', now('Asia/Manila')->toDateString())->where('is_active', true)->get()->first(fn ($s) => $s->isOnDuty());
             $until = now()->addHours(4);
-            if ($schedule) {
+            if ($schedule && $schedule->shift_end) {
                 $end = now('Asia/Manila')->setTimeFromTimeString($schedule->shift_end);
                 if ($end->lt($until)) {
                     $until = $end;

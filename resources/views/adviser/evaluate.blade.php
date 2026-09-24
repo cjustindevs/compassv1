@@ -209,7 +209,7 @@
                 <p><strong>Session result:</strong> {{ ucwords(str_replace('_',' ',$report->session_result ?? 'Not recorded')) }}</p>
                 <p><strong>Follow-up plan:</strong> {{ $report->follow_up_plan ?: 'Not recorded' }}</p>
                 <p><strong>Personal reflection:</strong> {{ $report->personal_reflection ?: 'Not submitted' }}</p>
-                <p><strong>Skills applied:</strong> {{ collect($report->skills)->map(fn($skill)=>(['active_listening'=>'Active Listening','empathy'=>'Empathy','crisis_intervention'=>'Clarification','problem_solving'=>'Problem Solving','validation'=>'Validation','referral'=>'Referral'][$skill] ?? ucwords(str_replace('_',' ',$skill))))->join(', ') ?: 'Not recorded' }}</p>
+                <p><strong>Skills applied:</strong> {{ collect($report->skills)->map(fn($skill)=>ucwords(str_replace('_',' ',$skill)))->join(', ') ?: 'Not recorded' }}</p>
                 @if($report->reassessment_requested_at)<p><strong>Risk reassessment requested:</strong> {{ ucfirst($report->risk_level_assessed) }}. Review through the screening review workflow; this is a helper observation, not an official classification.</p>@endif
                 <p><strong>Documentation:</strong> {{ $report->documentation_late ? 'Submitted after 24 hours' : 'No overdue submission recorded' }}</p>
             </div>
@@ -263,7 +263,7 @@
                             <li>Personal reflection submitted {{ $report->reflection_submitted_at?->format('M d, Y g:i A') ?: '' }}.</li>
                         @endif
                         @if(count($report->skills))
-                            <li>Skills reported as applied: {{ collect($report->skills)->map(fn($skill)=>(['active_listening'=>'Active Listening','empathy'=>'Empathy','crisis_intervention'=>'Clarification','problem_solving'=>'Problem Solving','validation'=>'Validation','referral'=>'Referral'][$skill] ?? ucwords(str_replace('_',' ',$skill))))->join(', ') }}.</li>
+                            <li>Skills reported as applied: {{ collect($report->skills)->map(fn($skill)=>ucwords(str_replace('_',' ',$skill)))->join(', ') }}.</li>
                         @endif
                         <li>{{ $messages->count() ? 'Reviewed ' . $messages->count() . ' conversation messages from the authorized (consent-gated, aliased) record.' : 'Conversation transcript is not disclosed without an authorized access grant; evaluation relies on submitted documentation.' }}</li>
                         @if($existingFeedback)
@@ -359,10 +359,10 @@
                         <input type="hidden" name="ethical_practices" id="ethical_practices" required>
                     </div>
 
-                    <!-- Referral Accuracy (10%) -->
+                    <!-- Referral Judgment (10%) -->
                     <div>
-                        <label class="form-label">Referral Accuracy <span class="text-gray-400 font-normal">(10%)</span></label>
-                        <p class="text-sm text-gray-400 mb-2">Correctly tags cases matching adviser-approved referral guidelines</p>
+                        <label class="form-label">Referral Judgment <span class="text-gray-400 font-normal">(10%)</span></label>
+                        <p class="text-sm text-gray-400 mb-2">Identifies concerns requiring adviser review, referral, or emergency escalation and follows the proper procedure</p>
                         <div class="rating-group" data-target="referral_accuracy">
                             @for($i = 1; $i <= 5; $i++)
                                 <button type="button" class="rating-btn" data-value="{{ $i }}" onclick="selectRating(this, 'referral_accuracy')">{{ $i }}</button>

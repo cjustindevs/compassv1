@@ -58,6 +58,7 @@ class HelperCalendarController extends Controller
             'schedules' => $helper->schedules()->whereBetween('date', [$firstDay->toDateString(), $lastDay->toDateString()])->orderBy('date')->get(),
             'sessions' => $sessions,
             'grid' => $grid,
+            'adviser' => $helper->adviser?->loadMissing('user'),
             'month' => $month,
             'year' => $year,
             'monthName' => $firstDay->format('F Y'),

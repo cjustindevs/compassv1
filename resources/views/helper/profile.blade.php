@@ -53,6 +53,15 @@
                         <span class="text-sm text-gray-500">Language</span>
                         <span class="text-sm font-semibold text-gray-800">{{ $helper->preferred_language ?? 'English' }}</span>
                     </div>
+                    <div class="flex justify-between mt-2">
+                        <span class="text-sm text-gray-500">Adviser</span>
+                        <span class="text-sm font-semibold text-gray-800">{{ $helper->adviser?->full_name ?? '—' }}</span>
+                    </div>
+                    @if($helper->adviser)
+                        <div class="text-right mt-1">
+                            <a class="link text-sm" href="mailto:{{ $helper->adviser->email ?? $helper->adviser->user?->email }}">{{ $helper->adviser->email ?? $helper->adviser->user?->email }}</a>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

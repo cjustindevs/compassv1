@@ -56,8 +56,12 @@ class AdviserAnalytics {
             ->when(($f['concern_id'] ?? null) || ($f['referral_status'] ?? null),fn($q)=>$q->whereIn('report_id',$rows->pluck('report.id')->filter()))->orderBy('evaluation_date')->get();
         $hours=0;
         foreach(HelperSchedule::whereIn('helper_id',$helperIds)->where('is_active',true)->whereBetween('date',[$f['start']->copy()->timezone('Asia/Manila')->toDateString(),$f['end']->copy()->timezone('Asia/Manila')->toDateString()])->get() as $shift) {
-            $a=Carbon::parse($shift->date->toDateString().' '.$shift->shift_start,'Asia/Manila')->utc()->max($f['start']);
-            $b=Carbon::parse($shift->date->toDateString().' '.$shift->shift_end,'Asia/Manila')->utc()->min($f['end']);
+            // Date-only duty schedules carry no times; planned coverage falls
+            // back to the approved 6:00 PM - 11:00 PM operating window.
+            $startTime = $shift->shift_start ?? HelperSchedule::OPERATING_START;
+            $endTime = $shift->shift_end ?? HelperSchedule::OPERATING_END;
+            $a=Carbon::parse($shift->date->toDateString().' '.$startTime,'Asia/Manila')->utc()->max($f['start']);
+            $b=Carbon::parse($shift->date->toDateString().' '.$endTime,'Asia/Manila')->utc()->min($f['end']);
             if($b->gt($a)) $hours+=$a->diffInSeconds($b)/3600;
         }
         $metrics=['total'=>$rows->count(),'completed'=>$completed->count(),'cancelled'=>$rows->whereIn('session_status',['cancelled','abandoned'])->count(),'active'=>$rows->where('session_status','active')->count(),

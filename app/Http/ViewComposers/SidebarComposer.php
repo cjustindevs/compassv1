@@ -48,6 +48,7 @@ class SidebarComposer
                 return [
                     'helper'             => null,
                     'helperName'         => $user->name ?? 'Helper',
+                    'assignedAdviser'    => null,
                     'totalSessions'      => 0,
                     'competencyScore'    => 0,
                     'availabilityStatus' => 'offline',
@@ -89,8 +90,10 @@ class SidebarComposer
             $helperName = $helper->full_name ?: $user->name ?: 'Helper';
             $initials = Str::substr($helperName, 0, 2);
 
+            $assignedAdviser = $helper->adviser?->loadMissing('user');
+
             return compact(
-                'helper', 'helperName', 'totalSessions', 'competencyScore',
+                'helper', 'helperName', 'assignedAdviser', 'totalSessions', 'competencyScore',
                 'availabilityStatus', 'availabilityLabel', 'caseBadgeCount',
                 'notifBadgeCount', 'activeSession', 'voiceUrl', 'notesUrl', 'initials'
             );

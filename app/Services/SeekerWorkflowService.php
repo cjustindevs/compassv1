@@ -117,6 +117,9 @@ class SeekerWorkflowService {
             abort_unless(app(ConsentService::class)->valid($session->seeker,'privacy_policy') && app(ConsentService::class)->valid($session->seeker,'informed_consent'),409,'Current seeker consent is required.');
             $session->update(['helper_accepted_at'=>now(),'match_status'=>'accepted','workflow_state'=>'session_ready']);
             $session->queue?->update(['helper_accepted_at'=>now(),'assigned_at'=>now()]);
+            if ($helper->non_response_count > 0) {
+                $helper->update(['non_response_count' => 0]);
+            }
             SupportAudit::record('helper_accepted',$session);
             Notification::create(['user_account_id'=>$session->seeker->user_account_id,'title'=>'Helper accepted your request','message'=>'Your helper is preparing the session. Chat opens when the session starts.','notification_type'=>'session','link'=>'/request/matching']);
             return $session;

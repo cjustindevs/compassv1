@@ -12,7 +12,7 @@ class IdentityVaultController extends Controller
     public function form(Request $request, Referral $referral)
     {
         abort_unless($request->user()->role === 'seeker' && $request->user()->helpSeeker?->id === $referral->session->seeker_id, 403);
-        abort_unless($referral->approved_at, 409, 'Adviser approval is required.');
+        abort_unless($referral->canProvideIdentity(), 409, 'Identity details can be provided only after adviser approval, with your recorded consent, and while the referral is open.');
         return response()->view('session.identity', compact('referral'))->header('Cache-Control', 'no-store, private');
     }
 

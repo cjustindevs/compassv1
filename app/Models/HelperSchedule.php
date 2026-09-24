@@ -31,6 +31,15 @@ class HelperSchedule extends Model
         'approved_at' => 'datetime',
     ];
 
+    /**
+     * Approved default operating window (Monday to Saturday, 6:00 PM to
+     * 11:00 PM). Used only for planned-hours reporting when a date-only
+     * duty schedule no longer records explicit shift times.
+     */
+    public const OPERATING_START = '18:00';
+
+    public const OPERATING_END = '23:00';
+
     public function helper(): BelongsTo
     {
         return $this->belongsTo(Helper::class, 'helper_id', 'id');
@@ -46,26 +55,39 @@ class HelperSchedule extends Model
         return $this->belongsTo(Adviser::class, 'approved_by', 'id');
     }
 
+    /**
+     * Duty is date-based: a helper on an active schedule is on duty for the
+     * whole planned day. Shift times are informational only.
+     */
     public function isWithinShift(): bool
     {
         $now = now(config('app.schedule_timezone', 'Asia/Manila'));
-        if (! $this->is_active || $this->date?->format('Y-m-d') !== $now->toDateString()) {
-            return false;
-        }
-        $start = $now->copy()->setTimeFromTimeString((string) $this->shift_start);
-        $end = $now->copy()->setTimeFromTimeString((string) $this->shift_end);
 
-        return $now->between($start, $end);
+        return $this->is_active && $this->date?->format('Y-m-d') === $now->toDateString();
     }
 
     public function getShiftDuration(): float
     {
-        return now()->setTimeFromTimeString((string) $this->shift_start)
-            ->diffInHours(now()->setTimeFromTimeString((string) $this->shift_end));
+        $start = $this->shift_start ?? self::OPERATING_START;
+        $end = $this->shift_end ?? self::OPERATING_END;
+
+        return now()->setTimeFromTimeString((string) $start)
+            ->diffInHours(now()->setTimeFromTimeString((string) $end));
     }
 
     public function isOnDuty(): bool
     {
         return $this->is_active && $this->isWithinShift();
+    }
+
+    public function getShiftLabelAttribute(): string
+    {
+        if (! $this->shift_start || ! $this->shift_end) {
+            return 'All day';
+        }
+
+        return \Illuminate\Support\Carbon::parse($this->shift_start)->format('h:i A')
+            .' - '
+            .\Illuminate\Support\Carbon::parse($this->shift_end)->format('h:i A');
     }
 }

@@ -7,6 +7,7 @@ use App\Models\HelperAvailabilityLog;
 use App\Models\Notification;
 use App\Models\ReadinessCheck;
 use App\Models\Session;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class HelperWorkflowMaintenance
@@ -130,13 +131,57 @@ class HelperWorkflowMaintenance
             $session->queue?->update(['assigned_helper_id' => null, 'request_status' => 'waiting', 'helper_proposed_at' => null]);
             $helper->syncSessionCounters();
             $helper->update(['status' => $helper->availability === 'available' ? 'available' : 'offline']);
+            if ($reason === 'expired') {
+                $this->recordNonResponse($helper);
+            }
             SupportAudit::record('helper_recommendation_'.$reason, $session, ['helper_id' => $helper->id]);
             $this->notify($helper->user_account_id, 'Assignment returned to the queue', 'The pending assignment is no longer reserved for you.', '/helper/cases');
             $this->notify($session->seeker?->user_account_id, 'Finding another available helper', 'Your support request remains in the queue.', '/request/matching');
+            if ($reason === 'expired') {
+                $this->notifyEscalation($helper, $session);
+            }
             if ($queue = $session->queue) {
                 DB::afterCommit(fn () => app(HelperMatchingService::class)->processQueueRequest($queue, $helper->id));
             }
         }, 3);
+    }
+
+    /**
+     * Track a helper who did not respond before the recommendation brief
+     * expired. After NON_RESPONSE_LIMIT consecutive misses the helper is
+     * flagged for adviser review and excluded from future matching.
+     */
+    private function recordNonResponse(Helper $helper): void
+    {
+        if ($helper->non_response_count >= Helper::NON_RESPONSE_LIMIT) {
+            return;
+        }
+        $count = $helper->non_response_count + 1;
+        $helper->update(['non_response_count' => $count]);
+        if ($count < Helper::NON_RESPONSE_LIMIT) {
+            $this->notify($helper->user_account_id, 'Missed session recommendation', sprintf('You did not respond to a session recommendation within %d minutes. %d of %d misses are recorded.', Helper::PRE_SESSION_BRIEF_MINUTES, $count, Helper::NON_RESPONSE_LIMIT), '/helper/cases');
+            return;
+        }
+        $helper->update([
+            'is_under_review' => true,
+            'review_reason' => sprintf('Did not respond to %d consecutive session recommendations within the %d-minute brief.', Helper::NON_RESPONSE_LIMIT, Helper::PRE_SESSION_BRIEF_MINUTES),
+        ]);
+        $this->notify($helper->user_account_id, 'Account placed under adviser review', 'You missed several session recommendations. Contact your adviser to resolve this before receiving new assignments.', '/helper/cases');
+        if ($adviserUserId = $helper->adviser?->user_account_id) {
+            $this->notify($adviserUserId, 'Helper placed under review', sprintf('%s missed %d consecutive session recommendations and is suspended from matching pending your review.', $helper->full_name, Helper::NON_RESPONSE_LIMIT), route('adviser.helper.show', $helper->id));
+        }
+    }
+
+    private function notifyEscalation(Helper $helper, Session $session): void
+    {
+        $title = 'Helper missed a session recommendation';
+        $message = sprintf('%s (%s) did not respond to %s within the %d-minute brief. The request was returned to the queue.', $helper->full_name, $session->reference_number, $session->seeker?->generated_alias ?? 'a seeker', Helper::PRE_SESSION_BRIEF_MINUTES);
+        foreach (User::where('role', 'moderator')->where('is_active', true)->pluck('id') as $moderatorUserId) {
+            $this->notify($moderatorUserId, $title, $message, '/moderator/queue');
+        }
+        if ($adviserUserId = $helper->adviser?->user_account_id) {
+            $this->notify($adviserUserId, 'Your helper missed a session recommendation', $message, route('adviser.helper.show', $helper->id));
+        }
     }
 
     private function notify(?int $userId, string $title, string $message, string $link): void

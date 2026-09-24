@@ -1,4 +1,4 @@
-{{-- Variables provided by SidebarComposer: $helper, $helperName, $totalSessions, $competencyScore,
+{{-- Variables provided by SidebarComposer: $helper, $helperName, $assignedAdviser, $totalSessions, $competencyScore,
      $availabilityStatus, $availabilityLabel, $caseBadgeCount, $notifBadgeCount,
      $activeSession, $voiceUrl, $notesUrl, $initials --}}
 
@@ -72,7 +72,7 @@
             <div class="user-avatar">{{ $initials }}</div>
             <div class="user-info">
                 <div class="user-name">{{ $helperName }}</div>
-                <div class="user-role">Psychology Helper</div>
+                <div class="user-role">{{ $assignedAdviser ? 'Supervised by ' . $assignedAdviser->full_name : 'Psychology Helper' }}</div>
             </div>
         </div>
         <div class="user-stats">

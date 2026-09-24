@@ -23,10 +23,11 @@ class Helper extends Model
             if($target && self::where('adviser_id',$target)->when($this->exists,fn($q)=>$q->where('id','!=',$this->id))->count() >= self::MAX_HELPERS_PER_ADVISER) throw \Illuminate\Validation\ValidationException::withMessages(['adviser_id'=>'Adviser capacity is 15 Helpers.']);
             $saved=parent::save($options);
             $history=\Illuminate\Support\Facades\DB::table('adviser_helper_assignments')->where('helper_id',$this->id)->whereNull('ended_at');
-            if($before && !$history->exists()) \Illuminate\Support\Facades\DB::table('adviser_helper_assignments')->insert(['helper_id'=>$this->id,'adviser_id'=>$before,'started_at'=>null,'ended_at'=>now(),'reason'=>'Legacy relationship; original start unknown','created_at'=>now()]);
-            $history->update(['ended_at'=>now()]);
             $reason=$this->assignmentReason ?? 'Initial account provisioning or authorized assignment';
-            if($target) \Illuminate\Support\Facades\DB::table('adviser_helper_assignments')->insert(['helper_id'=>$this->id,'adviser_id'=>$target,'actor_id'=>auth()->id(),'started_at'=>now(),'reason'=>$reason,'created_at'=>now()]);
+            $actorId=auth()->id();
+            if($before && !$history->exists()) \Illuminate\Support\Facades\DB::table('adviser_helper_assignments')->insert(['helper_id'=>$this->id,'adviser_id'=>$before,'started_at'=>null,'ended_at'=>now(),'reason'=>'Legacy relationship; original start unknown','actor_id'=>$actorId,'created_at'=>now()]);
+            $history->update(['ended_at'=>now(),'reason'=>$reason,'actor_id'=>$actorId]);
+            if($target) \Illuminate\Support\Facades\DB::table('adviser_helper_assignments')->insert(['helper_id'=>$this->id,'adviser_id'=>$target,'actor_id'=>$actorId,'started_at'=>now(),'reason'=>$reason,'created_at'=>now()]);
             \App\Services\SupportAudit::record('supervision_relationship_changed',$this,['previous_adviser_id'=>$before,'adviser_id'=>$target,'reason'=>$reason]);
             return $saved;
         },3);
@@ -83,6 +84,7 @@ class Helper extends Model
         'default_shift_end',
         'is_under_review',
         'review_reason',
+        'non_response_count',
     ];
 
     protected $casts = [
@@ -104,6 +106,7 @@ class Helper extends Model
         'last_readiness_at' => 'datetime',
         'is_ready' => 'boolean',
         'is_under_review' => 'boolean',
+        'non_response_count' => 'integer',
         'languages' => 'array',
         'specialties' => 'array',
     ];
@@ -112,6 +115,7 @@ class Helper extends Model
     public const MAX_HELPERS_PER_ADVISER = 15;
     public const BREAK_TIMEOUT_MINUTES = 30;
     public const PRE_SESSION_BRIEF_MINUTES = 5;
+    public const NON_RESPONSE_LIMIT = 3;
 
     public function user(): BelongsTo
     {

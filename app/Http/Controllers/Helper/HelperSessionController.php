@@ -261,14 +261,9 @@ class HelperSessionController extends Controller
         $report = $session->report;
         $revisions = $report ? DB::table('session_report_revisions')->where('report_id', $report->id)->latest('id')->get() : collect();
 
-        $skills = [
-            'active_listening' => 'Active Listening',
-            'empathy' => 'Empathy',
-            'crisis_intervention' => 'Clarification',
-            'problem_solving' => 'Problem Solving',
-            'validation' => 'Validation',
-            'referral' => 'Referral',
-        ];
+        $skills = collect(\App\Services\HelperReadinessService::SKILLS)
+            ->mapWithKeys(fn (string $skill) => [$skill => ucwords(str_replace('_', ' ', $skill))])
+            ->all();
 
         return view('helper.notes', compact('session', 'report', 'skills', 'revisions'));
     }
@@ -288,7 +283,7 @@ class HelperSessionController extends Controller
             'follow_up_plan' => ['nullable', 'string', 'max:2000', \Illuminate\Validation\Rule::requiredIf(in_array($request->input('session_result'), ['needs_follow_up', 'needs_referral'], true))],
             'personal_reflection' => 'nullable|string|max:2000',
             'skills_applied' => 'nullable|array',
-            'skills_applied.*' => 'string|max:50',
+            'skills_applied.*' => ['string', 'max:50', \Illuminate\Validation\Rule::in(\App\Services\HelperReadinessService::SKILLS)],
             'correction_reason' => 'nullable|string|max:1000',
         ]);
 
@@ -309,7 +304,7 @@ class HelperSessionController extends Controller
         $validated = $request->validate([
             'personal_reflection' => 'required|string|max:2000',
             'skills_applied' => 'required|array|min:1',
-            'skills_applied.*' => 'string|max:50',
+            'skills_applied.*' => ['string', 'max:50', \Illuminate\Validation\Rule::in(\App\Services\HelperReadinessService::SKILLS)],
             'correction_reason' => 'nullable|string|max:1000',
         ]);
 

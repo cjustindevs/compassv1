@@ -6,10 +6,16 @@
 @section('subheading', 'Your scheduled sessions for ' . $monthName . '.')
 
 @section('content')
-    <div class="card mb-6"><div class="card-header"><h3>Official duty schedule</h3><span class="pill">Philippine time</span></div>
+    <div class="card mb-6"><div class="card-header"><h3>Official duty schedule</h3><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><span class="pill">Philippine time</span>@if($adviser)<span class="pill">Adviser: {{ $adviser->full_name }}</span>@endif</div></div>
         @forelse($schedules as $shift)
-            <div class="flex flex-wrap justify-between gap-3 py-3 border-b border-gray-100 text-sm"><span>{{ $shift->date->format('M d, Y') }}</span><span>{{ substr($shift->shift_start,0,5) }} &ndash; {{ substr($shift->shift_end,0,5) }}</span><span class="pill">{{ $shift->is_active ? 'Scheduled' : 'Inactive' }}</span></div>
-        @empty<p class="text-sm text-gray-500">No duty shifts have been assigned this month. Contact your adviser for scheduling.</p>@endforelse
+            <div class="flex flex-wrap justify-between gap-3 py-3 border-b border-gray-100 text-sm"><span>{{ $shift->date->format('M d, Y') }}</span><span>{{ $shift->shift_label }}</span><span class="pill">{{ $shift->is_active ? 'Scheduled' : 'Inactive' }}</span></div>
+        @empty
+            <p class="text-sm text-gray-500">
+                No duty dates have been assigned this month. Contact your adviser
+                @if($adviser)({{ $adviser->full_name }}, <a class="link" href="mailto:{{ $adviser->email ?? $adviser->user?->email }}">{{ $adviser->email ?? $adviser->user?->email }}</a>)@endif
+                for scheduling.
+            </p>
+        @endforelse
     </div>
 
 

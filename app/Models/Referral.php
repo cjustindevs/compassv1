@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Referral extends Model
 {
     public function scopeProfessionalAuthorized($query) {
-        return $query->whereNotNull('approved_at')->where('help_seeker_consent',true)->whereIn('status',['pending_professional','accepted','in_progress','completed']);
+        return $query->whereNotNull('approved_at')->where('help_seeker_consent',true)->whereIn('status',[self::STATUS_PENDING_PROFESSIONAL,self::STATUS_ACCEPTED,self::STATUS_IN_PROGRESS,self::STATUS_COMPLETED]);
     }
     public function releaseIdentity(): void
     {
@@ -153,6 +153,27 @@ class Referral extends Model
     public function isPending(): bool
     {
         return in_array($this->status, [self::STATUS_PENDING_ADVISER, self::STATUS_PENDING_CONSENT, self::STATUS_PENDING_PROFESSIONAL], true);
+    }
+
+    public function isOpen(): bool
+    {
+        return in_array($this->status, [
+            self::STATUS_PENDING_ADVISER,
+            self::STATUS_PENDING_CONSENT,
+            self::STATUS_CONSENT_REQUESTED,
+            self::STATUS_PENDING_PROFESSIONAL,
+            self::STATUS_ACCEPTED,
+            self::STATUS_IN_PROGRESS,
+        ], true);
+    }
+
+    /**
+     * A seeker may store identity details and an adviser may authorize release
+     * only after approval, with recorded consent, and while the referral is open.
+     */
+    public function canProvideIdentity(): bool
+    {
+        return (bool) $this->approved_at && (bool) $this->help_seeker_consent && $this->isOpen();
     }
 
     public function isCompleted(): bool

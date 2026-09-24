@@ -20,6 +20,7 @@ class HelperProfileController extends Controller
         abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $user = Auth::user();
         $helper = $user->helper;
+        $helper->loadMissing('adviser.user');
 
         $totalSessions = Session::where('helper_id', $helper->id)->count();
         $completedSessions = Session::where('helper_id', $helper->id)

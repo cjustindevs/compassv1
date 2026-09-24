@@ -213,7 +213,7 @@
             <div class="card">
                 <div class="card-header">
                     <h3>Advisers</h3>
-                    <span class="text-xs text-gray-400">Capacity: 5 each</span>
+                    <span class="text-xs text-gray-400">Capacity: {{ \App\Models\Helper::MAX_HELPERS_PER_ADVISER }} each</span>
                 </div>
                 <div class="space-y-3">
                     @foreach($advisers as $adviser)

@@ -52,52 +52,48 @@ class ModeratorScheduleController extends Controller
         $validated = $request->validate([
             'helper_id' => 'required|exists:helpers,id',
             'event_date' => 'required|date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i',
             'description' => 'nullable|string|max:500',
         ]);
 
         $helper = Helper::findOrFail($validated['helper_id']);
+        $date = Carbon::parse($validated['event_date'])->toDateString();
 
-        $conflict = CalendarEvent::where('event_type', CalendarEvent::TYPE_MEETING)
-            ->whereDate('event_date', $validated['event_date'])
+        $conflict = \App\Models\HelperSchedule::where('helper_id', $helper->id)
+            ->whereDate('date', $date)
+            ->exists()
+            || CalendarEvent::where('event_type', CalendarEvent::TYPE_MEETING)
+            ->whereDate('event_date', $date)
             ->where('title', 'like', 'Duty: ' . $helper->full_name . '%')
-            ->where(function ($query) use ($validated) {
-                $query->whereBetween('start_time', [$validated['start_time'], $validated['end_time']])
-                    ->orWhereBetween('end_time', [$validated['start_time'], $validated['end_time']])
-                    ->orWhere(function ($query) use ($validated) {
-                        $query->where('start_time', '<=', $validated['start_time'])
-                            ->where('end_time', '>=', $validated['end_time']);
-                    });
-            })
             ->exists();
 
         if ($conflict) {
             return back()->with('error', 'Schedule conflict detected for ' . $helper->full_name . '.');
         }
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $helper) {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $helper, $date) {
         CalendarEvent::create([
             'title' => 'Duty: ' . $helper->full_name,
             'description' => $validated['description'] ?? null,
-            'event_date' => $validated['event_date'],
-            'start_time' => $validated['start_time'],
-            'end_time' => $validated['end_time'],
+            'event_date' => $date,
+            'start_time' => $validated['start_time'] ?? null,
+            'end_time' => $validated['end_time'] ?? null,
             'event_type' => CalendarEvent::TYPE_MEETING,
             'created_by' => Auth::id(),
             'color' => '#04A052',
         ]);
 
         \App\Models\HelperSchedule::create([
-            'helper_id' => $helper->id, 'date' => $validated['event_date'],
-            'shift_start' => $validated['start_time'], 'shift_end' => $validated['end_time'],
+            'helper_id' => $helper->id, 'date' => $date,
+            'shift_start' => $validated['start_time'] ?? null, 'shift_end' => $validated['end_time'] ?? null,
             'is_active' => true, 'created_by' => Auth::id(),
         ]);
         });
         app(\App\Services\HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh());
         app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
 
-        return redirect()->route('moderator.schedules', ['date' => $validated['event_date']])
+        return redirect()->route('moderator.schedules', ['date' => $date])
             ->with('success', 'Helper duty schedule created.');
     }
 }

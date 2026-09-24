@@ -99,7 +99,7 @@ class IdentityVaultService
     private function approved(Referral $referral): bool
     {
         return (bool) ($referral->approved_at && $referral->help_seeker_consent
-            && ! in_array($referral->status, ['closed', 'declined', 'completed'], true));
+            && ! in_array($referral->status, [Referral::STATUS_CLOSED, Referral::STATUS_DECLINED, Referral::STATUS_COMPLETED], true));
     }
 
     public function storeForReferral(Referral $referral, array $data): void
@@ -143,6 +143,9 @@ class IdentityVaultService
         $allowed = Auth::user()?->role === 'adviser' && Auth::user()?->adviser?->id === $referral->adviser_id
             && $referral->adviser_id !== null && $this->approved($referral) && $referral->professional_id !== null;
         abort_unless($fields && !array_diff($fields,self::FIELDS) && mb_strlen(trim($reason))>=20,422,'Select necessary fields and provide a reason.');
+        $stored = DB::connection('identity_vault')->table('idv_identities')
+            ->where('pseudo_id', $pseudo)->where('is_active', true)->where('data_expires_at', '>', now())->exists();
+        abort_unless($stored, 422, 'The help seeker has not stored contact details yet. Ask the seeker to provide them before releasing identity.');
         $this->perform($pseudo, 'release', $allowed, function () use ($pseudo, $referral, $fields, $reason) {
             $identity = $this->identity($pseudo);
             $db = DB::connection('identity_vault');

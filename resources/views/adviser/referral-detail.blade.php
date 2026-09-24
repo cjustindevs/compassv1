@@ -222,12 +222,9 @@
                 <a href="{{ route('adviser.referrals') }}" class="btn-outline">
                     <i class="fas fa-arrow-left mr-2"></i> Back
                 </a>
-                <form class="inline" method="POST" action="{{ route('adviser.referral.approve', $referral->id) }}">
-                    @csrf
-                    <button type="submit" class="btn-primary">
-                        <i class="fas fa-check mr-2"></i> Approve Referral
-                    </button>
-                </form>
+                <button type="button" class="btn-primary" onclick="openApproveModal()">
+                    <i class="fas fa-check mr-2"></i> Approve Referral
+                </button>
                 <button class="btn-danger" onclick="openRejectModal({{ $referral->id }})">
                     <i class="fas fa-times mr-2"></i> Reject Referral
                 </button>
@@ -235,6 +232,31 @@
 
         </div>
 </div>
+    <!-- Approve Modal -->
+    <div class="modal-overlay" id="approveModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 999; align-items: center; justify-content: center;">
+        <div class="modal-box" style="background: white; border-radius: 24px; max-width: 480px; width: 92%; padding: 32px; box-shadow: 0 40px 80px rgba(0,0,0,0.15); animation: modalSlide 0.3s ease-out;">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                    <i class="fas fa-check text-green-600"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800">Approve Referral</h3>
+            </div>
+            <p class="text-gray-500 text-sm mb-4">Record a short review note. This is stored alongside the approval for accountability.</p>
+
+            <form class="form-maximized" id="approveForm" method="POST" action="{{ route('adviser.referral.approve', $referral->id) }}">
+                @csrf
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Review Notes <span class="text-red-500">*</span></label>
+                    <textarea name="review_notes" class="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" rows="4" placeholder="Summarize your assessment of this referral..." required maxlength="1000"></textarea>
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" class="btn-outline flex-1" onclick="closeApproveModal()">Cancel</button>
+                    <button type="submit" class="btn-primary flex-1">Approve Referral</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Reject Modal -->
     <div class="modal-overlay" id="rejectModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 999; align-items: center; justify-content: center;">
         <div class="modal-box" style="background: white; border-radius: 24px; max-width: 480px; width: 92%; padding: 32px; box-shadow: 0 40px 80px rgba(0,0,0,0.15); animation: modalSlide 0.3s ease-out;">
@@ -267,6 +289,14 @@
     </style>
 
     <script>
+        function openApproveModal() {
+            document.getElementById('approveModal').classList.add('active');
+        }
+
+        function closeApproveModal() {
+            document.getElementById('approveModal').classList.remove('active');
+        }
+
         function openRejectModal(id) {
             document.getElementById('rejectModal').classList.add('active');
         }

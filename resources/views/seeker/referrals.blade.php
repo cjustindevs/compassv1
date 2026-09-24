@@ -209,14 +209,14 @@
                         <span class="status-badge {{ $referral->help_seeker_consent ? '' : 'muted' }}">{{ $statusLabel }}</span>
                     </div>
 
-                    @if($referral->status === 'pending_consent')
+                    @if($referral->status === \App\Models\Referral::STATUS_PENDING_CONSENT)
                         <p>Your adviser recommends professional support beyond the scope of peer support. Agreeing allows the assigned professional to review the authorized case records.</p>
                         <form method="POST" action="{{ route('referrals.consent', $referral) }}" class="flex flex-wrap gap-3">
                             @csrf
                             <button class="page-button" type="submit" name="consent_given" value="1">Agree to referral</button>
                             <button class="page-button light" type="submit" name="consent_given" value="0">Decline</button>
                         </form>
-                    @elseif($referral->help_seeker_consent)
+                    @elseif($referral->canProvideIdentity())
                         <p>You agreed to this referral. Provide your contact details when coordination is needed, or withdraw consent to stop future professional access.</p>
                         <div class="flex flex-wrap gap-3">
                             <a href="{{ route('identity.form', $referral) }}" class="page-button light">
@@ -230,6 +230,10 @@
                                 <button class="page-button danger" type="submit">Withdraw referral consent</button>
                             </form>
                         </div>
+                    @elseif($referral->help_seeker_consent)
+                        <p>You agreed to this referral. It is no longer an open case, so no further action is available here.</p>
+                    @elseif($referral->status === \App\Models\Referral::STATUS_CONSENT_REQUESTED)
+                        <p>Your helper recommended a professional referral. Please review the consent request in the chat window so the referral can be submitted.</p>
                     @else
                         <p>This referral is awaiting your adviser's review. There is nothing to do right now.</p>
                     @endif

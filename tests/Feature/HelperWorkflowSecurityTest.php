@@ -250,6 +250,74 @@ class HelperWorkflowSecurityTest extends TestCase
         $this->assertNull($session2->fresh()->helper_id);
     }
 
+    public function test_notes_and_reflection_accept_only_the_five_appendix_listener_skills(): void
+    {
+        $helper = $this->helper();
+        $session = $this->supportSession($helper);
+
+        $this->post(route('helper.session.notes.store', $session->id), $this->summary(['skills_applied' => ['validation']]))
+            ->assertSessionHasErrors('skills_applied.0');
+
+        $this->post(route('helper.session.notes.store', $session->id), ['personal_reflection' => 'Reflection', 'skills_applied' => ['problem_solving']])
+            ->assertSessionHasErrors('skills_applied.0');
+
+        $this->post(route('helper.reflection.submit', $session->id), ['personal_reflection' => 'Reflection', 'skills_applied' => ['active_listening', 'summarizing']])
+            ->assertSessionHasNoErrors();
+    }
+
+    public function test_recommendation_expiry_counts_non_response_and_notifies_moderator_and_adviser(): void
+    {
+        $moderator = User::factory()->create(['role' => 'moderator', 'is_active' => true]);
+        $helper = $this->helper();
+        $session = $this->supportSession($helper, 'helper_assigned');
+        $session->update(['pre_session_brief_expires_at' => now()->subMinute()]);
+        $queue = QueueRequest::create(['seeker_id' => $session->seeker_id, 'request_status' => 'assigned', 'assigned_helper_id' => $helper->id, 'priority_level' => 'low']);
+        $session->update(['queue_request_id' => $queue->id]);
+
+        app(HelperWorkflowMaintenance::class)->run();
+
+        $this->assertSame(1, $helper->fresh()->non_response_count);
+        $this->assertFalse($helper->fresh()->is_under_review);
+        $this->assertNull($session->fresh()->helper_id);
+        $this->assertSame('expired', $session->fresh()->match_status);
+        $this->assertDatabaseHas('notifications', ['user_account_id' => $moderator->id, 'title' => 'Helper missed a session recommendation']);
+        $this->assertDatabaseHas('notifications', ['user_account_id' => $helper->adviser->user_account_id, 'title' => 'Your helper missed a session recommendation']);
+        $this->assertDatabaseHas('notifications', ['user_account_id' => $helper->user_account_id, 'title' => 'Missed session recommendation']);
+    }
+
+    public function test_three_consecutive_non_responses_flag_helper_for_review(): void
+    {
+        $helper = $this->helper();
+
+        foreach (range(1, Helper::NON_RESPONSE_LIMIT) as $i) {
+            $session = $this->supportSession($helper, 'helper_assigned');
+            $session->update(['pre_session_brief_expires_at' => now()->subMinute()]);
+            $queue = QueueRequest::create(['seeker_id' => $session->seeker_id, 'request_status' => 'assigned', 'assigned_helper_id' => $helper->id, 'priority_level' => 'low']);
+            $session->update(['queue_request_id' => $queue->id]);
+            app(HelperWorkflowMaintenance::class)->run();
+        }
+
+        $helper = $helper->fresh();
+        $this->assertSame(Helper::NON_RESPONSE_LIMIT, $helper->non_response_count);
+        $this->assertTrue($helper->is_under_review);
+        $this->assertStringContainsString('did not respond to 3 consecutive session recommendations', strtolower((string) $helper->review_reason));
+        $this->assertFalse(app(HelperEligibilityService::class)->allows($helper));
+        $this->assertDatabaseHas('notifications', ['user_account_id' => $helper->adviser->user_account_id, 'title' => 'Helper placed under review']);
+        $this->assertDatabaseHas('notifications', ['user_account_id' => $helper->user_account_id, 'title' => 'Account placed under adviser review']);
+    }
+
+    public function test_accepting_a_recommendation_resets_the_non_response_counter(): void
+    {
+        $helper = $this->helper();
+        $helper->update(['non_response_count' => Helper::NON_RESPONSE_LIMIT - 1]);
+        $session = $this->supportSession($helper, 'helper_assigned');
+
+        $this->post(route('helper.cases.accept', $session->id))
+            ->assertRedirect(route('helper.session.pre-assessment', $session->id));
+
+        $this->assertSame(0, $helper->fresh()->non_response_count);
+    }
+
     public function test_helper_cannot_grant_own_qualification_or_edit_competency(): void
     {
         $helper = $this->helper(false);
@@ -368,21 +436,23 @@ class HelperWorkflowSecurityTest extends TestCase
         $this->assertFalse($helper->fresh()->hasCapacity(), 'Two sessions inside the shift must exhaust capacity.');
     }
 
-    public function test_readiness_before_shift_is_activated_and_reconciled_at_shift_start(): void
+    public function test_readiness_activates_a_helper_on_whole_day_duty_date(): void
     {
-        $this->travelTo(Carbon::parse('2026-09-16 17:00', 'Asia/Manila')->utc());
+        $this->travelTo(Carbon::parse('2026-09-16 09:00', 'Asia/Manila')->utc());
         $user = User::factory()->create(['role' => 'helper', 'is_active' => true]);
         $helper = Helper::create(['user_account_id' => $user->id, 'first_name' => 'Ahead', 'last_name' => 'Helper', 'email' => $user->email, 'status' => 'offline', 'availability' => 'unavailable', 'competency_level' => 3, 'competency_risk_level' => 3]);
         $this->verifiedHelperFixture($helper);
-        HelperSchedule::create(['helper_id' => $helper->id, 'date' => now('Asia/Manila')->toDateString(), 'shift_start' => '18:00', 'shift_end' => '23:00', 'created_by' => $user->id, 'is_active' => true]);
 
+        // Without a duty date the helper must stay offline after readiness.
         app(HelperReadinessService::class)->submit($user, $this->readiness());
         $helper = $helper->fresh();
-        $this->assertSame('available', $helper->availability, 'Willing helpers declare availability before the shift.');
-        $this->assertNotSame('available', $helper->status, 'They must not be assignable until on duty.');
+        $this->assertSame('available', $helper->availability, 'Willing helpers declare availability before the duty date.');
+        $this->assertSame('offline', $helper->status, 'An unscheduled helper must not be assignable.');
 
-        $this->travelTo(Carbon::parse('2026-09-16 18:30', 'Asia/Manila')->utc());
+        // A duty schedule covers the whole date, so scheduling today and
+        // reconciling makes the helper available before the 6:00 PM open.
+        HelperSchedule::create(['helper_id' => $helper->id, 'date' => now('Asia/Manila')->toDateString(), 'created_by' => $user->id, 'is_active' => true]);
         $this->assertTrue(app(HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh()));
-        $this->assertSame('available', $helper->fresh()->status, 'Shift-start reconcile flips a ready helper available.');
+        $this->assertSame('available', $helper->fresh()->status, 'Scheduling the duty date flips a ready helper available.');
     }
 }

@@ -201,6 +201,7 @@ class AdviserHelperController extends Controller
                 'is_on_shift' => $schedule?->isWithinShift() ?? false,
                 'can_accept_sessions' => app(\App\Services\HelperEligibilityService::class)->status($helper)['assignable'],
                 'status_label' => app(\App\Services\HelperEligibilityService::class)->status($helper)['label'],
+                'shift_label' => $schedule?->shift_label ?? null,
                 'shift_start' => $schedule?->shift_start,
                 'shift_end' => $schedule?->shift_end,
             ];
@@ -234,8 +235,8 @@ class AdviserHelperController extends Controller
         $validated = $request->validate([
             'helper_id' => 'required|exists:helpers,id',
             'date' => 'required|date_format:Y-m-d',
-            'shift_start' => 'required|date_format:H:i',
-            'shift_end' => 'required|date_format:H:i|after:shift_start',
+            'shift_start' => 'nullable|date_format:H:i',
+            'shift_end' => 'nullable|date_format:H:i',
             'is_recurring' => 'nullable|boolean',
             'recurrence_pattern' => 'nullable|array',
         ]);
@@ -244,12 +245,16 @@ class AdviserHelperController extends Controller
             ->where('adviser_id', Auth::user()->adviser?->id)
             ->firstOrFail();
 
+        if (($validated['shift_start'] ?? null) && ($validated['shift_end'] ?? null) && strtotime((string) $validated['shift_end']) <= strtotime((string) $validated['shift_start'])) {
+            return back()->withErrors(['shift_end' => 'The shift end must be after the shift start.']);
+        }
+
         $schedule = HelperSchedule::where('helper_id', $helper->id)
             ->whereDate('date', $validated['date'])->first()
             ?? new HelperSchedule(['helper_id' => $helper->id, 'date' => $validated['date']]);
         $schedule->fill([
-                'shift_start' => $validated['shift_start'],
-                'shift_end' => $validated['shift_end'],
+                'shift_start' => $validated['shift_start'] ?? null,
+                'shift_end' => $validated['shift_end'] ?? null,
                 'is_recurring' => (bool) ($validated['is_recurring'] ?? false),
                 'recurrence_pattern' => $validated['recurrence_pattern'] ?? null,
                 'created_by' => Auth::id(),
