@@ -111,6 +111,11 @@ services:
         value: local
       - key: LOG_CHANNEL
         value: stderr
+      # File cache (single web instance): avoids the online database cache
+      # (cache/cache_locks tables + lock contention), which otherwise stalls
+      # every rate-limited AJAX call (OTP, alias shuffle).
+      - key: CACHE_STORE
+        value: file
       - key: MAIL_MAILER
         value: log
       - key: RUN_SCHEDULER

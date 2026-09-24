@@ -18,57 +18,66 @@ class OTPController extends Controller
         if (RateLimiter::tooManyAttempts($key, 1)) {
             return response()->json(['message' => 'Please wait before resending. You can still enter the code already sent.', 'retry_after' => RateLimiter::availableIn($key)], 429);
         }
-        RateLimiter::hit($key, 60);
-        $otp = (string) random_int(100000, 999999);
-        $mailer = (string) config('mail.default');
-        $demoMode = in_array($mailer, ['', 'log', 'array'], true);
+        try {
+            RateLimiter::hit($key, 60);
+            $otp = (string) random_int(100000, 999999);
+            $mailer = (string) config('mail.default');
+            $demoMode = in_array($mailer, ['', 'log', 'array'], true);
 
-        if ($demoMode) {
-            try {
-                Mail::send('emails.otp', ['otp' => $otp], function ($message) use ($email) {
-                    $message->to($email)->subject('COMPASS - Email Verification Code');
-                });
-            } catch (\Throwable $exception) {
-                \Illuminate\Support\Facades\Log::info("OTP demo mode (mailer='{$mailer}') cannot deliver to {$email} — the code is shown on screen instead.");
-            }
-        } else {
-            try {
-                retry(2, function () use ($otp, $email) {
+            if ($demoMode) {
+                try {
                     Mail::send('emails.otp', ['otp' => $otp], function ($message) use ($email) {
                         $message->to($email)->subject('COMPASS - Email Verification Code');
                     });
-                }, 250, fn (\Throwable $e) => $e instanceof \Symfony\Component\Mailer\Exception\TransportExceptionInterface
-                    && $this->failureReason($e) === 'connection');
-            } catch (\Throwable $exception) {
-                RateLimiter::clear($key);
-                \Illuminate\Support\Facades\Log::warning('Registration OTP mail transport failed', ['exception_type' => get_class($exception), 'reason' => $this->failureReason($exception), 'mailer' => $mailer]);
-                $message = match ($this->failureReason($exception)) {
-                    'authentication' => 'The email provider rejected the server login. The administrator needs to update the mail credentials before OTP can be sent.',
-                    'certificate' => 'The server could not establish a secure email connection. Please contact the administrator.',
-                    'provider_limit' => 'The email provider temporarily limited sending. Please try again later.',
-                    default => 'Unable to reach the email service. No new code was issued. You can try sending again.',
-                };
-                return response()->json(['message' => $message], 503);
+                } catch (\Throwable $exception) {
+                    \Illuminate\Support\Facades\Log::info("OTP demo mode (mailer='{$mailer}') cannot deliver to {$email} — the code is shown on screen instead.");
+                }
+            } else {
+                try {
+                    retry(2, function () use ($otp, $email) {
+                        Mail::send('emails.otp', ['otp' => $otp], function ($message) use ($email) {
+                            $message->to($email)->subject('COMPASS - Email Verification Code');
+                        });
+                    }, 250, fn (\Throwable $e) => $e instanceof \Symfony\Component\Mailer\Exception\TransportExceptionInterface
+                        && $this->failureReason($e) === 'connection');
+                } catch (\Throwable $exception) {
+                    RateLimiter::clear($key);
+                    \Illuminate\Support\Facades\Log::warning('Registration OTP mail transport failed', ['exception_type' => get_class($exception), 'reason' => $this->failureReason($exception), 'mailer' => $mailer]);
+                    $message = match ($this->failureReason($exception)) {
+                        'authentication' => 'The email provider rejected the server login. The administrator needs to update the mail credentials before OTP can be sent.',
+                        'certificate' => 'The server could not establish a secure email connection. Please contact the administrator.',
+                        'provider_limit' => 'The email provider temporarily limited sending. Please try again later.',
+                        default => 'Unable to reach the email service. No new code was issued. You can try sending again.',
+                    };
+                    return response()->json(['message' => $message], 503);
+                }
             }
+            $request->session()->forget(['registration_verified_until', 'registration_verified_at']);
+            $request->session()->put('registration_otp', [
+                'hash' => Hash::make($otp), 'expires' => now()->addMinutes(10)->timestamp, 'attempts' => 0,
+            ]);
+
+            $payload = ['message' => 'Verification code sent. Check your inbox and spam folder. It expires in 10 minutes.', 'retry_after' => 60];
+
+            // Demo convenience: when the app has no real SMTP configured (blank,
+            // log or array mailer), no email is delivered anywhere. Surface the
+            // code on screen so the flow stays usable. Never exposed when real
+            // SMTP is configured, because the code is genuinely emailed that way.
+            if ($demoMode) {
+                $payload['message'] = "Demo mode — your verification code is: {$otp}. It expires in 10 minutes.";
+                $payload['debug_otp'] = $otp;
+                \Illuminate\Support\Facades\Log::info("Registration OTP (demo mode, mailer='{$mailer}') for {$email}: {$otp}");
+            }
+
+            return response()->json($payload);
+        } catch (\Throwable $exception) {
+            RateLimiter::clear($key);
+            \Illuminate\Support\Facades\Log::error('Registration OTP send failed unexpectedly', ['exception_type' => get_class($exception), 'path' => $request->path()]);
+            return response()->json([
+                'message' => 'Unable to send the verification code right now. Please try again in a minute.',
+                'reason' => \Illuminate\Support\Str::afterLast(get_class($exception), '\\'),
+            ], 503);
         }
-        $request->session()->forget(['registration_verified_until', 'registration_verified_at']);
-        $request->session()->put('registration_otp', [
-            'hash' => Hash::make($otp), 'expires' => now()->addMinutes(10)->timestamp, 'attempts' => 0,
-        ]);
-
-        $payload = ['message' => 'Verification code sent. Check your inbox and spam folder. It expires in 10 minutes.', 'retry_after' => 60];
-
-        // Demo convenience: when the app has no real SMTP configured (blank,
-        // log or array mailer), no email is delivered anywhere. Surface the
-        // code on screen so the flow stays usable. Never exposed when real
-        // SMTP is configured, because the code is genuinely emailed that way.
-        if ($demoMode) {
-            $payload['message'] = "Demo mode — your verification code is: {$otp}. It expires in 10 minutes.";
-            $payload['debug_otp'] = $otp;
-            \Illuminate\Support\Facades\Log::info("Registration OTP (demo mode, mailer='{$mailer}') for {$email}: {$otp}");
-        }
-
-        return response()->json($payload);
     }
 
     public function verifyOTP(Request $request)
