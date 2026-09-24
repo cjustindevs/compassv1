@@ -73,6 +73,30 @@ migrate_with_retry() {
 migrate_with_retry "main database" migrate || true
 migrate_with_retry "identity vault" migrate --database=identity_vault --path=database/migrations/identity_vault || true
 
+# --- Optional demo seeding (guarded: requested AND users table is empty) ------
+# A freshly provisioned database has NO accounts, so the documented demo logins
+# (admin@example.com / password, seeker|helper|adviser|professional@compass.edu.ph
+# / password123, etc.) do not exist until seeded. Setting RUN_SEED_DEMO=true seeds
+# them once against an empty users table; on later boots the table is non-empty
+# and the seeder is skipped, so it never duplicates or wipes data.
+seed_demo_if_empty() {
+    if [ "${RUN_SEED_DEMO:-false}" != "true" ]; then
+        return 0
+    fi
+    echo "[start] RUN_SEED_DEMO=true -- checking whether demo data should be seeded."
+    user_count="$(php artisan tinker --execute="echo DB::table('users')->count();" 2>/dev/null | tr -cd '0-9' | tail -c 8)"
+    if [ -z "${user_count}" ] || [ "${user_count}" = "0" ]; then
+        echo "[start] users table is empty -- seeding demo data."
+        php artisan db:seed --force --no-interaction \
+            && echo "[start] Demo data seeded." \
+            || echo "[start] ERROR: demo seeding failed -- inspect logs above."
+    else
+        echo "[start] Demo data already present (${user_count} users) -- skipping seeder."
+    fi
+}
+
+seed_demo_if_empty
+
 # --- Nginx configuration (inject Render's $PORT) --------------------------
 rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
 envsubst '${PORT}' < /docker/nginx.conf > /etc/nginx/conf.d/default.conf
