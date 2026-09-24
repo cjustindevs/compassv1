@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\SystemAdministrator;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -26,6 +27,15 @@ class DatabaseSeeder extends Seeder
                     'password' => Hash::make('password'),
                     'role' => $role,
                 ]
+            );
+        }
+
+        // The admin module expects an administrator profile row for admin accounts.
+        $admin = User::where('role', 'admin')->first();
+        if ($admin && $admin->email === 'admin@example.com') {
+            SystemAdministrator::firstOrCreate(
+                ['user_account_id' => $admin->id],
+                ['first_name' => 'System', 'last_name' => 'Administrator', 'email' => $admin->email]
             );
         }
 

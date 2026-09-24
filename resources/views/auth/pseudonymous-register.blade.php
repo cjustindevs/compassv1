@@ -182,7 +182,7 @@
 
 @push('styles')
 <style>
-    .email-dialog { width: min(480px, calc(100% - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; border: 0; border-radius: 20px; padding: 20px; }
+    .email-dialog { position: fixed; inset: 0; margin: auto; width: min(480px, calc(100% - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; border: 0; border-radius: 20px; padding: 20px; }
     .email-dialog::backdrop { background: rgba(15, 23, 42, .5); }
     .email-dialog > button { margin: 0 0 12px auto; display: flex; }
     .registration-divider { border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 4px; }

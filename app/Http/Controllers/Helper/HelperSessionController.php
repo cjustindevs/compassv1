@@ -264,7 +264,7 @@ class HelperSessionController extends Controller
         $skills = [
             'active_listening' => 'Active Listening',
             'empathy' => 'Empathy',
-            'crisis_intervention' => 'Crisis Intervention',
+            'crisis_intervention' => 'Clarification',
             'problem_solving' => 'Problem Solving',
             'validation' => 'Validation',
             'referral' => 'Referral',
@@ -286,12 +286,16 @@ class HelperSessionController extends Controller
             'risk_level_assessed' => 'nullable|in:low,moderate,high,emergency',
             'session_result' => 'required|in:stable,needs_follow_up,needs_referral',
             'follow_up_plan' => ['nullable', 'string', 'max:2000', \Illuminate\Validation\Rule::requiredIf(in_array($request->input('session_result'), ['needs_follow_up', 'needs_referral'], true))],
+            'personal_reflection' => 'nullable|string|max:2000',
+            'skills_applied' => 'nullable|array',
+            'skills_applied.*' => 'string|max:50',
             'correction_reason' => 'nullable|string|max:1000',
         ]);
 
         $session = Session::where('helper_id', Auth::user()->helper->id)->findOrFail($id);
 
-        app(\App\Services\HelperDocumentationService::class)->save(Auth::user(), $session, $validated);
+        $hasReflection = filled($validated['personal_reflection'] ?? null) || ! empty($validated['skills_applied'] ?? []);
+        app(\App\Services\HelperDocumentationService::class)->save(Auth::user(), $session, $validated, $hasReflection ? 'both' : 'summary');
 
         return back()->with('success', 'Session notes saved successfully.');
     }
@@ -311,7 +315,7 @@ class HelperSessionController extends Controller
 
         $session = Session::where('helper_id', Auth::user()->helper->id)->findOrFail($id);
 
-        app(\App\Services\HelperDocumentationService::class)->save(Auth::user(), $session, $validated, true);
+        app(\App\Services\HelperDocumentationService::class)->save(Auth::user(), $session, $validated, 'reflection');
 
         return back()->with('success', 'Personal reflection saved.');
     }

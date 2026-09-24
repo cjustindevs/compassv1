@@ -230,7 +230,19 @@
                             @error('account_status') <small class="field-validation">{{ $message }}</small> @enderror
                         </label>
                     </div>
-                    <p class="field-note">A secure random initial password is generated. The user sets their own password through Forgot Password.</p>
+                    <div class="form-grid form-grid-two">
+                        <label class="admin-field">
+                            <span>Initial password</span>
+                            <input name="password" type="password" value="" maxlength="255" autocomplete="new-password" required>
+                            @error('password') <small class="field-validation">{{ $message }}</small> @enderror
+                        </label>
+                        <label class="admin-field">
+                            <span>Confirm password</span>
+                            <input name="password_confirmation" type="password" value="" maxlength="255" autocomplete="new-password" required>
+                            @error('password_confirmation') <small class="field-validation">{{ $message }}</small> @enderror
+                        </label>
+                    </div>
+                    <p class="field-note">At least 8 characters with upper and lower case letters, a number, and a symbol. Share this initial password with the user securely.</p>
                 </fieldset>
             </div>
 

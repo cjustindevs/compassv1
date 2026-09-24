@@ -209,14 +209,99 @@
                 <p><strong>Session result:</strong> {{ ucwords(str_replace('_',' ',$report->session_result ?? 'Not recorded')) }}</p>
                 <p><strong>Follow-up plan:</strong> {{ $report->follow_up_plan ?: 'Not recorded' }}</p>
                 <p><strong>Personal reflection:</strong> {{ $report->personal_reflection ?: 'Not submitted' }}</p>
-                <p><strong>Skills applied:</strong> {{ collect($report->skills)->map(fn($skill)=>ucwords(str_replace('_',' ',$skill)))->join(', ') ?: 'Not recorded' }}</p>
+                <p><strong>Skills applied:</strong> {{ collect($report->skills)->map(fn($skill)=>(['active_listening'=>'Active Listening','empathy'=>'Empathy','crisis_intervention'=>'Clarification','problem_solving'=>'Problem Solving','validation'=>'Validation','referral'=>'Referral'][$skill] ?? ucwords(str_replace('_',' ',$skill))))->join(', ') ?: 'Not recorded' }}</p>
                 @if($report->reassessment_requested_at)<p><strong>Risk reassessment requested:</strong> {{ ucfirst($report->risk_level_assessed) }}. Review through the screening review workflow; this is a helper observation, not an official classification.</p>@endif
                 <p><strong>Documentation:</strong> {{ $report->documentation_late ? 'Submitted after 24 hours' : 'No overdue submission recorded' }}</p>
+            </div>
+
+            <!-- Referral & Risk Review -->
+            <div class="mb-6 p-4 bg-gray-50 rounded-xl">
+                <h4 class="font-semibold text-gray-700 text-sm mb-3">Referral &amp; Risk Review</h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div>
+                        <span class="text-gray-400 text-xs uppercase tracking-wider">Referral recommended</span>
+                        <p class="font-medium">{{ $report->referral_recommended ? 'Yes' : 'No' }}</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-400 text-xs uppercase tracking-wider">Recorded risk</span>
+                        <p class="font-medium capitalize">{{ $report->session->risk_level ?? 'Not recorded' }}</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-400 text-xs uppercase tracking-wider">Reassessment on file</span>
+                        <p class="font-medium capitalize">{{ $report->reassessment_requested_at ? ($report->risk_level_assessed ?? 'Requested') : 'None' }}</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-400 text-xs uppercase tracking-wider">Current referral</span>
+                        <p class="font-medium">{{ $report->session->referrals()->latest('id')->value('status') ?? 'None' }}</p>
+                    </div>
+                </div>
+                @php($sessionReferrals = $report->session->referrals()->latest('id')->take(3)->get())
+                @if($sessionReferrals->count())
+                    <div class="mt-3 space-y-2">
+                        @foreach($sessionReferrals as $r)
+                            <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white border border-gray-200 px-3 py-2">
+                                <span class="capitalize">{{ str_replace('_', ' ', $r->status) }}</span>
+                                <span class="text-xs text-gray-400">{{ $r->created_at->format('M d, Y g:i A') }} · {{ $r->priority ? ucfirst($r->priority) : 'Standard' }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-sm text-gray-400 mt-3">No referrals were recorded for this session. Note whether a referral should have been initiated when asking the helper about scope and judgment.</p>
+                @endif
             </div>
             <!-- Evaluation Form -->
             <form class="form-maximized" method="POST" action="{{ route('adviser.evaluate.store', $report->id) }}">
                 @csrf
                 <p class="text-sm text-gray-500 my-3">Rubric: {{ \App\Services\CompetencyRubric::VERSION }}. Evidence: submitted session report #{{ $report->id }} and its correction history. Each criterion is rated independently; weighted total is on a 1?5 scale.</p>
+
+                <!-- Evidence considered -->
+                <div class="mb-5 p-4 bg-gray-50 rounded-xl text-sm">
+                    <h4 class="font-semibold text-gray-700 mb-2">Evidence considered</h4>
+                    <ul class="list-disc pl-5 space-y-1 text-gray-600">
+                        <li>Submitted documentation (report #{{ $report->id }}): summary, observations, actions taken, session result, and follow-up plan.</li>
+                        @if($report->personal_reflection)
+                            <li>Personal reflection submitted {{ $report->reflection_submitted_at?->format('M d, Y g:i A') ?: '' }}.</li>
+                        @endif
+                        @if(count($report->skills))
+                            <li>Skills reported as applied: {{ collect($report->skills)->map(fn($skill)=>(['active_listening'=>'Active Listening','empathy'=>'Empathy','crisis_intervention'=>'Clarification','problem_solving'=>'Problem Solving','validation'=>'Validation','referral'=>'Referral'][$skill] ?? ucwords(str_replace('_',' ',$skill))))->join(', ') }}.</li>
+                        @endif
+                        <li>{{ $messages->count() ? 'Reviewed ' . $messages->count() . ' conversation messages from the authorized (consent-gated, aliased) record.' : 'Conversation transcript is not disclosed without an authorized access grant; evaluation relies on submitted documentation.' }}</li>
+                        @if($existingFeedback)
+                            <li>Prior feedback exists for this report — see the correction history above; ignore prior ratings unless this is a correction run.</li>
+                        @endif
+                    </ul>
+                </div>
+
+                <!-- Rating descriptor reference -->
+                <details class="mb-6 rounded-xl border border-gray-200 p-4 group">
+                    <summary class="cursor-pointer text-sm font-semibold text-gray-700">View rating descriptors (5 = highest)</summary>
+                    <div class="mt-3 overflow-x-auto">
+                        <table class="w-full text-sm text-left border-collapse">
+                            <thead>
+                                <tr class="text-xs uppercase tracking-wider text-gray-400 border-b border-gray-200">
+                                    <th class="py-2 pr-3 font-semibold">Rating</th>
+                                    <th class="py-2 pr-3 font-semibold">Meaning</th>
+                                    <th class="py-2 font-semibold">What the helper does at this level</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @foreach([
+                                    '5' => ['Excellent', 'Consistently and skillfully applies the behavior, even under difficult circumstances; serves as a model.'],
+                                    '4' => ['Good', 'Applies the behavior consistently; rare, minor lapses that do not affect the session.'],
+                                    '3' => ['Satisfactory', 'Applies the behavior adequately; present but with clear room to deepen skills.'],
+                                    '2' => ['Needs attention', 'Applies the behavior inconsistently or superficially; noticeable gaps in quality.'],
+                                    '1' => ['Unsatisfactory', 'Does not apply the behavior, or applies it in ways that undermine the session.'],
+                                ] as $score => [$tag, $meaning])
+                                    <tr class="align-top">
+                                        <td class="py-2 pr-3 font-bold text-gray-800">{{ $score }}</td>
+                                        <td class="py-2 pr-3 font-medium text-gray-700">{{ $tag }}</td>
+                                        <td class="py-2 text-gray-500">{{ $meaning }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
                 @if($existingFeedback)
                     <label class="block text-sm font-semibold my-3">Correction reason<input name="correction_reason" required minlength="10" maxlength="1000" class="form-input mt-1" placeholder="Explain why this evaluation or feedback needs correction."></label>
                     <x-supervision-history :record="$existingFeedback" />
@@ -342,12 +427,20 @@
 
                     <!-- Submit -->
                     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-200">
-                        <a href="{{ route('adviser.evaluations') }}" class="btn-outline">
-                            <i class="fas fa-times mr-2"></i> Cancel
-                        </a>
-                        <button type="submit" class="btn-primary">
-                            <i class="fas fa-check mr-2"></i> Submit Evaluation
-                        </button>
+                        <div class="flex items-start gap-3 text-xs text-gray-500">
+                            <input type="checkbox" id="evaluationDeclaration" required class="mt-0.5 accent-[#04A052]" aria-required="true">
+                            <label for="evaluationDeclaration" class="leading-relaxed">
+                                I declare that I rated each criterion independently against the 5-point descriptors and the evidence listed above, without duplicating any prior score. This declaration is attestation only and is not stored as a separate record.
+                            </label>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <a href="{{ route('adviser.evaluations') }}" class="btn-outline">
+                                <i class="fas fa-times mr-2"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-check mr-2"></i> Submit Evaluation
+                            </button>
+                        </div>
                     </div>
 
                 </div>
@@ -465,10 +558,6 @@
             else { level = 'Unsatisfactory'; className = 'competency-level unsatisfactory'; }
             return `<span class="${className}">${level}</span>`;
         }
-    </script>
+</script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-});
-    </script>
 @endsection

@@ -267,6 +267,56 @@
         .chat-input button:hover { background: #038A45; }
         .chat-input button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+        /* ─── Seeker check-in card ─── */
+        .checkin-card {
+            align-self: center;
+            max-width: 100%;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #d1e5d9;
+            border-radius: 16px;
+            padding: 16px 18px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+        }
+        .checkin-card h4 { font-size: 15px; font-weight: 700; color: #163b2d; margin-bottom: 4px; }
+        .checkin-card > p { font-size: 12px; color: #6b7280; margin-bottom: 12px; }
+        .checkin-options { display: flex; flex-wrap: wrap; gap: 8px; }
+        .checkin-options label {
+            flex: 1;
+            min-width: 120px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .checkin-options input { display: none; }
+        .checkin-options input:checked + span {
+            border-color: transparent;
+        }
+        .checkin-options label:has(input:checked) {
+            border-color: #04A052;
+            background: #EAF8F0;
+            color: #027039;
+        }
+        .checkin-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+        .checkin-actions button {
+            border-radius: 24px;
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+        .checkin-actions button[type="submit"] { background: #04A052; color: white; }
+        .checkin-actions button[data-skip] { background: transparent; color: #6b7280; border: 1.5px solid #e5e7eb; }
+        .checkin-error { color: #b91c1c; font-size: 12px; margin-top: 8px; }
+        .checkin-saved { font-size: 13px; color: #027039; font-weight: 600; }
+
         /* ─── Responsive ─── */
         @media (max-width: 640px) {
             .chat-header { padding: 12px 14px; }
@@ -328,6 +378,25 @@
                 <p>Say hello to your helper to get started.</p>
             </div>
 
+            @if(! $report?->help_seeker_condition)
+            <div class="checkin-card" id="checkinCard">
+                <h4>How is your condition right now?</h4>
+                <p>This helps your helper understand how you are feeling at the start of the session. Your helper sees only your answer.</p>
+                <form id="checkinForm">
+                    <div class="checkin-options">
+                        @foreach(['coping_well' => 'Coping well', 'mild_distress' => 'Mild distress', 'moderate_distress' => 'Moderate distress', 'severe_distress' => 'Severe distress', 'prefer_not_to_say' => 'Prefer not to say'] as $value => $label)
+                            <label><input type="radio" name="condition" value="{{ $value }}"><span>{{ $label }}</span></label>
+                        @endforeach
+                    </div>
+                    <div class="checkin-actions">
+                        <button type="submit">Save my answer</button>
+                        <button type="button" data-skip>Skip for now</button>
+                    </div>
+                    <p class="checkin-error" id="checkinError"></p>
+                </form>
+            </div>
+            @endif
+
             <!-- Typing indicator (shown via JavaScript) -->
             <div class="typing-indicator" id="typingIndicator" style="display:none;">
                 <div class="dots"><span></span><span></span><span></span></div>
@@ -348,5 +417,43 @@
     @include('layouts.partials.pwa-banner')
 
 @include('session.referral-prompt')
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const card = document.getElementById('checkinCard');
+    if (!card) return;
+    const form = document.getElementById('checkinForm');
+    const error = document.getElementById('checkinError');
+
+    async function submitCheckIn(condition) {
+        error.textContent = '';
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        try {
+            const response = await fetch('{{ route('session.checkin') }}', {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                body: new URLSearchParams({ condition: condition, _token: csrfToken })
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Unable to save your answer.');
+            card.classList.add('checkin-saved');
+            card.innerHTML = '<p class="checkin-saved"><i class="fas fa-check-circle" aria-hidden="true"></i> Thank you. Your answer was saved.</p>';
+        } catch (e) {
+            error.textContent = e.message;
+        }
+    }
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        const selected = form.querySelector('input[name="condition"]:checked');
+        if (!selected) { error.textContent = 'Please choose an option.'; return; }
+        submitCheckIn(selected.value);
+    });
+
+    form.querySelector('[data-skip]').addEventListener('click', function () {
+        submitCheckIn('prefer_not_to_say');
+    });
+});
+</script>
 </body>
 </html>

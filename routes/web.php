@@ -182,6 +182,7 @@ Route::middleware(['auth', 'role:seeker'])->group(function () {
     // Session Routes (Chat / Voice / Evaluation)
     Route::get('/session/chat', [SessionController::class, 'chat'])->name('session.chat');
     Route::post('/session/chat', [SessionController::class, 'sendMessage'])->name('session.chat.send');
+    Route::post('/session/check-in', [SessionController::class, 'checkIn'])->name('session.checkin');
     Route::get('/session/voice', [SessionController::class, 'voice'])->name('session.voice');
     Route::post('/session/end', [SessionController::class, 'endSession'])->name('session.end');
     Route::get('/session/evaluation', [SessionController::class, 'evaluation'])->name('session.evaluation');

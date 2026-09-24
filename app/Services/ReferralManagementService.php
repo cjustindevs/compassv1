@@ -14,11 +14,13 @@ use App\Models\Notification;
 use App\Models\PsychologyProfessional;
 use App\Models\Referral;
 use App\Models\Session;
+use App\Traits\BroadcastsSafely;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ReferralManagementService
 {
+    use BroadcastsSafely;
     private const OPEN_STATUSES = [
         'status' => [Referral::STATUS_PENDING_ADVISER, Referral::STATUS_PENDING_CONSENT, Referral::STATUS_CONSENT_REQUESTED, Referral::STATUS_PENDING_PROFESSIONAL, Referral::STATUS_ACCEPTED, Referral::STATUS_IN_PROGRESS],
     ];
@@ -55,7 +57,7 @@ class ReferralManagementService
             ]);
 
             SupportAudit::record('referral_consent_requested', $referral, ['status' => Referral::STATUS_CONSENT_REQUESTED]);
-            event(new ReferralConsentRequested($referral));
+            $this->broadcastSafely(new ReferralConsentRequested($referral));
             $this->notifySeekerConsentRequested($referral);
 
             return $referral->refresh();
@@ -108,7 +110,7 @@ class ReferralManagementService
             }
 
             SupportAudit::record($accepted ? 'referral_consent_accepted' : 'referral_consent_declined', $referral, ['status' => $referral->status, 'purpose' => 'referral']);
-            event(new ReferralConsentUpdated($referral, $accepted));
+            $this->broadcastSafely(new ReferralConsentUpdated($referral, $accepted));
 
             return $referral->refresh();
         }, 3);
@@ -241,7 +243,7 @@ class ReferralManagementService
             }
 
             if ($referral->helper?->user_account_id) {
-                event(new ReferralApproved($referral, $referral->helper->user_account_id));
+                $this->broadcastSafely(new ReferralApproved($referral, $referral->helper->user_account_id));
             }
         } else {
             $referral->forceFill([

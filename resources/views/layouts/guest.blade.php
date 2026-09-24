@@ -14,6 +14,17 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <style>
+            dialog {
+                position: fixed;
+                inset: 0;
+                margin: auto;
+                max-width: calc(100vw - 16px);
+                max-height: 92dvh;
+                overflow: auto;
+            }
+            dialog:not([open]) { display: none; }
+        </style>
     </head>
     <body class="compass-compact font-sans text-gray-900 antialiased">
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">

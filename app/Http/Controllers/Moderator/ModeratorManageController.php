@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Moderator;
 use App\Http\Controllers\Controller;
 use App\Models\Adviser;
 use App\Models\Helper;
+use App\Models\Referral;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -90,7 +91,30 @@ class ModeratorManageController extends Controller
         ]);
 
         $helper = Helper::findOrFail($request->helper_id);
-        abort_if($helper->adviser_id,403,'Use the Adviser transfer workflow to preserve supervision and case responsibility.');
+
+        if (! $helper->adviser_id) {
+            return back()->with('success', $helper->full_name . ' moved back to the unassigned pool.');
+        }
+
+        $openReferrals = Referral::where('helper_id', $helper->id)
+            ->whereIn('status', [
+                Referral::STATUS_PENDING_ADVISER,
+                Referral::STATUS_CONSENT_REQUESTED,
+                Referral::STATUS_PENDING_CONSENT,
+                Referral::STATUS_PENDING_PROFESSIONAL,
+                Referral::STATUS_ACCEPTED,
+                Referral::STATUS_IN_PROGRESS,
+            ])->exists();
+
+        $openCases = $helper->sessions()
+            ->whereIn('session_status', ['active', 'helper_assigned'])
+            ->exists();
+
+        abort_if($openReferrals || $openCases, 409, 'This helper still has open referrals or active cases. Transfer or close them before removing supervision, or use the Adviser transfer workflow to preserve case responsibility.');
+
+        $helper->assignmentReason = 'Supervision ended by Moderator; helper returned to the unassigned pool.';
+        $helper->update(['adviser_id' => null]);
+        app(\App\Services\HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh());
 
         return back()->with('success', $helper->full_name . ' moved back to the unassigned pool.');
     }

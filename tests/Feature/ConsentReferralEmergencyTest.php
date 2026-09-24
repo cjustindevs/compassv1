@@ -135,6 +135,38 @@ class ConsentReferralEmergencyTest extends TestCase
         $this->assertDatabaseCount('consent_records', 2);
     }
 
+    public function test_referral_consent_request_survives_a_broadcast_exception(): void
+    {
+        \Illuminate\Support\Facades\Broadcast::extend('failing-broadcaster', fn () => new class implements \Illuminate\Contracts\Broadcasting\Broadcaster {
+            public function auth($request)
+            {
+                return [];
+            }
+
+            public function validAuthenticationResponse($request, $result)
+            {
+                return json_encode([]);
+            }
+
+            public function broadcast(array $channels, $event, array $payload)
+            {
+                throw new \Illuminate\Broadcasting\BroadcastException('Pusher error: cURL error 7: Failed to connect to localhost port 8080');
+            }
+        });
+        config(['broadcasting.default' => 'failing-broadcaster']);
+
+        [, $helper] = $this->readyHelper();
+        $seekerUser = $this->seekerUser();
+        $session = $this->activeSession($helper, $seekerUser);
+
+        $this->post(route('helper.session.referral.consent', ['id' => $session->id]), [
+            'summary' => 'The seeker may benefit from professional support for anxiety management.',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('referrals', ['session_id' => $session->id, 'status' => Referral::STATUS_CONSENT_REQUESTED]);
+        $this->assertFalse(Referral::where('session_id', $session->id)->firstOrFail()->identity_disclosed);
+    }
+
     public function test_consent_prompt_is_visible_to_seeker_and_helper_but_hidden_from_others(): void
     {
         [, $helper] = $this->readyHelper();

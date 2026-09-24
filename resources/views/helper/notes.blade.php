@@ -34,10 +34,18 @@
                     <legend>Session documentation</legend>
                     <div class="form-row">
 
+                    @if($report?->help_seeker_condition)
+                    <div class="form-group form-span-all">
+                        <label class="form-label">Seeker condition</label>
+                        <input type="text" class="form-control" value="{{ $report->help_seeker_condition }}" readonly>
+                        <small style="font-size:12px;color:var(--gray-400)">Recorded from the seeker's check-in at session start.</small>
+                    </div>
+                    @else
                     <div class="form-group form-span-all">
                         <label class="form-label">Seeker condition</label>
                         <input type="text" id="help_seeker_condition" name="help_seeker_condition" class="form-control" placeholder="Briefly describe the seeker's condition" value="{{ old('help_seeker_condition', $report->help_seeker_condition ?? '') }}" maxlength="500">
                     </div>
+                    @endif
 
                     <div class="form-group">
                         <label class="form-label" for="session_summary">Session summary <span style="color:var(--red-600);">*</span></label>
@@ -75,21 +83,17 @@
                         </select>
                     </div>
                     <div class="form-group"><label class="form-label" for="follow_up_plan">Follow-up or referral plan</label><textarea id="follow_up_plan" name="follow_up_plan" class="form-control" maxlength="2000">{{ old('follow_up_plan',$report?->follow_up_plan) }}</textarea><small>Required when follow-up or a referral is needed. Submit a referral from the case actions for adviser approval.</small></div>
-                    @if($report?->session_summary)
-                        <div class="form-group"><label class="form-label">Reason for correction</label><input name="correction_reason" class="form-control" maxlength="1000" required></div>
-                    @endif
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Submit summary</button>
-                </form>
-                <hr class="divider">
-                <form class="form-container form-maximized" method="POST" action="{{ route('helper.reflection.submit',$session->id) }}">
-                    @csrf
-                    <fieldset class="form-section-compact"><legend>Personal reflection</legend><div class="form-row">
-                    <div class="form-group">
+
+                    <fieldset class="form-section-compact">
+                    <legend>Personal reflection</legend>
+                    <div class="form-row">
+                    <div class="form-group form-span-all">
                         <label class="form-label" for="personal_reflection">Personal reflection</label>
-                        <textarea id="personal_reflection" name="personal_reflection" required class="form-control" placeholder="Your personal reflection on the session (not shared with the seeker)" maxlength="2000">{{ old('personal_reflection', $report->personal_reflection ?? '') }}</textarea>
+                        <textarea id="personal_reflection" name="personal_reflection" class="form-control" placeholder="Your personal reflection on the session (not shared with the seeker)" maxlength="2000">{{ old('personal_reflection', $report->personal_reflection ?? '') }}</textarea>
+                        <small style="font-size:12px;color:var(--gray-400)">Private between you and your adviser; not shared with the seeker.</small>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group form-span-all">
                         <label class="form-label">Skills applied</label>
                         <div class="skills-grid-max">
                             @foreach($skills as $key => $label)
@@ -101,13 +105,13 @@
                             @endforeach
                         </div>
                     </div>
-
-                    @if($report?->personal_reflection)
-                    <div class="form-group form-span-all"><label class="form-label">Reason for correction</label><input name="correction_reason" class="form-control" maxlength="1000" required></div>
-                    @endif
                     </div>
                     </fieldset>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Submit reflection</button>
+
+                    @if($report?->session_summary || $report?->personal_reflection)
+                        <div class="form-group"><label class="form-label">Reason for correction</label><input name="correction_reason" class="form-control" maxlength="1000" required></div>
+                    @endif
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Submit session documentation</button>
                 </form>
             </div>
         </div>

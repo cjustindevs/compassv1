@@ -484,6 +484,89 @@
             .safety-btn { min-width: 100%; }
             .step-dot { width: 24px; height: 24px; font-size: 10px; }
         }
+
+        /* ─── Safety check modal ─── */
+        #safetyModal {
+            border: 0;
+            border-radius: 20px;
+            padding: 0;
+            position: fixed;
+            inset: 0;
+            margin: auto;
+            width: min(620px, calc(100% - 32px));
+            max-height: 88dvh;
+            color: #163B2D;
+            background: white;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.2);
+            font-family: 'Inter', sans-serif;
+        }
+        #safetyModal::backdrop { background: rgba(15,35,25,.5); backdrop-filter: blur(3px); }
+        .safety-modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+        .safety-modal-header h2 { font-size: 19px; font-weight: 800; color: #991b1b; margin: 0; }
+        .safety-modal-body { padding: 8px 24px 20px; max-height: 60dvh; overflow: auto; }
+        .safety-modal-body h3 { font-size: 14px; font-weight: 700; margin: 16px 0 8px; }
+        .safety-modal-body p, .safety-modal-body li { font-size: 13px; line-height: 1.7; color: #64748b; }
+        .hotline-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border: 1px solid #fee2e2;
+            background: #fef2f2;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+        .hotline-card .hotline-name { font-weight: 600; font-size: 13px; color: #7f1d1d; }
+        .hotline-card .hotline-number {
+            background: #b91c1c;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        .self-help-item {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 10px 4px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 13px;
+            color: #374151;
+        }
+        .self-help-item i { color: var(--green-500); margin-top: 3px; }
+        .self-help-item a { color: var(--green-600); font-weight: 600; text-decoration: none; }
+        .safety-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
+            background: #f8fbf9;
+        }
+        .safety-modal-footer button, .safety-modal-footer a.primary {
+            border: 1px solid #d1e5d9;
+            background: white;
+            color: #027039;
+            border-radius: 10px;
+            padding: 10px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .safety-modal-footer button.primary, .safety-modal-footer a:hover.primary { background: #04a052; color: white; border-color: #04a052; }
     </style>
 </head>
 <body class="compass-compact">
@@ -634,6 +717,50 @@
             </form>
         </div>
 
+        <!-- Safety check modal (opens when the safety answer is Yes) -->
+        <dialog id="safetyModal" aria-labelledby="safetyModalTitle">
+            <div class="safety-modal-header">
+                <div>
+                    <h2 id="safetyModalTitle"><i class="fas fa-heart-crack mr-2"></i>You are not alone</h2>
+                    <p class="text-sm text-gray-500 mt-1">Helpful resources are available right now. Please review them before continuing.</p>
+                </div>
+                <button type="button" class="consent-action" data-close-safety aria-label="Close"><i class="fas fa-xmark" aria-hidden="true"></i></button>
+            </div>
+            <div class="safety-modal-body">
+                <h3><i class="fas fa-phone-volume text-red-600 mr-1"></i> Crisis hotlines (available 24/7)</h3>
+                @forelse($hotlines as $hotline)
+                    <div class="hotline-card">
+                        <div>
+                            <div class="hotline-name">{{ $hotline->agency_name }}</div>
+                            <div class="text-xs text-gray-500 mt-0.5">{{ $hotline->description }}</div>
+                        </div>
+                        <span class="hotline-number">{{ $hotline->hotline }}</span>
+                    </div>
+                @empty
+                    <p>No hotlines are listed right now. If you are in immediate danger, call 911.</p>
+                @endforelse
+
+                <h3><i class="fas fa-book-open text-green-600 mr-1"></i> Self-help tools</h3>
+                @forelse($selfHelp as $tool)
+                    <div class="self-help-item">
+                        <i class="fas {{ $tool->icon ?? 'fa-book-open' }}" aria-hidden="true"></i>
+                        <div>
+                            <a href="{{ route('selfhelp.show', $tool->id) }}">{{ $tool->title }}</a>
+                            <div class="text-xs text-gray-500">{{ $tool->description }} · {{ $tool->duration ? $tool->duration . ' min' : 'Self-paced' }}</div>
+                        </div>
+                    </div>
+                @empty
+                    <p>You can browse grounding and calming activities anytime in the Self-Help section.</p>
+                @endforelse
+
+                <p class="text-xs text-gray-400 mt-4"><i class="fas fa-shield-halved mr-1"></i> COMPASS cannot guarantee an immediate emergency response. If you are in danger, contact local emergency services first.</p>
+            </div>
+            <div class="safety-modal-footer">
+                <button type="button" data-close-safety>Continue my request</button>
+                <a class="primary" href="{{ route('emergency') }}">Open Emergency page</a>
+            </div>
+        </dialog>
+
         <!-- Emergency Banner -->
         <div class="mt-6 p-4 bg-red-50 rounded-xl border border-red-200 flex items-center gap-4 flex-wrap">
             <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
@@ -674,17 +801,38 @@
             // ── Custom Concern Toggle ──
             const concernSelect = document.getElementById('concern_id');
             const customContainer = document.getElementById('customConcernContainer');
+            const customConcernInput = document.getElementById('custom_concern');
+
+            function isOthers(option) {
+                return option && option.text.trim().toLowerCase() === 'others';
+            }
 
             concernSelect.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
-                if (selectedOption && selectedOption.text === 'Others') {
+                if (isOthers(selectedOption)) {
                     customContainer.classList.remove('hidden');
+                    customConcernInput.setAttribute('required', 'required');
                 } else {
                     customContainer.classList.add('hidden');
-                    document.getElementById('custom_concern').value = '';
+                    customConcernInput.removeAttribute('required');
+                    customConcernInput.value = '';
                 }
             });
             concernSelect.dispatchEvent(new Event('change'));
+
+            // ── Safety check modal ──
+            const safetyModal = document.getElementById('safetyModal');
+            function openSafetyModal() {
+                if (safetyModal && typeof safetyModal.showModal === 'function') safetyModal.showModal();
+            }
+            safetyModal.querySelectorAll('[data-close-safety]').forEach(btn => {
+                btn.addEventListener('click', () => safetyModal.close());
+            });
+            document.querySelectorAll('input[name="safety_check"]').forEach(input => {
+                input.addEventListener('change', function () {
+                    if (this.checked && this.value === 'yes') openSafetyModal();
+                });
+            });
 
             // ── Safety answer → compact screening fields ──
             // The five compact answers are hidden inputs kept in sync with the

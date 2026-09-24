@@ -10,11 +10,14 @@ use App\Models\HelpSeekerEvaluation;
 use App\Models\Message;
 use App\Models\Notification;
 use App\Models\Session;
+use App\Models\SessionReport;
 use App\Models\User;
 use App\Services\ChatTranscriptionService;
 use App\Traits\BroadcastsSafely;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 class SessionController extends Controller
 {
@@ -53,7 +56,44 @@ class SessionController extends Controller
         $helperName = $session->helper->public_alias ?: 'Peer Helper';
         $seekerName = $session->seeker->generated_alias ?? Auth::user()->name ?? 'Seeker';
 
-        return view('session.chat', compact('session', 'messages', 'helperName', 'seekerName'));
+        $report = $session->report;
+
+        return view('session.chat', compact('session', 'messages', 'helperName', 'seekerName', 'report'));
+    }
+
+    /**
+     * Record the seeker's condition check-in at session start. The value the
+     * seeker selects is stored as the session report's seeker condition, so it
+     * reflects the seeker's own answer rather than the helper's words.
+     */
+    public function checkIn(Request $request)
+    {
+        Gate::authorize('seeker-workflow');
+
+        $options = [
+            'coping_well' => 'Coping well',
+            'mild_distress' => 'Mild distress',
+            'moderate_distress' => 'Moderate distress',
+            'severe_distress' => 'Severe distress',
+            'prefer_not_to_say' => 'Prefer not to say',
+        ];
+
+        $validated = $request->validate([
+            'condition' => ['required', Rule::in(array_keys($options))],
+        ]);
+
+        $session = $this->activeSession();
+        if (! $session || ! $session->isActive()) {
+            return response()->json(['error' => 'Only an active session can record a check-in.'], 409);
+        }
+
+        $report = SessionReport::firstOrNew(['session_id' => $session->id]);
+        $report->help_seeker_condition = $options[$validated['condition']];
+        $report->save();
+
+        \App\Services\SupportAudit::record('seeker_checkin_recorded', $session, ['condition' => $validated['condition']]);
+
+        return response()->json(['saved' => true, 'condition' => $report->help_seeker_condition]);
     }
 
     /**

@@ -135,19 +135,19 @@ class SettingsTest extends TestCase
             ->from(route('admin.settings'))
             ->put(route('password.update'), [
                 'current_password' => 'password',
-                'password' => 'a-secure-new-password',
-                'password_confirmation' => 'a-secure-new-password',
+                'password' => 'SecurePass!2026',
+                'password_confirmation' => 'SecurePass!2026',
             ]);
 
         $response
             ->assertSessionHasNoErrors()
             ->assertRedirect(route('admin.settings'));
 
-        $this->assertTrue(Hash::check('a-secure-new-password', $administrator->refresh()->password));
+        $this->assertTrue(Hash::check('SecurePass!2026', $administrator->refresh()->password));
         $audit = AuditLog::query()->where('action', AuditLogger::PASSWORD_CHANGED)->sole();
         $this->assertSame($administrator->id, $audit->user_account_id);
-        $this->assertSame('Authentication', $audit->module);
-        $this->assertStringNotContainsString('a-secure-new-password', (string) $audit->description);
+        $this->assertSame('authentication', $audit->module);
+        $this->assertStringNotContainsString('SecurePass!2026', (string) $audit->description);
     }
 
     public function test_active_session_review_uses_non_sensitive_session_metadata(): void

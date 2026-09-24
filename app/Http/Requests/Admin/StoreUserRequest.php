@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class StoreUserRequest extends FormRequest
 {
@@ -25,6 +26,8 @@ class StoreUserRequest extends FormRequest
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
             'role' => ['required', Rule::in(array_keys(User::ROLE_LABELS))],
             'account_status' => ['required', Rule::in(['active', 'pending'])],
+            'password' => ['required', 'confirmed', Password::defaults()],
+            'password_confirmation' => ['required'],
         ];
     }
 

@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\Helper;
 use App\Models\HelperCompetencyHistory;
 use App\Models\HelperSchedule;
+use App\Models\ReadinessCheck;
 use App\Models\Session;
 use App\Services\HelperMatchingService;
 use Illuminate\Http\RedirectResponse;
@@ -205,7 +206,27 @@ class AdviserHelperController extends Controller
             ];
         });
 
-        return view('adviser.schedule', compact('scheduleData', 'helpers', 'date'));
+        $attendance = ReadinessCheck::with('helper')
+            ->whereHas('helper', fn ($query) => $query->whereIn('id', $helperIds))
+            ->whereDate('assessment_date', $date->toDateString())
+            ->latest('assessment_date')
+            ->get()
+            ->map(function (ReadinessCheck $check) {
+                $dutyMinutes = $check->shift_start && $check->shift_end
+                    ? max(0, $check->shift_start->diffInMinutes($check->shift_end))
+                    : null;
+
+                return [
+                    'helper' => $check->helper?->full_name ?? 'Unknown helper',
+                    'status' => $check->availability_status,
+                    'result' => $check->result_label,
+                    'shift_start' => $check->shift_start?->format('H:i'),
+                    'shift_end' => $check->shift_end?->format('H:i'),
+                    'duty_hours' => $dutyMinutes !== null ? round($dutyMinutes / 60, 2) : null,
+                ];
+            });
+
+        return view('adviser.schedule', compact('scheduleData', 'helpers', 'date', 'attendance'));
     }
 
     public function updateSchedule(Request $request): RedirectResponse

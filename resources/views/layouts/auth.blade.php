@@ -23,6 +23,15 @@
         .btn-primary:focus-visible { outline: 3px solid #15803d; outline-offset: 3px; }
         @media (prefers-reduced-motion: reduce) { .btn-primary { transition: none; } .btn-primary:hover { transform: none; } }
         .card-shadow { box-shadow: 0 20px 60px rgba(0,0,0,0.06); }
+        dialog {
+            position: fixed;
+            inset: 0;
+            margin: auto;
+            max-width: calc(100vw - 16px);
+            max-height: 92dvh;
+            overflow: auto;
+        }
+        dialog:not([open]) { display: none; }
         @media (max-width: 640px) {
             .p-8 { padding: 1.5rem; }
             .text-2xl { font-size: 1.25rem; }

@@ -2,7 +2,7 @@
 @section('title', 'Transcript access - COMPASS')
 @section('content')
 <div class="adviser-page-content space-y-5">
-    <header><h1 class="text-2xl font-bold text-gray-800">Transcript access</h1><p class="text-sm text-gray-500 mt-1">Completed sessions only. Each access requires a purpose, current supervision, and session-specific transcription consent.</p></header>
+    <header><h1 class="text-2xl font-bold text-gray-800">Transcript access</h1><p class="text-sm text-gray-500 mt-1">Completed sessions only. Each access requires a purpose and current supervision; seeker consent is captured at the start of the support flow.</p></header>
     @foreach($errors->all() as $error)<p role="alert" class="text-red-700">{{ $error }}</p>@endforeach
     @forelse($unverifiedTranscripts as $item)
         <section class="bg-white rounded-2xl border border-gray-200 p-5">
@@ -22,7 +22,7 @@
                     <button class="bg-green-600 text-white rounded-xl px-4 py-2 text-sm font-semibold">Open transcript</button>
                 </form>
             @else
-                <p class="text-sm text-gray-500 mt-3">Unavailable: valid session-specific transcription consent is required. An Adviser cannot provide consent on the participant?s behalf.</p>
+                <p class="text-sm text-gray-500 mt-3">Unavailable: you do not currently supervise this helper, or this is not a completed chat session.</p>
             @endif
         </section>
     @empty

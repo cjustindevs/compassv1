@@ -20,7 +20,7 @@ class IntegrationTest extends TestCase {
     public function test_provisioning_creates_required_profiles_without_clinical_approval(): void {
         $this->actingAs(User::factory()->create(['role'=>'admin']));
         foreach(['adviser'=>Adviser::class,'helper'=>Helper::class,'moderator'=>Moderator::class,'professional'=>PsychologyProfessional::class,'admin'=>SystemAdministrator::class,'seeker'=>HelpSeeker::class] as $role=>$model) {
-            $this->post(route('admin.users.store'),['first_name'=>'New','last_name'=>'Account','email'=>$role.'@example.test','role'=>$role,'account_status'=>'active'])->assertSessionHasNoErrors()->assertRedirect();
+            $this->post(route('admin.users.store'),['first_name'=>'New','last_name'=>'Account','email'=>$role.'@example.test','role'=>$role,'account_status'=>'active','password'=>'SecurePass!2026','password_confirmation'=>'SecurePass!2026'])->assertSessionHasNoErrors()->assertRedirect();
             $account=User::where('email',$role.'@example.test')->firstOrFail();
             $this->assertTrue($model::where('user_account_id',$account->id)->exists());
             if($role==='helper') $this->assertNotEquals('verified',$account->helper->verification_status);
@@ -32,6 +32,7 @@ class IntegrationTest extends TestCase {
         $this->actingAs($admin)->get(route('admin.audit-logs'))->assertOk()->assertDontSee('PRIVATE CLINICAL SENTINEL')->assertSee('Protected operational event');
     }
     public function test_inactive_administrator_cannot_open_admin_pages(): void {
-        $this->actingAs(User::factory()->create(['role'=>'admin','is_active'=>false]))->get(route('admin.users'))->assertRedirect(route('login'));
+        // Compass blocks inactive accounts app-wide (EnsureActiveAccount + role middleware) with a 403.
+        $this->actingAs(User::factory()->create(['role'=>'admin','is_active'=>false]))->get(route('admin.users'))->assertForbidden();
     }
 }

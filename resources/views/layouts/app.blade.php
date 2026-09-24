@@ -30,6 +30,15 @@
                 top: 0;
                 z-index: 90;
             }
+            dialog {
+                position: fixed;
+                inset: 0;
+                margin: auto;
+                max-width: calc(100vw - 16px);
+                max-height: 92dvh;
+                overflow: auto;
+            }
+            dialog:not([open]) { display: none; }
             .hamburger {
                 display: none;
                 background: #ffffff;

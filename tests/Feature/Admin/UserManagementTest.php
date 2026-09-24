@@ -7,11 +7,14 @@ use App\Models\Helper;
 use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class UserManagementTest extends TestCase
 {
     use RefreshDatabase;
+
+    private const VALID_PASSWORD = 'SecurePass!2026';
 
     public function test_guest_is_redirected_to_the_shared_login(): void
     {
@@ -71,6 +74,8 @@ class UserManagementTest extends TestCase
             'email' => 'ELENA.CRUZ@UNIVERSITY.EDU',
             'role' => 'adviser',
             'account_status' => 'active',
+            'password' => self::VALID_PASSWORD,
+            'password_confirmation' => self::VALID_PASSWORD,
         ]);
 
         $response->assertRedirect(route('admin.users'))
@@ -81,6 +86,9 @@ class UserManagementTest extends TestCase
             'email' => 'elena.cruz@university.edu',
             'role' => 'adviser',
         ]);
+
+        $created = User::where('email', 'elena.cruz@university.edu')->firstOrFail();
+        $this->assertTrue(Hash::check(self::VALID_PASSWORD, $created->password));
         $this->assertDatabaseHas('audit_logs', [
             'user_account_id' => $administrator->id,
             'action' => AuditLogger::USER_CREATED,
@@ -102,6 +110,8 @@ class UserManagementTest extends TestCase
             'email' => 'karla.uy@university.edu',
             'role' => 'moderator',
             'account_status' => 'pending',
+            'password' => self::VALID_PASSWORD,
+            'password_confirmation' => self::VALID_PASSWORD,
         ])->assertRedirect(route('admin.users'));
 
         $this->assertNull(User::where('email', 'karla.uy@university.edu')->firstOrFail()->email_verified_at);
@@ -120,9 +130,32 @@ class UserManagementTest extends TestCase
                 'email' => $existing->email,
                 'role' => 'super-admin',
                 'account_status' => 'active',
+                'password' => self::VALID_PASSWORD,
+                'password_confirmation' => self::VALID_PASSWORD,
             ]);
 
         $response->assertRedirect(route('admin.users'))
             ->assertSessionHasErrors(['email', 'role']);
+    }
+
+    public function test_create_user_requires_a_policy_compliant_password(): void
+    {
+        $administrator = User::factory()->create(['role' => 'admin']);
+
+        $response = $this->actingAs($administrator)
+            ->from(route('admin.users'))
+            ->post(route('admin.users.store'), [
+                'first_name' => 'Weak',
+                'last_name' => 'Password',
+                'email' => 'weak.password@university.edu',
+                'role' => 'helper',
+                'account_status' => 'active',
+                'password' => 'password',
+                'password_confirmation' => 'password',
+            ]);
+
+        $response->assertRedirect(route('admin.users'))
+            ->assertSessionHasErrors('password');
+        $this->assertDatabaseMissing('users', ['email' => 'weak.password@university.edu']);
     }
 }

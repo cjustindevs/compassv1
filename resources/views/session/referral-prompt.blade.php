@@ -1,5 +1,21 @@
 @isset($session)
-<dialog id="referralConsentDialog" style="border:0;border-radius:16px;padding:24px;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+<style>
+#referralConsentDialog {
+    border: 0;
+    border-radius: 16px;
+    padding: 24px;
+    width: min(480px, calc(100vw - 24px));
+    max-width: 480px;
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+#referralConsentDialog::backdrop { background: rgba(15, 23, 42, .45); backdrop-filter: blur(2px); }
+#referralConsentDialog:not([open]) { display: none; }
+@media (max-width: 480px) { #referralConsentDialog { max-height: 86dvh; } }
+</style>
+<dialog id="referralConsentDialog">
     <h2 style="font-size:20px;font-weight:700;color:#1f2937">Professional support</h2>
     <p style="font-size:13px;color:#6b7280;margin:4px 0 14px">Please review what this means for your privacy before deciding.</p>
     <div id="referralConsentText" style="margin:10px 0;font-size:14px;line-height:1.6;color:#374151"></div>

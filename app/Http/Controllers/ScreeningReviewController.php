@@ -23,7 +23,7 @@ class ScreeningReviewController extends Controller {
         $adviser=$request->user()->adviser;
         abort_unless($request->user()->role==='adviser' && $request->user()->is_active && $adviser,403);
         abort_unless((int)$session->review_adviser_id===(int)$adviser->id || (int)$session->helper?->adviser_id===(int)$adviser->id,403);
-        abort_unless(app(\App\Services\AdviserTranscriptAccess::class)->allowed($session),403,'Conversation access requires purpose, consent and current authorization.');
+        abort_unless(app(\App\Services\AdviserTranscriptAccess::class)->allowed($session),403,'Conversation access requires purpose and current authorization.');
         $session->load(['seeker','helper','concern']);
         $messages=$session->messages()->orderBy('sent_datetime','asc')->orderBy('id','asc')->limit(500)->get();
         SupportAudit::record('screening_conversation_viewed',$session,['reviewer'=>$adviser->id,'purpose'=>'screening_review']);

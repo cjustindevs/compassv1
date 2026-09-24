@@ -41,7 +41,7 @@ class UserController extends Controller
             $user = User::create([
                 'name' => trim($validated['first_name'].' '.$validated['last_name']),
                 'email' => $validated['email'],
-                'password' => Str::password(40),
+                'password' => $validated['password'],
                 'role' => $validated['role'],
                 'is_active' => $validated['account_status'] === 'active',
                 'email_verified_at' => $validated['account_status'] === 'active' ? now() : null,

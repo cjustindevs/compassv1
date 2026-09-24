@@ -342,6 +342,35 @@ class ModeratorAdviserModuleTest extends TestCase
         ]);
     }
 
+    public function test_moderator_can_unassign_a_clear_helper_back_to_the_pool(): void
+    {
+        [$user] = $this->moderatorUser();
+        [, $adviser] = $this->adviserUser('unassign-free@example.com');
+        $helper = $this->helper($adviser);
+
+        $this->actingAs($user)->from(route('moderator.manage'))
+            ->post(route('moderator.manage.unassign'), ['helper_id' => $helper->id])
+            ->assertRedirect(route('moderator.manage'))->assertSessionHas('success');
+
+        $this->assertDatabaseHas('helpers', ['id' => $helper->id, 'adviser_id' => null]);
+        $this->assertNotNull(\Illuminate\Support\Facades\DB::table('adviser_helper_assignments')->where('helper_id', $helper->id)->where('adviser_id', $adviser->id)->value('ended_at'));
+        $this->assertDatabaseHas('audit_logs', ['action' => 'supervision_relationship_changed', 'target_id' => $helper->id]);
+    }
+
+    public function test_moderator_cannot_unassign_a_helper_with_open_referrals_or_cases(): void
+    {
+        [$user] = $this->moderatorUser();
+        [, $adviser] = $this->adviserUser('unassign-blocked@example.com');
+        $referral = $this->referralFor($adviser, 'Open referral', 'high');
+        $helper = $referral->helper;
+
+        $this->actingAs($user)->from(route('moderator.manage'))
+            ->post(route('moderator.manage.unassign'), ['helper_id' => $helper->id])
+            ->assertStatus(409);
+
+        $this->assertNotNull($helper->fresh()->adviser_id);
+    }
+
     public function test_supervision_transfer_moves_active_referrals_and_blocks_previous_owner(): void
     {
         [$user, $adviser] = $this->adviserUser('transfer-one@example.com');

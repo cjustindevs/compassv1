@@ -208,7 +208,7 @@ class AuditLogController extends Controller
             'actorType' => $actorType,
             'action' => $this->humanizeAction($log->action),
             'category' => $this->eventCategory($log->module, $log->action),
-            'target' => $log->description ?: ($log->module ? Str::headline($log->module) : '—'),
+            'target' => $this->displayTarget($log),
             'createdAt' => CarbonImmutable::instance($log->created_at),
         ]);
     }
@@ -229,6 +229,31 @@ class AuditLogController extends Controller
         };
 
         return $role.': '.$actor->name;
+    }
+
+    /**
+     * The narrative shown for a log record. Operational/clinical events can
+     * carry sensitive case details in their description, so those are masked
+     * to a neutral label while the humanized action remains visible.
+     */
+    private function displayTarget(AuditLog $log): string
+    {
+        if ($this->isSensitiveNarrative($log)) {
+            return 'Protected operational event';
+        }
+
+        return $log->description ?: ($log->module ? Str::headline($log->module) : '—');
+    }
+
+    private function isSensitiveNarrative(AuditLog $log): bool
+    {
+        if (! $log->description) {
+            return false;
+        }
+
+        $terms = Str::lower(($log->module ?? '').' '.$log->action);
+
+        return (bool) preg_match('/risk(_reassess|_level|_assess)?|screening|screened|clinical|reassess|self_harm|suicidal/i', $terms);
     }
 
     private function humanizeAction(string $action): string

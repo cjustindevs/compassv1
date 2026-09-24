@@ -33,6 +33,15 @@
         html.sidebar-collapsed-preload body.helper-layout > .main-content { margin-left: var(--sidebar-w-collapsed); }
         .helper-layout .main-content > * { min-width: 0; max-width: 100%; }
         .helper-layout .top-bar { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+        dialog {
+            position: fixed;
+            inset: 0;
+            margin: auto;
+            max-width: calc(100vw - 16px);
+            max-height: 92dvh;
+            overflow: auto;
+        }
+        dialog:not([open]) { display: none; }
         @media (max-width: 768px) {
             body.helper-layout > .main-content { margin-left: 0; padding: 20px 16px 88px; }
         }

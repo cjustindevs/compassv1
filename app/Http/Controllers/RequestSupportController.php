@@ -1,9 +1,10 @@
 <?php
 namespace App\Http\Controllers;
-use App\Models\{ConcernCategory, SelfHelpResource, Session};
+use App\Models\{ConcernCategory, EmergencyResource, SelfHelpResource, Session};
 use App\Services\{ConsentService, HelperMatchingService, HelperWorkflowMaintenance, OperatingHoursService, ScreeningInstrument, SeekerWorkflowService};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 class RequestSupportController extends Controller {
     public function __construct(private SeekerWorkflowService $workflow) {}
     public function screening(Request $request) {
@@ -11,7 +12,9 @@ class RequestSupportController extends Controller {
         $consents=app(ConsentService::class);
         // Required consent opens on this page; POST endpoints still enforce it.
         if ($session=$this->workflow->current($request->user())) return $this->next($session);
-        return view('request.screening',['concerns'=>ConcernCategory::all()]);
+        $hotlines=EmergencyResource::published()->get();
+        $selfHelp=SelfHelpResource::published()->orderByDesc('is_featured')->orderByDesc('views_count')->limit(4)->get();
+        return view('request.screening',['concerns'=>ConcernCategory::all(),'hotlines'=>$hotlines,'selfHelp'=>$selfHelp]);
     }
     public function processScreening(Request $request) {
         Gate::authorize('seeker-workflow');
@@ -19,7 +22,10 @@ class RequestSupportController extends Controller {
             $answers=$request->validate(ScreeningInstrument::rules());
             return $this->next($this->workflow->screen($request->user(),$answers));
         }
-        $data=$request->validate(\App\Services\CompactScreening::rules() + ['concern_id'=>'required|exists:concern_categories,id','description'=>'nullable|string|max:500','custom_concern'=>'nullable|string|max:255']);
+        $data=$request->validate(\App\Services\CompactScreening::rules() + ['concern_id'=>'required|exists:concern_categories,id','description'=>'nullable|string|max:500','custom_concern'=>['nullable','string','max:255',Rule::requiredIf(function () use ($request) {
+            $concern=ConcernCategory::find($request->input('concern_id'));
+            return $concern && strtolower(trim($concern->concern_name)) === 'others';
+        })]]);
         $answers=array_intersect_key($data,array_flip(\App\Services\CompactScreening::FIELDS));
         return $this->next($this->workflow->screen($request->user(),$answers,$data));
     }
