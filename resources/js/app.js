@@ -20,6 +20,16 @@ if ('serviceWorker' in navigator) {
         wb.register().catch(function (error) {
             console.log('Service Worker registration failed (run `npm run build` first):', error);
         });
+
+        // Force an update check on every load so installed phones never keep
+        // serving a stale precache (old bundles shipped broken hamburgers).
+        navigator.serviceWorker.getRegistrations()
+            .then(function (registrations) {
+                registrations.forEach(function (reg) {
+                    reg.update().catch(function () {});
+                });
+            })
+            .catch(function () {});
     });
 }
 
