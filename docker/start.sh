@@ -73,25 +73,25 @@ migrate_with_retry() {
 migrate_with_retry "main database" migrate || true
 migrate_with_retry "identity vault" migrate --database=identity_vault --path=database/migrations/identity_vault || true
 
-# --- Optional demo seeding (guarded: requested AND users table is empty) ------
+# --- Optional demo seeding (guarded: requested AND demo accounts missing) -----
 # A freshly provisioned database has NO accounts, so the documented demo logins
 # (admin@example.com / password, seeker|helper|adviser|professional@compass.edu.ph
 # / password123, etc.) do not exist until seeded. Setting RUN_SEED_DEMO=true seeds
-# them once against an empty users table; on later boots the table is non-empty
-# and the seeder is skipped, so it never duplicates or wipes data.
+# them once; once the demo admin/seeker exist the seeder is skipped on later
+# boots, so it never duplicates or wipes data.
 seed_demo_if_empty() {
     if [ "${RUN_SEED_DEMO:-false}" != "true" ]; then
         return 0
     fi
-    echo "[start] RUN_SEED_DEMO=true -- checking whether demo data should be seeded."
-    user_count="$(php artisan tinker --execute="echo DB::table('users')->count();" 2>/dev/null | tr -cd '0-9' | tail -c 8)"
-    if [ -z "${user_count}" ] || [ "${user_count}" = "0" ]; then
-        echo "[start] users table is empty -- seeding demo data."
+    echo "[start] RUN_SEED_DEMO=true -- checking whether demo accounts exist."
+    demo_count="$(php artisan tinker --execute="echo App\\Models\\User::whereIn('email', ['admin@example.com', 'seeker@compass.edu.ph'])->count();" 2>/dev/null | tr -cd '0-9' | tail -c 8)"
+    if [ -z "${demo_count}" ] || [ "${demo_count}" -lt 2 ]; then
+        echo "[start] demo accounts missing (${demo_count:-0} of 2) -- seeding demo data."
         php artisan db:seed --force --no-interaction \
             && echo "[start] Demo data seeded." \
             || echo "[start] ERROR: demo seeding failed -- inspect logs above."
     else
-        echo "[start] Demo data already present (${user_count} users) -- skipping seeder."
+        echo "[start] Demo accounts already present -- skipping seeder."
     fi
 }
 
