@@ -1,19 +1,9 @@
 # ============================================================================
 # COMPASS -- Render Blueprint (render.yaml)
 #
-# Usage: Render Dashboard -> New -> Blueprint -> select the COMPASS repo, or
-# run from the repo root in the Render Shell. Render reads this file, creates a
-# Docker web service and lets you fill in the secret values marked sync: false.
-#
-# Region and plan reflect the free tier; Singapore is selected if available.
-# ============================================================================
-
-# ============================================================================
-# COMPASS -- Render Blueprint (render.yaml)
-#
-# Provisions: (1) a free managed PostgreSQL database and (2) a free Docker web
-# service. Render's free tier includes ONE free PostgreSQL database, which is
-# why the stack is PostgreSQL (there is no free MySQL on Render).
+# Provisioning: (1) a free managed PostgreSQL database and (2) a free Docker
+# web service. Render's free tier includes ONE free PostgreSQL instance with a
+# single database, which is why everything (main app + identity vault) uses it.
 #
 # Render Dashboard -> New -> Blueprint -> this repo/branch. Render reads this
 # file, creates the DB, then asks you to fill the sync:false secret values.
@@ -58,6 +48,8 @@ services:
         value: pgsql
       - key: DB_PORT
         value: "5432"
+      - key: DB_SSLMODE
+        value: prefer
       - key: DB_HOST
         fromDatabase:
           name: compass-postgres
@@ -75,19 +67,30 @@ services:
           name: compass-postgres
           property: password
 
-      # --- Isolated identity vault (second database -- auto-created on boot) ---
+      # --- Identity vault (SAME managed Postgres -- free tier allows only ONE
+      #     database. The vault's `idv_*` tables live beside the main tables;
+      #     `docker/start.sh` migrates them with
+      #     `--database=identity_vault --path=database/migrations/identity_vault`. ---
       - key: DB_IDENTITY_CONNECTION
         value: pgsql
       - key: DB_IDENTITY_PORT
         value: "5432"
       - key: DB_IDENTITY_HOST
-        sync: false
+        fromDatabase:
+          name: compass-postgres
+          property: host
       - key: DB_IDENTITY_DATABASE
-        sync: false
+        fromDatabase:
+          name: compass-postgres
+          property: database
       - key: DB_IDENTITY_USERNAME
-        sync: false
+        fromDatabase:
+          name: compass-postgres
+          property: user
       - key: DB_IDENTITY_PASSWORD
-        sync: false
+        fromDatabase:
+          name: compass-postgres
+          property: password
       - key: IDENTITY_VAULT_ENCRYPTION_KEY
         sync: false
       - key: IDENTITY_VAULT_RESPONDER_IDS

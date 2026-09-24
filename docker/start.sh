@@ -19,10 +19,10 @@ cd /var/www/html
 
 # --- Fail fast when essential configuration is missing --------------------
 : "${APP_KEY:?APP_KEY is required. Generate one with 'php artisan key:generate --show' and add it in Render > Environment.}"
-: "${DB_HOST:?DB_HOST (MySQL host) is required. Add it in Render > Environment.}"
-: "${DB_DATABASE:?DB_DATABASE (MySQL database name) is required.}"
-: "${DB_USERNAME:?DB_USERNAME (MySQL user) is required.}"
-: "${DB_PASSWORD:?DB_PASSWORD (MySQL password) is required.}"
+: "${DB_HOST:?DB_HOST (PostgreSQL host) is required. Add it in Render > Environment.}"
+: "${DB_DATABASE:?DB_DATABASE (PostgreSQL database name) is required.}"
+: "${DB_USERNAME:?DB_USERNAME (PostgreSQL user) is required.}"
+: "${DB_PASSWORD:?DB_PASSWORD (PostgreSQL password) is required.}"
 
 export PORT="${PORT:-10000}"
 
@@ -44,6 +44,34 @@ php artisan storage:link --force >/dev/null 2>&1 || echo "[start] storage:link s
 php artisan config:cache
 php artisan view:cache
 # NOTE: routes contain closures, so route:cache is intentionally NOT run.
+
+# --- Database migrations (managed PostgreSQL on Render) ----------------------
+# Render's free tier includes ONE managed Postgres database. The main app and
+# the identity vault share it: the vault connection points at that same
+# database/credentials and its migrations create the separate idv_* tables.
+# Auto-migrating here makes a brand-new (empty) free database work on the first
+# deploy. The commands are idempotent and never destructive (no fresh/wipe).
+# If the DB is temporarily unreachable we retry, then boot anyway and surface a
+# loud ERROR in the logs (the site will HTTP 500 until the DB is migrated).
+migrate_with_retry() {
+    label="$1"; shift
+    attempt=1
+    limit="${MIGRATE_RETRIES:-5}"
+    until php artisan "$@" --force --step; do
+        if [ "$attempt" -ge "$limit" ]; then
+            echo "[start] ERROR: ${label} could not be migrated after ${attempt} attempts."
+            echo "[start] ERROR: the app will return HTTP 500 until this is resolved. Inspect Render > Logs."
+            return 1
+        fi
+        echo "[start] ${label} attempt ${attempt} failed (database not ready?) -- retrying in 5s."
+        sleep 5
+        attempt=$((attempt + 1))
+    done
+    echo "[start] ${label} migrations are up to date."
+}
+
+migrate_with_retry "main database" migrate || true
+migrate_with_retry "identity vault" migrate --database=identity_vault --path=database/migrations/identity_vault || true
 
 # --- Nginx configuration (inject Render's $PORT) --------------------------
 rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
