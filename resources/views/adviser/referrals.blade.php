@@ -264,7 +264,6 @@
                 </div>
             @else
                 <div class="text-center py-12 text-gray-400">
-                    <i class="fas fa-check-circle text-5xl mb-3 block text-green-500"></i>
                     <p class="text-lg font-medium text-gray-600">No pending referrals</p>
                     <p class="text-sm">All referrals have been reviewed</p>
                 </div>

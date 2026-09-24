@@ -89,7 +89,6 @@
             </div>
         @empty
             <div class="text-center py-8">
-                <i class="fas fa-check-circle text-4xl text-green-500 mb-2 block"></i>
                 <h3 class="text-lg font-semibold text-gray-800">No Open Emergency Cases</h3>
                 <p class="text-sm text-gray-500">All emergencies have been resolved.</p>
             </div>
@@ -118,7 +117,6 @@
             </div>
         @empty
             <div class="text-center py-8">
-                <i class="fas fa-inbox text-4xl text-gray-300 mb-2 block"></i>
                 <p class="text-sm text-gray-500">No resolved emergency cases yet.</p>
             </div>
         @endforelse

@@ -247,7 +247,6 @@
                 </div>
             @else
                 <div class="text-center py-12 text-gray-400">
-                    <i class="fas fa-users text-4xl mb-3 block opacity-50"></i>
                     <p class="text-lg font-medium text-gray-600">No helpers found</p>
                     <p>Try a different status filter.</p>
                 </div>

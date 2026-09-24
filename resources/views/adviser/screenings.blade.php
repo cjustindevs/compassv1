@@ -256,13 +256,11 @@
         </section>
     @empty
         <div data-filter-empty class="bg-white rounded-2xl border border-gray-200 p-10 text-center">
-            <div class="text-3xl text-gray-300 mb-2"><i class="fas fa-clipboard-check" aria-hidden="true"></i></div>
             <p class="text-sm text-gray-500"><span>No screening reviews are assigned to you right now.</span></p>
         </div>
     @endforelse
 
     <div data-filter-empty hidden class="bg-white rounded-2xl border border-gray-200 p-10 text-center">
-        <div class="text-3xl text-gray-300 mb-2"><i class="fas fa-filter" aria-hidden="true"></i></div>
         <p class="text-sm text-gray-500"><span>Nothing matches this filter.</span></p>
     </div>
 </div>

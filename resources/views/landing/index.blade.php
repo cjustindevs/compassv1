@@ -398,7 +398,6 @@
 
                         <!-- Mood indicator -->
                         <div class="flex items-center gap-4 p-4 rounded-xl bg-green-50/70 border border-green-100/50">
-                            <div class="text-3xl"><i class="fas fa-face-laugh" aria-hidden="true"></i></div>
                             <div>
                                 <div class="text-sm font-semibold text-gray-800">Feeling Better</div>
                                 <div class="text-xs text-gray-500">You're doing well today</div>

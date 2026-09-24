@@ -236,7 +236,6 @@
                 </article>
             @empty
                 <div class="text-center py-12">
-                    <div class="text-5xl mb-4 text-green-500"><i class="fas fa-user-doctor" aria-hidden="true"></i></div>
                     <h3 class="text-lg font-semibold text-gray-800">No referral decisions yet</h3>
                     <p class="text-gray-500 text-sm mt-1">Recommendations from your adviser will appear here.</p>
                 </div>

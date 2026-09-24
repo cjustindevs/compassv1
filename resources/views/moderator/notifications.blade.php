@@ -218,7 +218,6 @@
                 </div>
             @empty
                 <div class="text-center py-12 text-gray-400">
-                    <p class="text-3xl mb-2"><i class="fas fa-bell" aria-hidden="true"></i></p>
                     <p>No notifications</p>
                 </div>
             @endforelse

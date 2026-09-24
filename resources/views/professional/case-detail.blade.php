@@ -371,7 +371,6 @@
                         </div>
                     @else
                         <div class="text-center py-10 text-gray-400">
-                            <i class="fas fa-notes-medical text-5xl mb-3 block text-green-500"></i>
                             <p class="text-lg font-medium text-gray-600">No intervention notes yet</p>
                             <p class="text-sm">Document your first intervention below</p>
                         </div>

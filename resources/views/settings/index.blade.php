@@ -77,7 +77,6 @@
         <!-- Settings tabs -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <a href="{{ route('settings.account') }}" class="settings-card">
-                <div class="icon"><i class="fas fa-user-cog"></i></div>
                 <div>
                     <h3>Account</h3>
                     <p>Email, name, password, and account deletion.</p>
@@ -85,7 +84,6 @@
                 <i class="fas fa-chevron-right chevron"></i>
             </a>
             <a href="{{ route('settings.preferences') }}" class="settings-card">
-                <div class="icon"><i class="fas fa-sliders-h"></i></div>
                 <div>
                     <h3>Preferences</h3>
                     <p>Notifications and session preferences for matching.</p>
@@ -93,7 +91,6 @@
                 <i class="fas fa-chevron-right chevron"></i>
             </a>
             <a href="{{ route('settings.privacy') }}" class="settings-card">
-                <div class="icon"><i class="fas fa-shield-alt"></i></div>
                 <div>
                     <h3>Privacy</h3>
                     <p>Visibility, data usage, history, and exports.</p>
@@ -101,7 +98,6 @@
                 <i class="fas fa-chevron-right chevron"></i>
             </a>
             <a href="{{ route('settings.appearance') }}" class="settings-card">
-                <div class="icon"><i class="fas fa-palette"></i></div>
                 <div>
                     <h3>Appearance</h3>
                     <p>Dark mode, font size, and accessibility.</p>

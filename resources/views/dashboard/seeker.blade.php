@@ -679,7 +679,6 @@
                                 </a>
                             </div>
                         </div>
-                        <div class="hidden md:block text-6xl opacity-10 mt-4 md:mt-0"><i class="fas fa-leaf" aria-hidden="true"></i></div>
                     </div>
                 </div>
             </div>
@@ -729,7 +728,6 @@
             <!-- ═══════ PRODUCT CARDS ═══════ -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6 dashboard-grid-max">
                 <a href="{{ route('request.screening') }}" class="product-card" style="text-decoration: none;">
-                    <div class="icon-wrap"><i class="fas fa-comments" aria-hidden="true"></i></div>
                     <h3>Talk to Someone</h3>
                     <p>Connect with a trained peer helper who will listen without judgment.</p>
                     <span class="btn-join">
@@ -737,7 +735,6 @@
                     </span>
                 </a>
                 <a href="{{ route('selfhelp') }}" class="product-card" style="text-decoration: none;">
-                    <div class="icon-wrap"><i class="fas fa-spa" aria-hidden="true"></i></div>
                     <h3>Self-Care Resources</h3>
                     <p>Guided meditations, breathing exercises, and wellness tools to support you.</p>
                     <span class="btn-join">
@@ -745,7 +742,6 @@
                     </span>
                 </a>
                 <a href="{{ route('selfhelp') }}" class="product-card" style="text-decoration: none;">
-                    <div class="icon-wrap"><i class="fas fa-book-open" aria-hidden="true"></i></div>
                     <h3>Daily Wellness</h3>
                     <p>Track your mood, journal your thoughts, and build healthy habits.</p>
                     <span class="btn-join">
@@ -797,21 +793,18 @@
             <!-- ═══════ QUICK LINKS ═══════ -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <a href="{{ route('selfhelp') }}" class="glass-card p-5 flex items-center gap-4 cursor-pointer hover:border-[#04A052] transition-all" style="text-decoration: none;">
-                    <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-2xl"><i class="fas fa-book-open" aria-hidden="true"></i></div>
                     <div>
                         <h4 class="font-semibold text-gray-800">Resources</h4>
                         <p class="text-xs text-gray-500">Articles &amp; guides</p>
                     </div>
                 </a>
                 <a href="{{ route('selfhelp') }}" class="glass-card p-5 flex items-center gap-4 cursor-pointer hover:border-[#04A052] transition-all" style="text-decoration: none;">
-                    <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-2xl"><i class="fas fa-spa" aria-hidden="true"></i></div>
                     <div>
                         <h4 class="font-semibold text-gray-800">Meditation</h4>
                         <p class="text-xs text-gray-500">Guided sessions</p>
                     </div>
                 </a>
                 <a href="{{ route('emergency') }}" class="glass-card p-5 flex items-center gap-4 cursor-pointer hover:border-[#04A052] transition-all" style="text-decoration: none;">
-                    <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center text-2xl">🆘</div>
                     <div>
                         <h4 class="font-semibold text-gray-800">Crisis Support</h4>
                         <p class="text-xs text-gray-500">Immediate help</p>
@@ -915,28 +908,24 @@
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="resource-card">
-                        <div class="icon text-green-500"><i class="fas fa-spa" aria-hidden="true"></i></div>
                         <div class="info">
                             <h4>Grounding Techniques for Anxiety</h4>
                             <p>Anxiety · 8 min</p>
                         </div>
                     </div>
                     <div class="resource-card">
-                        <div class="icon text-blue-500"><i class="fas fa-wind" aria-hidden="true"></i></div>
                         <div class="info">
                             <h4>Guided Breathing - 4-7-8</h4>
                             <p>Meditation · 8 min</p>
                         </div>
                     </div>
                     <div class="resource-card">
-                        <div class="icon text-purple-500"><i class="fas fa-book-open" aria-hidden="true"></i></div>
                         <div class="info">
                             <h4>Understanding Academic Burnout</h4>
                             <p>Stress · 12 min</p>
                         </div>
                     </div>
                     <div class="resource-card">
-                        <div class="icon text-yellow-500"><i class="fas fa-moon" aria-hidden="true"></i></div>
                         <div class="info">
                             <h4>Sleep Hygiene Checklist</h4>
                             <p>Mental Health · 5 min</p>

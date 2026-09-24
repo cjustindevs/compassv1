@@ -245,7 +245,6 @@
                 </div>
             @else
                 <div class="text-center py-12">
-                    <div class="text-5xl mb-4 text-green-500"><i class="fas fa-clipboard-list" aria-hidden="true"></i></div>
                     <h3 class="text-lg font-semibold text-gray-800">No requests yet</h3>
                     <p class="text-gray-500 text-sm mt-1">When you request support, its progress will appear here.</p>
                     <a href="{{ route('request.screening') }}" class="inline-block mt-4 px-6 py-2 bg-green-500 text-white text-sm font-semibold rounded-full hover:bg-green-600 transition">

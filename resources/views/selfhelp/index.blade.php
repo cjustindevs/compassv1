@@ -261,7 +261,6 @@
                     </div>
                 @else
                     <div class="bg-white rounded-2xl border border-dashed border-gray-300 p-8 text-center">
-                        <div class="text-4xl mb-3"><i class="fas fa-bookmark" aria-hidden="true"></i></div>
                         <p class="text-sm text-gray-500">You haven't saved any resources yet.</p>
                         <p class="text-xs text-gray-400 mt-1">Tap the bookmark icon on any resource to save it here.</p>
                     </div>
@@ -297,7 +296,6 @@
                 </div>
             @else
                 <div class="bg-white rounded-2xl border border-dashed border-gray-300 p-10 text-center">
-                    <div class="text-5xl mb-3"><i class="fas fa-magnifying-glass" aria-hidden="true"></i></div>
                     <h3 class="font-semibold text-gray-800">No results found</h3>
                     <p class="text-sm text-gray-500 mt-1">Try a different keyword like "anxiety", "sleep", or "focus".</p>
                 </div>

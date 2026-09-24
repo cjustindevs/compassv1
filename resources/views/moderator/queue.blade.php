@@ -301,7 +301,6 @@
                     </div>
                 @empty
                     <div class="text-center py-10 text-gray-400">
-                        <p class="text-3xl mb-2"><i class="fas fa-star" aria-hidden="true"></i></p>
                         <p>No seekers waiting. Queue is clear!</p>
                     </div>
                 @endforelse

@@ -112,7 +112,6 @@
                         </div>
                     @else
                         <div class="text-center py-8 text-gray-400">
-                            <i class="fas fa-check-circle text-4xl mb-2 block text-green-500"></i>
                             <p>No pending evaluations</p>
                         </div>
                     @endif

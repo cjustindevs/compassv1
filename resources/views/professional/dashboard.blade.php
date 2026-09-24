@@ -355,7 +355,6 @@
                     </div>
                 @else
                     <div class="text-center py-10 text-gray-400">
-                        <i class="fas fa-clipboard-list text-5xl mb-3 block text-green-500"></i>
                         <p class="text-lg font-medium text-gray-600">No referrals yet</p>
                         <p class="text-sm">Referrals from advisers will appear here</p>
                     </div>
@@ -394,7 +393,6 @@
                     </div>
                 @else
                     <div class="text-center py-10 text-gray-400">
-                        <i class="fas fa-folder-open text-5xl mb-3 block text-green-500"></i>
                         <p class="text-lg font-medium text-gray-600">No active cases</p>
                         <p class="text-sm">Accept a referral to start a case</p>
                     </div>
@@ -426,7 +424,6 @@
                 </div>
             @else
                 <div class="text-center py-10 text-gray-400">
-                    <i class="fas fa-bell text-5xl mb-3 block text-green-500"></i>
                     <p class="text-lg font-medium text-gray-600">No recent activity</p>
                     <p class="text-sm">Notifications about referrals and cases will appear here</p>
                 </div>

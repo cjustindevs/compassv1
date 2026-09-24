@@ -283,7 +283,6 @@
         @else
             <div class="card">
                 <div class="empty-state text-center py-12 text-gray-400">
-                    <i class="fas fa-book-open text-4xl mb-3 block opacity-50"></i>
                     <p class="text-lg font-medium text-gray-600">No resources found</p>
                     <p>Try a different search or add a new resource.</p>
                 </div>

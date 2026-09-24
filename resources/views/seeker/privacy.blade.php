@@ -283,7 +283,6 @@
                 </div>
             @else
                 <div class="text-center py-10">
-                    <div class="text-4xl mb-3 text-green-500"><i class="fas fa-shield-halved" aria-hidden="true"></i></div>
                     <p class="text-gray-500 text-sm">No decisions recorded yet.</p>
                 </div>
             @endif

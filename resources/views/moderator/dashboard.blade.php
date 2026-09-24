@@ -302,7 +302,6 @@
                     </div>
                 @empty
                     <div class="text-center py-8 text-gray-400">
-                        <p class="text-3xl mb-2"><i class="fas fa-comments" aria-hidden="true"></i></p>
                         <p>No active sessions right now</p>
                     </div>
                 @endforelse

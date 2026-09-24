@@ -484,7 +484,6 @@
                         <label class="mode-card">
                             <input type="radio" name="support_mode" value="chat" {{ old('support_mode', 'chat') === 'chat' ? 'checked' : '' }}>
                             <div class="mode-content">
-                                <div class="icon"><i class="fas fa-comments" aria-hidden="true"></i></div>
                                 <div class="label">Chat</div>
                                 <div class="sub">Private text-based conversation</div>
                                 <div class="checkmark"><i class="fas fa-check-circle"></i></div>

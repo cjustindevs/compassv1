@@ -324,7 +324,6 @@
                     </div>
                 @else
                     <div class="text-center py-10 text-gray-400">
-                        <p class="text-3xl mb-2"><i class="fas fa-arrow-left" aria-hidden="true"></i></p>
                         <p>Select an adviser to open the assignment workspace</p>
                     </div>
                 @endif
@@ -389,9 +388,8 @@
                         @endif
                     </div>
                 @empty
-                    <div class="text-center py-10 text-gray-400">
-                        <p class="text-3xl mb-2"><i class="fas fa-users" aria-hidden="true"></i></p>
-                        <p>No helpers match your search</p>
+<div class="text-center py-10 text-gray-400">
+                        <p>No helpers in this list</p>
                     </div>
                 @endforelse
             </div>

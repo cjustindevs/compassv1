@@ -314,7 +314,6 @@
                 </div>
             @else
                 <div class="text-center py-16 text-gray-400">
-                    <i class="fas fa-folder-open text-5xl mb-3 block text-green-500"></i>
                     <p class="text-lg font-medium text-gray-600">No active cases</p>
                     <p class="text-sm mb-4">Accept a referral to start a case</p>
                     <a href="{{ route('professional.referrals') }}" class="btn-primary">

@@ -175,7 +175,6 @@
                 </div>
             @empty
                 <div class="empty-state">
-                    <div class="text-5xl mb-4"><x-ui-icon :value="$activeType ? $types[$activeType]['icon'] : 'fa-bell'" /></div>
                     <h3 class="text-lg font-semibold text-gray-800">
                         @if($activeType)
                             No {{ strtolower($types[$activeType]['label']) }} notifications
@@ -259,7 +258,7 @@
 
             const list = document.getElementById('notifList');
             if (list && list.children.length === 0) {
-                list.innerHTML = '<div class="empty-state"><div class="text-5xl mb-4"><i class="fas fa-circle-check" aria-hidden="true"></i></div><h3 class="text-lg font-semibold text-gray-800">All caught up</h3><p class="text-sm text-gray-500 mt-1">You have no notifications left.</p></div>';
+                list.innerHTML = '<div class="empty-state"><h3 class="text-lg font-semibold text-gray-800">All caught up</h3><p class="text-sm text-gray-500 mt-1">You have no notifications left.</p></div>';
             }
         }
 

@@ -446,7 +446,6 @@
             <!-- ============================================ -->
             @if($session->isActive())
                 <div class="text-center py-4">
-                    <div class="text-5xl mb-3"><i class="fas fa-star" aria-hidden="true"></i></div>
                     <h2 class="text-2xl font-bold text-gray-800">Your helper accepted</h2>
                     <p class="text-gray-500 mt-2">A helper accepted your request. Your session is now active.</p>
 
@@ -465,7 +464,6 @@
             <!-- ============================================ -->
             @elseif($session->isHelperAssigned())
                 <div class="text-center py-4">
-                    <div class="text-5xl mb-3"><i class="fas fa-hourglass-half" aria-hidden="true"></i></div>
                     <h2 class="text-2xl font-bold text-gray-800">Waiting for helper acceptance</h2>
                     <p class="text-gray-500 mt-2 max-w-md mx-auto">
                         A helper has been notified about your request. Please wait while they review it.
@@ -552,7 +550,6 @@
             <!-- ============================================ -->
             @else
                 <div id="noHelperSection" class="text-center py-4">
-                    <div class="text-5xl mb-4"><i class="fas fa-magnifying-glass" aria-hidden="true"></i></div>
                     <h2 class="text-xl font-bold text-gray-800">Waiting for an available helper</h2>
                     <p class="text-gray-500 mt-2 max-w-md mx-auto">
                         You're in the queue. You will be notified the moment a trained peer helper accepts your request.

@@ -146,7 +146,6 @@
             </div>
         @else
             <div class="empty-state">
-                <div class="text-5xl mb-3"><x-ui-icon :value="$meta['icon']" /></div>
                 <h3 class="font-semibold text-gray-800">No resources found</h3>
                 <p class="text-sm text-gray-500 mt-1">Try a different search, or check back soon.</p>
                 <a href="{{ route('selfhelp.category', $category) }}" class="inline-block mt-4 text-sm font-semibold text-[#04A052] hover:underline">
