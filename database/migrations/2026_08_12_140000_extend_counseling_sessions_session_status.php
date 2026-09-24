@@ -15,11 +15,12 @@ return new class extends Migration
      * PostgreSQL stores Laravel 'enum' columns as varchar + CHECK constraints,
      * so the new flow statuses are added by replacing the constraint.
      * SQLite keeps the same constraint inside the column definition, so the
-     * column must be rebuilt via 'change'.
+     * column must be rebuilt via 'change'. MySQL uses a native ENUM column,
+     * which is widened with the same 'change' approach.
      */
     public function up(): void
     {
-        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+        if (in_array(Schema::getConnection()->getDriverName(), ['sqlite', 'mysql', 'mariadb'], true)) {
             Schema::table('counseling_sessions', function (Blueprint $table) {
                 $table->enum('session_status', self::ALL_STATUSES)->default('scheduled')->change();
             });
@@ -33,7 +34,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+        if (in_array(Schema::getConnection()->getDriverName(), ['sqlite', 'mysql', 'mariadb'], true)) {
             Schema::table('counseling_sessions', function (Blueprint $table) {
                 $table->enum('session_status', self::ORIGINAL_STATUSES)->default('scheduled')->change();
             });

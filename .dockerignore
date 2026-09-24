@@ -1,0 +1,56 @@
+# Version control and CI
+.git
+.gitignore
+.github
+
+# Environment / secrets (keep the example for the build)
+.env
+.env.*
+!.env.example
+
+# Dependencies (installed inside the image)
+node_modules
+vendor
+
+# Frontend build output (rebuilt in the Docker build)
+public/build
+public/hot
+
+# Tests and dev tooling
+tests
+coverage
+.phpunit.cache
+.phpunit.result.cache
+.phpactor.json
+.fleet
+.idea
+.nova
+.vscode
+.zed
+*.log
+Thumbs.db
+
+# Transient Laravel runtime state
+storage/framework/cache
+storage/framework/sessions
+storage/framework/views
+storage/framework/testing
+storage/logs
+storage/pail
+
+# Local database files and dumps (never deployed)
+database/*.sqlite
+database/*.sqlite-*
+database/*.sql
+database/dumps
+*.sql.gz
+*.sql.zip
+
+# Sensitive user-uploaded content
+public/uploads
+
+# Local tools / credentials
+auth.json
+.vagrant
+Homestead.json
+Homestead.yaml

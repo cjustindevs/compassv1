@@ -64,7 +64,7 @@ return new class extends Migration
             $table->text('closure_notes')->nullable()->after('closed_by');
         });
 
-        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+        if (in_array(Schema::getConnection()->getDriverName(), ['sqlite', 'mysql', 'mariadb'], true)) {
             Schema::table('referrals', function (Blueprint $table) {
                 $table->enum('status', self::REFERRAL_STATUSES)->default('pending_adviser')->change();
             });
@@ -96,7 +96,7 @@ return new class extends Migration
             $table->dropColumn(['current_risk_level', 'risk_last_updated', 'has_emergency', 'last_emergency_at']);
         });
 
-        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+        if (in_array(Schema::getConnection()->getDriverName(), ['sqlite', 'mysql', 'mariadb'], true)) {
             Schema::table('referrals', function (Blueprint $table) {
                 $table->enum('status', self::PREVIOUS_REFERRAL_STATUSES)->default('pending_adviser')->change();
             });
@@ -107,7 +107,7 @@ return new class extends Migration
 
     private function replaceReferralStatusConstraint(array $statuses): void
     {
-        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+        if (in_array(Schema::getConnection()->getDriverName(), ['sqlite', 'mysql', 'mariadb'], true)) {
             return;
         }
 

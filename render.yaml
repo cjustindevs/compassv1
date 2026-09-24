@@ -1,0 +1,88 @@
+# ============================================================================
+# COMPASS -- Render Blueprint (render.yaml)
+#
+# Usage: Render Dashboard -> New -> Blueprint -> select the COMPASS repo, or
+# run from the repo root in the Render Shell. Render reads this file, creates a
+# Docker web service and lets you fill in the secret values marked sync: false.
+#
+# Region and plan reflect the free tier; Singapore is selected if available.
+# ============================================================================
+
+services:
+  - type: web
+    name: compass
+    runtime: docker
+    branch: deploy                # deployment branch (change only if you deploy elsewhere)
+    region: singapore             # fall back to oregon if the Singapore region is not offered
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /up
+    autoDeploy: true
+
+    envVars:
+      - key: APP_NAME
+        value: COMPASS
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: PORT
+        value: "10000"
+
+      # --- Application secrets (set in the Dashboard, not stored in Git) ---
+      - key: APP_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+
+      # --- Main MySQL-compatible database ---
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_HOST
+        sync: false
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+
+      # --- Isolated identity vault (second database on the same provider) ---
+      - key: DB_IDENTITY_CONNECTION
+        value: mysql
+      - key: DB_IDENTITY_PORT
+        value: "3306"
+      - key: DB_IDENTITY_HOST
+        sync: false
+      - key: DB_IDENTITY_DATABASE
+        sync: false
+      - key: DB_IDENTITY_USERNAME
+        sync: false
+      - key: DB_IDENTITY_PASSWORD
+        sync: false
+      - key: IDENTITY_VAULT_ENCRYPTION_KEY
+        sync: false
+      - key: IDENTITY_VAULT_RESPONDER_IDS
+        sync: false
+
+      # --- Runtime behavior ---
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: BROADCAST_CONNECTION
+        value: log
+      - key: CACHE_STORE
+        value: database
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_SECURE_COOKIE
+        value: "true"
+      - key: FILESYSTEM_DISK
+        value: local
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: MAIL_MAILER
+        value: log
+      - key: RUN_SCHEDULER
+        value: "true"

@@ -17,7 +17,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+        if (in_array(Schema::getConnection()->getDriverName(), ['sqlite', 'mysql', 'mariadb'], true)) {
             Schema::table('counseling_sessions', function (Blueprint $table) {
                 $table->enum('session_status', self::ALL_STATUSES)->default('scheduled')->change();
             });
@@ -31,7 +31,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+        if (in_array(Schema::getConnection()->getDriverName(), ['sqlite', 'mysql', 'mariadb'], true)) {
             Schema::table('counseling_sessions', function (Blueprint $table) {
                 $table->enum('session_status', self::PREVIOUS_STATUSES)->default('scheduled')->change();
             });

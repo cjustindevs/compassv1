@@ -18,7 +18,7 @@ return new class extends Migration
             $table->index(['session_id', 'status'], 'referrals_session_status_index');
         });
 
-        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+        if (in_array(Schema::getConnection()->getDriverName(), ['sqlite', 'mysql', 'mariadb'], true)) {
             Schema::table('referrals', function (Blueprint $table) {
                 $table->enum('status', self::ALL_STATUSES)->default('pending_adviser')->change();
             });
@@ -37,7 +37,7 @@ return new class extends Migration
             $table->dropIndex('referrals_session_status_index');
         });
 
-        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+        if (in_array(Schema::getConnection()->getDriverName(), ['sqlite', 'mysql', 'mariadb'], true)) {
             Schema::table('referrals', function (Blueprint $table) {
                 $table->enum('status', self::PREVIOUS_STATUSES)->default('pending_adviser')->change();
             });

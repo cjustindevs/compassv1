@@ -23,6 +23,18 @@ return Application::configure(basePath: dirname(__DIR__))
             'ensure.helper.profile' => EnsureHelperProfile::class,
             'ensure.helper.readiness' => EnsureHelperReadiness::class,
         ]);
+
+        // Render terminates TLS at its edge and forwards requests over HTTP,
+        // so the X-Forwarded-* headers must be trusted to generate https URLs,
+        // enforce secure cookies and resolve the client's real IP. This is safe
+        // on Render's platform proxy; do not enable it on an untrusted network.
+        $middleware->trustProxies(
+            at: '*',
+            headers: \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR
+                   | \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO
+                   | \Illuminate\Http\Request::HEADER_X_FORWARDED_HOST
+                   | \Illuminate\Http\Request::HEADER_X_FORWARDED_PORT,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontFlash(\App\Services\IdentityVaultService::FIELDS);

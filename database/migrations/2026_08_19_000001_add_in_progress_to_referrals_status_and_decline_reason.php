@@ -19,7 +19,8 @@ return new class extends Migration
      * PostgreSQL stores Laravel 'enum' columns as varchar + CHECK constraints,
      * so the new status is added by replacing the constraint. SQLite keeps the
      * constraint inside the column definition, so the column must be rebuilt
-     * via 'change'.
+     * via 'change'. MySQL uses a native ENUM column, which is widened with the
+     * same 'change' approach.
      */
     public function up(): void
     {
@@ -27,7 +28,7 @@ return new class extends Migration
             $table->text('decline_reason')->nullable();
         });
 
-        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+        if (in_array(Schema::getConnection()->getDriverName(), ['sqlite', 'mysql', 'mariadb'], true)) {
             Schema::table('referrals', function (Blueprint $table) {
                 $table->enum('status', self::ALL_STATUSES)->default('pending_adviser')->change();
             });
@@ -45,7 +46,7 @@ return new class extends Migration
             $table->dropColumn('decline_reason');
         });
 
-        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+        if (in_array(Schema::getConnection()->getDriverName(), ['sqlite', 'mysql', 'mariadb'], true)) {
             Schema::table('referrals', function (Blueprint $table) {
                 $table->enum('status', self::PREVIOUS_STATUSES)->default('pending_adviser')->change();
             });
