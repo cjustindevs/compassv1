@@ -82,12 +82,12 @@ class RequestSupportController extends Controller {
         $availableHelperCount=app(HelperMatchingService::class)->countEligibleHelpers($session->risk_level ?? 'low');
         $matchingReason=null;
         if ($availableHelperCount === 0) {
-            if (!app(OperatingHoursService::class)->acceptsAssignments()) {
+            if (!config('app.relax_duty_hours', false) && !app(OperatingHoursService::class)->acceptsAssignments()) {
                 $matchingReason='Peer-helper matching opens daily from 6:00 PM to 10:30 PM (Manila time). Your request stays safely in the queue and will be matched when the service reopens.';
-            } elseif (\App\Models\Helper::where('verification_status','!=','verified')->whereHas('user',fn($q)=>$q->where('is_active',true))->exists()) {
+            } elseif (!config('app.relax_duty_hours', false) && \App\Models\Helper::where('verification_status','!=','verified')->whereHas('user',fn($q)=>$q->where('is_active',true))->exists()) {
                 $matchingReason='No verified peer helper is on duty right now. Helpers must complete adviser verification before they can accept requests, so this can take a little longer. Your place in the queue is saved.';
             } else {
-                $matchingReason='No peer helper is on duty right now. Your place in the queue is saved and you will be notified as soon as one becomes available.';
+                $matchingReason='No peer helper is currently available. Your place in the queue is saved and you will be notified as soon as one becomes available.';
             }
         }
 

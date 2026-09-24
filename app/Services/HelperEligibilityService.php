@@ -11,10 +11,12 @@ class HelperEligibilityService
     public function reasons(Helper $helper, ?Session $session = null, bool $activating = false): array
     {
         $reasons = [];
+        $relaxed = (bool) config('app.relax_duty_hours', false);
+
         if (! $helper->user?->is_active || $helper->user?->role !== 'helper') {
             $reasons[] = 'Account is inactive.';
         }
-        if ($helper->verification_status !== 'verified' || ! $helper->verified_at || ! $helper->verified_by || ! $helper->training_verified || ($helper->verification_expires_at && $helper->verification_expires_at->isPast())) {
+        if (! $relaxed && ($helper->verification_status !== 'verified' || ! $helper->verified_at || ! $helper->verified_by || ! $helper->training_verified || ($helper->verification_expires_at && $helper->verification_expires_at->isPast()))) {
             $reasons[] = 'Institutional verification and training approval are required.';
         }
         if (! $helper->adviser_id || ! $helper->adviser?->user?->is_active) {
@@ -23,23 +25,25 @@ class HelperEligibilityService
         if ($helper->is_under_review) {
             $reasons[] = 'Session assignments are restricted pending adviser review.';
         }
-        if (! app(OperatingHoursService::class)->acceptsAssignments()) {
+        if (! $relaxed && ! app(OperatingHoursService::class)->acceptsAssignments()) {
             $reasons[] = 'Service is closed for new assignments.';
         }
-        $schedule = $helper->schedules()->whereDate('date', now('Asia/Manila')->toDateString())->where('is_active', true)->get()->first(fn ($s) => $s->isOnDuty());
-        if (! $schedule) {
-            $reasons[] = 'You are not on an official duty shift.';
+        if (! $relaxed) {
+            $schedule = $helper->schedules()->whereDate('date', now('Asia/Manila')->toDateString())->where('is_active', true)->get()->first(fn ($s) => $s->isOnDuty());
+            if (! $schedule) {
+                $reasons[] = 'You are not on an official duty shift.';
+            }
+            if (! $helper->getCurrentReadiness()) {
+                $reasons[] = 'A current passed readiness check is required.';
+            }
         }
-        if (! $helper->getCurrentReadiness()) {
-            $reasons[] = 'A current passed readiness check is required.';
-        }
-        if (! $activating && $helper->availability !== 'available') {
+        if (! $activating && ! $relaxed && $helper->availability !== 'available') {
             $reasons[] = 'Availability is not set to Available.';
         }
         if ($helper->activeSessions()->when($session, fn ($q) => $q->where('id', '!=', $session->id))->exists()) {
             $reasons[] = 'Another assignment or active session already occupies your capacity.';
         }
-        if ($helper->getRemainingCapacity() === 0) {
+        if (! $relaxed && $helper->getRemainingCapacity() === 0) {
             $reasons[] = 'The two-session duty-shift limit has been reached.';
         }
         if ($session) {

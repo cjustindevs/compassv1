@@ -17,6 +17,29 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Duty Hours Relaxation (testing mode)
+    |--------------------------------------------------------------------------
+    |
+    | While true, helper matching skips the duty-hour gatekeeping normally
+    | required before assignment: institutional verification & training,
+    | being on an official duty shift, a current readiness check, the
+    | two-session duty-shift limit, the availability toggle, and the
+    | 6:00-10:30 PM operating-hours window are all bypassed so that every
+    | feature can be exercised end to end.
+    |
+    | Hard safety rules are ALWAYS enforced regardless of this flag: the
+    | account must be active, a helper must have an active primary adviser,
+    | must not be under review, must not have a declared conflict, must not
+    | hold a concurrent active assignment, and risk/competency gates apply.
+    |
+    | Set RELAX_DUTY_HOURS=false in production to restore full enforcement.
+    |
+    */
+
+    'relax_duty_hours' => env('RELAX_DUTY_HOURS', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Branding
     |--------------------------------------------------------------------------
     |

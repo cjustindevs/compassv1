@@ -126,3 +126,11 @@ services:
       # SCREEN inside the register dialog instead of being emailed.
       - key: RUN_SEED_DEMO
         value: "true"
+      # Testing mode: DEFAULT true. Skips duty-hour gatekeeping (verification,
+      # duty shift, readiness, two-session limit, availability toggle, service
+      # hours) so every feature can be tested end to end. Hard safety rules
+      # (active account, active adviser, not under review, no conflict, no
+      # concurrent assignment, competency/risk) always remain enforced.
+      # Set to "false" when the institution wants real enforcement back.
+      - key: RELAX_DUTY_HOURS
+        value: "true"

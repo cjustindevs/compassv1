@@ -50,7 +50,8 @@ class HelperMatchingService
 
     protected function getEligibleHelpers(string $riskLevel, ?int $excludeHelperId = null): Collection
     {
-        if (!app(OperatingHoursService::class)->acceptsAssignments()) return collect();
+        $relaxed = (bool) config('app.relax_duty_hours', false);
+        if (! $relaxed && ! app(OperatingHoursService::class)->acceptsAssignments()) return collect();
         $query = Helper::query()
             // Eligible helpers are selected by declared availability OR the
             // operational status, then narrowed authoritatively by
@@ -59,9 +60,11 @@ class HelperMatchingService
                 $query->whereIn('status', ['available', 'busy'])
                     ->orWhere('availability', 'available');
             })
-            ->whereHas('user', fn ($q) => $q->where('is_active', true))
-            ->whereHas('currentReadiness', fn ($query) => $query->ready())
-            ->with(['currentReadiness', 'schedule', 'helperSpecialties'])
+            ->whereHas('user', fn ($q) => $q->where('is_active', true));
+        if (! $relaxed) {
+            $query->whereHas('currentReadiness', fn ($query) => $query->ready());
+        }
+        $query->with(['currentReadiness', 'schedule', 'helperSpecialties'])
             ->withCount('activeSessions as live_active_sessions_count');
 
         if (Schema::hasColumn('helpers', 'is_under_review')) {
@@ -134,7 +137,7 @@ class HelperMatchingService
 
     public function processQueueRequest(QueueRequest $queue, ?int $excludeHelperId = null): ?Session
     {
-        if ($queue->request_status !== 'waiting' || !app(OperatingHoursService::class)->acceptsAssignments()) return null;
+        if ($queue->request_status !== 'waiting' || (! config('app.relax_duty_hours', false) && ! app(OperatingHoursService::class)->acceptsAssignments())) return null;
         $session=$this->pendingSessionForQueue($queue);
         if (!$session || !$session->submitted_at || !$session->risk_level || $session->requires_adviser_review || $session->risk_level==='emergency') return null;
         $helper=$this->findBestMatch($queue->seeker,$session->risk_level,$session->concern?->concern_name,$queue->seeker?->user?->preferred_language,$excludeHelperId);
@@ -169,10 +172,12 @@ class HelperMatchingService
             if (DB::table('helper_conflicts')->where('helper_id',$helperId)->where('seeker_id',$session->seeker_id)->exists()) return 'A declared conflict prevents this assignment.';
             if (!$helper->canHandleRiskLevel($session->risk_level)) return 'This request requires a different competency or adviser review and cannot be assigned to a peer helper.';
 
-            // Capacity and concurrency are always enforced, even under an
-            // override: a helper is never overloaded past one live session or
-            // the two-session duty-shift limit.
-            if ($helper->getRemainingCapacity() === 0) {
+            // Capacity and concurrency rules: a helper is never overloaded past
+            // one live session or the two-session duty-shift limit. The
+            // duty-shift limit is bypassed while RELAX_DUTY_HOURS is enabled
+            // for testing; concurrency is always enforced, even under an
+            // override.
+            if (! config('app.relax_duty_hours', false) && $helper->getRemainingCapacity() === 0) {
                 return 'The two-session duty-shift limit has been reached.';
             }
             if ($helper->activeSessions()->where('id','!=',$session->id)->exists()) {
@@ -189,7 +194,7 @@ class HelperMatchingService
                     ->reject(fn (string $r) => str_contains($r, 'Service is closed for new assignments.'))
                     ->values()->all();
             } else {
-                if (!app(OperatingHoursService::class)->acceptsAssignments()) {
+                if (! config('app.relax_duty_hours', false) && ! app(OperatingHoursService::class)->acceptsAssignments()) {
                     return 'Service is closed for new assignments.';
                 }
                 // Single authoritative eligibility check (readiness, shift, capacity…).

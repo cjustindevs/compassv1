@@ -74,6 +74,7 @@ class RegistrationTest extends TestCase
 
     public function test_failed_mail_delivery_preserves_previous_verification(): void
     {
+        config(['mail.default' => 'smtp']);
         Mail::shouldReceive('send')->once()->andThrow(new \RuntimeException('Unavailable'));
         $this->withSession(['registration_verified_until' => now()->addMinutes(10)->timestamp])
             ->postJson(route('registration.otp.send'), ['email' => 'failure-test@example.com'])->assertStatus(503);
@@ -134,6 +135,7 @@ class RegistrationTest extends TestCase
 
     public function test_transient_smtp_failure_retries_with_the_same_code(): void
     {
+        config(['mail.default' => 'smtp']);
         $firstCode=null;$attempts=0;
         Mail::shouldReceive('send')->twice()->andReturnUsing(function($view,$data) use (&$firstCode,&$attempts) {
             $attempts++;
@@ -145,6 +147,7 @@ class RegistrationTest extends TestCase
     }
     public function test_rejected_smtp_login_is_clear_and_does_not_lock_resending(): void
     {
+        config(['mail.default' => 'smtp']);
         Mail::shouldReceive('send')->twice()->andThrow(new \Symfony\Component\Mailer\Exception\TransportException('535 authentication rejected secret-should-not-be-returned'));
         for($i=0;$i<2;$i++) $this->postJson(route('registration.otp.send'),['email'=>'auth-failure@example.com'])
             ->assertStatus(503)->assertJsonPath('message','The email provider rejected the server login. The administrator needs to update the mail credentials before OTP can be sent.')->assertDontSee('secret-should-not-be-returned');
