@@ -156,31 +156,19 @@
         <!-- Stats -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Sessions</span>
-                    <span class="text-2xl"><i class="fas fa-comments" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">Sessions</span>
                 <div class="stat-number">{{ $sessions->count() }}</div>
             </div>
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Evaluations</span>
-                    <span class="text-2xl"><i class="fas fa-chart-column" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">Evaluations</span>
                 <div class="stat-number">{{ $evaluations->count() }}</div>
             </div>
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Events</span>
-                    <span class="text-2xl"><i class="fas fa-calendar" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">Events</span>
                 <div class="stat-number">{{ $customEvents->count() }}</div>
             </div>
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Days With Activity</span>
-                    <span class="text-2xl"><i class="fas fa-calendar-days" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">Days With Activity</span>
                 <div class="stat-number">{{ count($eventsByDate) }}</div>
             </div>
         </div>

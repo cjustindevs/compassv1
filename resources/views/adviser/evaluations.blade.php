@@ -164,26 +164,17 @@
         <!-- Stats -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Pending Reviews</span>
-                    <span class="text-2xl"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">Pending Reviews</span>
                 <div class="stat-number">{{ $totalPending }}</div>
                 <span class="text-xs text-gray-400">Sessions awaiting review</span>
             </div>
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">High Risk</span>
-                    <span class="text-2xl"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">High Risk</span>
                 <div class="stat-number">{{ $highRiskPending }}</div>
                 <span class="text-xs text-gray-400">Require immediate attention</span>
             </div>
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Total Feedback Given</span>
-                    <span class="text-2xl"><i class="fas fa-pen-to-square" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">Total Feedback Given</span>
                 <div class="stat-number">{{ $feedbackCount }}</div>
                 <span class="text-xs text-gray-400">Evaluations completed</span>
             </div>

@@ -30,6 +30,13 @@ class SidebarController {
 
     // ── Desktop collapse ──
     applyCollapsed() {
+        // The drawer is never icon-collapsed: a phone/tablet must always get
+        // the full-width slide-in, even if a desktop collapse was saved before.
+        if (this.isMobile()) {
+            this.sidebar.classList.remove('collapsed');
+            this.updateToggleIcon(false);
+            return;
+        }
         const collapsed = localStorage.getItem(STORAGE_KEY) === 'true';
         this.sidebar.classList.toggle('collapsed', collapsed);
         this.updateToggleIcon(collapsed);
@@ -102,7 +109,14 @@ class SidebarController {
 
         // Keep the desktop layout correct across viewport changes.
         window.addEventListener('resize', () => {
-            if (!this.isMobile()) this.closeMobile();
+            if (this.isMobile()) {
+                // Entering mobile: restore a clean full-width drawer.
+                this.sidebar.classList.remove('collapsed');
+                this.closeMobile();
+            } else {
+                this.applyCollapsed();
+                this.closeMobile();
+            }
         });
     }
 }

@@ -205,26 +205,17 @@
         <!-- Stats -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Pending Review</span>
-                    <span class="text-2xl"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">Pending Review</span>
                 <div class="stat-number">{{ $totalPending }}</div>
                 <span class="text-xs text-gray-400">Awaiting your decision</span>
             </div>
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Emergency Cases</span>
-                    <span class="text-2xl"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">Emergency Cases</span>
                 <div class="stat-number">{{ $emergencyCount }}</div>
                 <span class="text-xs text-gray-400">Require immediate attention</span>
             </div>
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Approved</span>
-                    <span class="text-2xl"><i class="fas fa-circle-check" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">Approved</span>
                 <div class="stat-number">{{ $totalApproved }}</div>
                 <span class="text-xs text-gray-400">Waiting for professional</span>
             </div>

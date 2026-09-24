@@ -151,31 +151,19 @@
         <!-- Stats -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Total Resources</span>
-                    <span class="text-2xl"><i class="fas fa-book-open" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">Total Resources</span>
                 <div class="stat-number">{{ $stats['total'] }}</div>
             </div>
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Published</span>
-                    <span class="text-2xl"><i class="fas fa-circle-check" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">Published</span>
                 <div class="stat-number">{{ $stats['published'] }}</div>
             </div>
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Total Views</span>
-                    <span class="text-2xl"><i class="fas fa-eye" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">Total Views</span>
                 <div class="stat-number">{{ number_format($stats['views']) }}</div>
             </div>
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Featured</span>
-                    <span class="text-2xl">⭐</span>
-                </div>
+                <span class="stat-label">Featured</span>
                 <div class="stat-number">{{ $stats['featured'] }}</div>
             </div>
         </div>

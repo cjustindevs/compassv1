@@ -156,17 +156,11 @@
         <!-- Stats -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Total Helpers</span>
-                    <span class="text-2xl"><i class="fas fa-users" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">Total Helpers</span>
                 <div class="stat-number">{{ $totalHelpers }}</div>
             </div>
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Available</span>
-                    <span class="text-2xl"><i class="fas fa-circle" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">Available</span>
                 <div class="stat-number">{{ $availableHelpers }}</div>
             </div>
             <div class="stat-card">

@@ -2,7 +2,9 @@
     <script>
         (function () {
             try {
-                if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                // Desktop-only: never collapse the drawer strip on phones/tablets,
+                // even when a desktop collapse preference was saved previously.
+                if (window.innerWidth > 768 && localStorage.getItem('sidebarCollapsed') === 'true') {
                     document.documentElement.classList.add('sidebar-collapsed-preload');
                 }
             } catch (e) {}
@@ -43,6 +45,7 @@
         html.sidebar-collapsed-preload .sidebar .logout-text { display: none; }
         @media (max-width: 768px) {
             .sidebar { width: 280px; transform: translateX(-100%); }
+            .sidebar.collapsed { width: 280px; }
             .sidebar.open,
             .sidebar.open.closed { transform: translateX(0); }
             .sidebar.closed { transform: translateX(-100%); }

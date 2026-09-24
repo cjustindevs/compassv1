@@ -21,34 +21,22 @@
     <!-- ─── STATS ─── -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 dashboard-grid-max">
         <div class="stat-card">
-            <div class="flex items-center justify-between">
-                <span class="stat-label">Total Sessions</span>
-                <span class="stat-icon"><i class="fas fa-chart-column" aria-hidden="true"></i></span>
-            </div>
+            <span class="stat-label">Total Sessions</span>
             <div class="stat-number">{{ $stats['total_sessions'] }}</div>
             <span class="text-xs text-gray-400">All time</span>
         </div>
         <div class="stat-card">
-            <div class="flex items-center justify-between">
-                <span class="stat-label">Active Sessions</span>
-                <span class="stat-icon"><i class="fas fa-circle" aria-hidden="true"></i></span>
-            </div>
+            <span class="stat-label">Active Sessions</span>
             <div class="stat-number">{{ $stats['active_sessions'] }}</div>
             <span class="text-xs text-gray-400">Currently ongoing</span>
         </div>
         <div class="stat-card">
-            <div class="flex items-center justify-between">
-                <span class="stat-label">Pending Requests</span>
-                <span class="stat-icon"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span>
-            </div>
+            <span class="stat-label">Pending Requests</span>
             <div class="stat-number">{{ $stats['pending_requests'] }}</div>
             <span class="text-xs text-gray-400">Awaiting your action</span>
         </div>
         <div class="stat-card">
-            <div class="flex items-center justify-between">
-                <span class="stat-label">Competency Score</span>
-                <span class="stat-icon">⭐</span>
-            </div>
+            <span class="stat-label">Competency Score</span>
             <div class="stat-number">{{ $stats['competency_score'] !== null ? $stats['competency_score'].'%' : 'Not evaluated' }}</div>
             <span class="text-xs text-gray-400">{{ optional($competency)->level_label ?: 'Not yet evaluated' }}</span>
         </div>

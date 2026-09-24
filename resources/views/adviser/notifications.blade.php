@@ -156,25 +156,16 @@
         <!-- Stats -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Total Notifications</span>
-                    <span class="text-2xl"><i class="fas fa-bell" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">Total Notifications</span>
                 <div class="stat-number">{{ $notifications->count() }}</div>
             </div>
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Unread</span>
-                    <span class="text-2xl"><i class="fas fa-envelope-open" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">Unread</span>
                 <div class="stat-number">{{ $unreadCount }}</div>
                 <span class="text-xs text-gray-400">Needs your attention</span>
             </div>
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Read</span>
-                    <span class="text-2xl"><i class="fas fa-circle-check" aria-hidden="true"></i></span>
-                </div>
+                <span class="stat-label">Read</span>
                 <div class="stat-number">{{ $notifications->count() - $unreadCount }}</div>
             </div>
         </div>

@@ -21,8 +21,4 @@
             {{ $detail }}
         </span>
     </div>
-
-    <span class="stat-icon stat-icon-{{ $tone }}" aria-hidden="true">
-        <x-admin.icon :name="$icon" :size="24" />
-    </span>
 </article>

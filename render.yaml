@@ -117,7 +117,21 @@ services:
       - key: CACHE_STORE
         value: file
       - key: MAIL_MAILER
-        value: log
+        value: smtp
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        value: projectdialafriendorganization@gmail.com
+      - key: MAIL_ENCRYPTION
+        value: tls
+      - key: MAIL_FROM_ADDRESS
+        value: projectdialafriendorganization@gmail.com
+      # 16-char Gmail App Password — set in the Dashboard (NEVER in Git).
+      # Without it Gmail rejects the login and OTP sending returns 503.
+      - key: MAIL_PASSWORD
+        sync: false
       - key: RUN_SCHEDULER
         value: "true"
       # Seeds the documented demo accounts on first boot only (guarded: the

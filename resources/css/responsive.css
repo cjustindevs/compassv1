@@ -94,6 +94,7 @@ img { max-width: 100%; height: auto; }
         width: 280px;
         z-index: 100;
     }
+    .sidebar.collapsed { width: 280px; }
     .sidebar.closed { transform: translateX(-100%); }
 
     .hamburger { display: block !important; }

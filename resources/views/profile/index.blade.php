@@ -176,14 +176,12 @@
         <!-- Stats -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             <div class="stat-card">
-                <div class="icon"><i class="fas fa-comments"></i></div>
                 <div>
                     <div class="value">{{ $stats['total_sessions'] }}</div>
                     <div class="label">Total sessions</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="icon"><i class="fas fa-star"></i></div>
                 <div>
                     <div class="value">{{ $stats['average_rating'] > 0 ? number_format($stats['average_rating'], 1) : '—' }}</div>
                     <div class="label">Average rating
@@ -194,14 +192,12 @@
                 </div>
             </div>
             <div class="stat-card">
-                <div class="icon"><i class="far fa-clock"></i></div>
                 <div>
                     <div class="value">{{ $stats['total_minutes'] }}</div>
                     <div class="label">Minutes in sessions</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="icon"><i class="fas fa-check-circle"></i></div>
                 <div>
                     <div class="value">{{ $stats['completed_sessions'] }}</div>
                     <div class="label">Completed sessions</div>

@@ -285,57 +285,29 @@
         <!-- Stats -->
         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <div class="stat-number" id="statPending">{{ $pendingReferrals }}</div>
-                        <div class="stat-label">Pending Referrals</div>
-                    </div>
-                    <div class="stat-icon" style="background:#FEF3C7;color:#D97706;">
-                        <i class="fas fa-clipboard-list"></i>
-                    </div>
-                </div>
+                <div class="stat-number" id="statPending">{{ $pendingReferrals }}</div>
+                <div class="stat-label">Pending Referrals</div>
                 <p class="text-xs text-gray-400 mt-2">Awaiting your decision</p>
             </div>
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <div class="stat-number" id="statActive">{{ $activeCases }}</div>
-                        <div class="stat-label">Active Cases</div>
-                    </div>
-                    <div class="stat-icon" style="background:#DBEAFE;color:#1D4ED8;">
-                        <i class="fas fa-folder-open"></i>
-                    </div>
-                </div>
+                <div class="stat-number" id="statActive">{{ $activeCases }}</div>
+                <div class="stat-label">Active Cases</div>
                 <p class="text-xs text-gray-400 mt-2">In your care right now</p>
             </div>
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <div class="stat-number" id="statCompleted">{{ $completedCases }}</div>
-                        <div class="stat-label">Completed Interventions</div>
-                    </div>
-                    <div class="stat-icon" style="background:#EAF8F0;color:#04A052;">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                </div>
+                <div class="stat-number" id="statCompleted">{{ $completedCases }}</div>
+                <div class="stat-label">Completed Interventions</div>
                 <p class="text-xs text-gray-400 mt-2">Completed or closed</p>
             </div>
             <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <div class="stat-number" id="statResponse">
-                            @if($avgResponseHours > 48)
-                                {{ number_format($avgResponseHours / 24, 1) }}<span class="text-base">d</span>
-                            @else
-                                {{ $avgResponseHours }}<span class="text-base">h</span>
-                            @endif
-                        </div>
-                        <div class="stat-label">Avg Response Time</div>
-                    </div>
-                    <div class="stat-icon" style="background:#E0E7FF;color:#4338CA;">
-                        <i class="fas fa-clock"></i>
-                    </div>
+                <div class="stat-number" id="statResponse">
+                    @if($avgResponseHours > 48)
+                        {{ number_format($avgResponseHours / 24, 1) }}<span class="text-base">d</span>
+                    @else
+                        {{ $avgResponseHours }}<span class="text-base">h</span>
+                    @endif
                 </div>
+                <div class="stat-label">Avg Response Time</div>
                 <p class="text-xs text-gray-400 mt-2">Assignment to decision</p>
             </div>
         </div>

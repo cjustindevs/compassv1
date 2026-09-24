@@ -834,40 +834,28 @@
             <!-- Stats -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 dashboard-grid-max">
                 <div class="stat-card">
-                    <div class="flex items-center justify-between">
-                        <span class="stat-label">Total Sessions</span>
-                        <span class="text-2xl"><i class="fas fa-chart-column" aria-hidden="true"></i></span>
-                    </div>
+                    <span class="stat-label">Total Sessions</span>
                     <div class="stat-number">{{ $totalSessions }}</div>
                     <div class="flex items-center gap-2 mt-1">
                         <span class="text-xs text-gray-400">All time</span>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="flex items-center justify-between">
-                        <span class="stat-label">Completed</span>
-                        <span class="text-2xl"><i class="fas fa-circle-check" aria-hidden="true"></i></span>
-                    </div>
+                    <span class="stat-label">Completed</span>
                     <div class="stat-number">{{ $completedSessions }}</div>
                     <div class="flex items-center gap-2 mt-1">
                         <span class="text-xs text-gray-400">Sessions finished</span>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="flex items-center justify-between">
-                        <span class="stat-label">Evaluations</span>
-                        <span class="text-2xl">⭐</span>
-                    </div>
+                    <span class="stat-label">Evaluations</span>
                     <div class="stat-number">{{ $totalEvaluations }}</div>
                     <div class="flex items-center gap-2 mt-1">
                         <span class="text-xs text-gray-400">Feedback given</span>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="flex items-center justify-between">
-                        <span class="stat-label">Active Sessions</span>
-                        <span class="text-2xl"><i class="fas fa-circle" aria-hidden="true"></i></span>
-                    </div>
+                    <span class="stat-label">Active Sessions</span>
                     <div class="stat-number">{{ $activeSession ? 1 : 0 }}</div>
                     <div class="flex items-center gap-2 mt-1">
                         <span class="text-xs text-gray-400">Currently ongoing</span>

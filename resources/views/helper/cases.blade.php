@@ -10,26 +10,17 @@
     <!-- Summary stats -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div class="stat-card">
-            <div class="flex items-center justify-between">
-                <span class="stat-label">Awaiting Action</span>
-                <span class="stat-icon"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span>
-            </div>
+            <span class="stat-label">Awaiting Action</span>
             <div class="stat-number" id="pendingCount" style="{{ $stats['pending'] > 0 ? 'color:var(--yellow-500);' : '' }}">{{ $stats['pending'] }}</div>
             <span class="text-xs text-gray-400">Accept or decline</span>
         </div>
         <div class="stat-card">
-            <div class="flex items-center justify-between">
-                <span class="stat-label">Active</span>
-                <span class="stat-icon"><i class="fas fa-circle" aria-hidden="true"></i></span>
-            </div>
+            <span class="stat-label">Active</span>
             <div class="stat-number">{{ $stats['active'] }}</div>
             <span class="text-xs text-gray-400">In progress</span>
         </div>
         <div class="stat-card">
-            <div class="flex items-center justify-between">
-                <span class="stat-label">Completed</span>
-                <span class="stat-icon"><i class="fas fa-circle-check" aria-hidden="true"></i></span>
-            </div>
+            <span class="stat-label">Completed</span>
             <div class="stat-number">{{ $stats['completed'] }}</div>
             <span class="text-xs text-gray-400">Finished sessions</span>
         </div>
