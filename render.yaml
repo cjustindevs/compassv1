@@ -116,7 +116,8 @@ services:
       - key: RUN_SCHEDULER
         value: "true"
       # Seeds the documented demo accounts on first boot only (guarded: the
-      # seeder runs only while the users table is empty). OTP codes appear in
-      # the container logs because MAIL_MAILER=log.
+      # seeder runs only while the demo accounts are still missing). With
+      # MAIL_MAILER=log (or blank), OTP verification codes are DISPLAYED ON
+      # SCREEN inside the register dialog instead of being emailed.
       - key: RUN_SEED_DEMO
         value: "true"

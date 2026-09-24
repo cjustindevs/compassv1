@@ -170,10 +170,15 @@
         if (result) { verifiedUntil = result.verified_until; updateSummary(); dialog.close(); }
     });
     document.getElementById('shuffle-alias').addEventListener('click', async function () {
-        const submit = document.querySelector('button[type="submit"]');
+        const submit = form.querySelector('button[type="submit"]');
+        const aliasStatus = document.getElementById('alias-status');
         submit.disabled = true;
-        const result = await post(@json(route('registration.alias.shuffle')), {}, this, document.getElementById('alias-status'));
-        if (result) document.getElementById('alias').value = result.alias;
+        const result = await post(@json(route('registration.alias.shuffle')), {}, this, aliasStatus);
+        if (result && typeof result.alias === 'string' && result.alias.length) {
+            document.getElementById('alias').value = result.alias;
+        } else if (result && !aliasStatus.textContent) {
+            aliasStatus.textContent = 'Could not generate a new alias. Please try again.';
+        }
         submit.disabled = false;
     });
 })();
