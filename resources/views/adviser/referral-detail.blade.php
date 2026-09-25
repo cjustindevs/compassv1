@@ -214,7 +214,7 @@
                 </div>
             </div>
 
-            @if($referral->clarification_requested_at && !$referral->clarification_received_at && $referral->status === \App\Models\Referral::STATUS_PENDING_ADVISER)
+            @if($referral->clarification_requested_at && !$referral->clarification_received_at && in_array($referral->status,[\App\Models\Referral::STATUS_PENDING_ADVISER,\App\Models\Referral::STATUS_CONSENT_REQUESTED]))
         <div class="flash-error mb-4"><i class="fas fa-comment-dots mr-1"></i> This referral was returned to the Helper for revision. Approval is blocked until the Helper responds with the requested clarification.</div>
         @endif
 
@@ -226,7 +226,7 @@
                 <a href="{{ route('adviser.referrals') }}" class="btn-outline">
                     <i class="fas fa-arrow-left mr-2"></i> Back
                 </a>
-                @if($referral->status === \App\Models\Referral::STATUS_PENDING_ADVISER && !($referral->clarification_requested_at && !$referral->clarification_received_at))
+                @if(in_array($referral->status,[\App\Models\Referral::STATUS_PENDING_ADVISER,\App\Models\Referral::STATUS_CONSENT_REQUESTED]) && !($referral->clarification_requested_at && !$referral->clarification_received_at))
                 <button type="button" class="btn-outline" onclick="openReviseModal()">
                     <i class="fas fa-rotate-left mr-2"></i> Request Revision
                 </button>
@@ -237,7 +237,7 @@
                     <i class="fas fa-times mr-2"></i> Reject Referral
                 </button>
                 @endif
-                @if($referral->clarification_requested_at && $referral->clarification_received_at && $referral->status === \App\Models\Referral::STATUS_PENDING_ADVISER)
+                @if($referral->clarification_requested_at && $referral->clarification_received_at && in_array($referral->status,[\App\Models\Referral::STATUS_PENDING_ADVISER,\App\Models\Referral::STATUS_CONSENT_REQUESTED]))
                 <button type="button" class="btn-primary" onclick="openApproveModal()">
                     <i class="fas fa-check mr-2"></i> Approve Referral
                 </button>
@@ -384,4 +384,5 @@
 <button class="btn btn-primary" @disabled($professionals->isEmpty())>Assign professional</button>
 @if($professionals->isEmpty())<p>No active professional is currently available.</p>@endif
 </form></section>@endif
+@include('partials.referral-appointments')
 @endsection

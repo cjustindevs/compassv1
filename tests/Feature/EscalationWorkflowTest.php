@@ -74,6 +74,10 @@ class EscalationWorkflowTest extends TestCase
         $this->assertSame(Referral::STATUS_PENDING_PROFESSIONAL, $referral->status);
         $this->assertFalse($referral->identity_disclosed);
 
+        $this->assertNull($referral->professional_id);
+        // This service test supplies the vault gateway result; real encrypted storage is tested in IdentityVaultTest.
+        $this->mock(\App\Services\IdentityVaultService::class, function ($mock) { $mock->shouldReceive('hasCurrentSubmission')->once()->andReturn(true); });
+        $referral = $service->forwardToProfessional($referral);
         $this->actingAs($professional->user);
         $referral = $service->acceptReferral($referral, $professional);
         $this->assertSame(Referral::STATUS_ACCEPTED, $referral->status);

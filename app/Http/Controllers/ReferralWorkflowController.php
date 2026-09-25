@@ -56,7 +56,7 @@ class ReferralWorkflowController extends Controller
 
         if (!$request->expectsJson()) {
             if ($referral->help_seeker_consent) {
-                return redirect()->route('seeker.referrals')->with('success','Thank you. Your consent is recorded — provide your contact details whenever you are ready for coordination.');
+                return redirect()->route('seeker.referrals')->with('identity_referral_id',$referral->id)->with('success','Referral consent recorded. Review identity disclosure and submit your details to continue.');
             }
             return redirect()->route('seeker.referrals')->with('success','Thank you for letting us know. Your decision is respected.');
         }
@@ -75,7 +75,7 @@ class ReferralWorkflowController extends Controller
 
         $referral = $this->referrals->decideConsentRequest($referral, (bool) $validated['accepted']);
 
-        return response()->json(['success' => true, 'status' => $referral->status, 'referral_id' => $referral->id]);
+        return response()->json(['success' => true, 'status' => $referral->status, 'referral_id' => $referral->id, 'next_url'=>route('seeker.referrals',['identity'=>$validated['accepted'] ? $referral->id : null])]);
     }
 
     public function accept(Request $request, Referral $referral): JsonResponse

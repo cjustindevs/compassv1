@@ -13,7 +13,7 @@ class ScreeningReviewController extends Controller {
             ->where('requires_adviser_review',true)
             ->whereNot('session_status',Session::STATUS_CANCELLED)
             ->where(function ($query) {
-                $query->where('workflow_state','adviser_review_required')
+                $query->where(fn($q)=>$q->whereIn('workflow_state',['adviser_review_required','emergency_escalated'])->whereDoesntHave('screeningResponses',fn($r)=>$r->where('review_status','reviewed')))
                     ->orWhereHas('report', fn ($r) => $r->whereNotNull('reassessment_requested_at')->whereNull('reassessment_reviewed_at'));
             })
             ->get();
@@ -34,13 +34,15 @@ class ScreeningReviewController extends Controller {
             && (int)$session->review_adviser_id===(int)$request->user()->adviser->id,403);
         $data=$request->validate(['risk_level'=>'required|in:low,moderate,high,emergency','reason'=>'required|string|max:1000','evidence_source'=>'required|string|max:255','allow_peer_support'=>'required|boolean']);
         $helperRequest=$session->report?->reassessment_requested_at && !$session->report?->reassessment_reviewed_at;
-        if (($session->workflow_state ?? '')!=='adviser_review_required' && !$helperRequest) {
+        if (!in_array($session->workflow_state,['adviser_review_required','emergency_escalated'],true) && !$helperRequest) {
             return back()->with('error','This request is no longer awaiting a screening review, so the reassessment was not recorded.');
         }
         DB::transaction(function () use ($request,$session,$data) {
             $session=Session::lockForUpdate()->findOrFail($session->id);
             abort_unless((int)$session->review_adviser_id===(int)$request->user()->adviser->id,403);
             $helperRequest=$session->report?->reassessment_requested_at && !$session->report?->reassessment_reviewed_at;
+            abort_unless(in_array($session->workflow_state,['adviser_review_required','emergency_escalated'],true) || $helperRequest,409);
+            abort_if(!$helperRequest && $session->screeningResponses()->where('review_status','reviewed')->exists(),409,'This screening has already been reviewed.');
             if($helperRequest) abort_unless((int)$session->helper?->adviser_id === (int)$request->user()->adviser->id,403);
             $original=$session->screeningResponses()->oldest('id')->first();
             $answers = $original?->responses ?? [];
@@ -71,6 +73,12 @@ class ScreeningReviewController extends Controller {
                 SupportAudit::record('referral_proposed',$referral);
             }
             SupportAudit::record('risk_reassessed',$screening,['original_screening_id'=>$original?->id,'evidence_source'=>$data['evidence_source']]);
+            \App\Models\Notification::create(['user_account_id'=>$session->seeker->user_account_id,
+                'title'=>'Screening reviewed','message'=>'Your adviser has reviewed your screening. Open your request to see the next step.',
+                'notification_type'=>'system','link'=>'/seeker/requests']);
+            if ($session->queue_request_id) \App\Models\QueueRequest::whereKey($session->queue_request_id)
+                ->where('request_status','waiting')->update(['priority_level'=>$data['risk_level']]);
+
             if ($helperRequest) {
                 $session->report->update(['reassessment_reviewed_at'=>now()]);
                 $session->update(['requires_adviser_review'=>!$data['allow_peer_support'],'peer_support_approved_at'=>$data['allow_peer_support']?now():null]);

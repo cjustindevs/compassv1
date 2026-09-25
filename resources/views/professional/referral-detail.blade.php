@@ -360,7 +360,8 @@
             Confidentiality and care, always.
         </div>
 
-    </main>
+    @include('partials.referral-appointments')
+</main>
 
     <!-- Decline Modal -->
     <div class="modal-overlay" id="declineModal">

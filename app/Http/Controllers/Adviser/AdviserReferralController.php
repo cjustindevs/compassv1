@@ -27,7 +27,7 @@ class AdviserReferralController extends Controller
 
         // Get pending referrals (awaiting adviser review)
         $pendingReferrals = Referral::with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'helper.user:id,id,name'])
-            ->where('status', Referral::STATUS_PENDING_ADVISER)
+            ->whereIn('status', [Referral::STATUS_PENDING_ADVISER,Referral::STATUS_CONSENT_REQUESTED])
             ->where(fn ($q) => $q->whereIn('helper_id', $helperIds)->orWhere('adviser_id', Auth::user()->adviser?->id))
             ->orderBy('priority_level', 'desc')
             ->orderBy('created_at', 'asc')

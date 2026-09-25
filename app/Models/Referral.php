@@ -94,6 +94,8 @@ class Referral extends Model
     const PRIORITY_EMERGENCY = 'emergency';
 
     // Relationships
+    public function appointments() { return $this->hasMany(ReferralAppointment::class)->latest('id'); }
+
     public function session()
     {
         return $this->belongsTo(Session::class, 'session_id', 'id');

@@ -266,14 +266,6 @@
                               title="Priority class P{{ [ 'emergency'=>1,'high'=>2,'moderate'=>3,'low'=>4 ][$item->priority_level] ?? 4 }}">
                             {{ \App\Models\QueueRequest::priorityClass($item->priority_level) }} · {{ ucfirst($item->priority_level) }}
                         </span>
-                        <form method="POST" action="{{ route('moderator.queue.priority', $item) }}" class="flex items-center gap-2">
-                            @csrf @method('PATCH')
-                            <label class="sr-only" for="priority-{{ $item->id }}">Queue priority</label>
-                            <select id="priority-{{ $item->id }}" name="priority_level" class="assign-select">
-                                @foreach(['low', 'moderate', 'high', 'emergency'] as $priority)<option @selected($item->priority_level === $priority)>{{ $priority }}</option>@endforeach
-                            </select>
-                            <button type="submit" class="btn-outline" aria-label="Update queue priority"><i class="fas fa-check" aria-hidden="true"></i></button>
-                        </form>
                         <div class="min-w-0 flex-1">
                             <p class="font-semibold text-gray-800 text-sm">{{ $item->seeker?->generated_alias ?? 'Anonymous' }}</p>
                             <p class="text-xs text-gray-500 truncate">{{ $item->concern_name }}</p>
@@ -290,21 +282,15 @@
                                 <input type="hidden" name="queue_id" value="{{ $item->id }}">
                                 <select name="helper_id" class="assign-select" required>
                                     <option value="">Select helper...</option>
-                                    @foreach($availableHelpers as $helper)
-                                        <option @disabled(!$helper->assignable) data-ineligible="{{ $helper->assignable ? '0' : '1' }}" value="{{ $helper->id }}"
-                                            title="{{ $helper->assignment_detail }}">
-                                            {{ $helper->full_name }} · {{ $helper->assignable ? '✓ ' . 'Ready · ' . $helper->remaining_capacity . '/' . \App\Models\Helper::MAX_SESSIONS_PER_SHIFT : $helper->assignment_reason }} · {{ $helper->competency_level }}/5
+                                    @foreach($availableHelpers->sortByDesc(fn($candidate) => $candidate->calculateMatchingScore($item->supportSession?->risk_level ?? 'low', $item->supportSession?->concern?->concern_name, $item->seeker?->user?->preferred_language)) as $helper)
+                                        @php($eligibility = app(\App\Services\HelperEligibilityService::class)->status($helper, $item->supportSession))
+                                        <option @disabled(!$eligibility['assignable']) data-ineligible="{{ $eligibility['assignable'] ? '0' : '1' }}" value="{{ $helper->id }}"
+                                            title="{{ $eligibility['reason'] }}">
+                                            {{ $helper->full_name }} · {{ $eligibility['assignable'] ? '✓ ' . 'Ready · ' . $helper->remaining_capacity . '/' . \App\Models\Helper::MAX_SESSIONS_PER_SHIFT : $eligibility['label'] }} · {{ $helper->competency_level }}/5
                                         </option>
                                     @endforeach
-                                </select>
-                                <label class="sr-only" for="scheduled_at-{{ $item->id }}">Appointment time</label>
-                                <input type="datetime-local" id="scheduled_at-{{ $item->id }}" name="scheduled_at" class="assign-select"
+                                </select>id }}" name="scheduled_at" class="assign-select"
                                        title="Optional appointment time for the session (Asia/Manila). Leave empty to schedule immediately.">
-                                <label class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 cursor-pointer"
-                                       title="Assign even though the helper does not meet normal eligibility rules. This is recorded in the audit log.">
-                                    <input type="checkbox" name="emergency_override" value="1" class="override-toggle rounded border-amber-300 text-amber-600">
-                                    Override eligibility (audited)
-                                </label>
                                 <button type="submit" class="btn-primary">
                                     <i class="fas fa-user-check"></i> Assign
                                 </button>
@@ -337,14 +323,6 @@
                               title="Priority class P{{ [ 'emergency'=>1,'high'=>2,'moderate'=>3,'low'=>4 ][$item->priority_level] ?? 4 }}">
                             {{ \App\Models\QueueRequest::priorityClass($item->priority_level) }} · {{ ucfirst($item->priority_level) }}
                         </span>
-                        <form method="POST" action="{{ route('moderator.queue.priority', $item) }}" class="flex items-center gap-2">
-                            @csrf @method('PATCH')
-                            <label class="sr-only" for="priority-{{ $item->id }}">Queue priority</label>
-                            <select id="priority-{{ $item->id }}" name="priority_level" class="assign-select">
-                                @foreach(['low', 'moderate', 'high', 'emergency'] as $priority)<option @selected($item->priority_level === $priority)>{{ $priority }}</option>@endforeach
-                            </select>
-                            <button type="submit" class="btn-outline" aria-label="Update queue priority"><i class="fas fa-check" aria-hidden="true"></i></button>
-                        </form>
                         <div class="min-w-0 flex-1">
                             <p class="font-semibold text-gray-800 text-sm">{{ $item->seeker?->generated_alias ?? 'Anonymous' }}</p>
                             <p class="text-xs text-gray-500">
@@ -368,22 +346,19 @@
                             @csrf
                             <input type="hidden" name="queue_id" value="{{ $item->id }}">
                             <select name="helper_id" class="assign-select">
-                                @foreach($availableHelpers as $helper)
-                                    <option @disabled(!$helper->assignable) data-ineligible="{{ $helper->assignable ? '0' : '1' }}" value="{{ $helper->id }}" {{ $item->assigned_helper_id === $helper->id ? 'selected' : '' }}
-                                        title="{{ $helper->assignment_detail }}">
-                                        {{ $helper->full_name }} · {{ $helper->assignable ? '✓ ' . 'Ready · ' . $helper->remaining_capacity . '/' . \App\Models\Helper::MAX_SESSIONS_PER_SHIFT : $helper->assignment_reason }}
+                                @foreach($availableHelpers->sortByDesc(fn($candidate) => $candidate->calculateMatchingScore($item->supportSession?->risk_level ?? 'low', $item->supportSession?->concern?->concern_name, $item->seeker?->user?->preferred_language)) as $helper)
+                                        @php($eligibility = app(\App\Services\HelperEligibilityService::class)->status($helper, $item->supportSession))
+                                    <option @disabled(!$eligibility['assignable']) data-ineligible="{{ $eligibility['assignable'] ? '0' : '1' }}" value="{{ $helper->id }}" {{ $item->assigned_helper_id === $helper->id ? 'selected' : '' }}
+                                        title="{{ $eligibility['reason'] }}">
+                                        {{ $helper->full_name }} · {{ $eligibility['assignable'] ? '✓ ' . 'Ready · ' . $helper->remaining_capacity . '/' . \App\Models\Helper::MAX_SESSIONS_PER_SHIFT : $eligibility['label'] }}
                                     </option>
                                 @endforeach
                             </select>
-                            <label class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 cursor-pointer"
-                                   title="Assign even though the helper does not meet normal eligibility rules. This is recorded in the audit log.">
-                                <input type="checkbox" name="emergency_override" value="1" class="override-toggle rounded border-amber-300 text-amber-600">
-                                Override
-                            </label>
                             <button type="submit" class="btn-outline">
                                 <i class="fas fa-sync-alt"></i> Reassign
                             </button>
                         </form>
+                        <button type="button" class="btn-outline text-red-600" data-remove-url="{{ route('moderator.queue.remove',$item->id) }}"><i class="fas fa-times" aria-hidden="true"></i> Remove assignment</button>
                     </div>
                 @empty
                     <div class="text-center py-8 text-gray-400">
@@ -437,40 +412,13 @@
             }, 30000);
 
             // ── Audited override: unlock ineligible helpers and confirm ──
-            document.querySelectorAll('form .override-toggle').forEach((toggle) => {
-                const form = toggle.closest('form');
-                const select = form?.querySelector('select[name="helper_id"]');
-                if (!form || !select) return;
-
-                toggle.addEventListener('change', () => {
-                    select.querySelectorAll('option[data-ineligible="1"]').forEach((option) => {
-                        option.disabled = !toggle.checked;
-                    });
-
-                    if (toggle.checked) {
-                        form.dataset.confirm = 'Override eligibility and assign?';
-                        form.dataset.confirmMessage = 'This helper does not meet the normal verification, shift or readiness rules. The override is recorded in the audit log.';
-                        form.dataset.confirmText = 'Assign with override';
-                        form.dataset.confirmClass = 'bg-amber-600 hover:bg-amber-700 focus:ring-amber-500';
-                        form.dataset.confirmIcon = '<i class="fas fa-triangle-exclamation text-amber-500 text-5xl"></i>';
-                    } else {
-                        delete form.dataset.confirm;
-                        delete form.dataset.confirmMessage;
-                        delete form.dataset.confirmText;
-                        delete form.dataset.confirmClass;
-                        delete form.dataset.confirmIcon;
-                    }
-                });
-            });
-
-            // ── Real-time: remove a request from the queue ──
             const csrfToken = () => document.querySelector('meta[name="csrf-token"]').content;
 
             document.querySelectorAll('[data-remove-url]').forEach((btn) => {
                 btn.addEventListener('click', async () => {
                     const ok = await confirmAction({
                         title: 'Remove from queue?',
-                        message: 'This will remove the help seeker from the incoming queue.',
+                        message: 'An unaccepted assignment will be removed and returned to waiting. A waiting request will be cancelled. Started sessions cannot be removed.',
                         confirmText: 'Remove',
                         confirmClass: 'bg-red-600 hover:bg-red-700 focus:ring-red-600',
                     });
@@ -488,7 +436,7 @@
                         .then((data) => {
                             if (data.success) {
                                 showToast(data.message, 'success');
-                                btn.closest('.queue-item')?.remove();
+                                window.location.reload();
                             } else {
                                 showToast(data.message || 'Could not remove request.', 'error');
                                 resetButton(btn);

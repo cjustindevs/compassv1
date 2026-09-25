@@ -11,6 +11,13 @@ use Illuminate\Support\Facades\Auth;
 
 class ProfessionalReferralController extends Controller
 {
+    public function schedule(Request $request, Referral $referral)
+    {
+        $data = $request->validate(['starts_at'=>'required|date_format:Y-m-d\\TH:i','ends_at'=>'required|date_format:Y-m-d\\TH:i','meeting_details'=>'required|string|max:2000']);
+        app(\App\Services\ReferralAppointmentService::class)->schedule($referral, $data);
+        return back()->with('success','Appointment saved. The seeker has been notified.');
+    }
+
     public function index()
     {
         $professional = Auth::user()->psychologyProfessional;

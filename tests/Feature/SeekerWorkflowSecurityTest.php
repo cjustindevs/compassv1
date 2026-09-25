@@ -66,6 +66,23 @@ class SeekerWorkflowSecurityTest extends TestCase {
         $this->assertSame($answers,\App\Models\ScreeningResponse::first()->responses);
         $this->assertDatabaseHas('screening_responses',['risk_level'=>'moderate','rule_code'=>'v4_moderate','instrument_version'=>ScreeningInstrument::VERSION]);
     }
+    public function test_emergency_screening_has_an_authorized_review_and_working_notification_link(): void {
+        $adviserUser=User::factory()->create(['role'=>'adviser','is_active'=>true]);
+        $adviser=Adviser::create(['user_account_id'=>$adviserUser->id,'first_name'=>'Test','last_name'=>'Reviewer','email'=>$adviserUser->email]);
+        $user=$this->seeker();
+        $this->actingAs($user)->post(route('request.screening.process'),$this->answers(['immediate_intent'=>'yes','current_suicide_plan'=>'yes']));
+        $session=Session::where('seeker_id',$user->helpSeeker->id)->latest('id')->firstOrFail();
+        $this->assertSame($adviser->id,$session->review_adviser_id);
+        $this->assertTrue((bool)$session->requires_adviser_review);
+        $this->actingAs($adviserUser)->get(route('adviser.screenings'))->assertOk()->assertSee('screening-'.$session->id,false);
+        $this->assertDatabaseHas('notifications',['user_account_id'=>$adviserUser->id,'link'=>'/adviser/screenings#screening-'.$session->id]);
+        $this->post(route('adviser.screenings.review',$session),['risk_level'=>'emergency','allow_peer_support'=>false,'reason'=>'Confirmed the recorded immediate safety indicators.','evidence_source'=>'Original screening responses'])->assertRedirect()->assertSessionHas('success');
+        $this->assertDatabaseHas('screening_responses',['session_id'=>$session->id,'review_status'=>'reviewed','actor_id'=>$adviserUser->id]);
+        $this->get(route('adviser.screenings'))->assertViewHas('sessions',fn($rows)=>!$rows->contains('id',$session->id));
+
+        $this->assertDatabaseCount('queue_requests',0);
+    }
+
     public function test_emergency_overrides_contradictions_and_bypasses_queue(): void {
         $user=$this->seeker(); $this->actingAs($user)->post(route('request.screening.process'),$this->answers(['immediate_intent'=>'yes','current_suicide_plan'=>'yes','suicidal_thoughts'=>'no']))->assertRedirect(route('request.matching'));
         $this->assertDatabaseHas('counseling_sessions',['workflow_state'=>'emergency_escalated']);

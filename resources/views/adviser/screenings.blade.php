@@ -91,7 +91,7 @@
             $flags = $answers->filter(fn ($v, $k) => in_array($k, $flagKeys, true) && $v === 'yes');
         @endphp
 
-        <section
+        <section id="screening-{{ $session->id }}"
             data-review-type="{{ $reassessment ? 'reassessment' : 'pre-session' }}"
             data-filter-target
             class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">

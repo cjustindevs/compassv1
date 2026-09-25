@@ -142,15 +142,16 @@ class CompassImplementationTest extends TestCase
         $helper = \App\Models\Helper::firstOrFail();
         $this->verifiedHelperFixture($helper);
         $seeker = $this->seeker();
-        $session = Session::create(['seeker_id' => $seeker->helpSeeker->id, 'helper_id' => $helper->id, 'session_status' => 'active','helper_accepted_at'=>now(),'start_time'=>now()]);
+        $session = Session::create(['seeker_id' => $seeker->helpSeeker->id, 'helper_id' => $helper->id, 'risk_level'=>'low','session_status' => 'active','helper_accepted_at'=>now(),'start_time'=>now()]);
         $this->actingAs($helper->user)->post(route('helper.session.referral.consent', ['id' => $session->id]), [
             'summary' => 'Additional professional support is recommended.',
         ])->assertSessionHasNoErrors();
         $referral = $session->referrals()->firstOrFail();
-        $this->assertSame('consent_requested', $referral->status);
+        $this->assertSame('pending_adviser', $referral->status);
         $this->assertFalse($referral->help_seeker_consent);
         $this->actingAs($this->seeker())->postJson(route('referrals.consent-request', $referral), ['accepted' => true])->assertForbidden();
-        $this->actingAs($seeker)->postJson(route('referrals.consent-request', $referral), ['accepted' => true])->assertOk()->assertJson(['status' => 'consent_requested']);
+        $this->actingAs($helper->adviser->user)->postJson(route('referrals.review',$referral),['approved'=>true,'notes'=>'Reviewed recommendation.'])->assertOk();
+        $this->actingAs($seeker)->postJson(route('referrals.consent-request', $referral), ['accepted' => true])->assertOk()->assertJson(['status' => 'pending_professional']);
         $this->assertTrue($referral->fresh()->help_seeker_consent);
         $this->assertFalse($referral->fresh()->identity_disclosed);
     }

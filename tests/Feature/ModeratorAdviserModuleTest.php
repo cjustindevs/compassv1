@@ -137,7 +137,7 @@ class ModeratorAdviserModuleTest extends TestCase
         $this->get(route('adviser.schedule'))->assertOk()->assertSee('role="alert"', false);
     }
 
-    public function test_moderator_assignment_requires_current_ready_helper_unless_emergency_override(): void
+    public function test_moderator_assignment_requires_current_ready_helper_and_rejects_override(): void
     {
         [$moderatorUser] = $this->moderatorUser();
         $helper = $this->helper();
@@ -169,16 +169,14 @@ class ModeratorAdviserModuleTest extends TestCase
 
         $this->assertDatabaseHas('queue_requests', ['id' => $queue->id, 'request_status' => 'waiting', 'assigned_helper_id' => null]);
 
-        // The moderator can force the assignment with an audited override.
-        $this->actingAs($moderatorUser)->post(route('moderator.queue.assign'), [
-            'queue_id' => $queue->id,
-            'helper_id' => $helper->id,
-            'emergency_override' => '1',
-        ])->assertRedirect(route('moderator.queue'));
-
-        $this->assertDatabaseHas('queue_requests', ['id' => $queue->id, 'request_status' => 'assigned', 'assigned_helper_id' => $helper->id]);
-        $this->assertDatabaseHas('counseling_sessions', ['id' => $session->id, 'helper_id' => $helper->id, 'session_status' => Session::STATUS_HELPER_ASSIGNED]);
-        $this->assertDatabaseHas('audit_logs', ['action' => 'match_override', 'module' => 'seeker_workflow', 'target_id' => $session->id]);
+        // A forged override cannot bypass the same eligibility checks used by automatic matching.
+        $this->actingAs($moderatorUser)->postJson(route('moderator.queue.assign'), [
+            'queue_id'=>$queue->id,'helper_id'=>$helper->id,'emergency_override'=>1,
+        ])->assertUnprocessable()->assertJsonValidationErrors('emergency_override');
+        $this->assertDatabaseHas('queue_requests',['id'=>$queue->id,'request_status'=>'waiting']);
+        $this->readyDutyHelper($helper);
+        $this->actingAs($moderatorUser)->post(route('moderator.queue.assign'), ['queue_id'=>$queue->id,'helper_id'=>$helper->id])->assertSessionHas('success');
+        $this->assertDatabaseHas('counseling_sessions',['id'=>$session->id,'helper_id'=>$helper->id,'session_status'=>Session::STATUS_HELPER_ASSIGNED]);
     }
 
     public function test_emergency_override_cannot_exceed_shift_capacity(): void
@@ -229,7 +227,6 @@ class ModeratorAdviserModuleTest extends TestCase
         $this->actingAs($moderatorUser)->post(route('moderator.queue.assign'), [
             'queue_id' => $queue->id,
             'helper_id' => $helper->id,
-            'emergency_override' => '1',
         ])->assertRedirect(route('moderator.queue'))->assertSessionHas('error');
 
         $this->assertDatabaseHas('queue_requests', ['id' => $queue->id, 'request_status' => 'waiting', 'assigned_helper_id' => null]);
@@ -489,7 +486,7 @@ class ModeratorAdviserModuleTest extends TestCase
         $this->consentFixture($seeker->user);
         Session::create(['seeker_id'=>$seeker->id,'queue_request_id'=>$queue->id,'submitted_at'=>now(),'risk_level'=>'low','session_status'=>'waiting','created_date'=>now()]);
         $this->readyDutyHelper($helper);
-        $payload = ['queue_id' => $queue->id, 'helper_id' => $helper->id, 'emergency_override' => 1];
+        $payload = ['queue_id' => $queue->id, 'helper_id' => $helper->id];
         $this->actingAs($user)->post(route('moderator.queue.assign'), $payload)->assertSessionHas('success');
         $this->post(route('moderator.queue.assign'), $payload)->assertSessionHas('error');
         $this->assertSame(1, Session::where('queue_request_id', $queue->id)->count());
@@ -528,6 +525,7 @@ class ModeratorAdviserModuleTest extends TestCase
     {
         [$moderatorUser] = $this->moderatorUser();
         $helper = $this->schedulableHelper();
+        $this->readyDutyHelper($helper);
         [$seeker, $seekerUser] = $this->seeker();
         $this->consentFixture($seekerUser);
 
@@ -536,7 +534,7 @@ class ModeratorAdviserModuleTest extends TestCase
 
         $appointment = now('Asia/Manila')->addHours(6)->second(0);
         $this->actingAs($moderatorUser)->post(route('moderator.queue.assign'), [
-            'queue_id' => $queue->id, 'helper_id' => $helper->id, 'emergency_override' => '1', 'scheduled_at' => $appointment->format('Y-m-d H:i:s'),
+            'queue_id' => $queue->id, 'helper_id' => $helper->id, 'scheduled_at' => $appointment->format('Y-m-d H:i:s'),
         ])->assertRedirect(route('moderator.queue'));
 
         $this->assertDatabaseHas('counseling_sessions', [
@@ -551,6 +549,7 @@ class ModeratorAdviserModuleTest extends TestCase
     {
         [$moderatorUser] = $this->moderatorUser();
         $helper = $this->schedulableHelper();
+        $this->readyDutyHelper($helper);
         [$seeker, $seekerUser] = $this->seeker();
         $this->consentFixture($seekerUser);
 
@@ -558,7 +557,7 @@ class ModeratorAdviserModuleTest extends TestCase
         $session = Session::create(['seeker_id' => $seeker->id, 'queue_request_id' => $queue->id, 'session_status' => Session::STATUS_WAITING, 'session_type' => 'chat', 'risk_level' => 'low', 'submitted_at' => now(), 'created_date' => now()]);
 
         $this->actingAs($moderatorUser)->post(route('moderator.queue.assign'), [
-            'queue_id' => $queue->id, 'helper_id' => $helper->id, 'emergency_override' => '1', 'scheduled_at' => now()->subHours(1)->format('Y-m-d H:i:s'),
+            'queue_id' => $queue->id, 'helper_id' => $helper->id, 'scheduled_at' => now()->subHours(1)->format('Y-m-d H:i:s'),
         ])->assertStatus(422);
         $this->assertDatabaseHas('queue_requests', ['id' => $queue->id, 'request_status' => 'waiting']);
         $this->assertDatabaseHas('counseling_sessions', ['id' => $session->id, 'session_status' => Session::STATUS_WAITING]);
@@ -568,6 +567,7 @@ class ModeratorAdviserModuleTest extends TestCase
     {
         [$moderatorUser] = $this->moderatorUser();
         $helper = $this->schedulableHelper();
+        $this->readyDutyHelper($helper);
         [$seeker, $seekerUser] = $this->seeker();
         $this->consentFixture($seekerUser);
 
@@ -575,7 +575,7 @@ class ModeratorAdviserModuleTest extends TestCase
         $session = Session::create(['seeker_id' => $seeker->id, 'queue_request_id' => $queue->id, 'session_status' => Session::STATUS_WAITING, 'session_type' => 'chat', 'risk_level' => 'low', 'submitted_at' => now(), 'created_date' => now()]);
 
         $this->actingAs($moderatorUser)->post(route('moderator.queue.assign'), [
-            'queue_id' => $queue->id, 'helper_id' => $helper->id, 'emergency_override' => '1',
+            'queue_id' => $queue->id, 'helper_id' => $helper->id,
         ])->assertRedirect(route('moderator.queue'));
 
         $appointment = now('Asia/Manila')->addDay()->second(0);
@@ -596,6 +596,7 @@ class ModeratorAdviserModuleTest extends TestCase
         [$moderatorUser] = $this->moderatorUser();
         $helperUser = User::factory()->create(['role' => 'helper', 'is_active' => true]);
         $helper = $this->schedulableHelper($helperUser);
+        $this->readyDutyHelper($helper);
         [$seeker, $seekerUser] = $this->seeker();
         $this->consentFixture($seekerUser);
 
@@ -604,7 +605,7 @@ class ModeratorAdviserModuleTest extends TestCase
 
         $appointment = now('Asia/Manila')->addHours(8)->second(0);
         $this->actingAs($moderatorUser)->post(route('moderator.queue.assign'), [
-            'queue_id' => $queue->id, 'helper_id' => $helper->id, 'emergency_override' => '1', 'scheduled_at' => $appointment->format('Y-m-d H:i:s'),
+            'queue_id' => $queue->id, 'helper_id' => $helper->id, 'scheduled_at' => $appointment->format('Y-m-d H:i:s'),
         ])->assertRedirect(route('moderator.queue'));
 
         $label = $appointment->format('M d, h:i A');
@@ -656,9 +657,10 @@ class ModeratorAdviserModuleTest extends TestCase
     }
 
     private function readyDutyHelper(Helper $helper): void {
+        $this->travelTo(now('Asia/Manila')->setTime(19,0)->utc());
         $this->verifiedHelperFixture($helper);
         $helper->update(['status'=>'available','availability'=>'available']);
-        \App\Models\HelperSchedule::create(['helper_id'=>$helper->id,'date'=>now('Asia/Manila')->toDateString(),'shift_start'=>'18:00:00','shift_end'=>'23:00:00','created_by'=>$helper->user_account_id,'is_active'=>true]);
+        \App\Models\HelperSchedule::updateOrCreate(['helper_id'=>$helper->id,'date'=>now('Asia/Manila')->startOfDay()],['shift_start'=>'18:00:00','shift_end'=>'23:00:00','created_by'=>$helper->user_account_id,'is_active'=>true]);
         \App\Models\ReadinessCheck::create(['helper_id'=>$helper->id,'assessment_date'=>now(),'valid_until'=>now()->addHours(3),'assessment_result'=>'ready','emotionally_ready'=>true,'willing_to_listen'=>true,'stress_level'=>'low','availability_status'=>'available','is_active'=>true]);
     }
 

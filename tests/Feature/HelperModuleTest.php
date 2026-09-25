@@ -1425,29 +1425,12 @@ class HelperModuleTest extends TestCase
             ->assertSessionHas('success');
 
         $referral = Referral::where('session_id', $session->id)->firstOrFail();
-        $this->assertSame(Referral::STATUS_CONSENT_REQUESTED, $referral->status);
-
-        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $referral), ['accepted' => true])
-            ->assertOk()
-            ->assertJson(['status' => Referral::STATUS_CONSENT_REQUESTED]);
-
-        $this->actingAs($this->helperUser)
-            ->from(route('helper.session.chat', ['id' => $session->id]))
-            ->post(route('helper.session.referral', ['id' => $session->id]), [
-                'referral_id' => $referral->id,
-                'referral_reason' => 'Seeker may benefit from professional counseling for grief.',
-                'priority_level' => 'moderate',
-            ])
-            ->assertRedirect(route('helper.session.chat', ['id' => $session->id]))
-            ->assertSessionHas('success');
-
-        $referral->refresh();
-        $this->assertDatabaseHas('referrals', [
-            'session_id' => $session->id,
-            'helper_id' => $this->helperUser->helper->id,
-            'priority_level' => 'moderate',
-            'status' => 'pending_adviser',
-        ]);
+        $this->assertSame(Referral::STATUS_PENDING_ADVISER, $referral->status);
+        $this->assertFalse($referral->help_seeker_consent);
+        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request',$referral),['accepted'=>true])->assertStatus(409);
+        $this->actingAs($this->helperUser->helper->adviser->user)->postJson(route('referrals.review',$referral),['approved'=>true,'notes'=>'Reviewed grief support recommendation.'])->assertOk();
+        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request',$referral),['accepted'=>true])->assertOk();
+        $this->assertNull($referral->fresh()->professional_id);
 
         $this->assertDatabaseHas('notifications', [
             'user_account_id' => $this->helperUser->helper->adviser->user_account_id,

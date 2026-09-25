@@ -100,7 +100,7 @@ class ConsentReferralEmergencyTest extends TestCase
         ]);
     }
 
-    public function test_request_consent_creates_consent_requested_referral_and_is_idempotent(): void
+    public function test_recommendation_creates_pending_adviser_referral_and_is_idempotent(): void
     {
         Event::fake();
 
@@ -113,19 +113,12 @@ class ConsentReferralEmergencyTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $referral = Referral::where('session_id', $session->id)->firstOrFail();
-        $this->assertSame(Referral::STATUS_CONSENT_REQUESTED, $referral->status);
+        $this->assertSame(Referral::STATUS_PENDING_ADVISER, $referral->status);
         $this->assertFalse($referral->help_seeker_consent);
         $this->assertFalse($referral->identity_disclosed);
         $this->assertSame('The seeker may benefit from professional support for anxiety management.', $referral->referral_reason);
 
-        Event::assertDispatched(ReferralConsentRequested::class, function ($event) use ($referral) {
-            return $event->referral->is($referral)
-                && $event->broadcastOn()->name === 'private-session.' . $referral->session_id
-                && $event->broadcastAs() === 'ReferralConsentRequested'
-                && $event->broadcastWith()['referral_id'] === $referral->id;
-        });
-
-        $this->assertNotNull($referral->consent_requested_at);
+        $this->assertNull($referral->consent_requested_at);
 
         $this->post(route('helper.session.referral.consent', ['id' => $session->id]), [
             'summary' => 'Updated summary should not create a second referral.',
@@ -163,7 +156,7 @@ class ConsentReferralEmergencyTest extends TestCase
             'summary' => 'The seeker may benefit from professional support for anxiety management.',
         ])->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('referrals', ['session_id' => $session->id, 'status' => Referral::STATUS_CONSENT_REQUESTED]);
+        $this->assertDatabaseHas('referrals', ['session_id' => $session->id, 'status' => Referral::STATUS_PENDING_ADVISER]);
         $this->assertFalse(Referral::where('session_id', $session->id)->firstOrFail()->identity_disclosed);
     }
 
@@ -180,7 +173,7 @@ class ConsentReferralEmergencyTest extends TestCase
         $this->actingAs($seekerUser)->getJson(route('session.referral-prompt', $session))
             ->assertOk()
             ->assertJsonPath('referral.id', $referral->id)
-            ->assertJsonPath('referral.status', Referral::STATUS_CONSENT_REQUESTED)
+            ->assertJsonPath('referral.status', Referral::STATUS_PENDING_ADVISER)
             ->assertJsonPath('referral.help_seeker_consent', false)
             ->assertJsonPath('referral.summary', 'Professional support recommendation.')
             ->assertJsonPath('referral.consent_url', route('referrals.consent-request', $referral));
@@ -208,70 +201,30 @@ class ConsentReferralEmergencyTest extends TestCase
         ])->assertStatus(409);
 
         $referral->refresh();
-        $this->assertSame(Referral::STATUS_CONSENT_REQUESTED, $referral->status);
+        $this->assertSame(Referral::STATUS_PENDING_ADVISER, $referral->status);
         $this->assertNull($referral->approved_at);
     }
 
-    public function test_accept_submit_adviser_approval_forwards_to_professional_without_reconsent(): void
+    public function test_adviser_review_precedes_consent_and_professional_assignment_waits_for_identity(): void
     {
         Event::fake();
-
-        [$helperUser, $helper] = $this->readyHelper();
+        [, $helper] = $this->readyHelper();
         $seekerUser = $this->seekerUser();
-        $session = $this->activeSession($helper, $seekerUser);
-        $professional = $this->professional();
+        $session = $this->activeSession($helper,$seekerUser);
+        $this->professional();
+        $this->post(route('helper.session.referral.consent',$session->id),['summary'=>'Professional support recommended.'])->assertSessionHasNoErrors();
+        $referral=Referral::where('session_id',$session->id)->firstOrFail();
+        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request',$referral),['accepted'=>true])->assertStatus(409);
+        $this->approve($referral,$helper);
+        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request',$referral),['accepted'=>true])->assertOk();
+        $this->assertTrue($referral->fresh()->help_seeker_consent);
+        $this->assertNull($referral->fresh()->professional_id);
+        $this->assertDatabaseHas('consent_records',['purpose'=>'referral','decision'=>'accepted','referral_id'=>$referral->id]);
+    }
 
-        $this->post(route('helper.session.referral.consent', ['id' => $session->id]), ['summary' => 'Summary.']);
-        $referral = Referral::where('session_id', $session->id)->firstOrFail();
-
-        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $referral), ['accepted' => true])
-            ->assertOk()
-            ->assertJson(['success' => true, 'status' => Referral::STATUS_CONSENT_REQUESTED, 'referral_id' => $referral->id]);
-
-        $referral->refresh();
-        $this->assertTrue($referral->help_seeker_consent);
-        $this->assertSame(Referral::STATUS_CONSENT_REQUESTED, $referral->status);
-        $this->assertNotNull($referral->consent_obtained_at);
-        $this->assertDatabaseHas('consent_records', [
-            'seeker_id' => $seekerUser->helpSeeker->id,
-            'purpose' => 'referral',
-            'scope' => 'referral',
-            'decision' => 'accepted',
-            'consent_given' => true,
-            'referral_id' => $referral->id,
-        ]);
-
-        Event::assertDispatched(ReferralConsentUpdated::class, function ($event) use ($referral) {
-            return $event->referral->is($referral)
-                && $event->accepted === true
-                && $event->broadcastOn()->name === 'private-session.' . $referral->session_id
-                && $event->broadcastWith()['help_seeker_consent'] === true;
-        });
-
-        $this->actingAs($helperUser)->post(route('helper.session.referral', ['id' => $session->id]), [
-            'referral_id' => $referral->id,
-            'referral_reason' => 'Ongoing severe anxiety affecting study and sleep.',
-            'priority_level' => 'high',
-        ])->assertStatus(302);
-
-        $referral->refresh();
-        $this->assertSame(Referral::STATUS_PENDING_ADVISER, $referral->status);
-        $this->assertSame('Ongoing severe anxiety affecting study and sleep.', $referral->referral_reason);
-
-        $adviser = $helper->adviser;
-        $this->actingAs($adviser->user)->postJson(route('referrals.review', $referral), [
-            'approved' => true,
-            'notes' => 'Approved based on helper observations.',
-        ])->assertOk()->assertJson(['success' => true, 'status' => Referral::STATUS_PENDING_PROFESSIONAL]);
-
-        $referral->refresh();
-        $this->assertSame(Referral::STATUS_PENDING_PROFESSIONAL, $referral->status);
-        $this->assertNotNull($referral->approved_at);
-        $this->assertTrue($referral->help_seeker_consent);
-        $this->assertSame($professional->id, $referral->professional_id);
-        $this->assertNotNull($referral->professional_notified_at);
-
-        Event::assertDispatched(ReferralConsentUpdated::class);
+    private function approve(Referral $referral, Helper $helper): void
+    {
+        $this->actingAs($helper->adviser->user)->postJson(route('referrals.review',$referral),['approved'=>true,'notes'=>'Reviewed supporting documentation.'])->assertOk();
     }
 
     public function test_seeker_decline_closes_referral_and_blocks_submission(): void
@@ -286,6 +239,7 @@ class ConsentReferralEmergencyTest extends TestCase
         $this->post(route('helper.session.referral.consent', ['id' => $session->id]), ['summary' => 'Summary.']);
         $referral = Referral::where('session_id', $session->id)->firstOrFail();
 
+        $this->approve($referral,$helper);
         $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $referral), ['accepted' => false])
             ->assertOk()
             ->assertJson(['success' => true, 'status' => Referral::STATUS_CLOSED, 'referral_id' => $referral->id]);
@@ -322,11 +276,12 @@ class ConsentReferralEmergencyTest extends TestCase
 
         $this->post(route('helper.session.referral.consent', ['id' => $session->id]), ['summary' => 'First request.']);
         $first = Referral::where('session_id', $session->id)->firstOrFail();
+        $this->approve($first,$helper);
         $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $first), ['accepted' => false])->assertOk();
 
         $this->actingAs($helperUser)->post(route('helper.session.referral.consent', ['id' => $session->id]), ['summary' => 'Second request after decline.'])->assertSessionHasNoErrors();
         $second = Referral::where('session_id', $session->id)->where('id', '!=', $first->id)->firstOrFail();
-        $this->assertSame(Referral::STATUS_CONSENT_REQUESTED, $second->status);
+        $this->assertSame(Referral::STATUS_PENDING_ADVISER, $second->status);
         $this->assertSame(2, Referral::where('session_id', $session->id)->count());
 
         $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $first), ['accepted' => true])->assertStatus(409);
@@ -344,6 +299,7 @@ class ConsentReferralEmergencyTest extends TestCase
         $this->post(route('helper.session.referral.consent', ['id' => $session->id]), ['summary' => 'Summary.']);
         $referral = Referral::where('session_id', $session->id)->firstOrFail();
 
+        $this->approve($referral,$helper);
         $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $referral), ['accepted' => true])->assertOk();
         $this->assertTrue(app(ConsentService::class)->valid($seeker, 'referral', $referral->id));
 
@@ -376,7 +332,7 @@ class ConsentReferralEmergencyTest extends TestCase
 
         [$otherUser] = $this->readyHelper();
         $referral->refresh();
-        $this->assertSame(Referral::STATUS_CONSENT_REQUESTED, $referral->status);
+        $this->assertSame(Referral::STATUS_PENDING_ADVISER, $referral->status);
         $this->actingAs($otherUser)->post(route('helper.session.referral', ['id' => $session->id]), [
             'referral_id' => $referral->id,
             'referral_reason' => 'Nope.',
@@ -400,7 +356,7 @@ class ConsentReferralEmergencyTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $referral = Referral::where('session_id', $session->id)->firstOrFail();
-        $this->assertSame(Referral::STATUS_CONSENT_REQUESTED, $referral->status);
+        $this->assertSame(Referral::STATUS_PENDING_ADVISER, $referral->status);
         $this->assertSame(Referral::PRIORITY_EMERGENCY, $referral->priority_level);
         $this->assertFalse($referral->help_seeker_consent);
         $this->assertFalse($referral->identity_disclosed);
@@ -426,38 +382,19 @@ class ConsentReferralEmergencyTest extends TestCase
         $this->assertSame('Updated description on a second click.', $incident->description);
     }
 
-    public function test_emergency_consent_accept_forwards_directly_to_adviser_then_professional(): void
+    public function test_emergency_referral_still_requires_review_before_ordinary_consent(): void
     {
         Event::fake();
-
         [, $helper] = $this->readyHelper();
         $seekerUser = $this->seekerUser();
-        $session = $this->activeSession($helper, $seekerUser);
-        $professional = $this->professional();
-
-        $this->post(route('helper.session.emergency', ['id' => $session->id]), ['description' => 'Immediate self-harm thoughts.']);
-        $referral = Referral::where('session_id', $session->id)->firstOrFail();
-        $this->assertSame(Referral::STATUS_CONSENT_REQUESTED, $referral->status);
-
-        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $referral), ['accepted' => true])
-            ->assertOk()
-            ->assertJson(['success' => true, 'status' => Referral::STATUS_PENDING_ADVISER, 'referral_id' => $referral->id]);
-
-        $referral->refresh();
-        $this->assertSame(Referral::STATUS_PENDING_ADVISER, $referral->status);
-        $this->assertTrue($referral->help_seeker_consent);
-        $this->assertDatabaseHas('consent_records', ['purpose' => 'referral', 'scope' => 'referral', 'decision' => 'accepted', 'referral_id' => $referral->id]);
-
-        $adviser = $helper->adviser;
-        $this->actingAs($adviser->user)->postJson(route('referrals.review', $referral), [
-            'approved' => true,
-            'notes' => 'Emergency referral approved.',
-        ])->assertOk()->assertJson(['success' => true, 'status' => Referral::STATUS_PENDING_PROFESSIONAL]);
-
-        $referral->refresh();
-        $this->assertSame(Referral::STATUS_PENDING_PROFESSIONAL, $referral->status);
-        $this->assertSame($professional->id, $referral->professional_id);
-        $this->assertTrue($referral->help_seeker_consent);
+        $session = $this->activeSession($helper,$seekerUser);
+        $this->post(route('helper.session.emergency',$session->id),['description'=>'Immediate safety concern.']);
+        $referral=Referral::where('session_id',$session->id)->firstOrFail();
+        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request',$referral),['accepted'=>true])->assertStatus(409);
+        $this->approve($referral,$helper);
+        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request',$referral),['accepted'=>true])->assertOk();
+        $this->assertNull($referral->fresh()->professional_id);
+        $this->assertDatabaseCount('emergency_alerts',1);
     }
 
     public function test_emergency_flag_persists_and_notifies_while_consent_is_declined(): void
@@ -475,6 +412,7 @@ class ConsentReferralEmergencyTest extends TestCase
 
         $this->assertGreaterThanOrEqual(2, Notification::where('notification_type', 'emergency')->count(), 'Adviser, seeker, or moderator must be notified for an emergency flag.');
 
+        $this->approve($referral,$helper);
         $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $referral), ['accepted' => false])->assertOk();
         $this->assertSame(Referral::STATUS_CLOSED, $referral->fresh()->status);
 
@@ -517,34 +455,15 @@ class ConsentReferralEmergencyTest extends TestCase
         $this->assertStringContainsString('/seeker/referrals', $seekerNotification->link, 'Post-approval consent must link to the decision page, not an inaccessible identity URL.');
     }
 
-    public function test_consent_accept_prompts_seeker_to_provide_identity_for_coordination(): void
+    public function test_consent_accept_opens_the_identity_modal(): void
     {
-        Event::fake();
-
         [, $helper] = $this->readyHelper();
-        $this->professional();
         $seekerUser = $this->seekerUser();
-        $session = $this->activeSession($helper, $seekerUser);
-
-        $this->post(route('helper.session.referral.consent', ['id' => $session->id]), ['summary' => 'Summary.']);
-        $referral = Referral::where('session_id', $session->id)->firstOrFail();
-        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $referral), ['accepted' => true])->assertOk();
-        $this->actingAs($helper->user)->post(route('helper.session.referral', ['id' => $session->id]), [
-            'referral_id' => $referral->id,
-            'referral_reason' => 'Needs professional support.',
-            'priority_level' => 'high',
-        ])->assertStatus(302);
-
-        $referral->refresh();
-        $this->actingAs($helper->adviser->user)->postJson(route('referrals.review', $referral), ['approved' => true, 'notes' => 'Approved.'])->assertOk();
-
-        $referral->refresh();
-        $this->assertSame(Referral::STATUS_PENDING_PROFESSIONAL, $referral->status);
-        $this->assertTrue($referral->canProvideIdentity());
-        $this->assertDatabaseHas('notifications', ['user_account_id' => $seekerUser->id, 'title' => 'Referral approved — provide contact details']);
-
-        $this->actingAs($seekerUser)->get(route('identity.form', $referral))->assertOk();
-        $this->get(route('seeker.referrals'))->assertOk()->assertSee('Provide contact details for coordination');
+        $session = $this->activeSession($helper,$seekerUser);
+        $referral=$this->pendingAdviserReferral($session,$helper);
+        $this->approve($referral,$helper);
+        $this->actingAs($seekerUser)->post(route('referrals.consent',$referral),['consent_given'=>1])->assertRedirect(route('seeker.referrals'))->assertSessionHas('identity_referral_id',$referral->id);
+        $this->get(route('seeker.referrals'))->assertOk()->assertSee('identity-dialog-'.$referral->id,false);
     }
 
     public function test_adviser_approve_then_seeker_consent_prompts_identity(): void
@@ -586,7 +505,7 @@ class ConsentReferralEmergencyTest extends TestCase
         $this->actingAs($seekerUser)->post(route('referrals.consent', $referral), ['consent_given' => 0])->assertRedirect(route('seeker.referrals'));
         $referral->refresh();
         $this->assertSame(Referral::STATUS_CLOSED, $referral->status);
-        $this->assertDatabaseHas('notifications', ['user_account_id' => $seekerUser->id, 'title' => 'Referral declined', 'link' => '/emergency']);
+        $this->assertDatabaseHas('notifications', ['user_account_id' => $seekerUser->id, 'title' => 'Referral declined', 'link' => '/selfhelp']);
     }
 
     public function test_adviser_request_revision_and_helper_revises_recommendation(): void
@@ -658,7 +577,7 @@ class ConsentReferralEmergencyTest extends TestCase
 
         $this->actingAs($helper->adviser->user)->postJson(route('referrals.review', $referral), ['approved' => true, 'notes' => 'Approved.'])->assertOk();
         $referral->refresh();
-        $this->assertSame(Referral::STATUS_NO_PROFESSIONAL_AVAILABLE, $referral->status);
+        $this->assertSame(Referral::STATUS_PENDING_PROFESSIONAL, $referral->status);
         $this->assertTrue($referral->canProvideIdentity(), 'Identity must be collectible while awaiting a professional assignment.');
 
         $this->actingAs($seekerUser)->get(route('identity.form', $referral))->assertOk();

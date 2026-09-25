@@ -363,17 +363,17 @@
     <div class="modal-overlay" id="referralModal">
         <div class="modal-box">
             <h3><i class="fas fa-arrow-right" style="color:#2563eb;"></i> Recommend a Referral</h3>
-            <p class="modal-sub">Recommend professional support for this seeker. Referral consent is requested from the seeker before an adviser reviews it.</p>
+            <p class="modal-sub">Recommend professional support for this seeker. Your adviser reviews the recommendation before the seeker is asked for consent.</p>
 
             <div id="referralStateChip" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;"></div>
 
             <form method="POST" action="{{ route('helper.session.referral.consent', ['id' => $session->id]) }}" id="referralConsentForm">
                 @csrf
-                <label class="form-label" for="referralSummary">Summary the seeker will see</label>
+                <label class="form-label" for="referralSummary">Referral recommendation for adviser review</label>
                 <textarea id="referralSummary" name="summary" rows="3" required placeholder="Short summary of why a professional referral may help, written for the seeker."></textarea>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-cancel modal-close" data-modal="referralModal">Cancel</button>
-                    <button type="submit" class="btn btn-info" id="requestConsentBtn"><i class="fas fa-paper-plane" style="margin-right:6px;"></i> Request Consent</button>
+                    <button type="submit" class="btn btn-info" id="requestConsentBtn"><i class="fas fa-paper-plane" style="margin-right:6px;"></i> Submit for Adviser Review</button>
                 </div>
             </form>
 

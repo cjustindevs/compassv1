@@ -27,7 +27,14 @@ class IdentityVaultController extends Controller
         if ($validator->fails()) {
             return response()->json(['message' => 'Please check the identity fields.', 'errors' => $validator->errors()], 422);
         }
+        abort_unless($request->user()?->role === 'seeker' && $request->user()->is_active && $request->user()->helpSeeker?->id === $referral->session->seeker_id,403);
+        abort_unless($referral->canProvideIdentity(),403);
+        abort_unless($request->boolean('identity_disclosure'),422,'Confirm identity disclosure consent before submitting your details.');
+        app(\App\Services\ConsentService::class)->decide($request->user(),'identity_disclosure','accepted',$referral->session_id,$referral->id);
         $vault->storeForReferral($referral, $validator->validated());
+        // Vault commits first. If operational coordination fails, a retry remains safe;
+        // no professional can be assigned without the committed vault submission.
+        if (!$referral->professional_id) app(\App\Services\ReferralManagementService::class)->forwardToProfessional($referral);
         if ($referral->adviser?->user_account_id) {
             \App\Models\Notification::create([
                 'user_account_id' => $referral->adviser->user_account_id, 'title' => 'Identity ready for release',

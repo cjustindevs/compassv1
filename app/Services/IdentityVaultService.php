@@ -102,6 +102,18 @@ class IdentityVaultService
             && ! in_array($referral->status, [Referral::STATUS_CLOSED, Referral::STATUS_DECLINED, Referral::STATUS_COMPLETED], true));
     }
 
+    public function hasCurrentSubmission(Referral $referral): bool
+    {
+        // Metadata only; never return identity fields to the operational database.
+        try {
+            return DB::connection('identity_vault')->table('idv_identities')
+                ->where('pseudo_id',$referral->session->seeker->pseudo_id)->where('referral_id',$referral->id)
+                ->where('is_active',true)->where('data_expires_at','>',now())->exists();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     public function storeForReferral(Referral $referral, array $data): void
     {
         $referral->refresh();

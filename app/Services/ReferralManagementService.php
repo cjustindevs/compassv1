@@ -25,96 +25,20 @@ class ReferralManagementService
         'status' => [Referral::STATUS_PENDING_ADVISER, Referral::STATUS_PENDING_CONSENT, Referral::STATUS_CONSENT_REQUESTED, Referral::STATUS_PENDING_PROFESSIONAL, Referral::STATUS_NO_PROFESSIONAL_AVAILABLE, Referral::STATUS_ACCEPTED, Referral::STATUS_IN_PROGRESS],
     ];
 
+    /** Backward-compatible route name; recommendations now go to the adviser first. */
     public function requestConsent(Session $session, array $summary): Referral
     {
-        $summaryText = trim((string) ($summary['summary'] ?? $summary['referral_reason'] ?? ''));
-        abort_if($summaryText === '', 422, 'A short summary for the seeker is required.');
-
-        return DB::transaction(function () use ($session, $summaryText) {
-            $session = Session::lockForUpdate()->findOrFail($session->id);
-            abort_unless($session->helper_id, 409, 'Referral requires a helper-assigned session.');
-
-            $existing = Referral::lockForUpdate()
-                ->where('session_id', $session->id)
-                ->whereIn('status', self::OPEN_STATUSES['status'])
-                ->first();
-
-            if ($existing) {
-                return $existing->refresh();
-            }
-
-            $referral = Referral::create([
-                'session_id' => $session->id,
-                'helper_id' => $session->helper_id,
-                'adviser_id' => $session->helper?->adviser_id,
-                'priority_level' => $session->risk_level ?? Referral::PRIORITY_LOW,
-                'help_seeker_consent' => false,
-                'identity_disclosed' => false,
-                'referral_reason' => $summaryText,
-                'referral_date' => now(),
-                'consent_requested_at' => now(),
-                'status' => Referral::STATUS_CONSENT_REQUESTED,
-            ]);
-
-            SupportAudit::record('referral_consent_requested', $referral, ['status' => Referral::STATUS_CONSENT_REQUESTED]);
-            $this->broadcastSafely(new ReferralConsentRequested($referral));
-            $this->notifySeekerConsentRequested($referral);
-
-            return $referral->refresh();
-        }, 3);
+        abort_unless(Auth::user()?->is_active && Auth::user()->role === 'helper' && Auth::user()->helper?->id === $session->helper_id,403);
+        return DB::transaction(function () use ($session,$summary) {
+            $session = Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
+            abort_unless($session->isActive(),409,'Referral recommendations require an active session.');
+            return $this->createReferral($session,$session->seeker,['reason'=>$summary['summary'] ?? '']);
+        },3);
     }
 
     public function decideConsentRequest(Referral $referral, bool $accepted): Referral
     {
-        return DB::transaction(function () use ($referral, $accepted) {
-            $referral = Referral::lockForUpdate()->findOrFail($referral->id);
-            abort_unless($referral->status === Referral::STATUS_CONSENT_REQUESTED, 409, 'This referral is no longer awaiting consent.');
-
-            $seeker = $referral->session?->seeker;
-            abort_unless($seeker?->user_account_id, 409, 'The seeker account is unavailable.');
-
-            app(ConsentService::class)->decide(
-                Auth::user(),
-                'referral',
-                $accepted ? 'accepted' : 'declined',
-                $referral->session_id,
-                $referral->id,
-                'referral'
-            );
-
-            if ($accepted) {
-                $isEmergency = $referral->priority_level === Referral::PRIORITY_EMERGENCY;
-                $referral->forceFill([
-                    'help_seeker_consent' => true,
-                    'consent_obtained_at' => now(),
-                    'status' => $isEmergency ? Referral::STATUS_PENDING_ADVISER : Referral::STATUS_CONSENT_REQUESTED,
-                ])->save();
-                $this->notifyHelper($referral, 'Referral consent granted', $isEmergency
-                    ? 'The seeker accepted the emergency referral. It is now pending adviser review.'
-                    : 'The seeker accepted the referral consent. You can now submit the referral details.');
-                if ($isEmergency) {
-                    $this->notifyAdviser($referral);
-                }
-            } else {
-                $referral->forceFill([
-                    'help_seeker_consent' => false,
-                    'consent_declined_at' => now(),
-                    'status' => Referral::STATUS_CLOSED,
-                    'closure_notes' => 'Help seeker declined referral consent.',
-                    'closed_date' => now(),
-                ])->save();
-                $this->notifyHelper($referral, 'Referral consent declined', 'The seeker declined the referral consent.');
-                $this->notifySeekerReferralDeclined($referral);
-                if ($this->exceedsPeerSupportScope($referral)) {
-                    $this->initiateSafetyProtocol($referral);
-                }
-            }
-
-            SupportAudit::record($accepted ? 'referral_consent_accepted' : 'referral_consent_declined', $referral, ['status' => $referral->status, 'purpose' => 'referral']);
-            $this->broadcastSafely(new ReferralConsentUpdated($referral, $accepted));
-
-            return $referral->refresh();
-        }, 3);
+        return $this->processConsent($referral,$accepted);
     }
 
     public function submitAfterConsent(Referral $referral, array $data): Referral
@@ -169,7 +93,7 @@ class ReferralManagementService
         ]);
 
         SupportAudit::record('referral_proposed',$referral);
-        event(new ReferralCreated($referral));
+        $this->broadcastSafely(new ReferralCreated($referral));
         $this->notifyAdviser($referral);
 
         return $referral;
@@ -216,7 +140,7 @@ class ReferralManagementService
     private function recordReview(Referral $referral, Adviser $adviser, array $data): Referral
     {
         $this->validateAdviserAuthorization($adviser, $referral);
-        abort_unless($referral->status === Referral::STATUS_PENDING_ADVISER, 409, 'This referral has already been reviewed.');
+        abort_unless(in_array($referral->status,[Referral::STATUS_PENDING_ADVISER,Referral::STATUS_CONSENT_REQUESTED],true) && !$referral->reviewed_at, 409, 'This referral has already been reviewed.');
 
         abort_unless(array_key_exists('approved', $data), 422);
         $approved = (bool) $data['approved'];
@@ -243,7 +167,6 @@ class ReferralManagementService
             ])->save();
 
             if ($consentAlreadyGiven) {
-                $this->forwardToProfessional($referral);
                 $this->notifySeekerProvideIdentity($referral);
             } else {
                 $this->notifySeekerPostApprovalConsent($referral);
@@ -280,7 +203,7 @@ class ReferralManagementService
     {
         \Illuminate\Support\Facades\Gate::authorize('update',$referral);
         abort_unless($referral->approved_at && $referral->status === Referral::STATUS_PENDING_CONSENT, 409, 'Adviser approval is required before consent.');
-        app(ConsentService::class)->decide(Auth::user(),'referral',$consentGiven?'accepted':'declined',$referral->session_id,$referral->id);
+        app(ConsentService::class)->decide(Auth::user(),'referral',$consentGiven?'accepted':'declined',$referral->session_id,$referral->id,'referral');
         if ($consentGiven) {
             $referral->forceFill([
                 'help_seeker_consent' => true,
@@ -288,7 +211,6 @@ class ReferralManagementService
                 'status' => Referral::STATUS_PENDING_PROFESSIONAL,
             ])->save();
 
-            $this->forwardToProfessional($referral);
             $this->notifySeekerProvideIdentity($referral);
         } else {
             $referral->forceFill([
@@ -305,12 +227,20 @@ class ReferralManagementService
             }
         }
 
+        $this->notifyHelper($referral,'Referral consent updated','The seeker recorded a referral decision.');
+        $this->notifyUser($referral->adviser?->user_account_id,'Referral consent updated','The seeker recorded a referral decision.','/adviser/referral/'.$referral->id,'referral');
+        $this->broadcastSafely(new ReferralConsentUpdated($referral,$consentGiven));
         return $referral->refresh();
     }
 
     public function forwardToProfessional(Referral $referral): Referral
     {
+        return DB::transaction(function () use ($referral) {
+        $referral = Referral::whereKey($referral->id)->lockForUpdate()->firstOrFail();
+        abort_unless(in_array($referral->status,[Referral::STATUS_PENDING_PROFESSIONAL,Referral::STATUS_NO_PROFESSIONAL_AVAILABLE],true),409);
+        if ($referral->professional_id && $referral->professional_notified_at) return $referral;
         abort_unless($referral->approved_at && $referral->help_seeker_consent,409);
+        abort_unless(app(IdentityVaultService::class)->hasCurrentSubmission($referral),409,'Complete identity submission before professional coordination.');
         $professional = $referral->professional ?: $this->getAvailableProfessional($referral);
 
         if (! $professional) {
@@ -327,7 +257,9 @@ class ReferralManagementService
 
         $this->notifyUser($professional->user_account_id, 'New referral assigned', 'A referral is pending your review.', '/professional/referral/' . $referral->id, 'referral');
 
+        SupportAudit::record('referral_forwarded',$referral,['professional_id'=>$professional->id]);
         return $referral->refresh();
+        },3);
     }
 
     public function assignProfessional(Referral $referral, int $professionalId, string $reason): Referral
@@ -337,6 +269,7 @@ class ReferralManagementService
             app(AdviserScope::class)->referral($referral);
             abort_unless(trim($reason) !== '' && mb_strlen($reason) <= 1000, 422);
             abort_unless($referral->approved_at && $referral->help_seeker_consent && in_array($referral->status, [Referral::STATUS_PENDING_PROFESSIONAL, Referral::STATUS_NO_PROFESSIONAL_AVAILABLE], true), 409);
+            abort_unless(app(IdentityVaultService::class)->hasCurrentSubmission($referral),409,'Complete identity submission before professional coordination.');
             $professional = PsychologyProfessional::whereKey($professionalId)->where('is_available', true)
                 ->whereHas('user', fn ($query) => $query->where('is_active', true)->where('role', 'professional'))->first();
             abort_unless($professional, 422, 'Select an active, available professional.');
@@ -479,7 +412,7 @@ class ReferralManagementService
     {
         $this->notifyUser($referral->session?->seeker?->user_account_id, 'Referral declined',
             'Your decision is respected. You are not alone — rest, self-care tools, and crisis hotlines are always available to you.',
-            '/emergency', 'referral');
+            '/selfhelp', 'referral');
     }
 
     private function notifySeekerConsentRequested(Referral $referral): void

@@ -29,16 +29,9 @@ class ModeratorQueueController extends Controller
             ->orderBy('request_date')
             ->get();
 
-        $seekerIds = $queueItems->pluck('seeker_id')->filter()->unique()->values()->all();
-        $latestSessions = Session::whereIn('seeker_id', $seekerIds)
-            ->with('concern:id,concern_name')
-            ->latest('created_date')
-            ->get()
-            ->unique('seeker_id')
-            ->keyBy('seeker_id');
-
-        $queueItems->each(function (QueueRequest $queue) use ($latestSessions) {
-            $session = $latestSessions->get($queue->seeker_id);
+        $queueItems->each(function (QueueRequest $queue) {
+            $session = Session::with('concern')->where('queue_request_id', $queue->id)->latest('id')->first();
+            $queue->setRelation('supportSession', $session);
             $queue->concern_name = $session?->concern?->concern_name ?? 'General Concern';
             $queue->wait_minutes = (int) floor($queue->request_date->diffInSeconds(now()) / 60);
         });
@@ -54,7 +47,7 @@ class ModeratorQueueController extends Controller
             'avg_holding' => $this->getAverageHoldingTime(),
         ];
 
-        $availableHelpers = Helper::with(['user', 'adviser.user', 'currentReadiness', 'schedule', 'latestCompetency'])
+        $availableHelpers = Helper::with(['user', 'adviser.user', 'currentReadiness', 'schedule', 'latestCompetency', 'helperSpecialties'])
             ->withCount('activeSessions as active_sessions_count')
             ->orderBy('competency_level', 'desc')->get();
         // Helper state always derives from HelperEligibilityService so the
@@ -114,7 +107,7 @@ class ModeratorQueueController extends Controller
     {
         $data = $request->validate([
             'queue_id' => 'required|exists:queue_requests,id', 'helper_id' => 'required|exists:helpers,id',
-            'emergency_override' => 'sometimes|boolean',
+            'emergency_override' => 'prohibited',
             'scheduled_at' => 'nullable|date',
         ]);
         $queue = QueueRequest::findOrFail($data['queue_id']);
@@ -124,7 +117,7 @@ class ModeratorQueueController extends Controller
             abort_unless($scheduledStart->isFuture(), 422, 'The scheduled appointment must be in the future.');
         }
         $result = app(\App\Services\HelperMatchingService::class)->manualAssign(
-            $queue, (int) $data['helper_id'], $request->boolean('emergency_override'), $reassign, $reassign ? 'manual_reassign' : 'manual', $scheduledStart
+            $queue, (int) $data['helper_id'], false, $reassign, $reassign ? 'manual_reassign' : 'manual', $scheduledStart
         );
         return redirect()->route('moderator.queue')->with(
             $result instanceof Session ? 'success' : 'error',
@@ -138,29 +131,12 @@ class ModeratorQueueController extends Controller
      * Remove a request from the queue entirely (moderator action).
      * Returns JSON so the queue UI can update live without a full reload.
      */
-    public function removeFromQueue(Request $request): JsonResponse
+    public function removeFromQueue(Request $request, int $id): JsonResponse
     {
-        $request->validate([
-            'queue_id' => 'required|exists:queue_requests,id',
-        ]);
-
-        $queue = QueueRequest::findOrFail($request->queue_id);
-        $session=Session::where('queue_request_id',$queue->id)->first();
-        if ($session) {
-            abort_unless(auth()->user()->role==='moderator',403);
-            \Illuminate\Support\Facades\DB::transaction(function () use ($session,$queue) {
-                $session->update(['session_status'=>'cancelled','completion_status'=>'cancelled','cancelled_at'=>now()]);
-                $queue->update(['request_status'=>'cancelled','cancelled_at'=>now()]);
-                \App\Services\SupportAudit::record('request_cancelled',$session,['reason'=>'moderator_cancelled']);
-            });
-        } else $queue->update(['request_status'=>'cancelled','cancelled_at'=>now()]);
-
+        abort_unless($request->user()?->role === 'moderator' && $request->user()->is_active, 403);
+        $message = app(\App\Services\ModeratorQueueRemoval::class)->remove($id);
         $this->broadcastSafely(new QueueUpdated(Auth::id()));
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Request removed from the queue.',
-        ]);
+        return response()->json(['success' => true, 'message' => $message]);
     }
 
     public function priority(Request $request, QueueRequest $queue): RedirectResponse

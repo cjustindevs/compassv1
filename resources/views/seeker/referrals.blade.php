@@ -224,9 +224,8 @@
                     @elseif($referral->canProvideIdentity())
                         <p>You agreed to this referral. Provide your contact details when coordination is needed, or withdraw consent to stop future professional access.</p>
                         <div class="flex flex-wrap gap-3">
-                            <a href="{{ route('identity.form', $referral) }}" class="page-button light">
-                                <i class="fas fa-address-card"></i> Provide contact details for coordination
-                            </a>
+                            <button type="button" class="page-button light" onclick="document.getElementById('identity-dialog-{{ $referral->id }}').showModal()"><i class="fas fa-address-card"></i> Provide contact details for coordination</button>
+                            @include('partials.referral-identity-modal')
                             <form method="POST" action="{{ route('seeker.privacy.decision') }}" data-confirm="Withdraw referral consent and stop future professional access?">
                                 @csrf
                                 <input type="hidden" name="purpose" value="referral">
@@ -239,9 +238,13 @@
                         <p>You agreed to this referral. It is no longer an open case, so no further action is available here.</p>
                     @elseif($referral->status === \App\Models\Referral::STATUS_CONSENT_REQUESTED)
                         <p>Your helper recommended a professional referral. Please review the consent request in the chat window so the referral can be submitted.</p>
+                    @elseif(in_array($referral->status,['closed','declined','completed']))
+                        <p>This referral is {{ $statusLabel }}. You can continue accessing self-help tools.</p>
+                        <a href="{{ url('/selfhelp') }}" class="page-button light">Open self-help tools</a>
                     @else
                         <p>This referral is awaiting your adviser's review. There is nothing to do right now.</p>
                     @endif
+                @include('partials.referral-appointments')
                 </article>
             @empty
                 <div class="text-center py-12">

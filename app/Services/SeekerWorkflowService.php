@@ -20,7 +20,7 @@ class SeekerWorkflowService {
             try { $result = $compactDetails !== null ? app(CompactScreening::class)->classify($answers) : $this->risk->classifyRisk($answers); }
             catch (\RuntimeException $e) { $review = true; $result = ['risk_level'=>null,'rule_code'=>'review_unresolved','priority'=>2,'action'=>'adviser_review_required','reason'=>'Unresolved screening responses']; }
             $emergency = $result['risk_level'] === 'emergency';
-            $review = !$emergency && ($review || ($compactDetails === null && !ScreeningInstrument::approved()) || $result['risk_level']==='high');
+            $review = $emergency || ($review || ($compactDetails === null && !ScreeningInstrument::approved()) || $result['risk_level']==='high');
             $adviser = $review ? $this->pickReviewer() : null;
             $session = Session::create(['seeker_id'=>$user->helpSeeker->id,'risk_level'=>$result['risk_level'],
                 'session_type'=>'chat','session_status'=>$emergency?'emergency':($review?'pending_review':'screening_completed'),
@@ -42,7 +42,7 @@ class SeekerWorkflowService {
             SupportAudit::record($review?'screening_review_required':'risk_classified',$screening,['rule_code'=>$result['rule_code']]);
             if ($emergency) app(EmergencyEscalationService::class)->escalateEmergency($session,$user->helpSeeker,['reason'=>$result['reason'],'screening_id'=>$screening->id,'rule_code'=>$result['rule_code']]);
             if ($review && $adviser) Notification::create(['user_account_id'=>$adviser->user_account_id,'title'=>'Screening review required',
-                'message'=>'A preliminary screening needs your review before peer support.','notification_type'=>'system','link'=>'/adviser/screenings']);
+                'message'=>'A preliminary screening needs your review before peer support.','notification_type'=>'system','link'=>'/adviser/screenings#screening-'.$session->id]);
             return $session;
         });
     }

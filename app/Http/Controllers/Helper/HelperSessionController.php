@@ -423,7 +423,7 @@ class HelperSessionController extends Controller
         $referral = app(\App\Services\ReferralManagementService::class)->requestConsent($session, ['summary' => $validated['summary']]);
 
         if (! $request->expectsJson()) {
-            return back()->with('success', 'Referral consent requested. The seeker will be prompted to review it.');
+            return back()->with('success', 'Recommendation submitted. Your adviser will review it before seeker consent is requested.');
         }
 
         return response()->json(['success' => true, 'referral_id' => $referral->id, 'status' => $referral->status]);
@@ -458,17 +458,8 @@ class HelperSessionController extends Controller
             'priority_level' => $validated['priority_level'],
         ]);
 
-        $this->notifyStaff(
-            ['adviser'],
-            ' New referral request',
-            'Referral #' . $referral->id . ' (' . $validated['priority_level'] . ' priority) for session #' . $session->id . ' from ' . $helper->full_name . '.',
-            'referral',
-            '/adviser/dashboard'
-        );
-
-        // Real-time alert for advisers
-        foreach (User::where('role', 'adviser')->pluck('id') as $adviserUserId) {
-            $this->broadcastSafely(new ReferralRecommended($referral, $adviserUserId));
+        if ($referral->adviser?->user_account_id) {
+            $this->broadcastSafely(new ReferralRecommended($referral, $referral->adviser->user_account_id));
         }
 
         if ($session->seeker?->user_account_id) {

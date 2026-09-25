@@ -433,6 +433,7 @@ Route::middleware(['auth', 'role:professional'])->prefix('professional')->name('
     Route::get('/referrals', [ProfessionalReferralController::class, 'index'])->name('referrals');
     Route::get('/referral/{id}', [ProfessionalReferralController::class, 'show'])->name('referral.show');
     Route::post('/referral/{id}/accept', [ProfessionalReferralController::class, 'accept'])->name('referral.accept');
+    Route::post('/referral/{referral}/appointment', [ProfessionalReferralController::class, 'schedule'])->name('referral.appointment');
     Route::post('/referral/{id}/decline', [ProfessionalReferralController::class, 'decline'])->name('referral.decline');
     Route::post('/referral/{id}/start', [ProfessionalReferralController::class, 'startCase'])->name('referral.start');
 

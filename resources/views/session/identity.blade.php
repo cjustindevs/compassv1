@@ -6,7 +6,7 @@
             <button id="consentYes" class="bg-green-700 text-white p-3 rounded">I consent to this referral and identity release</button>
             <button id="consentNo" class="p-3">Decline referral</button>
         @elseif ($referral->help_seeker_consent && !$referral->identity_disclosed && !in_array($referral->status, ['closed', 'declined', 'completed']))
-            <form id="identityForm" autocomplete="off">
+            <form id="identityForm" autocomplete="off"><label class="block my-3"><input type="checkbox" name="identity_disclosure" value="1" required> I voluntarily agree to store and disclose the necessary identity information for this referral.</label>
                 @foreach (\App\Services\IdentityVaultService::FIELDS as $field)
                     <label class="block my-3">{{ ucwords(str_replace('_', ' ', $field)) }}{{ in_array($field, ['real_name', 'phone_number']) ? ' *' : '' }}
                         <input class="block w-full rounded border-gray-300" name="{{ $field }}" type="{{ $field === 'email' ? 'email' : 'text' }}" maxlength="500" @required(in_array($field, ['real_name', 'phone_number']))>

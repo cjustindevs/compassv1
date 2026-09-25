@@ -65,11 +65,12 @@ class EmergencyEscalationService
 
     private function sendEmergencyNotifications(HelpSeeker $seeker, Session $session, EmergencyAlert $alert): void
     {
-        $adviser = $session->helper_id ? $session->helper?->adviser : Adviser::whereHas('user', fn($q)=>$q->where('is_active',true))->oldest()->first();
+        $adviser = $session->review_adviser_id ? Adviser::find($session->review_adviser_id) : ($session->helper_id ? $session->helper?->adviser : Adviser::whereHas('user', fn($q)=>$q->where('is_active',true))->oldest()->first());
 
         if ($adviser && !$adviser->user?->is_active) $adviser=null;
         if ($adviser) {
-            $this->notifyUser($adviser->user_account_id, 'Emergency risk detected', 'Emergency risk detected for ' . $seeker->generated_alias . '. Review immediately.', '/adviser/session/' . $session->id);
+            $session->update(['review_adviser_id' => $adviser->id]);
+            $this->notifyUser($adviser->user_account_id, 'Emergency risk detected', 'Emergency risk detected for ' . $seeker->generated_alias . '. Review immediately.', '/adviser/screenings#screening-' . $session->id);
             $alert->forceFill([
                 'adviser_id' => $adviser->id,
                 'adviser_notified' => true,
@@ -138,8 +139,7 @@ class EmergencyEscalationService
 
     private function initiateEmergencyReferral(HelpSeeker $seeker, Session $session, EmergencyAlert $alert, array $context): void
     {
-        $hasReferableConsent = $seeker->user_account_id
-            && app(ConsentService::class)->valid($seeker, 'referral');
+        $hasReferableConsent = false; // Consent to another referral never authorizes this one.
 
         $referral = Referral::create([
             'session_id' => $session->id,
@@ -152,7 +152,7 @@ class EmergencyEscalationService
             'referral_reason' => $context['reason'] ?? 'Emergency escalation referral',
             'referral_date' => now(),
             'consent_requested_at' => $hasReferableConsent ? null : now(),
-            'status' => $hasReferableConsent ? Referral::STATUS_PENDING_ADVISER : Referral::STATUS_CONSENT_REQUESTED,
+            'status' => Referral::STATUS_PENDING_ADVISER,
             'professional_notified_at' => null,
         ]);
 

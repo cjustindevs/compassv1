@@ -234,6 +234,7 @@ class HelperMatchingService
             }
             $this->logAssignment($queue, $helper, $method);
             SupportAudit::record('match_recommended',$session);
+            \Illuminate\Support\Facades\Cache::forget('moderator_dashboard_stats');
             if ($emergencyOverride) {
                 SupportAudit::record('match_override',$session,[
                     'helper_id' => $helper->id,

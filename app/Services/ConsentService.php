@@ -21,7 +21,7 @@ class ConsentService {
     }
     public function decide(User $user, string $purpose, string $decision, ?int $sessionId = null, ?int $referralId = null, ?string $scope = null): ConsentRecord {
         Gate::authorize('seeker-workflow');
-        abort_unless(in_array($purpose,['privacy_policy','informed_consent','referral','voice_participation','voice_recording','transcription'],true),422);
+        abort_unless(in_array($purpose,['privacy_policy','informed_consent','referral','identity_disclosure','voice_participation','voice_recording','transcription'],true),422);
         abort_unless(in_array($decision,['accepted','declined','withdrawn'],true),422);
         if ($sessionId) Gate::authorize('view',Session::findOrFail($sessionId));
         if ($referralId) Gate::authorize('view',\App\Models\Referral::findOrFail($referralId));

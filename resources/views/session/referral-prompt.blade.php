@@ -82,7 +82,7 @@
         }
 
         const alreadyDecided = data.consent && ['accepted', 'declined', 'withdrawn'].includes(data.consent.decision);
-        const isConsentRequest = referral.status === 'consent_requested';
+        const isConsentRequest = referral.status === 'pending_consent';
 
         document.getElementById('referralConsentText').textContent =
             referral.status === 'pending_consent'
@@ -135,7 +135,9 @@
                 body: JSON.stringify(body)
             });
             if (!response.ok) throw new Error('Your decision could not be saved. Please try again.');
+            const saved = await response.json();
             dialog.close();
+            if (saved.next_url) window.location.assign(saved.next_url);
         } catch (error) {
             errorEl.textContent = error.message;
         } finally {
