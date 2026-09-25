@@ -40,6 +40,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Duty Hours Enforcement
+    |--------------------------------------------------------------------------
+    |
+    | The 6:00-10:30 PM (Mon-Sat) operating-hours window is currently not
+    | enforced so features can be tested at any hour. Set ENFORCE_DUTY_HOURS=true
+    | in the environment to restore the window immediately.
+    |
+    */
+
+    'enforce_duty_hours' => env('ENFORCE_DUTY_HOURS', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Branding
     |--------------------------------------------------------------------------
     |

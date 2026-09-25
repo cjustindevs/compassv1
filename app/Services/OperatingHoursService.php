@@ -2,6 +2,7 @@
 namespace App\Services;
 class OperatingHoursService {
     public function acceptsAssignments(): bool {
+        if (! config('app.enforce_duty_hours', false)) return true;
         $now = now('Asia/Manila');
         return !$now->isSunday() && $now->format('H:i') >= '18:00' && $now->format('H:i') < '22:30';
     }
