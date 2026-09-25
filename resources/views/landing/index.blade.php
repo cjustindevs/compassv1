@@ -499,10 +499,10 @@
                 <!-- Card 2 -->
                 <div class="card-hover p-6 md:p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group animate-fade-up delay-200">
                     <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        <i class="fas fa-brain text-xl text-green-600"></i>
+                        <i class="fas fa-heart text-xl text-green-600"></i>
                     </div>
-                    <h3 class="text-lg font-bold text-gray-800 mb-1.5">AI-Assisted Risk Detection</h3>
-                    <p class="text-sm text-gray-500 leading-relaxed">Early emotional risk identification for timely support.</p>
+                    <h3 class="text-lg font-bold text-gray-800 mb-1.5">Personalized Care</h3>
+                    <p class="text-sm text-gray-500 leading-relaxed">Support tailored to your needs for timely help.</p>
                 </div>
 
                 <!-- Card 3 -->
