@@ -198,6 +198,23 @@ class IdentityVaultTest extends TestCase
         $this->actingAs($seeker)->get(route('identity.form', $referral))->assertStatus(409);
     }
 
+    public function test_identity_disclosure_reuses_the_canonical_referral_consent_terms(): void
+    {
+        $referral = $this->referral();
+        $seeker = $referral->session->seeker->user;
+
+        $marker = 'Personal data is processed under the Data Privacy Act of 2012';
+        $identityPage = $this->actingAs($seeker)->get(route('identity.form', $referral));
+        $identityPage->assertOk()->assertSee('Identity Disclosure Consent')->assertSee($marker);
+
+        $referralPage = $this->actingAs($seeker)->get(route('seeker.referrals'));
+        $referralPage->assertOk()->assertSee('Identity Disclosure Consent')->assertSee($marker);
+
+        $terms = view('partials.referral-consent-terms')->render();
+        $this->assertStringContainsString($marker, $terms);
+        $this->assertStringContainsString('Contact details are voluntary', $terms);
+    }
+
     public function test_seeker_referral_page_hides_identity_actions_until_the_referral_is_approvable(): void
     {
         $referral = $this->referral();

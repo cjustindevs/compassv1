@@ -1,45 +1,110 @@
 @isset($session)
 <style>
-#referralConsentDialog {
-    border: 0;
-    border-radius: 16px;
-    padding: 24px;
-    width: min(480px, calc(100vw - 24px));
-    max-width: 480px;
-    position: fixed;
-    inset: 0;
-    margin: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,.25);
-}
-#referralConsentDialog::backdrop { background: rgba(15, 23, 42, .45); backdrop-filter: blur(2px); }
-#referralConsentDialog:not([open]) { display: none; }
-@media (max-width: 480px) { #referralConsentDialog { max-height: 86dvh; } }
+    #referralConsentDialog {
+        position: fixed;
+        inset: 0;
+        margin: auto;
+        border: 0;
+        padding: 0;
+        width: min(460px, calc(100vw - 24px));
+        max-height: 88dvh;
+        color: #163b2d;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, .28);
+        font-family: Inter, sans-serif;
+        overflow: hidden;
+    }
+    #referralConsentDialog::backdrop { background: rgba(15, 35, 25, .5); backdrop-filter: blur(3px); }
+    #referralConsentDialog:not([open]) { display: none; }
+    #referralConsentDialog .rv-modal__head {
+        display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+        padding: 20px 22px 16px; border-bottom: 1px solid #eef2ef;
+        background: linear-gradient(180deg, #f4fbf7, #fff);
+    }
+    #referralConsentDialog .rv-modal__eyebrow {
+        display: inline-flex; align-items: center; gap: 6px; margin: 0 0 6px;
+        font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #027039;
+    }
+    #referralConsentDialog h2 { margin: 0; font-size: 19px; font-weight: 700; line-height: 1.3; }
+    #referralConsentDialog .rv-modal__body { padding: 18px 22px 20px; max-height: 56dvh; overflow-y: auto; }
+    #referralConsentText { margin: 0 0 14px; font-size: 14px; line-height: 1.65; color: #374151; }
+    #referralConsentTerms {
+        padding: 14px 16px; margin: 0;
+        background: #fbfdfc; border: 1px solid #e5e7eb; border-radius: 14px;
+    }
+    #referralConsentTerms h3 {
+        display: flex; align-items: center; gap: 7px; margin: 0 0 8px;
+        font-size: 13px; font-weight: 700; color: #163b2d;
+    }
+    #referralConsentTerms h3 i { color: #04a052; }
+    #referralConsentTerms .rv-consent-terms__list { margin: 0; padding-left: 18px; }
+    #referralConsentTerms .rv-consent-terms__list li { font-size: 13px; line-height: 1.7; color: #475569; margin-bottom: 5px; }
+    #referralConsentTerms .rv-consent-terms__list li:last-child { margin-bottom: 0; }
+    #referralConsentTerms .rv-consent-terms__list strong { color: #163b2d; }
+    #referralConsentTerms .rv-consent-terms__note {
+        margin: 10px 0 0; padding: 10px 12px; border-radius: 10px;
+        background: #eaf8f0; border: 1px solid #d0f0d8;
+        font-size: 12px; line-height: 1.65; color: #027039;
+    }
+    #referralConsentCheckRow {
+        display: flex; align-items: flex-start; gap: 10px; margin: 12px 0 0;
+        padding: 12px 14px; cursor: pointer;
+        background: #eaf8f0; border: 1px solid #d0f0d8; border-radius: 12px;
+        font-size: 13px; line-height: 1.65; color: #163b2d;
+    }
+    #referralConsentCheckRow input { margin: 2px 0 0; width: 17px; height: 17px; flex-shrink: 0; accent-color: #04a052; }
+    #referralConsentError { margin: 12px 0 0; font-size: 13px; line-height: 1.6; color: #b91c1c; }
+    #referralConsentError:empty { display: none; }
+    #referralConsentDialog .rv-modal__foot {
+        display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;
+        padding: 14px 22px; border-top: 1px solid #eef2ef; background: #f8fbf9;
+    }
+    #referralConsentDialog .rv-btn {
+        display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px;
+        font-family: inherit; font-size: 13px; font-weight: 600; border-radius: 10px; cursor: pointer;
+        border: 1px solid #d1e5d9; background: #fff; color: #027039; transition: background .15s ease, border-color .15s ease;
+    }
+    #referralConsentDialog .rv-btn:hover { background: #f1f5f3; }
+    #referralConsentDialog .rv-btn.primary { background: #04a052; border-color: #04a052; color: #fff; }
+    #referralConsentDialog .rv-btn.primary:hover { background: #038a45; }
+    #referralConsentDialog .rv-btn:disabled { opacity: .55; cursor: not-allowed; }
+    #referralConsentDialog :focus-visible { outline: 3px solid #86efac; outline-offset: 2px; }
+    @media (max-width: 480px) {
+        #referralConsentDialog { width: calc(100vw - 16px); max-height: 92dvh; }
+        #referralConsentDialog .rv-modal__body { max-height: 54dvh; }
+        #referralConsentDialog .rv-modal__foot .rv-btn { flex: 1 1 auto; justify-content: center; }
+    }
 </style>
-<dialog id="referralConsentDialog">
-    <h2 style="font-size:20px;font-weight:700;color:#1f2937">Professional support</h2>
-    <p style="font-size:13px;color:#6b7280;margin:4px 0 14px">Please review what this means for your privacy before deciding.</p>
-    <div id="referralConsentText" style="margin:10px 0;font-size:14px;line-height:1.6;color:#374151"></div>
-
-    <div id="referralConsentTerms" style="background:#F8FBF9;border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;margin:12px 0;font-size:13px;line-height:1.6;color:#374151">
-        <p style="font-weight:600;margin-bottom:6px">Referral consent</p>
-        <ul style="margin:0;padding-left:18px">
-            <li>Your helper recommended connecting you with a psychology professional for follow-up care.</li>
-            <li><strong>Contact details are voluntary</strong> and are shared only so a professional can schedule your session. No identity is released without your consent.</li>
-            <li>Only the adviser and assigned professional can access the referral information needed to support you.</li>
-            <li>Personal data is processed under the Data Privacy Act of 2012 (RA 10173) and COMPASS privacy notice.</li>
-            <li>If your safety is at risk, COMPASS may contact support services in line with its duty-to-protect policy, even if you decline.</li>
-        </ul>
-        <label id="referralConsentCheckRow" style="display:flex;align-items:flex-start;gap:8px;margin-top:12px;cursor:pointer">
-            <input type="checkbox" id="referralConsentCheck" style="margin-top:3px" autocomplete="off">
-            <span>I understand and I consent to a referral for professional support.</span>
-        </label>
+<dialog id="referralConsentDialog" aria-labelledby="referralConsentHeading" aria-describedby="referralConsentText">
+    <div class="rv-modal__head">
+        <div>
+            <p class="rv-modal__eyebrow"><i class="fas fa-user-doctor" aria-hidden="true"></i>Professional support</p>
+            <h2 id="referralConsentHeading">Referral consent</h2>
+        </div>
     </div>
 
-    <p id="referralConsentError" role="alert" style="color:#dc2626;font-size:13px"></p>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
-        <button type="button" id="referralDecline" style="padding:10px 16px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;cursor:pointer;font-weight:600">Decline</button>
-        <button type="button" id="referralAccept" style="padding:10px 16px;background:#047b40;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;disabled:disabled" disabled>Accept referral</button>
-        <button type="button" id="referralDismiss" style="padding:10px 16px;background:none;color:#6b7280;border:none;cursor:pointer">Continue</button>
+    <div class="rv-modal__body">
+        <p id="referralConsentText">Please review what this means for your privacy before deciding.</p>
+
+        <div id="referralConsentTerms">
+            <h3><i class="fas fa-file-signature" aria-hidden="true"></i>What you are agreeing to</h3>
+            @include('partials.referral-consent-terms')
+            <p class="rv-consent-terms__note">Your contact details are collected in a later, separate step and only if you still want a professional to reach you.</p>
+
+            <label id="referralConsentCheckRow">
+                <input type="checkbox" id="referralConsentCheck" autocomplete="off">
+                <span>I understand and I consent to a referral for professional support.</span>
+            </label>
+        </div>
+
+        <p id="referralConsentError" role="alert"></p>
+    </div>
+
+    <div class="rv-modal__foot">
+        <button type="button" id="referralDecline" class="rv-btn">Decline</button>
+        <button type="button" id="referralAccept" class="rv-btn primary" disabled>Accept referral</button>
+        <button type="button" id="referralDismiss" class="rv-btn" hidden>Continue</button>
     </div>
 </dialog>
 <script>
@@ -127,6 +192,7 @@
                 if (!check?.checked) {
                     errorEl.textContent = 'Please tick the consent checkbox to accept.';
                     deciding = false; enabledButtons();
+                    check.focus();
                     return;
                 }
             }
@@ -149,6 +215,12 @@
     acceptBtn.addEventListener('click', () => decide(true));
     declineBtn.addEventListener('click', () => decide(false));
     dismissBtn.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', event => {
+        if (event.target !== dialog) return;
+        const box = dialog.getBoundingClientRect();
+        const outside = event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom;
+        if (outside) dialog.close();
+    });
 
     poll();
     setInterval(poll, 5000);

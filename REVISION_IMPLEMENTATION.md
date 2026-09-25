@@ -46,7 +46,9 @@ After explicit deployment approval: back up databases, deploy code/assets, run `
 
 ## Documentation gaps and limitations
 
-The supplied COMPASS-v4 contains Appendix O referral fields, participation consent and a privacy notice. A separately approved Identity Disclosure Consent and Personal Information form could not be located. The requested verbatim complete forms therefore are NOT certified complete. A question requesting a newer document path remains pending. The current modal reuses the existing vault fields and an explicit purpose-specific confirmation; this wording must be reconciled with the approved form before publication.
+The supplied COMPASS-v4 contains Appendix O referral fields, participation consent and a privacy notice. A separately approved Identity Disclosure Consent and Personal Information form could not be located. The requested verbatim complete forms therefore are NOT certified complete. A question requesting a newer document path remains pending.
+
+**Identity Disclosure Consent is now derived from the referral consent rather than separately drafted.** The approved referral consent wording was extracted into `resources/views/partials/referral-consent-terms.blade.php` as the single source of truth. Both the in-chat referral prompt and the Identity Disclosure Consent step render that same partial, so the identity step cannot drift from the consent the seeker already accepted; it adds only identity-specific facts (vault encryption, who may authorize release, retention, replacement requiring fresh release, and the logged emergency exception). `IdentityVaultTest::test_identity_disclosure_reuses_the_canonical_referral_consent_terms` guards this. Because no separately approved form exists, this wording remains derived-and-traceable rather than verbatim, and must still be reconciled with the approved form before publication.
 
 Appointment start/end and meeting instructions are proposed implementation fields. The PDF lists Scheduled as a referral outcome but does not specify duration, rescheduling/cancellation policy or seeker confirmation. Appointment state is kept in the appointment record rather than changing the referral enum. No arbitrary fixed duration or mandatory seeker confirmation is imposed. Standalone appointment cancellation and external-offline-professional registration are not added without an approved workflow; existing adviser reassignment to authorized professional accounts remains available.
 
@@ -64,7 +66,7 @@ Existing duty-hour testing relaxation remains configurable; production must use 
 
 ## Verification results
 
-- `php artisan test --compact`: **342 passed, 2,484 assertions**, 71.94 seconds. Log: `storage/logs/revision-verified-tests.txt`.
+- `php artisan test --compact`: **343 passed, 2,493 assertions**. Log: `storage/logs/revision-verified-tests.txt`.
 - `npm run build`: passed, including PWA service-worker generation. The sandbox initially blocked esbuild process creation (EPERM); an approved local build outside the sandbox succeeded. Log: `storage/logs/revision-build.txt`.
 - `php artisan view:cache`: passed after the final edits.
 - `php artisan route:list`: 304 routes, including protected professional appointment POST route. Log: `storage/logs/revision-routes.txt`.
@@ -80,7 +82,7 @@ Existing duty-hour testing relaxation remains configurable; production must use 
 | Emergency screening review | SeekerWorkflowSecurityTest creates emergency, opens scoped review, submits review, preserves history and notification link |
 | Adviser-before-consent referral | ConsentReferralEmergencyTest, HelperModuleTest, CompassImplementationTest |
 | Seeker decline | Closed referral, retained emergency incident and self-help notification tests |
-| Identity modal | Server-rendered modal/redirect tests and Blade compile; browser focus/automatic opening not manually verified |
+| Identity modal | `IdentityVaultTest` renders the shared terms partial on both the standalone page and the modal; per-field inline errors, success panel, backdrop/Escape close and Blade compile. Browser keyboard focus and automatic opening not manually verified |
 | Explicit identity disclosure and storage | IdentityVaultTest with separate in-memory vault DB, missing consent rejection, encrypted values, professional assignment gate |
 | Professional accept/reject | Existing escalation/referral tests; authorized account coordination only |
 | Professional appointments | ReferralAppointmentTest: future schedule, reschedule history, encrypted instructions, conflicts, unrelated professional and withdrawn consent denial |
