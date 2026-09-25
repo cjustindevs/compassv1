@@ -27,12 +27,6 @@
             <i class="fas fa-folder-open"></i><span class="nav-text">Assigned Cases</span>
             <span class="nav-badge" id="caseBadge" style="{{ $caseBadgeCount > 0 ? '' : 'display:none;' }}">{{ $caseBadgeCount }}</span>
         </a>
-        <a href="{{ route('helper.chat') }}" class="nav-item {{ request()->routeIs('helper.chat*', 'helper.session.chat*') ? 'active' : '' }}">
-            <i class="fas fa-comment-dots"></i><span class="nav-text">Live Chat</span>
-        </a>
-        <a href="{{ $voiceUrl }}" class="nav-item {{ request()->routeIs('helper.voice', 'helper.session.voice*') ? 'active' : '' }}">
-            <i class="fas fa-phone"></i><span class="nav-text">Voice Call</span>
-        </a>
         <a href="{{ $notesUrl }}" class="nav-item {{ request()->routeIs('helper.notes', 'helper.session.notes*') ? 'active' : '' }}">
             <i class="fas fa-edit"></i><span class="nav-text">Session Notes</span>
         </a>
