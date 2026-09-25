@@ -33,28 +33,12 @@
 @include('partials.terms-text')
 <hr class="my-4 border-gray-200">
 @include('partials.privacy-text')
-<h3>Safety and referrals</h3><p>Safety concerns may be reviewed by authorized advisers. A professional referral requires a separate decision from you. Identity information is released only through an authorized referral or a restricted emergency procedure.</p>
-<details class="see-more"><summary>See more</summary><div class="see-more-body">
-<p>If your screening or session indicates a safety concern, an authorized adviser may review the record and, where needed, request a professional referral. A program coordinator approves the referral and, if you agree, releases the minimum contact details from the Identity Vault to a qualified professional. The helper's account stays pseudonymous so that your helper cannot be contacted directly by a professional.</p>
-<p>In an emergency, a restricted procedure may release identifying information to emergency authorities to protect life, and this is logged. You can withdraw from a pending referral at any time. Withdrawal does not erase records that were already lawfully retained for safety and institutional obligations.</p>
-<p>If you need immediate help now, view the Emergency page for crisis hotlines and 911.</p>
-</div></details>
-<h3>Incident reporting (Appendix T)</h3><p>You can report a concern about a session, a helper, or your own conduct. Reports are reviewed under the community standards procedures and are kept confidential on a need-to-know basis.</p>
-<details class="see-more"><summary>See more</summary><div class="see-more-body">
-<p>To report a concern, tell a helper or adviser, or use the report contact provided by support. Provide a short description of what happened, when it happened, and who was involved. Do not include anyone else's personal information.</p>
-<p>Authorized staff review the report, contact you through your account alias, and take proportionate action, which may include feedback, retraining, suspending or removing a helper, or closing a request. Retaliation against a person who reports a concern is not allowed. Reports and their resolution are logged; your identity is visible only to the staff who need it, and conversation content is reviewed only with an authorized access grant.</p>
-</div></details>
-<h3>Your choices</h3><p>You can review or withdraw consent in Privacy and Consent. Withdrawal stops future consent-dependent support and closes current requests. Existing records may be retained for authorized safety and institutional recordkeeping. You can still use self-help and emergency resources.</p>
-<details class="see-more"><summary>See more</summary><div class="see-more-body">
-<p>In Privacy and Consent you can: review the current Terms and Privacy, withdraw your support consent, manage your referral contact details in the Identity Vault, and close any open request. Consent can always be withdrawn before a session begins.</p>
-<p>If you have questions about how your data is handled, contact the program operators. You may also request a copy of the records we hold about you; access is provided to authorized people on your behalf. We recommend reviewing these pages whenever you are referred, because professional referrals involve releasing your optional contact details with your separate consent.</p>
-</div></details>
 @if($needsSupportConsent)
 <h3>Consent to participate</h3>
 @foreach(['agree_privacy'=>'I have read and accept the Privacy Notice.','agree_terms'=>'I understand the terms and limits of peer support.','agree_emergency'=>'I understand how safety concerns and referrals are handled.','agree_consent'=>'I voluntarily agree to participate in peer support.'] as $name=>$label)
 <label class="consent-check"><input type="checkbox" name="{{ $name }}" value="1" required><span>{{ $label }}</span></label>
 @endforeach
-@else<p>You have accepted the current Terms and Privacy. You can manage your choices in Privacy and Consent.</p>@endif
+@endif
 <p id="seekerConsentError" role="alert" style="color:#b91c1c"></p>
 </div>
 <div class="consent-footer"><button type="button" class="consent-action" data-close-seeker-consent>{{ $needsSupportConsent ? 'Not now' : 'Close' }}</button>@if($needsSupportConsent)<button type="submit" class="consent-action primary">Agree and continue</button>@endif</div>
