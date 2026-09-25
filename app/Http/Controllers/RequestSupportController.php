@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 use App\Models\{ConcernCategory, EmergencyResource, SelfHelpResource, Session};
 use App\Services\{ConsentService, HelperMatchingService, HelperWorkflowMaintenance, OperatingHoursService, ScreeningInstrument, SeekerWorkflowService};
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 class RequestSupportController extends Controller {
@@ -18,6 +19,7 @@ class RequestSupportController extends Controller {
     }
     public function processScreening(Request $request) {
         Gate::authorize('seeker-workflow');
+        if ($redirect = $this->requireConsentOrRedirect($request->user())) return $redirect;
         if ($request->has('immediate_intent')) {
             $answers=$request->validate(ScreeningInstrument::rules());
             return $this->next($this->workflow->screen($request->user(),$answers));
@@ -36,6 +38,7 @@ class RequestSupportController extends Controller {
         return view('request.concern',['concerns'=>ConcernCategory::whereIn('concern_name',['Stress','Family','Relationships','Academic','Health','Others'])->get(),'session'=>$session]);
     }
     public function processConcern(Request $request) {
+        if ($redirect = $this->requireConsentOrRedirect($request->user())) return $redirect;
         $data=$request->validate(['concern_id'=>['required',\Illuminate\Validation\Rule::exists('concern_categories','id')->whereIn('concern_name',['Stress','Family','Relationships','Academic','Health','Others'])],'description'=>'nullable|string|max:500']);
         return $this->next($this->workflow->concern($request->user(),$data));
     }
@@ -46,6 +49,7 @@ class RequestSupportController extends Controller {
         return view('request.preferences',['session'=>$session]);
     }
     public function processPreferences(Request $request) {
+        if ($redirect = $this->requireConsentOrRedirect($request->user())) return $redirect;
         $data=$request->validate(['support_mode'=>'required|in:chat','preferred_language'=>'required|in:English,Tagalog,English/Tagalog']);
         return $this->next($this->workflow->submit($request->user(),$data));
     }
@@ -117,6 +121,11 @@ class RequestSupportController extends Controller {
     public function voiceConsent() { abort(503,'Voice calls, recording and automatic transcription are unavailable. Please use chat.'); }
     public function processVoiceConsent() { return $this->voiceConsent(); }
     public function declineVoiceConsent() { return redirect()->route('request.matching'); }
+    private function requireConsentOrRedirect(\App\Models\User $user): ?RedirectResponse {
+        if ($user->helpSeeker && app(ConsentService::class)->isFull($user->helpSeeker)) return null;
+        session(['open_consent' => true]);
+        return redirect()->route('request.screening')->with('info', 'Please review and accept the current Terms and Condition and Privacy Notice before requesting support.');
+    }
     private function next(Session $session) {
         return redirect()->route(match ($session->workflow_state) {
             'concern_required'=>'request.concern','session_preferences_required'=>'request.preferences','session_active'=>'session.chat',default=>'request.matching',

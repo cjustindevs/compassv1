@@ -50,7 +50,7 @@ class SeekerWorkflowSecurityTest extends TestCase {
     public function test_consent_and_workflow_steps_cannot_be_skipped(): void {
         $user=$this->seeker(false); $this->actingAs($user);
         $this->get(route('request.screening'))->assertOk()->assertSee('seekerConsentDialog');
-        $this->postJson(route('request.screening.process'),$this->answers())->assertStatus(409);
+        $this->postJson(route('request.screening.process'),$this->answers())->assertRedirect(route('request.screening'))->assertSessionHas('open_consent',true);
         foreach(['privacy_policy','informed_consent'] as $purpose) app(ConsentService::class)->decide($user,$purpose,'accepted');
         $this->postJson(route('request.preferences.process'),['support_mode'=>'chat','preferred_language'=>'English'])->assertStatus(409);
         $this->post(route('request.screening.process'),$this->answers())->assertRedirect(route('request.concern'));
@@ -125,7 +125,7 @@ class SeekerWorkflowSecurityTest extends TestCase {
         $this->post(route('seeker.privacy.decision'),['purpose'=>'privacy_policy','decision'=>'withdrawn'])->assertRedirect();
         $this->assertSame($original,ConsentRecord::first()->getAttributes());
         $this->assertDatabaseCount('consent_records',3);$this->assertSame('cancelled',$session->fresh()->session_status);
-        $this->postJson(route('request.screening.process'),$this->answers())->assertStatus(409);
+        $this->postJson(route('request.screening.process'),$this->answers())->assertRedirect(route('request.screening'))->assertSessionHas('open_consent',true);
     }
     public function test_categorical_evaluation_requires_completed_owner_and_rejects_duplicates(): void {
         $user=$this->seeker();$session=$this->queued($user);$answers=array_map(fn($options)=>$options[0],EvaluationInstrument::OPTIONS);

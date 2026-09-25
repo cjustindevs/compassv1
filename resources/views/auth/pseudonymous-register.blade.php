@@ -5,13 +5,36 @@
 
 @section('content')
 <h1 class="text-xl font-bold text-gray-800 mb-2">Create Your Account</h1>
-<p class="text-gray-500 text-sm mb-6">Verify your email and choose a generated alias for signing in.</p>
+<p class="text-gray-500 text-sm mb-6">Read and accept the Terms and Condition and Privacy Notice first, then verify your email and create your account.</p>
 @if ($errors->any())
     <div role="alert" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">{{ $errors->first('registration') ?: 'Please check the highlighted fields below.' }}</div>
 @endif
+
+<!-- STEP 1: Terms and Condition + Privacy Notice (verbatim, consent first) -->
+<div id="registrationStep1" class="{{ $errors->any() ? 'hidden' : '' }}">
+    <section class="agreement-panel" aria-label="Terms and Condition and Privacy Notice">
+        <h2 class="text-base font-semibold text-gray-800 mb-2">1. Terms and Condition &amp; Privacy Notice</h2>
+        <p class="text-sm text-gray-600 mb-3">Please read the full documents below carefully before you create your account.</p>
+        <div class="agreement-scroll" id="agreementScroll">
+            @include('partials.terms-text')
+            <hr class="my-4 border-gray-200">
+            @include('partials.privacy-text')
+        </div>
+        <p id="agreement-hint" class="text-xs text-gray-400 mt-2">Scroll to the bottom of the documents to continue.</p>
+        <label class="agreement-check">
+            <input type="checkbox" id="agree-terms-checkbox" value="1" disabled>
+            <span>I have read and understood the Terms and Condition and the Privacy Notice, and I agree to them.</span>
+        </label>
+        <p id="agree-error" class="text-sm text-red-600 mt-1" role="alert"></p>
+        <button type="button" id="agree-continue" class="registration-action registration-action-solid" disabled><i class="fas fa-check mr-2" aria-hidden="true"></i> Agree and continue</button>
+    </section>
+</div>
+
+<!-- STEP 2: Email verification + account details -->
+<div id="registrationStep2" class="{{ $errors->any() ? '' : 'hidden' }}">
 <div class="registration-columns">
 <section class="verification-panel space-y-4">
-    <h2 class="text-base font-semibold text-gray-800">1. Email verification</h2>
+    <h2 class="text-base font-semibold text-gray-800">2. Email verification</h2>
     <p class="text-sm text-gray-600">Verify your Gmail or other email address before creating your account.</p>
     <button type="button" id="open-verification" class="registration-action registration-action-solid">Verify email address</button>
     <p id="email-summary" class="text-sm text-green-700" role="status"></p>
@@ -19,7 +42,7 @@
 <dialog id="email-dialog" aria-labelledby="verification-heading" class="email-dialog">
     <button type="button" id="close-verification" class="registration-action" aria-label="Close email verification">Close</button>
 <section class="verification-panel space-y-4" aria-labelledby="verification-heading">
-    <h2 id="verification-heading" class="text-base font-semibold text-gray-800">1. Email verification</h2>
+    <h2 id="verification-heading" class="text-base font-semibold text-gray-800">2. Email verification</h2>
     <div>
         <label for="verification-email" class="block text-sm font-medium text-gray-700 mb-1.5">Email for verification <span class="text-red-500">*</span></label>
         <div class="registration-input-action">
@@ -40,7 +63,7 @@
 </section></dialog>
 <form method="POST" action="{{ route('seeker.onboarding.store') }}" class="registration-fields">
     @csrf
-    <h2 class="registration-full text-base font-semibold text-gray-800">2. Your profile</h2>
+    <h2 class="registration-full text-base font-semibold text-gray-800">3. Your profile</h2>
     <div class="registration-full">
         <label for="alias" class="block text-sm font-medium text-gray-700 mb-1.5">Your sign-in alias</label>
         <div class="registration-input-action">
@@ -75,7 +98,7 @@
         </select>
         @error('preferred_language') <p id="preferred_language-error" class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
     </div>
-    <h2 class="registration-full registration-divider text-base font-semibold text-gray-800">3. Account security</h2>
+    <h2 class="registration-full registration-divider text-base font-semibold text-gray-800">4. Account security</h2>
     <div>
         <label for="password" class="block text-sm font-medium text-gray-700 mb-1.5">Password <span class="text-red-500" aria-hidden="true">*</span></label>
         <input type="password" id="password" name="password" required class="input-focus w-full px-4 py-3 rounded-xl border border-gray-200 bg-white outline-none transition-all" aria-invalid="{{ $errors->has('password') ? 'true' : 'false' }}" aria-describedby="password-help{{ $errors->has('password') ? ' password-error' : '' }}" minlength="8" autocomplete="new-password" pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{8,}" placeholder="Create a secure password">
@@ -90,7 +113,10 @@
     <div class="registration-full pt-2">
         <button type="submit" class="btn-primary w-full py-3 rounded-xl text-white font-semibold transition-all"><i class="fas fa-user-plus mr-2" aria-hidden="true"></i> Create Account</button>
     </div>
+    <input type="hidden" name="agree_privacy" value="1">
+    <input type="hidden" name="agree_terms" value="1">
 </form>
+</div>
 </div>
 @endsection
 
@@ -99,6 +125,35 @@
 @endsection
 
 @push('scripts')
+<script>
+(() => {
+    // ── Step 1: Terms & Privacy gate ──
+    const step1 = document.getElementById('registrationStep1');
+    const step2 = document.getElementById('registrationStep2');
+    const scrollBox = document.getElementById('agreementScroll');
+    const agreeBox = document.getElementById('agree-terms-checkbox');
+    const agreeBtn = document.getElementById('agree-continue');
+    const agreeHint = document.getElementById('agreement-hint');
+    const agreeError = document.getElementById('agree-error');
+    if (step1 && step2 && scrollBox) {
+        const atBottom = () => scrollBox.scrollTop + scrollBox.clientHeight >= scrollBox.scrollHeight - 24;
+        scrollBox.addEventListener('scroll', () => {
+            const reached = atBottom();
+            agreeBox.disabled = !reached;
+            if (agreeHint) agreeHint.textContent = reached ? 'You have reached the end of the documents.' : 'Scroll to the bottom of the documents to continue.';
+            if (!reached) agreeBtn.disabled = true;
+        });
+        agreeBox.addEventListener('change', () => { agreeBtn.disabled = !agreeBox.checked; });
+        agreeBtn.addEventListener('click', () => {
+            if (!agreeBox.checked) { if (agreeError) agreeError.textContent = 'Please tick the agreement checkbox to continue.'; return; }
+            if (agreeError) agreeError.textContent = '';
+            step1.classList.add('hidden');
+            step2.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+})();
+</script>
 <script>
 (() => {
     const status = document.getElementById('verification-status');
@@ -211,5 +266,15 @@
     @media (min-width: 640px) { .registration-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (min-width: 900px) { .registration-columns { grid-template-columns: minmax(0, 1fr) minmax(0, 1.65fr); gap: 32px; } }
     @media (max-width: 639px) { .registration-action { width: 100%; } }
+    .agreement-panel { padding: 20px; background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 16px; }
+    .agreement-scroll { max-height: 420px; overflow-y: auto; padding: 18px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 14px; line-height: 1.7; color: #374151; }
+    .agreement-scroll h3 { margin-top: 14px; }
+    .agreement-scroll h3:first-child { margin-top: 0; }
+    .agreement-scroll ul { padding-left: 20px; margin-top: 8px; }
+    .agreement-scroll li { margin-bottom: 8px; }
+    .agreement-check { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0 6px; font-size: 14px; font-weight: 500; color: #1f2937; cursor: pointer; }
+    .agreement-check input { margin-top: 2px; width: 18px; height: 18px; flex-shrink: 0; accent-color: #15803d; }
+    .agreement-check input:disabled { opacity: .55; }
+    @media (max-width: 639px) { .agreement-scroll { max-height: 340px; padding: 14px; } }
 </style>
 @endpush

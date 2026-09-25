@@ -22,15 +22,13 @@ class CompassImplementationTest extends TestCase
             'alias' => session('registration_alias'),
             'age' => 20, 'gender' => 'prefer-not-to-say', 'preferred_language' => 'Tagalog',
             'password' => 'StrongPass123!', 'password_confirmation' => 'StrongPass123!',
-        ])->assertRedirect(route('seeker.consent'));
+            'agree_privacy' => 1, 'agree_terms' => 1,
+        ])->assertRedirect(route('request.screening'));
         $this->assertAuthenticated();
         $seeker = HelpSeeker::firstOrFail();
         $this->assertMatchesRegularExpression('/^[A-Z][a-z]+[A-Z][a-z]+[0-9]+$/', $seeker->generated_alias);
-        $this->get(route('request.screening'))->assertOk()->assertSee('seekerConsentDialog');
-        $this->post(route('seeker.consent.accept'), [
-            'agree_privacy' => 1, 'agree_terms' => 1, 'agree_emergency' => 1, 'agree_consent' => 1,
-        ])->assertRedirect(route('request.screening'));
         $this->assertDatabaseHas('consent_records', ['seeker_id' => $seeker->id, 'version' => \App\Services\ConsentService::VERSION, 'ip_address' => '127.0.0.1']);
+        $this->get(route('request.screening'))->assertOk()->assertSee('seekerConsentDialog');
         $this->post('/logout');
         $this->post('/login', ['email' => $seeker->generated_alias, 'password' => 'StrongPass123!'])->assertRedirect();
         $this->assertAuthenticated();

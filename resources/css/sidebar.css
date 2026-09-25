@@ -450,7 +450,7 @@
 .bottom-nav .nav-item.active i { color: var(--green-500); }
 
 /* ───────────── Responsive ───────────── */
-@media (min-width: 1025px) {
+@media (min-width: 769px) {
     .sidebar-toggle { display: inline-flex; }
 }
 @media (min-width: 769px) {

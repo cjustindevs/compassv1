@@ -76,7 +76,7 @@ img { max-width: 100%; height: auto; }
 }
 .sidebar .nav-item.active::before { height: 60%; }
 
-@media (min-width: 1025px) {
+@media (min-width: 769px) {
     .sidebar-toggle { display: inline-flex; }
 }
 

@@ -16,6 +16,9 @@ class ConsentService {
         Gate::authorize('seeker-workflow');
         abort_unless($user->helpSeeker && $this->valid($user->helpSeeker,'privacy_policy') && $this->valid($user->helpSeeker,'informed_consent'), 409, 'Please review and accept the current consent documents first.');
     }
+    public function isFull(HelpSeeker $seeker): bool {
+        return $this->valid($seeker, 'privacy_policy') && $this->valid($seeker, 'informed_consent');
+    }
     public function decide(User $user, string $purpose, string $decision, ?int $sessionId = null, ?int $referralId = null, ?string $scope = null): ConsentRecord {
         Gate::authorize('seeker-workflow');
         abort_unless(in_array($purpose,['privacy_policy','informed_consent','referral','voice_participation','voice_recording','transcription'],true),422);

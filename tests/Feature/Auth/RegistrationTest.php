@@ -92,10 +92,21 @@ class RegistrationTest extends TestCase
                 'alias' => $alias, 'age' => 20, 'gender' => 'female',
                 'preferred_language' => 'English', 'password' => 'StrongPass123!',
                 'password_confirmation' => 'StrongPass123!',
-            ])->assertRedirect(route('seeker.consent'))->assertSessionHasNoErrors();
+                'agree_privacy' => 1, 'agree_terms' => 1,
+            ])->assertRedirect(route('request.screening'))->assertSessionHasNoErrors();
 
             $this->assertAuthenticated();
             $this->assertNull(session('registration_verified_until'));
+
+            $seeker = \App\Models\HelpSeeker::where('generated_alias', $alias)->firstOrFail();
+            $this->assertSame(2, $seeker->consentRecords()->where('consent_given', true)->count());
+            $this->assertSame(
+                ['privacy_policy', 'informed_consent'],
+                $seeker->consentRecords()->where('consent_given', true)->orderBy('id')->pluck('purpose')->all()
+            );
+            $this->assertTrue(
+                $seeker->consentRecords()->where('consent_given', true)->get()->every(fn ($r) => $r->version === \App\Services\ConsentService::VERSION)
+            );
             $this->post('/logout');
         }
 
@@ -115,7 +126,8 @@ class RegistrationTest extends TestCase
             'alias' => session('registration_alias'), 'age' => 20, 'gender' => 'female',
             'preferred_language' => 'English', 'password' => 'StrongPass123!',
             'password_confirmation' => 'StrongPass123!',
-        ])->assertRedirect(route('seeker.consent'));
+            'agree_privacy' => 1, 'agree_terms' => 1,
+        ])->assertRedirect(route('request.screening'));
         $user = \App\Models\User::firstOrFail();
         $this->assertSame($verifiedAt->timestamp, $user->email_verified_at->timestamp);
         $this->assertTrue($user->email_verified_at->lt($user->created_at));
@@ -130,6 +142,18 @@ class RegistrationTest extends TestCase
                 'alias' => 'UnapprovedAlias', 'age' => 20, 'gender' => 'female',
                 'preferred_language' => 'English', 'password' => 'StrongPass123!', 'password_confirmation' => 'StrongPass123!',
             ])->assertSessionHasErrors('alias');
+        $this->assertDatabaseCount('users', 0);
+    }
+
+    public function test_registration_requires_accepting_terms_and_privacy(): void
+    {
+        $this->withSession(['registration_alias' => 'CalmFox900', 'registration_verified_until' => now()->addMinutes(10)->timestamp])
+            ->from(route('register'))
+            ->post(route('seeker.onboarding.store'), [
+                'alias' => 'CalmFox900', 'age' => 20, 'gender' => 'female',
+                'preferred_language' => 'English', 'password' => 'StrongPass123!',
+                'password_confirmation' => 'StrongPass123!',
+            ])->assertRedirect(route('register'))->assertSessionHasErrors(['agree_privacy', 'agree_terms']);
         $this->assertDatabaseCount('users', 0);
     }
 

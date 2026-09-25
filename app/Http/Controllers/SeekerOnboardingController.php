@@ -51,6 +51,8 @@ class SeekerOnboardingController extends Controller
             'gender' => 'required|in:male,female,non-binary,prefer-not-to-say',
             'preferred_language' => 'required|in:English,Tagalog,English/Tagalog',
             'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'agree_privacy' => 'accepted',
+            'agree_terms' => 'accepted',
         ]);
 
         $user = DB::transaction(function () use ($request, $data) {
@@ -79,7 +81,14 @@ class SeekerOnboardingController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('seeker.consent');
+        // Terms and Privacy acceptance was collected at the very start of the
+        // registration flow, so consent is recorded now and no second consent
+        // step is required before the seeker can request support.
+        foreach (['privacy_policy', 'informed_consent'] as $purpose) {
+            app(\App\Services\ConsentService::class)->decide($user, $purpose, 'accepted');
+        }
+
+        return redirect()->route('request.screening');
     }
 
     public function consent()

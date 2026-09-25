@@ -30,20 +30,9 @@
 <div class="consent-header"><div><h2 id="seekerConsentTitle">Terms and Privacy</h2><p>Understand your choices before requesting support.</p></div><button type="button" class="consent-action" data-close-seeker-consent aria-label="Close terms and privacy"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
 <form id="seekerConsentForm" action="{{ route('seeker.consent.accept') }}" method="POST">@csrf
 <div class="consent-body">
-<h3>Terms of support</h3><p>COMPASS connects you with trained peer helpers under adviser supervision. Participation is voluntary. Peer support is not a diagnosis, therapy or professional treatment. You may stop a session at any time.</p>
-<p>Sessions last up to 90 minutes. {{ app(\App\Services\OperatingHoursService::class)->message() }} If you need urgent help, emergency resources remain available. COMPASS cannot guarantee an immediate emergency response.</p>
-<details class="see-more"><summary>See more</summary><div class="see-more-body">
-<p>You must be a registered member of our community at least 18 years old (or an authorized participant) to use peer support. Keep contact details and personal identifiers out of chat unless a formal referral begins. Do not share another person's personal information, and do not use the platform for any unlawful, commercial or fraudulent purpose.</p>
-<p>Peer helpers follow a code of conduct and confidentiality rules. They may pause or end a session if either of you is unsafe, or if the session is outside their scope. You can request a different helper by declining the match. Repeated misuse of the service may limit access.</p>
-<p>Peer support and self-help tools are not a substitute for professional care. If you are considering harm, please contact a crisis hotline or emergency services right away.</p>
-</div></details>
-<h3>Privacy Notice</h3><p>Your alias is shown to your peer helper. We keep your account details, support answers, messages and feedback to provide support, supervise sessions and maintain records. Authorized staff can access records needed for their responsibilities.</p>
-<p>Chat messages are stored on the server and are not end-to-end encrypted. Voice calls, recording and automatic transcription are currently unavailable. Optional contact details for referrals are kept separately in the Identity Vault.</p>
-<details class="see-more"><summary>See more</summary><div class="see-more-body">
-<p>When you create a request we collect: your account profile (name and university of the institution, if provided), your screening answers, the concern you selected, your session messages, your satisfaction ratings, session documentation written by your helper (not visible to you), and referral records.</p>
-<p>This information is processed to match you with a supervised peer helper, operate the live session, keep a record of support for safety and institutional recordkeeping, and improve the service. Authorized personnel (program coordinators, advisers, moderators, system administrators and the operators' staff) can access only the records they need for their role, and every access is logged.</p>
-<p>We do not sell your personal information. Your optional contact details for referrals are stored separately in the Identity Vault and are released only through an authorized referral or a restricted emergency procedure. Records may be retained for as long as authorized for safety and legal recordkeeping even after you withdraw consent.</p>
-</div></details>
+@include('partials.terms-text')
+<hr class="my-4 border-gray-200">
+@include('partials.privacy-text')
 <h3>Safety and referrals</h3><p>Safety concerns may be reviewed by authorized advisers. A professional referral requires a separate decision from you. Identity information is released only through an authorized referral or a restricted emergency procedure.</p>
 <details class="see-more"><summary>See more</summary><div class="see-more-body">
 <p>If your screening or session indicates a safety concern, an authorized adviser may review the record and, where needed, request a professional referral. A program coordinator approves the referral and, if you agree, releases the minimum contact details from the Identity Vault to a qualified professional. The helper's account stays pseudonymous so that your helper cannot be contacted directly by a professional.</p>
