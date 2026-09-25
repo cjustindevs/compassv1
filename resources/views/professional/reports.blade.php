@@ -388,26 +388,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            const hamburger = document.getElementById('hamburgerBtn');
-
-            function toggleSidebar() {
-                sidebar.classList.toggle('closed');
-                overlay.classList.toggle('active');
-            }
-
-            function closeSidebar() {
-                sidebar.classList.add('closed');
-                overlay.classList.remove('active');
-            }
-
-            hamburger.addEventListener('click', toggleSidebar);
-            overlay.addEventListener('click', closeSidebar);
-
-            window.addEventListener('resize', function() {
-                if (window.innerWidth > 768) closeSidebar();
-            });
 
             // Referral trends chart
             const trendLabels = @json(array_column($monthlyTrends, 'month'));

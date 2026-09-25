@@ -19,6 +19,16 @@ class SidebarController {
 
         if (!this.sidebar) return;
 
+        // The shared sidebar partial ships a self-contained inline controller so
+        // the drawer works even on pages that never load this bundle. When that
+        // controller has already claimed the sidebar, skip binding to avoid
+        // double-toggling the drawer.
+        if (this.sidebar.dataset.sidebarBound === '1') {
+            document.documentElement.classList.remove('sidebar-collapsed-preload');
+            return;
+        }
+        this.sidebar.dataset.sidebarBound = '1';
+
         this.applyCollapsed();
         document.documentElement.classList.remove('sidebar-collapsed-preload');
         this.bind();
