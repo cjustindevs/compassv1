@@ -8,17 +8,81 @@ use App\Models\UserSavedResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class SelfHelpController extends Controller
 {
+    /**
+     * Content types. Slugs are part of the `selfhelp.category` route contract,
+     * so the keys must not be renamed. Presentation is text only — no icons.
+     */
     public const CATEGORIES = [
-        'meditation' => ['label' => 'Meditation', 'icon' => 'fa-spa', 'color' => 'purple'],
-        'exercise' => ['label' => 'Exercises', 'icon' => 'fa-wind', 'color' => 'blue'],
-        'article' => ['label' => 'Articles', 'icon' => 'fa-book-open', 'color' => 'green'],
-        'tool' => ['label' => 'Tools', 'icon' => 'fa-toolbox', 'color' => 'amber'],
-        'video' => ['label' => 'Videos', 'icon' => 'fa-video', 'color' => 'red'],
+        'meditation' => ['label' => 'Meditation'],
+        'exercise' => ['label' => 'Exercises'],
+        'article' => ['label' => 'Articles'],
+        'tool' => ['label' => 'Tools'],
+        'video' => ['label' => 'Videos'],
+    ];
+
+    /**
+     * Support-focused sections used to group published resources on the
+     * dashboard. Order is intentional: grounding techniques that calm the body
+     * come first, then the broader topics.
+     *
+     * `terms` are matched against each resource's title and tags so resources
+     * are classified from their own content. The first matching section wins,
+     * and anything unclassified falls through to `more` so no resource is ever
+     * hidden from the dashboard.
+     */
+    public const SECTIONS = [
+        'breathing' => [
+            'label' => 'Breathing Exercises',
+            'description' => 'Slow, controlled breathing to settle a racing mind and a tense body.',
+            'terms' => ['breathing', 'breath'],
+        ],
+        'grounding' => [
+            'label' => 'Grounding Techniques',
+            'description' => 'Use your senses to return to the present when things feel overwhelming.',
+            'terms' => ['grounding', 'ground', 'panic'],
+        ],
+        'stress' => [
+            'label' => 'Stress Management',
+            'description' => 'Notice stress early and release the tension your body is holding.',
+            'terms' => ['stress', 'burnout', 'relaxation', 'tension'],
+        ],
+        'mindfulness' => [
+            'label' => 'Mindfulness',
+            'description' => 'Short practices that build focus, presence, and calm in your day.',
+            'terms' => ['mindfulness', 'mindful', 'meditation', 'meditate'],
+        ],
+        'journaling' => [
+            'label' => 'Journaling',
+            'description' => 'Write things down to make sense of your feelings and notice patterns over time.',
+            'terms' => ['journal', 'tracking', 'emotions', 'writing'],
+        ],
+        'coping' => [
+            'label' => 'Coping Strategies',
+            'description' => 'Steps to take in the moment when things feel like too much.',
+            'terms' => ['coping', 'crisis', 'emergency', 'urgent'],
+        ],
+        'sleep' => [
+            'label' => 'Sleep and Rest',
+            'description' => 'Build a routine that makes restful sleep easier to come by.',
+            'terms' => ['sleep', 'rest', 'routine', 'health'],
+        ],
+        'anxiety' => [
+            'label' => 'Working with Anxiety',
+            'description' => 'Understand what anxiety is and find steadier ground around people and plans.',
+            'terms' => ['anxiety', 'social', 'confidence', 'nervousness'],
+        ],
+        'more' => [
+            'label' => 'More Resources',
+            'description' => 'Everything else in the library, kept together so nothing gets missed.',
+            'terms' => [],
+        ],
     ];
 
     /**
@@ -31,12 +95,19 @@ class SelfHelpController extends Controller
 
         $query = SelfHelpResource::query()->published();
 
+        $categoryLabels = collect(static::CATEGORIES)
+            ->map(fn ($meta) => $meta['label'])
+            ->all();
+
         if ($search !== '') {
             $query->search($search);
         }
 
         $featured = (clone $query)->featured()->orderByDesc('views_count')->limit(6)->get();
         $all = (clone $query)->latest()->get();
+
+        $featuredIds = $featured->pluck('id')->all();
+        $sections = $this->groupIntoSections($all);
 
         if ($search === '') {
             $savedIds = $user->savedResources()->pluck('resource_id')->all();
@@ -65,21 +136,83 @@ class SelfHelpController extends Controller
             return [
                 'slug' => $slug,
                 'label' => $meta['label'],
-                'icon' => $meta['icon'],
-                'color' => $meta['color'],
                 'count' => SelfHelpResource::published()->where('category', $slug)->count(),
             ];
-        });
+        })->filter(fn ($cat) => $cat['count'] > 0)->values();
 
         return view('selfhelp.index', compact(
-            'featured',
             'all',
+            'sections',
+            'featuredIds',
             'categories',
+            'categoryLabels',
             'savedResources',
             'savedIds',
             'continueProgress',
             'search'
         ));
+    }
+
+    /**
+     * Group published resources into the text sections defined in SECTIONS.
+     *
+     * Classification reads the resource's own title and tags rather than
+     * hard-coded IDs, so newly published resources are picked up
+     * automatically. Empty sections are omitted; `more` guarantees that no
+     * published resource is dropped from the dashboard.
+     *
+     * @param  iterable<SelfHelpResource>  $resources
+     * @return array<int, array{key: string, label: string, description: string, resources: Collection}>
+     */
+    protected function groupIntoSections(iterable $resources): array
+    {
+        $buckets = [];
+
+        foreach ($resources as $resource) {
+            $buckets[$this->sectionKeyFor($resource)][] = $resource;
+        }
+
+        $sections = [];
+
+        foreach (static::SECTIONS as $key => $meta) {
+            if (empty($buckets[$key])) {
+                continue;
+            }
+
+            $sections[] = [
+                'key' => $key,
+                'label' => $meta['label'],
+                'description' => $meta['description'],
+                'resources' => collect($buckets[$key])->values(),
+            ];
+        }
+
+        return $sections;
+    }
+
+    /**
+     * Resolve the section a resource belongs to, or `more` when nothing matches.
+     */
+    protected function sectionKeyFor(SelfHelpResource $resource): string
+    {
+        $haystack = Str::lower(implode(' ', array_filter([
+            $resource->title,
+            implode(' ', $resource->tags_list),
+        ])));
+
+        foreach (static::SECTIONS as $key => $meta) {
+            if (empty($meta['terms'])) {
+                continue;
+            }
+
+            foreach ($meta['terms'] as $term) {
+                if (Str::contains($haystack, $term)) {
+                    return $key;
+                }
+            }
+        }
+
+        return 'more';
     }
 
     /**
@@ -217,7 +350,7 @@ class SelfHelpController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Progress updated (' . $validated['percentage'] . '%).');
+        return back()->with('success', 'Progress updated ('.$validated['percentage'].'%).');
     }
 
     /**

@@ -310,7 +310,7 @@
         .product-card:hover .btn-join i { transform: translateX(6px); }
         .product-card .btn-join:hover { color: var(--green-700); }
 
-        /* ─── Mood Check-in ─── */
+        /* Mood check-in: text-only, no icons or emoji. */
         .mood-section {
             background: white;
             border-radius: 20px;
@@ -318,16 +318,47 @@
             border: 1px solid var(--gray-200);
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
         }
+        .mood-heading {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--green-600);
+            margin-bottom: 6px;
+        }
+        .mood-legend {
+            font-size: 13px;
+            color: var(--gray-500);
+            margin-top: 4px;
+            max-width: 60ch;
+        }
+        .mood-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 18px;
+        }
         .mood-btn {
-            padding: 12px 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+            text-align: left;
+            padding: 14px 16px;
             border-radius: 14px;
             border: 1.5px solid var(--gray-200);
             background: white;
             cursor: pointer;
-            transition: all 0.25s ease;
-            font-weight: 500;
-            font-size: 14px;
-            color: var(--gray-600);
+            transition: border-color 0.25s ease, background 0.25s ease,
+                        box-shadow 0.25s ease, transform 0.25s ease;
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--gray-700);
+        }
+        .mood-btn .mood-caption {
+            font-weight: 400;
+            font-size: 12px;
+            color: var(--gray-400);
         }
         .mood-btn:hover {
             border-color: var(--green-400);
@@ -341,7 +372,31 @@
             color: var(--green-700);
             box-shadow: 0 4px 16px rgba(4, 160, 82, 0.12);
         }
-        .mood-btn .mood-icon { display: block; font-size: 28px; margin-bottom: 4px; }
+        .mood-btn.active .mood-caption { color: var(--green-600); }
+        .mood-btn:focus-visible {
+            outline: 3px solid var(--green-500);
+            outline-offset: 2px;
+        }
+        .mood-response {
+            margin-top: 16px;
+            padding: 14px 18px;
+            background: var(--green-50);
+            border: 1px solid var(--green-200);
+            border-radius: 14px;
+            color: var(--green-800);
+            font-size: 14px;
+            line-height: 1.65;
+        }
+        .mood-response .mood-response-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--green-600);
+            margin-bottom: 4px;
+        }
+
 
         /* ─── Quote Card ─── */
         .quote-card {
@@ -581,8 +636,8 @@
             .hero-title { font-size: 1.6rem; }
             .hero-sub { font-size: 0.9rem; }
             .mood-section { padding: 16px 18px; }
-            .mood-btn { padding: 10px 14px; font-size: 12px; }
-            .mood-btn .mood-icon { font-size: 22px; }
+            .mood-options { grid-template-columns: 1fr; }
+            .mood-btn { padding: 12px 14px; font-size: 14px; }
             .quote-card { padding: 20px; }
             .quote-card p { font-size: 0.95rem; padding-left: 20px; }
             .grid-cols-3 { grid-template-columns: 1fr; }
@@ -750,34 +805,41 @@
                 </a>
             </div>
 
-            <!-- ═══════ FEELING BETTER ═══════ -->
+            <!-- MOOD CHECK-IN -->
             <div class="mood-section mb-6">
-                <div class="flex items-center justify-between flex-wrap gap-3">
-                    <div>
-                        <h3 class="font-semibold text-gray-800 text-lg">How are you feeling today?</h3>
-                        <p class="text-sm text-gray-400">Check in with yourself — it only takes a moment.</p>
-                    </div>
-                    <div class="flex flex-wrap gap-2" id="moodContainer">
-                        <button class="mood-btn" data-mood="great">
-                            <span class="mood-icon"><i class="fas fa-face-laugh" aria-hidden="true"></i></span> Great
-                        </button>
-                        <button class="mood-btn" data-mood="good">
-                            <span class="mood-icon"><i class="fas fa-face-smile" aria-hidden="true"></i></span> Good
-                        </button>
-                        <button class="mood-btn" data-mood="okay">
-                            <span class="mood-icon"><i class="fas fa-face-meh" aria-hidden="true"></i></span> Okay
-                        </button>
-                        <button class="mood-btn" data-mood="not-great">
-                            <span class="mood-icon"><i class="fas fa-face-frown" aria-hidden="true"></i></span> Not Great
-                        </button>
-                        <button class="mood-btn" data-mood="struggling">
-                            <span class="mood-icon"><i class="fas fa-face-sad-tear" aria-hidden="true"></i></span> Struggling
-                        </button>
-                    </div>
+                <span class="mood-heading" id="moodHeading">Daily check-in</span>
+                <h3 class="font-semibold text-gray-800 text-lg">How are you feeling today?</h3>
+                <p class="mood-legend">
+                    Take a moment to notice where you are. Choosing an option simply shows you
+                    something supportive &mdash; nothing is recorded or sent anywhere.
+                </p>
+
+                <div class="mood-options" id="moodContainer" role="group" aria-labelledby="moodHeading">
+                    <button type="button" class="mood-btn" data-mood="great" aria-pressed="false">
+                        Very Good
+                        <span class="mood-caption">Steady and positive</span>
+                    </button>
+                    <button type="button" class="mood-btn" data-mood="good" aria-pressed="false">
+                        Good
+                        <span class="mood-caption">Mostly okay</span>
+                    </button>
+                    <button type="button" class="mood-btn" data-mood="okay" aria-pressed="false">
+                        Okay
+                        <span class="mood-caption">Neutral, in between</span>
+                    </button>
+                    <button type="button" class="mood-btn" data-mood="not-great" aria-pressed="false">
+                        Low
+                        <span class="mood-caption">Not my best today</span>
+                    </button>
+                    <button type="button" class="mood-btn" data-mood="struggling" aria-pressed="false">
+                        Very Low
+                        <span class="mood-caption">Having a hard time</span>
+                    </button>
                 </div>
-                <div id="moodResponse" class="hidden mt-3 p-3 bg-green-50 rounded-xl border border-[#04A052] text-[#027039] text-sm">
-                    <i class="fas fa-check-circle text-[#04A052] mr-2"></i>
-                    <span id="moodMessage">You're not alone. We're here to listen.</span>
+
+                <div id="moodResponse" class="mood-response hidden" role="status" aria-live="polite">
+                    <span class="mood-response-label">Thank you for checking in</span>
+                    <span id="moodMessage">You are not alone. We are here to listen.</span>
                 </div>
             </div>
 
@@ -944,26 +1006,33 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
 
-            // ── Mood Check-in ──
+            // Mood check-in. Deliberately client-side only: no value is sent to
+            // the server, stored, or used to classify the visitor.
             const moodBtns = document.querySelectorAll('.mood-btn');
             const moodResponse = document.getElementById('moodResponse');
             const moodMessage = document.getElementById('moodMessage');
 
             const moodMessages = {
-                'great': "We're so glad you're feeling great! Keep that positive energy going! ",
-                'good': "Good to hear! Remember, we're here if you need anything. ",
-                'okay': "It's okay to feel okay. If you want to talk, we're here. ",
-                'not-great': "Thank you for being honest. You're not alone. We're here to listen. ",
-                'struggling': "We hear you. You are not alone. Let's talk.  You matter."
+                'great': "We are glad you are feeling well today. Keep holding on to whatever is helping.",
+                'good': "Good to hear. Remember we are here whenever you need us.",
+                'okay': "Feeling okay is a perfectly valid place to be. We are here if you want to talk.",
+                'not-great': "Thank you for being honest about how you feel. You are not alone here.",
+                'struggling': "It sounds like today has been hard. You matter, and support is available."
             };
 
-            if (moodBtns.length) {
+            if (moodBtns.length && moodResponse && moodMessage) {
                 moodBtns.forEach(btn => {
                     btn.addEventListener('click', function() {
-                        moodBtns.forEach(b => b.classList.remove('active'));
+                        moodBtns.forEach(b => {
+                            b.classList.remove('active');
+                            b.setAttribute('aria-pressed', 'false');
+                        });
                         this.classList.add('active');
+                        this.setAttribute('aria-pressed', 'true');
+
                         const mood = this.dataset.mood;
-                        moodMessage.textContent = moodMessages[mood] || "You're not alone. We're here to listen.";
+                        moodMessage.textContent = moodMessages[mood]
+                            || "You are not alone. We are here to listen.";
                         moodResponse.classList.remove('hidden');
                     });
                 });

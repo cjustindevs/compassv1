@@ -8,6 +8,8 @@
     <title>COMPASS – {{ $resource->title }}</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
+    {{-- Loaded only for the shared sidebar/nav chrome, which still uses icon
+         classes. No icon markup is used inside <main> on this page. --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
@@ -31,50 +33,72 @@
 
         .main-content { margin-left: 260px; padding: 24px 32px 80px; min-height: 100vh; }
 
+        .menu-btn {
+            display: none; align-items: center; gap: 8px; background: #ffffff;
+            border: 1px solid var(--gray-200); border-radius: 12px; color: var(--gray-600);
+            font-size: 13px; font-weight: 600; padding: 8px 14px; cursor: pointer;
+            transition: border-color 0.2s ease, color 0.2s ease;
+        }
+        .menu-btn::before {
+            content: ''; width: 16px; height: 2px; border-radius: 2px;
+            background: currentColor; box-shadow: 0 5px 0 currentColor, 0 -5px 0 currentColor;
+        }
+        .menu-btn:hover { border-color: var(--green-400); color: var(--green-700); }
+        @media (max-width: 768px) { .menu-btn { display: inline-flex; } }
+
+        .back-link {
+            display: inline-flex; align-items: center; background: white; border: 1px solid var(--gray-200);
+            border-radius: 12px; color: var(--gray-600); font-size: 13px; font-weight: 600;
+            padding: 9px 16px; text-decoration: none;
+            transition: border-color 0.2s ease, color 0.2s ease;
+        }
+        .back-link:hover { border-color: var(--green-400); color: var(--green-700); }
+
         .hero-card {
             background: white; border: 1px solid var(--gray-200); border-radius: 24px;
-            padding: 32px; position: relative; overflow: hidden;
+            padding: 32px; margin-bottom: 24px;
             background-image: linear-gradient(130deg, #ffffff 60%, var(--green-50));
         }
-        .hero-card .big-icon {
-            width: 76px; height: 76px; border-radius: 22px; background: var(--green-50);
-            display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 18px;
+        .hero-card .eyebrow {
+            display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+            text-transform: uppercase; color: var(--green-600); margin-bottom: 10px;
         }
+        .hero-card h1 { font-weight: 800; color: var(--gray-800); line-height: 1.25; }
+        .hero-card .lede { color: var(--gray-500); margin-top: 10px; max-width: 65ch; line-height: 1.7; }
+
         .chip {
-            display: inline-flex; align-items: center; gap: 6px;
-            background: var(--gray-100); color: var(--gray-600);
+            display: inline-flex; align-items: center; background: var(--gray-100); color: var(--gray-600);
             font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 20px;
         }
         .chip.green { background: var(--green-50); color: var(--green-700); }
-        .chip.amber { background: #FEF3C7; color: #B45309; }
-        .chip.purple { background: #EDE9FE; color: #6D28D9; }
+        .chip.tag { background: transparent; border: 1px solid var(--gray-200); color: var(--gray-500); }
 
         .btn {
             display: inline-flex; align-items: center; justify-content: center; gap: 8px;
             font-weight: 600; font-size: 14px; padding: 11px 22px; border-radius: 12px;
-            border: none; cursor: pointer; transition: all 0.25s ease; text-decoration: none;
+            border: none; cursor: pointer; transition: all 0.2s ease; text-decoration: none;
         }
+        .btn:disabled { cursor: default; opacity: 0.75; }
         .btn-primary { background: linear-gradient(135deg, var(--green-500), var(--green-600)); color: white; box-shadow: 0 4px 16px rgba(4,160,82,0.25); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(4,160,82,0.35); }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(4,160,82,0.35); }
         .btn-outline { background: white; border: 1px solid var(--gray-300); color: var(--gray-600); }
         .btn-outline:hover { border-color: var(--green-500); color: var(--green-700); }
         .btn-saved { background: var(--green-50); border: 1px solid var(--green-300); color: var(--green-700); }
-        .btn-danger-outline { background: white; border: 1px solid #FECACA; color: #DC2626; }
-        .btn-danger-outline:hover { background: #FEF2F2; }
 
         .content-card {
             background: white; border: 1px solid var(--gray-200); border-radius: 24px;
             padding: 32px 36px; line-height: 1.85; font-size: 15px; color: var(--gray-600);
+            margin-bottom: 24px;
         }
         .content-card h2 {
             font-size: 19px; font-weight: 800; color: var(--gray-800);
-            margin: 28px 0 10px; padding-left: 14px; border-left: 4px solid var(--green-500);
-            line-height: 1.4;
+            margin: 28px 0 10px; padding-left: 14px; border-left: 4px solid var(--green-500); line-height: 1.4;
         }
         .content-card h2:first-child { margin-top: 0; }
         .content-card p { margin-bottom: 12px; }
         .content-card strong { color: var(--gray-800); }
 
+        .progress-panel { background: rgba(255,255,255,0.8); border: 1px solid var(--gray-200); border-radius: 18px; padding: 20px; }
         .progress-track { height: 8px; background: var(--gray-100); border-radius: 20px; overflow: hidden; }
         .progress-track .fill { height: 100%; background: linear-gradient(90deg, var(--green-400), var(--green-600)); border-radius: 20px; transition: width 0.5s ease; }
 
@@ -83,22 +107,29 @@
             -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
             background: var(--green-500); border: 3px solid white; box-shadow: 0 2px 8px rgba(4,160,82,0.4); cursor: pointer;
         }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px; height: 20px; border-radius: 50%; background: var(--green-500);
+            border: 3px solid white; box-shadow: 0 2px 8px rgba(4,160,82,0.4); cursor: pointer;
+        }
 
         .related-card {
             background: white; border: 1px solid var(--gray-200); border-radius: 20px;
-            padding: 16px; display: flex; gap: 12px; align-items: center; text-decoration: none;
-            transition: all 0.3s ease;
+            padding: 18px; display: block; text-decoration: none; height: 100%;
+            transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
         }
         .related-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(4,160,82,0.08); border-color: var(--green-300); }
-        .related-card .icon { width: 42px; height: 42px; border-radius: 12px; background: var(--green-50); display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+        .related-card h3 { font-weight: 700; font-size: 15px; color: var(--gray-800); line-height: 1.35; }
+        .related-card .meta { font-size: 12px; color: var(--gray-400); margin-top: 6px; }
 
         .flash-banner {
-            background: var(--green-500); color: white; border-radius: 14px; padding: 12px 18px;
-            font-size: 14px; font-weight: 500; display: none; align-items: center; gap: 10px;
-            box-shadow: 0 8px 28px rgba(4,160,82,0.3);
+            background: var(--green-50); border: 1px solid var(--green-200); color: var(--green-800);
+            border-radius: 14px; padding: 12px 18px; font-size: 14px; font-weight: 500;
+            display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
         }
-        .flash-banner.show { display: flex; animation: slideDown 0.4s ease; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .flash-banner button {
+            margin-left: auto; background: none; border: none; cursor: pointer;
+            color: var(--green-700); font-size: 12px; font-weight: 600; text-decoration: underline;
+        }
 
         .toast {
             position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(120%);
@@ -107,6 +138,11 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
         .toast.show { transform: translateX(-50%) translateY(0); }
+
+        :focus-visible { outline: 3px solid var(--green-500); outline-offset: 2px; border-radius: 6px; }
+        @media (prefers-reduced-motion: reduce) {
+            * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+        }
 
         @media (max-width: 1024px) { .main-content { padding: 20px 24px 80px; } }
         @media (max-width: 768px) {
@@ -120,74 +156,67 @@
     <main class="main-content">
 
         @if(session('success'))
-            <div class="flash-banner show mb-4">
-                <i class="fas fa-check-circle"></i>
+            <div class="flash-banner" role="status" aria-live="polite">
                 <span>{{ session('success') }}</span>
-                <button class="ml-auto text-lg leading-none" onclick="this.parentElement.remove()">&times;</button>
+                <button type="button" onclick="this.parentElement.remove()">Dismiss</button>
             </div>
         @endif
 
-        <!-- Top Bar -->
+        {{-- Top bar --}}
         <div class="flex items-center justify-between mb-6 gap-4 flex-wrap">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <a href="{{ url()->previous() == url()->current() ? route('selfhelp') : url()->previous() }}" class="text-xs font-semibold text-[#04A052] hover:underline">
-                    <i class="fas fa-arrow-left mr-1"></i>Back
-                </a>
+                <button type="button" class="menu-btn" id="hamburgerBtn">Menu</button>
+                <a href="{{ url()->previous() == url()->current() ? route('selfhelp') : url()->previous() }}" class="back-link">Back</a>
             </div>
-            <div class="flex items-center gap-2">
-                <button class="btn {{ $isSaved ? 'btn-saved' : 'btn-outline' }}" id="saveBtn" onclick="toggleSave()">
-                    <i class="fas {{ $isSaved ? 'fa-bookmark' : 'fa-bookmark' }} mr-1"></i>
-                    <span id="saveLabel">{{ $isSaved ? 'Saved' : 'Save' }}</span>
-                </button>
-            </div>
+            <button type="button" class="btn {{ $isSaved ? 'btn-saved' : 'btn-outline' }}" id="saveBtn" onclick="toggleSave()">
+                <span id="saveLabel">{{ $isSaved ? 'Saved' : 'Save' }}</span>
+            </button>
         </div>
 
-        <!-- Hero -->
+        {{-- Hero --}}
         <div class="hero-card mb-6">
-            <div class="big-icon"><x-ui-icon :value="$resource->icon" /></div>
-            <h1 class="text-2xl md:text-3xl font-extrabold text-gray-800 leading-tight">{{ $resource->title }}</h1>
-            <p class="text-gray-500 text-sm mt-2 max-w-2xl">{{ $resource->description }}</p>
+            <span class="eyebrow">{{ \Illuminate\Support\Str::headline($resource->category) }}</span>
+            <h1 class="text-2xl md:text-3xl font-extrabold">{{ $resource->title }}</h1>
+            <p class="lede text-sm">{{ $resource->description }}</p>
 
             <div class="flex flex-wrap items-center gap-2 mt-5">
                 <a href="{{ route('selfhelp.category', $resource->category) }}" class="chip green">
-                    <i class="fas fa-layer-group"></i>{{ ucfirst($resource->category) }}
+                    {{ \App\Http\Controllers\SelfHelpController::CATEGORIES[$resource->category]['label'] ?? \Illuminate\Support\Str::headline($resource->category) }}
                 </a>
-                <span class="chip"><i class="far fa-clock"></i>{{ $resource->duration }}</span>
-                <span class="chip purple"><i class="fas fa-signal"></i>{{ $resource->difficulty_label }}</span>
+                @if($resource->duration)
+                    <span class="chip">{{ $resource->duration }}</span>
+                @endif
+                <span class="chip">{{ $resource->difficulty_label }}</span>
                 @foreach($resource->tags_list as $tag)
-                    <span class="chip amber">#{{ $tag }}</span>
+                    <span class="chip tag">#{{ $tag }}</span>
                 @endforeach
                 @if($resource->views_count > 0)
-                    <span class="chip"><i class="far fa-eye"></i>{{ number_format($resource->views_count) }} views</span>
+                    <span class="chip">{{ number_format($resource->views_count) }} views</span>
                 @endif
                 @if($progress->is_completed)
-                    <span class="chip green"><i class="fas fa-check-circle"></i>Completed</span>
+                    <span class="chip green">Completed</span>
                 @endif
             </div>
 
-            @if(in_array($resource->category, ['exercise', 'meditation', 'tool']))
-                <div class="mt-8 bg-white/80 border border-gray-200 rounded-2xl p-5">
+            @if(in_array($resource->category, ['exercise', 'meditation', 'tool'], true))
+                <div class="progress-panel mt-8">
                     <div class="flex items-center justify-between mb-3">
-                        <h3 class="font-bold text-sm text-gray-800"><i class="fas fa-chart-line text-[#04A052] mr-2"></i>Your progress</h3>
+                        <h2 class="font-bold text-sm text-gray-800">Your progress</h2>
                         <span class="text-sm font-extrabold text-[#04A052]" id="progressValue">{{ $progress->progress_percentage }}%</span>
                     </div>
-                    <div class="progress-track mb-4">
+                    <div class="progress-track mb-4" role="progressbar" aria-valuenow="{{ $progress->progress_percentage }}" aria-valuemin="0" aria-valuemax="100" aria-label="Your progress on this resource">
                         <div class="fill" id="progressFill" style="width: {{ $progress->progress_percentage }}%"></div>
                     </div>
                     <div class="flex flex-wrap items-center gap-3">
                         <div class="flex-1 min-w-[200px]">
+                            <label for="progressSlider" class="sr-only">Progress percentage</label>
                             <input type="range" id="progressSlider" min="0" max="100" step="5"
                                    value="{{ $progress->progress_percentage }}">
                         </div>
                         <div class="flex gap-2">
-                            <button class="btn btn-outline text-xs px-4 py-2" id="updateProgressBtn" onclick="saveProgress()">
-                                <i class="fas fa-save mr-1"></i>Update
-                            </button>
-                            <button class="btn btn-primary text-xs px-4 py-2" id="completeBtn" onclick="markComplete()">
-                                <i class="fas fa-check mr-1"></i><x-ui-icon :value="$progress->is_completed ? 'Completed ' : 'Mark complete'" />
+                            <button type="button" class="btn btn-outline text-xs px-4 py-2" id="updateProgressBtn" onclick="saveProgress()">Update</button>
+                            <button type="button" class="btn btn-primary text-xs px-4 py-2" id="completeBtn" onclick="markComplete()">
+                                <span id="completeLabel">{{ $progress->is_completed ? 'Completed' : 'Mark complete' }}</span>
                             </button>
                         </div>
                     </div>
@@ -195,7 +224,7 @@
             @endif
         </div>
 
-        <!-- Content -->
+        {{-- Content --}}
         <div class="content-card mb-6">
             @php
                 $sections = preg_split('/\n\s*\n/', $resource->content ?? '');
@@ -209,34 +238,31 @@
             @endforeach
         </div>
 
-        <!-- Related -->
+        {{-- Related --}}
         @if($related->count() > 0)
             <div class="mb-6">
-                <h2 class="font-extrabold text-lg text-gray-800 mb-4">
-                    <i class="fas fa-link text-[#04A052] mr-2"></i>Related resources
-                </h2>
+                <h2 class="font-extrabold text-lg text-gray-800 mb-4">Related resources</h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     @foreach($related as $item)
                         <a href="{{ route('selfhelp.show', $item->id) }}" class="related-card">
-                            <div class="icon"><x-ui-icon :value="$item->icon" /></div>
-                            <div class="min-w-0">
-                                <h4 class="font-semibold text-sm text-gray-800 truncate">{{ $item->title }}</h4>
-                                <p class="text-xs text-gray-400 mt-0.5">{{ $item->duration }} · {{ ucfirst($item->category) }}</p>
-                            </div>
+                            <h3>{{ $item->title }}</h3>
+                            <p class="meta">
+                                {{ \App\Http\Controllers\SelfHelpController::CATEGORIES[$item->category]['label'] ?? \Illuminate\Support\Str::headline($item->category) }}
+                                @if($item->duration) &middot; {{ $item->duration }} @endif
+                            </p>
                         </a>
                     @endforeach
                 </div>
             </div>
         @endif
 
-        <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
-            Be gentle with yourself — every practice counts.
-        </div>
+        <p class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
+            Be gentle with yourself &mdash; every practice counts.
+        </p>
 
     </main>
 
-    <!-- Hidden forms for non-JS fallback -->
+    {{-- Hidden forms for non-JS fallback --}}
     <form method="POST" action="{{ route('selfhelp.save', $resource->id) }}" id="saveForm" style="display:none">@csrf</form>
     <form method="POST" action="{{ route('selfhelp.unsave', $resource->id) }}" id="unsaveForm" style="display:none">@csrf</form>
     <form method="POST" action="{{ route('selfhelp.progress', $resource->id) }}" id="progressForm" style="display:none">
@@ -245,7 +271,7 @@
     </form>
     <form method="POST" action="{{ route('selfhelp.complete', $resource->id) }}" id="completeForm" style="display:none">@csrf</form>
 
-    <div class="toast" id="toast"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     @include('partials.sidebar', [
         'active' => ['selfhelp*'],
@@ -268,17 +294,25 @@
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
             });
+            if (!res.ok) throw new Error('Request failed');
             return res.json();
         }
 
         async function toggleSave() {
             const btn = document.getElementById('saveBtn');
             const label = document.getElementById('saveLabel');
-            const data = await post(isSaved ? '{{ route("selfhelp.unsave", $resource->id) }}' : '{{ route("selfhelp.save", $resource->id) }}');
-            isSaved = data.saved;
-            label.textContent = isSaved ? 'Saved' : 'Save';
-            btn.className = 'btn ' + (isSaved ? 'btn-saved' : 'btn-outline');
-            showToast(isSaved ? 'Saved to your collection.' : 'Removed from your collection.');
+            btn.disabled = true;
+            try {
+                const data = await post(isSaved ? '{{ route("selfhelp.unsave", $resource->id) }}' : '{{ route("selfhelp.save", $resource->id) }}');
+                isSaved = data.saved;
+                label.textContent = isSaved ? 'Saved' : 'Save';
+                btn.className = 'btn ' + (isSaved ? 'btn-saved' : 'btn-outline');
+                showToast(isSaved ? 'Saved to your collection.' : 'Removed from your collection.');
+            } catch (e) {
+                showToast('Could not update your collection. Please try again.');
+            } finally {
+                btn.disabled = false;
+            }
         }
 
         const slider = document.getElementById('progressSlider');
@@ -291,14 +325,23 @@
 
         async function saveProgress() {
             if (!slider) return;
+            const btn = document.getElementById('updateProgressBtn');
+            btn.disabled = true;
             document.getElementById('progressInput').value = slider.value;
-            await post('{{ route("selfhelp.progress", $resource->id) }}?percentage=' + slider.value).catch(function () {
+            try {
+                await post('{{ route("selfhelp.progress", $resource->id) }}?percentage=' + slider.value);
+                showToast('Progress saved (' + slider.value + '%).');
+            } catch (e) {
                 document.getElementById('progressForm').submit();
-            });
-            showToast('Progress saved (' + slider.value + '%).');
+            } finally {
+                btn.disabled = false;
+            }
         }
 
         async function markComplete() {
+            const btn = document.getElementById('completeBtn');
+            const label = document.getElementById('completeLabel');
+            btn.disabled = true;
             try {
                 await post('{{ route("selfhelp.complete", $resource->id) }}');
                 if (slider) {
@@ -306,11 +349,10 @@
                     document.getElementById('progressValue').textContent = '100%';
                     document.getElementById('progressFill').style.width = '100%';
                 }
-                const btn = document.getElementById('completeBtn');
-                btn.innerHTML = '<i class="fas fa-check mr-1"></i>Completed ';
-                btn.disabled = true;
-                showToast('Great job! Resource marked as complete. ');
+                label.textContent = 'Completed';
+                showToast('Great job! Resource marked as complete.');
             } catch (e) {
+                btn.disabled = false;
                 document.getElementById('completeForm').submit();
             }
         }

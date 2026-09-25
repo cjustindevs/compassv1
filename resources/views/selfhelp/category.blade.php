@@ -8,6 +8,8 @@
     <title>COMPASS – {{ $meta['label'] }}</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
+    {{-- Loaded only for the shared sidebar/nav chrome, which still uses icon
+         classes. No icon markup is used inside <main> on this page. --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
@@ -31,60 +33,88 @@
 
         .main-content { margin-left: 260px; padding: 24px 32px 80px; min-height: 100vh; }
 
+        .menu-btn {
+            display: none; align-items: center; gap: 8px; background: #ffffff;
+            border: 1px solid var(--gray-200); border-radius: 12px; color: var(--gray-600);
+            font-size: 13px; font-weight: 600; padding: 8px 14px; cursor: pointer;
+            transition: border-color 0.2s ease, color 0.2s ease;
+        }
+        .menu-btn::before {
+            content: ''; width: 16px; height: 2px; border-radius: 2px;
+            background: currentColor; box-shadow: 0 5px 0 currentColor, 0 -5px 0 currentColor;
+        }
+        .menu-btn:hover { border-color: var(--green-400); color: var(--green-700); }
+        @media (max-width: 768px) { .menu-btn { display: inline-flex; } }
+
         .search-box {
             display: flex; align-items: center; gap: 10px;
             background: white; border: 1px solid var(--gray-200);
             border-radius: 14px; padding: 10px 16px; flex: 1; min-width: 220px;
-            transition: all 0.2s ease;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
         .search-box:focus-within { border-color: var(--green-500); box-shadow: 0 0 0 4px rgba(4,160,82,0.08); }
-        .search-box i { color: var(--gray-400); }
-        .search-box input { border: none; outline: none; background: transparent; flex: 1; font-size: 14px; color: var(--gray-700); }
+        .search-box input { border: none; outline: none; background: transparent; flex: 1; font-size: 14px; color: var(--gray-700); width: 100%; }
 
-        .category-header {
-            background: white; border: 1px solid var(--gray-200); border-radius: 24px;
-            padding: 28px 32px; display: flex; align-items: center; gap: 20px; margin-bottom: 24px;
-            background-image: linear-gradient(120deg, #ffffff 55%, var(--green-50));
+        .link-btn {
+            display: inline-flex; align-items: center; background: white;
+            border: 1px solid var(--gray-200); border-radius: 12px; color: var(--gray-600);
+            font-size: 13px; font-weight: 600; padding: 9px 16px; cursor: pointer;
+            text-decoration: none; white-space: nowrap;
+            transition: border-color 0.2s ease, color 0.2s ease;
         }
-        .category-header .big-icon {
-            width: 72px; height: 72px; border-radius: 22px; font-size: 34px;
-            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        .link-btn:hover { border-color: var(--green-400); color: var(--green-700); }
+
+        .page-header {
+            background: white; border: 1px solid var(--gray-200); border-radius: 22px;
+            padding: 26px 30px; margin-bottom: 24px;
+            background-image: linear-gradient(120deg, #ffffff 60%, var(--green-50));
         }
+        .page-header .eyebrow {
+            display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+            text-transform: uppercase; color: var(--green-600); margin-bottom: 6px;
+        }
+        .page-header h1 { font-weight: 800; font-size: 22px; color: var(--gray-800); line-height: 1.3; }
+        .page-header .meta { font-size: 13px; color: var(--gray-500); margin-top: 8px; }
 
         .resource-card {
-            background: white; border-radius: 24px; padding: 22px;
-            border: 1px solid var(--gray-200); transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            cursor: pointer; position: relative; overflow: hidden; display: flex; flex-direction: column;
-            text-decoration: none;
+            background: white; border: 1px solid var(--gray-200); border-radius: 20px;
+            padding: 20px; display: flex; flex-direction: column; text-decoration: none; height: 100%;
+            transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
         }
-        .resource-card::after {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-            background: linear-gradient(90deg, var(--green-400), var(--green-500), var(--green-600));
-            opacity: 0; transition: opacity 0.3s ease;
-        }
-        .resource-card:hover { transform: translateY(-6px); box-shadow: 0 20px 60px rgba(4, 160, 82, 0.10); border-color: var(--green-300); }
-        .resource-card:hover::after { opacity: 1; }
-        .resource-card .icon-wrap {
-            width: 54px; height: 54px; border-radius: 16px; background: var(--green-50);
-            display: flex; align-items: center; justify-content: center; font-size: 25px;
-            margin-bottom: 14px; transition: all 0.3s ease;
-        }
-        .resource-card:hover .icon-wrap { background: var(--green-500); transform: scale(1.06); }
-        .resource-card h3 { font-weight: 700; font-size: 16px; color: var(--gray-800); margin-bottom: 6px; line-height: 1.35; }
-        .resource-card p { font-size: 13px; color: var(--gray-500); line-height: 1.6; margin-bottom: 14px; flex: 1; }
-        .resource-card .meta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--gray-400); flex-wrap: wrap; }
-        .resource-card .meta .tag {
-            background: var(--green-50); color: var(--green-700); font-weight: 600;
-            padding: 3px 10px; border-radius: 20px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em;
-        }
-        .resource-card .meta .chip { background: var(--gray-100); padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+        .resource-card:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(4,160,82,0.10); border-color: var(--green-300); }
+        .resource-card:focus-visible { outline: 3px solid var(--green-500); outline-offset: 2px; }
 
-        .empty-state { background: white; border-radius: 24px; border: 1px dashed var(--gray-300); padding: 48px 24px; text-align: center; }
+        .kind {
+            align-self: flex-start; font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+            text-transform: uppercase; color: var(--green-700); background: var(--green-50);
+            border: 1px solid var(--green-100); padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+        }
+        .resource-card h2 { font-weight: 700; font-size: 16px; color: var(--gray-800); margin-bottom: 6px; line-height: 1.35; }
+        .resource-card .summary { font-size: 13px; color: var(--gray-500); line-height: 1.65; margin-bottom: 14px; flex: 1; }
+
+        .meta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--gray-500); flex-wrap: wrap; }
+        .meta .chip { background: var(--gray-100); padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+        .meta .chip.saved { background: var(--green-50); color: var(--green-700); font-weight: 600; }
+        .meta .chip.tag { color: var(--gray-400); }
+
+        .empty-state { background: white; border: 1px dashed var(--gray-300); border-radius: 20px; padding: 40px 24px; text-align: center; }
+
+        .btn-primary {
+            display: inline-flex; align-items: center; justify-content: center; margin-top: 16px;
+            font-weight: 600; font-size: 14px; padding: 10px 20px; border-radius: 12px;
+            border: none; cursor: pointer; text-decoration: none; color: white;
+            background: linear-gradient(135deg, var(--green-500), var(--green-600));
+        }
+
+        :focus-visible { outline: 3px solid var(--green-500); outline-offset: 2px; border-radius: 6px; }
+        @media (prefers-reduced-motion: reduce) {
+            * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+        }
 
         @media (max-width: 1024px) { .main-content { padding: 20px 24px 80px; } }
         @media (max-width: 768px) {
             .main-content { margin-left: 0; padding: 16px 16px 100px; }
-            .category-header { padding: 20px; }
+            .page-header { padding: 20px; }
         }
     </style>
 </head>
@@ -92,53 +122,56 @@
 
     <main class="main-content">
 
-        <!-- Top Bar -->
+        {{-- Top bar --}}
         <div class="flex items-center justify-between mb-6 gap-4 flex-wrap">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
-                </button>
+                <button type="button" class="menu-btn" id="hamburgerBtn">Menu</button>
                 <div>
-                    <a href="{{ route('selfhelp') }}" class="text-xs font-semibold text-[#04A052] hover:underline">
-                        <i class="fas fa-arrow-left mr-1"></i>All resources
-                    </a>
-                    <h1 class="text-xl md:text-2xl font-extrabold text-gray-800 mt-1">{{ $meta['label'] }}</h1>
+                    <a href="{{ route('selfhelp') }}" class="link-btn">All resources</a>
+                    <h1 class="text-xl md:text-2xl font-extrabold text-gray-800 mt-2">{{ $meta['label'] }}</h1>
                 </div>
             </div>
-            <form method="GET" action="{{ route('selfhelp.category', $category) }}" class="flex items-center gap-2 w-full md:w-auto">
+            <form method="GET" action="{{ route('selfhelp.category', $category) }}" class="flex items-center gap-2 w-full md:w-auto" role="search">
+                <label for="categorySearch" class="sr-only">Search {{ strtolower($meta['label']) }}</label>
                 <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" name="q" value="{{ $search }}" placeholder="Search {{ strtolower($meta['label']) }}…">
+                    <input type="search" id="categorySearch" name="q" value="{{ $search }}"
+                           placeholder="Search {{ strtolower($meta['label']) }}">
                 </div>
+                @if($search !== '')
+                    <a href="{{ route('selfhelp.category', $category) }}" class="link-btn">Clear</a>
+                @endif
             </form>
         </div>
 
-        <!-- Category header -->
-        <div class="category-header">
-            <div class="big-icon" style="background: var(--green-50);"><x-ui-icon :value="$meta['icon']" /></div>
-            <div>
-                <h2 class="font-extrabold text-xl text-gray-800">{{ $meta['label'] }}</h2>
-                <p class="text-sm text-gray-500 mt-1">{{ $resources->count() }} {{ $resources->count() === 1 ? 'resource' : 'resources' }} available
-                    @if($search !== '') · searching "<strong>{{ $search }}</strong>" @endif
-                </p>
-            </div>
+        {{-- Category header --}}
+        <div class="page-header">
+            <span class="eyebrow">Format</span>
+            <h2>{{ $meta['label'] }}</h2>
+            <p class="meta">
+                {{ $resources->count() }} {{ $resources->count() === 1 ? 'resource' : 'resources' }} available
+                @if($search !== '')
+                    &mdash; searching &ldquo;<strong>{{ $search }}</strong>&rdquo;
+                @endif
+            </p>
         </div>
 
         @if($resources->count() > 0)
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 @foreach($resources as $resource)
                     <a href="{{ route('selfhelp.show', $resource->id) }}" class="resource-card">
-                        <div class="icon-wrap"><x-ui-icon :value="$resource->icon" /></div>
-                        <h3>{{ $resource->title }}</h3>
-                        <p>{{ \Illuminate\Support\Str::limit($resource->description, 90) }}</p>
+                        <span class="kind">{{ $meta['label'] }}</span>
+                        <h2>{{ $resource->title }}</h2>
+                        <p class="summary">{{ \Illuminate\Support\Str::limit($resource->description, 100) }}</p>
                         <div class="meta">
-                            <span class="chip"><i class="far fa-clock mr-1"></i>{{ $resource->duration }}</span>
-                            <span class="chip"><i class="fas fa-signal mr-1"></i>{{ $resource->difficulty_label }}</span>
+                            @if($resource->duration)
+                                <span class="chip">{{ $resource->duration }}</span>
+                            @endif
+                            <span class="chip">{{ $resource->difficulty_label }}</span>
                             @foreach(array_slice($resource->tags_list, 0, 2) as $tag)
-                                <span class="chip">#{{ $tag }}</span>
+                                <span class="chip tag">#{{ $tag }}</span>
                             @endforeach
                             @if(in_array($resource->id, $savedIds))
-                                <i class="fas fa-bookmark text-[#04A052] ml-auto" title="Saved"></i>
+                                <span class="chip saved">Saved</span>
                             @endif
                         </div>
                     </a>
@@ -148,9 +181,11 @@
             <div class="empty-state">
                 <h3 class="font-semibold text-gray-800">No resources found</h3>
                 <p class="text-sm text-gray-500 mt-1">Try a different search, or check back soon.</p>
-                <a href="{{ route('selfhelp.category', $category) }}" class="inline-block mt-4 text-sm font-semibold text-[#04A052] hover:underline">
-                    <i class="fas fa-times mr-1"></i>Clear search
-                </a>
+                @if($search !== '')
+                    <a href="{{ route('selfhelp.category', $category) }}" class="btn-primary">Clear search</a>
+                @else
+                    <a href="{{ route('selfhelp') }}" class="btn-primary">Browse all resources</a>
+                @endif
             </div>
         @endif
 
