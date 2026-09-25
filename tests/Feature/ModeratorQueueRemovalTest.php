@@ -20,6 +20,16 @@ class ModeratorQueueRemovalTest extends TestCase
         return [$queue, $session];
     }
 
+    public function test_browser_form_removes_waiting_request_and_redirects_with_feedback(): void
+    {
+        [$queue, $session] = $this->requestFixture();
+        $this->actingAs(User::factory()->create(['role'=>'moderator','is_active'=>true]));
+        $this->get(route('moderator.queue'))->assertOk()->assertSee('name="_method" value="DELETE"',false)->assertDontSee('data-remove-url',false);
+        $this->post(route('moderator.queue.remove',$queue->id),['_method'=>'DELETE'])->assertRedirect(route('moderator.queue'))->assertSessionHas('success');
+        $this->assertSame('cancelled',$session->fresh()->session_status);
+        $this->post(route('moderator.queue.remove',$queue->id),['_method'=>'DELETE'])->assertRedirect(route('moderator.queue'))->assertSessionHas('error');
+    }
+
     public function test_url_id_is_used_and_cancelled_request_cannot_be_removed_again(): void
     {
         [$queue, $session] = $this->requestFixture();

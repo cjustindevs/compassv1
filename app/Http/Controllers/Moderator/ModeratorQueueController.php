@@ -129,13 +129,20 @@ class ModeratorQueueController extends Controller
      * Remove a request from the queue entirely (moderator action).
      * Returns JSON so the queue UI can update live without a full reload.
      */
-    public function removeFromQueue(Request $request, int $id): JsonResponse
+    public function removeFromQueue(Request $request, int $id): JsonResponse|RedirectResponse
     {
         abort_unless($request->user()?->role === 'moderator' && $request->user()->is_active, 403);
-        $message = app(ModeratorQueueRemoval::class)->remove($id);
+        try {
+            $message = app(ModeratorQueueRemoval::class)->remove($id);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $exception) {
+            if ($request->expectsJson() || $exception->getStatusCode() !== 409) throw $exception;
+            return redirect()->route('moderator.queue')->with('error', $exception->getMessage());
+        }
         $this->broadcastSafely(new QueueUpdated(Auth::id()));
 
-        return response()->json(['success' => true, 'message' => $message]);
+        return $request->expectsJson()
+            ? response()->json(['success' => true, 'message' => $message])
+            : redirect()->route('moderator.queue')->with('success', $message);
     }
 
     public function priority(Request $request, QueueRequest $queue): RedirectResponse

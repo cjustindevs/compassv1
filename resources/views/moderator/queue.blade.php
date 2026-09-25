@@ -313,11 +313,13 @@
                                     <i class="fas fa-user-check"></i> Assign
                                 </button>
                             </form>
-                            <button type="button"
-                                    class="btn-outline btn-danger whitespace-nowrap"
-                                    data-remove-url="{{ route('moderator.queue.remove', $item->id) }}">
+                            <form method="POST" action="{{ route('moderator.queue.remove', $item->id, false) }}" onsubmit="if (this.dataset.submitting) return false; if (!window.confirm('Remove this queue entry? Waiting requests will be cancelled; unaccepted assignments will return to waiting. Started sessions cannot be removed.')) return false; this.dataset.submitting = '1'; this.querySelector('button').disabled = true;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn-outline btn-danger whitespace-nowrap">
                                 <i class="fas fa-times"></i> Remove
                             </button>
+                            </form>
                         </div>
                     </div>
                 @empty
@@ -384,7 +386,11 @@
                                     <i class="fas fa-sync-alt"></i> Reassign
                                 </button>
                             </form>
-                            <button type="button" class="btn-outline btn-danger whitespace-nowrap" data-remove-url="{{ route('moderator.queue.remove',$item->id) }}"><i class="fas fa-times" aria-hidden="true"></i> Remove assignment</button>
+                            <form method="POST" action="{{ route('moderator.queue.remove', $item->id, false) }}" onsubmit="if (this.dataset.submitting) return false; if (!window.confirm('Remove this queue entry? Waiting requests will be cancelled; unaccepted assignments will return to waiting. Started sessions cannot be removed.')) return false; this.dataset.submitting = '1'; this.querySelector('button').disabled = true;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn-outline btn-danger whitespace-nowrap"><i class="fas fa-times" aria-hidden="true"></i> Remove assignment</button>
+                            </form>
                         </div>
                     </div>
                 @empty
@@ -528,39 +534,7 @@
             });
 
             // ── Remove: cancel a waiting request / release an assignment ──
-            document.querySelectorAll('[data-remove-url]').forEach((btn) => {
-                btn.addEventListener('click', async () => {
-                    const ok = await confirmAction({
-                        title: 'Remove from queue?',
-                        message: 'An unaccepted assignment will be removed and returned to waiting. A waiting request will be cancelled. Started sessions cannot be removed.',
-                        confirmText: 'Remove',
-                        confirmClass: 'bg-red-600 hover:bg-red-700 focus:ring-red-600',
-                    });
-                    if (!ok) return;
 
-                    setButtonLoading(btn, 'Removing…');
-                    try {
-                        const response = await fetch(btn.dataset.removeUrl, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': csrfToken(),
-                                'Accept': 'application/json',
-                            },
-                        });
-                        const data = await readJson(response);
-                        if (data.success) {
-                            showToast(data.message, 'success');
-                            window.location.reload();
-                        } else {
-                            showToast(data.message || 'Could not remove request.', 'error');
-                            resetButton(btn);
-                        }
-                    } catch (e) {
-                        showToast('Network error — please try again.', 'error');
-                        resetButton(btn);
-                    }
-                });
-            });
         });
     </script>
 
