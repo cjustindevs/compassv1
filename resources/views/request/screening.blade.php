@@ -766,9 +766,9 @@
             <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
             <div>
                 <p class="text-sm font-medium text-red-700">Need immediate help?</p>
-                <p class="text-xs text-red-600">COMPASS also offers emergency services. Click the Emergency button in the sidebar.</p>
+                <p class="text-xs text-red-600">COMPASS is not an emergency service. For urgent support, open the emergency page or call your local emergency number.</p>
             </div>
-            <a href="{{ route('emergency') }}" class="px-6 py-2 bg-red-500 text-white text-sm font-semibold rounded-full hover:bg-red-600 transition ml-auto">Emergency</a>
+            <a href="{{ route('emergency') }}" class="px-6 py-2 bg-red-500 text-white text-sm font-semibold rounded-full hover:bg-red-600 transition ml-auto">Emergency support</a>
         </div>
 
         <!-- Footer -->

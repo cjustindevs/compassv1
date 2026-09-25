@@ -466,6 +466,10 @@ class ModeratorAdviserModuleTest extends TestCase
 
     public function test_analytics_handles_submitted_at_sessions_without_type_errors(): void
     {
+        // Freeze the clock: response_minutes is derived from two separate now()
+        // reads, so an uncontrolled tick makes the interval 5.02m instead of 5m.
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-09-16 19:00', 'Asia/Manila')->utc());
+
         [$user, $adviser] = $this->adviserUser('reports-submitted@example.com');
         [$referral] = [$this->referralFor($adviser, 'Submitted review')];
         $session = $referral->session;
