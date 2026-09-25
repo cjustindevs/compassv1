@@ -294,7 +294,6 @@
                     <a href="#home" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors">Home</a>
                     <a href="#features" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors">Features</a>
                     <a href="#how-it-works" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors">How It Works</a>
-                    <a href="#about" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors">About</a>
                     <a href="#contact" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors">Contact</a>
                 </nav>
 
@@ -320,7 +319,6 @@
                     <a href="#home" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors px-3 py-2 rounded-lg hover:bg-green-50">Home</a>
                     <a href="#features" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors px-3 py-2 rounded-lg hover:bg-green-50">Features</a>
                     <a href="#how-it-works" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors px-3 py-2 rounded-lg hover:bg-green-50">How It Works</a>
-                    <a href="#about" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors px-3 py-2 rounded-lg hover:bg-green-50">About</a>
                     <a href="#contact" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors px-3 py-2 rounded-lg hover:bg-green-50">Contact</a>
                     <hr class="border-gray-200/50 my-1" />
                     <a href="{{ route('login') }}" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors px-3 py-2">Log In</a>
@@ -623,48 +621,6 @@
     </section>
 
     <!-- ══════════════════════════════════════════════ -->
-    <!--  SECTION 4 – STATISTICS                      -->
-    <!-- ══════════════════════════════════════════════ -->
-
-    <section id="about" class="py-20 md:py-28 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-2xl mx-auto mb-14">
-                <span class="section-badge mb-4">Trusted by Students</span>
-                <h2 class="section-title">
-                    Why Students Trust <span class="highlight">COMPASS</span>
-                </h2>
-                <p class="section-sub mt-3">
-                    Real results from real students.
-                </p>
-            </div>
-
-            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-
-                <div class="animate-fade-up delay-100">
-                    <div class="stat-number">98%</div>
-                    <div class="text-sm text-gray-500 mt-1">Sessions Completed</div>
-                </div>
-
-                <div class="animate-fade-up delay-200">
-                    <div class="stat-number">95%</div>
-                    <div class="text-sm text-gray-500 mt-1">Users Felt Supported</div>
-                </div>
-
-                <div class="animate-fade-up delay-300">
-                    <div class="stat-number">100%</div>
-                    <div class="text-sm text-gray-500 mt-1">Confidential</div>
-                </div>
-
-                <div class="animate-fade-up delay-400">
-                    <div class="stat-number">24/7</div>
-                    <div class="text-sm text-gray-500 mt-1">Self-Help Resources</div>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- ══════════════════════════════════════════════ -->
     <!--  SECTION 5 – TESTIMONIALS                    -->
     <!-- ══════════════════════════════════════════════ -->
 
@@ -861,7 +817,6 @@
                         <li><a href="#home" class="hover:text-green-400 transition-colors">Home</a></li>
                         <li><a href="#features" class="hover:text-green-400 transition-colors">Features</a></li>
                         <li><a href="#resources" class="hover:text-green-400 transition-colors">Resources</a></li>
-                        <li><a href="#about" class="hover:text-green-400 transition-colors">About</a></li>
                     </ul>
                 </div>
 
