@@ -50,15 +50,29 @@
         .card-header h3 { font-weight: 700; font-size: 16px; color: var(--text-primary, #1F2937); }
 
         .queue-item {
-            display: flex;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto auto auto;
             align-items: center;
-            gap: 16px;
+            gap: 10px 16px;
             padding: 14px 16px;
             border-bottom: 1px solid var(--border-color, #F3F4F6);
             transition: background 0.2s;
         }
         .queue-item:hover { background: var(--hover-bg, #F9FAFB); }
         .queue-item:last-child { border-bottom: none; }
+
+        /* Grouped helper controls; Remove stays outside the form at the end. */
+        .queue-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .queue-actions form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .btn-danger { color: #DC2626; }
+        .btn-danger:hover { border-color: #DC2626; color: #DC2626; }
+        .alias { font-weight: 600; color: var(--text-primary, #1F2937); overflow-wrap: anywhere; }
 
         .priority-badge {
             padding: 2px 10px;
@@ -160,8 +174,12 @@
             .main-content { margin-left: 0; padding: 16px 16px 100px; }
             .hamburger { display: block; }
             .bottom-nav { display: flex; }
-            .queue-item { flex-wrap: wrap; }
-            .assign-select { width: 100%; }
+            .queue-item { grid-template-columns: auto minmax(0, 1fr); }
+            .queue-item .type-pill,
+            .queue-item .wait-chip { grid-column: 2; justify-self: start; }
+            .queue-actions { grid-column: 1 / -1; justify-content: stretch; }
+            .queue-actions form { flex: 1 1 100%; }
+            .assign-select { flex: 1 1 auto; width: 100%; min-width: 0; }
         }
     </style>
 </head>
@@ -220,11 +238,11 @@
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             @php
                 $metrics = [
-                    ['label' => 'Queue Size', 'value' => $stats['queue_size'], 'icon' => 'fa-list-ol'],
-                    ['label' => 'Avg Wait', 'value' => $stats['avg_wait'], 'icon' => 'fa-clock'],
-                    ['label' => 'Avg Holding', 'value' => $stats['avg_holding'], 'icon' => 'fa-pause-circle'],
-                    ['label' => 'Unserved Waiting', 'value' => $stats['unserved'], 'icon' => 'fa-user-clock'],
-                    ['label' => 'Unserved Jobs', 'value' => $stats['queue_size'] - $stats['assigned'], 'icon' => 'fa-exclamation'],
+                    ['key' => 'queue_size', 'label' => 'Queue Size', 'value' => $stats['queue_size'], 'icon' => 'fa-list-ol'],
+                    ['key' => 'avg_wait', 'label' => 'Avg Wait', 'value' => $stats['avg_wait'], 'icon' => 'fa-clock'],
+                    ['key' => 'avg_holding', 'label' => 'Avg Holding', 'value' => $stats['avg_holding'], 'icon' => 'fa-pause-circle'],
+                    ['key' => 'unserved', 'label' => 'Unserved Waiting', 'value' => $stats['unserved'], 'icon' => 'fa-user-clock'],
+                    ['key' => 'oldest_wait', 'label' => 'Oldest Wait', 'value' => $stats['oldest_wait'], 'icon' => 'fa-hourglass-half'],
                 ];
             @endphp
             @foreach($metrics as $metric)
@@ -233,7 +251,7 @@
                         <i class="fas {{ $metric['icon'] }} text-gray-400"></i>
                     </div>
                     <div class="min-w-0">
-                        <p class="font-bold text-gray-800 text-sm truncate">{{ $metric['value'] }}</p>
+                        <p class="font-bold text-gray-800 text-sm truncate" data-metric="{{ $metric['key'] }}">{{ $metric['value'] }}</p>
                         <p class="text-[11px] text-gray-400 truncate">{{ $metric['label'] }}</p>
                     </div>
                 </div>
@@ -257,46 +275,46 @@
         <div class="card mb-6">
             <div class="card-header">
                 <h3>Waiting Seekers</h3>
-                <span class="text-xs text-gray-400">{{ $queueItems->where('request_status', 'waiting')->count() }} waiting</span>
+                <span class="text-xs text-gray-400" id="waitingHeading">{{ $queueItems->where('request_status', 'waiting')->count() }} waiting</span>
             </div>
             <div>
                 @forelse($queueItems->where('request_status', 'waiting') as $item)
-                    <div class="queue-item fade-in">
-                        <span class="px-2.5 py-1 rounded-full text-xs font-bold text-white {{ $item->priority_level==='emergency'?'bg-red-600':($item->priority_level==='high'?'bg-orange-500':($item->priority_level==='moderate'?'bg-amber-500':'bg-gray-400')) }}"
-                              title="Priority class P{{ [ 'emergency'=>1,'high'=>2,'moderate'=>3,'low'=>4 ][$item->priority_level] ?? 4 }}">
+                    <div class="queue-item fade-in" data-queue-row="{{ $item->id }}">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap {{ $item->priority_level==='emergency'?'bg-red-600':($item->priority_level==='high'?'bg-orange-500':($item->priority_level==='moderate'?'bg-amber-500':'bg-gray-400')) }}"
+                              title="Priority class {{ \App\Models\QueueRequest::priorityClass($item->priority_level) }}">
                             {{ \App\Models\QueueRequest::priorityClass($item->priority_level) }} · {{ ucfirst($item->priority_level) }}
                         </span>
-                        <div class="min-w-0 flex-1">
-                            <p class="font-semibold text-gray-800 text-sm">{{ $item->seeker?->generated_alias ?? 'Anonymous' }}</p>
+                        <div class="min-w-0">
+                            <p class="alias text-sm">{{ $item->seeker?->generated_alias ?? 'Anonymous' }}</p>
                             <p class="text-xs text-gray-500 truncate">{{ $item->concern_name }}</p>
                         </div>
-                        <span class="type-pill hidden md:inline">
+                        <span class="type-pill hidden md:inline-flex items-center">
                             <i class="fas {{ $item->preferred_session_type === 'voice' ? 'fa-microphone-alt' : 'fa-comment-dots' }} mr-1"></i>{{ ucfirst($item->preferred_session_type) }}
                         </span>
                         <span class="wait-chip {{ $item->wait_minutes >= 30 ? 'alert' : ($item->wait_minutes >= 15 ? 'warn' : 'ok') }}">
                             <i class="fas fa-hourglass-half mr-1"></i>{{ $item->wait_minutes }} min
                         </span>
-                        <div class="flex items-center gap-2">
-                            <form method="POST" action="{{ route('moderator.queue.assign') }}" class="flex flex-wrap items-center gap-2">
+                        <div class="queue-actions">
+                            <form method="POST" action="{{ route('moderator.queue.assign') }}" class="assign-form" data-queue-id="{{ $item->id }}">
                                 @csrf
                                 <input type="hidden" name="queue_id" value="{{ $item->id }}">
-                                <select name="helper_id" class="assign-select" required>
-                                    <option value="">Select helper...</option>
+                                <label class="sr-only" for="helper-{{ $item->id }}">Eligible helper for queue request {{ $item->id }}</label>
+                                <select id="helper-{{ $item->id }}" name="helper_id" class="assign-select" required>
+                                    <option value="">Select helper…</option>
                                     @foreach($availableHelpers->sortByDesc(fn($candidate) => $candidate->calculateMatchingScore($item->supportSession?->risk_level ?? 'low', $item->supportSession?->concern?->concern_name, $item->seeker?->user?->preferred_language)) as $helper)
                                         @php($eligibility = app(\App\Services\HelperEligibilityService::class)->status($helper, $item->supportSession))
                                         <option @disabled(!$eligibility['assignable']) data-ineligible="{{ $eligibility['assignable'] ? '0' : '1' }}" value="{{ $helper->id }}"
                                             title="{{ $eligibility['reason'] }}">
-                                            {{ $helper->full_name }} · {{ $eligibility['assignable'] ? '✓ ' . 'Ready · ' . $helper->remaining_capacity . '/' . \App\Models\Helper::MAX_SESSIONS_PER_SHIFT : $eligibility['label'] }} · {{ $helper->competency_level }}/5
+                                            {{ $helper->full_name }} · {{ $eligibility['assignable'] ? '✓ Ready · ' . $helper->remaining_capacity . '/' . \App\Models\Helper::MAX_SESSIONS_PER_SHIFT : $eligibility['label'] }} · {{ $helper->competency_level }}/5
                                         </option>
                                     @endforeach
-                                </select>id }}" name="scheduled_at" class="assign-select"
-                                       title="Optional appointment time for the session (Asia/Manila). Leave empty to schedule immediately.">
-                                <button type="submit" class="btn-primary">
+                                </select>
+                                <button type="submit" class="btn-primary whitespace-nowrap">
                                     <i class="fas fa-user-check"></i> Assign
                                 </button>
                             </form>
                             <button type="button"
-                                    class="btn-outline text-red-600 hover:border-red-500 hover:text-red-600"
+                                    class="btn-outline btn-danger whitespace-nowrap"
                                     data-remove-url="{{ route('moderator.queue.remove', $item->id) }}">
                                 <i class="fas fa-times"></i> Remove
                             </button>
@@ -314,51 +332,60 @@
         <div class="card">
             <div class="card-header">
                 <h3>Recently Matched</h3>
-                <span class="text-xs text-gray-400">{{ $queueItems->where('request_status', 'assigned')->count() }} assigned</span>
+                <span class="text-xs text-gray-400" id="assignedHeading">{{ $queueItems->where('request_status', 'assigned')->count() }} assigned</span>
             </div>
             <div>
                 @forelse($queueItems->where('request_status', 'assigned') as $item)
-                    <div class="queue-item fade-in">
-                        <span class="px-2.5 py-1 rounded-full text-xs font-bold text-white {{ $item->priority_level==='emergency'?'bg-red-600':($item->priority_level==='high'?'bg-orange-500':($item->priority_level==='moderate'?'bg-amber-500':'bg-gray-400')) }}"
-                              title="Priority class P{{ [ 'emergency'=>1,'high'=>2,'moderate'=>3,'low'=>4 ][$item->priority_level] ?? 4 }}">
+                    <div class="queue-item fade-in" data-queue-row="{{ $item->id }}">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap {{ $item->priority_level==='emergency'?'bg-red-600':($item->priority_level==='high'?'bg-orange-500':($item->priority_level==='moderate'?'bg-amber-500':'bg-gray-400')) }}"
+                              title="Priority class {{ \App\Models\QueueRequest::priorityClass($item->priority_level) }}">
                             {{ \App\Models\QueueRequest::priorityClass($item->priority_level) }} · {{ ucfirst($item->priority_level) }}
                         </span>
-                        <div class="min-w-0 flex-1">
-                            <p class="font-semibold text-gray-800 text-sm">{{ $item->seeker?->generated_alias ?? 'Anonymous' }}</p>
-                            <p class="text-xs text-gray-500">
+                        <div class="min-w-0">
+                            <p class="alias text-sm">{{ $item->seeker?->generated_alias ?? 'Anonymous' }}</p>
+                            <p class="text-xs text-gray-500 truncate">
                                 Matched {{ $item->matched_date?->diffForHumans() }} with
                                 <span class="font-semibold text-emerald-600">{{ $item->assignedHelper?->full_name ?? '—' }}</span>
-                                @if($item->scheduled_date)<br><span class="text-gray-500"><i class="fas fa-calendar-check mr-1"></i>Scheduled {{ $item->scheduled_date->setTimezone(config('app.schedule_timezone'))->format('M d, h:i A') }}</span>@endif
                             </p>
                         </div>
-                        <form method="POST" action="{{ route('moderator.queue.schedule') }}" class="flex flex-wrap items-center gap-2">
-                            @csrf
-                            <label class="sr-only" for="scheduled_at-{{ $item->id }}">Appointment time</label>
-                            <input type="datetime-local" id="scheduled_at-{{ $item->id }}" name="scheduled_at" class="assign-select"
-                                   value="{{ $item->scheduled_date?->setTimezone(config('app.schedule_timezone'))->format('Y-m-d\TH:i') }}"
-                                   title="Set or change the session appointment time (Asia/Manila).">
-                            <input type="hidden" name="queue_id" value="{{ $item->id }}">
-                            <button type="submit" class="btn-outline">
-                                <i class="fas fa-calendar-alt"></i> Schedule
-                            </button>
-                        </form>
-                        <form method="POST" action="{{ route('moderator.queue.reassign') }}" class="flex flex-wrap items-center gap-2">
-                            @csrf
-                            <input type="hidden" name="queue_id" value="{{ $item->id }}">
-                            <select name="helper_id" class="assign-select">
-                                @foreach($availableHelpers->sortByDesc(fn($candidate) => $candidate->calculateMatchingScore($item->supportSession?->risk_level ?? 'low', $item->supportSession?->concern?->concern_name, $item->seeker?->user?->preferred_language)) as $helper)
+                        <span class="type-pill hidden md:inline-flex items-center">
+                            <i class="fas {{ $item->preferred_session_type === 'voice' ? 'fa-microphone-alt' : 'fa-comment-dots' }} mr-1"></i>{{ ucfirst($item->preferred_session_type) }}
+                        </span>
+                        <span class="wait-chip ok">
+                            <i class="fas fa-calendar-check mr-1"></i>{{ $item->scheduled_date ? $item->scheduled_date->copy()->setTimezone(config('app.schedule_timezone'))->format('M d, h:i A') : 'Awaiting acceptance' }}
+                        </span>
+                        <div class="queue-actions">
+                            <form method="POST" action="{{ route('moderator.queue.schedule') }}">
+                                @csrf
+                                <label class="sr-only" for="scheduled_at-{{ $item->id }}">Appointment time for queue request {{ $item->id }}</label>
+                                <input type="datetime-local" id="scheduled_at-{{ $item->id }}" name="scheduled_at" class="assign-select"
+                                       value="{{ $item->scheduled_date?->copy()->setTimezone(config('app.schedule_timezone'))->format('Y-m-d\TH:i') }}"
+                                       title="Set the appointment time for this already-assigned session ({{ config('app.schedule_timezone') }}).">
+                                <input type="hidden" name="queue_id" value="{{ $item->id }}">
+                                <button type="submit" class="btn-outline whitespace-nowrap">
+                                    <i class="fas fa-calendar-alt"></i> Schedule
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ route('moderator.queue.reassign') }}">
+                                @csrf
+                                <input type="hidden" name="queue_id" value="{{ $item->id }}">
+                                <label class="sr-only" for="reassign-{{ $item->id }}">Replacement helper for queue request {{ $item->id }}</label>
+                                <select id="reassign-{{ $item->id }}" name="helper_id" class="assign-select">
+                                    <option value="">Select helper…</option>
+                                    @foreach($availableHelpers->sortByDesc(fn($candidate) => $candidate->calculateMatchingScore($item->supportSession?->risk_level ?? 'low', $item->supportSession?->concern?->concern_name, $item->seeker?->user?->preferred_language)) as $helper)
                                         @php($eligibility = app(\App\Services\HelperEligibilityService::class)->status($helper, $item->supportSession))
-                                    <option @disabled(!$eligibility['assignable']) data-ineligible="{{ $eligibility['assignable'] ? '0' : '1' }}" value="{{ $helper->id }}" {{ $item->assigned_helper_id === $helper->id ? 'selected' : '' }}
-                                        title="{{ $eligibility['reason'] }}">
-                                        {{ $helper->full_name }} · {{ $eligibility['assignable'] ? '✓ ' . 'Ready · ' . $helper->remaining_capacity . '/' . \App\Models\Helper::MAX_SESSIONS_PER_SHIFT : $eligibility['label'] }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <button type="submit" class="btn-outline">
-                                <i class="fas fa-sync-alt"></i> Reassign
-                            </button>
-                        </form>
-                        <button type="button" class="btn-outline text-red-600" data-remove-url="{{ route('moderator.queue.remove',$item->id) }}"><i class="fas fa-times" aria-hidden="true"></i> Remove assignment</button>
+                                        <option @disabled(!$eligibility['assignable']) data-ineligible="{{ $eligibility['assignable'] ? '0' : '1' }}" value="{{ $helper->id }}" {{ $item->assigned_helper_id === $helper->id ? 'selected' : '' }}
+                                            title="{{ $eligibility['reason'] }}">
+                                            {{ $helper->full_name }} · {{ $eligibility['assignable'] ? '✓ Ready · ' . $helper->remaining_capacity . '/' . \App\Models\Helper::MAX_SESSIONS_PER_SHIFT : $eligibility['label'] }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <button type="submit" class="btn-outline whitespace-nowrap">
+                                    <i class="fas fa-sync-alt"></i> Reassign
+                                </button>
+                            </form>
+                            <button type="button" class="btn-outline btn-danger whitespace-nowrap" data-remove-url="{{ route('moderator.queue.remove',$item->id) }}"><i class="fas fa-times" aria-hidden="true"></i> Remove assignment</button>
+                        </div>
                     </div>
                 @empty
                     <div class="text-center py-8 text-gray-400">
@@ -392,28 +419,115 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
 
-            setInterval(function () {
-                fetch('/moderator/queue/stats', {
-                    headers: { 'Accept': 'application/json' },
-                })
-                    .then((response) => response.json())
-                    .then((data) => {
-                        document.getElementById('statWaiting').textContent = data.waiting;
-                        document.getElementById('statAssigned').textContent = data.assigned;
-                        document.getElementById('statAvgWait').textContent = data.avg_wait;
-                        document.getElementById('statUnserved').textContent = data.unserved;
-                        document.getElementById('statUnserved').className = data.unserved > 0 ? 'stat-number text-red-600' : 'stat-number text-gray-800';
-
-                        const qb = document.getElementById('queueBadge');
-                        if (qb) { qb.textContent = data.waiting; qb.style.display = data.waiting > 0 ? 'inline-block' : 'none'; }
-                        document.getElementById('queueCount') && (document.getElementById('queueCount').textContent = data.waiting);
-                    })
-                    .catch(() => {});
-            }, 30000);
-
-            // ── Audited override: unlock ineligible helpers and confirm ──
             const csrfToken = () => document.querySelector('meta[name="csrf-token"]').content;
+            const setText = (id, value) => {
+                const el = document.getElementById(id);
+                if (el && value !== undefined && value !== null) el.textContent = value;
+            };
 
+            /**
+             * Read a fetch response as JSON even when the server answers with an
+             * HTML error page (419 CSRF, 403, 409 …). Previously r.json() threw on
+             * those, which surfaced as a misleading "Network error" and left the
+             * button stuck in its loading state.
+             */
+            const readJson = async (response) => {
+                const text = await response.text();
+                let data = null;
+                try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+                if (!response.ok) {
+                    return {
+                        success: false,
+                        status: response.status,
+                        message: (data && (data.message || data.error))
+                            || (response.status === 419
+                                ? 'Your session expired. Please refresh the page and try again.'
+                                : (response.status === 403
+                                    ? 'You are not authorized to perform that action.'
+                                    : 'The server rejected that request (HTTP ' + response.status + ').')),
+                    };
+                }
+                return data || { success: false, message: 'Unexpected server response.' };
+            };
+
+            // ── Auto-refresh: figures only, never re-render rows ──
+            // Updating text nodes in place means dropdown selections, focus and
+            // in-flight forms survive the refresh, so rows cannot flicker,
+            // duplicate or lose the helper a moderator already picked.
+            const refreshStats = async () => {
+                // Do not refresh while a moderator is mid-action.
+                if (document.querySelector('form.assign-form[data-submitting="1"]')) return;
+                if (document.activeElement && document.activeElement.matches('.assign-select')) return;
+
+                try {
+                    const response = await fetch('{{ route('moderator.queue.stats') }}', {
+                        headers: { 'Accept': 'application/json' },
+                        cache: 'no-store',
+                    });
+                    if (!response.ok) return;
+                    const data = await response.json();
+
+                    setText('statWaiting', data.waiting);
+                    setText('statAssigned', data.assigned);
+                    setText('statAvgWait', data.avg_wait);
+                    setText('statUnserved', data.unserved);
+                    setText('waitingHeading', data.waiting + ' waiting');
+                    setText('assignedHeading', data.assigned + ' assigned');
+
+                    const unserved = document.getElementById('statUnserved');
+                    if (unserved) {
+                        unserved.className = 'stat-number ' + (data.unserved > 0 ? 'text-red-600' : 'text-gray-800');
+                    }
+
+                    document.querySelectorAll('[data-metric]').forEach((el) => {
+                        const value = data[el.dataset.metric];
+                        if (value !== undefined && value !== null) el.textContent = value;
+                    });
+
+                    const qb = document.getElementById('queueBadge');
+                    if (qb) {
+                        qb.textContent = data.waiting;
+                        qb.style.display = data.waiting > 0 ? 'inline-block' : 'none';
+                    }
+                    setText('queueCount', data.waiting);
+                } catch (e) {
+                    // Offline or transient failure: leave the last good figures.
+                }
+            };
+
+            setInterval(refreshStats, 30000);
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) refreshStats();
+            });
+
+            // ── Assign: validate the selection and block double submission ──
+            document.querySelectorAll('form.assign-form').forEach((form) => {
+                form.addEventListener('submit', function (event) {
+                    if (form.dataset.submitting === '1') {
+                        event.preventDefault();
+                        return;
+                    }
+                    const select = form.querySelector('select[name="helper_id"]');
+                    if (!select || !select.value) {
+                        event.preventDefault();
+                        showToast('Select an eligible helper before assigning.', 'error');
+                        if (select) select.focus();
+                        return;
+                    }
+                    const chosen = select.options[select.selectedIndex];
+                    if (chosen && chosen.disabled) {
+                        event.preventDefault();
+                        showToast('That helper is no longer available. Pick another helper.', 'error');
+                        if (select) select.focus();
+                        return;
+                    }
+                    form.dataset.submitting = '1';
+                    const button = form.querySelector('button[type="submit"]');
+                    if (button && window.setButtonLoading) window.setButtonLoading(button, 'Assigning…');
+                });
+            });
+
+            // ── Remove: cancel a waiting request / release an assignment ──
             document.querySelectorAll('[data-remove-url]').forEach((btn) => {
                 btn.addEventListener('click', async () => {
                     const ok = await confirmAction({
@@ -425,31 +539,32 @@
                     if (!ok) return;
 
                     setButtonLoading(btn, 'Removing…');
-                    fetch(btn.dataset.removeUrl, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': csrfToken(),
-                            'Accept': 'application/json',
-                        },
-                    })
-                        .then((r) => r.json())
-                        .then((data) => {
-                            if (data.success) {
-                                showToast(data.message, 'success');
-                                window.location.reload();
-                            } else {
-                                showToast(data.message || 'Could not remove request.', 'error');
-                                resetButton(btn);
-                            }
-                        })
-                        .catch(() => {
-                            showToast('Network error — please try again.', 'error');
-                            resetButton(btn);
+                    try {
+                        const response = await fetch(btn.dataset.removeUrl, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': csrfToken(),
+                                'Accept': 'application/json',
+                            },
                         });
+                        const data = await readJson(response);
+                        if (data.success) {
+                            showToast(data.message, 'success');
+                            window.location.reload();
+                        } else {
+                            showToast(data.message || 'Could not remove request.', 'error');
+                            resetButton(btn);
+                        }
+                    } catch (e) {
+                        showToast('Network error — please try again.', 'error');
+                        resetButton(btn);
+                    }
                 });
             });
         });
     </script>
+
+    @include('components.confirmation-modal')
 
     @include('layouts.partials.pwa-banner')
 

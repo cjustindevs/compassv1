@@ -44,6 +44,7 @@ return [
             'search_path' => 'public',
             'sslmode' => env('DB_IDENTITY_SSLMODE', env('DB_SSLMODE', 'prefer')),
             'foreign_key_constraints' => true,
+            'timezone' => env('DB_TIMEZONE', 'UTC'),
         ],
 
         'sqlite' => [
@@ -73,6 +74,7 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            'timezone' => env('DB_TIMEZONE', '+00:00'),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
@@ -93,6 +95,7 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            'timezone' => env('DB_TIMEZONE', '+00:00'),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
@@ -111,6 +114,12 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Queue/waiting columns are `timestamp without time zone` and are
+            // compared against PHP's UTC clock. Forcing the session to UTC
+            // keeps database-side defaults (CURRENT_TIMESTAMP) and now()
+            // writing the same wall-clock value as Carbon, so durations can
+            // never drift by the server's local offset.
+            'timezone' => env('DB_TIMEZONE', 'UTC'),
         ],
 
         'sqlsrv' => [

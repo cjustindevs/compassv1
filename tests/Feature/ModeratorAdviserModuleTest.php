@@ -525,7 +525,7 @@ class ModeratorAdviserModuleTest extends TestCase
         $this->assertSame('high', $queue->fresh()->priority_level);
     }
 
-    public function test_moderator_can_schedule_the_session_appointment_time_when_assigning_a_helper(): void
+    public function test_queue_assignment_starts_immediately_and_rejects_an_appointment_time(): void
     {
         [$moderatorUser] = $this->moderatorUser();
         $helper = $this->schedulableHelper();
@@ -539,14 +539,36 @@ class ModeratorAdviserModuleTest extends TestCase
         $appointment = now('Asia/Manila')->addHours(6)->second(0);
         $this->actingAs($moderatorUser)->post(route('moderator.queue.assign'), [
             'queue_id' => $queue->id, 'helper_id' => $helper->id, 'scheduled_at' => $appointment->format('Y-m-d H:i:s'),
-        ])->assertRedirect(route('moderator.queue'));
+        ])->assertSessionHasErrors('scheduled_at');
+
+        $this->assertDatabaseHas('counseling_sessions', [
+            'id' => $session->id, 'session_status' => Session::STATUS_WAITING,
+        ]);
+        $this->assertDatabaseHas('queue_requests', ['id' => $queue->id, 'request_status' => 'waiting']);
+    }
+
+    public function test_assigning_a_helper_activates_the_session_immediately(): void
+    {
+        [$moderatorUser] = $this->moderatorUser();
+        $helper = $this->schedulableHelper();
+        $this->readyDutyHelper($helper);
+        [$seeker, $seekerUser] = $this->seeker();
+        $this->consentFixture($seekerUser);
+
+        $queue = QueueRequest::create(['seeker_id' => $seeker->id, 'request_status' => 'waiting', 'priority_level' => 'low', 'preferred_session_type' => 'chat']);
+        $session = Session::create(['seeker_id' => $seeker->id, 'queue_request_id' => $queue->id, 'session_status' => Session::STATUS_WAITING, 'session_type' => 'chat', 'risk_level' => 'low', 'submitted_at' => now(), 'created_date' => now()]);
+
+        $this->actingAs($moderatorUser)->post(route('moderator.queue.assign'), [
+            'queue_id' => $queue->id, 'helper_id' => $helper->id,
+        ])->assertRedirect(route('moderator.queue'))->assertSessionHas('success');
 
         $this->assertDatabaseHas('counseling_sessions', [
             'id' => $session->id, 'helper_id' => $helper->id, 'session_status' => Session::STATUS_HELPER_ASSIGNED,
-            'scheduled_start' => $appointment->utc()->format('Y-m-d H:i:s'),
-            'pre_session_brief_expires_at' => $appointment->utc()->format('Y-m-d H:i:s'),
         ]);
-        $this->assertDatabaseHas('queue_requests', ['id' => $queue->id, 'request_status' => 'assigned', 'scheduled_date' => $appointment->utc()->format('Y-m-d H:i:s')]);
+        // The session waits for the helper to accept before it goes live.
+        $this->assertDatabaseHas('counseling_sessions', ['id' => $session->id, 'match_status' => 'awaiting_acceptance']);
+        $this->assertNull($session->fresh()->helper_accepted_at);
+        $this->assertDatabaseHas('queue_requests', ['id' => $queue->id, 'request_status' => 'assigned']);
     }
 
     public function test_moderator_cannot_schedule_an_appointment_in_the_past(): void
@@ -561,10 +583,13 @@ class ModeratorAdviserModuleTest extends TestCase
         $session = Session::create(['seeker_id' => $seeker->id, 'queue_request_id' => $queue->id, 'session_status' => Session::STATUS_WAITING, 'session_type' => 'chat', 'risk_level' => 'low', 'submitted_at' => now(), 'created_date' => now()]);
 
         $this->actingAs($moderatorUser)->post(route('moderator.queue.assign'), [
-            'queue_id' => $queue->id, 'helper_id' => $helper->id, 'scheduled_at' => now()->subHours(1)->format('Y-m-d H:i:s'),
+            'queue_id' => $queue->id, 'helper_id' => $helper->id,
+        ])->assertRedirect(route('moderator.queue'));
+
+        $this->actingAs($moderatorUser)->post(route('moderator.queue.schedule'), [
+            'queue_id' => $queue->id, 'scheduled_at' => now('Asia/Manila')->subHours(1)->format('Y-m-d H:i:s'),
         ])->assertStatus(422);
-        $this->assertDatabaseHas('queue_requests', ['id' => $queue->id, 'request_status' => 'waiting']);
-        $this->assertDatabaseHas('counseling_sessions', ['id' => $session->id, 'session_status' => Session::STATUS_WAITING]);
+        $this->assertDatabaseHas('counseling_sessions', ['id' => $session->id, 'session_status' => Session::STATUS_HELPER_ASSIGNED]);
     }
 
     public function test_moderator_can_change_the_appointment_time_of_an_assigned_request(): void
@@ -609,8 +634,11 @@ class ModeratorAdviserModuleTest extends TestCase
 
         $appointment = now('Asia/Manila')->addHours(8)->second(0);
         $this->actingAs($moderatorUser)->post(route('moderator.queue.assign'), [
-            'queue_id' => $queue->id, 'helper_id' => $helper->id, 'scheduled_at' => $appointment->format('Y-m-d H:i:s'),
+            'queue_id' => $queue->id, 'helper_id' => $helper->id,
         ])->assertRedirect(route('moderator.queue'));
+        $this->actingAs($moderatorUser)->post(route('moderator.queue.schedule'), [
+            'queue_id' => $queue->id, 'scheduled_at' => $appointment->format('Y-m-d H:i:s'),
+        ])->assertRedirect()->assertSessionHas('success');
 
         $label = $appointment->format('M d, h:i A');
         $this->actingAs($helperUser)->get(route('helper.cases'))->assertOk()->assertSee($label);
