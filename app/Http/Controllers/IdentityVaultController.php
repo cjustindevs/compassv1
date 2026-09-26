@@ -34,7 +34,8 @@ class IdentityVaultController extends Controller
         $vault->storeForReferral($referral, $validator->validated());
         // Vault commits first. If operational coordination fails, a retry remains safe;
         // no professional can be assigned without the committed vault submission.
-        if (!$referral->professional_id) app(\App\Services\ReferralManagementService::class)->forwardToProfessional($referral);
+        // Adviser coordination selects the designated professional; identity
+        // submission must not automatically distribute the referral.
         if ($referral->adviser?->user_account_id) {
             \App\Models\Notification::create([
                 'user_account_id' => $referral->adviser->user_account_id, 'title' => 'Identity ready for release',

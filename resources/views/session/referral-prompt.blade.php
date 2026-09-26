@@ -151,7 +151,7 @@
 
         const alreadyDecided = data.consent && ['accepted', 'declined', 'withdrawn'].includes(data.consent.decision);
         const isConsentRequest = referral.status === 'pending_consent';
-        if (isConsentRequest && !alreadyDecided) {
+        if (isConsentRequest) {
             document.getElementById('referralConsentText').textContent = 'Your Adviser approved a referral. Review the complete recommendation and consent form before deciding.';
             terms.hidden = true;
             acceptBtn.hidden = false;

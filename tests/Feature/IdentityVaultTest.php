@@ -54,11 +54,28 @@ class IdentityVaultTest extends TestCase
         $this->postJson(route('identity.store',$referral),['real_name'=>'Fictional Person','phone_number'=>'+639170000000'])->assertUnprocessable();
         $this->assertNull($referral->fresh()->professional_id);
         $this->postJson(route('identity.store',$referral),['identity_disclosure'=>true,'real_name'=>'Fictional Person','phone_number'=>'+639170000000'])->assertOk();
-        $this->assertSame($professional->id,$referral->fresh()->professional_id);
+        $this->assertNull($referral->fresh()->professional_id);
+        $this->actingAs($referral->adviser->user)->post(route('adviser.referral.assign', $referral), [
+            'professional_id' => $professional->id, 'reason' => 'Designated professional for approved referral.',
+        ])->assertSessionHasNoErrors();
+        $this->assertSame($professional->id, $referral->fresh()->professional_id);
         $row=DB::connection('identity_vault')->table('idv_identities')->first();
         $this->assertNotSame('Fictional Person',$row->real_name);
         $this->assertDatabaseHas('consent_records',['purpose'=>'identity_disclosure','decision'=>'accepted','referral_id'=>$referral->id]);
         $this->assertDatabaseCount('identity_vault',0);
+    }
+
+    public function test_approval_does_not_reuse_preapproval_consent(): void
+    {
+        $referral = $this->referral();
+        $referral->update(['status' => 'pending_adviser', 'approved_at' => null, 'reviewed_at' => null]);
+        $this->actingAs($referral->adviser->user)->post(route('adviser.referral.approve', $referral), [
+            'review_notes' => 'Reviewed the final recommendation.',
+        ])->assertSessionHasNoErrors();
+        $this->assertSame('pending_consent', $referral->fresh()->status);
+        $this->assertFalse($referral->fresh()->help_seeker_consent);
+        $this->assertNull($referral->fresh()->professional_id);
+        $this->actingAs($referral->session->seeker->user)->get(route('identity.form', $referral))->assertStatus(409);
     }
 
     public function test_availability_and_storage_self_test_use_no_real_identity(): void
