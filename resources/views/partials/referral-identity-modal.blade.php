@@ -150,7 +150,7 @@
                 </div>
             </div>
 
-            <fieldset data-identity-fields>
+            <fieldset data-identity-fields hidden disabled>
                 <legend>Your contact details</legend>
                 <p class="rv-hint">Use details a professional can actually reach you on. Everything you enter here is optional except the two marked required.</p>
                 <div class="rv-grid">
@@ -220,7 +220,10 @@
         const form = event.target.closest('[data-identity-form]');
         if (!form || form.dataset.identitySaved) return;
         const submit = form.querySelector('[data-identity-submit]');
-        if (submit) submit.disabled = !form.querySelector('[name="identity_disclosure"]')?.checked;
+        const consented = !!form.querySelector('[name="identity_disclosure"]')?.checked;
+        if (submit) submit.disabled = !consented;
+        const fields = form.querySelector('[data-identity-fields]');
+        if (fields) { fields.hidden = !consented; fields.disabled = !consented; }
     });
 
     document.addEventListener('submit', async event => {
@@ -259,7 +262,7 @@
                 headers: {Accept: 'application/json'},
                 body: new FormData(form),
             });
-            const body = await response.json();
+            const body = await response.json().catch(() => ({message: response.status === 419 ? 'Your sign-in session expired. Refresh the page and sign in before trying again.' : 'The server could not confirm your submission. Please check your referral status before retrying.'}));
             if (!response.ok) {
                 const errors = body.errors || {};
                 Object.entries(errors).forEach(([field, messages]) => {
@@ -294,7 +297,7 @@
             const dismiss = form.querySelector('[data-identity-dismiss]');
             if (dismiss) dismiss.textContent = 'Close';
         } catch (error) {
-            result.textContent = 'We could not reach the server. Your details were not saved. Please try again.';
+            result.textContent = 'We could not confirm the submission. Check your connection and referral status before retrying.';
             submit.disabled = false;
             submit.innerHTML = label;
         }

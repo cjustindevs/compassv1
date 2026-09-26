@@ -484,8 +484,8 @@ class ModeratorAdviserModuleTest extends TestCase
 
         $this->assertDatabaseHas('referrals', [
             'id' => $ownReferral->id,
-            'status' => Referral::STATUS_DECLINED,
-            'decline_reason' => 'Not clinically indicated yet.',
+            'status' => Referral::STATUS_PENDING_ADVISER,
+            'clarification_question' => 'Not clinically indicated yet.',
         ]);
         $this->assertDatabaseHas('referrals', ['id' => $otherReferral->id, 'status' => Referral::STATUS_PENDING_ADVISER]);
     }

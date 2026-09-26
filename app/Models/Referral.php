@@ -64,6 +64,7 @@ class Referral extends Model
     ];
 
     protected $casts = [
+        'recommendation_form' => 'encrypted:array',
         'referral_date' => 'datetime',
         'reviewed_at' => 'datetime',
         'approved_at' => 'datetime',

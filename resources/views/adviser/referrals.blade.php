@@ -338,19 +338,19 @@
                 <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
                     <i class="fas fa-times text-red-600"></i>
                 </div>
-                <h3 class="text-xl font-bold text-gray-800">Reject Referral</h3>
+                <h3 class="text-xl font-bold text-gray-800">Return for Revision</h3>
             </div>
-            <p class="text-gray-500 text-sm mb-4">Provide a reason for rejecting this referral.</p>
+            <p class="text-gray-500 text-sm mb-4">Explain what the Helper must revise before you can approve this referral.</p>
 
             <form class="form-maximized" id="rejectForm" method="POST">
                 @csrf
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Rejection Reason <span class="text-red-500">*</span></label>
-                    <textarea name="rejection_reason" class="form-input w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" rows="4" placeholder="Explain why this referral is being rejected..." required></textarea>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Revision comments <span class="text-red-500">*</span></label>
+                    <textarea name="rejection_reason" class="form-input w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" rows="4" placeholder="Explain the required corrections..." required></textarea>
                 </div>
                 <div class="flex gap-3">
                     <button type="button" class="btn-outline flex-1" onclick="closeRejectModal()">Cancel</button>
-                    <button type="submit" class="btn-danger flex-1">Reject Referral</button>
+                    <button type="submit" class="btn-danger flex-1">Return for Revision</button>
                 </div>
             </form>
         </div>

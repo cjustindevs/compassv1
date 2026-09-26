@@ -45,5 +45,6 @@
         @endif
     </section>
     @endif
+    @include('partials.referral-recommendation')
     <x-supervision-history :record="$referral" />
 @endsection

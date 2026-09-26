@@ -425,9 +425,20 @@ class HelperSessionController extends Controller
 
         $validated = $request->validate([
             'summary' => 'required|string|max:500',
+            'form_version' => 'nullable|in:appendix-o-v4',
+            'indicators' => 'required_with:form_version|array|min:1|max:9',
+            'indicators.*' => ['string', \Illuminate\Validation\Rule::in(\App\Services\ReferralForm::INDICATORS)],
+            'session_summary' => 'required_with:form_version|string|max:2000',
+            'observations' => 'required_with:form_version|string|max:2000',
+            'actions_taken' => 'required_with:form_version|string|max:2000',
+            'receiving_office' => 'required_with:form_version|string|max:200',
+            'referral_explained' => 'required_with:form_version|in:yes,no,emergency',
+            'recommended_urgency' => 'required_with:form_version|in:routine,priority,urgent,emergency',
+            'helper_remarks' => 'nullable|string|max:1000',
         ]);
 
-        $referral = app(ReferralManagementService::class)->requestConsent($session, ['summary' => $validated['summary']]);
+        $form = isset($validated['form_version']) ? \Illuminate\Support\Arr::except($validated, ['summary']) : null;
+        $referral = app(ReferralManagementService::class)->requestConsent($session, ['summary' => $validated['summary'], 'recommendation_form' => $form]);
 
         if (! $request->expectsJson()) {
             return back()->with('success', 'Recommendation submitted. Your adviser will review it before seeker consent is requested.');

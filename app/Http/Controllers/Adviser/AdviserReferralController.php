@@ -113,10 +113,10 @@ class AdviserReferralController extends Controller
     {
         $referral = Referral::findOrFail($id);
         $this->authorizeReferral($referral);
-        $data = $request->validate(['rejection_reason' => 'required|string|max:1000']);
-        $this->transition(fn () => app(ReferralManagementService::class)->reviewReferral($referral, Auth::user()->adviser, ['approved' => false, 'decline_reason' => $data['rejection_reason']]), 'rejection_reason');
+        $data = $request->validate(['rejection_reason' => 'required|string|min:10|max:1000']);
+        $this->transition(fn () => app(ReferralManagementService::class)->clarify($referral, $data['rejection_reason']), 'rejection_reason');
 
-        return redirect()->route('adviser.referrals')->with('info', 'Referral declined.');
+        return redirect()->route('adviser.referrals')->with('info', 'Recommendation returned to the Helper with your comments. Approval remains pending until the revision is reviewed.');
     }
 
     /**

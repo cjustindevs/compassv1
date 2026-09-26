@@ -216,6 +216,9 @@
                             <p><span class="text-gray-400">Priority</span><br><span class="font-medium text-gray-700">{{ ucfirst($referral->priority_level) }}</span></p>
                         </div>
                         <p class="mb-3">Agreeing allows the assigned professional to review the authorized case records and lets you provide contact details for coordination. You may decline at any time — your decision is respected.</p>
+                        <p class="text-sm mb-3 whitespace-pre-line">{{ $referral->referral_reason }}</p>
+                        @include('partials.referral-recommendation')
+                        @include('partials.referral-consent-terms')
                         <form method="POST" action="{{ route('referrals.consent', $referral) }}" class="flex flex-wrap gap-3">
                             @csrf
                             <button class="page-button" type="submit" name="consent_given" value="1">Agree to referral</button>

@@ -1,5 +1,17 @@
 # Referral workflow verification — 2026-09-26
 
+## Helper submission repair — 2026-09-27
+
+The generic Helper 422 page came from a cross-session open-referral check using `abort(422)`. It now returns a validation message while preserving the existing referral; it does not silently create another open case. The seeker row is locked during creation to serialize concurrent submissions. Identical retries no longer repeat notifications, and revised recommendations preserve encrypted historical snapshots.
+
+The initial Helper form now collects Appendix O recommendation fields (indicators, factual summary, observations, actions, receiving office, explanation status, urgency and remarks), separate from identity and seeker consent. The new `recommendation_form` column uses Laravel encrypted-array storage. Previously submitted summary-only referrals remain readable. Legacy clients may still send summary-only requests during rollout.
+
+The visible consent-first Helper form has been removed. Adviser return actions use the existing clarification/revision workflow. Seeker chat prompts link to the full approved recommendation and consent page. Identity modal fields stay disabled until explicit disclosure consent is checked. Vault-authorized identity views include the approved recommendation; unauthorized pages never retrieve the vault data. Ordinary referral decline redirects to Self-Help.
+
+Deployment requires `php artisan migrate --force` for `2026_09_27_000001_add_referral_recommendation_form.php`. This is additive; no existing records are deleted. Run before serving updated pages. Existing authorized professional assignment and appointment services remain in use. Off-platform external-professional transfer remains unavailable pending a documented recipient-verification and secure-sharing procedure; existing verified COMPASS professional accounts can be assigned through the authorized coordination workflow.
+
+Validation: 76 focused referral, consent, identity-vault, appointment and Adviser tests passed (516 assertions); frontend build passed. The full run reported 412 passes and 9 failures: two expectations were updated for the requested return-for-revision and Self-Help behavior and pass in the focused run; seven moderator scheduling/queue failures remain outside this change. Full-system success is not claimed. The legacy summary-only submission endpoints and concluded-session eligibility remain backward compatible; enforcing the new form on every legacy caller and external transfer governance remain follow-up work.
+
 ## Adviser queue follow-up
 
 The referral queue, dashboard pending list/count and sidebar badge now share the same Adviser scope. This includes directly assigned referrals, supervised Helpers' referrals, and previously unassigned referrals for sessions explicitly assigned to that reviewer. Unrelated Advisers remain blocked.

@@ -279,6 +279,7 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            @include('partials.referral-recommendation')
             <!-- Referral Information -->
             <div class="card">
                 <div class="card-header">

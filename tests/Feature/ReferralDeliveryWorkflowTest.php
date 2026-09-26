@@ -256,9 +256,42 @@ class ReferralDeliveryWorkflowTest extends TestCase
         $second = $this->makeSession($helper, $seekerUser, Session::STATUS_EVALUATED);
 
         $this->post(route('helper.session.referral.consent', $second->id), ['summary' => 'Second referral.'])
-            ->assertStatus(422);
+            ->assertRedirect()->assertSessionHasErrors('summary');
 
         $this->assertSame(1, Referral::count());
+    }
+
+    public function test_identical_recommendation_retry_does_not_duplicate_notifications(): void
+    {
+        Event::fake();
+        [, $helper] = $this->readyHelper();
+        $session = $this->makeSession($helper, $this->seekerUser());
+        $url = route('helper.session.referral.consent', $session->id);
+        $this->post($url, ['summary' => 'Professional support recommended.'])->assertSessionHasNoErrors();
+        $count = \App\Models\Notification::count();
+        $this->post($url, ['summary' => 'Professional support recommended.'])->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('referrals', 1);
+        $this->assertSame($count, \App\Models\Notification::count());
+    }
+
+    public function test_complete_recommendation_is_encrypted_and_visible_to_assigned_adviser(): void
+    {
+        Event::fake();
+        [, $helper] = $this->readyHelper();
+        $session = $this->makeSession($helper, $this->seekerUser());
+        $payload = ['summary'=>'Professional follow-up recommended.', 'form_version'=>'appendix-o-v4',
+            'indicators'=>['Help seeker requested professional assistance'], 'session_summary'=>'Private factual summary.',
+            'observations'=>'Persistent distress reported.', 'actions_taken'=>'Active listening and support.',
+            'receiving_office'=>'DWCC Guidance Office', 'referral_explained'=>'yes', 'recommended_urgency'=>'priority'];
+        $this->post(route('helper.session.referral.consent', $session->id), $payload)->assertSessionHasNoErrors();
+        $referral = $session->referrals()->firstOrFail();
+        $this->assertSame('Private factual summary.', $referral->recommendation_form['session_summary']);
+        $this->assertStringNotContainsString('Private factual summary.', $referral->getRawOriginal('recommendation_form'));
+        $this->actingAs($helper->adviser->user)->get(route('adviser.referral.show', $referral))->assertOk()->assertSee('Private factual summary.');
+        $this->post(route('adviser.referral.reject', $referral), ['rejection_reason'=>'Please clarify the observations.'])->assertSessionHasNoErrors();
+        $this->assertSame('pending_adviser', $referral->fresh()->status);
+        $this->assertNotNull($referral->fresh()->clarification_requested_at);
+        $this->assertNull($referral->fresh()->approved_at);
     }
 
     public function test_unassigned_referral_is_preserved_and_resolvable_by_a_moderator(): void
