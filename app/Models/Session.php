@@ -12,16 +12,27 @@ class Session extends Model
     // ── Status flow for the request-support journey ──
     // screening_completed → preferences_set → waiting → helper_assigned → active → completed
     const STATUS_SCREENING_COMPLETED = 'screening_completed';
+
     const STATUS_PREFERENCES_SET = 'preferences_set';
+
     const STATUS_WAITING = 'waiting';
+
     const STATUS_HELPER_ASSIGNED = 'helper_assigned';
+
     const STATUS_ACTIVE = 'active';
+
     const STATUS_COMPLETED = 'completed';
+
     const STATUS_EVALUATED = 'evaluated';
+
     const STATUS_CANCELLED = 'cancelled';
+
     const STATUS_NO_SHOW = 'no_show';
+
     const STATUS_SCHEDULED = 'scheduled';
+
     const STATUS_EMERGENCY = 'emergency';
+
     const STATUS_PENDING_REVIEW = 'pending_review';
 
     /**
@@ -96,7 +107,7 @@ class Session extends Model
     ];
 
     protected $casts = [
-        'documentation_notified_at'=>'datetime',
+        'documentation_notified_at' => 'datetime',
 
         'scheduled_start' => 'datetime',
         'pre_session_brief_expires_at' => 'datetime',
@@ -257,6 +268,24 @@ class Session extends Model
         return $this->session_status === self::STATUS_ACTIVE;
     }
 
+    /**
+     * Whether a helper may raise a referral recommendation for this session.
+     *
+     * A recommendation is valid while the session is live and after it has
+     * concluded (completed or evaluated), because the helper may only notice
+     * the need for professional support while documenting the outcome.
+     * Cancelled sessions are excluded: the seeker withdrew, so no referral
+     * should be created on their behalf.
+     */
+    public function isReferralEligible(): bool
+    {
+        return in_array($this->session_status, [
+            self::STATUS_ACTIVE,
+            self::STATUS_COMPLETED,
+            self::STATUS_EVALUATED,
+        ], true);
+    }
+
     public function getStatusLabelAttribute(): string
     {
         $labels = [
@@ -279,7 +308,7 @@ class Session extends Model
 
     public function getReferenceNumberAttribute(): string
     {
-        return 'R-' . str_pad((string) $this->id, 4, '0', STR_PAD_LEFT);
+        return 'R-'.str_pad((string) $this->id, 4, '0', STR_PAD_LEFT);
     }
 
     public function getModeLabelAttribute(): string

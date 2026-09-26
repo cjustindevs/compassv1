@@ -25,8 +25,18 @@ class ReferralAppointmentService {
             $appointment = ReferralAppointment::create(['referral_id'=>$referral->id,'professional_id'=>$professionalId,'created_by'=>Auth::id(),
                 'starts_at'=>$start,'ends_at'=>$end,'meeting_details'=>$data['meeting_details'],'replaces_id'=>$current?->id]);
             SupportAudit::record('referral_appointment_scheduled',$appointment,['referral_id'=>$referral->id,'replaces_id'=>$current?->id]);
-            foreach (array_filter([$referral->session->seeker->user_account_id,$referral->adviser?->user_account_id,Auth::id()]) as $recipient) {
-                $link = $recipient === $referral->session->seeker->user_account_id ? '/seeker/referrals?appointment='.$appointment->id : ($recipient === Auth::id() ? '/professional/referral/'.$referral->id : '/adviser/referral/'.$referral->id);
+            // The helper raised the referral and coordinates with the seeker, so
+            // they must be told when a professional books or moves a session.
+            $seekerId = $referral->session->seeker->user_account_id;
+            $helperId = $referral->session->helper?->user_account_id;
+            $links = [
+                $seekerId => '/seeker/referrals?appointment='.$appointment->id,
+                $helperId => '/helper/chat/'.$referral->session_id,
+                $referral->adviser?->user_account_id => '/adviser/referral/'.$referral->id,
+                Auth::id() => '/professional/referral/'.$referral->id,
+            ];
+            foreach ($links as $recipient => $link) {
+                if (! $recipient) continue;
                 Notification::create(['user_account_id'=>$recipient,'title'=>'Referral appointment updated','message'=>'Open the referral to review the appointment details.','notification_type'=>'referral','type_icon'=>'fa-calendar','link'=>$link]);
             }
             return $appointment;

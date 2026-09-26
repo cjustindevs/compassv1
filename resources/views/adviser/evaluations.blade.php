@@ -230,6 +230,18 @@
                 <div class="text-center py-12 text-gray-400">
                     <p class="text-lg font-medium text-gray-600">All caught up!</p>
                     <p class="text-sm">No pending evaluations to review</p>
+                       @if(!empty($heldReports))
+                           <p class="text-sm mt-3 text-gray-500">
+                               {{ $heldReports }} {{ $heldReports === 1 ? 'report is' : 'reports are' }} withheld
+                               until the session is completed or evaluated.
+                           </p>
+                       @endif
+                       @if(!empty($undocumentedReports))
+                           <p class="text-sm mt-3 text-gray-500">
+                               {{ $undocumentedReports }} {{ $undocumentedReports === 1 ? 'report is' : 'reports are' }} awaiting
+                               session documentation from the Helper.
+                           </p>
+                       @endif
                 </div>
             @endif
         </div>

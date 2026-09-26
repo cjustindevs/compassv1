@@ -1,16 +1,13 @@
 <?php
 
-// Role and record authorization are enforced by the vault gateway and logged there.
-Route::middleware(['auth', 'throttle:20,1'])->group(function () {
-    Route::get('/referrals/{referral}/identity', [\App\Http\Controllers\IdentityVaultController::class, 'form'])->name('identity.form');
-    Route::post('/referrals/{referral}/identity', [\App\Http\Controllers\IdentityVaultController::class, 'store'])->name('identity.store');
-    Route::post('/referrals/{referral}/identity/release', [\App\Http\Controllers\IdentityVaultController::class, 'release'])->name('identity.release');
-    Route::get('/referrals/{referral}/identity/released', [\App\Http\Controllers\IdentityVaultController::class, 'show'])->name('identity.show');
-    Route::post('/referrals/{referral}/identity/acknowledge', [\App\Http\Controllers\IdentityVaultController::class, 'acknowledge'])->name('identity.acknowledge');
-    Route::post('/sessions/{session}/identity/emergency', [\App\Http\Controllers\IdentityVaultController::class, 'emergency'])->name('identity.emergency');
-    Route::post('/sessions/{session}/identity/emergency-review', [\App\Http\Controllers\IdentityVaultController::class, 'reviewEmergency'])->name('identity.emergency-review');
-});
-
+use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\BackupRestoreController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\ResourceLibraryController;
+use App\Http\Controllers\Admin\RolePermissionController;
+use App\Http\Controllers\Admin\SystemHealthController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Adviser\AdviserCalendarController;
 use App\Http\Controllers\Adviser\AdviserDashboardController;
 use App\Http\Controllers\Adviser\AdviserEmergencyController;
@@ -22,14 +19,16 @@ use App\Http\Controllers\Adviser\AdviserReportController;
 use App\Http\Controllers\Adviser\AdviserResourceController;
 use App\Http\Controllers\Adviser\AdviserSessionController;
 use App\Http\Controllers\Adviser\AdviserSettingsController;
+use App\Http\Controllers\Adviser\AdviserTrainingController;
 use App\Http\Controllers\Adviser\AdviserTranscriptController;
 use App\Http\Controllers\Auth\HelpSeekerRegisterController;
 use App\Http\Controllers\Auth\OTPController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Helper\HelperCalendarController;
 use App\Http\Controllers\Helper\HelperCaseController;
 use App\Http\Controllers\Helper\HelperChatController;
-use App\Http\Controllers\Helper\HelperDashboardController;
 use App\Http\Controllers\Helper\HelperCompetencyController;
+use App\Http\Controllers\Helper\HelperDashboardController;
 use App\Http\Controllers\Helper\HelperNotificationController;
 use App\Http\Controllers\Helper\HelperProfileController;
 use App\Http\Controllers\Helper\HelperReadinessController;
@@ -37,6 +36,8 @@ use App\Http\Controllers\Helper\HelperResourceController;
 use App\Http\Controllers\Helper\HelperSelfHelpController;
 use App\Http\Controllers\Helper\HelperSessionController;
 use App\Http\Controllers\Helper\HelperSettingsController;
+use App\Http\Controllers\IdentityVaultController;
+use App\Http\Controllers\IncidentReportController;
 use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\Moderator\ModeratorAnalyticsController;
 use App\Http\Controllers\Moderator\ModeratorDashboardController;
@@ -44,28 +45,46 @@ use App\Http\Controllers\Moderator\ModeratorEmergencyController;
 use App\Http\Controllers\Moderator\ModeratorManageController;
 use App\Http\Controllers\Moderator\ModeratorNotificationController;
 use App\Http\Controllers\Moderator\ModeratorQueueController;
+use App\Http\Controllers\Moderator\ModeratorReferralController;
 use App\Http\Controllers\Moderator\ModeratorReportController;
 use App\Http\Controllers\Moderator\ModeratorScheduleController;
 use App\Http\Controllers\Moderator\ModeratorSessionController;
 use App\Http\Controllers\Moderator\ModeratorSettingsController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Professional\ProfessionalCaseController;
 use App\Http\Controllers\Professional\ProfessionalDashboardController;
 use App\Http\Controllers\Professional\ProfessionalProfileController;
 use App\Http\Controllers\Professional\ProfessionalReferralController;
 use App\Http\Controllers\Professional\ProfessionalReportController;
-use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\IncidentReportController;
 use App\Http\Controllers\ReferralWorkflowController;
 use App\Http\Controllers\RequestSupportController;
 use App\Http\Controllers\RiskClassificationController;
+use App\Http\Controllers\ScreeningReviewController;
+use App\Http\Controllers\SeekerConsentController;
 use App\Http\Controllers\SeekerDashboardController;
+use App\Http\Controllers\SeekerOnboardingController;
 use App\Http\Controllers\SelfHelpController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SettingsController;
-use App\Http\Controllers\ChatController;
+use App\Models\EmergencyAlert;
+use App\Models\EmergencyResource;
+use App\Models\IncidentReport;
+use App\Models\Session;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
+
+// Role and record authorization are enforced by the vault gateway and logged there.
+Route::middleware(['auth', 'throttle:20,1'])->group(function () {
+    Route::get('/referrals/{referral}/identity', [IdentityVaultController::class, 'form'])->name('identity.form');
+    Route::post('/referrals/{referral}/identity', [IdentityVaultController::class, 'store'])->name('identity.store');
+    Route::post('/referrals/{referral}/identity/release', [IdentityVaultController::class, 'release'])->name('identity.release');
+    Route::get('/referrals/{referral}/identity/released', [IdentityVaultController::class, 'show'])->name('identity.show');
+    Route::post('/referrals/{referral}/identity/acknowledge', [IdentityVaultController::class, 'acknowledge'])->name('identity.acknowledge');
+    Route::post('/sessions/{session}/identity/emergency', [IdentityVaultController::class, 'emergency'])->name('identity.emergency');
+    Route::post('/sessions/{session}/identity/emergency-review', [IdentityVaultController::class, 'reviewEmergency'])->name('identity.emergency-review');
+});
+
 
 /*
 |--------------------------------------------------------------------------
@@ -126,7 +145,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/helper/dashboard', [HelperDashboardController::class, 'index'])->name('helper.dashboard');
     Route::get('/adviser/dashboard', [AdviserDashboardController::class, 'index'])->name('adviser.dashboard');
 
-    Route::get('/admin/dashboard', \App\Http\Controllers\Admin\DashboardController::class)->middleware('role:admin')->name('admin.dashboard');
+    Route::get('/admin/dashboard', DashboardController::class)->middleware('role:admin')->name('admin.dashboard');
 });
 
 // =============================================
@@ -151,8 +170,8 @@ require __DIR__.'/auth.php';
 // CUSTOM HELP SEEKER REGISTRATION (WITH OTP)
 // MUST BE AFTER require __DIR__.'/auth.php' TO OVERRIDE
 // =============================================
-Route::get('/register', [\App\Http\Controllers\SeekerOnboardingController::class, 'create'])->name('register');
-Route::get('/register-seeker', [\App\Http\Controllers\SeekerOnboardingController::class, 'create'])->name('seeker.register');
+Route::get('/register', [SeekerOnboardingController::class, 'create'])->name('register');
+Route::get('/register-seeker', [SeekerOnboardingController::class, 'create'])->name('seeker.register');
 
 // =============================================
 // REQUEST SUPPORT ROUTES (3-Step Process)
@@ -162,10 +181,10 @@ Route::middleware(['auth', 'role:seeker'])->group(function () {
     Route::get('/request/screening', [RequestSupportController::class, 'screening'])->name('request.screening');
     Route::post('/request/screening', [RequestSupportController::class, 'processScreening'])->name('request.screening.process');
 
-    Route::get('/request/concern', [RequestSupportController::class,'concern'])->name('request.concern');
-    Route::post('/request/concern', [RequestSupportController::class,'processConcern'])->name('request.concern.process');
-    Route::post('/request/{session}/cancel', [RequestSupportController::class,'cancel'])->name('request.cancel');
-    Route::get('/seeker/requests', [RequestSupportController::class,'history'])->name('seeker.requests');
+    Route::get('/request/concern', [RequestSupportController::class, 'concern'])->name('request.concern');
+    Route::post('/request/concern', [RequestSupportController::class, 'processConcern'])->name('request.concern.process');
+    Route::post('/request/{session}/cancel', [RequestSupportController::class, 'cancel'])->name('request.cancel');
+    Route::get('/seeker/requests', [RequestSupportController::class, 'history'])->name('seeker.requests');
     // Step 2: Preferences (Support Mode, Language, Notes)
     Route::get('/request/preferences', [RequestSupportController::class, 'preferences'])->name('request.preferences');
     Route::post('/request/preferences', [RequestSupportController::class, 'processPreferences'])->name('request.preferences.process');
@@ -279,12 +298,11 @@ Route::middleware(['auth', 'role:helper', 'ensure.helper.profile', 'ensure.helpe
     Route::get('/referral/status/{id}', [HelperSessionController::class, 'referralStatus'])->name('referral.status');
     Route::post('/referral/{id}/clarification', [HelperSessionController::class, 'clarifyReferral'])->name('referral.clarify');
 
-
     // Calendar
     Route::get('/calendar', [HelperCalendarController::class, 'index'])->name('calendar');
 
     // Competency
-    Route::post('/feedback/{id}/acknowledge', [HelperCompetencyController::class,'acknowledgeFeedback'])->name('feedback.acknowledge');
+    Route::post('/feedback/{id}/acknowledge', [HelperCompetencyController::class, 'acknowledgeFeedback'])->name('feedback.acknowledge');
     Route::get('/competency', [HelperCompetencyController::class, 'index'])->name('competency');
     Route::get('/competency/{id}', [HelperCompetencyController::class, 'show'])->name('competency.view');
     Route::get('/feedback', [HelperCompetencyController::class, 'feedback'])->name('feedback');
@@ -342,9 +360,9 @@ Route::middleware(['auth', 'role:helper', 'ensure.helper.profile'])->prefix('hel
 // ADVISER MODULE ROUTES
 // =============================================
 Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')->group(function () {
-    Route::get('/training', [\App\Http\Controllers\Adviser\AdviserTrainingController::class, 'index'])->name('training');
-    Route::post('/training', [\App\Http\Controllers\Adviser\AdviserTrainingController::class, 'store'])->name('training.store');
-    Route::patch('/training/{training}', [\App\Http\Controllers\Adviser\AdviserTrainingController::class, 'update'])->name('training.update');
+    Route::get('/training', [AdviserTrainingController::class, 'index'])->name('training');
+    Route::post('/training', [AdviserTrainingController::class, 'store'])->name('training.store');
+    Route::patch('/training/{training}', [AdviserTrainingController::class, 'update'])->name('training.update');
     // Dashboard
     Route::get('/dashboard', [AdviserDashboardController::class, 'index'])->name('dashboard');
 
@@ -383,7 +401,7 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
     // Transcript Review
     Route::get('/transcripts', [AdviserTranscriptController::class, 'index'])->name('transcripts');
     Route::post('/transcript/{sessionId}/verify', [AdviserTranscriptController::class, 'verify'])->name('transcript.verify');
-        Route::post('/transcripts/{sessionId}/access', [AdviserTranscriptController::class, 'access'])->name('transcript.access');
+    Route::post('/transcripts/{sessionId}/access', [AdviserTranscriptController::class, 'access'])->name('transcript.access');
 
     // Reports
     Route::get('/reports', [AdviserReportController::class, 'index'])->name('reports');
@@ -393,7 +411,7 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
     Route::get('/emergencies', [AdviserEmergencyController::class, 'index'])->name('emergencies');
     Route::get('/emergencies/{id}', [AdviserEmergencyController::class, 'show'])->name('emergencies.show');
     Route::post('/emergencies/{id}/resolve', [AdviserEmergencyController::class, 'resolve'])->name('emergencies.resolve');
-    Route::post('/emergencies/{id}/action', [AdviserEmergencyController::class,'action'])->name('emergencies.action');
+    Route::post('/emergencies/{id}/action', [AdviserEmergencyController::class, 'action'])->name('emergencies.action');
 
     // Calendar
     Route::get('/calendar', [AdviserCalendarController::class, 'index'])->name('calendar');
@@ -456,6 +474,13 @@ Route::middleware(['auth', 'role:professional'])->prefix('professional')->name('
     Route::get('/settings', function () {
         return view('professional.settings');
     })->name('settings');
+});
+
+// Referrals awaiting an Adviser assignment. Administrators are notified of
+// this queue alongside Moderators, so they must be able to open and action it.
+Route::middleware(['auth', 'role:moderator,admin'])->prefix('moderator')->name('moderator.')->group(function () {
+    Route::get('/referrals/unassigned', [ModeratorReferralController::class, 'index'])->name('referrals.unassigned');
+    Route::post('/referrals/{referral}/assign-adviser', [ModeratorReferralController::class, 'assign'])->name('referrals.assign-adviser');
 });
 
 // =============================================
@@ -527,7 +552,7 @@ Route::middleware(['auth'])->prefix('api')->group(function () {
     Route::post('/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
     Route::post('/chat/typing', [ChatController::class, 'typing'])->name('chat.typing');
     Route::get('/chat/messages/{sessionId}', [ChatController::class, 'getMessages'])->name('chat.messages');
-    Route::post('/chat/expire/{sessionId}', [ChatController::class,'expire'])->whereNumber('sessionId')->name('chat.expire');
+    Route::post('/chat/expire/{sessionId}', [ChatController::class, 'expire'])->whereNumber('sessionId')->name('chat.expire');
     Route::get('/chat/status/{sessionId}', [ChatController::class, 'status'])->whereNumber('sessionId')->name('chat.status');
     Route::get('/chat/transcript/{sessionId}', [ChatController::class, 'getTranscript'])->name('chat.transcript');
     Route::get('/transcript/{sessionId}/download', [ChatController::class, 'downloadTranscript'])->name('api.transcript.download');
@@ -556,29 +581,30 @@ Route::prefix('api')->group(function () {
     Route::post('/send-otp', [OTPController::class, 'sendOTP'])->middleware(['guest', 'throttle:registration-actions'])->name('registration.otp.send');
     Route::post('/resend-otp', [OTPController::class, 'sendOTP'])->middleware(['guest', 'throttle:registration-actions']);
     Route::post('/verify-otp', [OTPController::class, 'verifyOTP'])->middleware(['guest', 'throttle:registration-actions'])->name('registration.otp.verify');
-    Route::post('/shuffle-alias', [\App\Http\Controllers\SeekerOnboardingController::class, 'shuffleAlias'])->middleware(['guest', 'throttle:registration-actions'])->name('registration.alias.shuffle');
+    Route::post('/shuffle-alias', [SeekerOnboardingController::class, 'shuffleAlias'])->middleware(['guest', 'throttle:registration-actions'])->name('registration.alias.shuffle');
     // Retired legacy account creation routes
     foreach (['check-email', 'register-seeker'] as $legacyEndpoint) {
-        Route::post('/' . $legacyEndpoint, fn () => response()->json(['message' => 'Email-based seeker registration has been retired. Use pseudonymous onboarding.', 'registration_url' => route('seeker.register')], 410));
+        Route::post('/'.$legacyEndpoint, fn () => response()->json(['message' => 'Email-based seeker registration has been retired. Use pseudonymous onboarding.', 'registration_url' => route('seeker.register')], 410));
     }
 
     // Help Seeker Registration
     Route::get('/generate-alias', [HelpSeekerRegisterController::class, 'generateAlias']);
 });
 
-Route::post('/onboarding', [\App\Http\Controllers\SeekerOnboardingController::class, 'store'])->middleware(['guest', 'throttle:seeker-registration'])->name('seeker.onboarding.store');
+Route::post('/onboarding', [SeekerOnboardingController::class, 'store'])->middleware(['guest', 'throttle:seeker-registration'])->name('seeker.onboarding.store');
 Route::middleware(['auth', 'role:seeker'])->group(function () {
-    Route::get('/seeker/consent', [\App\Http\Controllers\SeekerOnboardingController::class, 'consent'])->name('seeker.consent');
-    Route::post('/seeker/consent', [\App\Http\Controllers\SeekerOnboardingController::class, 'accept'])->name('seeker.consent.accept');
+    Route::get('/seeker/consent', [SeekerOnboardingController::class, 'consent'])->name('seeker.consent');
+    Route::post('/seeker/consent', [SeekerOnboardingController::class, 'accept'])->name('seeker.consent.accept');
 });
 
-Route::get('/session/{session}/referral-prompt', function (\App\Models\Session $session) {
+Route::get('/session/{session}/referral-prompt', function (Session $session) {
     $user = auth()->user();
     abort_unless(($user->helpSeeker && $user->helpSeeker->id === $session->seeker_id) || ($user->helper && $user->helper->id === $session->helper_id), 403);
     $referral = $session->referrals()->latest('id')->first();
     $consent = $referral ? $referral->consentRecords()->where('purpose', 'referral')->latest('id')->first() : null;
-    $emergency = \App\Models\EmergencyAlert::where('session_id', $session->id)->latest('id')->first();
-    $incident = \App\Models\IncidentReport::where('session_id', $session->id)->where('incident_category', 'emergency_flag')->where('status', 'open')->latest('id')->first();
+    $emergency = EmergencyAlert::where('session_id', $session->id)->latest('id')->first();
+    $incident = IncidentReport::where('session_id', $session->id)->where('incident_category', 'emergency_flag')->where('status', 'open')->latest('id')->first();
+
     return response()->json([
         'referral' => $referral ? [
             'id' => $referral->id, 'status' => $referral->status,
@@ -593,33 +619,33 @@ Route::get('/session/{session}/referral-prompt', function (\App\Models\Session $
     ]);
 })->middleware('auth')->name('session.referral-prompt');
 
-Route::get('/emergency', fn()=>view('emergency',['hotlines'=>\App\Models\EmergencyResource::published()->get()]))->middleware('auth')->name('emergency');
-Route::middleware(['auth','role:seeker'])->group(function () {
-    Route::get('/seeker/privacy', [\App\Http\Controllers\SeekerConsentController::class,'index'])->name('seeker.privacy');
-    Route::post('/seeker/privacy/decision', [\App\Http\Controllers\SeekerConsentController::class,'decision'])->name('seeker.privacy.decision');
-    Route::get('/seeker/referrals', [\App\Http\Controllers\SeekerConsentController::class,'referrals'])->name('seeker.referrals');
+Route::get('/emergency', fn () => view('emergency', ['hotlines' => EmergencyResource::published()->get()]))->middleware('auth')->name('emergency');
+Route::middleware(['auth', 'role:seeker'])->group(function () {
+    Route::get('/seeker/privacy', [SeekerConsentController::class, 'index'])->name('seeker.privacy');
+    Route::post('/seeker/privacy/decision', [SeekerConsentController::class, 'decision'])->name('seeker.privacy.decision');
+    Route::get('/seeker/referrals', [SeekerConsentController::class, 'referrals'])->name('seeker.referrals');
 });
-Route::middleware(['auth','role:adviser'])->group(function () {
-    Route::get('/adviser/screenings', [\App\Http\Controllers\ScreeningReviewController::class,'index'])->name('adviser.screenings');
-    Route::get('/adviser/screenings/{session}/conversation', [\App\Http\Controllers\ScreeningReviewController::class,'conversation'])->name('adviser.screenings.conversation');
-    Route::post('/adviser/screenings/{session}', [\App\Http\Controllers\ScreeningReviewController::class,'review'])->name('adviser.screenings.review');
+Route::middleware(['auth', 'role:adviser'])->group(function () {
+    Route::get('/adviser/screenings', [ScreeningReviewController::class, 'index'])->name('adviser.screenings');
+    Route::get('/adviser/screenings/{session}/conversation', [ScreeningReviewController::class, 'conversation'])->name('adviser.screenings.conversation');
+    Route::post('/adviser/screenings/{session}', [ScreeningReviewController::class, 'review'])->name('adviser.screenings.review');
 });
 
-Route::middleware(['auth','role:helper'])->group(function () {
-    Route::get('/helper/training', [\App\Http\Controllers\Adviser\AdviserTrainingController::class,'index'])->name('helper.training');
-    Route::patch('/helper/training/{training}', [\App\Http\Controllers\Adviser\AdviserTrainingController::class,'update'])->name('helper.training.update');
+Route::middleware(['auth', 'role:helper'])->group(function () {
+    Route::get('/helper/training', [AdviserTrainingController::class, 'index'])->name('helper.training');
+    Route::patch('/helper/training/{training}', [AdviserTrainingController::class, 'update'])->name('helper.training.update');
 });
 
 // Integrated Admin module; the existing active-account and role middleware remain authoritative.
-Route::middleware(['auth','role:admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/users',[\App\Http\Controllers\Admin\UserController::class,'index'])->name('users');
-    Route::post('/users',[\App\Http\Controllers\Admin\UserController::class,'store'])->name('users.store');
-    Route::get('/roles-permissions',\App\Http\Controllers\Admin\RolePermissionController::class)->name('roles-permissions');
-    Route::get('/resource-library',\App\Http\Controllers\Admin\ResourceLibraryController::class)->name('resource-library');
-    Route::get('/audit-logs',\App\Http\Controllers\Admin\AuditLogController::class)->name('audit-logs');
-    Route::get('/backup-restore',\App\Http\Controllers\Admin\BackupRestoreController::class)->name('backup-restore');
-    Route::get('/system-health',\App\Http\Controllers\Admin\SystemHealthController::class)->name('system-health');
-    Route::get('/reports',\App\Http\Controllers\Admin\ReportController::class)->name('reports');
-    Route::get('/settings',[\App\Http\Controllers\Admin\SettingsController::class,'index'])->name('settings');
-    Route::patch('/settings/preferences',[\App\Http\Controllers\Admin\SettingsController::class,'updatePreference'])->name('settings.preference.update');
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/users', [UserController::class, 'index'])->name('users');
+    Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::get('/roles-permissions', RolePermissionController::class)->name('roles-permissions');
+    Route::get('/resource-library', ResourceLibraryController::class)->name('resource-library');
+    Route::get('/audit-logs', AuditLogController::class)->name('audit-logs');
+    Route::get('/backup-restore', BackupRestoreController::class)->name('backup-restore');
+    Route::get('/system-health', SystemHealthController::class)->name('system-health');
+    Route::get('/reports', ReportController::class)->name('reports');
+    Route::get('/settings', [App\Http\Controllers\Admin\SettingsController::class, 'index'])->name('settings');
+    Route::patch('/settings/preferences', [App\Http\Controllers\Admin\SettingsController::class, 'updatePreference'])->name('settings.preference.update');
 });

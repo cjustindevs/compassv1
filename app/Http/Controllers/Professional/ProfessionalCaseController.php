@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Professional;
 
 use App\Http\Controllers\Controller;
+use App\Models\Notification;
 use App\Models\ProfessionalNote;
 use App\Models\Referral;
+use App\Services\ReferralManagementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -67,7 +69,7 @@ class ProfessionalCaseController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $validated = $request->validate([
-            'status' => 'required|in:' . Referral::STATUS_IN_PROGRESS . ',' . Referral::STATUS_COMPLETED . ',' . Referral::STATUS_CLOSED,
+            'status' => 'required|in:'.Referral::STATUS_IN_PROGRESS.','.Referral::STATUS_COMPLETED.','.Referral::STATUS_CLOSED,
         ]);
 
         $professional = Auth::user()->psychologyProfessional;
@@ -75,17 +77,17 @@ class ProfessionalCaseController extends Controller
         $case = Referral::professionalAuthorized()->where('professional_id', $professional->id)
             ->findOrFail($id);
 
-        app(\App\Services\ReferralManagementService::class)->updateReferralOutcome($case,$validated);
+        app(ReferralManagementService::class)->updateReferralOutcome($case, $validated);
 
         // Notify the adviser when a case is finished
         if (in_array($validated['status'], Referral::COMPLETED_STATUSES, true) && $case->adviser?->user_account_id) {
-            \App\Models\Notification::create([
+            Notification::create([
                 'user_account_id' => $case->adviser->user_account_id,
-                'title' => 'Case ' . ($validated['status'] === Referral::STATUS_COMPLETED ? 'Completed' : 'Closed'),
-                'message' => 'Professional intervention for ' . ($case->session?->seeker?->generated_alias ?? 'Anonymous') . ' has been ' . ($validated['status'] === Referral::STATUS_COMPLETED ? 'completed' : 'closed') . '.',
+                'title' => 'Case '.($validated['status'] === Referral::STATUS_COMPLETED ? 'Completed' : 'Closed'),
+                'message' => 'Professional intervention for '.($case->session?->seeker?->generated_alias ?? 'Anonymous').' has been '.($validated['status'] === Referral::STATUS_COMPLETED ? 'completed' : 'closed').'.',
                 'notification_type' => 'referral',
                 'type_icon' => 'fa-flag-checkered',
-                'link' => '/adviser/referral/' . $case->id,
+                'link' => '/adviser/referral/'.$case->id,
             ]);
         }
 
@@ -113,6 +115,14 @@ class ProfessionalCaseController extends Controller
         $case = Referral::professionalAuthorized()->where('professional_id', $professional->id)
             ->findOrFail($id);
 
+        // A concluded case must not accrue new clinical notes, which would
+        // rewrite the record of work that already ended.
+        abort_unless(
+            in_array($case->status, [Referral::STATUS_ACCEPTED, Referral::STATUS_IN_PROGRESS], true),
+            409,
+            'Notes can only be added while the case is active.'
+        );
+
         ProfessionalNote::create([
             'referral_id' => $case->id,
             'professional_id' => $professional->id,
@@ -125,7 +135,7 @@ class ProfessionalCaseController extends Controller
 
         // Opening a case for the first time moves it to in_progress
         if ($case->status === Referral::STATUS_ACCEPTED) {
-            app(\App\Services\ReferralManagementService::class)->updateReferralOutcome($case,['status'=>Referral::STATUS_IN_PROGRESS]);
+            app(ReferralManagementService::class)->updateReferralOutcome($case, ['status' => Referral::STATUS_IN_PROGRESS]);
         }
 
         return redirect()->route('professional.cases.show', $case->id)

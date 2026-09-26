@@ -319,8 +319,10 @@
                     <span class="session-timer" id="sessionTimer">00:00</span>
                 @endif
                 <span class="status-badge {{ $session->session_status === 'active' ? 'active' : 'helper-assigned' }}">{{ $session->status_label }}</span>
-                @if($session->session_status !== 'completed')
+                @if($session->isReferralEligible())
                     <button type="button" class="action-btn referral-btn" id="referralBtn"><i class="fas fa-arrow-right"></i> Referral</button>
+                @endif
+                @if($session->session_status !== 'completed')
                     <button type="button" class="action-btn emergency-btn" id="emergencyBtn"><i class="fas fa-exclamation-triangle"></i> Emergency</button>
                     <form method="POST" action="{{ route('helper.session.end', ['id' => $session->id]) }}"
                           data-confirm="End session?"

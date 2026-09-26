@@ -4,14 +4,13 @@ namespace Tests\Feature;
 
 use App\Events\EmergencyTriggered;
 use App\Events\ModeratorAlert;
-use App\Events\ReferralConsentRequested;
 use App\Events\ReferralConsentUpdated;
 use App\Models\Adviser;
-use App\Models\ConsentRecord;
+use App\Models\ConcernCategory;
 use App\Models\EmergencyAlert;
-use App\Models\HelpSeeker;
 use App\Models\Helper;
 use App\Models\HelperSchedule;
+use App\Models\HelpSeeker;
 use App\Models\IncidentReport;
 use App\Models\Moderator;
 use App\Models\Notification;
@@ -19,12 +18,17 @@ use App\Models\PsychologyProfessional;
 use App\Models\Referral;
 use App\Models\Session;
 use App\Models\User;
+use App\Services\CompactScreening;
 use App\Services\ConsentService;
 use App\Services\HelperReadinessService;
+use Illuminate\Broadcasting\BroadcastException;
+use Illuminate\Contracts\Broadcasting\Broadcaster;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Symfony\Component\Process\Process;
 use Tests\Concerns\SeekerWorkflowFixtures;
 use Tests\TestCase;
 
@@ -67,7 +71,7 @@ class ConsentReferralEmergencyTest extends TestCase
     private function seekerUser(): User
     {
         $user = User::factory()->create(['role' => 'seeker', 'is_active' => true]);
-        HelpSeeker::create(['user_account_id' => $user->id, 'generated_alias' => 'Seeker' . $user->id, 'age' => 20, 'gender' => 'male']);
+        HelpSeeker::create(['user_account_id' => $user->id, 'generated_alias' => 'Seeker'.$user->id, 'age' => 20, 'gender' => 'male']);
         $this->consentFixture($user);
 
         return $user;
@@ -130,7 +134,8 @@ class ConsentReferralEmergencyTest extends TestCase
 
     public function test_referral_consent_request_survives_a_broadcast_exception(): void
     {
-        \Illuminate\Support\Facades\Broadcast::extend('failing-broadcaster', fn () => new class implements \Illuminate\Contracts\Broadcasting\Broadcaster {
+        Broadcast::extend('failing-broadcaster', fn () => new class implements Broadcaster
+        {
             public function auth($request)
             {
                 return [];
@@ -143,7 +148,7 @@ class ConsentReferralEmergencyTest extends TestCase
 
             public function broadcast(array $channels, $event, array $payload)
             {
-                throw new \Illuminate\Broadcasting\BroadcastException('Pusher error: cURL error 7: Failed to connect to localhost port 8080');
+                throw new BroadcastException('Pusher error: cURL error 7: Failed to connect to localhost port 8080');
             }
         });
         config(['broadcasting.default' => 'failing-broadcaster']);
@@ -210,21 +215,21 @@ class ConsentReferralEmergencyTest extends TestCase
         Event::fake();
         [, $helper] = $this->readyHelper();
         $seekerUser = $this->seekerUser();
-        $session = $this->activeSession($helper,$seekerUser);
+        $session = $this->activeSession($helper, $seekerUser);
         $this->professional();
-        $this->post(route('helper.session.referral.consent',$session->id),['summary'=>'Professional support recommended.'])->assertSessionHasNoErrors();
-        $referral=Referral::where('session_id',$session->id)->firstOrFail();
-        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request',$referral),['accepted'=>true])->assertStatus(409);
-        $this->approve($referral,$helper);
-        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request',$referral),['accepted'=>true])->assertOk();
+        $this->post(route('helper.session.referral.consent', $session->id), ['summary' => 'Professional support recommended.'])->assertSessionHasNoErrors();
+        $referral = Referral::where('session_id', $session->id)->firstOrFail();
+        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $referral), ['accepted' => true])->assertStatus(409);
+        $this->approve($referral, $helper);
+        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $referral), ['accepted' => true])->assertOk();
         $this->assertTrue($referral->fresh()->help_seeker_consent);
         $this->assertNull($referral->fresh()->professional_id);
-        $this->assertDatabaseHas('consent_records',['purpose'=>'referral','decision'=>'accepted','referral_id'=>$referral->id]);
+        $this->assertDatabaseHas('consent_records', ['purpose' => 'referral', 'decision' => 'accepted', 'referral_id' => $referral->id]);
     }
 
     private function approve(Referral $referral, Helper $helper): void
     {
-        $this->actingAs($helper->adviser->user)->postJson(route('referrals.review',$referral),['approved'=>true,'notes'=>'Reviewed supporting documentation.'])->assertOk();
+        $this->actingAs($helper->adviser->user)->postJson(route('referrals.review', $referral), ['approved' => true, 'notes' => 'Reviewed supporting documentation.'])->assertOk();
     }
 
     public function test_session_reviewer_receives_referral_when_helper_has_no_supervisor(): void
@@ -250,14 +255,32 @@ class ConsentReferralEmergencyTest extends TestCase
         $this->get(route('adviser.referral.show', $referral))->assertForbidden();
     }
 
-    public function test_recommendation_without_active_reviewer_returns_actionable_error(): void
+    public function test_recommendation_without_active_reviewer_is_preserved_and_escalated(): void
     {
         Event::fake();
         [, $helper] = $this->readyHelper();
         $helper->adviser->user->update(['is_active' => false]);
         $session = $this->activeSession($helper, $this->seekerUser());
-        $this->post(route('helper.session.referral.consent', $session->id), ['summary' => 'Needs an assigned reviewer.'])->assertSessionHasErrors('summary');
-        $this->assertDatabaseCount('referrals', 0);
+        $moderator = User::factory()->create(['role' => 'moderator', 'is_active' => true]);
+
+        $this->post(route('helper.session.referral.consent', $session->id), ['summary' => 'Needs an assigned reviewer.'])
+            ->assertRedirect();
+
+        // The recommendation must never be discarded just because no Adviser
+        // can be resolved; it is parked for Moderator assignment instead.
+        $referral = Referral::sole();
+        $this->assertSame(Referral::STATUS_PENDING_ADVISER_ASSIGNMENT, $referral->status);
+        $this->assertNull($referral->adviser_id);
+        $this->assertSame('Needs an assigned reviewer.', $referral->referral_reason);
+        $this->assertNotNull($referral->priority_level);
+
+        $this->assertDatabaseHas('notifications', [
+            'user_account_id' => $moderator->id,
+            'notification_type' => 'referral',
+            'link' => '/moderator/referrals/unassigned',
+        ]);
+
+        $this->actingAs($moderator)->get(route('moderator.referrals.unassigned'))->assertOk()->assertSee('Needs an assigned reviewer.');
     }
 
     public function test_adviser_browser_approval_redirect_and_review_scripts_work(): void
@@ -273,7 +296,7 @@ class ConsentReferralEmergencyTest extends TestCase
         preg_match_all('~<script\\b[^>]*>(.*?)</script>~si', $page->getContent(), $scripts);
         foreach ($scripts[1] as $script) {
             $this->assertStringNotContainsString('</style>', $script);
-            $syntax = new \Symfony\Component\Process\Process(['node', '--check']);
+            $syntax = new Process(['node', '--check']);
             $syntax->setInput($script)->run();
             $this->assertTrue($syntax->isSuccessful(), $syntax->getErrorOutput());
         }
@@ -317,7 +340,7 @@ class ConsentReferralEmergencyTest extends TestCase
         $this->post(route('helper.session.referral.consent', ['id' => $session->id]), ['summary' => 'Summary.']);
         $referral = Referral::where('session_id', $session->id)->firstOrFail();
 
-        $this->approve($referral,$helper);
+        $this->approve($referral, $helper);
         $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $referral), ['accepted' => false])
             ->assertOk()
             ->assertJson(['success' => true, 'status' => Referral::STATUS_CLOSED, 'referral_id' => $referral->id]);
@@ -354,7 +377,7 @@ class ConsentReferralEmergencyTest extends TestCase
 
         $this->post(route('helper.session.referral.consent', ['id' => $session->id]), ['summary' => 'First request.']);
         $first = Referral::where('session_id', $session->id)->firstOrFail();
-        $this->approve($first,$helper);
+        $this->approve($first, $helper);
         $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $first), ['accepted' => false])->assertOk();
 
         $this->actingAs($helperUser)->post(route('helper.session.referral.consent', ['id' => $session->id]), ['summary' => 'Second request after decline.'])->assertSessionHasNoErrors();
@@ -377,7 +400,7 @@ class ConsentReferralEmergencyTest extends TestCase
         $this->post(route('helper.session.referral.consent', ['id' => $session->id]), ['summary' => 'Summary.']);
         $referral = Referral::where('session_id', $session->id)->firstOrFail();
 
-        $this->approve($referral,$helper);
+        $this->approve($referral, $helper);
         $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $referral), ['accepted' => true])->assertOk();
         $this->assertTrue(app(ConsentService::class)->valid($seeker, 'referral', $referral->id));
 
@@ -443,7 +466,7 @@ class ConsentReferralEmergencyTest extends TestCase
         $this->assertDatabaseHas('emergency_alerts', ['session_id' => $session->id, 'referral_id' => $referral->id]);
 
         Event::assertDispatched(ModeratorAlert::class, function ($event) use ($session, $moderatorUser) {
-            return $event->broadcastOn()->name === 'private-moderator.' . $moderatorUser->id
+            return $event->broadcastOn()->name === 'private-moderator.'.$moderatorUser->id
                 && $event->broadcastWith()['session_id'] === $session->id
                 && $event->broadcastWith()['risk_level'] === 'emergency';
         });
@@ -465,14 +488,14 @@ class ConsentReferralEmergencyTest extends TestCase
         Event::fake();
         [, $helper] = $this->readyHelper();
         $seekerUser = $this->seekerUser();
-        $session = $this->activeSession($helper,$seekerUser);
-        $this->post(route('helper.session.emergency',$session->id),['description'=>'Immediate safety concern.']);
-        $referral=Referral::where('session_id',$session->id)->firstOrFail();
-        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request',$referral),['accepted'=>true])->assertStatus(409);
-        $this->approve($referral,$helper);
-        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request',$referral),['accepted'=>true])->assertOk();
+        $session = $this->activeSession($helper, $seekerUser);
+        $this->post(route('helper.session.emergency', $session->id), ['description' => 'Immediate safety concern.']);
+        $referral = Referral::where('session_id', $session->id)->firstOrFail();
+        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $referral), ['accepted' => true])->assertStatus(409);
+        $this->approve($referral, $helper);
+        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $referral), ['accepted' => true])->assertOk();
         $this->assertNull($referral->fresh()->professional_id);
-        $this->assertDatabaseCount('emergency_alerts',1);
+        $this->assertDatabaseCount('emergency_alerts', 1);
     }
 
     public function test_emergency_flag_persists_and_notifies_while_consent_is_declined(): void
@@ -490,7 +513,7 @@ class ConsentReferralEmergencyTest extends TestCase
 
         $this->assertGreaterThanOrEqual(2, Notification::where('notification_type', 'emergency')->count(), 'Adviser, seeker, or moderator must be notified for an emergency flag.');
 
-        $this->approve($referral,$helper);
+        $this->approve($referral, $helper);
         $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $referral), ['accepted' => false])->assertOk();
         $this->assertSame(Referral::STATUS_CLOSED, $referral->fresh()->status);
 
@@ -537,11 +560,11 @@ class ConsentReferralEmergencyTest extends TestCase
     {
         [, $helper] = $this->readyHelper();
         $seekerUser = $this->seekerUser();
-        $session = $this->activeSession($helper,$seekerUser);
-        $referral=$this->pendingAdviserReferral($session,$helper);
-        $this->approve($referral,$helper);
-        $this->actingAs($seekerUser)->post(route('referrals.consent',$referral),['consent_given'=>1])->assertRedirect(route('seeker.referrals'))->assertSessionHas('identity_referral_id',$referral->id);
-        $this->get(route('seeker.referrals'))->assertOk()->assertSee('identity-dialog-'.$referral->id,false);
+        $session = $this->activeSession($helper, $seekerUser);
+        $referral = $this->pendingAdviserReferral($session, $helper);
+        $this->approve($referral, $helper);
+        $this->actingAs($seekerUser)->post(route('referrals.consent', $referral), ['consent_given' => 1])->assertRedirect(route('seeker.referrals'))->assertSessionHas('identity_referral_id', $referral->id);
+        $this->get(route('seeker.referrals'))->assertOk()->assertSee('identity-dialog-'.$referral->id, false);
     }
 
     public function test_adviser_approve_then_seeker_consent_prompts_identity(): void
@@ -623,11 +646,11 @@ class ConsentReferralEmergencyTest extends TestCase
     public function test_classification_emergency_creates_open_incident_for_moderator_board(): void
     {
         $user = User::factory()->create(['role' => 'seeker', 'is_active' => true]);
-        HelpSeeker::create(['user_account_id' => $user->id, 'generated_alias' => 'EmSeeker' . $user->id, 'age' => 20, 'gender' => 'male']);
+        HelpSeeker::create(['user_account_id' => $user->id, 'generated_alias' => 'EmSeeker'.$user->id, 'age' => 20, 'gender' => 'male']);
         $this->consentFixture($user);
         $this->actingAs($user);
 
-        $this->post(route('request.screening.process'), array_replace(array_fill_keys(\App\Services\CompactScreening::FIELDS, '0'), ['current_suicide_plan' => '1', 'concern_id' => \App\Models\ConcernCategory::firstOrCreate(['concern_name' => 'Health'])->id]))
+        $this->post(route('request.screening.process'), array_replace(array_fill_keys(CompactScreening::FIELDS, '0'), ['current_suicide_plan' => '1', 'concern_id' => ConcernCategory::firstOrCreate(['concern_name' => 'Health'])->id]))
             ->assertRedirect(route('request.matching'));
 
         $session = Session::where('seeker_id', $user->helpSeeker->id)->firstOrFail();
@@ -683,7 +706,7 @@ class ConsentReferralEmergencyTest extends TestCase
         $this->assertGreaterThanOrEqual(1, Notification::where('user_account_id', $helper->adviser->user_account_id)->where('title', 'Helper not responding')->count());
 
         $this->artisan('sessions:check-no-response')->assertSuccessful();
-        $this->assertSame(1, \Illuminate\Support\Facades\DB::table('audit_logs')->where('action', 'helper_no_response_escalated')->count(), 'Escalation must be idempotent.');
+        $this->assertSame(1, DB::table('audit_logs')->where('action', 'helper_no_response_escalated')->count(), 'Escalation must be idempotent.');
 
         $this->actingAs($helperUser)->postJson(route('chat.send'), ['session_id' => $session->id, 'message' => 'I am here now.'])->assertOk();
         $session->refresh();

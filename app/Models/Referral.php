@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\IdentityVaultService;
 use Illuminate\Database\Eloquent\Model;
 
 class Referral extends Model
@@ -14,12 +15,14 @@ class Referral extends Model
                 ->whereHas('session', fn ($session) => $session->where('review_adviser_id', $adviserId))));
     }
 
-    public function scopeProfessionalAuthorized($query) {
-        return $query->whereNotNull('approved_at')->where('help_seeker_consent',true)->whereIn('status',[self::STATUS_PENDING_PROFESSIONAL,self::STATUS_ACCEPTED,self::STATUS_IN_PROGRESS,self::STATUS_COMPLETED]);
+    public function scopeProfessionalAuthorized($query)
+    {
+        return $query->whereNotNull('approved_at')->where('help_seeker_consent', true)->whereIn('status', [self::STATUS_PENDING_PROFESSIONAL, self::STATUS_ACCEPTED, self::STATUS_IN_PROGRESS, self::STATUS_COMPLETED]);
     }
+
     public function releaseIdentity(): void
     {
-        app(\App\Services\IdentityVaultService::class)->releaseForReferral($this);
+        app(IdentityVaultService::class)->releaseForReferral($this);
     }
 
     protected $table = 'referrals';
@@ -51,7 +54,7 @@ class Referral extends Model
         'status',
         'closed_date',
         'closure_notes',
-        'decline_reason'
+        'decline_reason',
     ];
 
     protected $casts = [
@@ -68,19 +71,32 @@ class Referral extends Model
         'closed_date' => 'datetime',
         'help_seeker_consent' => 'boolean',
         'identity_disclosed' => 'boolean',
-        'follow_up_required' => 'boolean'
+        'follow_up_required' => 'boolean',
     ];
 
     // Status constants
     const STATUS_PENDING_ADVISER = 'pending_adviser';
+
+    // Raised when a recommendation exists but no Adviser could be resolved, so
+    // a Moderator/Administrator must complete the assignment.
+    const STATUS_PENDING_ADVISER_ASSIGNMENT = 'pending_adviser_assignment';
+
     const STATUS_PENDING_CONSENT = 'pending_consent';
+
     const STATUS_CONSENT_REQUESTED = 'consent_requested';
+
     const STATUS_PENDING_PROFESSIONAL = 'pending_professional';
+
     const STATUS_ACCEPTED = 'accepted';
+
     const STATUS_IN_PROGRESS = 'in_progress';
+
     const STATUS_DECLINED = 'declined';
+
     const STATUS_COMPLETED = 'completed';
+
     const STATUS_CLOSED = 'closed';
+
     const STATUS_NO_PROFESSIONAL_AVAILABLE = 'no_professional_available';
 
     // Statuses treated as an "active case" for the professional
@@ -97,12 +113,18 @@ class Referral extends Model
 
     // Priority constants
     const PRIORITY_LOW = 'low';
+
     const PRIORITY_MODERATE = 'moderate';
+
     const PRIORITY_HIGH = 'high';
+
     const PRIORITY_EMERGENCY = 'emergency';
 
     // Relationships
-    public function appointments() { return $this->hasMany(ReferralAppointment::class)->latest('id'); }
+    public function appointments()
+    {
+        return $this->hasMany(ReferralAppointment::class)->latest('id');
+    }
 
     public function session()
     {

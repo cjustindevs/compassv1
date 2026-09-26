@@ -14,13 +14,20 @@ use App\Models\Notification;
 use App\Models\Referral;
 use App\Models\ScreeningResponse;
 use App\Models\Session;
-use App\Models\SessionReport;
 use App\Models\User;
+use App\Services\EmergencyEscalationService;
+use App\Services\HelperDocumentationService;
 use App\Services\HelperMatchingService;
+use App\Services\HelperReadinessService;
+use App\Services\ReferralManagementService;
+use App\Services\SeekerWorkflowService;
+use App\Services\SessionDurationService;
 use App\Traits\BroadcastsSafely;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class HelperSessionController extends Controller
 {
@@ -64,8 +71,8 @@ class HelperSessionController extends Controller
         }
 
         try {
-            $session = app(\App\Services\SeekerWorkflowService::class)->start(Auth::user(), $session);
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            $session = app(SeekerWorkflowService::class)->start(Auth::user(), $session);
+        } catch (HttpException $e) {
             return redirect()->route('helper.session.pre-assessment', $id)->with('error', $e->getMessage());
         }
 
@@ -141,13 +148,13 @@ class HelperSessionController extends Controller
 
         $text = '';
         if ($safetyIndicators !== []) {
-            $text .= 'Safety concern: ' . implode('; ', $safetyIndicators) . '. ';
+            $text .= 'Safety concern: '.implode('; ', $safetyIndicators).'. ';
         }
         if ($summaryParts !== []) {
-            $text .= 'The seeker ' . implode('; ', $summaryParts) . '. ';
+            $text .= 'The seeker '.implode('; ', $summaryParts).'. ';
         }
         if ($functionalImpacts !== []) {
-            $text .= 'Affected areas: ' . implode(', ', $functionalImpacts) . '. ';
+            $text .= 'Affected areas: '.implode(', ', $functionalImpacts).'. ';
         }
 
         return [
@@ -179,7 +186,7 @@ class HelperSessionController extends Controller
      */
     public function voice(int $id)
     {
-        abort(503,'Voice service is unavailable.');
+        abort(503, 'Voice service is unavailable.');
         $helper = Auth::user()->helper;
 
         $session = Session::with(['seeker'])
@@ -200,12 +207,12 @@ class HelperSessionController extends Controller
      */
     public function startVoice(Request $request, int $id)
     {
-        abort(503,'Voice service is unavailable.');
+        abort(503, 'Voice service is unavailable.');
         $helper = Auth::user()->helper;
 
         $session = Session::where('helper_id', $helper->id)->findOrFail($id);
 
-        session(['voice_call_started_at_' . $session->id => now()->timestamp]);
+        session(['voice_call_started_at_'.$session->id => now()->timestamp]);
 
         return response()->json(['ok' => true, 'started_at' => now()->timestamp]);
     }
@@ -215,14 +222,14 @@ class HelperSessionController extends Controller
      */
     public function endVoice(Request $request, int $id)
     {
-        abort(503,'Voice service is unavailable.');
+        abort(503, 'Voice service is unavailable.');
         $helper = Auth::user()->helper;
 
         $session = Session::with(['seeker'])
             ->where('helper_id', $helper->id)
             ->findOrFail($id);
 
-        $startedTs = session('voice_call_started_at_' . $session->id);
+        $startedTs = session('voice_call_started_at_'.$session->id);
         $callStart = $startedTs
             ? now()->createFromTimestamp((int) $startedTs)
             : ($session->start_time ?? now());
@@ -240,7 +247,7 @@ class HelperSessionController extends Controller
             ]
         );
 
-        session()->forget('voice_call_started_at_' . $session->id);
+        session()->forget('voice_call_started_at_'.$session->id);
 
         return redirect()
             ->route('helper.session.notes', ['id' => $session->id])
@@ -261,7 +268,7 @@ class HelperSessionController extends Controller
         $report = $session->report;
         $revisions = $report ? DB::table('session_report_revisions')->where('report_id', $report->id)->latest('id')->get() : collect();
 
-        $skills = collect(\App\Services\HelperReadinessService::SKILLS)
+        $skills = collect(HelperReadinessService::SKILLS)
             ->mapWithKeys(fn (string $skill) => [$skill => ucwords(str_replace('_', ' ', $skill))])
             ->all();
 
@@ -280,17 +287,17 @@ class HelperSessionController extends Controller
             'actions_taken' => 'required|string|max:2000',
             'risk_level_assessed' => 'nullable|in:low,moderate,high,emergency',
             'session_result' => 'required|in:stable,needs_follow_up,needs_referral',
-            'follow_up_plan' => ['nullable', 'string', 'max:2000', \Illuminate\Validation\Rule::requiredIf(in_array($request->input('session_result'), ['needs_follow_up', 'needs_referral'], true))],
+            'follow_up_plan' => ['nullable', 'string', 'max:2000', Rule::requiredIf(in_array($request->input('session_result'), ['needs_follow_up', 'needs_referral'], true))],
             'personal_reflection' => 'nullable|string|max:2000',
             'skills_applied' => 'nullable|array',
-            'skills_applied.*' => ['string', 'max:50', \Illuminate\Validation\Rule::in(\App\Services\HelperReadinessService::SKILLS)],
+            'skills_applied.*' => ['string', 'max:50', Rule::in(HelperReadinessService::SKILLS)],
             'correction_reason' => 'nullable|string|max:1000',
         ]);
 
         $session = Session::where('helper_id', Auth::user()->helper->id)->findOrFail($id);
 
         $hasReflection = filled($validated['personal_reflection'] ?? null) || ! empty($validated['skills_applied'] ?? []);
-        app(\App\Services\HelperDocumentationService::class)->save(Auth::user(), $session, $validated, $hasReflection ? 'both' : 'summary');
+        app(HelperDocumentationService::class)->save(Auth::user(), $session, $validated, $hasReflection ? 'both' : 'summary');
 
         return back()->with('success', 'Session notes saved successfully.');
     }
@@ -304,13 +311,13 @@ class HelperSessionController extends Controller
         $validated = $request->validate([
             'personal_reflection' => 'required|string|max:2000',
             'skills_applied' => 'required|array|min:1',
-            'skills_applied.*' => ['string', 'max:50', \Illuminate\Validation\Rule::in(\App\Services\HelperReadinessService::SKILLS)],
+            'skills_applied.*' => ['string', 'max:50', Rule::in(HelperReadinessService::SKILLS)],
             'correction_reason' => 'nullable|string|max:1000',
         ]);
 
         $session = Session::where('helper_id', Auth::user()->helper->id)->findOrFail($id);
 
-        app(\App\Services\HelperDocumentationService::class)->save(Auth::user(), $session, $validated, 'reflection');
+        app(HelperDocumentationService::class)->save(Auth::user(), $session, $validated, 'reflection');
 
         return back()->with('success', 'Personal reflection saved.');
     }
@@ -355,12 +362,12 @@ class HelperSessionController extends Controller
             ]);
         }
 
-        app(\App\Services\EmergencyEscalationService::class)->escalateEmergency($session,$session->seeker,['reason'=>'Helper reported immediate safety concern','preserve_classification'=>true]);
+        app(EmergencyEscalationService::class)->escalateEmergency($session, $session->seeker, ['reason' => 'Helper reported immediate safety concern', 'preserve_classification' => true]);
 
         $this->notifyStaff(
             ['moderator', 'adviser'],
             ' Emergency flagged',
-            'Emergency flagged in session #' . $session->id . ' by ' . $helper->full_name . '. ' . $validated['description'],
+            'Emergency flagged in session #'.$session->id.' by '.$helper->full_name.'. '.$validated['description'],
             'emergency',
             '/moderator/dashboard'
         );
@@ -376,7 +383,7 @@ class HelperSessionController extends Controller
                 $moderatorUserId,
                 'emergency',
                 'Emergency flagged',
-                'Emergency flagged in session #' . $session->id,
+                'Emergency flagged in session #'.$session->id,
                 '/moderator/emergency',
                 [
                     'session_id' => $session->id,
@@ -398,7 +405,7 @@ class HelperSessionController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Emergency flagged. A support coordinator has been notified. Incident #' . $incident->id . ' recorded.');
+        return back()->with('success', 'Emergency flagged. A support coordinator has been notified. Incident #'.$incident->id.' recorded.');
     }
 
     /**
@@ -414,13 +421,13 @@ class HelperSessionController extends Controller
             ->where('helper_id', $helper->id)
             ->findOrFail($id);
 
-        abort_unless($session->isActive() || $session->isCompleted(), 409);
+        abort_unless($session->isReferralEligible(), 409, 'A referral recommendation may only be raised for a live or concluded session.');
 
         $validated = $request->validate([
             'summary' => 'required|string|max:500',
         ]);
 
-        $referral = app(\App\Services\ReferralManagementService::class)->requestConsent($session, ['summary' => $validated['summary']]);
+        $referral = app(ReferralManagementService::class)->requestConsent($session, ['summary' => $validated['summary']]);
 
         if (! $request->expectsJson()) {
             return back()->with('success', 'Recommendation submitted. Your adviser will review it before seeker consent is requested.');
@@ -446,14 +453,14 @@ class HelperSessionController extends Controller
             'priority_level' => 'required|in:low,moderate,high,emergency',
         ]);
 
-        abort_unless($session->isActive() || $session->isCompleted(), 409);
+        abort_unless($session->isReferralEligible(), 409, 'A referral recommendation may only be raised for a live or concluded session.');
 
         $referral = Referral::where('id', $validated['referral_id'])
             ->where('session_id', $session->id)
             ->where('helper_id', $helper->id)
             ->firstOrFail();
 
-        $referral = app(\App\Services\ReferralManagementService::class)->submitAfterConsent($referral, [
+        $referral = app(ReferralManagementService::class)->submitAfterConsent($referral, [
             'referral_reason' => $validated['referral_reason'],
             'priority_level' => $validated['priority_level'],
         ]);
@@ -473,7 +480,7 @@ class HelperSessionController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Referral recommended. An adviser will review it shortly. Referral #' . $referral->id . ' recorded.');
+        return back()->with('success', 'Referral recommended. An adviser will review it shortly. Referral #'.$referral->id.' recorded.');
     }
 
     public function clarifyReferral(Request $request, int $id)
@@ -482,8 +489,9 @@ class HelperSessionController extends Controller
             'response' => 'required|string|min:10|max:2000',
             'referral_reason' => 'nullable|string|max:1000',
         ]);
-        app(\App\Services\ReferralManagementService::class)->clarify(\App\Models\Referral::findOrFail($id), $data['response'], true, $data['referral_reason'] ?? null);
-        return back()->with('success','Your clarification was sent to the Adviser.');
+        app(ReferralManagementService::class)->clarify(Referral::findOrFail($id), $data['response'], true, $data['referral_reason'] ?? null);
+
+        return back()->with('success', 'Your clarification was sent to the Adviser.');
     }
 
     public function referralStatus(int $id)
@@ -527,17 +535,19 @@ class HelperSessionController extends Controller
             ->where('helper_id', $helper->id)
             ->findOrFail($id);
 
-        app(\App\Services\SessionDurationService::class)->expire($session);
+        app(SessionDurationService::class)->expire($session);
 
         if (! $session->isCompleted()) {
-            if (!app(\App\Services\SessionDurationService::class)->complete($session)) return redirect()->route('helper.session.notes',$id);
+            if (! app(SessionDurationService::class)->complete($session)) {
+                return redirect()->route('helper.session.notes', $id);
+            }
 
             // Tell the seeker (and anyone watching the room) the session has ended.
             $this->broadcastSafely(new SessionEnded($session, 'helper'));
 
             // Let every moderator know in real time so their live session stats refresh.
             foreach (User::where('role', 'moderator')->pluck('id') as $moderatorUserId) {
-                $this->broadcastSafely(new ModeratorAlert($moderatorUserId, 'session', 'Session ended', 'Session #' . $session->id . ' has been completed.', '/moderator/sessions'));
+                $this->broadcastSafely(new ModeratorAlert($moderatorUserId, 'session', 'Session ended', 'Session #'.$session->id.' has been completed.', '/moderator/sessions'));
             }
 
             if ($session->seeker) {

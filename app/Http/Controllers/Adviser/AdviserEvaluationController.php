@@ -2,35 +2,43 @@
 
 namespace App\Http\Controllers\Adviser;
 
-use App\Events\EvaluationCompleted;
 use App\Http\Controllers\Controller;
 use App\Models\AdviserFeedback;
 use App\Models\Helper;
-use App\Models\HelperCompetencyHistory;
-use App\Models\Notification;
 use App\Models\Session;
 use App\Models\SessionReport;
+use App\Services\AdviserEvaluationService;
+use App\Services\AdviserScope;
+use App\Services\AdviserTranscriptAccess;
 use App\Services\SupportAudit;
-use App\Traits\BroadcastsSafely;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class AdviserEvaluationController extends Controller
 {
-    use BroadcastsSafely;
-
     /**
      * Show all pending evaluations
      */
     public function index()
     {
-        $helperIds = Helper::where('adviser_id', Auth::user()->adviser?->id)->pluck('id');
+        $adviser = Auth::user()?->adviser;
+        abort_unless($adviser, 403, 'No Adviser profile is linked to this account.');
+
+        $helperIds = Helper::where('adviser_id', $adviser->id)->pluck('id');
+
+        // The store/skip actions only accept concluded sessions, so the queue
+        // must not offer reports that would only fail with a 409.
+        $evaluable = [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED];
+
+        // Evaluation also requires submitted documentation as evidence, so
+        // reports without it must not be offered either.
+        $documented = fn ($query) => $query->whereRaw("TRIM(COALESCE(session_reports.session_summary, '')) <> '' OR TRIM(COALESCE(session_reports.personal_reflection, '')) <> ''");
 
         // Get all session reports that haven't been reviewed
         $pendingReports = SessionReport::with(['session', 'session.seeker', 'session.helper', 'session.concern'])
             ->where('adviser_reviewed', false)
-            ->whereHas('session', fn ($query) => $query->whereIn('helper_id', $helperIds))
+            ->where($documented)
+            ->whereHas('session', fn ($query) => $query->whereIn('helper_id', $helperIds)->whereIn('session_status', $evaluable))
             ->orderBy('created_at', 'asc')
             ->paginate(15, ['*'], 'pending_page')->withQueryString();
 
@@ -41,23 +49,40 @@ class AdviserEvaluationController extends Controller
             ->orderBy('updated_at', 'desc')
             ->paginate(15, ['*'], 'completed_page')->withQueryString();
 
+        // Reports held back because the session has not concluded yet. Surfaced
+        // so an empty queue reads as "nothing due" instead of "broken".
+        $heldReports = SessionReport::where('adviser_reviewed', false)
+            ->whereHas('session', fn ($query) => $query->whereIn('helper_id', $helperIds)->whereNotIn('session_status', $evaluable))
+            ->count();
+
+        // Concluded sessions whose Helper submitted no documentation. These can
+        // never be evaluated, so they are counted rather than listed.
+        $undocumentedReports = SessionReport::where('adviser_reviewed', false)
+            ->whereNot($documented)
+            ->whereHas('session', fn ($query) => $query->whereIn('helper_id', $helperIds)->whereIn('session_status', $evaluable))
+            ->count();
+
         // Get statistics
         $totalPending = $pendingReports->total();
         $highRiskPending = SessionReport::where('adviser_reviewed', false)
-            ->whereHas('session', function ($query) use ($helperIds) {
+            ->where($documented)
+            ->whereHas('session', function ($query) use ($helperIds, $evaluable) {
                 $query->whereIn('helper_id', $helperIds)
+                    ->whereIn('session_status', $evaluable)
                     ->whereIn('risk_level', ['high', 'emergency']);
             })
             ->count();
 
         // Get adviser feedback count
-        $feedbackCount = AdviserFeedback::where('adviser_id', Auth::user()->adviser->id ?? 0)->count();
+        $feedbackCount = AdviserFeedback::where('adviser_id', $adviser->id)->count();
 
         return view('adviser.evaluations', compact(
             'pendingReports',
             'completedReports',
             'totalPending',
             'highRiskPending',
+            'heldReports',
+            'undocumentedReports',
             'feedbackCount'
         ));
     }
@@ -77,9 +102,9 @@ class AdviserEvaluationController extends Controller
             ->latest('id')->first();
 
         $messages = collect();
-        if (app(\App\Services\AdviserTranscriptAccess::class)->allowed($report->session)) {
+        if (app(AdviserTranscriptAccess::class)->allowed($report->session)) {
             $messages = $report->session->messages()->orderBy('sent_datetime')->orderBy('id')->limit(500)->get();
-            SupportAudit::record('authorized_conversation_viewed', $report, ['purpose'=>'competency_assessment']);
+            SupportAudit::record('authorized_conversation_viewed', $report, ['purpose' => 'competency_assessment']);
         }
         SupportAudit::record('session_documentation_viewed', $report);
 
@@ -110,31 +135,16 @@ class AdviserEvaluationController extends Controller
             'follow_up_date' => 'nullable|date',
         ]);
 
-        app(\App\Services\AdviserEvaluationService::class)->save($report, $validated);
+        $service = app(AdviserEvaluationService::class);
+        $service->save($report, $validated);
+
+        if ($service->lastSaveWasUnchanged) {
+            return redirect()->route('adviser.evaluations')
+                ->with('info', 'This session was already evaluated, so no changes were saved.');
+        }
 
         return redirect()->route('adviser.evaluations')
             ->with('success', 'Competency evaluation submitted successfully!');
-    }
-
-    /**
-     * Get competency level based on score
-     */
-    private function getCompetencyLevel($score)
-    {
-        if ($score >= 4.5) {
-            return 'Outstanding';
-        }
-        if ($score >= 3.5) {
-            return 'Very Good';
-        }
-        if ($score >= 2.5) {
-            return 'Satisfactory';
-        }
-        if ($score >= 1.5) {
-            return 'Needs Improvement';
-        }
-
-        return 'Unsatisfactory';
     }
 
     /**
@@ -157,7 +167,7 @@ class AdviserEvaluationController extends Controller
     private function authorizeReport(SessionReport $report): void
     {
         abort_unless(Auth::user()?->role === 'adviser' && Auth::user()?->is_active, 403);
-        $adviserId = app(\App\Services\AdviserScope::class)->actor()->id;
+        $adviserId = app(AdviserScope::class)->actor()->id;
         $helperId = $report->session?->helper_id;
 
         abort_unless(

@@ -2,8 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\HelpSeeker;
 use App\Models\Referral;
+use App\Models\Session;
 use Illuminate\Encryption\Encrypter;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -20,8 +23,11 @@ class IdentityVaultService
             $db = DB::connection('identity_vault');
             $db->getPdo();
             foreach (['idv_identities', 'idv_access_logs', 'idv_release_records'] as $table) {
-                if (! $db->getSchemaBuilder()->hasTable($table)) return false;
+                if (! $db->getSchemaBuilder()->hasTable($table)) {
+                    return false;
+                }
             }
+
             return true;
         } catch (\Throwable) {
             return false;
@@ -30,7 +36,7 @@ class IdentityVaultService
 
     public function verifyStorage(): void
     {
-        $pseudo = 'PS-HEALTH-' . bin2hex(random_bytes(8));
+        $pseudo = 'PS-HEALTH-'.bin2hex(random_bytes(8));
         $this->perform($pseudo, 'storage_self_test', app()->runningInConsole() && ! Auth::check(), function () use ($pseudo) {
             $db = DB::connection('identity_vault');
             $plaintext = 'Synthetic vault health check';
@@ -54,6 +60,7 @@ class IdentityVaultService
         if (! is_string($key) || strlen($key) !== 32) {
             throw new HttpException(503, 'Identity storage is not configured. Please contact support.');
         }
+
         return new Encrypter($key, 'AES-256-CBC');
     }
 
@@ -71,26 +78,44 @@ class IdentityVaultService
         ]);
     }
 
-    private function perform(string $pseudo, string $action, bool $allowed, callable $operation, ?string $reason = null): mixed
+    private function perform(?string $pseudo, string $action, bool $allowed, callable $operation, ?string $reason = null): mixed
     {
+        // A seeker without a pseudo identifier cannot be keyed in the vault.
+        // Fail closed with the standard unavailable response instead of raising
+        // a TypeError that would surface a stack trace.
+        $pseudo = $pseudo === null ? '' : trim($pseudo);
+        if ($pseudo === '') {
+            $this->audit('unresolved', $action, 'denied', $reason ?: 'Missing pseudo identifier');
+            throw new HttpException(503, 'Identity information is unavailable. Please try again or contact support.');
+        }
+
         $allowed = $allowed && (! Auth::check() ? app()->runningInConsole() : (bool) Auth::user()->is_active);
         try {
             // Persist attempts separately so transaction rollback cannot erase them.
             $this->audit($pseudo, $action, $allowed ? 'attempted' : 'denied', $reason);
             abort_unless($allowed, 403, 'Identity access is not authorized.');
+
             return DB::connection('identity_vault')->transaction(function () use ($pseudo, $action, $operation, $reason) {
                 $result = $operation();
                 $this->audit($pseudo, $action, 'success', $reason);
+
                 return $result;
             });
         } catch (\Throwable $exception) {
             if ($exception instanceof HttpException && $exception->getStatusCode() === 403) {
-                try { if ($allowed) $this->audit($pseudo, $action, 'denied'); } catch (\Throwable) {
+                try {
+                    if ($allowed) {
+                        $this->audit($pseudo, $action, 'denied');
+                    }
+                } catch (\Throwable) {
                     throw new HttpException(503, 'Identity information is unavailable.');
                 }
                 throw $exception;
             }
-            try { $this->audit($pseudo, $action, 'failed'); } catch (\Throwable) { /* Fail closed below. */ }
+            try {
+                $this->audit($pseudo, $action, 'failed');
+            } catch (\Throwable) { /* Fail closed below. */
+            }
             // Do not attach the original exception: database bindings can contain identity data.
             throw new HttpException(503, 'Identity information is unavailable. Please try again or contact support.');
         }
@@ -107,8 +132,8 @@ class IdentityVaultService
         // Metadata only; never return identity fields to the operational database.
         try {
             return DB::connection('identity_vault')->table('idv_identities')
-                ->where('pseudo_id',$referral->session->seeker->pseudo_id)->where('referral_id',$referral->id)
-                ->where('is_active',true)->where('data_expires_at','>',now())->exists();
+                ->where('pseudo_id', $referral->session->seeker->pseudo_id)->where('referral_id', $referral->id)
+                ->where('is_active', true)->where('data_expires_at', '>', now())->exists();
         } catch (\Throwable) {
             return false;
         }
@@ -145,6 +170,7 @@ class IdentityVaultService
         $row = DB::connection('identity_vault')->table('idv_identities')->where('pseudo_id', $pseudo)
             ->where('is_active', true)->where('data_expires_at', '>', now())->lockForUpdate()->first();
         abort_unless($row, 404, 'No current identity record.');
+
         return $row;
     }
 
@@ -154,7 +180,7 @@ class IdentityVaultService
         $pseudo = $referral->session->seeker->pseudo_id;
         $allowed = Auth::user()?->role === 'adviser' && Auth::user()?->adviser?->id === $referral->adviser_id
             && $referral->adviser_id !== null && $this->approved($referral) && $referral->professional_id !== null;
-        abort_unless($fields && !array_diff($fields,self::FIELDS) && mb_strlen(trim($reason))>=20,422,'Select necessary fields and provide a reason.');
+        abort_unless($fields && ! array_diff($fields, self::FIELDS) && mb_strlen(trim($reason)) >= 20, 422, 'Select necessary fields and provide a reason.');
         $stored = DB::connection('identity_vault')->table('idv_identities')
             ->where('pseudo_id', $pseudo)->where('is_active', true)->where('data_expires_at', '>', now())->exists();
         abort_unless($stored, 422, 'The help seeker has not stored contact details yet. Ask the seeker to provide them before releasing identity.');
@@ -168,7 +194,7 @@ class IdentityVaultService
                     'identity_version' => $identity->identity_version,
                     'session_id' => $referral->session_id, 'released_to_user_id' => $recipient, 'released_to_role' => 'professional',
                     'authorized_by_user_id' => Auth::id(), 'authorized_by_role' => 'adviser', 'authorized_at' => now(),
-                    'release_reason' => 'approved_referral', 'release_notes'=>$this->cipher()->encryptString($reason), 'information_released' => json_encode(array_values(array_unique($fields))),
+                    'release_reason' => 'approved_referral', 'release_notes' => $this->cipher()->encryptString($reason), 'information_released' => json_encode(array_values(array_unique($fields))),
                     'consent_obtained' => true, 'consent_obtained_at' => $referral->consent_obtained_at,
                     'consent_method' => 'authenticated_seeker', 'released_at' => now(), 'created_at' => now(), 'updated_at' => now(),
                 ]);
@@ -187,6 +213,7 @@ class IdentityVaultService
         $pseudo = $referral->session->seeker->pseudo_id;
         $allowed = Auth::user()?->role === 'professional' && $referral->professional_id !== null
             && Auth::user()?->psychologyProfessional?->id === $referral->professional_id && $this->approved($referral);
+
         return $this->perform($pseudo, 'read', $allowed, function () use ($pseudo, $referral) {
             $identity = $this->identity($pseudo);
             $release = DB::connection('identity_vault')->table('idv_release_records')->where('referral_id', $referral->id)
@@ -194,11 +221,12 @@ class IdentityVaultService
                 ->where('released_to_user_id', Auth::id())->where('release_reason', 'approved_referral')->first();
             abort_unless($release, 403, 'Identity has not been released to you.');
             $result = [];
-            $fields=array_intersect(json_decode($release->information_released,true) ?: [],self::FIELDS);
-            $this->audit($pseudo,'fields_disclosed','success',json_encode(['purpose'=>'approved_referral','referral_id'=>$referral->id,'approval'=>$release->authorized_by_user_id,'fields'=>$fields,'emergency_override'=>false]));
+            $fields = array_intersect(json_decode($release->information_released, true) ?: [], self::FIELDS);
+            $this->audit($pseudo, 'fields_disclosed', 'success', json_encode(['purpose' => 'approved_referral', 'referral_id' => $referral->id, 'approval' => $release->authorized_by_user_id, 'fields' => $fields, 'emergency_override' => false]));
             foreach ($fields as $field) {
                 $result[$field] = $identity->$field === null ? null : $this->cipher()->decryptString($identity->$field);
             }
+
             return $result;
         });
     }
@@ -223,10 +251,11 @@ class IdentityVaultService
                     $count++;
                 }
             }, 'identity_id');
+
         return $count;
     }
 
-    public function emergencyRead(\App\Models\Session $session, string $reason): array
+    public function emergencyRead(Session $session, string $reason): array
     {
         $session->refresh();
         $pseudo = $session->seeker->pseudo_id;
@@ -237,6 +266,7 @@ class IdentityVaultService
         $activeAlert = $session->emergencyAlerts()->whereIn('status', ['pending', 'notified', 'referred', 'acknowledged', 'in_progress'])->exists();
         $allowed = $responder && $session->risk_level === 'emergency' && $session->requires_immediate_action
             && $activeAlert && mb_strlen(trim($reason)) >= 20;
+
         return $this->perform($pseudo, 'emergency_read', $allowed, function () use ($session, $pseudo, $reason) {
             $identity = $this->identity($pseudo);
             $fields = ['real_name', 'phone_number', 'address', 'emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relationship'];
@@ -258,6 +288,7 @@ class IdentityVaultService
             foreach ($fields as $field) {
                 $result[$field] = $identity->$field === null ? null : $this->cipher()->decryptString($identity->$field);
             }
+
             return $result;
         }, $reason);
     }
@@ -273,7 +304,7 @@ class IdentityVaultService
         });
     }
 
-    public function reviewEmergency(\App\Models\Session $session, string $notes): void
+    public function reviewEmergency(Session $session, string $notes): void
     {
         $pseudo = $session->seeker->pseudo_id;
         $allowed = Auth::user()?->role === 'adviser' && Auth::user()?->adviser?->id !== null
@@ -287,7 +318,7 @@ class IdentityVaultService
     }
 
     /** Verified import for the explicit CLI migration; never used by web requests. */
-    public function importLegacy(\App\Models\HelpSeeker $seeker, array $data): void
+    public function importLegacy(HelpSeeker $seeker, array $data): void
     {
         $this->perform($seeker->pseudo_id, 'legacy_import', app()->runningInConsole() && ! Auth::check(), function () use ($seeker, $data) {
             $db = DB::connection('identity_vault');
@@ -304,8 +335,10 @@ class IdentityVaultService
                 }
             }
             if ($existing) {
-                abort_unless($existing->is_active && \Illuminate\Support\Carbon::parse($existing->data_expires_at)->isFuture(), 409);
-                if ($values) $db->table('idv_identities')->where('identity_id', $existing->identity_id)->update($values + ['updated_at' => now()]);
+                abort_unless($existing->is_active && Carbon::parse($existing->data_expires_at)->isFuture(), 409);
+                if ($values) {
+                    $db->table('idv_identities')->where('identity_id', $existing->identity_id)->update($values + ['updated_at' => now()]);
+                }
             } else {
                 $db->table('idv_identities')->insert($values + [
                     'pseudo_id' => $seeker->pseudo_id, 'seeker_alias' => $seeker->generated_alias,
