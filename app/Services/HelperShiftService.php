@@ -31,13 +31,61 @@ class HelperShiftService
     }
 
     /**
+     * Resolve a submitted slot key to its times. Duty is entered as a fixed
+     * slot, so the times are decided on the server and cannot be malformed.
+     *
+     * The custom key is only honoured when $legacyTimes is supplied, and
+     * callers must derive that from the row being edited. A request therefore
+     * cannot invent shift times, it can only keep the ones already stored.
+     *
+     * @param  array{start: string, end: string}|null  $legacyTimes
+     * @return array{0: ?string, 1: ?string}
+     *
+     * @throws ValidationException
+     */
+    public function resolveSlot(?string $slot, ?array $legacyTimes = null): array
+    {
+        if (blank($slot)) {
+            throw ValidationException::withMessages([
+                'shift_slot' => 'Choose a duty shift.',
+            ]);
+        }
+
+        if ($slot === HelperSchedule::SLOT_CUSTOM) {
+            if (blank($legacyTimes['start'] ?? null) || blank($legacyTimes['end'] ?? null)) {
+                throw ValidationException::withMessages([
+                    'shift_slot' => 'Choose a duty shift.',
+                ]);
+            }
+
+            return [
+                substr((string) $legacyTimes['start'], 0, 5),
+                substr((string) $legacyTimes['end'], 0, 5),
+            ];
+        }
+
+        if (! array_key_exists($slot, HelperSchedule::SHIFT_SLOTS)) {
+            throw ValidationException::withMessages([
+                'shift_slot' => 'That duty shift is not available.',
+            ]);
+        }
+
+        $resolved = HelperSchedule::SHIFT_SLOTS[$slot];
+
+        return [$resolved['start'], $resolved['end']];
+    }
+
+    /**
      * Create or update one shift. When $shiftId is given that row is edited and
      * excluded from its own overlap check, so a shift can be nudged without
      * first being deleted.
      *
+     * $errorKey is the form field an overlap is reported against, which is the
+     * shift slot in both scheduling forms.
+     *
      * @throws ValidationException
      */
-    public function saveShift(Helper $helper, string $date, ?string $start, ?string $end, ?int $shiftId = null, array $attributes = []): HelperSchedule
+    public function saveShift(Helper $helper, string $date, ?string $start, ?string $end, ?int $shiftId = null, array $attributes = [], string $errorKey = 'shift_start'): HelperSchedule
     {
         $day = Carbon::parse($date, config('app.schedule_timezone', 'Asia/Manila'))->toDateString();
 
@@ -53,12 +101,12 @@ class HelperShiftService
             ]);
         }
 
-        return DB::transaction(function () use ($helper, $day, $start, $end, $existing, $attributes) {
+        return DB::transaction(function () use ($helper, $day, $start, $end, $existing, $attributes, $errorKey) {
             // Serialise writes for this helper so two concurrent scheduling
             // requests cannot both pass the overlap check and both insert.
             Helper::whereKey($helper->id)->lockForUpdate()->firstOrFail();
 
-            $this->guardNoOverlap($helper, $day, $start, $end, $existing?->id);
+            $this->guardNoOverlap($helper, $day, $start, $end, $existing?->id, $errorKey);
 
             $shift = $existing ?? new HelperSchedule(['helper_id' => $helper->id, 'date' => $day]);
             $shift->fill(array_merge([
@@ -119,7 +167,7 @@ class HelperShiftService
     /**
      * @throws ValidationException
      */
-    private function guardNoOverlap(Helper $helper, string $day, ?string $start, ?string $end, ?int $ignoreId): void
+    private function guardNoOverlap(Helper $helper, string $day, ?string $start, ?string $end, ?int $ignoreId, string $errorKey = 'shift_start'): void
     {
         $candidate = new HelperSchedule([
             'date' => $day,
@@ -145,7 +193,7 @@ class HelperShiftService
 
             if ($otherStart->lessThan($windowEnd) && $otherEnd->greaterThan($windowStart)) {
                 throw ValidationException::withMessages([
-                    'shift_start' => 'This shift overlaps '.$neighbour->shift_label.' already scheduled on '
+                    $errorKey => 'This shift overlaps '.$neighbour->shift_label.' already scheduled on '
                         .Carbon::parse($neighbour->date)->format('M j, Y').'.',
                 ]);
             }

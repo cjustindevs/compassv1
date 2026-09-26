@@ -41,6 +41,68 @@ class HelperSchedule extends Model
 
     public const OPERATING_END = '23:00';
 
+    /**
+     * Duty is offered as fixed slots rather than free entry times. They tile the
+     * day end to end, so no two slots can ever overlap and a helper can hold
+     * every slot on one date. The evening slot is the approved operating
+     * window.
+     */
+    public const SHIFT_SLOTS = [
+        'morning' => ['label' => 'Morning', 'start' => '06:00', 'end' => '12:00'],
+        'afternoon' => ['label' => 'Afternoon', 'start' => '12:00', 'end' => '18:00'],
+        'evening' => ['label' => 'Evening', 'start' => '18:00', 'end' => '23:00'],
+        'night' => ['label' => 'Night', 'start' => '23:00', 'end' => '06:00'],
+        'allday' => ['label' => 'All day', 'start' => null, 'end' => null],
+    ];
+
+    /**
+     * Pseudo slot used only to carry a legacy shift whose recorded times match
+     * no offered slot. It keeps those times intact instead of silently
+     * rewriting them to whichever slot the form happened to default to.
+     */
+    public const SLOT_CUSTOM = 'custom';
+
+    /**
+     * The slot matching this shift, so an existing shift can be shown back in a
+     * slot based form. Returns null for a shift whose times match no slot.
+     */
+    public function slotKey(): ?string
+    {
+        foreach (self::SHIFT_SLOTS as $key => $slot) {
+            if ($slot['start'] === null) {
+                if (! $this->hasShiftTimes()) {
+                    return $key;
+                }
+
+                continue;
+            }
+
+            if ($this->hasShiftTimes()
+                && substr((string) $this->shift_start, 0, 5) === $slot['start']
+                && substr((string) $this->shift_end, 0, 5) === $slot['end']) {
+                return $key;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * A legacy shift recorded with times that no longer line up with an offered
+     * slot, which can only be kept as is or replaced with a real slot.
+     */
+    public function isCustomSlot(): bool
+    {
+        return $this->hasShiftTimes() && $this->slotKey() === null;
+    }
+
+    public function customSlotLabel(): string
+    {
+        $format = static fn ($time) => Carbon::parse((string) $time)->format('g:i A');
+
+        return 'Custom shift ('.$format($this->shift_start).' - '.$format($this->shift_end).')';
+    }
+
     public function scopeForDate($query, $date)
     {
         return $query->whereDate('date', Carbon::parse($date)->toDateString());
@@ -191,10 +253,14 @@ class HelperSchedule extends Model
         }
 
         $format = static fn ($time) => Carbon::parse((string) $time)->format('h:i A');
+        $slotKey = $this->slotKey();
+        $slot = $slotKey ? self::SHIFT_SLOTS[$slotKey]['label'].' (' : '';
 
-        return $format($this->shift_start)
+        return $slot
+            .$format($this->shift_start)
             .' - '
             .$format($this->shift_end)
-            .($this->crossesMidnight() ? ' (next day)' : '');
+            .($this->crossesMidnight() ? ', next day' : '')
+            .($slot ? ')' : '');
     }
 }

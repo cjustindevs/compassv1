@@ -123,28 +123,86 @@ class ModeratorAdviserModuleTest extends TestCase
         [$user, $adviser] = $this->adviserUser('schedule@example.com');
         $helper = $this->helper($adviser);
         $date = now()->addDays(2)->toDateString();
-        $payload = ['helper_id' => $helper->id, 'date' => $date, 'shift_start' => '09:00', 'shift_end' => '12:00'];
+        $payload = ['helper_id' => $helper->id, 'date' => $date, 'shift_slot' => 'morning'];
         $this->actingAs($user)->from(route('adviser.schedule'))->post(route('adviser.schedule.update'), $payload)
             ->assertRedirect(route('adviser.schedule', ['date' => $date]));
-        $this->get(route('adviser.schedule', ['date' => $date]))->assertOk()->assertSee('09:00 AM');
+        $this->get(route('adviser.schedule', ['date' => $date]))->assertOk()->assertSee('6:00 AM');
 
         $shiftId = \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->value('id');
 
-        // Overlapping times are refused, because duty is shift-based and the
-        // helper cannot be in two places at once.
-        $payload['shift_start'] = '10:00';
-        $this->post(route('adviser.schedule.update'), $payload)->assertSessionHasErrors('shift_start');
+        // Booking the same slot twice is refused, because the helper cannot be
+        // in two places at once.
+        $this->post(route('adviser.schedule.update'), $payload)->assertSessionHasErrors('shift_slot');
         $this->assertSame(1, \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
 
         // Passing the shift id edits that row in place instead of adding one.
-        $this->post(route('adviser.schedule.update'), $payload + ['shift_id' => $shiftId])->assertSessionHasNoErrors();
+        $this->post(route('adviser.schedule.update'), ['shift_slot' => 'afternoon'] + $payload + ['shift_id' => $shiftId])
+            ->assertSessionHasNoErrors();
         $this->assertSame(1, \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
-        $this->get(route('adviser.schedule', ['date' => $date]))->assertOk()->assertSee('10:00 AM');
+        $this->get(route('adviser.schedule', ['date' => $date]))->assertOk()->assertSee('12:00 PM');
 
-        $payload['shift_end'] = '08:00';
-        $this->from(route('adviser.schedule'))->post(route('adviser.schedule.update'), $payload)
-            ->assertSessionHasErrors('shift_start');
+        // A slot that is not on offer is rejected rather than silently accepted.
+        $this->from(route('adviser.schedule'))->post(route('adviser.schedule.update'), ['shift_slot' => 'lunchtime'] + $payload)
+            ->assertSessionHasErrors('shift_slot');
         $this->get(route('adviser.schedule'))->assertOk()->assertSee('role="alert"', false);
+    }
+
+    public function test_a_legacy_custom_shift_keeps_its_times_when_resaved(): void
+    {
+        [$user, $adviser] = $this->adviserUser('customshift@example.com');
+        $helper = $this->helper($adviser);
+        $date = now('Asia/Manila')->addDays(4)->toDateString();
+
+        // A shift recorded before fixed slots existed, so its times match no slot.
+        $shift = \App\Models\HelperSchedule::create([
+            'helper_id' => $helper->id,
+            'date' => $date,
+            'shift_start' => '20:46',
+            'shift_end' => '23:35',
+            'is_active' => true,
+            'created_by' => $user->id,
+        ]);
+
+        $this->assertNull($shift->slotKey());
+        $this->assertTrue($shift->isCustomSlot());
+
+        $this->actingAs($user);
+
+        // The form offers it back with its real times rather than a blank
+        // selection that would rewrite the row to whichever slot came first.
+        $this->get(route('adviser.schedule', ['date' => $date]))->assertOk()
+            ->assertSee('Custom shift (8:46 PM - 11:35 PM)');
+
+        $this->actingAs($user)->from(route('adviser.schedule'))->post(route('adviser.schedule.update'), [
+            'helper_id' => $helper->id,
+            'date' => $date,
+            'shift_slot' => \App\Models\HelperSchedule::SLOT_CUSTOM,
+            'shift_id' => $shift->id,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('helper_schedules', [
+            'id' => $shift->id, 'shift_start' => '20:46', 'shift_end' => '23:35',
+        ]);
+
+        // The custom key cannot be used to invent times on a shift that does
+        // not already have them.
+        $this->actingAs($user)->from(route('adviser.schedule'))->post(route('adviser.schedule.update'), [
+            'helper_id' => $helper->id,
+            'date' => $date,
+            'shift_slot' => \App\Models\HelperSchedule::SLOT_CUSTOM,
+        ])->assertSessionHasErrors('shift_slot');
+
+        // Choosing a real slot converts it, and the overlap check then applies.
+        $this->actingAs($user)->from(route('adviser.schedule'))->post(route('adviser.schedule.update'), [
+            'helper_id' => $helper->id,
+            'date' => $date,
+            'shift_slot' => 'evening',
+            'shift_id' => $shift->id,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('helper_schedules', [
+            'id' => $shift->id, 'shift_start' => '18:00', 'shift_end' => '23:00',
+        ]);
     }
 
     public function test_adviser_can_schedule_several_shifts_on_the_same_date(): void
@@ -153,19 +211,17 @@ class ModeratorAdviserModuleTest extends TestCase
         $helper = $this->helper($adviser);
         $date = now()->addDays(3)->toDateString();
 
-        foreach ([['09:00', '12:00'], ['13:00', '17:00'], ['18:00', '21:00']] as [$start, $end]) {
+        foreach (['morning', 'afternoon', 'evening'] as $slot) {
             $this->actingAs($user)->post(route('adviser.schedule.update'), [
-                'helper_id' => $helper->id, 'date' => $date, 'shift_start' => $start, 'shift_end' => $end,
+                'helper_id' => $helper->id, 'date' => $date, 'shift_slot' => $slot,
             ])->assertSessionHasNoErrors();
         }
 
         $this->assertSame(3, \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
 
         // Removing one shift leaves the rest of the day intact.
-        // The time column is stored as entered, so match on the prefix rather
-        // than assuming a zero padded value across SQLite and PostgreSQL.
         $shift = \App\Models\HelperSchedule::where('helper_id', $helper->id)
-            ->whereDate('date', $date)->where('shift_start', 'like', '09:00%')->firstOrFail();
+            ->whereDate('date', $date)->where('shift_start', 'like', '06:00%')->firstOrFail();
 
         $this->actingAs($user)->post(route('adviser.schedule.destroy'), [
             'helper_id' => $helper->id, 'date' => $date, 'shift_id' => $shift->id,
@@ -174,17 +230,55 @@ class ModeratorAdviserModuleTest extends TestCase
         $this->assertSame(2, \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
     }
 
+    public function test_every_offered_shift_slot_tiles_the_day_without_overlap(): void
+    {
+        $slots = \App\Models\HelperSchedule::SHIFT_SLOTS;
+        $this->assertSame('18:00', $slots['evening']['start']);
+        $this->assertSame('23:00', $slots['evening']['end']);
+
+        // Consecutive slots must butt up against each other rather than overlap,
+        // so a helper can hold every slot on one date.
+        $day = [
+            'morning' => ['06:00', '12:00'],
+            'afternoon' => ['12:00', '18:00'],
+            'evening' => ['18:00', '23:00'],
+            'night' => ['23:00', '06:00'],
+        ];
+
+        $previous = null;
+        foreach ($day as $key => [$expectedStart, $expectedEnd]) {
+            $this->assertSame($expectedStart, $slots[$key]['start'], 'unexpected slot start for '.$key);
+            $this->assertSame($expectedEnd, $slots[$key]['end'], 'unexpected slot end for '.$key);
+
+            if ($previous !== null) {
+                $this->assertSame(
+                    $previous,
+                    $slots[$key]['start'],
+                    'the previous slot must end exactly when '.$key.' begins'
+                );
+            }
+
+            $previous = $slots[$key]['end'];
+        }
+
+        // The night slot runs into the next morning by design.
+        $this->assertTrue((new \App\Models\HelperSchedule([
+            'date' => '2026-09-26', 'shift_start' => $slots['night']['start'], 'shift_end' => $slots['night']['end'],
+        ]))->crossesMidnight());
+    }
+
     public function test_an_overnight_shift_blocks_the_early_hours_of_the_next_day(): void
     {
         [$user, $adviser] = $this->adviserUser('overnight@example.com');
         $helper = $this->helper($adviser);
         $date = now()->addDays(4)->toDateString();
         $nextDay = now()->addDays(5)->toDateString();
+        $service = app(\App\Services\HelperShiftService::class);
 
         // An end earlier than the start is an overnight shift, not an error.
-        $this->actingAs($user)->post(route('adviser.schedule.update'), [
-            'helper_id' => $helper->id, 'date' => $date, 'shift_start' => '22:00', 'shift_end' => '06:00',
-        ])->assertSessionHasNoErrors();
+        // The forms only offer fixed slots, so this is driven through the
+        // service that both roles share.
+        $service->saveShift($helper, $date, '22:00', '06:00', attributes: ['created_by' => $user->id]);
 
         $this->assertDatabaseHas('helper_schedules', [
             'helper_id' => $helper->id, 'shift_start' => '22:00', 'shift_end' => '06:00',
@@ -192,14 +286,43 @@ class ModeratorAdviserModuleTest extends TestCase
 
         // The spillover into the following day still counts as duty, so a shift
         // starting at 03:00 the next morning would collide with it.
-        $this->actingAs($user)->post(route('adviser.schedule.update'), [
-            'helper_id' => $helper->id, 'date' => $nextDay, 'shift_start' => '03:00', 'shift_end' => '09:00',
-        ])->assertSessionHasErrors('shift_start');
+        try {
+            $service->saveShift($helper, $nextDay, '03:00', '09:00', attributes: ['created_by' => $user->id]);
+            $this->fail('An overlapping overnight shift should have been refused.');
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            $this->assertArrayHasKey('shift_start', $exception->errors());
+        }
 
         // A shift that begins once the overnight duty has ended is fine.
-        $this->actingAs($user)->post(route('adviser.schedule.update'), [
-            'helper_id' => $helper->id, 'date' => $nextDay, 'shift_start' => '07:00', 'shift_end' => '11:00',
-        ])->assertSessionHasNoErrors();
+        $service->saveShift($helper, $nextDay, '07:00', '11:00', attributes: ['created_by' => $user->id]);
+        $this->assertSame(2, \App\Models\HelperSchedule::where('helper_id', $helper->id)->count());
+    }
+
+    public function test_a_moderator_can_remove_a_single_shift_from_a_day(): void
+    {
+        [$moderatorUser] = $this->moderatorUser();
+        $helper = $this->helper();
+        $date = now()->addDays(2)->toDateString();
+
+        foreach (['morning', 'evening'] as $slot) {
+            $this->actingAs($moderatorUser)->post(route('moderator.schedules.store'), [
+                'helper_id' => $helper->id, 'event_date' => $date, 'shift_slot' => $slot,
+            ])->assertSessionHasNoErrors();
+        }
+
+        $shift = \App\Models\HelperSchedule::where('helper_id', $helper->id)
+            ->whereDate('date', $date)->where('shift_start', 'like', '06:00%')->firstOrFail();
+        $eventId = \App\Models\CalendarEvent::where('helper_schedule_id', $shift->id)->value('id');
+
+        $this->assertNotNull($eventId, 'the duty event should be linked to its shift');
+
+        $this->actingAs($moderatorUser)->from(route('moderator.schedules'))->post(route('moderator.schedules.destroy'), [
+            'helper_id' => $helper->id, 'date' => $date, 'shift_id' => $shift->id,
+        ])->assertRedirect(route('moderator.schedules', ['date' => $date]))->assertSessionHasNoErrors();
+
+        $this->assertDatabaseMissing('helper_schedules', ['id' => $shift->id]);
+        $this->assertDatabaseMissing('calendar_events', ['id' => $eventId]);
+        $this->assertSame(1, \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
     }
 
     public function test_moderator_assignment_requires_current_ready_helper_and_rejects_override(): void
@@ -305,15 +428,14 @@ class ModeratorAdviserModuleTest extends TestCase
         $payload = [
             'helper_id' => $helper->id,
             'event_date' => now()->toDateString(),
-            'start_time' => '09:00',
-            'end_time' => '12:00',
+            'shift_slot' => 'morning',
             'description' => 'Morning queue coverage',
         ];
 
         $this->actingAs($moderatorUser)->post(route('moderator.schedules.store'), $payload)
             ->assertRedirect(route('moderator.schedules', ['date' => $payload['event_date']]));
 
-        $this->assertDatabaseHas('helper_schedules', ['helper_id' => $helper->id, 'shift_start' => '09:00', 'shift_end' => '12:00']);
+        $this->assertDatabaseHas('helper_schedules', ['helper_id' => $helper->id, 'shift_start' => '06:00', 'shift_end' => '12:00']);
         $this->assertDatabaseHas('calendar_events', [
             'title' => 'Duty: ' . $helper->full_name,
             'event_type' => CalendarEvent::TYPE_MEETING,
@@ -324,8 +446,7 @@ class ModeratorAdviserModuleTest extends TestCase
         $this->actingAs($moderatorUser)->from(route('moderator.schedules'))->post(route('moderator.schedules.store'), [
             'helper_id' => $helper->id,
             'event_date' => $payload['event_date'],
-            'start_time' => '13:00',
-            'end_time' => '17:00',
+            'shift_slot' => 'evening',
         ])->assertRedirect(route('moderator.schedules', ['date' => $payload['event_date']]))->assertSessionHasNoErrors();
 
         $this->assertSame(2, \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $payload['event_date'])->count());
@@ -333,7 +454,7 @@ class ModeratorAdviserModuleTest extends TestCase
         // Only an overlapping shift is refused.
         $this->actingAs($moderatorUser)->from(route('moderator.schedules'))->post(route('moderator.schedules.store'), $payload)
             ->assertRedirect(route('moderator.schedules'))
-            ->assertSessionHasErrors('shift_start');
+            ->assertSessionHasErrors('shift_slot');
     }
 
     public function test_moderator_can_create_date_only_duty_schedule_without_times(): void
@@ -345,6 +466,7 @@ class ModeratorAdviserModuleTest extends TestCase
         $this->actingAs($moderatorUser)->post(route('moderator.schedules.store'), [
             'helper_id' => $helper->id,
             'event_date' => $date,
+            'shift_slot' => 'allday',
             'description' => 'All-day duty date',
         ])->assertRedirect(route('moderator.schedules', ['date' => $date]));
 
@@ -360,7 +482,8 @@ class ModeratorAdviserModuleTest extends TestCase
         $this->actingAs($moderatorUser)->from(route('moderator.schedules'))->post(route('moderator.schedules.store'), [
             'helper_id' => $helper->id,
             'event_date' => $date,
-        ])->assertRedirect(route('moderator.schedules'))->assertSessionHasErrors('shift_start');
+            'shift_slot' => 'morning',
+        ])->assertRedirect(route('moderator.schedules'))->assertSessionHasErrors('shift_slot');
     }
 
     public function test_adviser_can_save_date_only_schedule_and_sees_all_day(): void
@@ -372,6 +495,7 @@ class ModeratorAdviserModuleTest extends TestCase
         $this->actingAs($user)->from(route('adviser.schedule'))->post(route('adviser.schedule.update'), [
             'helper_id' => $helper->id,
             'date' => $date,
+            'shift_slot' => 'allday',
         ])->assertRedirect(route('adviser.schedule', ['date' => $date]))->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('helper_schedules', ['helper_id' => $helper->id, 'shift_start' => null, 'shift_end' => null]);

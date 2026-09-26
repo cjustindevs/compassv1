@@ -29,8 +29,6 @@
             </div>
         @endif
 
-        <p class="text-sm text-gray-500 mb-4">Add a duty shift for a helper. A helper can hold several shifts on the same date as long as they do not overlap, and an overnight shift is allowed when the end time is earlier than the start. Helpers also need a current readiness assessment and available status to receive sessions.</p>
-
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                 <h2 class="font-semibold text-gray-800 mb-4">Schedule Helper Duty</h2>
@@ -44,15 +42,19 @@
                         @endforeach
                     </select>
                     <input type="date" name="date" value="{{ old('date', $date->toDateString()) }}" required class="w-full rounded-lg border-gray-300 text-sm">
-                    <div class="grid grid-cols-2 gap-3">
-                        <label class="text-xs text-gray-600">Shift starts
-                            <input type="time" name="shift_start" value="{{ old('shift_start', '18:00') }}" required class="w-full rounded-lg border-gray-300 text-sm">
-                        </label>
-                        <label class="text-xs text-gray-600">Shift ends
-                            <input type="time" name="shift_end" value="{{ old('shift_end', '23:00') }}" required class="w-full rounded-lg border-gray-300 text-sm">
-                        </label>
-                    </div>
-                    <p class="text-xs text-gray-500">Leave both times empty for whole-day duty. An end earlier than the start continues into the next day.</p>
+                    <select name="shift_slot" required class="w-full rounded-lg border-gray-300 text-sm">
+                        <option value="">Select shift</option>
+                        @foreach(\App\Models\HelperSchedule::SHIFT_SLOTS as $slotKey => $slot)
+                            <option value="{{ $slotKey }}" @selected(old('shift_slot') === $slotKey)>
+                                {{ $slot['label'] }}@if($slot['start']) ({{ \Illuminate\Support\Carbon::parse($slot['start'])->format('g:i A') }} - {{ \Illuminate\Support\Carbon::parse($slot['end'])->format('g:i A') }})@endif
+                            </option>
+                        @endforeach
+                        @foreach(collect($scheduleData)->pluck('shifts')->flatten(1)->filter(fn ($shift) => $shift['custom_label'])->unique('custom_label') as $custom)
+                            <option value="{{ \App\Models\HelperSchedule::SLOT_CUSTOM }}" @selected(old('shift_slot') === \App\Models\HelperSchedule::SLOT_CUSTOM)>
+                                {{ $custom['custom_label'] }} (keep as is)
+                            </option>
+                        @endforeach
+                    </select>
                     <button class="w-full px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">Add Duty Shift</button>
                 </form>
             </section>
@@ -81,8 +83,7 @@
                                                         data-helper-id="{{ $data['helper_id'] }}"
                                                         data-date="{{ $date->toDateString() }}"
                                                         data-shift-id="{{ $shift['id'] }}"
-                                                        data-shift-start="{{ $shift['start'] }}"
-                                                        data-shift-end="{{ $shift['end'] }}">Edit</button>
+                                                        data-shift-slot="{{ $shift['slot'] }}">Edit</button>
                                                 <form method="POST" action="{{ route('adviser.schedule.destroy') }}" class="inline">
                                                     @csrf
                                                     <input type="hidden" name="helper_id" value="{{ $data['helper_id'] }}">
@@ -149,8 +150,7 @@
                 form.querySelector('[name="shift_id"]').value = button.dataset.shiftId;
                 form.querySelector('[name="helper_id"]').value = button.dataset.helperId;
                 form.querySelector('[name="date"]').value = button.dataset.date;
-                form.querySelector('[name="shift_start"]').value = (button.dataset.shiftStart || '').slice(0, 5);
-                form.querySelector('[name="shift_end"]').value = (button.dataset.shiftEnd || '').slice(0, 5);
+                form.querySelector('[name="shift_slot"]').value = button.dataset.shiftSlot || '';
                 form.scrollIntoView({ behavior: 'smooth', block: 'center' });
             });
         });

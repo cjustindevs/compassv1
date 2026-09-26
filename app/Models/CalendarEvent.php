@@ -16,6 +16,7 @@ class CalendarEvent extends Model
         'start_time',
         'end_time',
         'event_type',
+        'helper_schedule_id',
         'created_by',
         'color',
     ];
@@ -41,6 +42,14 @@ class CalendarEvent extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by', 'id');
+    }
+
+    /**
+     * The duty shift this event was created for, when it is a duty entry.
+     */
+    public function helperSchedule(): BelongsTo
+    {
+        return $this->belongsTo(HelperSchedule::class, 'helper_schedule_id', 'id');
     }
 
     public function getTypeLabelAttribute(): string

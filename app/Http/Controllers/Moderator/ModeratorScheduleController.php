@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ModeratorScheduleController extends Controller
@@ -63,22 +64,23 @@ class ModeratorScheduleController extends Controller
         $validated = $request->validate([
             'helper_id' => 'required|exists:helpers,id',
             'event_date' => 'required|date',
-            'start_time' => 'nullable|date_format:H:i',
-            'end_time' => 'nullable|date_format:H:i',
+            'shift_slot' => ['required', 'string', Rule::in(array_keys(HelperSchedule::SHIFT_SLOTS))],
             'description' => 'nullable|string|max:500',
         ]);
 
         $helper = Helper::findOrFail($validated['helper_id']);
         $date = Carbon::parse($validated['event_date'])->toDateString();
+        [$start, $end] = app(HelperShiftService::class)->resolveSlot($validated['shift_slot']);
 
         // A helper may hold several non-overlapping shifts on one date, so a
         // clash is an overlapping shift rather than any existing duty record.
         $shift = app(HelperShiftService::class)->saveShift(
             $helper,
             $date,
-            $validated['start_time'] ?? null,
-            $validated['end_time'] ?? null,
+            $start,
+            $end,
             attributes: ['created_by' => Auth::id()],
+            errorKey: 'shift_slot',
         );
 
         CalendarEvent::create([
@@ -102,19 +104,21 @@ class ModeratorScheduleController extends Controller
             ->with('success', $helper->full_name.' is on duty '.$shift->shift_label.'.');
     }
 
-    public function destroy(Request $request, int $shift): RedirectResponse
+    public function destroy(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'helper_id' => 'required|exists:helpers,id',
             'date' => 'required|date',
+            'shift_id' => 'required|integer',
         ]);
 
         $helper = Helper::findOrFail($validated['helper_id']);
         $date = Carbon::parse($validated['date'])->toDateString();
+        $shiftId = (int) $validated['shift_id'];
 
-        app(HelperShiftService::class)->deleteShift($helper, $shift);
+        app(HelperShiftService::class)->deleteShift($helper, $shiftId);
 
-        CalendarEvent::where('helper_schedule_id', $shift)->delete();
+        CalendarEvent::where('helper_schedule_id', $shiftId)->delete();
 
         app(\App\Services\HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh());
 

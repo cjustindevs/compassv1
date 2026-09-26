@@ -25,8 +25,6 @@
         @if(session('error')) <div class="mb-4 p-3 rounded-lg bg-red-50 text-red-700">{{ session('error') }}</div> @endif
         @if($errors->any()) <div role="alert" class="mb-4 p-3 rounded-lg bg-red-50 text-red-700">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div> @endif
 
-        <p class="text-sm text-gray-500 mb-4">Add a duty shift for a helper. A helper can hold several shifts on the same date as long as they do not overlap, and an overnight shift is allowed when the end time is earlier than the start.</p>
-
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                 <h2 class="font-semibold text-gray-800 mb-4">Schedule Helper Duty</h2>
@@ -39,15 +37,14 @@
                         @endforeach
                     </select>
                     <input type="date" name="event_date" value="{{ old('event_date', $date) }}" required class="w-full rounded-lg border-gray-300 text-sm">
-                    <div class="grid grid-cols-2 gap-3">
-                        <label class="text-xs text-gray-600">Shift starts
-                            <input type="time" name="start_time" value="{{ old('start_time', '18:00') }}" required class="w-full rounded-lg border-gray-300 text-sm">
-                        </label>
-                        <label class="text-xs text-gray-600">Shift ends
-                            <input type="time" name="end_time" value="{{ old('end_time', '23:00') }}" required class="w-full rounded-lg border-gray-300 text-sm">
-                        </label>
-                    </div>
-                    <p class="text-xs text-gray-500">Leave both times empty for whole-day duty. An end earlier than the start continues into the next day.</p>
+                    <select name="shift_slot" required class="w-full rounded-lg border-gray-300 text-sm">
+                        <option value="">Select shift</option>
+                        @foreach(\App\Models\HelperSchedule::SHIFT_SLOTS as $slotKey => $slot)
+                            <option value="{{ $slotKey }}" @selected(old('shift_slot') === $slotKey)>
+                                {{ $slot['label'] }}@if($slot['start']) ({{ \Illuminate\Support\Carbon::parse($slot['start'])->format('g:i A') }} - {{ \Illuminate\Support\Carbon::parse($slot['end'])->format('g:i A') }})@endif
+                            </option>
+                        @endforeach
+                    </select>
                     <textarea name="description" rows="3" maxlength="500" class="w-full rounded-lg border-gray-300 text-sm" placeholder="Duty notes or assignment details">{{ old('description') }}</textarea>
                     <button class="w-full px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">Add Duty Shift</button>
                 </form>
