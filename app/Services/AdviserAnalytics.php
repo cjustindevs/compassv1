@@ -14,7 +14,7 @@ class AdviserAnalytics {
         'period'=>'Activity date is end_time, otherwise start_time, otherwise submitted_at, otherwise legacy created_date/created_at. Completed/evaluated are completed; cancelled/abandoned are excluded from completed counts.',
     ];
     public function filters(Request $request): array {
-        $data=$request->validate(['period'=>'nullable|in:weekly,monthly,quarterly,yearly','from'=>'nullable|required_with:to|date','to'=>'nullable|required_with:from|date|after_or_equal:from','helper_id'=>'nullable|integer','concern_id'=>'nullable|integer|exists:concern_categories,id','referral_status'=>'nullable|in:pending_adviser,pending_consent,pending_professional,no_professional_available,accepted,in_progress,completed,closed,declined','competency_metric'=>'nullable|in:overall_score,active_listening_score,empathy_score,respect_score,ethical_practices_score,referral_accuracy_score','format'=>'nullable|in:pdf,csv']);
+        $data=$request->validate(['period'=>'nullable|in:weekly,monthly,quarterly,yearly','from'=>'nullable|required_with:to|date','to'=>'nullable|required_with:from|date|after_or_equal:from','helper_id'=>'nullable|integer','concern_id'=>'nullable|integer|exists:concern_categories,id','referral_status'=>'nullable|in:'.implode(',',Referral::STATUSES),'competency_metric'=>'nullable|in:overall_score,active_listening_score,empathy_score,respect_score,ethical_practices_score,referral_accuracy_score','format'=>'nullable|in:pdf,csv']);
         $adviser=app(AdviserScope::class)->actor();
         if(!empty($data['helper_id'])) abort_unless(Helper::whereKey($data['helper_id'])->where('adviser_id',$adviser->id)->exists(),403);
         $days=['weekly'=>7,'monthly'=>30,'quarterly'=>90,'yearly'=>365][$data['period'] ?? 'monthly'];

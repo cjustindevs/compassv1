@@ -135,8 +135,10 @@
         seen = key;
         errorEl.textContent = '';
         if (!isSeeker) {
+            const awaitingReview = ['pending_adviser', 'consent_requested'];
             document.getElementById('referralConsentText').textContent =
-                ['pending_adviser', 'consent_requested'].includes(referral.status) ? 'Your recommendation is awaiting Adviser review.'
+                referral.status === 'pending_adviser_assignment' ? 'Your recommendation is with a Moderator, who will assign an Adviser so it can be reviewed.'
+                : awaitingReview.includes(referral.status) ? 'Your recommendation is awaiting Adviser review.'
                 : referral.status === 'pending_consent' ? 'The Adviser approved your recommendation. The seeker is deciding whether to proceed.'
                 : 'Referral status: ' + referral.status.replaceAll('_', ' ') + '.';
             terms.hidden = true;

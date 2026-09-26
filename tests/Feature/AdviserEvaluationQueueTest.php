@@ -6,6 +6,8 @@ use App\Models\Adviser;
 use App\Models\Helper;
 use App\Models\HelperCompetencyHistory;
 use App\Models\HelpSeeker;
+use App\Models\PsychologyProfessional;
+use App\Models\Referral;
 use App\Models\Session;
 use App\Models\SessionReport;
 use App\Models\User;
@@ -204,5 +206,56 @@ class AdviserEvaluationQueueTest extends TestCase
             ->assertStatus(409);
 
         $this->assertFalse((bool) $report->fresh()->adviser_reviewed);
+    }
+
+    public function test_every_referral_status_is_accepted_by_the_reports_filter(): void
+    {
+        [$adviserUser] = $this->makeReport(Session::STATUS_COMPLETED);
+
+        // The dropdown and the validator each kept their own hardcoded list,
+        // so a newly added status was unfilterable and failed validation.
+        foreach (Referral::STATUSES as $status) {
+            $this->actingAs($adviserUser)
+                ->get(route('adviser.reports', ['referral_status' => $status]))
+                ->assertOk();
+        }
+
+        $this->actingAs($adviserUser)
+            ->get(route('adviser.reports', ['referral_status' => 'not_a_status']))
+            ->assertSessionHasErrors('referral_status');
+    }
+
+    public function test_concluded_referrals_stay_within_the_professional_read_scope(): void
+    {
+        [$adviserUser, $helper, $session] = $this->makeReport(Session::STATUS_COMPLETED);
+        $adviser = Adviser::where('user_account_id', $adviserUser->id)->firstOrFail();
+        $professional = PsychologyProfessional::create([
+            'user_account_id' => User::factory()->create(['role' => 'professional', 'is_active' => true])->id,
+            'first_name' => 'Pro',
+            'last_name' => 'One',
+            'email' => 'pro.scope@example.com',
+            'is_available' => true,
+        ]);
+
+        $base = [
+            'session_id' => $session->id,
+            'helper_id' => $helper->id,
+            'adviser_id' => $adviser->id,
+            'professional_id' => $professional->id,
+            'approved_at' => now(),
+            'help_seeker_consent' => true,
+            'priority_level' => Referral::PRIORITY_LOW,
+            'referral_reason' => 'Concluded professional support.',
+            'referral_date' => now(),
+        ];
+
+        $closed = Referral::create($base + ['status' => Referral::STATUS_CLOSED]);
+        $declined = Referral::create($base + ['status' => Referral::STATUS_DECLINED]);
+
+        // A professional could still write to a case after it closed, so the
+        // read scope must not drop completed and closed work either.
+        $visible = Referral::professionalAuthorized()->pluck('id')->all();
+        $this->assertContains($closed->id, $visible);
+        $this->assertNotContains($declined->id, $visible);
     }
 }

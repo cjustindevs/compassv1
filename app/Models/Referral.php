@@ -17,7 +17,13 @@ class Referral extends Model
 
     public function scopeProfessionalAuthorized($query)
     {
-        return $query->whereNotNull('approved_at')->where('help_seeker_consent', true)->whereIn('status', [self::STATUS_PENDING_PROFESSIONAL, self::STATUS_ACCEPTED, self::STATUS_IN_PROGRESS, self::STATUS_COMPLETED]);
+        // Concluded work stays readable so a closed case does not disappear
+        // from the professional's history; writes are still blocked separately.
+        return $query->whereNotNull('approved_at')->where('help_seeker_consent', true)->whereIn('status', array_merge(
+            [self::STATUS_PENDING_PROFESSIONAL],
+            self::ACTIVE_STATUSES,
+            self::COMPLETED_STATUSES,
+        ));
     }
 
     public function releaseIdentity(): void
@@ -99,13 +105,33 @@ class Referral extends Model
 
     const STATUS_NO_PROFESSIONAL_AVAILABLE = 'no_professional_available';
 
+    /**
+     * Every status the referrals table accepts, in workflow order. Filters,
+     * dropdowns and label maps must read from this so a newly added status
+     * cannot be silently missing from a report or an admin filter.
+     */
+    const STATUSES = [
+        self::STATUS_PENDING_ADVISER,
+        self::STATUS_PENDING_ADVISER_ASSIGNMENT,
+        self::STATUS_PENDING_CONSENT,
+        self::STATUS_CONSENT_REQUESTED,
+        self::STATUS_PENDING_PROFESSIONAL,
+        self::STATUS_NO_PROFESSIONAL_AVAILABLE,
+        self::STATUS_ACCEPTED,
+        self::STATUS_IN_PROGRESS,
+        self::STATUS_COMPLETED,
+        self::STATUS_CLOSED,
+        self::STATUS_DECLINED,
+    ];
+
     // Statuses treated as an "active case" for the professional
     const ACTIVE_STATUSES = [
         self::STATUS_ACCEPTED,
         self::STATUS_IN_PROGRESS,
     ];
 
-    // Statuses treated as finished work
+    // Statuses treated as finished work. A professional keeps read access to
+    // these so a closed case does not vanish from their history.
     const COMPLETED_STATUSES = [
         self::STATUS_COMPLETED,
         self::STATUS_CLOSED,

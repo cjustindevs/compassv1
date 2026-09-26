@@ -270,9 +270,16 @@
                             $referralTotal = array_sum($referralOutcomes);
                             $statusColors = [
                                 'pending_adviser' => 'text-amber-600',
+                                'pending_adviser_assignment' => 'text-orange-600',
+                                'pending_consent' => 'text-amber-600',
+                                'consent_requested' => 'text-amber-600',
                                 'pending_professional' => 'text-blue-600',
+                                'no_professional_available' => 'text-red-500',
                                 'approved' => 'text-emerald-600',
+                                'accepted' => 'text-blue-600',
+                                'in_progress' => 'text-blue-600',
                                 'completed' => 'text-emerald-600',
+                                'closed' => 'text-gray-600',
                                 'declined' => 'text-red-500',
                             ];
                         @endphp
