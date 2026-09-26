@@ -603,7 +603,7 @@ class ConsentReferralEmergencyTest extends TestCase
         $this->actingAs($helper->adviser->user)->postJson(route('referrals.review', $referral), ['approved' => true, 'notes' => 'Approved.'])->assertOk();
         $referral->refresh();
 
-        $this->actingAs($seekerUser)->post(route('referrals.consent', $referral), ['consent_given' => 0])->assertRedirect(route('seeker.referrals'));
+        $this->actingAs($seekerUser)->post(route('referrals.consent', $referral), ['consent_given' => 0])->assertRedirect('/selfhelp');
         $referral->refresh();
         $this->assertSame(Referral::STATUS_CLOSED, $referral->status);
         $this->assertDatabaseHas('notifications', ['user_account_id' => $seekerUser->id, 'title' => 'Referral declined', 'link' => '/selfhelp']);

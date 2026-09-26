@@ -46,7 +46,7 @@ class ReferralManagementService
             $session = Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
             abort_unless($session->isReferralEligible(), 409, 'A referral recommendation may only be raised for a live or concluded session. This session was cancelled, so no referral was created.');
 
-            return $this->createReferral($session, $session->seeker, ['reason' => $summary['summary'] ?? '']);
+            return $this->createReferral($session, $session->seeker, ['reason' => $summary['summary'] ?? '', 'recommendation_form' => $summary['recommendation_form'] ?? null]);
         }, 3);
     }
 
@@ -76,13 +76,7 @@ class ReferralManagementService
             'This referral is no longer awaiting submission.'
         );
 
-        if ($referral->status === Referral::STATUS_CONSENT_REQUESTED) {
-            abort_unless($referral->help_seeker_consent, 409, 'The help seeker must accept the referral consent first.');
-
-            $seeker = $referral->session?->seeker;
-            abort_unless($seeker, 409);
-            abort_unless(app(ConsentService::class)->valid($seeker, 'referral', $referral->id), 409, 'The referral consent is no longer valid.');
-        } else {
+        if ($resubmission) {
             // A resubmission must answer an outstanding clarification request.
             abort_unless(
                 $referral->clarification_requested_at && ! $referral->clarification_received_at,
@@ -133,22 +127,19 @@ class ReferralManagementService
         // submission for the SAME session must update the existing row rather
         // than be silently discarded.
         if ($conflicting = $this->findOpenReferralForSeeker($seeker)) {
-            abort_unless(
-                $conflicting->session_id === $session->id,
-                422,
-                'This seeker already has an open referral from another session. Review that referral before submitting a new recommendation.'
-            );
+            if ($conflicting->session_id !== $session->id) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['summary' => 'This seeker already has an open referral from another session. Ask the assigned Adviser to review that referral before submitting another recommendation.']);
+            }
         }
 
-        return DB::transaction(function () use ($session, $seeker, $reason, $priority) {
+        return DB::transaction(function () use ($session, $seeker, $reason, $priority, $data) {
+            HelpSeeker::whereKey($seeker->id)->lockForUpdate()->firstOrFail();
             // Re-check inside the transaction: two concurrent submissions for
             // different sessions must not both pass the pre-flight check.
             if ($conflicting = $this->findOpenReferralForSeeker($seeker)) {
-                abort_unless(
-                    $conflicting->session_id === $session->id,
-                    422,
-                    'This seeker already has an open referral from another session. Review that referral before submitting a new recommendation.'
-                );
+                if ($conflicting->session_id !== $session->id) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['summary' => 'This seeker already has an open referral from another session. Ask the assigned Adviser to review that referral before submitting another recommendation.']);
+                }
             }
 
             $adviserId = $this->resolveAdviserId($session);
@@ -164,6 +155,16 @@ class ReferralManagementService
                 abort(409, 'This session already has an open referral that has progressed past adviser review. Continue with that referral instead of starting a new recommendation.');
             }
 
+            if ($referral && $referral->referral_reason === $reason
+                && $referral->priority_level === $priority && $referral->helper_id === $session->helper_id
+                && $referral->adviser_id === $adviserId && $referral->status === $status
+                && $referral->recommendation_form === ($data['recommendation_form'] ?? $referral->recommendation_form)) {
+                return $referral;
+            }
+            if ($referral) {
+                app(SupervisionVersions::class)->record($referral, 'Recommendation before Helper revision');
+            }
+
             $referral ??= new Referral([
                 'session_id' => $session->id,
                 'help_seeker_consent' => false,
@@ -172,6 +173,7 @@ class ReferralManagementService
             ]);
 
             $referral->forceFill([
+                'recommendation_form' => $data['recommendation_form'] ?? $referral->recommendation_form,
                 'session_id' => $session->id,
                 'helper_id' => $session->helper_id,
                 'adviser_id' => $adviserId,
@@ -181,6 +183,7 @@ class ReferralManagementService
             ])->save();
 
             SupportAudit::record('referral_proposed', $referral);
+            app(SupervisionVersions::class)->record($referral, 'Helper recommendation submitted');
             $this->broadcastSafely(new ReferralCreated($referral));
 
             if ($adviserId) {

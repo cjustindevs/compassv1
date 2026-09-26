@@ -371,37 +371,37 @@
 
             <form method="POST" action="{{ route('helper.session.referral.consent', ['id' => $session->id]) }}" id="referralConsentForm">
                 @csrf
+                <input type="hidden" name="form_version" value="appendix-o-v4">
+                <p class="text-sm mb-3">Session #{{ $session->id }} · {{ $session->seeker?->generated_alias }} · {{ ucfirst($session->risk_level ?? 'Pending review') }} risk. Identity is requested separately after Adviser approval.</p>
+                <fieldset class="mb-3"><legend class="form-label">Reason indicators</legend>
+                    @foreach(\App\Services\ReferralForm::INDICATORS as $indicator)
+                        <label class="block text-sm mb-1"><input type="checkbox" name="indicators[]" value="{{ $indicator }}" @checked(in_array($indicator, old('indicators', [])))> {{ $indicator }}</label>
+                    @endforeach
+                </fieldset>
                 <label class="form-label" for="referralSummary">Referral recommendation for adviser review</label>
-                <textarea id="referralSummary" name="summary" rows="3" required placeholder="Short summary of why a professional referral may help, written for the seeker."></textarea>
+                <textarea id="referralSummary" name="summary" rows="3" required maxlength="500" placeholder="Short summary of why a professional referral may help, written for the seeker.">{{ old('summary') }}</textarea>
+                @error('summary')<p role="alert" class="text-red-700">{{ $message }}</p>@enderror
+                @foreach(['session_summary' => 'Session summary', 'observations' => 'Relevant observations', 'actions_taken' => 'Actions already taken'] as $field => $label)
+                    <label class="form-label" for="referral-{{ $field }}">{{ $label }}</label>
+                    <textarea id="referral-{{ $field }}" name="{{ $field }}" required maxlength="2000" rows="3">{{ old($field) }}</textarea>
+                    @error($field)<p role="alert" class="text-red-700">{{ $message }}</p>@enderror
+                @endforeach
+                <label class="form-label" for="referral-office">Recommended receiving office or professional</label>
+                <input id="referral-office" name="receiving_office" required maxlength="200" value="{{ old('receiving_office') }}">
+                <label class="form-label" for="referral-explained">Was the referral explained to the seeker?</label>
+                <select id="referral-explained" name="referral_explained" required><option value="">Select</option>@foreach(['yes'=>'Yes','no'=>'No','emergency'=>'Not applicable due to emergency'] as $value=>$label)<option value="{{ $value }}" @selected(old('referral_explained') === $value)>{{ $label }}</option>@endforeach</select>
+                <label class="form-label" for="referral-urgency">Recommended urgency</label>
+                <select id="referral-urgency" name="recommended_urgency" required>@foreach(['routine','priority','urgent','emergency'] as $urgency)<option value="{{ $urgency }}" @selected(old('recommended_urgency') === $urgency)>{{ ucfirst($urgency) }}</option>@endforeach</select>
+                <label class="form-label" for="referral-remarks">Helper remarks (optional)</label>
+                <textarea id="referral-remarks" name="helper_remarks" maxlength="1000" rows="2">{{ old('helper_remarks') }}</textarea>
+                <p class="text-sm">Seeker decision: pending. Only the seeker can record consent after approval.</p>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-cancel modal-close" data-modal="referralModal">Cancel</button>
                     <button type="submit" class="btn btn-info" id="requestConsentBtn"><i class="fas fa-paper-plane" style="margin-right:6px;"></i> Submit for Adviser Review</button>
                 </div>
             </form>
 
-            <form method="POST" action="{{ route('helper.session.referral', ['id' => $session->id]) }}" id="referralSubmitForm" style="display:none;">
-                @csrf
-                <input type="hidden" name="referral_id" id="referralId">
-                <label class="form-label" style="margin-top:2px;">Indicators (select all that apply)</label>
-                <div class="referral-indicators" style="display:grid;gap:6px;font-size:13px;margin-bottom:12px;">
-                    @foreach(['Concern exceeds the scope of peer support','Persistent or worsening emotional distress','Significant difficulty in daily functioning','Possible self-harm or safety concern','Possible harm to another person','Requires psychological assessment','Requires professional counseling or intervention','Help seeker requested professional assistance'] as $indicator)
-                        <label style="display:flex;gap:8px;align-items:flex-start;"><input type="checkbox" class="referral-indicator" value="{{ $indicator }}"> <span>{{ $indicator }}</span></label>
-                    @endforeach
-                </div>
-                <label class="form-label" for="referralReason">Reason for referral</label>
-                <textarea id="referralReason" name="referral_reason" rows="4" required placeholder="Describe why a professional referral is recommended..."></textarea>
-                <label class="form-label" style="margin-top:14px;" for="referralPriority">Priority level</label>
-                <select id="referralPriority" name="priority_level" required>
-                    <option value="low">Low</option>
-                    <option value="moderate">Moderate</option>
-                    <option value="high">High</option>
-                    <option value="emergency">Emergency</option>
-                </select>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-cancel modal-close" data-modal="referralModal">Cancel</button>
-                    <button type="submit" class="btn btn-info"><i class="fas fa-paper-plane" style="margin-right:6px;"></i> Submit Referral</button>
-                </div>
-            </form>
+
         </div>
     </div>
 
@@ -489,21 +489,6 @@
 
                 const status = referral.status;
                 const consented = referral.help_seeker_consent;
-
-                if (status === 'consent_requested' && !consented) {
-                    if (chip) { chip.style.display = 'block'; chip.style.cssText = CHIP_STYLES.pending; chip.textContent = '⏳ Awaiting seeker consent…'; }
-                    if (consentForm) consentForm.style.display = 'none';
-                    if (submitForm) submitForm.style.display = 'none';
-                    return;
-                }
-
-                if (status === 'consent_requested' && consented) {
-                    if (chip) { chip.style.display = 'block'; chip.style.cssText = CHIP_STYLES.granted; chip.textContent = '✓ Consent granted — submit the referral details below.'; }
-                    if (consentForm) consentForm.style.display = 'none';
-                    if (submitForm) submitForm.style.display = 'block';
-                    document.getElementById('referralId').value = referral.id;
-                    return;
-                }
 
                 const done = ['completed', 'closed', 'declined'].includes(status);
                 const declined = status === 'declined' || (data.consent?.decision === 'declined');

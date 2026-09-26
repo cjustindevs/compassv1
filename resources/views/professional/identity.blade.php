@@ -8,6 +8,10 @@
                 <dd>{{ $value ?: 'Not provided' }}</dd>
             @endforeach
         </dl>
+        <h2 class="font-semibold mt-5">Approved referral</h2>
+        <p class="whitespace-pre-line">{{ $referral->referral_reason }}</p>
+        @include('partials.referral-recommendation')
+        <p class="text-sm mt-3">Adviser review: {{ $referral->review_notes }}</p>
         <form method="POST" action="{{ route('identity.acknowledge', $referral) }}" class="mt-6">
             @csrf
             <button class="bg-green-700 text-white p-3 rounded">Acknowledge receipt</button>

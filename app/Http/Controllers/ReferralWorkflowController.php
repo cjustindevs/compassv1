@@ -58,7 +58,7 @@ class ReferralWorkflowController extends Controller
             if ($referral->help_seeker_consent) {
                 return redirect()->route('seeker.referrals')->with('identity_referral_id',$referral->id)->with('success','Referral consent recorded. Review identity disclosure and submit your details to continue.');
             }
-            return redirect()->route('seeker.referrals')->with('success','Thank you for letting us know. Your decision is respected.');
+            return redirect('/selfhelp')->with('success','Your decision is respected. You can continue using the Self-Help Tools whenever you need support.');
         }
         return response()->json(['success' => true, 'status' => $referral->status]);
     }
