@@ -130,6 +130,7 @@
     </script>
 
     @yield('scripts')
+    @include('partials.workflow-notice')
     @include('layouts.partials.pwa-banner')
 </body>
 </html>

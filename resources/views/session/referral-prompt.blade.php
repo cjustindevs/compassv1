@@ -17,6 +17,7 @@
     }
     #referralConsentDialog::backdrop { background: rgba(15, 35, 25, .5); backdrop-filter: blur(3px); }
     #referralConsentDialog:not([open]) { display: none; }
+    #referralConsentDialog [hidden] { display: none !important; }
     #referralConsentDialog .rv-modal__head {
         display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
         padding: 20px 22px 16px; border-bottom: 1px solid #eef2ef;
@@ -135,8 +136,8 @@
         errorEl.textContent = '';
         if (!isSeeker) {
             document.getElementById('referralConsentText').textContent =
-                referral.status === 'consent_requested' && !referral.help_seeker_consent ? 'Your referral request is waiting for the seeker\u2019s decision.'
-                : referral.status === 'consent_requested' ? 'The seeker accepted the referral consent. You can now submit the referral details.'
+                ['pending_adviser', 'consent_requested'].includes(referral.status) ? 'Your recommendation is awaiting Adviser review.'
+                : referral.status === 'pending_consent' ? 'The Adviser approved your recommendation. The seeker is deciding whether to proceed.'
                 : 'Referral status: ' + referral.status.replaceAll('_', ' ') + '.';
             terms.hidden = true;
             acceptBtn.hidden = true;

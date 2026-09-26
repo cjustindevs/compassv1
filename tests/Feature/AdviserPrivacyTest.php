@@ -97,7 +97,7 @@ class AdviserPrivacyTest extends TestCase
         $this->actingAs($user)->post($url, ['review_notes' => 'Appropriate for referral review', 'consent_obtained' => true])->assertSessionHasErrors('consent_obtained');
         $this->post($url, ['review_notes' => 'Appropriate for referral review'])->assertSessionHas('success');
         $this->assertDatabaseHas('referrals', ['id' => $referral->id, 'status' => 'pending_consent', 'professional_id' => null, 'help_seeker_consent' => false]);
-        $this->post(route('adviser.referral.reject', $referral->id), ['rejection_reason' => 'Overwrite prior decision'])->assertStatus(409);
+        $this->post(route('adviser.referral.reject', $referral->id), ['rejection_reason' => 'Overwrite prior decision'])->assertRedirect()->assertSessionHasErrors('rejection_reason');
         $this->assertDatabaseHas('audit_logs', ['action' => 'referral_status_changed', 'target_id' => $referral->id]);
     }
 

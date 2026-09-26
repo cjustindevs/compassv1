@@ -371,6 +371,7 @@
         <div class="flash-alert info"><i class="fas fa-info-circle text-blue-500 mr-2"></i>{{ session('info') }}</div>
     @endif
 
+    @include('partials.workflow-notice')
     @include('layouts.partials.pwa-banner')
 
 </body>

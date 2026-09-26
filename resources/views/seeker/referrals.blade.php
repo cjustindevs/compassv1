@@ -263,6 +263,7 @@
 
     </main>
 
+    @include('partials.workflow-notice')
     @include('layouts.partials.pwa-banner')
 
 </body>

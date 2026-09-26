@@ -227,6 +227,51 @@ class ConsentReferralEmergencyTest extends TestCase
         $this->actingAs($helper->adviser->user)->postJson(route('referrals.review',$referral),['approved'=>true,'notes'=>'Reviewed supporting documentation.'])->assertOk();
     }
 
+    public function test_adviser_browser_approval_redirect_and_review_scripts_work(): void
+    {
+        Event::fake();
+        [, $helper] = $this->readyHelper();
+        $seeker = $this->seekerUser();
+        $session = $this->activeSession($helper, $seeker);
+        $this->post(route('helper.session.referral.consent', $session->id), ['summary' => 'Professional support recommended.'])->assertSessionHasNoErrors();
+        $referral = $session->referrals()->firstOrFail();
+        $this->actingAs($helper->adviser->user);
+        $page = $this->get(route('adviser.referral.show', $referral->id))->assertOk();
+        preg_match_all('~<script\\b[^>]*>(.*?)</script>~si', $page->getContent(), $scripts);
+        foreach ($scripts[1] as $script) {
+            $this->assertStringNotContainsString('</style>', $script);
+            $syntax = new \Symfony\Component\Process\Process(['node', '--check']);
+            $syntax->setInput($script)->run();
+            $this->assertTrue($syntax->isSuccessful(), $syntax->getErrorOutput());
+        }
+        $this->post(route('adviser.referral.approve', $referral->id), ['review_notes' => 'Reviewed supporting documentation.'])
+            ->assertSessionHasNoErrors()->assertRedirect(route('adviser.referrals'));
+        $this->get(route('adviser.referrals'))->assertOk()->assertSee('Referral approved.');
+        $this->assertSame(Referral::STATUS_PENDING_CONSENT, $referral->fresh()->status);
+        $this->assertDatabaseHas('notifications', ['user_account_id' => $helper->user_account_id, 'title' => 'Referral approved']);
+        $this->from(route('adviser.referral.show', $referral->id))
+            ->post(route('adviser.referral.approve', $referral->id), ['review_notes' => 'Duplicate submission.'])
+            ->assertRedirect(route('adviser.referral.show', $referral->id))->assertSessionHasErrors('review_notes');
+        $this->get(route('adviser.referral.show', $referral->id))->assertOk()->assertSee('This referral has already been reviewed.');
+        $this->actingAs($seeker)->getJson(route('session.referral-prompt', $session))->assertOk()->assertJsonPath('referral.status', 'pending_consent');
+    }
+
+    public function test_status_poll_uses_referral_consent_not_identity_disclosure(): void
+    {
+        Event::fake();
+        [, $helper] = $this->readyHelper();
+        $seeker = $this->seekerUser();
+        $session = $this->activeSession($helper, $seeker);
+        $this->post(route('helper.session.referral.consent', $session->id), ['summary' => 'Professional support recommended.']);
+        $referral = $session->referrals()->firstOrFail();
+        $this->approve($referral, $helper);
+        $this->actingAs($seeker)->postJson(route('referrals.consent-request', $referral), ['accepted' => true])->assertOk();
+        app(ConsentService::class)->decide($seeker, 'identity_disclosure', 'declined', $session->id, $referral->id, 'referral');
+        $this->getJson(route('session.referral-prompt', $session))->assertOk()->assertJsonPath('consent.decision', 'accepted');
+        $this->withSession(['info' => 'Your referral status has changed.'])->get(route('seeker.referrals'))
+            ->assertOk()->assertSee('workflowNotice')->assertSee('Your referral status has changed.');
+    }
+
     public function test_seeker_decline_closes_referral_and_blocks_submission(): void
     {
         Event::fake();

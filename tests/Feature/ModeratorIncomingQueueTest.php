@@ -143,7 +143,7 @@ class ModeratorIncomingQueueTest extends TestCase
         $this->assertStringContainsString('7 min', $html, 'The wait chip should show the elapsed minutes.');
         $this->assertStringContainsString('Chat', $html, 'The communication preference is shown.');
         $this->assertStringContainsString(route('moderator.queue.assign'), $html);
-        $this->assertStringContainsString(route('moderator.queue.remove', $queue->id), $html);
+        $this->assertStringContainsString(route('moderator.queue.remove', $queue->id, false), $html);
     }
 
     public function test_queue_page_never_renders_a_negative_waiting_duration(): void

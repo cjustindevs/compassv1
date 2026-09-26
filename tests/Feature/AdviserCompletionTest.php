@@ -80,7 +80,7 @@ class AdviserCompletionTest extends TestCase {
         [$user,$helper,$session]=$this->records();
         $r=Referral::create(['session_id'=>$session->id,'helper_id'=>$helper->id,'adviser_id'=>$user->adviser->id,'referral_reason'=>'Further support requested','referral_date'=>now(),'status'=>'pending_adviser']);
         app(\App\Services\ReferralManagementService::class)->clarify($r,'Please clarify the supporting documentation.');
-        $this->post(route('adviser.referral.approve',$r->id),['review_notes'=>'Approved after review'])->assertStatus(409);
+        $this->post(route('adviser.referral.approve',$r->id),['review_notes'=>'Approved after review'])->assertRedirect()->assertSessionHasErrors('review_notes');
         $this->actingAs($helper->user)->post(route('helper.referral.clarify',$r->id),['response'=>'Supporting documentation is in the submitted summary.'])->assertRedirect();
         $this->actingAs($user)->post(route('adviser.referral.approve',$r->id),['review_notes'=>'Reviewed the clarified supporting documentation.'])->assertRedirect();
         $this->assertSame('pending_consent',$r->fresh()->status);

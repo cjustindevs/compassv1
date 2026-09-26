@@ -576,7 +576,7 @@ Route::get('/session/{session}/referral-prompt', function (\App\Models\Session $
     $user = auth()->user();
     abort_unless(($user->helpSeeker && $user->helpSeeker->id === $session->seeker_id) || ($user->helper && $user->helper->id === $session->helper_id), 403);
     $referral = $session->referrals()->latest('id')->first();
-    $consent = $referral ? $referral->consentRecords()->latest('id')->first() : null;
+    $consent = $referral ? $referral->consentRecords()->where('purpose', 'referral')->latest('id')->first() : null;
     $emergency = \App\Models\EmergencyAlert::where('session_id', $session->id)->latest('id')->first();
     $incident = \App\Models\IncidentReport::where('session_id', $session->id)->where('incident_category', 'emergency_flag')->where('status', 'open')->latest('id')->first();
     return response()->json([

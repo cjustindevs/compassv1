@@ -360,11 +360,6 @@
                 this.classList.remove('active');
             }
         });
-    </style>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-});
     </script>
 
     @if($referral->clarification_requested_at)

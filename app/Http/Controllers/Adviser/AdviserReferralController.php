@@ -101,7 +101,7 @@ class AdviserReferralController extends Controller
         $referral = Referral::findOrFail($id);
         $this->authorizeReferral($referral);
         $data = $request->validate(['review_notes' => 'required|string|max:1000', 'professional_id' => 'prohibited', 'consent_obtained' => 'prohibited']);
-        app(ReferralManagementService::class)->reviewReferral($referral, Auth::user()->adviser, ['approved' => true, 'notes' => $data['review_notes']]);
+        $this->transition(fn () => app(ReferralManagementService::class)->reviewReferral($referral, Auth::user()->adviser, ['approved' => true, 'notes' => $data['review_notes']]), 'review_notes');
 
         return redirect()->route('adviser.referrals')->with('success', 'Referral approved. The Help Seeker must decide consent before professional assignment.');
     }
@@ -114,7 +114,7 @@ class AdviserReferralController extends Controller
         $referral = Referral::findOrFail($id);
         $this->authorizeReferral($referral);
         $data = $request->validate(['rejection_reason' => 'required|string|max:1000']);
-        app(ReferralManagementService::class)->reviewReferral($referral, Auth::user()->adviser, ['approved' => false, 'decline_reason' => $data['rejection_reason']]);
+        $this->transition(fn () => app(ReferralManagementService::class)->reviewReferral($referral, Auth::user()->adviser, ['approved' => false, 'decline_reason' => $data['rejection_reason']]), 'rejection_reason');
 
         return redirect()->route('adviser.referrals')->with('info', 'Referral declined.');
     }
@@ -132,7 +132,7 @@ class AdviserReferralController extends Controller
             'info_request' => 'required|string|min:10|max:2000',
         ]);
 
-        app(ReferralManagementService::class)->clarify($referral, $request->info_request);
+        $this->transition(fn () => app(ReferralManagementService::class)->clarify($referral, $request->info_request), 'info_request');
 
         return redirect()->route('adviser.referrals')
             ->with('info', 'Additional information requested from helper.');
@@ -146,9 +146,25 @@ class AdviserReferralController extends Controller
         $referral = Referral::findOrFail($id);
         $this->authorizeReferral($referral);
         $data = $request->validate(['professional_id' => 'required|integer|exists:psychology_professionals,id', 'reason' => 'required|string|max:1000']);
-        app(ReferralManagementService::class)->assignProfessional($referral, (int) $data['professional_id'], $data['reason']);
+        $this->transition(fn () => app(ReferralManagementService::class)->assignProfessional($referral, (int) $data['professional_id'], $data['reason']), 'professional_id');
 
         return back()->with('success', 'Professional assignment recorded.');
+    }
+
+    private function transition(callable $action, string $field): void
+    {
+        try {
+            $action();
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $exception) {
+            // Browser forms should explain unmet workflow prerequisites on the page.
+            // Keep authorization failures and unexpected server errors unchanged.
+            if (!in_array($exception->getStatusCode(), [409, 422], true)) {
+                throw $exception;
+            }
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                $field => $exception->getMessage() ?: 'This referral has changed. Refresh its status before trying again.',
+            ]);
+        }
     }
 
     private function authorizeReferral(Referral $referral): void

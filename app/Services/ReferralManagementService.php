@@ -173,6 +173,7 @@ class ReferralManagementService
             }
 
             if ($referral->helper?->user_account_id) {
+                $this->notifyHelper($referral, 'Referral approved', 'The adviser approved the recommendation. The seeker must decide whether to proceed.');
                 $this->broadcastSafely(new ReferralApproved($referral, $referral->helper->user_account_id));
             }
         } else {
