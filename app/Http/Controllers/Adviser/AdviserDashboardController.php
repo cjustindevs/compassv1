@@ -49,14 +49,14 @@ class AdviserDashboardController extends Controller
         $activeHelpers = Helper::whereIn('id', $helperIds)->where('status', 'available')->count();
 
         // Pending referrals
-        $pendingReferrals = Referral::where('status', Referral::STATUS_PENDING_ADVISER)
-            ->where(fn($q)=>$q->whereIn('helper_id',$helperIds)->orWhere('adviser_id',auth()->user()->adviser->id))
+        $pendingReferrals = Referral::whereIn('status', [Referral::STATUS_PENDING_ADVISER,Referral::STATUS_CONSENT_REQUESTED])
+            ->forAdviser($adviser->id)
             ->with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name'])
             ->latest()
             ->limit(10)
             ->get();
 
-        $pendingReferralCount = Referral::where('status','pending_adviser')->where(fn($q)=>$q->whereIn('helper_id',$helperIds)->orWhere('adviser_id',$adviser->id))->count();
+        $pendingReferralCount = Referral::whereIn('status',[Referral::STATUS_PENDING_ADVISER,Referral::STATUS_CONSENT_REQUESTED])->forAdviser($adviser->id)->count();
 
         // Recent competency evaluations
         $recentEvaluations = HelperCompetencyHistory::with(['helper:id,id,first_name,last_name', 'adviser:id,id,first_name,last_name'])

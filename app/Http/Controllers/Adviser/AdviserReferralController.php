@@ -23,12 +23,12 @@ class AdviserReferralController extends Controller
      */
     public function index()
     {
-        $helperIds = Helper::where('adviser_id', Auth::user()->adviser?->id)->pluck('id');
+        $adviserId = app(AdviserScope::class)->actor()->id;
 
         // Get pending referrals (awaiting adviser review)
         $pendingReferrals = Referral::with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'helper.user:id,id,name'])
             ->whereIn('status', [Referral::STATUS_PENDING_ADVISER,Referral::STATUS_CONSENT_REQUESTED])
-            ->where(fn ($q) => $q->whereIn('helper_id', $helperIds)->orWhere('adviser_id', Auth::user()->adviser?->id))
+            ->forAdviser($adviserId)
             ->orderBy('priority_level', 'desc')
             ->orderBy('created_at', 'asc')
             ->paginate(15,['*'],'pending_page')->withQueryString();
@@ -36,14 +36,14 @@ class AdviserReferralController extends Controller
         // Get approved referrals (awaiting professional)
         $approvedReferrals = Referral::with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'professional:id,id,first_name,last_name'])
             ->whereIn('status', [Referral::STATUS_PENDING_CONSENT,Referral::STATUS_PENDING_PROFESSIONAL,Referral::STATUS_NO_PROFESSIONAL_AVAILABLE,Referral::STATUS_ACCEPTED,Referral::STATUS_IN_PROGRESS])
-            ->where(fn ($q) => $q->whereIn('helper_id', $helperIds)->orWhere('adviser_id', Auth::user()->adviser?->id))
+            ->forAdviser($adviserId)
             ->orderBy('created_at', 'asc')
             ->paginate(15,['*'],'approved_page')->withQueryString();
 
         // Get completed referrals
         $completedReferrals = Referral::with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'professional:id,id,first_name,last_name'])
             ->whereIn('status', [Referral::STATUS_COMPLETED, Referral::STATUS_CLOSED,Referral::STATUS_DECLINED])
-            ->where(fn ($q) => $q->whereIn('helper_id', $helperIds)->orWhere('adviser_id', Auth::user()->adviser?->id))
+            ->forAdviser($adviserId)
             ->orderBy('updated_at', 'desc')
             ->paginate(15,['*'],'completed_page')->withQueryString();
 

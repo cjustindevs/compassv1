@@ -6,6 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class Referral extends Model
 {
+    public function scopeForAdviser($query, int $adviserId)
+    {
+        return $query->where(fn ($q) => $q->where('adviser_id', $adviserId)
+            ->orWhereHas('helper', fn ($helper) => $helper->where('adviser_id', $adviserId))
+            ->orWhere(fn ($unassigned) => $unassigned->whereNull('adviser_id')
+                ->whereHas('session', fn ($session) => $session->where('review_adviser_id', $adviserId))));
+    }
+
     public function scopeProfessionalAuthorized($query) {
         return $query->whereNotNull('approved_at')->where('help_seeker_consent',true)->whereIn('status',[self::STATUS_PENDING_PROFESSIONAL,self::STATUS_ACCEPTED,self::STATUS_IN_PROGRESS,self::STATUS_COMPLETED]);
     }

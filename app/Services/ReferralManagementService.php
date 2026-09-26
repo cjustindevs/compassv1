@@ -77,13 +77,24 @@ class ReferralManagementService
 
         $existing = $this->checkExistingReferrals($seeker);
         if ($existing) {
+            if ($existing->session_id !== $session->id) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['summary' => 'This seeker already has an open referral from another session. Review that referral before submitting a new recommendation.']);
+            }
             return $existing;
+        }
+
+        $adviserId = Adviser::whereKey($session->helper?->adviser_id)
+            ->whereHas('user', fn ($q) => $q->where('role', 'adviser')->where('is_active', true))->value('id');
+        $adviserId ??= Adviser::whereKey($session->review_adviser_id)
+            ->whereHas('user', fn ($q) => $q->where('role', 'adviser')->where('is_active', true))->value('id');
+        if (!$adviserId) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['summary' => 'No active Adviser is assigned to this Helper or session. Ask for a supervision assignment before submitting the referral.']);
         }
 
         $referral = Referral::create([
             'session_id' => $session->id,
             'helper_id' => $session->helper_id,
-            'adviser_id' => $session->helper?->adviser_id,
+            'adviser_id' => $adviserId,
             'priority_level' => $data['urgency'] ?? $data['priority_level'] ?? $session->risk_level,
             'help_seeker_consent' => false,
             'identity_disclosed' => false,

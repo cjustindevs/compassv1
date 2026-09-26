@@ -113,8 +113,8 @@ class SidebarComposer
                 ->whereHas('session', fn ($q) => $q->whereIn('helper_id', $adviserHelperIds))
                 ->count();
 
-            $referralBadge = Referral::where('status', 'pending_adviser')
-                ->whereIn('helper_id', $adviserHelperIds)
+            $referralBadge = Referral::whereIn('status', [Referral::STATUS_PENDING_ADVISER, Referral::STATUS_CONSENT_REQUESTED])
+                ->forAdviser((int) $adviserProfile?->id)
                 ->count();
 
             $notifBadge = $user->unreadNotifications()->count();

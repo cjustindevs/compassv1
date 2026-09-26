@@ -29,7 +29,7 @@ class AdviserScope
     public function referral(Referral $referral): void
     {
         $id = $this->actor()->id;
-        abort_unless($referral->adviser_id === $id || $referral->helper?->adviser_id === $id, 403);
+        abort_unless(Referral::whereKey($referral->id)->forAdviser($id)->exists(), 403);
     }
 
     public function emergency(EmergencyAlert $alert): void

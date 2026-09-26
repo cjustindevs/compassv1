@@ -227,6 +227,39 @@ class ConsentReferralEmergencyTest extends TestCase
         $this->actingAs($helper->adviser->user)->postJson(route('referrals.review',$referral),['approved'=>true,'notes'=>'Reviewed supporting documentation.'])->assertOk();
     }
 
+    public function test_session_reviewer_receives_referral_when_helper_has_no_supervisor(): void
+    {
+        Event::fake();
+        [, $helper] = $this->readyHelper();
+        $adviser = $helper->adviser;
+        $helper->update(['adviser_id' => null]);
+        $session = $this->activeSession($helper, $this->seekerUser());
+        $session->update(['review_adviser_id' => $adviser->id]);
+        $this->post(route('helper.session.referral.consent', $session->id), ['summary' => 'Reviewer should receive this referral.'])->assertSessionHasNoErrors();
+        $referral = $session->referrals()->firstOrFail();
+        $this->assertSame($adviser->id, $referral->adviser_id);
+        $this->assertDatabaseHas('notifications', ['user_account_id' => $adviser->user_account_id, 'title' => 'New referral request']);
+        $this->actingAs($adviser->user)->get(route('adviser.referrals'))->assertOk()->assertSee('Reviewer should receive this referral.');
+        // Legacy unassigned referrals remain visible only to the explicit session reviewer.
+        $referral->update(['adviser_id' => null]);
+        $this->get(route('adviser.referrals'))->assertOk()->assertSee('Reviewer should receive this referral.');
+        $this->get(route('adviser.referral.show', $referral))->assertOk();
+        $other = User::factory()->create(['role' => 'adviser']);
+        Adviser::create(['user_account_id' => $other->id, 'first_name' => 'Other', 'last_name' => 'Adviser', 'email' => $other->email]);
+        $this->actingAs($other)->get(route('adviser.referrals'))->assertOk()->assertDontSee('Reviewer should receive this referral.');
+        $this->get(route('adviser.referral.show', $referral))->assertForbidden();
+    }
+
+    public function test_recommendation_without_active_reviewer_returns_actionable_error(): void
+    {
+        Event::fake();
+        [, $helper] = $this->readyHelper();
+        $helper->adviser->user->update(['is_active' => false]);
+        $session = $this->activeSession($helper, $this->seekerUser());
+        $this->post(route('helper.session.referral.consent', $session->id), ['summary' => 'Needs an assigned reviewer.'])->assertSessionHasErrors('summary');
+        $this->assertDatabaseCount('referrals', 0);
+    }
+
     public function test_adviser_browser_approval_redirect_and_review_scripts_work(): void
     {
         Event::fake();

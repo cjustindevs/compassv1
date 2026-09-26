@@ -1,5 +1,15 @@
 # Referral workflow verification — 2026-09-26
 
+## Adviser queue follow-up
+
+The referral queue, dashboard pending list/count and sidebar badge now share the same Adviser scope. This includes directly assigned referrals, supervised Helpers' referrals, and previously unassigned referrals for sessions explicitly assigned to that reviewer. Unrelated Advisers remain blocked.
+
+New Helper recommendations use an active supervising Adviser, falling back to the session's explicitly assigned active reviewer. Missing assignments produce an actionable validation error instead of silently creating an orphan referral. An open referral in another session no longer produces a misleading submission-success response for the current session.
+
+Existing referrals with neither a supervising Adviser nor an explicit session/referral reviewer still require an authorized assignment; this patch does not expose them to all Advisers or invent supervision relationships. No migration is needed.
+
+Follow-up verification: full suite passed with 390 tests and 2827 assertions, including session-reviewer routing, notification delivery, legacy queue visibility, unrelated-Adviser denial and missing-active-reviewer validation.
+
 ## Corrected failures
 
 - The Adviser detail page closed its review JavaScript with `</style>`, preventing review modal functions from being parsed.
