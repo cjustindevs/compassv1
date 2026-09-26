@@ -23,22 +23,58 @@
 
         @if(session('success')) <div class="mb-4 p-3 rounded-lg bg-green-50 text-green-700">{{ session('success') }}</div> @endif
         @if(session('error')) <div class="mb-4 p-3 rounded-lg bg-red-50 text-red-700">{{ session('error') }}</div> @endif
+        @if($errors->any()) <div role="alert" class="mb-4 p-3 rounded-lg bg-red-50 text-red-700">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div> @endif
+
+        <p class="text-sm text-gray-500 mb-4">Add a duty shift for a helper. A helper can hold several shifts on the same date as long as they do not overlap, and an overnight shift is allowed when the end time is earlier than the start.</p>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                <h2 class="font-semibold text-gray-800 mb-4">Schedule Helper for Duty</h2>
+                <h2 class="font-semibold text-gray-800 mb-4">Schedule Helper Duty</h2>
                 <form method="POST" action="{{ route('moderator.schedules.store') }}" class="space-y-3">
                     @csrf
                     <select name="helper_id" required class="w-full rounded-lg border-gray-300 text-sm">
                         <option value="">Select helper</option>
                         @foreach($helpers as $helper)
-                            <option value="{{ $helper->id }}">{{ $helper->full_name }} · {{ ucfirst($helper->status) }}</option>
+                            <option value="{{ $helper->id }}" @selected((string) old('helper_id') === (string) $helper->id)>{{ $helper->full_name }} · {{ ucfirst($helper->status) }}</option>
                         @endforeach
                     </select>
                     <input type="date" name="event_date" value="{{ old('event_date', $date) }}" required class="w-full rounded-lg border-gray-300 text-sm">
-                    <textarea name="description" rows="3" maxlength="500" class="w-full rounded-lg border-gray-300 text-sm" placeholder="Duty notes or assignment details"></textarea>
-                    <button class="w-full px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">Schedule Duty Date</button>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="text-xs text-gray-600">Shift starts
+                            <input type="time" name="start_time" value="{{ old('start_time', '18:00') }}" required class="w-full rounded-lg border-gray-300 text-sm">
+                        </label>
+                        <label class="text-xs text-gray-600">Shift ends
+                            <input type="time" name="end_time" value="{{ old('end_time', '23:00') }}" required class="w-full rounded-lg border-gray-300 text-sm">
+                        </label>
+                    </div>
+                    <p class="text-xs text-gray-500">Leave both times empty for whole-day duty. An end earlier than the start continues into the next day.</p>
+                    <textarea name="description" rows="3" maxlength="500" class="w-full rounded-lg border-gray-300 text-sm" placeholder="Duty notes or assignment details">{{ old('description') }}</textarea>
+                    <button class="w-full px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">Add Duty Shift</button>
                 </form>
+
+                @if($shiftsByHelper->isNotEmpty())
+                    <h3 class="font-semibold text-gray-800 mt-6 mb-2">Shifts on this date</h3>
+                    @foreach($shiftsByHelper as $helperId => $shifts)
+                        <div class="border-t border-gray-100 py-2">
+                            <div class="text-sm font-medium text-gray-700">{{ $shifts->first()->helper?->full_name ?? 'Helper #'.$helperId }}</div>
+                            @foreach($shifts as $shift)
+                                <div class="flex items-center gap-2 text-xs text-gray-600 mt-1">
+                                    <span>{{ $shift->shift_label }}</span>
+                                    @if($shift->isWithinShift())
+                                        <span class="text-green-600">On duty now</span>
+                                    @endif
+                                    <form method="POST" action="{{ route('moderator.schedules.destroy') }}" class="ml-auto">
+                                        @csrf
+                                        <input type="hidden" name="helper_id" value="{{ $shift->helper_id }}">
+                                        <input type="hidden" name="date" value="{{ $date }}">
+                                        <input type="hidden" name="shift_id" value="{{ $shift->id }}">
+                                        <button type="submit" class="text-red-600 hover:underline">Remove</button>
+                                    </form>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endforeach
+                @endif
             </section>
 
             <section class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">

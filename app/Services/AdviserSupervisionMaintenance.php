@@ -8,7 +8,7 @@ class AdviserSupervisionMaintenance {
             DB::transaction(function() use($adviser) {
                 Adviser::whereKey($adviser->id)->lockForUpdate()->first();
                 foreach(Helper::where('adviser_id',$adviser->id)->get() as $helper) {
-                    if($helper->schedules()->whereDate('date',now('Asia/Manila')->toDateString())->where('is_active',true)->get()->contains(fn($shift)=>$shift->isOnDuty()) && $helper->getReadinessStatus() !== 'ready') $this->notify($adviser->user_account_id,'Readiness follow-up: '.$helper->public_alias,'A scheduled Helper needs a readiness check before assignment.','/adviser/helper/'.$helper->id);
+                    if(\App\Models\HelperSchedule::coveringShiftFor($helper->id) && $helper->getReadinessStatus() !== 'ready') $this->notify($adviser->user_account_id,'Readiness follow-up: '.$helper->public_alias,'A scheduled Helper needs a readiness check before assignment.','/adviser/helper/'.$helper->id);
                     if($helper->currentAssignedSessionsCount() >= Helper::MAX_SESSIONS_PER_SHIFT) $this->notify($adviser->user_account_id,'Workload limit: '.$helper->public_alias,'A supervised Helper reached the duty-session limit.','/adviser/helper/'.$helper->id);
                 }
                 TrainingRecommendation::whereHas('helper',fn($q)=>$q->where('adviser_id',$adviser->id))->whereIn('status',['assigned','in_progress'])->whereDate('due_date','<=',now('Asia/Manila')->toDateString())->eachById(fn($task)=>$this->notify($adviser->user_account_id,'Training follow-up #'.$task->id,'A training recommendation is due for follow-up.','/adviser/training'));

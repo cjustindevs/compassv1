@@ -29,13 +29,14 @@
             </div>
         @endif
 
-        <p class="text-sm text-gray-500 mb-4">An active schedule assigns a helper to duty for the whole day of the chosen date. Helpers also need a current readiness assessment and available status to receive sessions.</p>
+        <p class="text-sm text-gray-500 mb-4">Add a duty shift for a helper. A helper can hold several shifts on the same date as long as they do not overlap, and an overnight shift is allowed when the end time is earlier than the start. Helpers also need a current readiness assessment and available status to receive sessions.</p>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                <h2 class="font-semibold text-gray-800 mb-4">Schedule Helper for Duty</h2>
+                <h2 class="font-semibold text-gray-800 mb-4">Schedule Helper Duty</h2>
                 <form method="POST" action="{{ route('adviser.schedule.update') }}" class="space-y-3">
                     @csrf
+                    <input type="hidden" name="shift_id" value="{{ old('shift_id') }}">
                     <select name="helper_id" required class="w-full rounded-lg border-gray-300 text-sm">
                         <option value="">Select helper</option>
                         @foreach($helpers as $helper)
@@ -43,7 +44,16 @@
                         @endforeach
                     </select>
                     <input type="date" name="date" value="{{ old('date', $date->toDateString()) }}" required class="w-full rounded-lg border-gray-300 text-sm">
-                    <button class="w-full px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">Schedule Duty Date</button>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="text-xs text-gray-600">Shift starts
+                            <input type="time" name="shift_start" value="{{ old('shift_start', '18:00') }}" required class="w-full rounded-lg border-gray-300 text-sm">
+                        </label>
+                        <label class="text-xs text-gray-600">Shift ends
+                            <input type="time" name="shift_end" value="{{ old('shift_end', '23:00') }}" required class="w-full rounded-lg border-gray-300 text-sm">
+                        </label>
+                    </div>
+                    <p class="text-xs text-gray-500">Leave both times empty for whole-day duty. An end earlier than the start continues into the next day.</p>
+                    <button class="w-full px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">Add Duty Shift</button>
                 </form>
             </section>
 
@@ -52,18 +62,40 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead class="text-left text-gray-500 border-b">
-                            <tr><th class="py-2">Helper</th><th class="py-2">Duty</th><th class="py-2">Status &amp; Readiness</th></tr>
+                            <tr><th class="py-2">Helper</th><th class="py-2">Duty shifts</th><th class="py-2">Status &amp; Readiness</th></tr>
                         </thead>
                         <tbody>
                             @forelse($scheduleData as $data)
                                 <tr class="border-b last:border-0">
                                     <td class="py-3 font-medium text-gray-800">{{ $data['name'] }}</td>
                                     <td class="py-3">
-                                        @if($data['has_schedule'])
-                                            <div class="font-medium text-gray-700">{{ $data['shift_label'] }}</div>
-                                            <span class="text-xs {{ $data['is_on_shift'] ? 'text-green-600' : 'text-yellow-600' }}">{{ $data['is_on_shift'] ? 'On duty today' : 'Scheduled for this date' }}</span>
-                                        @else
+                                        @forelse($data['shifts'] as $shift)
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <span class="font-medium text-gray-700">{{ $shift['label'] }}</span>
+                                                @if($shift['on_shift'])
+                                                    <span class="text-xs text-green-600">On duty now</span>
+                                                @endif
+                                                <button type="button"
+                                                        class="ml-auto text-xs text-red-600 hover:underline"
+                                                        data-shift-edit
+                                                        data-helper-id="{{ $data['helper_id'] }}"
+                                                        data-date="{{ $date->toDateString() }}"
+                                                        data-shift-id="{{ $shift['id'] }}"
+                                                        data-shift-start="{{ $shift['start'] }}"
+                                                        data-shift-end="{{ $shift['end'] }}">Edit</button>
+                                                <form method="POST" action="{{ route('adviser.schedule.destroy') }}" class="inline">
+                                                    @csrf
+                                                    <input type="hidden" name="helper_id" value="{{ $data['helper_id'] }}">
+                                                    <input type="hidden" name="date" value="{{ $date->toDateString() }}">
+                                                    <input type="hidden" name="shift_id" value="{{ $shift['id'] }}">
+                                                    <button type="submit" class="text-xs text-red-600 hover:underline">Remove</button>
+                                                </form>
+                                            </div>
+                                        @empty
                                             <span class="text-gray-400">Not scheduled</span>
+                                        @endforelse
+                                        @if($data['has_schedule'] && ! $data['is_on_shift'])
+                                            <span class="text-xs text-yellow-600">Not on duty at this time</span>
                                         @endif
                                     </td>
                                     <td class="py-3">
@@ -107,5 +139,21 @@
             </div>
         </section>
     </main>
+
+    <script>
+        // Clicking Edit loads the shift back into the form with its id, so the
+        // next submit updates that row instead of adding a second one.
+        document.querySelectorAll('[data-shift-edit]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const form = document.querySelector('form[action="{{ route('adviser.schedule.update') }}"]');
+                form.querySelector('[name="shift_id"]').value = button.dataset.shiftId;
+                form.querySelector('[name="helper_id"]').value = button.dataset.helperId;
+                form.querySelector('[name="date"]').value = button.dataset.date;
+                form.querySelector('[name="shift_start"]').value = (button.dataset.shiftStart || '').slice(0, 5);
+                form.querySelector('[name="shift_end"]').value = (button.dataset.shiftEnd || '').slice(0, 5);
+                form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+    </script>
 </body>
 </html>

@@ -188,7 +188,10 @@ class AdviserHelperController extends Controller
         $helpers = Helper::whereIn('id', $helperIds)->with(['user', 'latestReadiness'])->orderBy('first_name')->get();
 
         $scheduleData = $helpers->map(function (Helper $helper) use ($schedules) {
-            $schedule = $schedules->firstWhere('helper_id', $helper->id);
+            // Several shifts may exist for the same helper and date, so duty is
+            // summarised across all of them rather than read off the first row.
+            $shifts = $schedules->where('helper_id', $helper->id)->values();
+            $covering = $shifts->first(fn (HelperSchedule $shift) => $shift->isWithinShift());
 
             return [
                 'helper_id' => $helper->id,
@@ -197,13 +200,19 @@ class AdviserHelperController extends Controller
                 'is_ready' => (bool) $helper->getCurrentReadiness(),
                 'current_sessions' => $helper->current_shift_sessions ?? 0,
                 'max_sessions' => Helper::MAX_SESSIONS_PER_SHIFT,
-                'has_schedule' => $schedule !== null,
-                'is_on_shift' => $schedule?->isWithinShift() ?? false,
+                'has_schedule' => $shifts->isNotEmpty(),
+                'is_on_shift' => $covering !== null,
                 'can_accept_sessions' => app(\App\Services\HelperEligibilityService::class)->status($helper)['assignable'],
                 'status_label' => app(\App\Services\HelperEligibilityService::class)->status($helper)['label'],
-                'shift_label' => $schedule?->shift_label ?? null,
-                'shift_start' => $schedule?->shift_start,
-                'shift_end' => $schedule?->shift_end,
+                'shift_count' => $shifts->count(),
+                'shift_labels' => $shifts->map(fn (HelperSchedule $shift) => $shift->shift_label)->all(),
+                'shifts' => $shifts->map(fn (HelperSchedule $shift) => [
+                    'id' => $shift->id,
+                    'label' => $shift->shift_label,
+                    'start' => $shift->shift_start,
+                    'end' => $shift->shift_end,
+                    'on_shift' => $shift->isWithinShift(),
+                ])->all(),
             ];
         });
 
@@ -237,6 +246,7 @@ class AdviserHelperController extends Controller
             'date' => 'required|date_format:Y-m-d',
             'shift_start' => 'nullable|date_format:H:i',
             'shift_end' => 'nullable|date_format:H:i',
+            'shift_id' => 'nullable|integer',
             'is_recurring' => 'nullable|boolean',
             'recurrence_pattern' => 'nullable|array',
         ]);
@@ -245,29 +255,48 @@ class AdviserHelperController extends Controller
             ->where('adviser_id', Auth::user()->adviser?->id)
             ->firstOrFail();
 
-        if (($validated['shift_start'] ?? null) && ($validated['shift_end'] ?? null) && strtotime((string) $validated['shift_end']) <= strtotime((string) $validated['shift_start'])) {
-            return back()->withErrors(['shift_end' => 'The shift end must be after the shift start.']);
-        }
-
-        $schedule = HelperSchedule::where('helper_id', $helper->id)
-            ->whereDate('date', $validated['date'])->first()
-            ?? new HelperSchedule(['helper_id' => $helper->id, 'date' => $validated['date']]);
-        $schedule->fill([
-                'shift_start' => $validated['shift_start'] ?? null,
-                'shift_end' => $validated['shift_end'] ?? null,
+        // Saving without a shift_id adds another shift for the day. Passing one
+        // edits that shift in place, and the overlap check then ignores itself.
+        $shift = app(\App\Services\HelperShiftService::class)->saveShift(
+            $helper,
+            $validated['date'],
+            $validated['shift_start'] ?? null,
+            $validated['shift_end'] ?? null,
+            $validated['shift_id'] ?? null,
+            [
                 'is_recurring' => (bool) ($validated['is_recurring'] ?? false),
                 'recurrence_pattern' => $validated['recurrence_pattern'] ?? null,
                 'created_by' => Auth::id(),
                 'approved_by' => Auth::user()->adviser?->id,
                 'approved_at' => now(),
-                'is_active' => true,
-        ])->save();
+            ],
+        );
 
         app(\App\Services\HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh());
         app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
 
         return redirect()->route('adviser.schedule', ['date' => $validated['date']])
-            ->with('success', 'Schedule updated successfully.');
+            ->with('success', $helper->full_name.' is on duty '.$shift->shift_label.'.');
+    }
+
+    public function destroySchedule(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'helper_id' => 'required|exists:helpers,id',
+            'date' => 'required|date_format:Y-m-d',
+            'shift_id' => 'required|integer',
+        ]);
+
+        $helper = Helper::where('id', $validated['helper_id'])
+            ->where('adviser_id', Auth::user()->adviser?->id)
+            ->firstOrFail();
+
+        app(\App\Services\HelperShiftService::class)->deleteShift($helper, $validated['shift_id']);
+
+        app(\App\Services\HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh());
+
+        return redirect()->route('adviser.schedule', ['date' => $validated['date']])
+            ->with('success', 'Duty shift removed for '.$helper->full_name.'.');
     }
 
     public function assign(Request $request, int $id): RedirectResponse

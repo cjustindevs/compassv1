@@ -29,8 +29,10 @@ class HelperEligibilityService
             $reasons[] = 'Service is closed for new assignments.';
         }
         if (! $relaxed) {
-            $schedule = $helper->schedules()->whereDate('date', now('Asia/Manila')->toDateString())->where('is_active', true)->get()->first(fn ($s) => $s->isOnDuty());
-            if (! $schedule) {
+            // Shift-based duty: a helper counts as on duty only while the clock
+            // is inside one of their shifts, so an overnight shift also covers
+            // the small hours of the following day.
+            if (! \App\Models\HelperSchedule::coveringShiftFor($helper->id)) {
                 $reasons[] = 'You are not on an official duty shift.';
             }
             if (! $helper->getCurrentReadiness()) {

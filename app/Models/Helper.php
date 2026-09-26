@@ -414,33 +414,49 @@ class Helper extends Model
     }
 
     /**
-     * UTC bounds of the helper's current capacity window derived from their
-     * active duty schedule for today, or the whole day as a fallback.
+     * UTC bounds of the helper's current capacity window. With shift-based
+     * duty this is the shift covering now, otherwise the next shift due today,
+     * and only falls back to the whole day when no shift is scheduled.
      */
     public function currentDutyWindow(): array
     {
         $tz = config('app.schedule_timezone', 'Asia/Manila');
-        $today = now($tz)->toDateString();
-        $schedule = $this->schedules()
-            ->whereDate('date', $today)
-            ->where('is_active', true)
-            ->latest('id')
-            ->first();
+        $now = now($tz);
 
-        if ($schedule && $schedule->shift_start && $schedule->shift_end) {
-            $start = now($tz)->copy()->setTimeFromTimeString((string) $schedule->shift_start);
-            $end = now($tz)->copy()->setTimeFromTimeString((string) $schedule->shift_end);
-            if ($end->lessThanOrEqualTo($start)) {
-                $end = $end->addDay();
-            }
+        $shift = HelperSchedule::coveringShiftFor($this->id, $now)
+            ?? $this->schedules()
+                ->forDate($now->toDateString())
+                ->where('is_active', true)
+                ->orderByRaw('COALESCE(shift_start, \'00:00:00\')')
+                ->orderBy('id')
+                ->get()
+                ->first(fn (HelperSchedule $candidate) => $candidate->window()[0]->isFuture());
 
-            return ['start' => $start->utc(), 'end' => $end->utc()];
+        if ($shift) {
+            [$start, $end] = $shift->window();
+
+            return ['start' => $start->copy()->utc(), 'end' => $end->copy()->utc()];
         }
 
         return [
-            'start' => now($tz)->startOfDay()->utc(),
-            'end' => now($tz)->addDay()->startOfDay()->utc(),
+            'start' => $now->copy()->startOfDay()->utc(),
+            'end' => $now->copy()->addDay()->startOfDay()->utc(),
         ];
+    }
+
+    /**
+     * How many sessions the helper has already taken inside a given shift.
+     * Capacity is counted per shift, so a split shift allows a second block of
+     * sessions rather than running out at the first.
+     */
+    public function assignedSessionsCountForShift(HelperSchedule $shift): int
+    {
+        [$start, $end] = $shift->window();
+
+        return $this->sessions()
+            ->whereNotNull('start_time')
+            ->whereBetween('start_time', [$start->copy()->utc(), $end->copy()->utc()])
+            ->count();
     }
 
     public function setAvailability(string $availability, ?string $reason = null): void

@@ -397,6 +397,7 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
     // Schedule Management
     Route::get('/schedule', [AdviserHelperController::class, 'manageSchedule'])->name('schedule');
     Route::post('/schedule/update', [AdviserHelperController::class, 'updateSchedule'])->name('schedule.update');
+    Route::post('/schedule/destroy', [AdviserHelperController::class, 'destroySchedule'])->name('schedule.destroy');
 
     // Transcript Review
     Route::get('/transcripts', [AdviserTranscriptController::class, 'index'])->name('transcripts');
@@ -508,6 +509,7 @@ Route::middleware(['auth', 'role:moderator'])->prefix('moderator')->name('modera
     // Schedule Management
     Route::get('/schedules', [ModeratorScheduleController::class, 'index'])->name('schedules');
     Route::post('/schedules', [ModeratorScheduleController::class, 'store'])->name('schedules.store');
+    Route::post('/schedules/destroy', [ModeratorScheduleController::class, 'destroy'])->name('schedules.destroy');
 
     // Manage (Helpers & Advisers)
     Route::get('/manage', [ModeratorManageController::class, 'index'])->name('manage');
