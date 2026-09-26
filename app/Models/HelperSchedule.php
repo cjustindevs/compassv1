@@ -34,74 +34,12 @@ class HelperSchedule extends Model
 
     /**
      * Approved default operating window (Monday to Saturday, 6:00 PM to
-     * 11:00 PM). Only used as a fallback for planned-hours reporting on
-     * legacy duty rows that predate required shift times.
+     * 11:00 PM). Duty itself is a whole day; this is only used as a fallback
+     * for planned-hours reporting.
      */
     public const OPERATING_START = '18:00';
 
     public const OPERATING_END = '23:00';
-
-    /**
-     * Duty is offered as fixed slots rather than free entry times. They tile the
-     * day end to end, so no two slots can ever overlap and a helper can hold
-     * every slot on one date. The evening slot is the approved operating
-     * window.
-     */
-    public const SHIFT_SLOTS = [
-        'morning' => ['label' => 'Morning', 'start' => '06:00', 'end' => '12:00'],
-        'afternoon' => ['label' => 'Afternoon', 'start' => '12:00', 'end' => '18:00'],
-        'evening' => ['label' => 'Evening', 'start' => '18:00', 'end' => '23:00'],
-        'night' => ['label' => 'Night', 'start' => '23:00', 'end' => '06:00'],
-        'allday' => ['label' => 'All day', 'start' => null, 'end' => null],
-    ];
-
-    /**
-     * Pseudo slot used only to carry a legacy shift whose recorded times match
-     * no offered slot. It keeps those times intact instead of silently
-     * rewriting them to whichever slot the form happened to default to.
-     */
-    public const SLOT_CUSTOM = 'custom';
-
-    /**
-     * The slot matching this shift, so an existing shift can be shown back in a
-     * slot based form. Returns null for a shift whose times match no slot.
-     */
-    public function slotKey(): ?string
-    {
-        foreach (self::SHIFT_SLOTS as $key => $slot) {
-            if ($slot['start'] === null) {
-                if (! $this->hasShiftTimes()) {
-                    return $key;
-                }
-
-                continue;
-            }
-
-            if ($this->hasShiftTimes()
-                && substr((string) $this->shift_start, 0, 5) === $slot['start']
-                && substr((string) $this->shift_end, 0, 5) === $slot['end']) {
-                return $key;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * A legacy shift recorded with times that no longer line up with an offered
-     * slot, which can only be kept as is or replaced with a real slot.
-     */
-    public function isCustomSlot(): bool
-    {
-        return $this->hasShiftTimes() && $this->slotKey() === null;
-    }
-
-    public function customSlotLabel(): string
-    {
-        $format = static fn ($time) => Carbon::parse((string) $time)->format('g:i A');
-
-        return 'Custom shift ('.$format($this->shift_start).' - '.$format($this->shift_end).')';
-    }
 
     public function scopeForDate($query, $date)
     {
@@ -124,10 +62,8 @@ class HelperSchedule extends Model
     }
 
     /**
-     * A shift with no recorded times is legacy all-day duty and covers the
-     * whole day. Otherwise the end is read as ending the following day when it
-     * is not later than the start, so a 22:00 to 06:00 shift is overnight
-     * rather than a rejected or negative-length block.
+     * Duty is scheduled per day, so a row covers the whole of its date. The
+     * legacy start and end columns are no longer written.
      *
      * @return array{0: Carbon, 1: Carbon}
      */
@@ -145,38 +81,11 @@ class HelperSchedule extends Model
             $tz
         );
 
-        if (! $this->hasShiftTimes()) {
-            return [$day, $day->copy()->addDay()];
-        }
-
-        $start = $day->copy()->setTimeFromTimeString((string) $this->shift_start);
-        $end = $day->copy()->setTimeFromTimeString((string) $this->shift_end);
-
-        if ($end->lessThanOrEqualTo($start)) {
-            $end = $end->addDay();
-        }
-
-        return [$start, $end];
-    }
-
-    public function hasShiftTimes(): bool
-    {
-        return ! empty($this->shift_start) && ! empty($this->shift_end);
-    }
-
-    public function crossesMidnight(): bool
-    {
-        if (! $this->hasShiftTimes()) {
-            return false;
-        }
-
-        // Zero padded 24 hour times compare correctly as plain strings.
-        return substr((string) $this->shift_end, 0, 5) <= substr((string) $this->shift_start, 0, 5);
+        return [$day, $day->copy()->addDay()];
     }
 
     /**
-     * Whether the shift covers a given moment. Callers that need to honour a
-     * shift spilling over midnight must also load the previous day's row.
+     * Whether the duty day covers a given moment.
      */
     public function covers(Carbon $moment): bool
     {
@@ -190,9 +99,8 @@ class HelperSchedule extends Model
     }
 
     /**
-     * Duty is shift-based: a helper is on duty only while the clock is inside
-     * one of their shifts. A legacy row with no shift times still counts for
-     * the whole day.
+     * Duty is per day, so a helper is on duty for the whole of a date they are
+     * rostered on.
      */
     public function isWithinShift(): bool
     {
@@ -200,8 +108,7 @@ class HelperSchedule extends Model
     }
 
     /**
-     * The active shift covering a moment, if any. An overnight shift is dated
-     * by the day it starts, so the previous day is included in the lookup.
+     * The active duty day covering a moment, if any.
      */
     public static function coveringShiftFor(int $helperId, ?Carbon $at = null): ?self
     {
@@ -210,33 +117,20 @@ class HelperSchedule extends Model
 
         return static::where('helper_id', $helperId)
             ->where('is_active', true)
-            ->whereDate('date', '>=', $moment->copy()->subDays(2)->toDateString())
-            ->whereDate('date', '<=', $moment->toDateString())
-            ->orderBy('date')
+            ->whereDate('date', $moment->toDateString())
+            ->orderBy('id')
             ->get()
             ->first(fn (self $shift) => $shift->covers($moment));
     }
 
     public function getShiftDuration(): float
     {
-        if (! $this->hasShiftTimes()) {
-            $start = self::OPERATING_START;
-            $end = self::OPERATING_END;
-        } else {
-            $start = (string) $this->shift_start;
-            $end = (string) $this->shift_end;
-        }
-
         $minutes = (int) round(
-            Carbon::parse($start, 'UTC')->diffInMinutes(
-                Carbon::parse($end, 'UTC'),
+            Carbon::parse(self::OPERATING_START, 'UTC')->diffInMinutes(
+                Carbon::parse(self::OPERATING_END, 'UTC'),
                 false
             )
         );
-
-        if ($minutes <= 0) {
-            $minutes += 24 * 60;
-        }
 
         return round($minutes / 60, 2);
     }
@@ -248,19 +142,6 @@ class HelperSchedule extends Model
 
     public function getShiftLabelAttribute(): string
     {
-        if (! $this->hasShiftTimes()) {
-            return 'All day';
-        }
-
-        $format = static fn ($time) => Carbon::parse((string) $time)->format('h:i A');
-        $slotKey = $this->slotKey();
-        $slot = $slotKey ? self::SHIFT_SLOTS[$slotKey]['label'].' (' : '';
-
-        return $slot
-            .$format($this->shift_start)
-            .' - '
-            .$format($this->shift_end)
-            .($this->crossesMidnight() ? ', next day' : '')
-            .($slot ? ')' : '');
+        return 'All day';
     }
 }

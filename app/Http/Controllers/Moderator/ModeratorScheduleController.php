@@ -12,7 +12,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ModeratorScheduleController extends Controller
@@ -64,33 +63,27 @@ class ModeratorScheduleController extends Controller
         $validated = $request->validate([
             'helper_id' => 'required|exists:helpers,id',
             'event_date' => 'required|date',
-            'shift_slot' => ['required', 'string', Rule::in(array_keys(HelperSchedule::SHIFT_SLOTS))],
             'description' => 'nullable|string|max:500',
         ]);
 
         $helper = Helper::findOrFail($validated['helper_id']);
         $date = Carbon::parse($validated['event_date'])->toDateString();
-        [$start, $end] = app(HelperShiftService::class)->resolveSlot($validated['shift_slot']);
 
-        // A helper may hold several non-overlapping shifts on one date, so a
-        // clash is an overlapping shift rather than any existing duty record.
-        $shift = app(HelperShiftService::class)->saveShift(
+        // A date can carry as many helpers as are rostered on it, so the only
+        // clash is the same helper being rostered twice for that day.
+        $shift = app(HelperShiftService::class)->scheduleDuty(
             $helper,
             $date,
-            $start,
-            $end,
             attributes: ['created_by' => Auth::id()],
-            errorKey: 'shift_slot',
+            errorKey: 'event_date',
         );
 
         CalendarEvent::create([
             'title' => 'Duty: '.$helper->full_name,
-            'description' => ($validated['description'] ?? null)
-                ? ($validated['description'].' ('.$shift->shift_label.')')
-                : ('Duty shift '.$shift->shift_label),
+            'description' => $validated['description'] ?? null,
             'event_date' => $date,
-            'start_time' => $shift->shift_start,
-            'end_time' => $shift->shift_end,
+            'start_time' => null,
+            'end_time' => null,
             'event_type' => CalendarEvent::TYPE_MEETING,
             'helper_schedule_id' => $shift->id,
             'created_by' => Auth::id(),
@@ -101,7 +94,7 @@ class ModeratorScheduleController extends Controller
         app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
 
         return redirect()->route('moderator.schedules', ['date' => $date])
-            ->with('success', $helper->full_name.' is on duty '.$shift->shift_label.'.');
+            ->with('success', $helper->full_name.' is on duty on '.Carbon::parse($date)->format('M j, Y').'.');
     }
 
     public function destroy(Request $request): RedirectResponse
@@ -116,13 +109,13 @@ class ModeratorScheduleController extends Controller
         $date = Carbon::parse($validated['date'])->toDateString();
         $shiftId = (int) $validated['shift_id'];
 
-        app(HelperShiftService::class)->deleteShift($helper, $shiftId);
-
-        CalendarEvent::where('helper_schedule_id', $shiftId)->delete();
+        // The duty calendar event is linked to its day and cascades on delete,
+        // so removing the rostered day takes the event with it.
+        app(HelperShiftService::class)->removeDuty($helper, $shiftId);
 
         app(\App\Services\HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh());
 
         return redirect()->route('moderator.schedules', ['date' => $date])
-            ->with('success', 'Duty shift removed for '.$helper->full_name.'.');
+            ->with('success', 'Duty removed for '.$helper->full_name.' on '.Carbon::parse($date)->format('M j, Y').'.');
     }
 }

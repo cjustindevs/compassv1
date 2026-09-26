@@ -427,7 +427,6 @@ class Helper extends Model
             ?? $this->schedules()
                 ->forDate($now->toDateString())
                 ->where('is_active', true)
-                ->orderByRaw('COALESCE(shift_start, \'00:00:00\')')
                 ->orderBy('id')
                 ->get()
                 ->first(fn (HelperSchedule $candidate) => $candidate->window()[0]->isFuture());

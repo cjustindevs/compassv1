@@ -38,7 +38,7 @@ class HelperWorkflowSecurityTest extends TestCase
         if ($verified) {
             $this->verifiedHelperFixture($helper);
         }
-        HelperSchedule::create(['helper_id' => $helper->id, 'date' => now('Asia/Manila')->toDateString(), 'shift_start' => '18:00', 'shift_end' => '23:00', 'created_by' => $user->id, 'is_active' => true]);
+        HelperSchedule::create(['helper_id' => $helper->id, 'date' => now('Asia/Manila')->toDateString(), 'created_by' => $user->id, 'is_active' => true]);
         $this->actingAs($user);
         app(HelperReadinessService::class)->submit($user, $this->readiness());
 
@@ -74,11 +74,15 @@ class HelperWorkflowSecurityTest extends TestCase
         $this->assertContains('Institutional verification and training approval are required.', app(HelperEligibilityService::class)->reasons($helper));
     }
 
-    public function test_readiness_expires_at_shift_end_and_latest_failure_wins(): void
+    public function test_readiness_expires_at_the_end_of_the_duty_day_and_latest_failure_wins(): void
     {
         $helper = $this->helper();
         $check = $helper->getCurrentReadiness();
-        $this->assertSame('23:00', $check->valid_until->timezone('Asia/Manila')->format('H:i'));
+
+        // The helper is rostered for the whole of 2026-09-16, so readiness is
+        // valid to the end of that duty day rather than the default four hours.
+        $this->assertSame('00:00', $check->valid_until->timezone('Asia/Manila')->format('H:i'));
+        $this->assertSame('2026-09-17', $check->valid_until->timezone('Asia/Manila')->format('Y-m-d'));
         $this->assertSame(HelperReadinessService::VERSION, $check->form_version);
         $this->assertCount(5, $check->skills_confirmed);
         app(HelperReadinessService::class)->submit($helper->user, $this->readiness(['stress_level' => 'high']));
@@ -420,20 +424,24 @@ class HelperWorkflowSecurityTest extends TestCase
         $this->assertFalse(app(HelperEligibilityService::class)->allows($helper->fresh()));
     }
 
-    public function test_shift_capacity_ignores_sessions_started_outside_the_shift_window(): void
+    public function test_duty_day_capacity_counts_only_that_date(): void
     {
         $helper = $this->helper();
         $seekerUser = User::factory()->create(['role' => 'seeker']);
         $seeker = HelpSeeker::create(['user_account_id' => $seekerUser->id, 'generated_alias' => 'Capacity' . $seekerUser->id, 'age' => 20, 'gender' => 'male']);
-        $make = fn (int $hour) => Session::create(['seeker_id' => $seeker->id, 'helper_id' => $helper->id, 'session_status' => 'completed', 'start_time' => Carbon::parse(sprintf('2026-09-16 %02d:00', $hour), 'Asia/Manila')->utc(), 'end_time' => Carbon::parse(sprintf('2026-09-16 %02d:30', $hour), 'Asia/Manila')->utc(), 'completion_status' => 'completed']);
+        $make = fn (string $when) => Session::create(['seeker_id' => $seeker->id, 'helper_id' => $helper->id, 'session_status' => 'completed', 'start_time' => Carbon::parse($when, 'Asia/Manila')->utc(), 'end_time' => Carbon::parse($when, 'Asia/Manila')->addMinutes(30)->utc(), 'completion_status' => 'completed']);
 
-        $make(10);
-        $make(11);
-        $this->assertTrue($helper->fresh()->hasCapacity(), 'Sessions before the 18:00-23:00 shift must not count against it.');
+        // The helper is rostered for 2026-09-16, which is the duty day, so the
+        // capacity window is that whole date.
+        $make('2026-09-15 10:00');
+        $make('2026-09-15 18:00');
+        $this->assertTrue($helper->fresh()->hasCapacity(), 'Sessions on another date must not count against the duty day.');
 
-        $make(18);
-        $make(19);
-        $this->assertFalse($helper->fresh()->hasCapacity(), 'Two sessions inside the shift must exhaust capacity.');
+        $make('2026-09-16 10:00');
+        $this->assertTrue($helper->fresh()->hasCapacity(), 'One session on the duty day leaves capacity.');
+
+        $make('2026-09-16 18:00');
+        $this->assertFalse($helper->fresh()->hasCapacity(), 'Two sessions on the duty day exhaust capacity.');
     }
 
     public function test_readiness_activates_a_helper_on_whole_day_duty_date(): void

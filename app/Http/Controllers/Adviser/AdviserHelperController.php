@@ -15,7 +15,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AdviserHelperController extends Controller
@@ -211,8 +210,6 @@ class AdviserHelperController extends Controller
                 'shifts' => $shifts->map(fn (HelperSchedule $shift) => [
                     'id' => $shift->id,
                     'label' => $shift->shift_label,
-                    'slot' => $shift->slotKey() ?? HelperSchedule::SLOT_CUSTOM,
-                    'custom_label' => $shift->isCustomSlot() ? $shift->customSlotLabel() : null,
                     'on_shift' => $shift->isWithinShift(),
                 ])->all(),
             ];
@@ -246,10 +243,6 @@ class AdviserHelperController extends Controller
         $validated = $request->validate([
             'helper_id' => 'required|exists:helpers,id',
             'date' => 'required|date_format:Y-m-d',
-            'shift_slot' => ['required', 'string', Rule::in(array_merge(
-                array_keys(HelperSchedule::SHIFT_SLOTS),
-                [HelperSchedule::SLOT_CUSTOM]
-            ))],
             'shift_id' => 'nullable|integer',
             'is_recurring' => 'nullable|boolean',
             'recurrence_pattern' => 'nullable|array',
@@ -259,25 +252,11 @@ class AdviserHelperController extends Controller
             ->where('adviser_id', Auth::user()->adviser?->id)
             ->firstOrFail();
 
-        // A shift recorded before fixed slots existed can only be kept as is, so
-        // its own times are read back here rather than accepted from the form.
-        $editing = filled($validated['shift_id'] ?? null)
-            ? HelperSchedule::where('helper_id', $helper->id)->whereKey($validated['shift_id'])->first()
-            : null;
-
-        $legacyTimes = $editing?->isCustomSlot()
-            ? ['start' => $editing->shift_start, 'end' => $editing->shift_end]
-            : null;
-
-        [$start, $end] = app(HelperShiftService::class)->resolveSlot($validated['shift_slot'], $legacyTimes);
-
-        // Saving without a shift_id adds another shift for the day. Passing one
-        // edits that shift in place, and the overlap check then ignores itself.
-        $shift = app(HelperShiftService::class)->saveShift(
+        // Rostering without a shift_id adds the helper for that day. Passing one
+        // edits that day in place, and the duplicate check then ignores itself.
+        $shift = app(HelperShiftService::class)->scheduleDuty(
             $helper,
             $validated['date'],
-            $start,
-            $end,
             $validated['shift_id'] ?? null,
             [
                 'is_recurring' => (bool) ($validated['is_recurring'] ?? false),
@@ -286,7 +265,6 @@ class AdviserHelperController extends Controller
                 'approved_by' => Auth::user()->adviser?->id,
                 'approved_at' => now(),
             ],
-            errorKey: 'shift_slot',
         );
 
         app(\App\Services\HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh());
@@ -308,7 +286,7 @@ class AdviserHelperController extends Controller
             ->where('adviser_id', Auth::user()->adviser?->id)
             ->firstOrFail();
 
-        app(\App\Services\HelperShiftService::class)->deleteShift($helper, $validated['shift_id']);
+        app(HelperShiftService::class)->removeDuty($helper, (int) $validated['shift_id']);
 
         app(\App\Services\HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh());
 

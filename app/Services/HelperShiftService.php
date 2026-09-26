@@ -10,14 +10,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Duty scheduling is shift-based. A helper may hold several non-overlapping
- * shifts on the same date, and both the Adviser and the Moderator create them
- * through this service so the two roles cannot drift apart again.
- *
- * Overlap is resolved to absolute instants before comparing, because a shift
- * that ends earlier than it starts runs past midnight and can collide with a
- * shift recorded against the following day. A database unique index cannot
- * express that, which is why the rule lives here.
+ * Duty is scheduled per day. A date can carry as many helpers as are rostered on
+ * it, but each helper holds one duty record for that date and it covers the
+ * whole day. Both the Adviser and the Moderator roster duty through this service
+ * so the two roles cannot drift apart again.
  */
 class HelperShiftService
 {
@@ -25,71 +21,22 @@ class HelperShiftService
     {
         return HelperSchedule::where('helper_id', $helperId)
             ->forDate($date)
-            ->orderByRaw('COALESCE(shift_start, \'00:00:00\')')
             ->orderBy('id')
             ->get();
     }
 
     /**
-     * Resolve a submitted slot key to its times. Duty is entered as a fixed
-     * slot, so the times are decided on the server and cannot be malformed.
+     * Roster a helper for a whole day, or update the day they already hold when
+     * $shiftId is given. A helper cannot be rostered twice for the same date.
      *
-     * The custom key is only honoured when $legacyTimes is supplied, and
-     * callers must derive that from the row being edited. A request therefore
-     * cannot invent shift times, it can only keep the ones already stored.
-     *
-     * @param  array{start: string, end: string}|null  $legacyTimes
-     * @return array{0: ?string, 1: ?string}
+     * $errorKey is the form field a clash is reported against, which is the date
+     * field in both scheduling forms.
      *
      * @throws ValidationException
      */
-    public function resolveSlot(?string $slot, ?array $legacyTimes = null): array
-    {
-        if (blank($slot)) {
-            throw ValidationException::withMessages([
-                'shift_slot' => 'Choose a duty shift.',
-            ]);
-        }
-
-        if ($slot === HelperSchedule::SLOT_CUSTOM) {
-            if (blank($legacyTimes['start'] ?? null) || blank($legacyTimes['end'] ?? null)) {
-                throw ValidationException::withMessages([
-                    'shift_slot' => 'Choose a duty shift.',
-                ]);
-            }
-
-            return [
-                substr((string) $legacyTimes['start'], 0, 5),
-                substr((string) $legacyTimes['end'], 0, 5),
-            ];
-        }
-
-        if (! array_key_exists($slot, HelperSchedule::SHIFT_SLOTS)) {
-            throw ValidationException::withMessages([
-                'shift_slot' => 'That duty shift is not available.',
-            ]);
-        }
-
-        $resolved = HelperSchedule::SHIFT_SLOTS[$slot];
-
-        return [$resolved['start'], $resolved['end']];
-    }
-
-    /**
-     * Create or update one shift. When $shiftId is given that row is edited and
-     * excluded from its own overlap check, so a shift can be nudged without
-     * first being deleted.
-     *
-     * $errorKey is the form field an overlap is reported against, which is the
-     * shift slot in both scheduling forms.
-     *
-     * @throws ValidationException
-     */
-    public function saveShift(Helper $helper, string $date, ?string $start, ?string $end, ?int $shiftId = null, array $attributes = [], string $errorKey = 'shift_start'): HelperSchedule
+    public function scheduleDuty(Helper $helper, string $date, ?int $shiftId = null, array $attributes = [], string $errorKey = 'date'): HelperSchedule
     {
         $day = Carbon::parse($date, config('app.schedule_timezone', 'Asia/Manila'))->toDateString();
-
-        [$start, $end] = $this->normaliseTimes($start, $end);
 
         $existing = $shiftId
             ? HelperSchedule::where('helper_id', $helper->id)->whereKey($shiftId)->first()
@@ -97,22 +44,29 @@ class HelperShiftService
 
         if ($shiftId && ! $existing) {
             throw ValidationException::withMessages([
-                'shift_id' => 'That shift no longer exists for this helper.',
+                'shift_id' => 'That duty day no longer exists for this helper.',
             ]);
         }
 
-        return DB::transaction(function () use ($helper, $day, $start, $end, $existing, $attributes, $errorKey) {
+        return DB::transaction(function () use ($helper, $day, $existing, $attributes, $errorKey) {
             // Serialise writes for this helper so two concurrent scheduling
-            // requests cannot both pass the overlap check and both insert.
+            // requests cannot both find the day free and both insert.
             Helper::whereKey($helper->id)->lockForUpdate()->firstOrFail();
 
-            $this->guardNoOverlap($helper, $day, $start, $end, $existing?->id, $errorKey);
+            $clash = HelperSchedule::where('helper_id', $helper->id)
+                ->whereDate('date', $day)
+                ->when($existing, fn ($query) => $query->where('id', '!=', $existing->id))
+                ->exists();
 
-            $shift = $existing ?? new HelperSchedule(['helper_id' => $helper->id, 'date' => $day]);
+            if ($clash) {
+                throw ValidationException::withMessages([
+                    $errorKey => $helper->full_name.' is already on duty on '.Carbon::parse($day)->format('M j, Y').'.',
+                ]);
+            }
+
+            $shift = $existing ?? new HelperSchedule(['helper_id' => $helper->id]);
             $shift->fill(array_merge([
                 'date' => $day,
-                'shift_start' => $start,
-                'shift_end' => $end,
                 'is_active' => true,
             ], $attributes))->save();
 
@@ -123,80 +77,16 @@ class HelperShiftService
     /**
      * @throws ValidationException
      */
-    public function deleteShift(Helper $helper, int $shiftId): void
+    public function removeDuty(Helper $helper, int $shiftId): void
     {
         $shift = HelperSchedule::where('helper_id', $helper->id)->whereKey($shiftId)->first();
 
         if (! $shift) {
             throw ValidationException::withMessages([
-                'shift_id' => 'That shift no longer exists for this helper.',
+                'shift_id' => 'That duty day no longer exists for this helper.',
             ]);
         }
 
         $shift->delete();
-    }
-
-    /**
-     * @return array{0: ?string, 1: ?string}
-     *
-     * @throws ValidationException
-     */
-    private function normaliseTimes(?string $start, ?string $end): array
-    {
-        // Duty rows created before shifts became the scheduling unit carry no
-        // times and mean the whole day, so both may be omitted together.
-        if (blank($start) && blank($end)) {
-            return [null, null];
-        }
-
-        if (blank($start) || blank($end)) {
-            throw ValidationException::withMessages([
-                'shift_end' => 'A shift needs both a start and an end time.',
-            ]);
-        }
-
-        if (substr((string) $end, 0, 5) === substr((string) $start, 0, 5)) {
-            throw ValidationException::withMessages([
-                'shift_end' => 'The shift end must differ from the shift start.',
-            ]);
-        }
-
-        return [$start, $end];
-    }
-
-    /**
-     * @throws ValidationException
-     */
-    private function guardNoOverlap(Helper $helper, string $day, ?string $start, ?string $end, ?int $ignoreId, string $errorKey = 'shift_start'): void
-    {
-        $candidate = new HelperSchedule([
-            'date' => $day,
-            'shift_start' => $start,
-            'shift_end' => $end,
-            'is_active' => true,
-        ]);
-        [$windowStart, $windowEnd] = $candidate->window();
-
-        // The previous two days matter because a shift may run past midnight
-        // into the day being scheduled. Compared with whereDate because the
-        // column is a date, and a plain equality against a Y-m-d string misses
-        // the stored value on SQLite.
-        $neighbours = HelperSchedule::where('helper_id', $helper->id)
-            ->where('is_active', true)
-            ->whereDate('date', '>=', Carbon::parse($day)->subDays(2)->toDateString())
-            ->whereDate('date', '<=', $day)
-            ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
-            ->get();
-
-        foreach ($neighbours as $neighbour) {
-            [$otherStart, $otherEnd] = $neighbour->window();
-
-            if ($otherStart->lessThan($windowEnd) && $otherEnd->greaterThan($windowStart)) {
-                throw ValidationException::withMessages([
-                    $errorKey => 'This shift overlaps '.$neighbour->shift_label.' already scheduled on '
-                        .Carbon::parse($neighbour->date)->format('M j, Y').'.',
-                ]);
-            }
-        }
     }
 }

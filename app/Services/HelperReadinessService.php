@@ -22,10 +22,11 @@ class HelperReadinessService
             $helper = Helper::whereKey($user->helper->id)->lockForUpdate()->firstOrFail();
             $schedule = \App\Models\HelperSchedule::coveringShiftFor($helper->id);
             $until = now()->addHours(4);
-            if ($schedule && $schedule->shift_end) {
-                $end = now('Asia/Manila')->setTimeFromTimeString($schedule->shift_end);
-                if ($end->lt($until)) {
-                    $until = $end;
+            if ($schedule) {
+                // Readiness must not outlive the duty day it was submitted for.
+                [, $dutyEnd] = $schedule->window();
+                if ($dutyEnd->lt($until)) {
+                    $until = $dutyEnd;
                 }
             }
             $passed = $data['availability_status'] === 'available' && $data['emotionally_ready'] && $data['willing_to_listen'] && $data['stress_level'] !== 'high' && count(array_diff(self::SKILLS, $data['skills_confirmed'])) === 0;

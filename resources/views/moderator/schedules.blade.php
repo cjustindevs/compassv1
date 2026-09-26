@@ -37,16 +37,8 @@
                         @endforeach
                     </select>
                     <input type="date" name="event_date" value="{{ old('event_date', $date) }}" required class="w-full rounded-lg border-gray-300 text-sm">
-                    <select name="shift_slot" required class="w-full rounded-lg border-gray-300 text-sm">
-                        <option value="">Select shift</option>
-                        @foreach(\App\Models\HelperSchedule::SHIFT_SLOTS as $slotKey => $slot)
-                            <option value="{{ $slotKey }}" @selected(old('shift_slot') === $slotKey)>
-                                {{ $slot['label'] }}@if($slot['start']) ({{ \Illuminate\Support\Carbon::parse($slot['start'])->format('g:i A') }} - {{ \Illuminate\Support\Carbon::parse($slot['end'])->format('g:i A') }})@endif
-                            </option>
-                        @endforeach
-                    </select>
                     <textarea name="description" rows="3" maxlength="500" class="w-full rounded-lg border-gray-300 text-sm" placeholder="Duty notes or assignment details">{{ old('description') }}</textarea>
-                    <button class="w-full px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">Add Duty Shift</button>
+                    <button class="w-full px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">Add Duty Day</button>
                 </form>
 
                 @if($shiftsByHelper->isNotEmpty())
