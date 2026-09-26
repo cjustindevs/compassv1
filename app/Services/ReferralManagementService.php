@@ -210,6 +210,7 @@ class ReferralManagementService
             abort_unless(strlen(trim($text)) >= 10 && mb_strlen($text) <= 2000, 422);
             if ($response) {
                 abort_unless($referral->clarification_requested_at && ! $referral->clarification_received_at, 409);
+                app(SupervisionVersions::class)->record($referral, 'Recommendation before clarification response');
                 $referral->forceFill(['clarification_response' => $text, 'clarification_received_at' => now()])->save();
                 if ($revisedReason !== null) {
                     abort_unless(trim($revisedReason) !== '' && mb_strlen($revisedReason) <= 1000, 422, 'A revised referral reason cannot be empty.');
@@ -285,7 +286,8 @@ class ReferralManagementService
         abort_unless(trim((string) ($approved ? ($data['notes'] ?? '') : ($data['decline_reason'] ?? ''))) !== '', 422, 'A review reason is required.');
         abort_if(! empty($data['consent_obtained']) || ! empty($data['professional_id']), 422, 'Approval cannot assert consent or assign a professional.');
 
-        $consentAlreadyGiven = (bool) $referral->help_seeker_consent;
+        // Approval requires a fresh decision about the approved recommendation.
+        $consentAlreadyGiven = false;
 
         $referral->forceFill([
             'adviser_id' => $adviser->id,

@@ -465,6 +465,11 @@ class ReferralDeliveryWorkflowTest extends TestCase
             'phone_number' => '+63 917 000 0000',
             'identity_disclosure' => 1,
         ])->assertOk();
+        $this->assertNull($referral->fresh()->professional_id);
+        $professional = PsychologyProfessional::where('is_available', true)->firstOrFail();
+        $this->actingAs($referral->adviser->user)->post(route('adviser.referral.assign', $referral), [
+            'professional_id' => $professional->id, 'reason' => 'Designated professional for this referral.',
+        ])->assertSessionHasNoErrors();
     }
 
     public function test_seeker_is_notified_when_a_professional_accepts(): void

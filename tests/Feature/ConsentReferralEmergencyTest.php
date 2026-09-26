@@ -678,8 +678,11 @@ class ConsentReferralEmergencyTest extends TestCase
 
         $this->actingAs($helper->adviser->user)->postJson(route('referrals.review', $referral), ['approved' => true, 'notes' => 'Approved.'])->assertOk();
         $referral->refresh();
-        $this->assertSame(Referral::STATUS_PENDING_PROFESSIONAL, $referral->status);
-        $this->assertTrue($referral->canProvideIdentity(), 'Identity must be collectible while awaiting a professional assignment.');
+        $this->assertSame(Referral::STATUS_PENDING_CONSENT, $referral->status);
+        $this->assertFalse($referral->canProvideIdentity(), 'Fresh consent is required after approval.');
+        $this->actingAs($seekerUser)->postJson(route('referrals.consent-request', $referral), ['accepted' => true])->assertOk();
+        $referral->refresh();
+        $this->assertTrue($referral->canProvideIdentity());
 
         $this->actingAs($seekerUser)->get(route('identity.form', $referral))->assertOk();
         $this->get(route('seeker.referrals'))->assertOk()->assertSee('Provide contact details for coordination')->assertDontSee('no longer an open case');

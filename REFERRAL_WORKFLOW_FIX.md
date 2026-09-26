@@ -1,5 +1,13 @@
 # Referral workflow verification — 2026-09-26
 
+## Sequence verification follow-up
+
+Identity submission no longer automatically assigns the first available professional. It stores identity and notifies the Adviser, who chooses the designated verified professional using the existing authorized assignment action. Approval always requests fresh seeker consent, including legacy referrals previously marked consented before approval. The chat prompt continues to offer the full consent review even if an older consent record exists. Clarification corrections now snapshot the previous recommendation before updating it.
+
+Verification: 63 referral, consent, identity-vault and appointment tests passed (448 assertions). Blade compilation passed. Hosted multi-account validation remains outstanding.
+
+Remaining deviations from the strict requested workflow: legacy summary-only submission routes still exist; concluded sessions remain eligible; only verified in-system professional reassignment is available, not off-platform external transmission. Scheduling is tracked in the appointment record rather than a separate referral `scheduled` state. These are not claimed complete. Existing seven moderator queue/scheduling failures from the earlier full run also remain outside these changes.
+
 ## Helper submission repair — 2026-09-27
 
 The generic Helper 422 page came from a cross-session open-referral check using `abort(422)`. It now returns a validation message while preserving the existing referral; it does not silently create another open case. The seeker row is locked during creation to serialize concurrent submissions. Identical retries no longer repeat notifications, and revised recommendations preserve encrypted historical snapshots.
