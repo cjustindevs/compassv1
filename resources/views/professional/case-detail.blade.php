@@ -293,6 +293,16 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <!-- Case Details -->
             <div class="lg:col-span-1 space-y-6">
+                <section class="card">
+                    <div class="card-header"><h3>Released contact details</h3></div>
+                    @if($case->identity_disclosed && $case->help_seeker_consent && in_array($case->status, \App\Models\Referral::ACTIVE_STATUSES, true))
+                        <p class="text-sm text-gray-500 mb-3">View the name and contact fields authorized by the Adviser. Each access is recorded.</p>
+                        <a class="btn-primary" href="{{ route('identity.show', $case) }}">View released identity</a>
+                    @else
+                        <p class="text-sm text-gray-500">Identity access requires current consent and Adviser authorization. The case uses the Seeker's alias until details are released.</p>
+                    @endif
+                </section>
+
                 <div class="card">
                     <div class="card-header">
                         <h3>Case Details</h3>
