@@ -120,6 +120,16 @@ class ReferralManagementService
     {
         $this->validateReferralCriteria($session, $data);
 
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('referrals', 'recommendation_form')
+            || !\Illuminate\Support\Facades\Schema::hasTable('supervision_record_versions')) {
+            \Illuminate\Support\Facades\Log::error('Referral submission unavailable: required database migrations are missing.', [
+                'component' => 'referral_schema',
+            ]);
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'summary' => 'Referral submission is temporarily unavailable while the system update is completed. Your referral has not been submitted. Please contact support.',
+            ]);
+        }
+
         $reason = $data['reason'] ?? $data['referral_reason'];
         $priority = $this->normalisePriority($data['urgency'] ?? $data['priority_level'] ?? $session->risk_level);
 

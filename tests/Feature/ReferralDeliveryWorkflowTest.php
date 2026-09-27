@@ -274,6 +274,17 @@ class ReferralDeliveryWorkflowTest extends TestCase
         $this->assertSame($count, \App\Models\Notification::count());
     }
 
+    public function test_missing_referral_migration_returns_a_form_error_without_partial_submission(): void
+    {
+        Event::fake();
+        [, $helper] = $this->readyHelper();
+        $session = $this->makeSession($helper, $this->seekerUser());
+        \Illuminate\Support\Facades\Schema::table('referrals', fn ($table) => $table->dropColumn('recommendation_form'));
+        $this->post(route('helper.session.referral.consent', $session->id), ['summary' => 'Professional support recommended.'])
+            ->assertRedirect()->assertSessionHasErrors('summary');
+        $this->assertDatabaseCount('referrals', 0);
+    }
+
     public function test_complete_recommendation_is_encrypted_and_visible_to_assigned_adviser(): void
     {
         Event::fake();

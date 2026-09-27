@@ -1,5 +1,9 @@
 # Referral workflow verification — 2026-09-26
 
+## Hosted 500 investigation
+
+The reported Helper POST 500 requires the matching Render/Laravel exception to establish its root cause. The screenshot alone is insufficient. A confirmed deployment weakness was corrected: main migrations previously failed open (`|| true`), allowing new referral code to run against an outdated schema. Startup now fails if main migrations cannot complete. Referral creation also checks for its form column and revision table before writing, returning a form validation message rather than partially submitting when either is absent. This is a safeguard, not confirmation that the reported hosted failure has been resolved.
+
 ## Sequence verification follow-up
 
 Identity submission no longer automatically assigns the first available professional. It stores identity and notifies the Adviser, who chooses the designated verified professional using the existing authorized assignment action. Approval always requests fresh seeker consent, including legacy referrals previously marked consented before approval. The chat prompt continues to offer the full consent review even if an older consent record exists. Clarification corrections now snapshot the previous recommendation before updating it.

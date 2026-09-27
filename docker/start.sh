@@ -51,8 +51,7 @@ php artisan view:cache
 # database/credentials and its migrations create the separate idv_* tables.
 # Auto-migrating here makes a brand-new (empty) free database work on the first
 # deploy. The commands are idempotent and never destructive (no fresh/wipe).
-# If the DB is temporarily unreachable we retry, then boot anyway and surface a
-# loud ERROR in the logs (the site will HTTP 500 until the DB is migrated).
+# Retry transient failures, but do not serve new code against an outdated main schema.
 migrate_with_retry() {
     label="$1"; shift
     attempt=1
@@ -70,7 +69,7 @@ migrate_with_retry() {
     echo "[start] ${label} migrations are up to date."
 }
 
-migrate_with_retry "main database" migrate || true
+migrate_with_retry "main database" migrate
 migrate_with_retry "identity vault" migrate --database=identity_vault --path=database/migrations/identity_vault || true
 
 # --- Optional demo seeding (guarded: requested AND demo accounts missing) -----
