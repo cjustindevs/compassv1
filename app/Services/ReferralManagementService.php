@@ -436,6 +436,7 @@ class ReferralManagementService
             $referral->update(['professional_id' => $professionalId, 'status' => Referral::STATUS_PENDING_PROFESSIONAL, 'professional_notified_at' => now()]);
             SupportAudit::record('referral_professional_assigned', $referral, ['previous_professional_id' => $previous, 'professional_id' => $professionalId, 'reason' => $reason]);
             $this->notifyUser($professional->user_account_id, 'Referral assigned', 'A referral is pending your review.', '/professional/referral/'.$referral->id, 'referral');
+            $this->notifySeeker($referral, 'A professional was assigned to your referral', 'Open Referral decisions to see your assigned professional. An appointment will appear there once the professional accepts and schedules it.');
             $this->notifyHelper(
                 $referral,
                 'A professional was assigned to your referral',

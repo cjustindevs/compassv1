@@ -8,7 +8,7 @@
                 <button type="button" class="text-green-700 underline text-sm" onclick="document.getElementById('appointment-{{ $appointment->id }}').showModal()">View appointment details</button>
                 <dialog id="appointment-{{ $appointment->id }}" aria-labelledby="appointment-title-{{ $appointment->id }}" class="m-auto rounded-2xl border border-gray-200 p-6 w-full max-w-lg backdrop:bg-black/40">
                     <h3 id="appointment-title-{{ $appointment->id }}" class="font-bold text-lg">Referral appointment</h3>
-                    <p class="text-sm my-3">{{ $appointment->starts_at->timezone('Asia/Manila')->format('M d, Y g:i A') }} ? {{ $appointment->ends_at->timezone('Asia/Manila')->format('g:i A') }} (Asia/Manila)</p>
+                    <p class="text-sm my-3">{{ $appointment->starts_at->timezone('Asia/Manila')->format('M d, Y g:i A') }} to {{ $appointment->ends_at->timezone('Asia/Manila')->format('g:i A') }} (Asia/Manila)</p>
                     <p class="text-sm whitespace-pre-wrap">{{ $appointment->meeting_details }}</p>
                     <p class="text-sm mt-2">Status: {{ ucfirst($appointment->status) }}</p>
                     <form method="dialog" class="mt-4"><button class="bg-green-600 text-white rounded-lg px-4 py-2">Close</button></form>
@@ -17,7 +17,7 @@
                     <script>document.addEventListener('DOMContentLoaded',()=>document.getElementById('appointment-{{ $appointment->id }}').showModal());</script>
                 @endif
             @endif
-            <span class="text-sm font-semibold">{{ $appointment->starts_at->timezone('Asia/Manila')->format('M d, Y g:i A') }} ? {{ $appointment->ends_at->timezone('Asia/Manila')->format('g:i A') }}</span>
+            <span class="text-sm font-semibold">{{ $appointment->starts_at->timezone('Asia/Manila')->format('M d, Y g:i A') }} to {{ $appointment->ends_at->timezone('Asia/Manila')->format('g:i A') }}</span>
             <span class="text-xs text-green-700">{{ ucfirst($appointment->status) }}</span>
             <p class="text-sm whitespace-pre-wrap mt-2">{{ $appointment->meeting_details }}</p>
         </div>
