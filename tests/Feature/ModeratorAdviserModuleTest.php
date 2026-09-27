@@ -563,7 +563,8 @@ class ModeratorAdviserModuleTest extends TestCase
 
         $this->actingAs($user)->from(route('moderator.manage'))
             ->post(route('moderator.manage.unassign'), ['helper_id' => $helper->id])
-            ->assertStatus(409);
+            ->assertRedirect(route('moderator.manage'))
+            ->assertSessionHas('error');
 
         $this->assertNotNull($helper->fresh()->adviser_id);
     }

@@ -110,7 +110,9 @@ class ModeratorManageController extends Controller
             ->whereIn('session_status', ['active', 'helper_assigned'])
             ->exists();
 
-        abort_if($openReferrals || $openCases, 409, 'This helper still has open referrals or active cases. Transfer or close them before removing supervision, or use the Adviser transfer workflow to preserve case responsibility.');
+        if ($openReferrals || $openCases) {
+            return back()->with('error', 'Cannot unassign '.$helper->full_name.': this helper has '.($openReferrals ? 'an open referral' : 'an active or assigned session').'. Complete the case or transfer supervision through the Adviser transfer workflow first. The current Adviser assignment has been kept.');
+        }
 
         $helper->assignmentReason = 'Supervision ended by Moderator; helper returned to the unassigned pool.';
         $helper->update(['adviser_id' => null]);
