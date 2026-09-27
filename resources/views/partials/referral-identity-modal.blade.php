@@ -1,8 +1,10 @@
 @php
     $identityDialogId = 'identity-dialog-' . $referral->id;
+    $identitySaved = isset($referral->session) && app(\App\Services\IdentityVaultService::class)->hasCurrentSubmission($referral) && app(\App\Services\ConsentService::class)->valid($referral->session->seeker, 'identity_disclosure', $referral->id);
     $requiredIdentityFields = ['real_name', 'phone_number'];
 @endphp
 <style>
+    #{{ $identityDialogId }} [hidden] { display:none !important; }
     #{{ $identityDialogId }} {
         position: fixed;
         inset: 0;
@@ -125,7 +127,7 @@
         </button>
     </div>
 
-    <form data-identity-form method="POST" action="{{ route('identity.store',$referral, false) }}" autocomplete="off" novalidate>
+    <form data-identity-form @if($identitySaved) data-identity-saved="1" @endif method="POST" action="{{ route('identity.store',$referral, false) }}" autocomplete="off" novalidate>
         @csrf
         <div class="rv-modal__body">
             <ol class="rv-steps" aria-label="Referral progress">
@@ -176,22 +178,22 @@
             </fieldset>
 
             <label class="rv-consent">
-                <input type="checkbox" name="identity_disclosure" value="1" required>
+                <input type="checkbox" name="identity_disclosure" value="1" required @checked($identitySaved) @disabled($identitySaved)>
                 <span>I have read the referral consent above, and I voluntarily consent to store these contact details and authorize their disclosure to the professional assigned to this referral.</span>
             </label>
 
             <p class="rv-alert" role="alert" data-identity-result></p>
 
-            <div class="rv-done" data-identity-done>
+            <div class="rv-done" data-identity-done @if($identitySaved) data-shown="1" @endif>
                 <i class="fas fa-circle-check" aria-hidden="true"></i>
                 <h3>Details stored securely</h3>
-                <p data-identity-done-text></p>
+                <p data-identity-done-text>{{ $identitySaved ? "Your details are saved. Your adviser will coordinate the next step." : "" }}</p>
             </div>
         </div>
 
         <div class="rv-modal__foot">
             <button type="button" class="rv-btn" data-identity-close data-identity-dismiss>Not now</button>
-            <button type="submit" class="rv-btn primary" data-identity-submit disabled>
+            <button type="submit" class="rv-btn primary" data-identity-submit disabled @if($identitySaved) hidden @endif>
                 <i class="fas fa-lock" aria-hidden="true"></i>Submit details securely
             </button>
         </div>
@@ -231,6 +233,7 @@
         const form = event.target.closest('[data-identity-form]');
         if (!form) return;
         event.preventDefault();
+        if (form.dataset.identitySaved) return;
 
         const result = form.querySelector('[data-identity-result]');
         const submit = form.querySelector('[data-identity-submit]');
@@ -288,11 +291,14 @@
                 return;
             }
 
-            form.reset();
+            fields.querySelectorAll("input, textarea").forEach(input => input.value = "");
+            consent.checked = true;
+            consent.disabled = true;
             form.dataset.identitySaved = '1';
             submit.hidden = true;
             fields.hidden = true;
-            form.querySelector('.rv-consent').hidden = true;
+            submit.textContent = "Submitted";
+            fields.disabled = true;
             doneText.textContent = body.message || 'Your details were stored. Your adviser can now authorize release to the assigned professional.';
             done.dataset.shown = '1';
             const dismiss = form.querySelector('[data-identity-dismiss]');
