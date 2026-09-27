@@ -175,6 +175,26 @@
         .modal-box select:focus { border-color: var(--green-500); }
         .modal-box .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gray-600); margin-top: 10px; cursor: pointer; }
 
+        #referralModal .modal-box { max-width: 1040px; width: min(1040px, calc(100vw - 32px)); max-height: 90dvh; padding: 22px; display: flex; flex-direction: column; overflow: hidden; }
+        #referralConsentForm { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+        #referralModal .referral-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; overflow-y: auto; min-height: 0; padding: 2px 6px 8px 0; }
+        #referralModal .referral-fields > p, #referralModal fieldset { grid-column: 1 / -1; margin: 0; }
+        #referralModal fieldset { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 16px; padding: 12px; border: 1px solid var(--gray-200); border-radius: 12px; }
+        #referralModal fieldset label { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; line-height: 1.4; margin: 0; }
+        #referralModal fieldset input { margin-top: 2px; flex-shrink: 0; accent-color: var(--green-500); }
+        #referralModal .form-label { display: block; margin: 0 0 5px; font-weight: 600; }
+        #referralModal textarea { min-height: 64px; height: 64px; padding: 8px 10px; font-size: 13px; }
+        #referralModal select, #referral-office { width: 100%; min-height: 38px; padding: 8px 10px; font-size: 13px; border: 1px solid var(--gray-200); border-radius: 10px; }
+        #referralModal .modal-actions { flex-shrink: 0; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gray-200); }
+        #referralModal .btn-info { background: var(--green-500); }
+        #referralModal .btn-info:hover { background: var(--green-600); }
+        @media (max-width: 640px) {
+            #referralModal .modal-box { padding: 16px; max-height: 94dvh; }
+            #referralModal .referral-fields, #referralModal fieldset { grid-template-columns: 1fr; }
+            #referralModal .modal-actions { flex-wrap: wrap; }
+            #referralModal .modal-actions .btn { flex: 1; }
+        }
+
         /* ─── Messages ─── */
         .chat-window { height: calc(100vh - 330px); min-height: 380px; }
 
@@ -372,29 +392,36 @@
             <form method="POST" action="{{ route('helper.session.referral.consent', ['id' => $session->id]) }}" id="referralConsentForm">
                 @csrf
                 <input type="hidden" name="form_version" value="appendix-o-v4">
+                <div class="referral-fields">
                 <p class="text-sm mb-3">Session #{{ $session->id }} · {{ $session->seeker?->generated_alias }} · {{ ucfirst($session->risk_level ?? 'Pending review') }} risk. Identity is requested separately after Adviser approval.</p>
                 <fieldset class="mb-3"><legend class="form-label">Reason indicators</legend>
                     @foreach(\App\Services\ReferralForm::INDICATORS as $indicator)
                         <label class="block text-sm mb-1"><input type="checkbox" name="indicators[]" value="{{ $indicator }}" @checked(in_array($indicator, old('indicators', [])))> {{ $indicator }}</label>
                     @endforeach
                 </fieldset>
-                <label class="form-label" for="referralSummary">Referral recommendation for adviser review</label>
+                <div class="referral-field"><label class="form-label" for="referralSummary">Referral recommendation for adviser review</label>
                 <textarea id="referralSummary" name="summary" rows="3" required maxlength="500" placeholder="Short summary of why a professional referral may help, written for the seeker.">{{ old('summary') }}</textarea>
                 @error('summary')<p role="alert" class="text-red-700">{{ $message }}</p>@enderror
+                </div>
                 @foreach(['session_summary' => 'Session summary', 'observations' => 'Relevant observations', 'actions_taken' => 'Actions already taken'] as $field => $label)
+                    <div class="referral-field">
                     <label class="form-label" for="referral-{{ $field }}">{{ $label }}</label>
                     <textarea id="referral-{{ $field }}" name="{{ $field }}" required maxlength="2000" rows="3">{{ old($field) }}</textarea>
                     @error($field)<p role="alert" class="text-red-700">{{ $message }}</p>@enderror
+                    </div>
                 @endforeach
+                <div class="referral-field">
                 <label class="form-label" for="referral-office">Recommended receiving office or professional</label>
                 <input id="referral-office" name="receiving_office" required maxlength="200" value="{{ old('receiving_office') }}">
+                </div><div class="referral-field">
                 <label class="form-label" for="referral-explained">Was the referral explained to the seeker?</label>
                 <select id="referral-explained" name="referral_explained" required><option value="">Select</option>@foreach(['yes'=>'Yes','no'=>'No','emergency'=>'Not applicable due to emergency'] as $value=>$label)<option value="{{ $value }}" @selected(old('referral_explained') === $value)>{{ $label }}</option>@endforeach</select>
-                <label class="form-label" for="referral-urgency">Recommended urgency</label>
+                </div><div class="referral-field"><label class="form-label" for="referral-urgency">Recommended urgency</label>
                 <select id="referral-urgency" name="recommended_urgency" required>@foreach(['routine','priority','urgent','emergency'] as $urgency)<option value="{{ $urgency }}" @selected(old('recommended_urgency') === $urgency)>{{ ucfirst($urgency) }}</option>@endforeach</select>
-                <label class="form-label" for="referral-remarks">Helper remarks (optional)</label>
+                </div><div class="referral-field"><label class="form-label" for="referral-remarks">Helper remarks (optional)</label>
                 <textarea id="referral-remarks" name="helper_remarks" maxlength="1000" rows="2">{{ old('helper_remarks') }}</textarea>
-                <p class="text-sm">Seeker decision: pending. Only the seeker can record consent after approval.</p>
+                </div><p class="text-sm">Seeker decision: pending. Only the seeker can record consent after approval.</p>
+                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-cancel modal-close" data-modal="referralModal">Cancel</button>
                     <button type="submit" class="btn btn-info" id="requestConsentBtn"><i class="fas fa-paper-plane" style="margin-right:6px;"></i> Submit for Adviser Review</button>
