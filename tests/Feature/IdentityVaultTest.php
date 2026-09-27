@@ -201,6 +201,23 @@ class IdentityVaultTest extends TestCase
         $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral))->assertRedirect();
     }
 
+    public function test_embedded_identity_modal_restores_saved_consent(): void
+    {
+        $referral = $this->referral();
+        $this->store($referral);
+        $this->actingAs($referral->session->seeker->user);
+        app(\App\Services\ConsentService::class)->decide($referral->session->seeker->user, 'identity_disclosure', 'accepted', $referral->session_id, $referral->id);
+        $response = $this->get(route('identity.form', [$referral, 'embedded' => 1]))->assertOk();
+        $response->assertSee('data-identity-saved="1"', false);
+        $document = new \DOMDocument;
+        @$document->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($document);
+        $checkbox = $xpath->query('//input[@name="identity_disclosure"]')->item(0);
+        $this->assertTrue($checkbox->hasAttribute('checked'));
+        $this->assertTrue($checkbox->hasAttribute('disabled'));
+        $this->assertTrue($xpath->query('//button[@data-identity-submit]')->item(0)->hasAttribute('hidden'));
+    }
+
     public function test_identity_form_is_gated_on_approval_consent_and_open_status(): void
     {
         $referral = $this->referral();

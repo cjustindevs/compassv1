@@ -108,6 +108,8 @@
         <button type="button" id="referralDismiss" class="rv-btn" hidden>Continue</button>
     </div>
 </dialog>
+<button type="button" id="chatReferralOpen" hidden>Review referral</button>
+<dialog id="chatIdentityDialog" style="width:min(900px,96vw);height:92dvh;padding:0;border:0;border-radius:18px;margin:auto"><button type="button" onclick="this.closest('dialog').close()" style="position:absolute;right:14px;top:8px;z-index:2">Close</button><iframe title="Identity disclosure" style="border:0;width:100%;height:100%"></iframe></dialog>
 <script>
 (() => {
     const dialog = document.getElementById('referralConsentDialog');
@@ -120,6 +122,15 @@
     const terms = document.getElementById('referralConsentTerms');
     const errorEl = document.getElementById('referralConsentError');
     const stateUrl = @json(route('session.referral-prompt', $session));
+    const identityDialog = document.getElementById('chatIdentityDialog');
+    function openIdentity() {
+        dialog.close();
+        identityDialog.querySelector('iframe').src = referral.identity_url;
+        if (!identityDialog.open) identityDialog.showModal();
+    }
+    window.addEventListener('message', event => {
+        if (event.origin === location.origin && event.source === identityDialog.querySelector('iframe').contentWindow && event.data?.type === 'identity-modal-closed') identityDialog.close();
+    });
     let referral = null, seen = null, deciding = false;
 
     function enabledButtons() {
@@ -130,6 +141,7 @@
     function handleState(data) {
         referral = data?.referral || null;
         if (!referral) return;
+        document.getElementById('chatReferralOpen').hidden = !isSeeker;
         const key = referral.id + ':' + referral.status + ':' + (data.consent?.decision ?? 'none');
         if (key === seen) return;
         seen = key;
@@ -153,11 +165,15 @@
         const isConsentRequest = referral.status === 'pending_consent';
         if (isConsentRequest) {
             document.getElementById('referralConsentText').textContent = 'Your Adviser approved a referral. Review the complete recommendation and consent form before deciding.';
-            terms.hidden = true;
+            terms.hidden = false;
+            check.checked = false;
             acceptBtn.hidden = false;
-            acceptBtn.textContent = 'Review referral and consent';
-            acceptBtn.disabled = false;
-            declineBtn.hidden = true;
+            acceptBtn.textContent = 'Accept referral';
+            enabledButtons();
+            declineBtn.hidden = false;
+            let recommendation = document.getElementById('chatReferralRecommendation');
+            if (!recommendation) { recommendation = document.createElement('div'); recommendation.id = 'chatReferralRecommendation'; terms.prepend(recommendation); }
+            recommendation.innerHTML = referral.recommendation_html || '';
             dismissBtn.hidden = false;
             if (!dialog.open) dialog.showModal();
             return;
@@ -170,6 +186,7 @@
                     ? 'Your helper recommended connecting you with a professional. Please review the referral consent below.'
                     : 'Referral status: ' + referral.status.replaceAll('_', ' ') + '.';
 
+        if (referral.help_seeker_consent && ['pending_professional','no_professional_available','accepted','in_progress'].includes(referral.status)) { openIdentity(); return; }
         if (alreadyDecided || !isConsentRequest) {
             terms.hidden = true;
             acceptBtn.hidden = true;
@@ -197,10 +214,6 @@
     }
 
     async function decide(accepted) {
-        if (isSeeker && referral?.status === 'pending_consent') {
-            window.location.assign(@json(route('seeker.referrals')));
-            return;
-        }
         if (deciding) return;
         deciding = true;
         enabledButtons();
@@ -221,7 +234,8 @@
             if (!response.ok) throw new Error('Your decision could not be saved. Please try again.');
             const saved = await response.json();
             dialog.close();
-            if (saved.next_url) window.location.assign(saved.next_url);
+            if (accepted) { seen = null; await poll(); }
+            else { document.getElementById('referralConsentText').textContent = 'Your decision is respected. Self-help resources remain available whenever you need them.'; terms.hidden = true; acceptBtn.hidden = true; declineBtn.hidden = true; dismissBtn.hidden = false; dialog.showModal(); }
         } catch (error) {
             errorEl.textContent = error.message;
         } finally {
@@ -240,6 +254,7 @@
         if (outside) dialog.close();
     });
 
+    document.getElementById('chatReferralOpen').addEventListener('click', () => { seen = null; poll(); });
     poll();
     setInterval(poll, 5000);
 

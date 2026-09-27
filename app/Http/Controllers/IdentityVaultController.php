@@ -13,7 +13,7 @@ class IdentityVaultController extends Controller
     {
         abort_unless($request->user()->role === 'seeker' && $request->user()->helpSeeker?->id === $referral->session->seeker_id, 403);
         abort_unless($referral->canProvideIdentity(), 409, 'Identity details can be provided only after adviser approval, with your recorded consent, and while the referral is open.');
-        return response()->view('session.identity', compact('referral'))->header('Cache-Control', 'no-store, private');
+        return response()->view($request->boolean('embedded') ? 'session.identity-embedded' : 'session.identity', compact('referral'))->header('Cache-Control', 'no-store, private');
     }
 
     public function store(Request $request, Referral $referral, IdentityVaultService $vault)
