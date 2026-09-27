@@ -180,23 +180,5 @@
             @endif
         </div>
     </div>
-
-    <nav class="bottom-nav" id="bottomNav">
-        <a href="{{ route('moderator.dashboard') }}" class="nav-item">
-            <i class="fas fa-th-large"></i><span>Dashboard</span>
-        </a>
-        <a href="{{ route('moderator.queue') }}" class="nav-item">
-            <i class="fas fa-hourglass-half"></i><span>Queue</span>
-        </a>
-        <a href="{{ route('moderator.sessions') }}" class="nav-item">
-            <i class="fas fa-comments"></i><span>Sessions</span>
-        </a>
-        <a href="{{ route('moderator.referrals.unassigned') }}" class="nav-item active">
-            <i class="fas fa-user-plus"></i><span>Referrals</span>
-        </a>
-        <a href="{{ route('moderator.emergency') }}" class="nav-item">
-            <i class="fas fa-exclamation-triangle"></i><span>Emergency</span>
-        </a>
-    </nav>
 </body>
 </html>
