@@ -82,6 +82,18 @@
         .flash-success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
         .flash-error { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
 
+        .adviser-page-content { max-width:1280px; margin:0 auto; }
+        .adviser-page-content .card { border-radius:16px; box-shadow:none; padding:22px; }
+        .adviser-page-content .btn-primary { background:#049b50; border-radius:10px; padding:10px 18px; box-shadow:none; font-size:14px; }
+        .adviser-page-content .btn-primary:hover { transform:none; background:#037d41; }
+        .coordination-grid > div { background:#f5f9f7; border:1px solid #e5eee8; padding:14px 16px; border-radius:12px; }
+        .coordination-grid strong { display:block; margin-top:5px; color:#173e2c; font-size:15px; }
+        .referral-release summary { cursor:pointer; font-weight:600; color:#173e2c; padding:2px 0; }
+        .referral-release .release-intro { font-size:13px; color:#64748b; margin:12px 0 18px; }
+        .identity-field-grid label { border:1px solid #e2e8e5; border-radius:9px; padding:10px; font-size:13px; }
+        .identity-field-grid input { accent-color:#049b50; }
+        .identity-field-grid label:has(input:checked) { background:#edf9f1; border-color:#90d9b0; }
+        .adviser-page-content :is(input,select,textarea,button,summary):focus-visible { outline:2px solid #049b50; outline-offset:3px; }
         .coordination-grid, .identity-field-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
         .identity-field-grid > p { grid-column:1/-1; }
         .referral-release textarea, .coordination-form textarea, .coordination-form select { width:100%; border:1px solid #d1d5db; border-radius:10px; padding:10px 12px; font:inherit; margin:6px 0 12px; }
@@ -145,8 +157,8 @@
                 <p class="text-sm mt-3">This referral is assigned to the professional shown above. Active cases retain their assignment; identity release authorizes access to selected contact details.</p>
             @endif
         </section>
-@if($referral->approved_at && $referral->help_seeker_consent && in_array($referral->status,['pending_professional','no_professional_available']))
-<section class="card p-5 my-4"><h3 class="font-semibold">Professional coordination</h3>
+@if($referral->approved_at && $referral->help_seeker_consent && !$referral->professional_id && in_array($referral->status,['pending_professional','no_professional_available']))
+<section class="card p-5 my-4"><h3 class="font-semibold">Assign a professional</h3>
 <p class="text-sm text-gray-500 mb-3">After the Seeker saves their identity details, assign an available professional here. The referral appears in their review queue only after assignment. Identity release is a separate authorized action.</p>
 <form method="POST" action="{{ route('adviser.referral.assign',$referral->id) }}" class="coordination-form">@csrf
 <label for="professional">Professional</label><select name="professional_id" id="professional" required class="w-full rounded-lg border-gray-300"><option value="">Choose a professional</option>@foreach($professionals as $professional)<option value="{{ $professional->id }}" @selected((string)old('professional_id', $professionals->count() === 1 ? $professional->id : '') === (string)$professional->id)>{{ $professional->full_name }}</option>@endforeach</select>
@@ -157,14 +169,14 @@
     @if ($referral->approved_at && $referral->help_seeker_consent && $referral->professional_id && !in_array($referral->status, ['completed', 'closed', 'declined']))
         <form class="card mb-4 referral-release" method="POST" action="{{ route('identity.release', $referral) }}">
             @csrf
-            <h3 class="font-semibold mb-2">Authorize identity release</h3><p>Authorize release of the seeker's stored identity to the assigned psychology professional. You will not see the identity fields.</p>
+            <details @if($errors->any()) open @endif><summary>Identity release permissions</summary><p class="release-intro">Choose the contact details {{ $referral->professional->full_name }} needs for coordination. Identity values remain private.</p>
             <fieldset class="my-3" @disabled(! $identityReady)><legend class="font-semibold">Select only the necessary information</legend><div class="identity-field-grid">
                 @foreach(\App\Services\IdentityVaultService::FIELDS as $field)
                     <label class="flex items-center gap-2"><input type="checkbox" name="fields[]" value="{{ $field }}" @checked(in_array($field,['real_name','phone_number']))> {{ ucwords(str_replace('_',' ',$field)) }}</label>
                 @endforeach
             </div></fieldset>
             <label class="block my-3">Purpose of this disclosure<textarea name="reason" required minlength="20" maxlength="1000" class="block w-full rounded border-gray-300" placeholder="Explain why these fields are needed for this referral.">{{ old('reason') }}</textarea></label>
-            <button class="btn-primary" type="submit" @disabled(! $identityReady)>Authorize identity release</button>
+            <button class="btn-primary" type="submit" @disabled(! $identityReady)>Authorize identity release</button></details>
         </form>
     @endif
         <div class="card">

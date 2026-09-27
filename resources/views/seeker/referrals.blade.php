@@ -211,9 +211,12 @@
 
                     @if($referral->approved_at && $referral->help_seeker_consent)
                         <div class="rounded-xl bg-gray-50 p-4 my-3 text-sm">
-                            @if($referral->professional)
-                                <p><strong>Assigned professional:</strong> {{ $referral->professional->full_name }}</p>
+                            @if($referral->professional && app(\App\Services\ConsentService::class)->valid($referral->session->seeker, 'identity_disclosure', $referral->id))
+                                <p class="text-xs uppercase tracking-wide text-gray-500">Your assigned professional</p>
+                                <p class="text-lg font-semibold text-green-700 my-2"><i class="fas fa-user-doctor mr-2" aria-hidden="true"></i>{{ trim(($referral->professional->first_name ?? '').' '.($referral->professional->last_name ?? '')) ?: 'Professional name awaiting profile completion' }}</p>
                                 <p>See Professional appointments below for your schedule and meeting instructions. All times are in Asia/Manila.</p>
+                            @elseif($referral->professional)
+                                <p>Complete identity-disclosure consent to view your professional coordination details.</p>
                             @else
                                 <p><strong>Professional assignment pending.</strong> After your identity details are saved, your adviser assigns a professional for review. You will be notified when an appointment is scheduled.</p>
                             @endif
