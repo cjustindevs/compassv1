@@ -105,15 +105,6 @@
         @yield('content')
     </main>
 
-    <!-- Bottom navigation (mobile) -->
-    <nav class="bottom-nav" id="bottomNav">
-        <a href="{{ route('helper.dashboard') }}" class="nav-item {{ request()->routeIs('helper.dashboard') ? 'active' : '' }}"><i class="fas fa-th-large"></i><span>Home</span></a>
-        <a href="{{ route('helper.cases') }}" class="nav-item {{ request()->routeIs('helper.cases*') ? 'active' : '' }}"><i class="fas fa-folder-open"></i><span>Cases</span></a>
-        <a href="{{ route('helper.chat') }}" class="nav-item {{ request()->routeIs('helper.session.chat*') ? 'active' : '' }}"><i class="fas fa-comment-dots"></i><span>Chat</span></a>
-        <a href="{{ route('helper.notifications') }}" class="nav-item {{ request()->routeIs('helper.notifications*') ? 'active' : '' }}"><i class="fas fa-bell"></i><span>Alerts</span></a>
-        <a href="{{ route('helper.profile') }}" class="nav-item {{ request()->routeIs('helper.profile*') ? 'active' : '' }}"><i class="fas fa-user-circle"></i><span>Profile</span></a>
-    </nav>
-
     <script>
         @php $u = optional(auth()->user()); @endphp
         (function () {

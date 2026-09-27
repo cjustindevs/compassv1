@@ -363,28 +363,6 @@
     </main>
 
     <!-- Bottom Navigation -->
-    <nav class="bottom-nav" id="bottomNav">
-        <a href="{{ route('professional.dashboard') }}" class="nav-item">
-            <i class="fas fa-th-large"></i>
-            <span>Dashboard</span>
-        </a>
-        <a href="{{ route('professional.referrals') }}" class="nav-item">
-            <i class="fas fa-clipboard-list"></i>
-            <span>Referrals</span>
-        </a>
-        <a href="{{ route('professional.cases') }}" class="nav-item">
-            <i class="fas fa-folder-open"></i>
-            <span>Cases</span>
-        </a>
-        <a href="{{ route('professional.reports') }}" class="nav-item active">
-            <i class="fas fa-chart-bar"></i>
-            <span>Reports</span>
-        </a>
-        <a href="{{ route('professional.profile') }}" class="nav-item">
-            <i class="fas fa-user-circle"></i>
-            <span>Profile</span>
-        </a>
-    </nav>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
