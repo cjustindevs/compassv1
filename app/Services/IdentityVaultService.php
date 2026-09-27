@@ -180,10 +180,15 @@ class IdentityVaultService
         $pseudo = $referral->session->seeker->pseudo_id;
         $allowed = Auth::user()?->role === 'adviser' && Auth::user()?->adviser?->id === $referral->adviser_id
             && $referral->adviser_id !== null && $this->approved($referral) && $referral->professional_id !== null;
-        abort_unless($fields && ! array_diff($fields, self::FIELDS) && mb_strlen(trim($reason)) >= 20, 422, 'Select necessary fields and provide a reason.');
+        abort_unless($allowed, 403, 'Identity release is not authorized for this referral.');
+        if (! $fields || array_diff($fields, self::FIELDS) || mb_strlen(trim($reason)) < 20) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['reason' => 'Select necessary fields and provide a purpose of at least 20 characters.']);
+        }
         $stored = DB::connection('identity_vault')->table('idv_identities')
             ->where('pseudo_id', $pseudo)->where('is_active', true)->where('data_expires_at', '>', now())->exists();
-        abort_unless($stored, 422, 'The help seeker has not stored contact details yet. Ask the seeker to provide them before releasing identity.');
+        if (! $stored || ! $this->hasCurrentSubmission($referral)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['identity_release' => 'Current identity details are not available. Ask the Seeker to open Referral decisions and submit identity disclosure before authorizing release.']);
+        }
         $this->perform($pseudo, 'release', $allowed, function () use ($pseudo, $referral, $fields, $reason) {
             $identity = $this->identity($pseudo);
             $db = DB::connection('identity_vault');

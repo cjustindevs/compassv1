@@ -195,8 +195,8 @@ class IdentityVaultTest extends TestCase
     {
         $referral = $this->referral();
         $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral))
-            ->assertStatus(422)
-            ->assertSee('has not stored contact details');
+            ->assertRedirect()
+            ->assertSessionHasErrors('identity_release');
         $this->store($referral);
         $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral))->assertRedirect();
     }
