@@ -82,7 +82,13 @@
         .flash-success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
         .flash-error { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
 
+        .coordination-grid, .identity-field-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+        .identity-field-grid > p { grid-column:1/-1; }
+        .referral-release textarea, .coordination-form textarea, .coordination-form select { width:100%; border:1px solid #d1d5db; border-radius:10px; padding:10px 12px; font:inherit; margin:6px 0 12px; }
+        .referral-release textarea, .coordination-form textarea { min-height:76px; }
+        .referral-release button:disabled { opacity:.5; cursor:not-allowed; }
         @media (max-width: 768px) {
+            .coordination-grid, .identity-field-grid { grid-template-columns:1fr; }
             .card { padding: 16px; }
             .btn-primary, .btn-outline, .btn-danger { padding: 10px 20px; font-size: 14px; width: 100%; justify-content: center; }
         }
@@ -100,19 +106,6 @@
             <button class="btn-primary" type="submit">Record access review</button>
         </form>
     @endif
-    @if ($referral->approved_at && $referral->help_seeker_consent && $referral->professional_id)
-        <form class="form-maximized card mb-4" method="POST" action="{{ route('identity.release', $referral) }}">
-            @csrf
-            <p>Authorize release of the seeker's stored identity to the assigned psychology professional. You will not see the identity fields.</p>
-            <fieldset class="my-3 space-y-2"><legend class="font-semibold">Select only the necessary information</legend>
-                @foreach(\App\Services\IdentityVaultService::FIELDS as $field)
-                    <label class="flex items-center gap-2"><input type="checkbox" name="fields[]" value="{{ $field }}" @checked(in_array($field,['real_name','phone_number']))> {{ ucwords(str_replace('_',' ',$field)) }}</label>
-                @endforeach
-            </fieldset>
-            <label class="block my-3">Purpose of this disclosure<textarea name="reason" required minlength="20" maxlength="1000" class="block w-full rounded border-gray-300" placeholder="Explain why these fields are needed for this referral."></textarea></label>
-            <button class="btn-primary" type="submit">Authorize identity release</button>
-        </form>
-    @endif
         <!-- Top Bar -->
         <div class="flex items-center gap-4 mb-6">
             <div>
@@ -126,6 +119,7 @@
         @if(session('success'))
             <div class="flash-success"><i class="fas fa-check-circle mr-1"></i> {{ session('success') }}</div>
         @endif
+        @if($errors->any())<div class="flash-error" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
         @if(session('error'))
             <div class="flash-error"><i class="fas fa-exclamation-circle mr-1"></i> {{ session('error') }}</div>
         @endif
@@ -135,6 +129,44 @@
             <i class="fas fa-arrow-left"></i> Back to Referral Queue
         </a>
 
+
+        @php($identityReady = app(\App\Services\IdentityVaultService::class)->hasCurrentSubmission($referral))
+        <section class="card mb-4" aria-label="Referral coordination status">
+            <h2 class="font-semibold mb-3">Professional coordination</h2>
+            <div class="coordination-grid">
+                <div><p class="text-sm text-gray-500">Assigned professional</p><strong>{{ $referral->professional?->full_name ?? 'Not yet assigned' }}</strong></div>
+                <div><p class="text-sm text-gray-500">Referral status</p><strong>{{ ucwords(str_replace('_', ' ', $referral->status)) }}</strong></div>
+                <div><p class="text-sm text-gray-500">Identity details</p><strong>{{ $identityReady ? 'Current submission available' : 'Awaiting current Seeker submission' }}</strong></div>
+            </div>
+            @if(! $identityReady && $referral->approved_at && $referral->help_seeker_consent)
+                <p role="status" class="text-sm mt-3">The Seeker must open Referral decisions and submit identity disclosure. Release stays unavailable until current details are saved.</p>
+            @endif
+            @if($referral->professional)
+                <p class="text-sm mt-3">This referral is assigned to the professional shown above. Active cases retain their assignment; identity release authorizes access to selected contact details.</p>
+            @endif
+        </section>
+@if($referral->approved_at && $referral->help_seeker_consent && in_array($referral->status,['pending_professional','no_professional_available']))
+<section class="card p-5 my-4"><h3 class="font-semibold">Professional coordination</h3>
+<p class="text-sm text-gray-500 mb-3">After the Seeker saves their identity details, assign an available professional here. The referral appears in their review queue only after assignment. Identity release is a separate authorized action.</p>
+<form method="POST" action="{{ route('adviser.referral.assign',$referral->id) }}" class="coordination-form">@csrf
+<label for="professional">Professional</label><select name="professional_id" id="professional" required class="w-full rounded-lg border-gray-300"><option value="">Choose a professional</option>@foreach($professionals as $professional)<option value="{{ $professional->id }}" @selected((string)old('professional_id', $professionals->count() === 1 ? $professional->id : '') === (string)$professional->id)>{{ $professional->full_name }}</option>@endforeach</select>
+<label for="assignmentReason">Assignment reason</label><textarea name="reason" id="assignmentReason" required maxlength="1000" class="w-full rounded-lg border-gray-300">{{ old('reason') }}</textarea>
+<button class="btn btn-primary" @disabled($professionals->isEmpty() || ! $identityReady)>Assign professional</button>
+@if($professionals->isEmpty())<p>No active professional is currently available.</p>@endif
+</form></section>@endif
+    @if ($referral->approved_at && $referral->help_seeker_consent && $referral->professional_id && !in_array($referral->status, ['completed', 'closed', 'declined']))
+        <form class="card mb-4 referral-release" method="POST" action="{{ route('identity.release', $referral) }}">
+            @csrf
+            <h3 class="font-semibold mb-2">Authorize identity release</h3><p>Authorize release of the seeker's stored identity to the assigned psychology professional. You will not see the identity fields.</p>
+            <fieldset class="my-3" @disabled(! $identityReady)><legend class="font-semibold">Select only the necessary information</legend><div class="identity-field-grid">
+                @foreach(\App\Services\IdentityVaultService::FIELDS as $field)
+                    <label class="flex items-center gap-2"><input type="checkbox" name="fields[]" value="{{ $field }}" @checked(in_array($field,['real_name','phone_number']))> {{ ucwords(str_replace('_',' ',$field)) }}</label>
+                @endforeach
+            </div></fieldset>
+            <label class="block my-3">Purpose of this disclosure<textarea name="reason" required minlength="20" maxlength="1000" class="block w-full rounded border-gray-300" placeholder="Explain why these fields are needed for this referral.">{{ old('reason') }}</textarea></label>
+            <button class="btn-primary" type="submit" @disabled(! $identityReady)>Authorize identity release</button>
+        </form>
+    @endif
         <div class="card">
 
             <!-- Header -->
@@ -371,14 +403,5 @@
     @endif
     @include('partials.referral-recommendation')
     <x-supervision-history :record="$referral" />
-@if($referral->approved_at && $referral->help_seeker_consent && in_array($referral->status,['pending_professional','no_professional_available']))
-<section class="card p-5 my-4"><h3 class="font-semibold">Professional coordination</h3>
-<p class="text-sm text-gray-500 mb-3">After the Seeker saves their identity details, assign an available professional here. The referral appears in their review queue only after assignment. Identity release is a separate authorized action.</p>
-<form method="POST" action="{{ route('adviser.referral.assign',$referral->id) }}" class="space-y-3">@csrf
-<label for="professional">Professional</label><select name="professional_id" id="professional" required class="w-full rounded-lg border-gray-300"><option value="">Choose a professional</option>@foreach($professionals as $professional)<option value="{{ $professional->id }}" @selected((string)old('professional_id', $professionals->count() === 1 ? $professional->id : '') === (string)$professional->id)>{{ $professional->full_name }}</option>@endforeach</select>
-<label for="assignmentReason">Assignment reason</label><textarea name="reason" id="assignmentReason" required maxlength="1000" class="w-full rounded-lg border-gray-300">{{ old('reason') }}</textarea>
-<button class="btn btn-primary" @disabled($professionals->isEmpty())>Assign professional</button>
-@if($professionals->isEmpty())<p>No active professional is currently available.</p>@endif
-</form></section>@endif
 @include('partials.referral-appointments')
 @endsection
