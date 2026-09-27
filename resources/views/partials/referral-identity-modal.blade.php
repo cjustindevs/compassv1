@@ -125,7 +125,8 @@
         </button>
     </div>
 
-    <form data-identity-form action="{{ route('identity.store',$referral, false) }}" autocomplete="off" novalidate>
+    <form data-identity-form method="POST" action="{{ route('identity.store',$referral, false) }}" autocomplete="off" novalidate>
+        @csrf
         <div class="rv-modal__body">
             <ol class="rv-steps" aria-label="Referral progress">
                 <li data-done>Adviser approval</li>
