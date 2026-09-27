@@ -135,6 +135,24 @@ class IdentityVaultTest extends TestCase
         $this->assertTrue((bool) DB::connection('identity_vault')->table('idv_release_records')->value('recipient_acknowledged'));
     }
 
+    public function test_changed_release_fields_are_versioned_and_latest_selection_is_used(): void
+    {
+        $referral = $this->referral();
+        $this->store($referral);
+        $this->actingAs($referral->adviser->user);
+        foreach ([['phone_number'], ['real_name', 'email']] as $fields) {
+            $this->post(route('identity.release', $referral), ['fields' => $fields, 'reason' => 'Contact details needed for referral coordination.'])->assertRedirect()->assertSessionHasNoErrors();
+        }
+        $this->assertSame(2, DB::connection('identity_vault')->table('idv_release_records')->count());
+        $this->actingAs($referral->professional->user);
+        $identity = app(IdentityVaultService::class)->readForReferral($referral);
+        $this->assertSame('Private Test Name', $identity['real_name']);
+        $this->assertSame('private@example.com', $identity['email']);
+        $this->assertArrayNotHasKey('phone_number', $identity);
+        $referral->update(['status' => 'in_progress']);
+        $this->get(route('professional.cases.show', $referral))->assertOk()->assertSee('View released identity');
+    }
+
     public function test_admin_helper_moderator_and_unassigned_professional_are_denied_and_logged(): void
     {
         $referral = $this->referral();

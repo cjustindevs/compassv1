@@ -193,7 +193,12 @@ class IdentityVaultService
             $identity = $this->identity($pseudo);
             $db = DB::connection('identity_vault');
             $recipient = $referral->professional->user_account_id;
-            if (! $db->table('idv_release_records')->where('referral_id', $referral->id)->where('identity_version', $identity->identity_version)->where('released_to_user_id', $recipient)->exists()) {
+            $previousRelease = $db->table('idv_release_records')->where('referral_id', $referral->id)->where('identity_version', $identity->identity_version)->where('released_to_user_id', $recipient)->orderByDesc('release_id')->first();
+            $selectedFields = array_values(array_unique($fields));
+            sort($selectedFields);
+            $previousFields = $previousRelease ? (json_decode($previousRelease->information_released, true) ?: []) : [];
+            sort($previousFields);
+            if (! $previousRelease || $selectedFields !== $previousFields) {
                 $db->table('idv_release_records')->insert([
                     'pseudo_id' => $pseudo, 'identity_id' => $identity->identity_id, 'referral_id' => $referral->id,
                     'identity_version' => $identity->identity_version,
@@ -223,7 +228,7 @@ class IdentityVaultService
             $identity = $this->identity($pseudo);
             $release = DB::connection('identity_vault')->table('idv_release_records')->where('referral_id', $referral->id)
                 ->where('identity_version', $identity->identity_version)
-                ->where('released_to_user_id', Auth::id())->where('release_reason', 'approved_referral')->first();
+                ->where('released_to_user_id', Auth::id())->where('release_reason', 'approved_referral')->orderByDesc('release_id')->first();
             abort_unless($release, 403, 'Identity has not been released to you.');
             $result = [];
             $fields = array_intersect(json_decode($release->information_released, true) ?: [], self::FIELDS);
