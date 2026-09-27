@@ -209,6 +209,16 @@
                         <span class="status-badge {{ $referral->help_seeker_consent ? '' : 'muted' }}">{{ $statusLabel }}</span>
                     </div>
 
+                    @if($referral->approved_at && $referral->help_seeker_consent)
+                        <div class="rounded-xl bg-gray-50 p-4 my-3 text-sm">
+                            @if($referral->professional)
+                                <p><strong>Assigned professional:</strong> {{ $referral->professional->full_name }}</p>
+                                <p>See Professional appointments below for your schedule and meeting instructions. All times are in Asia/Manila.</p>
+                            @else
+                                <p><strong>Professional assignment pending.</strong> After your identity details are saved, your adviser assigns a professional for review. You will be notified when an appointment is scheduled.</p>
+                            @endif
+                        </div>
+                    @endif
                     @if($referral->status === \App\Models\Referral::STATUS_PENDING_CONSENT)
                         <p>Your adviser has reviewed your helper's recommendation and approved professional support beyond the scope of peer support.</p>
                         <div class="rounded-xl bg-gray-50 p-4 my-3 text-sm space-y-1">

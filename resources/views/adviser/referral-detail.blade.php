@@ -373,9 +373,9 @@
     <x-supervision-history :record="$referral" />
 @if($referral->approved_at && $referral->help_seeker_consent && in_array($referral->status,['pending_professional','no_professional_available']))
 <section class="card p-5 my-4"><h3 class="font-semibold">Professional coordination</h3>
-<p class="text-sm text-gray-500 mb-3">Approval and Help Seeker consent are recorded. Choose an available professional.</p>
+<p class="text-sm text-gray-500 mb-3">After the Seeker saves their identity details, assign an available professional here. The referral appears in their review queue only after assignment. Identity release is a separate authorized action.</p>
 <form method="POST" action="{{ route('adviser.referral.assign',$referral->id) }}" class="space-y-3">@csrf
-<label for="professional">Professional</label><select name="professional_id" id="professional" required class="w-full rounded-lg border-gray-300"><option value="">Choose a professional</option>@foreach($professionals as $professional)<option value="{{ $professional->id }}">{{ $professional->full_name }}</option>@endforeach</select>
+<label for="professional">Professional</label><select name="professional_id" id="professional" required class="w-full rounded-lg border-gray-300"><option value="">Choose a professional</option>@foreach($professionals as $professional)<option value="{{ $professional->id }}" @selected((string)old('professional_id', $professionals->count() === 1 ? $professional->id : '') === (string)$professional->id)>{{ $professional->full_name }}</option>@endforeach</select>
 <label for="assignmentReason">Assignment reason</label><textarea name="reason" id="assignmentReason" required maxlength="1000" class="w-full rounded-lg border-gray-300">{{ old('reason') }}</textarea>
 <button class="btn btn-primary" @disabled($professionals->isEmpty())>Assign professional</button>
 @if($professionals->isEmpty())<p>No active professional is currently available.</p>@endif

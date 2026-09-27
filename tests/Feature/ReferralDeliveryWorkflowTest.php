@@ -33,7 +33,17 @@ class ReferralDeliveryWorkflowTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config(['database.connections.identity_vault' => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '', 'foreign_key_constraints' => true],
+            'identity_vault.key' => 'base64:'.base64_encode(str_repeat('v', 32))]);
+        \Illuminate\Support\Facades\DB::purge('identity_vault');
+        $this->artisan('migrate', ['--database' => 'identity_vault', '--path' => 'database/migrations/identity_vault', '--force' => true])->assertSuccessful();
         $this->travelTo(Carbon::parse('2026-09-26 09:00', 'Asia/Manila')->utc());
+    }
+
+    protected function tearDown(): void
+    {
+        \Illuminate\Support\Facades\DB::purge('identity_vault');
+        parent::tearDown();
     }
 
     private function readyHelper(): array
@@ -425,6 +435,10 @@ class ReferralDeliveryWorkflowTest extends TestCase
             'user_account_id' => $helper->adviser->user_account_id,
             'title' => 'Referral appointment updated',
         ]);
+        $this->actingAs($seekerUser)->get(route('seeker.referrals'))
+            ->assertOk()->assertSee($referral->professional->full_name)
+            ->assertSee('Video call link to follow.')
+            ->assertSee('Asia/Manila');
     }
 
     public function test_adviser_cannot_request_clarification_when_no_helper_can_respond(): void
@@ -491,11 +505,21 @@ class ReferralDeliveryWorkflowTest extends TestCase
         $this->professional();
 
         [$referral] = $this->referralAwaitingProfessional($helper, $seekerUser, 'Needs professional anxiety support.');
+        $availableProfessional = PsychologyProfessional::firstOrFail();
+        $this->actingAs($availableProfessional->user)->get(route('professional.referrals'))
+            ->assertOk()->assertViewHas('pending', fn ($pending) => ! $pending->contains('id', $referral->id));
         $this->storeIdentity($seekerUser, $referral);
         $referral->refresh();
 
         $professional = $referral->professional;
-        $this->assertNotNull($professional, 'Identity submission should forward the referral to a professional.');
+        $this->assertNotNull($professional, 'Adviser assignment should forward the referral to a professional.');
+
+        $this->assertDatabaseHas('notifications', [
+            'user_account_id' => $seekerUser->id,
+            'title' => 'A professional was assigned to your referral',
+        ]);
+        $this->actingAs($professional->user)->get(route('professional.referrals'))
+            ->assertOk()->assertViewHas('pending', fn ($pending) => $pending->contains('id', $referral->id));
 
         $this->actingAs(User::find($professional->user_account_id))
             ->post(route('professional.referral.accept', $referral->id))

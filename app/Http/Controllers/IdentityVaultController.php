@@ -39,11 +39,11 @@ class IdentityVaultController extends Controller
         if ($referral->adviser?->user_account_id) {
             \App\Models\Notification::create([
                 'user_account_id' => $referral->adviser->user_account_id, 'title' => 'Identity ready for release',
-                'message' => 'Referral #' . $referral->id . ' has identity information ready for authorized release.',
+                'message' => 'Referral #' . $referral->id . ': identity details are saved. Open Professional coordination and assign a professional so the referral appears in their review queue. Identity release remains a separate authorized action.',
                 'notification_type' => 'referral', 'link' => '/adviser/referral/' . $referral->id,
             ]);
         }
-        return response()->json(['message' => 'Your identity was securely stored. Your adviser can now authorize its release to the assigned professional.']);
+        return response()->json(['message' => 'Your identity was securely stored. Your adviser will assign a professional for review and authorize the necessary identity release. You will receive notifications when a professional is assigned and an appointment is scheduled.']);
     }
 
     public function release(Request $request, Referral $referral, IdentityVaultService $vault)
