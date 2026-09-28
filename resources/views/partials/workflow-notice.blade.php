@@ -2,7 +2,7 @@
     $notice = session('error') ?? session('success') ?? session('info') ?? session('status');
 @endphp
 @if(is_string($notice) || $errors->any())
-<dialog id="workflowNotice" aria-labelledby="workflowNoticeTitle" style="border:1px solid #e5e7eb;border-radius:16px;padding:24px;width:min(440px,calc(100vw - 32px));color:#163b2d;">
+<dialog id="workflowNotice" aria-labelledby="workflowNoticeTitle" style="position:fixed;inset:0;margin:auto;max-height:85dvh;overflow:auto;border:1px solid #e5e7eb;border-radius:16px;padding:24px;width:min(440px,calc(100vw - 32px));color:#163b2d;">
     <h2 id="workflowNoticeTitle" class="text-lg font-semibold mb-3">{{ $errors->any() || session('error') ? 'Please review your request' : 'Status update' }}</h2>
     @if(is_string($notice))<p class="text-sm mb-4" role="status">{{ $notice }}</p>@endif
     @if($errors->any())

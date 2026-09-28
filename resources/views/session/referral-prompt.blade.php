@@ -109,10 +109,12 @@
     </div>
 </dialog>
 <section id="professionalSupportCard" hidden style="padding:16px;border:1px solid #d7e8dd;border-radius:14px;background:#f3fbf6;margin:12px 0"><strong>Your Professional Support</strong><p id="professionalSupportStatus" style="margin:8px 0"></p><button type="button" id="chatSupportOpen" style="padding:10px;border-radius:8px;background:#048948;color:white">View support details</button></section>
-<button type="button" id="chatReferralOpen" hidden>Review referral</button>
-<dialog id="chatIdentityDialog" style="width:min(900px,96vw);height:92dvh;padding:0;border:0;border-radius:18px;margin:auto"><button type="button" onclick="this.closest('dialog').close()" style="position:absolute;right:14px;top:8px;z-index:2">Close</button><iframe title="Identity disclosure" style="border:0;width:100%;height:100%"></iframe></dialog>
+<button type="button" id="chatReferralOpen" hidden style="padding:8px 12px;border:1px solid #bad8c4;border-radius:8px;margin:4px">Review referral</button>
+<dialog id="chatIdentityDialog" style="width:min(900px,96vw);height:min(620px,82dvh);padding:0;border:0;border-radius:18px;margin:auto"><button type="button" onclick="this.closest('dialog').close()" style="position:absolute;right:14px;top:8px;z-index:2">Close</button><iframe title="Identity disclosure" style="border:0;width:100%;height:100%"></iframe></dialog>
 <script>
 (() => {
+    const cardSlot = document.querySelector('.chat-header');
+    if (cardSlot) { cardSlot.insertAdjacentElement('afterend', document.getElementById('professionalSupportCard')); document.getElementById('professionalSupportCard').append(document.getElementById('chatReferralOpen')); }
     const dialog = document.getElementById('referralConsentDialog');
     if (!dialog) return;
     const isSeeker = @json(auth()->user()->role === 'seeker');
@@ -144,7 +146,8 @@
         if (!referral) return;
         document.getElementById('chatReferralOpen').hidden = !isSeeker;
         const card = document.getElementById('professionalSupportCard');
-        card.hidden = !isSeeker || !referral.help_seeker_consent;
+        card.hidden = !isSeeker;
+        document.getElementById('chatSupportOpen').hidden = !referral.help_seeker_consent;
         document.getElementById('professionalSupportStatus').textContent = (referral.professional_name ? referral.professional_name + ' ? ' : '') + (referral.appointment_time ? 'Appointment: ' + referral.appointment_time + ' Philippine Time.' : ['accepted','in_progress'].includes(referral.status) ? 'Referral accepted. View your appointment or scheduling updates.' : referral.professional_name ? 'Awaiting professional acceptance.' : 'Your Adviser is coordinating your referral.');
         const key = referral.id + ':' + referral.status + ':' + (data.consent?.decision ?? 'none');
         if (key === seen) return;

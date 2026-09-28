@@ -251,10 +251,18 @@
         <!-- Action Bar -->
         <div class="flex gap-3 mb-6 flex-wrap">
             @if($referral->status === \App\Models\Referral::STATUS_PENDING_PROFESSIONAL)
-                <form method="POST" action="{{ route('professional.referral.accept', $referral->id) }}">
+                <form id="acceptSchedule" method="POST" action="{{ route('professional.referral.accept', $referral->id) }}" style="width:100%;max-width:640px;padding:18px;border:1px solid #dce8df;border-radius:14px">
+                    <h3 class="font-semibold mb-3">Schedule the first appointment</h3>
+                    <p class="text-sm mb-3">Required before acceptance. Times are Philippine Time (Asia/Manila).</p>
+                    @foreach(['starts_at'=>'Start','ends_at'=>'End'] as $field=>$label)
+                    <label class="block mb-3">{{ $label }}<input type="datetime-local" name="{{ $field }}" value="{{ old($field) }}" required class="block w-full rounded-lg border-gray-300"></label>
+                    @endforeach
+                    <label class="block mb-3">Meeting format<select name="meeting_format" required class="block w-full rounded-lg border-gray-300"><option value="in_person">In person</option><option value="video">Video call</option><option value="phone">Phone call</option></select></label>
+                    <label class="block mb-3">Location or secure meeting instructions<textarea name="meeting_details" required maxlength="2000" class="block w-full rounded-lg border-gray-300">{{ old('meeting_details') }}</textarea></label>
+                    @if($errors->any())<p role="alert" class="text-red-700">{{ $errors->first() }}</p>@endif
                     @csrf
                     <button type="submit" class="btn-primary">
-                        <i class="fas fa-check mr-1"></i> Accept Referral
+                        <i class="fas fa-check mr-1"></i> Schedule and accept
                     </button>
                 </form>
                 <button class="btn-danger" onclick="openDeclineModal()">

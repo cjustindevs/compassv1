@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>COMPASS – Referral Decisions</title>
+    <title>COMPASS – Referrals and Appointments</title>
 
     <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -178,7 +178,7 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-gray-800">Referral Decisions</h1>
+                    <h1 class="text-xl md:text-2xl font-bold text-gray-800">Referrals and Appointments</h1>
                     <p class="text-sm text-gray-500 hidden sm:block">Review recommendations for professional support.</p>
                 </div>
             </div>
