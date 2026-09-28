@@ -31,6 +31,7 @@
                 <span class="nav-badge" id="sessionBadge">{{ $sessionCount }}</span>
             @endif
         </a>
+        <a href="{{ route('moderator.reconnections') }}" class="nav-item {{ request()->routeIs('moderator.reconnections') ? 'active' : '' }}" title="Connection review"><i class="fas fa-plug" aria-hidden="true"></i><span class="nav-text">Connection review</span></a>
         <a href="{{ route('moderator.manage') }}" class="nav-item {{ request()->routeIs('moderator.manage*') ? 'active' : '' }}">
             <i class="fas fa-users-cog"></i><span class="nav-text">Manage</span>
         </a>

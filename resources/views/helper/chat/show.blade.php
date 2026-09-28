@@ -314,6 +314,7 @@
 @endsection
 
 @section('content')
+@include('session.connection-status')
 
     <input type="hidden" id="sessionId" value="{{ $session->id }}">
     <input type="hidden" id="currentUserId" value="{{ auth()->id() }}">
