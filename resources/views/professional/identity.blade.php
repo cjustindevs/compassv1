@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('content')
-    <div class="max-w-4xl mx-auto p-6 bg-white rounded-2xl border border-gray-200 my-6">
+    @include('partials.referral-ui-styles')
+    <div class="referral-ui" style="max-width:1000px;margin:24px auto;padding:0 16px"><section class="ru-card">
         <h1 class="text-2xl font-bold">Released identity — Referral #{{ $referral->id }}</h1>
         <p class="my-4">This access has been recorded. Use these details only for this approved referral.</p>
         <a class="inline-block text-green-700 my-3" href="{{ route('professional.cases.show', $referral) }}">Back to case</a>
@@ -10,7 +11,7 @@
                 <dd>{{ $value ?: 'Not provided' }}</dd></div>
             @endforeach
         </dl>
-        <h2 class="font-semibold mt-5">Approved referral</h2>
+        </section><section class="ru-card"><h2>Approved referral</h2>
         <p class="whitespace-pre-line">{{ $referral->referral_reason }}</p>
         @include('partials.referral-recommendation')
         <p class="text-sm mt-3">Adviser review: {{ $referral->review_notes }}</p>
@@ -18,5 +19,5 @@
             @csrf
             <button class="bg-green-700 text-white p-3 rounded">Acknowledge receipt</button>
         </form>
-    </div>
+    </section></div>
 @endsection
