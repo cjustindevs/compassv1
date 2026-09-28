@@ -397,7 +397,7 @@
                                 </div>
                             </div>
                             <div class="actions flex gap-2 flex-wrap">
-                                <a href="{{ route('professional.cases.show', $referral->id) }}" class="btn-outline">
+                                <a href="{{ route('professional.cases.show', $referral->case_reference) }}" class="btn-outline">
                                     <i class="fas fa-eye mr-1"></i> View
                                 </a>
                                 <form method="POST" action="{{ route('professional.referral.start', $referral->id) }}">
@@ -442,7 +442,7 @@
                                     {{ \Illuminate\Support\Str::limit($referral->referral_reason, 70) }}
                                 </div>
                             </div>
-                            <a href="{{ route('professional.cases.show', $referral->id) }}" class="btn-outline">
+                            <a href="{{ route('professional.cases.show', $referral->case_reference) }}" class="btn-outline">
                                 <i class="fas fa-arrow-right mr-1"></i> Open Case
                             </a>
                         </div>

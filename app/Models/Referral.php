@@ -31,6 +31,11 @@ class Referral extends Model
         app(IdentityVaultService::class)->releaseForReferral($this);
     }
 
+    public function getCaseReferenceAttribute(): string
+    {
+        return bin2hex(\Illuminate\Support\Facades\Crypt::encryptString((string)$this->id));
+    }
+
     protected $table = 'referrals';
 
     protected $fillable = [

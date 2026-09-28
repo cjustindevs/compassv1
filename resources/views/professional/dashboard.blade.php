@@ -385,7 +385,7 @@
                                         {{ \Illuminate\Support\Str::limit($case->referral_reason, 60) }}
                                     </div>
                                 </div>
-                                <a href="{{ route('professional.cases.show', $case->id) }}" class="btn-outline">
+                                <a href="{{ route('professional.cases.show', $case->case_reference) }}" class="btn-outline">
                                     <i class="fas fa-arrow-right mr-1"></i> Open
                                 </a>
                             </div>

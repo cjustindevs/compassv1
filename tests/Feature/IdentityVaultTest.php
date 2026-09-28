@@ -150,7 +150,7 @@ class IdentityVaultTest extends TestCase
         $this->assertSame('private@example.com', $identity['email']);
         $this->assertArrayNotHasKey('phone_number', $identity);
         $referral->update(['status' => 'in_progress']);
-        $this->get(route('professional.cases.show', $referral))->assertOk()->assertSee('View released identity');
+        $this->get(route('professional.cases.show', $referral->case_reference))->assertOk()->assertSee('View released identity');
     }
 
     public function test_admin_helper_moderator_and_unassigned_professional_are_denied_and_logged(): void

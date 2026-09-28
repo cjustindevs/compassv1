@@ -4,7 +4,7 @@
     <div class="referral-ui" style="max-width:1000px;margin:24px auto;padding:0 16px"><section class="ru-card">
         <h1 class="text-2xl font-bold">Released identity — Referral #{{ $referral->id }}</h1>
         <p class="my-4">This access has been recorded. Use these details only for this approved referral.</p>
-        <a class="inline-block text-green-700 my-3" href="{{ route('professional.cases.show', $referral) }}">Back to case</a>
+        <a class="inline-block text-green-700 my-3" href="{{ route('professional.cases.show', $referral->case_reference) }}">Back to case</a>
         <dl style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
             @foreach ($identity as $field => $value)
                 <div style="padding:14px;background:#f5faf7;border-radius:10px;overflow-wrap:anywhere"><dt class="text-sm text-gray-500">{{ ucwords(str_replace('_', ' ', $field)) }}</dt>

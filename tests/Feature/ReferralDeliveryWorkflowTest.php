@@ -573,7 +573,13 @@ class ReferralDeliveryWorkflowTest extends TestCase
         $this->actingAs($professionalUser)->post(route('professional.cases.notes', $referral->id), $payload);
         $this->assertDatabaseHas('professional_notes', ['referral_id' => $referral->id]);
 
-        $this->actingAs($professionalUser)->post(route('professional.cases.status', $referral->id), ['status' => Referral::STATUS_COMPLETED]);
+        $response = $this->actingAs($professionalUser)->post(route('professional.cases.status', $referral->case_reference), ['status' => Referral::STATUS_COMPLETED]);
+        $response->assertRedirect();
+        $this->assertStringNotContainsString('/case/'.$referral->id, $response->headers->get('Location'));
+        $this->get($response->headers->get('Location'))->assertOk()->assertDontSee('Save Intervention Note');
+        $this->actingAs(User::factory()->create(['role'=>'professional','is_active'=>true]))->get(route('professional.cases.show',$referral->case_reference))->assertForbidden();
+        $this->actingAs($professionalUser);
+
         $this->assertSame(Referral::STATUS_COMPLETED, $referral->fresh()->status);
 
         // Concluded work must not accrue new clinical notes.

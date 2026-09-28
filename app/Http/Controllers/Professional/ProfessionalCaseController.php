@@ -12,6 +12,16 @@ use Illuminate\Support\Facades\Auth;
 
 class ProfessionalCaseController extends Controller
 {
+    private function caseId($reference): int
+    {
+        if (ctype_digit((string)$reference) && strlen((string)$reference) < 20) return (int)$reference;
+        try {
+            $value = \Illuminate\Support\Facades\Crypt::decryptString(hex2bin($reference));
+            abort_unless(ctype_digit($value),404);
+            return (int)$value;
+        } catch (\Throwable $e) { abort(404); }
+    }
+
     public function index()
     {
         $professional = Auth::user()->psychologyProfessional;
@@ -48,8 +58,10 @@ class ProfessionalCaseController extends Controller
             'professionalNotes',
         ])
             ->professionalAuthorized()->where('professional_id', $professional->id)
-            ->whereIn('status', Referral::ACTIVE_STATUSES)
-            ->findOrFail($id);
+            ->whereIn('status', array_merge(Referral::ACTIVE_STATUSES, Referral::COMPLETED_STATUSES))
+            ->findOrFail($this->caseId($id));
+
+        if (ctype_digit((string)$id) && strlen((string)$id) < 20) return redirect()->route('professional.cases.show', $case->case_reference);
 
         // Intervention history (chronological)
         $notes = ProfessionalNote::where('referral_id', $case->id)
@@ -75,7 +87,7 @@ class ProfessionalCaseController extends Controller
         $professional = Auth::user()->psychologyProfessional;
 
         $case = Referral::professionalAuthorized()->where('professional_id', $professional->id)
-            ->findOrFail($id);
+            ->findOrFail($this->caseId($id));
 
         app(ReferralManagementService::class)->updateReferralOutcome($case, $validated);
 
@@ -97,7 +109,7 @@ class ProfessionalCaseController extends Controller
             Referral::STATUS_CLOSED => 'Case closed.',
         ];
 
-        return redirect()->route('professional.cases.show', $case->id)
+        return redirect()->route('professional.cases.show', $case->case_reference)
             ->with('success', $messages[$validated['status']]);
     }
 
@@ -113,7 +125,7 @@ class ProfessionalCaseController extends Controller
         $professional = Auth::user()->psychologyProfessional;
 
         $case = Referral::professionalAuthorized()->where('professional_id', $professional->id)
-            ->findOrFail($id);
+            ->findOrFail($this->caseId($id));
 
         // A concluded case must not accrue new clinical notes, which would
         // rewrite the record of work that already ended.
@@ -138,7 +150,7 @@ class ProfessionalCaseController extends Controller
             app(ReferralManagementService::class)->updateReferralOutcome($case, ['status' => Referral::STATUS_IN_PROGRESS]);
         }
 
-        return redirect()->route('professional.cases.show', $case->id)
+        return redirect()->route('professional.cases.show', $case->case_reference)
             ->with('success', 'Intervention note recorded successfully.');
     }
 }
