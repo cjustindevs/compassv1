@@ -251,7 +251,8 @@
         <!-- Action Bar -->
         <div class="flex gap-3 mb-6 flex-wrap">
             @if($referral->status === \App\Models\Referral::STATUS_PENDING_PROFESSIONAL)
-                <form id="acceptSchedule" method="POST" action="{{ route('professional.referral.accept', $referral->id) }}" style="width:100%;max-width:640px;padding:18px;border:1px solid #dce8df;border-radius:14px">
+                @include('partials.referral-ui-styles')
+                <form class="referral-ui" id="acceptSchedule" method="POST" action="{{ route('professional.referral.accept', $referral->id) }}" style="width:100%;max-width:640px;padding:18px;border:1px solid #dce8df;border-radius:14px">
                     <h3 class="font-semibold mb-3">Schedule the first appointment</h3>
                     <p class="text-sm mb-3">Required before acceptance. Times are Philippine Time (Asia/Manila).</p>
                     @foreach(['starts_at'=>'Start','ends_at'=>'End'] as $field=>$label)
