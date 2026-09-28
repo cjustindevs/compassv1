@@ -294,7 +294,7 @@ class IdentityVaultTest extends TestCase
         $referral->update(['status' => Referral::STATUS_PENDING_ADVISER, 'approved_at' => null, 'professional_id' => null, 'help_seeker_consent' => false]);
         $adviser = $referral->adviser->user;
 
-        $this->actingAs($adviser)->get(route('adviser.referral.show', $referral->id))
+        $this->actingAs($adviser)->get(route('adviser.referral.show', $referral->case_reference))
             ->assertOk()->assertSee('Review Notes')->assertSee('Record a short review note');
 
         $this->actingAs($adviser)->post(route('adviser.referral.approve', $referral->id))->assertSessionHasErrors('review_notes');

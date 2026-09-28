@@ -249,7 +249,7 @@
                                 </div>
                             </div>
                             <div class="actions">
-                                <a href="{{ route('adviser.referral.show', $referral->id) }}" class="btn-outline">
+                                <a href="{{ route('adviser.referral.show', $referral->case_reference) }}" class="btn-outline">
                                     <i class="fas fa-eye mr-1"></i> View
                                 </a>
                                 <button class="btn-primary" onclick="openApproveModal({{ $referral->id }})">
@@ -292,7 +292,7 @@
                                 @endif
                             </div>
                         </div>
-                        <a href="{{ route('adviser.referral.show', $referral->id) }}" class="btn-outline">
+                        <a href="{{ route('adviser.referral.show', $referral->case_reference) }}" class="btn-outline">
                             <i class="fas fa-eye mr-1"></i> View
                         </a>
                     </div>
