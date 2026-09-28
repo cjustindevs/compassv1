@@ -79,3 +79,5 @@ Schedule::call(fn () => app(\App\Services\HelperWorkflowMaintenance::class)->run
 Schedule::command('sessions:check-no-response')->everyMinute()->withoutOverlapping();
 
 Schedule::call(fn () => app(\App\Services\AdviserSupervisionMaintenance::class)->run())->hourly()->name('adviser-supervision-follow-up')->withoutOverlapping();
+
+Schedule::call(fn () => app(\App\Services\ReferralAppointmentService::class)->sendReminders())->everyMinute()->name('referral-appointment-reminders')->withoutOverlapping();
