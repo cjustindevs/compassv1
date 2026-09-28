@@ -21,6 +21,16 @@ class AdviserReferralController extends Controller
     /**
      * Show the referral queue
      */
+    private function referralId($reference): int
+    {
+        if (ctype_digit((string)$reference) && strlen((string)$reference) < 20) return (int)$reference;
+        try {
+            $value = \Illuminate\Support\Facades\Crypt::decryptString(hex2bin($reference));
+            abort_unless(ctype_digit($value),404);
+            return (int)$value;
+        } catch (\Throwable $e) { abort(404); }
+    }
+
     public function index()
     {
         $adviserId = app(AdviserScope::class)->actor()->id;
@@ -82,9 +92,11 @@ class AdviserReferralController extends Controller
             'helper.user',
             'adviser',
             'professional',
-        ])->findOrFail($id);
+        ])->findOrFail($this->referralId($id));
 
         $this->authorizeReferral($referral);
+        if (ctype_digit((string)$id) && strlen((string)$id) < 20) return redirect()->route('adviser.referral.show', $referral->case_reference);
+
 
         // Get the session report if exists
         $sessionReport = $referral->session->report ?? null;
@@ -98,7 +110,7 @@ class AdviserReferralController extends Controller
      */
     public function approve(Request $request, $id)
     {
-        $referral = Referral::findOrFail($id);
+        $referral = Referral::findOrFail($this->referralId($id));
         $this->authorizeReferral($referral);
         $data = $request->validate(['review_notes' => 'required|string|max:1000', 'professional_id' => 'prohibited', 'consent_obtained' => 'prohibited']);
         $this->transition(fn () => app(ReferralManagementService::class)->reviewReferral($referral, Auth::user()->adviser, ['approved' => true, 'notes' => $data['review_notes']]), 'review_notes');
@@ -111,7 +123,7 @@ class AdviserReferralController extends Controller
      */
     public function reject(Request $request, $id)
     {
-        $referral = Referral::findOrFail($id);
+        $referral = Referral::findOrFail($this->referralId($id));
         $this->authorizeReferral($referral);
         $data = $request->validate(['rejection_reason' => 'required|string|min:10|max:1000']);
         $this->transition(fn () => app(ReferralManagementService::class)->clarify($referral, $data['rejection_reason']), 'rejection_reason');
@@ -124,7 +136,7 @@ class AdviserReferralController extends Controller
      */
     public function requestInfo(Request $request, $id)
     {
-        $referral = Referral::findOrFail($id);
+        $referral = Referral::findOrFail($this->referralId($id));
 
         $this->authorizeReferral($referral);
 
@@ -143,7 +155,7 @@ class AdviserReferralController extends Controller
      */
     public function assignProfessional(Request $request, $id)
     {
-        $referral = Referral::findOrFail($id);
+        $referral = Referral::findOrFail($this->referralId($id));
         $this->authorizeReferral($referral);
         $data = $request->validate(['professional_id' => 'required|integer|exists:psychology_professionals,id', 'reason' => 'required|string|max:1000']);
         $this->transition(fn () => app(ReferralManagementService::class)->assignProfessional($referral, (int) $data['professional_id'], $data['reason']), 'professional_id');

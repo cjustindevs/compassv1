@@ -160,7 +160,7 @@
 @if($referral->approved_at && $referral->help_seeker_consent && !$referral->professional_id && in_array($referral->status,['pending_professional','no_professional_available']))
 <section class="card p-5 my-4"><h3 class="font-semibold">Assign a professional</h3>
 <p class="text-sm text-gray-500 mb-3">After the Seeker saves their identity details, assign an available professional here. The referral appears in their review queue only after assignment. Identity release is a separate authorized action.</p>
-<form method="POST" action="{{ route('adviser.referral.assign',$referral->id) }}" class="coordination-form">@csrf
+<form method="POST" action="{{ route('adviser.referral.assign', $referral->case_reference) }}" class="coordination-form">@csrf
 <label for="professional">Professional</label><select name="professional_id" id="professional" required class="w-full rounded-lg border-gray-300"><option value="">Choose a professional</option>@foreach($professionals as $professional)<option value="{{ $professional->id }}" @selected((string)old('professional_id', $professionals->count() === 1 ? $professional->id : '') === (string)$professional->id)>{{ $professional->full_name }}</option>@endforeach</select>
 <label for="assignmentReason">Assignment reason</label><textarea name="reason" id="assignmentReason" required maxlength="1000" class="w-full rounded-lg border-gray-300">{{ old('reason') }}</textarea>
 <button class="btn btn-primary" @disabled($professionals->isEmpty() || ! $identityReady)>Assign professional</button>
@@ -304,7 +304,7 @@
             </div>
             <p class="text-gray-500 text-sm mb-4">Record a short review note. This is stored alongside the approval for accountability.</p>
 
-            <form class="form-maximized" id="approveForm" method="POST" action="{{ route('adviser.referral.approve', $referral->id) }}">
+            <form class="form-maximized" id="approveForm" method="POST" action="{{ route('adviser.referral.approve', $referral->case_reference) }}">
                 @csrf
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Review Notes <span class="text-red-500">*</span></label>
@@ -329,7 +329,7 @@
             </div>
             <p class="text-gray-500 text-sm mb-4">Return this referral to the Helper with comments. The Helper can revise the recommendation, and approval stays blocked until they respond.</p>
 
-            <form class="form-maximized" id="reviseForm" method="POST" action="{{ route('adviser.referral.request-info', $referral->id) }}">
+            <form class="form-maximized" id="reviseForm" method="POST" action="{{ route('adviser.referral.request-info', $referral->case_reference) }}">
                 @csrf
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Comments for the Helper <span class="text-red-500">*</span></label>
@@ -354,7 +354,7 @@
             </div>
             <p class="text-gray-500 text-sm mb-4">Explain what the Helper must revise before you can approve this referral.</p>
 
-            <form class="form-maximized" id="rejectForm" method="POST" action="{{ route('adviser.referral.reject', $referral->id) }}">
+            <form class="form-maximized" id="rejectForm" method="POST" action="{{ route('adviser.referral.reject', $referral->case_reference) }}">
                 @csrf
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Revision comments <span class="text-red-500">*</span></label>
