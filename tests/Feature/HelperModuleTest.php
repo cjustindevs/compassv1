@@ -1103,8 +1103,10 @@ class HelperModuleTest extends TestCase
             'end_time' => now(),
         ]);
 
-        $this->actingAs($this->helperUser)
-            ->get(route('helper.session.chat', ['id' => $session->id]))
+        $response = $this->actingAs($this->helperUser)
+            ->get(route('helper.session.chat', ['id' => $session->id]));
+        $response->assertRedirect();
+        $this->get($response->headers->get('Location'))
             ->assertRedirect(route('helper.session.notes', ['id' => $session->id]));
     }
 

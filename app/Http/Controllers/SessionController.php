@@ -368,15 +368,17 @@ class SessionController extends Controller
         $sessionId = session('session_id');
         $session = $sessionId ? Session::with(['helper', 'seeker'])->find($sessionId) : null;
 
-        if ($session && $session->seeker_id === Auth::user()->helpSeeker?->id) {
+        if ($session && $session->seeker_id === Auth::user()->helpSeeker?->id && $session->completion_reason !== 'connection_handoff') {
             return $session;
         }
 
-        return Session::with(['helper', 'seeker'])
+        $active = Session::with(['helper', 'seeker'])
             ->where('seeker_id', Auth::user()->helpSeeker?->id)
             ->where('session_status', Session::STATUS_ACTIVE)
-            ->orderByDesc('start_time')
+            ->orderByDesc('start_time')->orderByDesc('id')
             ->first();
+        if ($active) session(['session_id' => $active->id]);
+        return $active;
     }
 
     // Score mapping helpers

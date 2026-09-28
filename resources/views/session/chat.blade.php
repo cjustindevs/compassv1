@@ -416,6 +416,7 @@
     @include('layouts.partials.pwa-banner')
 
 @include('session.referral-prompt')
+@include('session.connection-status')
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {

@@ -659,3 +659,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
 Route::get('/seeker/referrals/{referral}/support', [\App\Http\Controllers\SeekerAppointmentController::class, 'show'])->middleware('auth')->name('seeker.referral.support');
 Route::post('/seeker/appointments/{appointment}/response', [\App\Http\Controllers\SeekerAppointmentController::class, 'respond'])->middleware('auth')->name('seeker.appointment.respond');
+
+Route::middleware('auth')->group(function () {
+ Route::get('/session/{session}/connection', [\App\Http\Controllers\SessionReconnectionController::class,'state'])->name('reconnections.state');
+ Route::post('/session/{session}/heartbeat', [\App\Http\Controllers\SessionReconnectionController::class,'heartbeat'])->name('reconnections.heartbeat');
+ Route::post('/session/{session}/connection-choice', [\App\Http\Controllers\SessionReconnectionController::class,'choose'])->name('reconnections.choose');
+ Route::get('/moderator/reconnections', [\App\Http\Controllers\SessionReconnectionController::class,'index'])->name('moderator.reconnections');
+ Route::get('/helper/reconnections', [\App\Http\Controllers\SessionReconnectionController::class,'index'])->name('helper.reconnections');
+ Route::post('/reconnections/{incident}/offer', [\App\Http\Controllers\SessionReconnectionController::class,'offer'])->name('reconnections.offer');
+ Route::post('/reconnections/{incident}/accept', [\App\Http\Controllers\SessionReconnectionController::class,'accept'])->name('reconnections.accept');
+});

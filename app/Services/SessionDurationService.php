@@ -26,7 +26,7 @@ class SessionDurationService
             'limit_seconds' => self::MAX_MINUTES * 60,
             'message' => $session->auto_completed ? 'The 90-minute session limit has been reached.' : 'This session has ended.',
             'warning' => $session->start_time && now()->gte($session->start_time->copy()->addMinutes(85)),
-            'seeker_redirect' => '/session/evaluation',
+            'seeker_redirect' => $session->completion_reason === 'connection_handoff' ? '/session/chat' : '/session/evaluation',
             'helper_redirect' => '/helper/session/'.$session->id.'/notes',
         ];
     }
