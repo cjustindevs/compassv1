@@ -303,7 +303,7 @@
                                         {{ $nextFollowUp ? \Carbon\Carbon::parse($nextFollowUp)->format('M d, Y') : '—' }}
                                     </td>
                                     <td data-label="">
-                                        <a href="{{ route('professional.cases.show', $case->id) }}" class="btn-outline open-btn">
+                                        <a href="{{ route('professional.cases.show', $case->case_reference) }}" class="btn-outline open-btn">
                                             <i class="fas fa-arrow-right mr-1"></i> Open
                                         </a>
                                     </td>

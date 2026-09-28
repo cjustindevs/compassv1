@@ -281,7 +281,7 @@
             @endif
 
             @if(in_array($referral->status, \App\Models\Referral::ACTIVE_STATUSES, true))
-                <a href="{{ route('professional.cases.show', $referral->id) }}" class="btn-outline">
+                <a href="{{ route('professional.cases.show', $referral->case_reference) }}" class="btn-outline">
                     <i class="fas fa-folder-open mr-1"></i> Open Case File
                 </a>
             @endif

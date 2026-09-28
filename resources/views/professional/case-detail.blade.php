@@ -394,7 +394,7 @@
                             <h3>Add Intervention Note</h3>
                         </div>
 
-                        <form method="POST" action="{{ route('professional.cases.notes', $case->id) }}" class="space-y-4">
+                        <form method="POST" action="{{ route('professional.cases.notes', $case->case_reference) }}" class="space-y-4">
                             @csrf
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Intervention Type <span class="text-red-500">*</span></label>
@@ -454,7 +454,7 @@
             </div>
             <p class="text-gray-500 text-sm mb-4">Change the status of case #{{ $case->id }}. The adviser will be notified when a case is completed or closed.</p>
 
-            <form method="POST" action="{{ route('professional.cases.status', $case->id) }}">
+            <form method="POST" action="{{ route('professional.cases.status', $case->case_reference) }}">
                 @csrf
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">New Status <span class="text-red-500">*</span></label>
