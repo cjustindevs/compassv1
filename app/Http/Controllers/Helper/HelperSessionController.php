@@ -168,9 +168,19 @@ class HelperSessionController extends Controller
     /**
      * Route: helper.session.chat → delegate to the chat controller.
      */
-    public function chat(int $id)
+    public function chat(string $id)
     {
-        return $this->chat->show($id);
+        abort_unless(Auth::user()?->role === 'helper' && Auth::user()?->is_active, 403);
+        if (ctype_digit($id) && strlen($id) < 20) {
+            $session = Session::where('helper_id', Auth::user()->helper?->id)->findOrFail($id);
+            return redirect()->route('helper.session.chat', bin2hex(\Illuminate\Support\Facades\Crypt::encryptString((string)$session->id)));
+        }
+        try {
+            $decoded = \Illuminate\Support\Facades\Crypt::decryptString(hex2bin($id));
+            abort_unless(ctype_digit($decoded),404);
+        } catch (\Throwable $e) { abort(404); }
+        Session::where('helper_id', Auth::user()->helper?->id)->findOrFail((int)$decoded);
+        return $this->chat->show((int)$decoded);
     }
 
     /**
