@@ -439,6 +439,24 @@ class ReferralDeliveryWorkflowTest extends TestCase
             ->assertOk()->assertSee($referral->professional->full_name)
             ->assertSee('Video call link to follow.')
             ->assertSee('Asia/Manila');
+        $appointment = $referral->appointments()->latest('id')->firstOrFail();
+        $this->get(route('seeker.referral.support',$referral))->assertOk()->assertSee('Confirm appointment');
+        $this->post(route('seeker.appointment.respond',$appointment),['decision'=>'confirmed'])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame('confirmed',$appointment->fresh()->seeker_response);
+        $count = \App\Models\Notification::where('title','Appointment confirmed')->count();
+        $this->post(route('seeker.appointment.respond',$appointment),['decision'=>'confirmed'])->assertRedirect();
+        $this->assertSame($count,\App\Models\Notification::where('title','Appointment confirmed')->count());
+        $this->actingAs(User::factory()->create(['role'=>'seeker','is_active'=>true]))
+            ->post(route('seeker.appointment.respond',$appointment),['decision'=>'reschedule_requested'])->assertForbidden();
+        $this->actingAs($seekerUser);
+        $appointment->update(['starts_at'=>now()->addMinutes(30),'ends_at'=>now()->addMinutes(90)]);
+        app(\App\Services\ReferralAppointmentService::class)->sendReminders();
+        app(\App\Services\ReferralAppointmentService::class)->sendReminders();
+        $this->assertSame(1,\App\Models\Notification::where('title','Appointment reminder')->where('user_account_id',$seekerUser->id)->count());
+        $this->post(route('seeker.appointment.respond',$appointment),['decision'=>'reschedule_requested'])->assertRedirect();
+        $this->assertSame('reschedule_requested',$appointment->fresh()->seeker_response);
+        $this->assertSame('scheduled',$appointment->fresh()->status);
+
     }
 
     public function test_adviser_cannot_request_clarification_when_no_helper_can_respond(): void

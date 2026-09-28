@@ -108,6 +108,7 @@
         <button type="button" id="referralDismiss" class="rv-btn" hidden>Continue</button>
     </div>
 </dialog>
+<section id="professionalSupportCard" hidden style="padding:16px;border:1px solid #d7e8dd;border-radius:14px;background:#f3fbf6;margin:12px 0"><strong>Your Professional Support</strong><p id="professionalSupportStatus" style="margin:8px 0"></p><button type="button" id="chatSupportOpen" style="padding:10px;border-radius:8px;background:#048948;color:white">View support details</button></section>
 <button type="button" id="chatReferralOpen" hidden>Review referral</button>
 <dialog id="chatIdentityDialog" style="width:min(900px,96vw);height:92dvh;padding:0;border:0;border-radius:18px;margin:auto"><button type="button" onclick="this.closest('dialog').close()" style="position:absolute;right:14px;top:8px;z-index:2">Close</button><iframe title="Identity disclosure" style="border:0;width:100%;height:100%"></iframe></dialog>
 <script>
@@ -142,6 +143,9 @@
         referral = data?.referral || null;
         if (!referral) return;
         document.getElementById('chatReferralOpen').hidden = !isSeeker;
+        const card = document.getElementById('professionalSupportCard');
+        card.hidden = !isSeeker || !referral.help_seeker_consent;
+        document.getElementById('professionalSupportStatus').textContent = (referral.professional_name ? referral.professional_name + ' ? ' : '') + (referral.appointment_time ? 'Appointment: ' + referral.appointment_time + ' Philippine Time.' : ['accepted','in_progress'].includes(referral.status) ? 'Referral accepted. View your appointment or scheduling updates.' : referral.professional_name ? 'Awaiting professional acceptance.' : 'Your Adviser is coordinating your referral.');
         const key = referral.id + ':' + referral.status + ':' + (data.consent?.decision ?? 'none');
         if (key === seen) return;
         seen = key;
@@ -186,7 +190,7 @@
                     ? 'Your helper recommended connecting you with a professional. Please review the referral consent below.'
                     : 'Referral status: ' + referral.status.replaceAll('_', ' ') + '.';
 
-        if (referral.help_seeker_consent && ['pending_professional','no_professional_available','accepted','in_progress'].includes(referral.status)) { openIdentity(); return; }
+        if (referral.help_seeker_consent && ['pending_professional','no_professional_available','accepted','in_progress'].includes(referral.status)) { if (!referral.has_identity) openIdentity(); return; }
         if (alreadyDecided || !isConsentRequest) {
             terms.hidden = true;
             acceptBtn.hidden = true;
@@ -254,6 +258,7 @@
         if (outside) dialog.close();
     });
 
+    document.getElementById('chatSupportOpen').addEventListener('click', () => { identityDialog.querySelector('iframe').src = referral.support_url; identityDialog.showModal(); });
     document.getElementById('chatReferralOpen').addEventListener('click', () => { seen = null; poll(); });
     poll();
     setInterval(poll, 5000);

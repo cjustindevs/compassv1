@@ -614,6 +614,10 @@ Route::get('/session/{session}/referral-prompt', function (Session $session) {
             'help_seeker_consent' => (bool) $referral->help_seeker_consent,
             'summary' => $referral->referral_reason,
             'consent_url' => route('referrals.consent-request', $referral),
+            'support_url' => route('seeker.referral.support', $referral),
+            'appointment_time' => $user->role === 'seeker' && $referral->help_seeker_consent ? $referral->appointments()->where('status','scheduled')->latest('id')->first()?->starts_at?->timezone('Asia/Manila')->format('M d, Y g:i A') : null,
+            'professional_name' => $user->role === 'seeker' && app(\App\Services\ConsentService::class)->valid($session->seeker, 'identity_disclosure', $referral->id) ? $referral->professional?->full_name : null,
+            'has_identity' => $user->role === 'seeker' && app(\App\Services\IdentityVaultService::class)->hasCurrentSubmission($referral),
             'identity_url' => route('identity.form', [$referral, 'embedded' => 1]),
             'recommendation_html' => $user->role === 'seeker' && $referral->approved_at ? view('partials.referral-recommendation', compact('referral'))->render() : null,
         ] : null,
@@ -652,3 +656,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/settings', [App\Http\Controllers\Admin\SettingsController::class, 'index'])->name('settings');
     Route::patch('/settings/preferences', [App\Http\Controllers\Admin\SettingsController::class, 'updatePreference'])->name('settings.preference.update');
 });
+
+Route::get('/seeker/referrals/{referral}/support', [\App\Http\Controllers\SeekerAppointmentController::class, 'show'])->middleware('auth')->name('seeker.referral.support');
+Route::post('/seeker/appointments/{appointment}/response', [\App\Http\Controllers\SeekerAppointmentController::class, 'respond'])->middleware('auth')->name('seeker.appointment.respond');

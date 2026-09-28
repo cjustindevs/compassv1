@@ -4,6 +4,33 @@ use App\Models\{Notification, PsychologyProfessional, Referral, ReferralAppointm
 use Illuminate\Support\Facades\{Auth, DB};
 use Illuminate\Support\Carbon;
 class ReferralAppointmentService {
+    public function respond(ReferralAppointment $appointment, string $decision): void {
+        abort_unless(Auth::user()?->is_active && Auth::user()->role === 'seeker' && Auth::user()->helpSeeker?->id === $appointment->referral->session->seeker_id,403);
+        DB::transaction(function () use ($appointment,$decision) {
+            $appointment=ReferralAppointment::lockForUpdate()->findOrFail($appointment->id);
+            $referral=Referral::lockForUpdate()->findOrFail($appointment->referral_id);
+            if (!in_array($decision,['confirmed','reschedule_requested'],true) || $appointment->status !== 'scheduled' || !$appointment->starts_at->isFuture() || !$referral->help_seeker_consent || !in_array($referral->status,['accepted','in_progress'],true) || !app(ConsentService::class)->valid($referral->session->seeker,'referral',$referral->id)) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['decision'=>'This appointment is no longer available for a response. Refresh the referral details.']);
+            }
+            if ($appointment->seeker_response === $decision) return;
+            $appointment->update(['seeker_response'=>$decision,'responded_at'=>now()]);
+            SupportAudit::record('appointment_seeker_response',$appointment,['decision'=>$decision]);
+            foreach (array_unique(array_filter([$referral->professional?->user_account_id,$referral->adviser?->user_account_id])) as $recipient) {
+                Notification::create(['user_account_id'=>$recipient,'title'=>$decision==='confirmed' ? 'Appointment confirmed' : 'New schedule requested','message'=>'The seeker responded to an appointment. Open the referral to review.','notification_type'=>'referral','link'=>$recipient===$referral->professional?->user_account_id ? '/professional/referral/'.$referral->id : '/adviser/referral/'.$referral->id]);
+            }
+        });
+    }
+    public function sendReminders(): void {
+        ReferralAppointment::where('status','scheduled')->where('seeker_response','confirmed')->whereNull('reminded_at')->whereBetween('starts_at',[now(),now()->addHour()])->eachById(function ($row) {
+            DB::transaction(function () use ($row) {
+                $appointment=ReferralAppointment::lockForUpdate()->findOrFail($row->id);
+                $referral=$appointment->referral;
+                if ($appointment->reminded_at || $appointment->status !== 'scheduled' || $appointment->seeker_response !== 'confirmed' || !$appointment->starts_at->isFuture() || !$referral->help_seeker_consent || !in_array($referral->status,['accepted','in_progress'],true) || !app(ConsentService::class)->valid($referral->session->seeker,'referral',$referral->id)) return;
+                Notification::create(['user_account_id'=>$referral->session->seeker->user_account_id,'title'=>'Appointment reminder','message'=>'Your confirmed appointment starts within an hour. Open the appointment details.','notification_type'=>'referral','link'=>'/seeker/referrals?appointment='.$appointment->id]);
+                $appointment->update(['reminded_at'=>now()]);
+            });
+        });
+    }
     public function schedule(Referral $referral, array $data): ReferralAppointment {
         abort_unless(Auth::user()?->is_active && Auth::user()->role === 'professional',403);
         $professionalId = Auth::user()->psychologyProfessional?->id;
@@ -23,7 +50,7 @@ class ReferralAppointmentService {
                 ->where('referral_id','!=',$referral->id)->where('starts_at','<',$end)->where('ends_at','>',$start)->exists(),422,'This time overlaps another appointment.');
             if ($current) $current->update(['status'=>'rescheduled']);
             $appointment = ReferralAppointment::create(['referral_id'=>$referral->id,'professional_id'=>$professionalId,'created_by'=>Auth::id(),
-                'starts_at'=>$start,'ends_at'=>$end,'meeting_details'=>$data['meeting_details'],'replaces_id'=>$current?->id]);
+                'starts_at'=>$start,'ends_at'=>$end,'meeting_format'=>$data['meeting_format'] ?? null,'meeting_details'=>$data['meeting_details'],'replaces_id'=>$current?->id]);
             SupportAudit::record('referral_appointment_scheduled',$appointment,['referral_id'=>$referral->id,'replaces_id'=>$current?->id]);
             // The helper raised the referral and coordinates with the seeker, so
             // they must be told when a professional books or moves a session.
