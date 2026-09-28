@@ -483,8 +483,9 @@ class HelperModuleTest extends TestCase
         $response = $this->actingAs($this->helperUser)
             ->get(route('helper.session.chat', ['id' => $session->id]));
 
-        $response->assertOk();
-        $response->assertSee('Live Chat');
+        $response->assertRedirect();
+        $this->assertStringNotContainsString('/session/'.$session->id.'/chat', $response->headers->get('Location'));
+        $this->get($response->headers->get('Location'))->assertOk()->assertSee('Live Chat');
     }
 
     public function test_chat_index_route_never_returns_404(): void
