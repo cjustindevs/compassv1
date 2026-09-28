@@ -356,12 +356,7 @@
                                 <a href="{{ route('professional.referral.show', $referral->id) }}" class="btn-outline">
                                     <i class="fas fa-eye mr-1"></i> View
                                 </a>
-                                <form method="POST" action="{{ route('professional.referral.accept', $referral->id) }}">
-                                    @csrf
-                                    <button type="submit" class="btn-primary">
-                                        <i class="fas fa-check mr-1"></i> Accept
-                                    </button>
-                                </form>
+                                <a class="btn-primary" href="{{ route('professional.referral.show', $referral->id) }}#acceptSchedule">Schedule and accept</a>
                                 <button class="btn-danger" onclick="openDeclineModal({{ $referral->id }})">
                                     <i class="fas fa-times mr-1"></i> Decline
                                 </button>

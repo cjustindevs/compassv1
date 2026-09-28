@@ -473,9 +473,18 @@ class ReferralManagementService
         }, 3);
     }
 
-    public function acceptReferral(Referral $referral, PsychologyProfessional $professional): Referral
+    public function acceptReferral(Referral $referral, PsychologyProfessional $professional, array $appointment = []): Referral
     {
-        return DB::transaction(fn () => $this->recordAcceptance(Referral::lockForUpdate()->findOrFail($referral->id), $professional), 3);
+        $appointment = \Illuminate\Support\Facades\Validator::make($appointment, [
+            'starts_at'=>'required|date_format:Y-m-d\\TH:i', 'ends_at'=>'required|date_format:Y-m-d\\TH:i',
+            'meeting_format'=>'required|in:in_person,video,phone', 'meeting_details'=>'required|string|max:2000',
+        ])->validate();
+        return DB::transaction(function () use ($referral, $professional, $appointment) {
+            PsychologyProfessional::whereKey($professional->id)->lockForUpdate()->firstOrFail();
+            $accepted = $this->recordAcceptance(Referral::lockForUpdate()->findOrFail($referral->id), $professional);
+            app(ReferralAppointmentService::class)->schedule($accepted, $appointment);
+            return $accepted;
+        }, 3);
     }
 
     private function recordAcceptance(Referral $referral, PsychologyProfessional $professional): Referral

@@ -88,7 +88,7 @@ class ReferralWorkflowController extends Controller
         abort_unless($professional, 403, 'Professional profile required.');
         abort_unless($request->user()?->psychologyProfessional?->id === $professional->id && $referral->professional_id === $professional->id, 403);
 
-        $referral = $this->referrals->acceptReferral($referral, $professional);
+        $referral = $this->referrals->acceptReferral($referral, $professional, $request->only(['starts_at','ends_at','meeting_format','meeting_details']));
 
         return response()->json(['success' => true, 'status' => $referral->status]);
     }

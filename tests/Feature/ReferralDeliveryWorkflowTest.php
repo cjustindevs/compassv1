@@ -241,7 +241,7 @@ class ReferralDeliveryWorkflowTest extends TestCase
 
         $professional = $referral->fresh()->professional;
         $this->actingAs(User::find($professional->user_account_id))
-            ->post(route('professional.referral.accept', $referral->id))
+            ->post(route('professional.referral.accept', $referral->id), ['starts_at'=>now()->addDays(2)->format('Y-m-d\TH:i'),'ends_at'=>now()->addDays(2)->addHour()->format('Y-m-d\TH:i'),'meeting_format'=>'video','meeting_details'=>'Secure link provided by professional.'])
             ->assertRedirect();
         $this->assertSame(Referral::STATUS_ACCEPTED, $referral->fresh()->status);
 
@@ -414,7 +414,7 @@ class ReferralDeliveryWorkflowTest extends TestCase
         $referral->refresh();
 
         $professionalUser = User::find($referral->professional->user_account_id);
-        $this->actingAs($professionalUser)->post(route('professional.referral.accept', $referral->id));
+        $this->actingAs($professionalUser)->post(route('professional.referral.accept', $referral->id), ['starts_at'=>now()->addDays(2)->format('Y-m-d\TH:i'),'ends_at'=>now()->addDays(2)->addHour()->format('Y-m-d\TH:i'),'meeting_format'=>'video','meeting_details'=>'Secure link provided by professional.']);
 
         $this->actingAs($professionalUser)->post(route('professional.referral.appointment', $referral->id), [
             'starts_at' => now()->addDays(3)->format('Y-m-d\TH:i'),
@@ -531,6 +531,9 @@ class ReferralDeliveryWorkflowTest extends TestCase
 
         $professional = $referral->professional;
         $this->assertNotNull($professional, 'Adviser assignment should forward the referral to a professional.');
+        $this->actingAs($professional->user)->postJson(route('professional.referral.accept',$referral))->assertUnprocessable();
+        $this->assertSame(Referral::STATUS_PENDING_PROFESSIONAL,$referral->fresh()->status);
+
 
         $this->assertDatabaseHas('notifications', [
             'user_account_id' => $seekerUser->id,
@@ -540,7 +543,7 @@ class ReferralDeliveryWorkflowTest extends TestCase
             ->assertOk()->assertViewHas('pending', fn ($pending) => $pending->contains('id', $referral->id));
 
         $this->actingAs(User::find($professional->user_account_id))
-            ->post(route('professional.referral.accept', $referral->id))
+            ->post(route('professional.referral.accept', $referral->id), ['starts_at'=>now()->addDays(2)->format('Y-m-d\TH:i'),'ends_at'=>now()->addDays(2)->addHour()->format('Y-m-d\TH:i'),'meeting_format'=>'video','meeting_details'=>'Secure link provided by professional.'])
             ->assertRedirect();
 
         $this->assertSame(Referral::STATUS_ACCEPTED, $referral->fresh()->status);
@@ -564,7 +567,7 @@ class ReferralDeliveryWorkflowTest extends TestCase
         $referral->refresh();
 
         $professionalUser = User::find($referral->professional->user_account_id);
-        $this->actingAs($professionalUser)->post(route('professional.referral.accept', $referral->id));
+        $this->actingAs($professionalUser)->post(route('professional.referral.accept', $referral->id), ['starts_at'=>now()->addDays(2)->format('Y-m-d\TH:i'),'ends_at'=>now()->addDays(2)->addHour()->format('Y-m-d\TH:i'),'meeting_format'=>'video','meeting_details'=>'Secure link provided by professional.']);
 
         $payload = ['intervention_type' => 'session', 'notes' => 'Intervention note.'];
         $this->actingAs($professionalUser)->post(route('professional.cases.notes', $referral->id), $payload);

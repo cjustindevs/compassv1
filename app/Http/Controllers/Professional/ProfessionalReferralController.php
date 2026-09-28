@@ -78,7 +78,7 @@ class ProfessionalReferralController extends Controller
         return view('professional.referral-detail', compact('referral', 'sessionReports'));
     }
 
-    public function accept($id)
+    public function accept(Request $request, $id)
     {
         $professional = Auth::user()->psychologyProfessional;
 
@@ -86,7 +86,7 @@ class ProfessionalReferralController extends Controller
             ->where('status', Referral::STATUS_PENDING_PROFESSIONAL)
             ->findOrFail($id);
 
-        app(\App\Services\ReferralManagementService::class)->acceptReferral($referral, $professional);
+        app(\App\Services\ReferralManagementService::class)->acceptReferral($referral, $professional, $request->only(['starts_at','ends_at','meeting_format','meeting_details']));
 
         $alias = $referral->session?->seeker?->generated_alias ?? 'Anonymous';
 
