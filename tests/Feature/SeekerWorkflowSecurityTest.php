@@ -75,7 +75,7 @@ class SeekerWorkflowSecurityTest extends TestCase {
         $this->assertSame($adviser->id,$session->review_adviser_id);
         $this->assertTrue((bool)$session->requires_adviser_review);
         $this->actingAs($adviserUser)->get(route('adviser.screenings'))->assertOk()->assertSee('screening-'.$session->id,false);
-        $this->assertDatabaseHas('notifications',['user_account_id'=>$adviserUser->id,'link'=>'/adviser/screenings#screening-'.$session->id]);
+        $this->assertDatabaseHas('notifications',['user_account_id'=>$adviserUser->id,'link'=>'/adviser/emergencies']);
         $this->post(route('adviser.screenings.review',$session),['risk_level'=>'emergency','allow_peer_support'=>false,'reason'=>'Confirmed the recorded immediate safety indicators.','evidence_source'=>'Original screening responses'])->assertRedirect()->assertSessionHas('success');
         $this->assertDatabaseHas('screening_responses',['session_id'=>$session->id,'review_status'=>'reviewed','actor_id'=>$adviserUser->id]);
         $this->get(route('adviser.screenings'))->assertViewHas('sessions',fn($rows)=>!$rows->contains('id',$session->id));
@@ -185,14 +185,12 @@ class SeekerWorkflowSecurityTest extends TestCase {
         $this->assertIsString(app(HelperMatchingService::class)->manualAssign($session->queue,$other->id));
         $this->assertSame('waiting',$session->fresh()->session_status);
     }
-    public function test_seeker_can_cancel_a_waiting_request_idempotently(): void {
+    public function test_seeker_cannot_cancel_a_submitted_request(): void {
         $user=$this->seeker();$session=$this->queued($user);
-        $this->actingAs($user)->post(route('request.cancel',$session))->assertRedirect(route('seeker.requests'));
-        $this->assertSame('cancelled',$session->fresh()->session_status);
-        $this->assertSame('cancelled',$session->queue->fresh()->request_status);
-        $this->actingAs($user)->post(route('request.cancel',$session))->assertRedirect(route('seeker.requests'));
-        $this->assertSame('cancelled',$session->fresh()->session_status);
-        $this->assertDatabaseHas('audit_logs',['action'=>'request_cancelled']);
+        $this->actingAs($user)->post(route('request.cancel',$session))->assertForbidden();
+        $this->assertSame('waiting',$session->fresh()->session_status);
+        $this->assertSame('waiting',$session->queue->fresh()->request_status);
+        $this->assertDatabaseMissing('audit_logs',['action'=>'request_cancelled']);
     }
     public function test_manual_assignment_reports_explicit_shift_capacity_reason(): void {
         $user=$this->seeker();$session=$this->queued($user);$helper=$this->helper();

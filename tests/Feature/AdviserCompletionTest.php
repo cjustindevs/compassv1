@@ -85,6 +85,11 @@ class AdviserCompletionTest extends TestCase {
         $this->actingAs($user)->post(route('adviser.referral.approve',$r->id),['review_notes'=>'Reviewed the clarified supporting documentation.'])->assertRedirect();
         $this->assertSame('pending_consent',$r->fresh()->status);
         $this->assertFalse($r->fresh()->help_seeker_consent);
-        $this->assertDatabaseCount('supervision_record_versions',3);
+         $this->assertSame([
+            'Adviser requested clarification',
+            'Recommendation before clarification response',
+            'Helper clarification submitted',
+            'Adviser approved referral review',
+        ], \Illuminate\Support\Facades\DB::table('supervision_record_versions')->where('record_type', 'referrals')->where('record_id', $r->id)->orderBy('version')->pluck('reason')->all());
     }
 }

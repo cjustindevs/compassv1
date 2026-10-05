@@ -533,15 +533,7 @@
                                 <i class="fas fa-times mr-2"></i> Decline &amp; Stay in Queue
                             </button>
                         </form>
-                        <form method="POST" action="{{ route('request.cancel', $session) }}"
-                              data-confirm="Cancel this request?"
-                              data-confirm-message="Your request will close and leave the queue. Its history is retained."
-                              data-confirm-text="Cancel request">
-                            @csrf
-                            <button type="submit" class="btn-outline w-full">
-                                <i class="fas fa-ban mr-2"></i> Cancel This Request
-                            </button>
-                        </form>
+
                     </div>
                 </div>
 
@@ -607,15 +599,7 @@
                         </button>
                     </div>
                     <div class="mt-4">
-                        <form method="POST" action="{{ route('request.cancel', $session) }}"
-                              data-confirm="Cancel this request?"
-                              data-confirm-message="Your request will close and leave the queue. Its history is retained."
-                              data-confirm-text="Cancel request">
-                            @csrf
-                            <button type="submit" class="text-sm text-red-500 hover:text-red-700 font-medium underline">
-                                <i class="fas fa-ban mr-1"></i> Cancel This Request
-                            </button>
-                        </form>
+
                     </div>
                     <p class="text-xs text-gray-400 mt-3">
                         Leaving this page keeps your place in the queue — you can come back anytime.

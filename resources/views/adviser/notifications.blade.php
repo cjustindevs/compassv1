@@ -137,6 +137,7 @@
 @endpush
 
 @section('content')
+<a href="{{ route('notifications.archive') }}" class="inline-block mb-4 text-green-700 underline">Archived notifications</a>
 <div class="adviser-page-content">
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
@@ -224,14 +225,14 @@
                                         </form>
                                     @endif
                                     <form class="form-maximized" method="POST" action="{{ route('adviser.notifications.destroy', ['id' => $item->id]) }}"
-                                          data-confirm="Delete notification?"
+                                          data-confirm="Archive notification?"
                                           data-confirm-message="This notification will be permanently removed."
-                                          data-confirm-text="Delete"
+                                          data-confirm-text="Archive"
                                           data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn-outline" style="color:var(--red-500);border-color:#FECACA;">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="fas fa-box-archive"></i>
                                         </button>
                                     </form>
                                 </div>

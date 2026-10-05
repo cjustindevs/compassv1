@@ -310,16 +310,7 @@
                                         <i class="fas fa-arrow-up mr-1"></i> Escalate
                                     </button>
                                 </form>
-                                <form method="POST" action="{{ route('moderator.emergency.resolve', $incident->id) }}"
-                                      data-confirm="Resolve emergency?"
-                                      data-confirm-message="Mark this incident as resolved."
-                                      data-confirm-text="Resolve"
-                                      data-confirm-class="bg-green-600 hover:bg-green-700 focus:ring-green-500">
-                                    @csrf
-                                    <button type="submit" class="btn-resolve" {{ in_array($incident->status, ['resolved', 'closed']) ? 'disabled style=opacity:.35;cursor:not-allowed' : '' }}>
-                                        <i class="fas fa-check mr-1"></i> Resolve
-                                    </button>
-                                </form>
+
                             </div>
                         </div>
                     @empty

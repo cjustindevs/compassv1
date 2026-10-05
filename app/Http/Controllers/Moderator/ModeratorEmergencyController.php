@@ -100,14 +100,7 @@ class ModeratorEmergencyController extends Controller
 
     public function resolve(int $id): RedirectResponse
     {
-        $incident = IncidentReport::findOrFail($id);
-
-        $incident->update([
-            'status' => 'resolved',
-            'resolved_at' => now(),
-        ]);
-
-        return back()->with('success', 'Emergency case #' . $incident->id . ' marked as resolved.');
+        abort(403, 'Emergency resolution requires the responsible Adviser.');
     }
 
     public function stats(): JsonResponse

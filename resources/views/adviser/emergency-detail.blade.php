@@ -32,4 +32,13 @@
             @endif
         </div>
 </div>
+@if(!in_array($alert->status,['resolved','closed']))
+<div class="bg-white rounded-2xl border p-5 mt-4">
+<h2 class="font-semibold">Return escalation to Helper</h2>
+@if($alert->review_decision === 'rejected')<p>Returned for follow-up: {{ $alert->rejection_reason }}</p>@else
+<p>Record why the escalation is rejected. This does not resolve the emergency or remove its history.</p>
+<form method="POST" action="{{ route('adviser.emergencies.action',$alert->id) }}">@csrf<input type="hidden" name="action" value="rejected"><label for="rejectionReason">Reason and next steps</label><textarea id="rejectionReason" name="notes" required maxlength="2000" class="block w-full rounded-lg border-gray-300"></textarea><button type="submit" class="mt-3 px-4 py-2 rounded-lg bg-green-600 text-white">Return to Helper</button></form>
+@endif
+</div>
+@endif
 @endsection

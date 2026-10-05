@@ -6,6 +6,13 @@
 @section('subheading', $session->seeker->generated_alias ?? 'Seeker')
 
 @section('content')
+@php
+    $returnedEmergency = $session->emergencyAlerts()->where('review_decision','rejected')->latest('id')->first();
+@endphp
+@if($returnedEmergency)
+<div class="rounded-xl border border-amber-200 bg-amber-50 p-4 mb-4" role="status"><h2 class="font-semibold">Emergency escalation returned</h2><p>{{ $returnedEmergency->rejection_reason }}</p><p>Continue the approved support protocol. This emergency has not been marked resolved.</p></div>
+@endif
+
 
         <a href="{{ route('helper.cases') }}" class="btn btn-secondary btn-sm mb-4"><i class="fas fa-arrow-left"></i> Back to cases</a>
 

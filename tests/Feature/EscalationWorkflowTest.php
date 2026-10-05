@@ -46,11 +46,11 @@ class EscalationWorkflowTest extends TestCase
 
         $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $seeker, ['reason' => 'Immediate threat']);
 
-        $this->assertDatabaseHas('emergency_alerts', ['id' => $alert->id, 'status' => 'pending', 'professional_referred' => false]);
+        $this->assertDatabaseHas('emergency_alerts', ['id' => $alert->id, 'status' => 'notified', 'professional_referred' => false]);
         $this->assertDatabaseHas('counseling_sessions', ['id' => $session->id, 'risk_level' => 'emergency', 'escalation_required' => true]);
         $this->assertDatabaseHas('help_seekers', ['id' => $seeker->id, 'current_risk_level' => 'emergency', 'has_emergency' => true]);
         $this->assertDatabaseHas('identity_vault', ['seeker_id' => $seeker->id, 'emergency_override' => false]);
-        $this->assertDatabaseHas('referrals', ['session_id' => $session->id, 'priority_level' => 'emergency']);
+        $this->assertDatabaseMissing('referrals', ['session_id' => $session->id]);
         $this->assertGreaterThanOrEqual(2, Notification::where('notification_type', 'emergency')->count());
     }
 
@@ -79,7 +79,7 @@ class EscalationWorkflowTest extends TestCase
         $this->mock(\App\Services\IdentityVaultService::class, function ($mock) { $mock->shouldReceive('hasCurrentSubmission')->once()->andReturn(true); });
         $referral = $service->forwardToProfessional($referral);
         $this->actingAs($professional->user);
-        $referral = $service->acceptReferral($referral, $professional);
+        $referral = $service->acceptReferral($referral, $professional, ['starts_at'=>now('Asia/Manila')->addDay()->format('Y-m-d\TH:i'),'ends_at'=>now('Asia/Manila')->addDay()->addHour()->format('Y-m-d\TH:i'),'meeting_format'=>'video','meeting_details'=>'Open your secure appointment page.']);
         $this->assertSame(Referral::STATUS_ACCEPTED, $referral->status);
 
         $referral = $service->updateReferralOutcome($referral, ['status' => Referral::STATUS_COMPLETED, 'outcome' => 'Care transferred']);

@@ -101,3 +101,7 @@
 </aside>
 
 @include('components.confirmation-modal')
+
+@once
+    @include('partials.emergency-notice')
+@endonce

@@ -10,8 +10,13 @@ class ConcernCategory extends Model
 
     protected $fillable = [
         'concern_name',
-        'description'
+        'description',
+        'is_active'
     ];
+
+    protected $casts = ['is_active' => 'boolean'];
+
+    public function scopeActive($query) { return $query->where('is_active', true); }
 
     public function sessions()
     {

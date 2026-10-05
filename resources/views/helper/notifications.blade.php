@@ -6,6 +6,7 @@
 @section('subheading', 'Stay up to date with assignments, evaluations, and reminders.')
 
 @section('content')
+<a href="{{ route('notifications.archive') }}" class="inline-block mb-4 text-green-700 underline">Archived notifications</a>
 
     <div class="card">
         <div class="card-header">

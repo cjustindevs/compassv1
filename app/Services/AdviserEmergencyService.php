@@ -7,8 +7,12 @@ class AdviserEmergencyService {
         DB::transaction(function() use($alert,$action,$notes) {
             $alert=EmergencyAlert::lockForUpdate()->findOrFail($alert->id);
             app(AdviserScope::class)->emergency($alert);
-            abort_unless(in_array($action,['acknowledged','instruction','coordination','resolved'],true) && trim($notes)!=='' && mb_strlen($notes)<=2000,422);
+            abort_unless(in_array($action,['acknowledged','instruction','coordination','resolved','rejected'],true) && trim($notes)!=='' && mb_strlen($notes)<=2000,422);
             abort_if(in_array($alert->status,['resolved','closed']),409,'This emergency review is already terminal.');
+            abort_if($action==='rejected' && $alert->review_decision==='rejected',409,'This escalation was already returned to the Helper.');
+            if($action==='rejected') {
+                $alert->forceFill(['review_decision'=>'rejected','rejection_reason'=>$notes,'rejected_by'=>auth()->id(),'rejected_at'=>now()])->save();
+            }
             if(!$alert->acknowledged_at) {
                 $alert->forceFill(['acknowledged_at'=>now(),'acknowledged_by'=>auth()->id()])->save();
                 $this->append($alert,'acknowledged',$action==='acknowledged' ? $notes : 'Acknowledged when recording the first Adviser action.');

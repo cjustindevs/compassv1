@@ -35,9 +35,9 @@ class HelperEligibilityService
             if (! \App\Models\HelperSchedule::coveringShiftFor($helper->id)) {
                 $reasons[] = 'You are not on an official duty shift.';
             }
-            if (! $helper->getCurrentReadiness()) {
-                $reasons[] = 'A current passed readiness check is required.';
-            }
+        }
+        if (! ($readiness = $helper->getCurrentReadiness()) || $readiness->assessment_result !== 'ready') {
+            $reasons[] = 'A current passed readiness check is required.';
         }
         if (! $activating && ! $relaxed && $helper->availability !== 'available') {
             $reasons[] = 'Availability is not set to Available.';

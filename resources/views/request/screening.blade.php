@@ -641,7 +641,7 @@
                     <!-- Custom Concern (appears when "Others" selected) -->
                     <div id="customConcernContainer" class="mt-3 hidden">
                         <label class="form-label" for="custom_concern">Please specify your concern</label>
-                        <input type="text" id="custom_concern" name="custom_concern" class="form-input" placeholder="Type your concern..." maxlength="100">
+                        <input type="text" id="custom_concern" name="custom_concern" class="form-input" placeholder="Type your concern..." maxlength="255">
                         @error('custom_concern')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -804,7 +804,7 @@
             const customConcernInput = document.getElementById('custom_concern');
 
             function isOthers(option) {
-                return option && option.text.trim().toLowerCase() === 'others';
+                return option && ['other','others'].includes(option.text.trim().toLowerCase());
             }
 
             concernSelect.addEventListener('change', function() {

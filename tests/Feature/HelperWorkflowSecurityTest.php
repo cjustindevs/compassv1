@@ -182,7 +182,7 @@ class HelperWorkflowSecurityTest extends TestCase
     {
         $helper = $this->helper();
         $session = $this->supportSession($helper, 'helper_assigned');
-        $this->get(route('helper.session.chat', $session->id))->assertRedirect(route('helper.cases'));
+        $this->get(route('helper.session.chat', bin2hex(\Illuminate\Support\Facades\Crypt::encryptString((string) $session->id))))->assertRedirect(route('helper.cases'));
         $this->post(route('helper.session.start', $session->id))
             ->assertRedirect(route('helper.session.pre-assessment', $session->id))
             ->assertSessionHas('error');
@@ -209,7 +209,7 @@ class HelperWorkflowSecurityTest extends TestCase
         $this->assertSame('active', $session->session_status);
         $this->assertNotNull($session->start_time);
 
-        $this->get(route('helper.session.chat', $session->id))->assertOk();
+        $this->get(route('helper.session.chat', bin2hex(\Illuminate\Support\Facades\Crypt::encryptString((string) $session->id))))->assertOk();
     }
 
     public function test_recommendation_expiry_is_scheduled_and_get_is_read_only(): void

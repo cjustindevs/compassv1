@@ -12,6 +12,11 @@ class AdviserReportController extends Controller {
         $data['avgResponseTime']=$data['metrics']['response_minutes']===null ? 'No data' : $data['metrics']['response_minutes'].'m';
         return view('adviser.reports',$data);
     }
+    public function analytics(Request $request, AdviserAnalytics $analytics) {
+        $filters=$analytics->filters($request);$data=$analytics->report($filters);
+        $data['categories']=ConcernCategory::orderBy('concern_name')->get();
+        return view('adviser.analytics',$data);
+    }
     public function export(Request $request, AdviserAnalytics $analytics) {
         $filters=$analytics->filters($request); $data=$analytics->report($filters);
         $sessions=$analytics->sessions($filters)->with(['helper','concern','evaluation'])->orderBy('id')->get();

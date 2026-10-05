@@ -406,6 +406,7 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
 
     // Reports
     Route::get('/reports', [AdviserReportController::class, 'index'])->name('reports');
+    Route::get('/analytics', [AdviserReportController::class, 'analytics'])->name('analytics');
     Route::get('/reports/export', [AdviserReportController::class, 'export'])->name('reports.export');
 
     // Emergency Management
@@ -647,6 +648,7 @@ Route::middleware(['auth', 'role:helper'])->group(function () {
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::post('/users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
     Route::get('/roles-permissions', RolePermissionController::class)->name('roles-permissions');
     Route::get('/resource-library', ResourceLibraryController::class)->name('resource-library');
     Route::get('/audit-logs', AuditLogController::class)->name('audit-logs');
@@ -669,3 +671,16 @@ Route::middleware('auth')->group(function () {
  Route::post('/reconnections/{incident}/offer', [\App\Http\Controllers\SessionReconnectionController::class,'offer'])->name('reconnections.offer');
  Route::post('/reconnections/{incident}/accept', [\App\Http\Controllers\SessionReconnectionController::class,'accept'])->name('reconnections.accept');
 });
+
+Route::middleware('auth')->group(function () {
+ Route::get('/concerns/manage', [\App\Http\Controllers\ConcernCategoryController::class,'index'])->name('concerns.manage');
+ Route::post('/concerns/manage', [\App\Http\Controllers\ConcernCategoryController::class,'save'])->name('concerns.store');
+ Route::patch('/concerns/manage/{category}', [\App\Http\Controllers\ConcernCategoryController::class,'save'])->name('concerns.update');
+});
+
+Route::get('/emergency-notice', [\App\Http\Controllers\EmergencyNoticeController::class,'next'])->middleware('auth')->name('emergency-notice.next');
+Route::post('/emergency-notice/dismiss', [\App\Http\Controllers\EmergencyNoticeController::class,'dismiss'])->middleware('auth')->name('emergency-notice.dismiss');
+
+Route::post('/helper/duty', [\App\Http\Controllers\Helper\HelperCalendarController::class,'declareDuty'])->middleware('auth')->name('helper.duty.declare');
+
+Route::get('/notification-archive', [\App\Http\Controllers\NotificationArchiveController::class,'index'])->middleware('auth')->name('notifications.archive');

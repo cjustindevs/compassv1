@@ -210,8 +210,8 @@
                         <form method="POST" action="{{ route('moderator.notifications.destroy', $notification->id) }}">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn-ghost" title="Delete">
-                                <i class="fas fa-trash"></i>
+                            <button type="submit" class="btn-ghost" title="Archive">
+                                <i class="fas fa-box-archive"></i>
                             </button>
                         </form>
                     </div>

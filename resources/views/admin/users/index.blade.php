@@ -36,6 +36,7 @@
         </div>
     </header>
 
+    @error('account')<div class="admin-flash" role="alert">{{ $message }}</div>@enderror
     @if (session('success'))
         <div class="admin-flash admin-flash-success" role="status">
             <x-admin.icon name="check-circle" :size="18" />
@@ -151,6 +152,7 @@
                                             type="button"
                                             role="menuitem"
                                             data-deactivate-user
+                                            data-deactivate-url="{{ route('admin.users.deactivate',$user['id']) }}"
                                             data-user-name="{{ $user['name'] }}"
                                         >
                                             <x-admin.icon name="user-minus" :size="16" /> Deactivate user
@@ -280,7 +282,7 @@
     <x-admin.dialog
         id="deactivate-user-dialog"
         title="Deactivate user?"
-        description="This action will require a reviewed backend authorization flow before it can change an account."
+        description="Accounts with protected Helper obligations cannot be deactivated."
         size="small"
     >
         <div class="admin-dialog-body">
@@ -288,7 +290,7 @@
         </div>
         <footer class="admin-dialog-footer">
             <button class="admin-button admin-button-secondary" type="button" data-dialog-close>Cancel</button>
-            <button class="admin-button admin-button-danger" type="button" data-confirm-deactivate>Confirm deactivation</button>
+            <form method="POST" data-deactivate-form>@csrf<button class="admin-button admin-button-danger" type="submit">Confirm deactivation</button></form>
         </footer>
     </x-admin.dialog>
 </x-admin.layout>

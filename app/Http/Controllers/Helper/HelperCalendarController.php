@@ -69,6 +69,22 @@ class HelperCalendarController extends Controller
         ]);
     }
 
+    public function declareDuty(Request $request)
+    {
+        abort_unless($request->user()?->is_active && $request->user()->role === 'helper' && $request->user()->helper,403);
+        $data=$request->validate(['date'=>['required','date_format:Y-m-d','after_or_equal:'.now('Asia/Manila')->toDateString()]]);
+        $helper=$request->user()->helper;
+        \Illuminate\Support\Facades\DB::transaction(function()use($helper,$data){
+            $helper=\App\Models\Helper::lockForUpdate()->findOrFail($helper->id);
+            $readiness=$helper->getCurrentReadiness();
+            if(!$readiness || $readiness->assessment_result!=='ready') throw \Illuminate\Validation\ValidationException::withMessages(['date'=>'Complete and pass your readiness check before declaring duty.']);
+            $shift=app(\App\Services\HelperShiftService::class)->scheduleDuty($helper,$data['date'],attributes:['created_by'=>auth()->id()]);
+            \App\Services\SupportAudit::record('helper_duty_declared',$shift);
+        });
+        app(\App\Services\HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh());
+        return back()->with('success','Duty date recorded. Your Moderator can now see it. Readiness must remain valid before assignment.');
+    }
+
     /**
      * Build the 6-week calendar grid cells.
      */

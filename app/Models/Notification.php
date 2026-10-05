@@ -19,11 +19,25 @@ class Notification extends Model
         'link',
         'status',
         'read_at',
+        'archived_at',
     ];
 
     protected $casts = [
         'read_at' => 'datetime',
+        'archived_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('unarchived', fn (Builder $query) => $query->whereNull('notifications.archived_at'));
+    }
+
+    public function archive(): void
+    {
+        $this->update(['archived_at' => now()]);
+        \Illuminate\Support\Facades\Cache::forget('unread_count_'.$this->user_account_id);
+        \App\Services\SupportAudit::record('notification_archived', $this);
+    }
 
     public function user(): BelongsTo
     {

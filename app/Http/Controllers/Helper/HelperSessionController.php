@@ -349,18 +349,15 @@ class HelperSessionController extends Controller
             'immediate_action' => 'nullable|string|max:500',
         ]);
 
-        $incident = IncidentReport::where('session_id', $session->id)
-            ->where('incident_category', 'emergency_flag')
-            ->where('status', 'open')
-            ->lockForUpdate()
-            ->first();
-
-        if ($incident) {
-            $incident->forceFill([
-                'description' => $validated['description'],
-                'immediate_action' => $validated['immediate_action'] ?? $incident->immediate_action,
-            ])->save();
-        } else {
+        [$incident, $alert, $created] = \Illuminate\Support\Facades\DB::transaction(function () use ($session, $validated) {
+            $session = Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
+            $incident = IncidentReport::where('session_id', $session->id)
+                ->where('incident_category', 'emergency_flag')
+                ->whereIn('status', ['open', 'under_review', 'escalated'])
+                ->lockForUpdate()->first();
+            if ($incident) {
+                return [$incident, null, false];
+            }
             $incident = IncidentReport::create([
                 'session_id' => $session->id,
                 'user_account_id' => $session->seeker?->user_account_id,
@@ -370,30 +367,31 @@ class HelperSessionController extends Controller
                 'risk_level' => 'emergency',
                 'status' => 'open',
             ]);
+            $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $session->seeker, [
+                'reason' => $validated['description'], 'preserve_classification' => true,
+            ]);
+            return [$incident, $alert, true];
+        });
+
+        if (! $created) {
+            return back()->with('success', 'This emergency has already been reported. Your original report is preserved.');
         }
 
-        app(EmergencyEscalationService::class)->escalateEmergency($session, $session->seeker, ['reason' => 'Helper reported immediate safety concern', 'preserve_classification' => true]);
-
-        $this->notifyStaff(
-            ['moderator', 'adviser'],
-            ' Emergency flagged',
-            'Emergency flagged in session #'.$session->id.' by '.$helper->full_name.'. '.$validated['description'],
-            'emergency',
-            '/moderator/dashboard'
-        );
-
-        // Real-time alert for advisers
-        foreach (User::where('role', 'adviser')->pluck('id') as $adviserUserId) {
-            $this->broadcastSafely(new EmergencyTriggered($session, $incident, $adviserUserId));
+        // Only the assigned active Adviser receives this event. The escalation
+        // service has already persisted the staff notifications.
+        if ($adviserUser = $alert->adviser?->user) {
+            if ($adviserUser->is_active && $adviserUser->role === 'adviser') {
+                $this->broadcastSafely(new EmergencyTriggered($session, $incident, $adviserUser->id));
+            }
         }
 
         // Real-time minimal alert for moderators (no clinical/identity data).
-        foreach (User::where('role', 'moderator')->pluck('id') as $moderatorUserId) {
+        foreach (User::where('role', 'moderator')->where('is_active', true)->pluck('id') as $moderatorUserId) {
             $this->broadcastSafely(new ModeratorAlert(
                 $moderatorUserId,
                 'emergency',
                 'Emergency flagged',
-                'Emergency flagged in session #'.$session->id,
+                'An emergency requires authorized review.',
                 '/moderator/emergency',
                 [
                     'session_id' => $session->id,
@@ -415,7 +413,7 @@ class HelperSessionController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Emergency flagged. A support coordinator has been notified. Incident #'.$incident->id.' recorded.');
+        return back()->with('success', 'Emergency recorded. The assigned support team has been notified.');
     }
 
     /**
@@ -567,7 +565,7 @@ class HelperSessionController extends Controller
             $this->broadcastSafely(new SessionEnded($session, 'helper'));
 
             // Let every moderator know in real time so their live session stats refresh.
-            foreach (User::where('role', 'moderator')->pluck('id') as $moderatorUserId) {
+            foreach (User::where('role', 'moderator')->where('is_active', true)->pluck('id') as $moderatorUserId) {
                 $this->broadcastSafely(new ModeratorAlert($moderatorUserId, 'session', 'Session ended', 'Session #'.$session->id.' has been completed.', '/moderator/sessions'));
             }
 

@@ -91,6 +91,7 @@ class IncidentReportService
     public function resolveIncident(IncidentReport $incident, array $data): IncidentReport
     {
         abort_unless(in_array(Auth::user()?->role,['adviser','moderator']) && Auth::user()?->is_active,403);
+        abort_if($incident->risk_level === 'emergency' || in_array($incident->incident_category,['emergency_flag','classification_emergency']),403,'Use the dedicated Adviser emergency review.');
         $incident->forceFill([
             'status' => 'resolved',
             'resolved_at' => now(),
@@ -108,6 +109,7 @@ class IncidentReportService
     public function closeIncident(IncidentReport $incident, array $data): IncidentReport
     {
         abort_unless(in_array(Auth::user()?->role,['adviser','moderator']) && Auth::user()?->is_active,403);
+        abort_if($incident->risk_level === 'emergency' || in_array($incident->incident_category,['emergency_flag','classification_emergency']),403,'Use the dedicated Adviser emergency review.');
         $incident->forceFill([
             'status' => 'closed',
             'closed_at' => now(),

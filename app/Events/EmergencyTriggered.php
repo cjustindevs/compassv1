@@ -48,12 +48,10 @@ class EmergencyTriggered implements ShouldBroadcastNow
         return [
             'session_id' => $this->session->id,
             'incident_id' => $this->incident->id,
-            'seeker_alias' => $this->session->seeker?->generated_alias ?? 'Anonymous',
-            'helper_name' => $this->session->helper?->full_name ?? 'A peer helper',
             'risk_level' => ucfirst($this->session->risk_level ?? 'Emergency'),
-            'description' => $this->incident->description,
+            'description' => 'An emergency requires your authorized review.',
             'created_at' => $this->incident->created_at?->diffForHumans(),
-            'link' => '/adviser/dashboard',
+            'link' => '/adviser/emergencies',
         ];
     }
 }

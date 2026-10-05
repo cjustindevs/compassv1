@@ -27,7 +27,6 @@ class EmergencyEscalationService
         $this->displayEmergencyResources($seeker, $alert);
         $this->sendEmergencyNotifications($seeker, $session, $alert);
         $this->flagEmergencyCase($session, $seeker, $context);
-        $this->initiateEmergencyReferral($seeker, $session, $alert, $context);
         $this->logEmergencyEscalation($alert);
 
         event(new EmergencyEscalationInitiated($alert, $seeker, $session));
@@ -70,12 +69,16 @@ class EmergencyEscalationService
         if ($adviser && !$adviser->user?->is_active) $adviser=null;
         if ($adviser) {
             $session->update(['review_adviser_id' => $adviser->id]);
-            $this->notifyUser($adviser->user_account_id, 'Emergency risk detected', 'Emergency risk detected for ' . $seeker->generated_alias . '. Review immediately.', '/adviser/screenings#screening-' . $session->id);
+            $this->notifyUser($adviser->user_account_id, 'Emergency risk detected', 'An emergency requires your authorized review.', '/adviser/emergencies');
             $alert->forceFill([
                 'adviser_id' => $adviser->id,
                 'adviser_notified' => true,
                 'adviser_notified_at' => now(),
             ])->save();
+        }
+
+        foreach (User::where('role', 'moderator')->where('is_active', true)->pluck('id') as $moderatorId) {
+            $this->notifyUser($moderatorId, 'Emergency requires attention', 'Open the emergency queue to coordinate support.', '/moderator/emergency');
         }
 
         SupportAudit::record('emergency_notification_attempted',$alert,['channel'=>'in_app','result'=>$adviser?'delivered':'no_active_adviser']);
@@ -135,33 +138,6 @@ class EmergencyEscalationService
             SupportAudit::record('classification_emergency_incident_created', $session, ['incident_category' => 'classification_emergency']);
         }
         // Escalation flags the case; only a separately authorized responder may open identity.
-    }
-
-    private function initiateEmergencyReferral(HelpSeeker $seeker, Session $session, EmergencyAlert $alert, array $context): void
-    {
-        $hasReferableConsent = false; // Consent to another referral never authorizes this one.
-
-        $referral = Referral::create([
-            'session_id' => $session->id,
-            'helper_id' => $session->helper_id,
-            'adviser_id' => $alert->adviser_id,
-            'professional_id' => null,
-            'priority_level' => Referral::PRIORITY_EMERGENCY,
-            'help_seeker_consent' => $hasReferableConsent,
-            'identity_disclosed' => false,
-            'referral_reason' => $context['reason'] ?? 'Emergency escalation referral',
-            'referral_date' => now(),
-            'consent_requested_at' => $hasReferableConsent ? null : now(),
-            'status' => Referral::STATUS_PENDING_ADVISER,
-            'professional_notified_at' => null,
-        ]);
-
-        $alert->forceFill([
-            'referral_id' => $referral->id,
-            'professional_referred' => false,
-            'professional_referred_at' => null,
-            'status' => 'pending',
-        ])->save();
     }
 
     private function logEmergencyEscalation(EmergencyAlert $alert): void

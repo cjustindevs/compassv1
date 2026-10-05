@@ -55,7 +55,7 @@ class AdviserEmergencyController extends Controller
     }
 
     public function action(Request $request,int $id): RedirectResponse {
-        $data=$request->validate(['action'=>'required|in:acknowledged,instruction,coordination','notes'=>'required|string|max:2000']);
+        $data=$request->validate(['action'=>'required|in:acknowledged,instruction,coordination,rejected','notes'=>'required|string|max:2000']);
         app(\App\Services\AdviserEmergencyService::class)->record(EmergencyAlert::findOrFail($id),$data['action'],$data['notes']);
         return back()->with('success','Emergency action recorded.');
     }

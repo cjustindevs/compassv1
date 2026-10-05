@@ -20,7 +20,7 @@ class ModeratorNotificationController extends Controller
         $notifications = Notification::where('user_account_id', Auth::id())
             ->ofType($typeFilter)
             ->latest()
-            ->paginate(25);
+            ->paginate(15)->withQueryString();
 
         $unreadCount = Notification::where('user_account_id', Auth::id())
             ->unread()
@@ -82,12 +82,12 @@ class ModeratorNotificationController extends Controller
     {
         Notification::where('user_account_id', Auth::id())
             ->findOrFail($id)
-            ->delete();
+            ->archive();
 
         if ($request->expectsJson()) {
-            return response()->json(['deleted' => true]);
+            return response()->json(['archived' => true]);
         }
 
-        return back()->with('success', 'Notification deleted.');
+        return back()->with('success', 'Notification archived.');
     }
 }

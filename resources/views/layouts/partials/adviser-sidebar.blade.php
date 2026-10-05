@@ -49,6 +49,7 @@
         </a>
 
         <div class="nav-section">Records</div>
+        <a href="{{ route('adviser.analytics') }}" class="nav-item {{ request()->routeIs('adviser.analytics') ? 'active' : '' }}"><i class="fas fa-chart-line" aria-hidden="true"></i><span class="nav-text">Analytics</span></a>
         <a href="{{ route('adviser.reports') }}" class="nav-item {{ request()->routeIs('adviser.reports*') ? 'active' : '' }}">
             <i class="fas fa-chart-bar"></i><span class="nav-text">Reports</span>
         </a>
@@ -64,6 +65,7 @@
         <a href="{{ route('adviser.resources') }}" class="nav-item {{ request()->routeIs('adviser.resources*') ? 'active' : '' }}">
             <i class="fas fa-book"></i><span class="nav-text">Resources</span>
         </a>
+<a href="{{ route('concerns.manage') }}" class="nav-item {{ request()->routeIs('concerns.*') ? 'active' : '' }}"><i class="fas fa-list" aria-hidden="true"></i><span class="nav-text">Areas of concern</span></a>
 
         <div class="nav-section">Account</div>
         <a href="{{ route('adviser.notifications') }}" class="nav-item {{ request()->routeIs('adviser.notifications*') ? 'active' : '' }}">
@@ -111,3 +113,7 @@
         </form>
     </div>
 </aside>
+
+@once
+    @include('partials.emergency-notice')
+@endonce

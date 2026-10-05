@@ -15,7 +15,7 @@ class RequestSupportController extends Controller {
         if ($session=$this->workflow->current($request->user())) return $this->next($session);
         $hotlines=EmergencyResource::published()->get();
         $selfHelp=SelfHelpResource::published()->orderByDesc('is_featured')->orderByDesc('views_count')->limit(4)->get();
-        return view('request.screening',['concerns'=>ConcernCategory::all(),'hotlines'=>$hotlines,'selfHelp'=>$selfHelp]);
+        return view('request.screening',['concerns'=>ConcernCategory::active()->orderBy('concern_name')->get(),'hotlines'=>$hotlines,'selfHelp'=>$selfHelp]);
     }
     public function processScreening(Request $request) {
         Gate::authorize('seeker-workflow');
@@ -24,9 +24,9 @@ class RequestSupportController extends Controller {
             $answers=$request->validate(ScreeningInstrument::rules());
             return $this->next($this->workflow->screen($request->user(),$answers));
         }
-        $data=$request->validate(\App\Services\CompactScreening::rules() + ['concern_id'=>'required|exists:concern_categories,id','description'=>'nullable|string|max:500','custom_concern'=>['nullable','string','max:255',Rule::requiredIf(function () use ($request) {
+        $data=$request->validate(\App\Services\CompactScreening::rules() + ['concern_id'=>['required',Rule::exists('concern_categories','id')->where('is_active',true)],'description'=>'nullable|string|max:500','custom_concern'=>['nullable','string','max:255',Rule::requiredIf(function () use ($request) {
             $concern=ConcernCategory::find($request->input('concern_id'));
-            return $concern && strtolower(trim($concern->concern_name)) === 'others';
+            return $concern && in_array(strtolower(trim($concern->concern_name)), ['other','others'], true);
         })]]);
         $answers=array_intersect_key($data,array_flip(\App\Services\CompactScreening::FIELDS));
         return $this->next($this->workflow->screen($request->user(),$answers,$data));
@@ -35,11 +35,11 @@ class RequestSupportController extends Controller {
         app(ConsentService::class)->requireGeneral($request->user());
         $session=$this->workflow->current($request->user());
         if (!$session || $session->workflow_state!=='concern_required') return $session?$this->next($session):redirect()->route('request.screening');
-        return view('request.concern',['concerns'=>ConcernCategory::whereIn('concern_name',['Stress','Family','Relationships','Academic','Health','Others'])->get(),'session'=>$session]);
+        return view('request.concern',['concerns'=>ConcernCategory::active()->get(),'session'=>$session]);
     }
     public function processConcern(Request $request) {
         if ($redirect = $this->requireConsentOrRedirect($request->user())) return $redirect;
-        $data=$request->validate(['concern_id'=>['required',\Illuminate\Validation\Rule::exists('concern_categories','id')->whereIn('concern_name',['Stress','Family','Relationships','Academic','Health','Others'])],'description'=>'nullable|string|max:500']);
+        $data=$request->validate(['concern_id'=>['required',\Illuminate\Validation\Rule::exists('concern_categories','id')->where('is_active',true)],'description'=>['nullable','string','max:500',Rule::requiredIf(fn()=>in_array(strtolower(trim(ConcernCategory::find($request->input('concern_id'))?->concern_name ?? '')),['other','others'],true))]]);
         return $this->next($this->workflow->concern($request->user(),$data));
     }
     public function preferences(Request $request) {
@@ -105,7 +105,7 @@ class RequestSupportController extends Controller {
         ]);
     }
     public function cancel(Request $request, Session $session) {
-        $this->workflow->cancel($request->user(),$session); return redirect()->route('seeker.requests')->with('success','Request cancelled.');
+        abort(403, 'Submitted support requests cannot be cancelled. Contact your support team for assistance.');
     }
     public function history(Request $request) {
         Gate::authorize('seeker-workflow');

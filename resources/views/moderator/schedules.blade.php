@@ -17,8 +17,15 @@
                 <h1 class="text-2xl font-bold text-gray-800">Schedule Management</h1>
                 <p class="text-sm text-gray-500">Plan helper duty dates and monitor readiness-based attendance.</p>
             </div>
-            <form method="GET" action="{{ route('moderator.schedules') }}" class="flex gap-2">
+            <form method="GET" action="{{ route('moderator.schedules') }}" class="flex flex-wrap items-center gap-2">
                 <input type="date" name="date" value="{{ $date }}" class="rounded-lg border-gray-300 text-sm">
+                <label for="availability" class="sr-only">Current availability</label>
+                <select id="availability" name="availability" class="rounded-lg border-gray-300 text-sm">
+                    <option value="">All availability</option>
+                    @foreach(['available'=>'Available now','busy'=>'Handling a session','offline'=>'Unavailable / off duty'] as $value=>$label)
+                        <option value="{{ $value }}" @selected(request('availability') === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
                 <button class="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">View</button>
             </form>
         </div>

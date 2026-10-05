@@ -21,7 +21,7 @@ class HelperNotificationController extends Controller
         abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $notifications = Notification::where('user_account_id', Auth::id())
             ->latest()
-            ->paginate(25);
+            ->paginate(15)->withQueryString();
 
         $unreadCount = Notification::where('user_account_id', Auth::id())
             ->unread()

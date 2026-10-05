@@ -308,7 +308,7 @@ class ReferralDeliveryWorkflowTest extends TestCase
         $referral = $session->referrals()->firstOrFail();
         $this->assertSame('Private factual summary.', $referral->recommendation_form['session_summary']);
         $this->assertStringNotContainsString('Private factual summary.', $referral->getRawOriginal('recommendation_form'));
-        $this->actingAs($helper->adviser->user)->get(route('adviser.referral.show', $referral))->assertOk()->assertSee('Private factual summary.');
+        $this->actingAs($helper->adviser->user)->get(route('adviser.referral.show', $referral->case_reference))->assertOk()->assertSee('Private factual summary.');
         $this->post(route('adviser.referral.reject', $referral), ['rejection_reason'=>'Please clarify the observations.'])->assertSessionHasNoErrors();
         $this->assertSame('pending_adviser', $referral->fresh()->status);
         $this->assertNotNull($referral->fresh()->clarification_requested_at);

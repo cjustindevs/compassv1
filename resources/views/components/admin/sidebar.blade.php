@@ -23,6 +23,7 @@
             ['key' => 'resource-library', 'label' => 'Resource Library', 'icon' => 'book-open', 'href' => route('admin.resource-library')],
         ],
         'System' => [
+            ['key'=>'concerns','label'=>'Areas of Concern','icon'=>'book-open','href'=>route('concerns.manage')],
             ['key' => 'audit-logs', 'label' => 'Audit Logs', 'icon' => 'file-text', 'href' => route('admin.audit-logs')],
             ['key' => 'backup-restore', 'label' => 'Backup & Restore', 'icon' => 'backup', 'href' => route('admin.backup-restore')],
             ['key' => 'system-health', 'label' => 'System Health', 'icon' => 'activity', 'href' => route('admin.system-health')],

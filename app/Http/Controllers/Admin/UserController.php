@@ -80,6 +80,26 @@ class UserController extends Controller
     /**
      * @return array<string, mixed>
      */
+    public function deactivate(Request $request, User $user): RedirectResponse
+    {
+        abort_unless($request->user()?->role==='admin' && $request->user()->is_active,403);
+        abort_if($request->user()->id===$user->id,403,'You cannot deactivate your own account.');
+        DB::transaction(function()use($user){
+            $user=User::lockForUpdate()->findOrFail($user->id);
+            if(!$user->is_active)return;
+            if($helper=$user->helper){
+                $helper=\App\Models\Helper::lockForUpdate()->findOrFail($helper->id);
+                $pendingDocumentation=$helper->sessions()->whereNotNull('start_time')->whereIn('session_status',['completed','evaluated','cancelled','no_show'])->where(fn($q)=>$q->whereNull('documentation_status')->orWhere('documentation_status','!=','submitted'))->exists();
+                $pendingReferral=\App\Models\Referral::where('helper_id',$helper->id)->whereNotIn('status',['completed','closed','cancelled','declined'])->exists();
+                $pendingEmergency=\App\Models\EmergencyAlert::whereHas('session',fn($q)=>$q->where('helper_id',$helper->id))->whereNotIn('status',['resolved','closed'])->exists();
+                if($helper->activeSessions()->exists() || $pendingDocumentation || $pendingReferral || $pendingEmergency)throw \Illuminate\Validation\ValidationException::withMessages(['account'=>'This Helper has an active assignment or pending documentation, referral, or emergency obligation. Complete or authorize a handoff before deactivation.']);
+            }
+            $user->update(['is_active'=>false]);
+            \App\Services\SupportAudit::record('account_deactivated',$user);
+        });
+        return back()->with('success','Account deactivated.');
+    }
+
     private function toDirectoryUser(User $user): array
     {
         $status = !$user->is_active ? 'offline' : ($user->role === 'helper'

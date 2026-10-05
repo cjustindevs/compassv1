@@ -524,12 +524,7 @@
                     <a href="{{ route('request.screening') }}" class="text-gray-500 hover:text-gray-700 transition font-medium text-sm">
                         <i class="fas fa-arrow-left mr-2"></i> Back
                     </a>
-                    <form method="POST" action="{{ route('request.cancel', $session) }}" data-confirm="Cancel this support request? Your history will be retained." class="inline">
-                        @csrf
-                        <button type="submit" class="text-gray-500 hover:text-red-600 transition font-medium text-sm">
-                            <i class="fas fa-times mr-1"></i> Cancel
-                        </button>
-                    </form>
+
                     <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                         <button type="submit" id="preferencesSubmit" class="btn-primary w-full sm:w-auto">
                             Find a Helper <i class="fas fa-arrow-right"></i>

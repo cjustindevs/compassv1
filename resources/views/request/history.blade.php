@@ -229,12 +229,7 @@
                                                 <a href="{{ route('request.matching') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-white text-green-700 border border-green-100 hover:bg-green-50 transition">
                                                     View request <i class="fas fa-arrow-right text-[10px]"></i>
                                                 </a>
-                                                <form method="POST" action="{{ route('request.cancel', $item) }}" onsubmit="return confirm('Cancel this request? It will close and leave the queue. Its history is retained.')">
-                                                    @csrf
-                                                    <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-white text-red-500 border border-red-100 hover:bg-red-50 transition">
-                                                        <i class="fas fa-ban"></i> Cancel
-                                                    </button>
-                                                </form>
+
                                             </div>
                                         @endif
                                     </td>

@@ -248,12 +248,9 @@
             const trigger = button.closest('[data-user-actions]')?.querySelector('[data-user-actions-trigger]');
             closeActionMenus();
             deactivateDialog.querySelector('[data-deactivate-name]').textContent = button.dataset.userName;
+            deactivateDialog.querySelector('[data-deactivate-form]').action = button.dataset.deactivateUrl;
             openDialog(deactivateDialog, trigger);
         });
-    });
-    document.querySelector('[data-confirm-deactivate]')?.addEventListener('click', () => {
-        deactivateDialog.close();
-        announce('Deactivation was not submitted. A protected backend authorization flow is still required.');
     });
 
     const csvInput = document.querySelector('[data-csv-input]');

@@ -18,12 +18,19 @@ class ModeratorScheduleController extends Controller
 {
     public function index(Request $request): View
     {
-        $date = Carbon::parse($request->get('date', now(config('app.schedule_timezone'))->toDateString()))->toDateString();
+        $request->validate(['date'=>'nullable|date_format:Y-m-d','availability'=>'nullable|in:available,offline,busy']);
+        $date = $request->input('date', now('Asia/Manila')->toDateString());
 
         $helpers = Helper::with('latestReadiness')->orderBy('first_name')->get();
 
+        if ($request->filled('availability')) {
+            $helpers=$helpers->filter(function($helper)use($request){$available=app(\App\Services\HelperEligibilityService::class)->allows($helper);$busy=$helper->activeSessions()->exists();return match($request->input('availability')){'available'=>$available,'busy'=>$busy,'offline'=>!$available&&!$busy};});
+        }
+
+        $helperIds=$helpers->pluck('id');
         $scheduleEvents = CalendarEvent::where('event_type', CalendarEvent::TYPE_MEETING)
             ->whereDate('event_date', $date)
+            ->when($request->filled('availability'),fn($q)=>$q->whereIn('helper_schedule_id',HelperSchedule::whereIn('helper_id',$helperIds)->select('id')))
             ->orderBy('start_time')
             ->get();
 
@@ -31,6 +38,7 @@ class ModeratorScheduleController extends Controller
         // is grouped per helper instead of assuming a single record.
         $shiftsByHelper = HelperSchedule::with('helper')
             ->forDate($date)
+            ->when($request->filled('availability'),fn($q)=>$q->whereIn('helper_id',$helperIds))
             ->orderByRaw('COALESCE(shift_start, \'00:00:00\')')
             ->orderBy('id')
             ->get()
@@ -38,6 +46,7 @@ class ModeratorScheduleController extends Controller
 
         $attendance = ReadinessCheck::with('helper')
             ->whereDate('assessment_date', $date)
+            ->when($request->filled('availability'),fn($q)=>$q->whereIn('helper_id',$helperIds))
             ->latest('assessment_date')
             ->get()
             ->map(function (ReadinessCheck $check) {

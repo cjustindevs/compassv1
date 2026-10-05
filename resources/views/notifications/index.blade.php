@@ -168,8 +168,8 @@
                                 <i class="fas fa-check"></i>
                             </button>
                         @endif
-                        <button class="delete-btn" onclick="deleteNotif({{ $notification->id }})" title="Delete">
-                            <i class="fas fa-trash"></i>
+                        <button class="delete-btn" onclick="deleteNotif({{ $notification->id }})" title="Archive">
+                            <i class="fas fa-box-archive"></i>
                         </button>
                     </div>
                 </div>
@@ -185,6 +185,7 @@
                     <p class="text-sm text-gray-500 mt-1">You'll see session updates, reminders, and system messages here.</p>
                 </div>
             @endforelse
+            {{ $notifications->links() }}
         </div>
 
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
@@ -247,7 +248,7 @@
         }
 
         async function deleteNotif(id) {
-            if (!confirm('Delete this notification?')) return;
+            if (!confirm('Archive this notification?')) return;
             await fetch('/notifications/' + id, {
                 method: 'DELETE',
                 headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }

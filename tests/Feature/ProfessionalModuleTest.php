@@ -178,7 +178,7 @@ class ProfessionalModuleTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Referral #' . $this->pendingReferral->id);
-        $response->assertSee('Accept Referral');
+        $response->assertSee('Schedule and accept');
     }
 
     public function test_professional_cannot_view_another_professionals_referral(): void
@@ -205,8 +205,17 @@ class ProfessionalModuleTest extends TestCase
 
     public function test_accept_referral_creates_notification_and_updates_status(): void
     {
+        $referral = $this->pendingReferral;
+        $seeker = $referral->session->seeker;
+        $this->actingAs($seeker->user);
+        app(\App\Services\ConsentService::class)->decide($seeker->user, 'referral', 'accepted', $referral->session_id, $referral->id);
         $response = $this->actingAs($this->professionalUser)
-            ->post(route('professional.referral.accept', $this->pendingReferral->id));
+            ->post(route('professional.referral.accept', $this->pendingReferral->id), [
+                'starts_at' => now('Asia/Manila')->addDay()->format('Y-m-d\TH:i'),
+                'ends_at' => now('Asia/Manila')->addDay()->addHour()->format('Y-m-d\TH:i'),
+                'meeting_format' => 'video',
+                'meeting_details' => 'Use the approved appointment link.',
+            ]);
 
         $response->assertRedirect(route('professional.referrals'));
 
@@ -281,7 +290,7 @@ class ProfessionalModuleTest extends TestCase
         $this->pendingReferral->update(['status' => Referral::STATUS_IN_PROGRESS]);
 
         $response = $this->actingAs($this->professionalUser)
-            ->get(route('professional.cases.show', $this->pendingReferral->id));
+            ->get(route('professional.cases.show', $this->pendingReferral->case_reference));
 
         $response->assertOk();
         $response->assertSee('Add Intervention Note');
@@ -291,7 +300,7 @@ class ProfessionalModuleTest extends TestCase
     public function test_case_detail_hidden_for_pending_referral(): void
     {
         $this->actingAs($this->professionalUser)
-            ->get(route('professional.cases.show', $this->pendingReferral->id))
+            ->get(route('professional.cases.show', $this->pendingReferral->case_reference))
             ->assertNotFound();
     }
 
@@ -307,7 +316,9 @@ class ProfessionalModuleTest extends TestCase
                 'follow_up_date' => now()->addWeek()->toDateString(),
             ]);
 
-        $response->assertRedirect(route('professional.cases.show', $this->pendingReferral->id));
+        $response->assertRedirect();
+        $reference = basename(parse_url($response->headers->get('Location'), PHP_URL_PATH));
+        $this->assertSame((string) $this->pendingReferral->id, \Illuminate\Support\Facades\Crypt::decryptString(hex2bin($reference)));
 
         $this->assertDatabaseHas('professional_notes', [
             'referral_id' => $this->pendingReferral->id,
@@ -343,7 +354,9 @@ class ProfessionalModuleTest extends TestCase
                 'status' => Referral::STATUS_COMPLETED,
             ]);
 
-        $response->assertRedirect(route('professional.cases.show', $this->pendingReferral->id));
+        $response->assertRedirect();
+        $reference = basename(parse_url($response->headers->get('Location'), PHP_URL_PATH));
+        $this->assertSame((string) $this->pendingReferral->id, \Illuminate\Support\Facades\Crypt::decryptString(hex2bin($reference)));
 
         $this->assertDatabaseHas('referrals', [
             'id' => $this->pendingReferral->id,
