@@ -6,9 +6,16 @@
 @section('subheading', 'Your scheduled sessions for ' . $monthName . '.')
 
 @section('content')
-<div class="bg-white rounded-2xl border p-5 mb-4"><h2 class="font-semibold">Declare a duty date</h2><p class="text-sm text-gray-500">Complete your readiness check first. Your duty date appears in the Moderator schedule.</p>
-@if($errors->any())<p role="alert">{{ $errors->first() }}</p>@endif
-<form method="POST" action="{{ route('helper.duty.declare') }}" class="flex flex-wrap items-end gap-3 mt-3">@csrf<label for="dutyDate">Duty date<input id="dutyDate" name="date" type="date" required min="{{ now('Asia/Manila')->toDateString() }}" class="block rounded-lg border-gray-300"></label><button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg">Declare duty</button></form></div>
+<section class="card mb-6" aria-labelledby="dutyTitle">
+    <div class="card-header"><h3 id="dutyTitle">Declare a duty date</h3><a class="link" href="{{ route('helper.readiness') }}">Readiness check</a></div>
+    <p class="text-sm text-gray-500 mb-4">Complete your readiness check before declaring duty. Your date will appear in the Moderator schedule.</p>
+    @if(session('success'))<div role="status" class="p-3 mb-4 rounded-lg bg-green-50 text-green-800">{{ session('success') }}</div>@endif
+    @error('date')<p role="alert" id="dutyDateError" class="text-sm text-red-600 mb-3">{{ $message }}</p>@enderror
+    <form method="POST" action="{{ route('helper.duty.declare') }}" class="flex flex-wrap items-end gap-3">@csrf
+        <div class="w-full sm:w-auto"><label for="dutyDate" class="block text-sm font-semibold mb-2">Duty date</label><input id="dutyDate" name="date" type="date" required min="{{ now('Asia/Manila')->toDateString() }}" value="{{ old('date', now('Asia/Manila')->toDateString()) }}" @error('date') aria-invalid="true" aria-describedby="dutyDateError" @enderror class="block w-full rounded-lg border-gray-300 text-sm px-3 py-2.5"></div>
+        <button type="submit" class="px-5 py-2.5 bg-green-600 text-white rounded-lg text-sm font-semibold w-full sm:w-auto">Declare duty</button>
+    </form>
+</section>
 
     <div class="card mb-6"><div class="card-header"><h3>Official duty schedule</h3><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><span class="pill">Philippine time</span>@if($adviser)<span class="pill">Adviser: {{ $adviser->full_name }}</span>@endif</div></div>
         @forelse($schedules as $shift)

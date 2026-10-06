@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'COMPASS – Reports & Analytics')
+@section('title', 'COMPASS - Analytics')
 
 @push('styles')
 <style>
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        .adviser-analytics { font-family: 'Inter', sans-serif; }
         body { background: #F8FBF9; }
 
         .stat-card {
