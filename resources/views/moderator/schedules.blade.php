@@ -40,14 +40,14 @@
                 <form method="POST" action="{{ route('moderator.schedules.store') }}" class="space-y-3">
                     @csrf
                     <select name="helper_id" required class="w-full rounded-lg border-gray-300 text-sm">
-                        <option value="">Select helper</option>
-                        @foreach($helpers as $helper)
-                            <option value="{{ $helper->id }}" @selected((string) old('helper_id') === (string) $helper->id)>{{ $helper->full_name }} · {{ ucfirst($helper->status) }}</option>
+                        <option value="">{{ $dutyHelpers->isEmpty() ? 'No online, ready Helpers' : 'Select an online, ready Helper' }}</option>
+                        @foreach($dutyHelpers as $helper)
+                            <option value="{{ $helper->id }}" @selected((string) old('helper_id') === (string) $helper->id)>{{ $helper->full_name }} · Online ? Ready</option>
                         @endforeach
                     </select>
                     <input type="date" name="event_date" value="{{ old('event_date', $date) }}" required class="w-full rounded-lg border-gray-300 text-sm">
                     <textarea name="description" rows="3" maxlength="500" class="w-full rounded-lg border-gray-300 text-sm" placeholder="Duty notes or assignment details">{{ old('description') }}</textarea>
-                    <button class="w-full px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">Add Duty Day</button>
+                    <button @disabled($dutyHelpers->isEmpty()) class="disabled:opacity-50 disabled:cursor-not-allowed w-full px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">Add Duty Day</button>
                 </form>
 
                 @if($shiftsByHelper->isNotEmpty())

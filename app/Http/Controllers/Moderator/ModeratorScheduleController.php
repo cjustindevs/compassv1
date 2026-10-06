@@ -21,13 +21,14 @@ class ModeratorScheduleController extends Controller
         $request->validate(['date'=>'nullable|date_format:Y-m-d','availability'=>'nullable|in:available,offline,busy']);
         $date = $request->input('date', now('Asia/Manila')->toDateString());
 
-        $helpers = Helper::with('latestReadiness')->orderBy('first_name')->get();
+        $helpers = Helper::with(['latestReadiness', 'user'])->orderBy('first_name')->get();
 
         if ($request->filled('availability')) {
             $helpers=$helpers->filter(function($helper)use($request){$available=app(\App\Services\HelperEligibilityService::class)->allows($helper);$busy=$helper->activeSessions()->exists();return match($request->input('availability')){'available'=>$available,'busy'=>$busy,'offline'=>!$available&&!$busy};});
         }
 
         $helperIds=$helpers->pluck('id');
+        $dutyHelpers = $helpers->filter(fn (Helper $helper) => app(\App\Services\HelperDutyCandidates::class)->allows($helper));
         $scheduleEvents = CalendarEvent::where('event_type', CalendarEvent::TYPE_MEETING)
             ->whereDate('event_date', $date)
             ->when($request->filled('availability'),fn($q)=>$q->whereIn('helper_schedule_id',HelperSchedule::whereIn('helper_id',$helperIds)->select('id')))
@@ -64,7 +65,7 @@ class ModeratorScheduleController extends Controller
                 ];
             });
 
-        return view('moderator.schedules', compact('date', 'helpers', 'scheduleEvents', 'attendance', 'shiftsByHelper'));
+        return view('moderator.schedules', compact('date', 'helpers', 'dutyHelpers', 'scheduleEvents', 'attendance', 'shiftsByHelper'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -76,6 +77,9 @@ class ModeratorScheduleController extends Controller
         ]);
 
         $helper = Helper::findOrFail($validated['helper_id']);
+        if (! app(\App\Services\HelperDutyCandidates::class)->allows($helper)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['helper_id' => 'Select a logged-in Helper with a current passed readiness check. Refresh the page if their status has changed.']);
+        }
         $date = Carbon::parse($validated['event_date'])->toDateString();
 
         // A date can carry as many helpers as are rostered on it, so the only
