@@ -42,7 +42,7 @@
                     <select name="helper_id" required class="w-full rounded-lg border-gray-300 text-sm">
                         <option value="">{{ $dutyHelpers->isEmpty() ? 'No online, ready Helpers' : 'Select an online, ready Helper' }}</option>
                         @foreach($dutyHelpers as $helper)
-                            <option value="{{ $helper->id }}" @selected((string) old('helper_id') === (string) $helper->id)>{{ $helper->full_name }} · Online ? Ready</option>
+                            <option value="{{ $helper->id }}" @selected((string) old('helper_id') === (string) $helper->id)>{{ $helper->full_name }} · Online | Ready</option>
                         @endforeach
                     </select>
                     <input type="date" name="event_date" value="{{ old('event_date', $date) }}" required class="w-full rounded-lg border-gray-300 text-sm">

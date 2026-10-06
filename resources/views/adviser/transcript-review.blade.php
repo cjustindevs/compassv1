@@ -6,7 +6,7 @@
     @foreach($errors->all() as $error)<p role="alert" class="text-red-700">{{ $error }}</p>@endforeach
     @forelse($unverifiedTranscripts as $item)
         <section class="bg-white rounded-2xl border border-gray-200 p-5">
-            <h2 class="font-semibold">Session #{{ $item['session_id'] }} ? {{ $item['helper_name'] }}</h2>
+            <h2 class="font-semibold">Session #{{ $item['session_id'] }} | {{ $item['helper_name'] }}</h2>
             <p class="text-sm text-gray-500 mt-1">{{ $item['session_date']?->timezone('Asia/Manila')->format('M d, Y h:i A') }}</p>
             @if($item['eligible'])
                 <form method="POST" action="{{ route('adviser.transcript.access', $item['session_id']) }}" class="mt-4 space-y-3">

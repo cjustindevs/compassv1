@@ -315,7 +315,7 @@
                 </div>
                 <h3 class="text-xl font-bold text-gray-800">Approve Referral</h3>
             </div>
-            <p class="text-gray-500 text-sm mb-4">Approve this recommendation and request the Help Seeker?s consent. Professional assignment follows their decision.</p>
+            <p class="text-gray-500 text-sm mb-4">Approve this recommendation and request the Help Seeker's consent. Professional assignment follows their decision.</p>
 
             <form class="form-maximized" id="approveForm" method="POST">
                 @csrf

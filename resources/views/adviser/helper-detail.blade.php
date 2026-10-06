@@ -211,8 +211,8 @@
             <h3 class="font-semibold text-gray-700 mb-3">Supervision history</h3>
             @forelse($assignmentHistory as $assignment)
                 <div class="rounded-xl border border-gray-200 p-3 mb-3 text-sm">
-                    <p class="font-semibold">Adviser #{{ $assignment->adviser_id }} ? {{ $assignment->ended_at ? 'Previous' : 'Current' }}</p>
-                    <p class="text-gray-500">{{ $assignment->started_at ?? 'Original start date unknown' }} ? {{ $assignment->ended_at ?? 'Present' }}</p>
+                    <p class="font-semibold">Adviser #{{ $assignment->adviser_id }} | {{ $assignment->ended_at ? 'Previous' : 'Current' }}</p>
+                    <p class="text-gray-500">{{ $assignment->started_at ?? 'Original start date unknown' }} | {{ $assignment->ended_at ?? 'Present' }}</p>
                     <p class="text-gray-600">{{ $assignment->reason }}</p>
                 </div>
             @empty

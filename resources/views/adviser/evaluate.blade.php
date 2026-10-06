@@ -252,7 +252,7 @@
             <!-- Evaluation Form -->
             <form class="form-maximized" method="POST" action="{{ route('adviser.evaluate.store', $report->id) }}">
                 @csrf
-                <p class="text-sm text-gray-500 my-3">Rubric: {{ \App\Services\CompetencyRubric::VERSION }}. Evidence: submitted session report #{{ $report->id }} and its correction history. Each criterion is rated independently; weighted total is on a 1?5 scale.</p>
+                <p class="text-sm text-gray-500 my-3">Rubric: {{ \App\Services\CompetencyRubric::VERSION }}. Evidence: submitted session report #{{ $report->id }} and its correction history. Each criterion is rated independently; weighted total is on a 1 to 5 scale.</p>
 
                 <!-- Evidence considered -->
                 <div class="mb-5 p-4 bg-gray-50 rounded-xl text-sm">

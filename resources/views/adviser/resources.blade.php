@@ -233,7 +233,7 @@
                             @endif
                         </div>
 
-                        <p class="text-xs text-gray-500">{{ ucfirst($resource->visibility) }} ? {{ $resource->archived_at ? 'Archived' : (($resource->review_date && $resource->review_date < now('Asia/Manila')->toDateString()) ? 'Review overdue' : 'Current') }}</p><x-supervision-history :record="$resource" />
+                        <p class="text-xs text-gray-500">{{ ucfirst($resource->visibility) }} | {{ $resource->archived_at ? 'Archived' : (($resource->review_date && $resource->review_date < now('Asia/Manila')->toDateString()) ? 'Review overdue' : 'Current') }}</p><x-supervision-history :record="$resource" />
                         <h3 class="font-bold text-gray-800 leading-snug">{{ $resource->title }}</h3>
                         <p class="text-sm text-gray-500 leading-relaxed line-clamp-2">{{ $resource->description }}</p>
 

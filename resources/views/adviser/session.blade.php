@@ -6,7 +6,7 @@
         <div>
             <a href="{{ route('adviser.dashboard') }}" class="text-sm text-green-700"><i class="fas fa-arrow-left mr-1" aria-hidden="true"></i>Back to dashboard</a>
             <h1 class="text-2xl font-bold text-gray-800 mt-2">Session documentation</h1>
-            <p class="text-sm text-gray-500 mt-1">Review the Helper?s submitted summary, reflection, and correction history.</p>
+            <p class="text-sm text-gray-500 mt-1">Review the Helper's submitted summary, reflection, and correction history.</p>
         </div>
         <span class="rounded-full bg-green-50 text-green-800 px-3 py-1 text-sm">{{ ucfirst($session->session_status) }}</span>
     </header>
@@ -30,7 +30,7 @@
         <h2 class="font-semibold text-gray-800 mb-3">Previous documentation versions</h2>
         @forelse($revisions as $revision)
             <details class="border-t border-gray-100 py-3">
-                <summary class="cursor-pointer text-sm font-medium">{{ $revision->created_at }} ? {{ $revision->reason }}</summary>
+                <summary class="cursor-pointer text-sm font-medium">{{ $revision->created_at }} | {{ $revision->reason }}</summary>
                 @php($snapshot = json_decode($revision->snapshot, true) ?? [])
                 <p class="text-sm text-gray-600 whitespace-pre-wrap mt-3">{{ $snapshot['session_summary'] ?? 'No summary in this version.' }}</p>
                 <p class="text-sm text-gray-600 whitespace-pre-wrap mt-3">{{ $snapshot['personal_reflection'] ?? 'No reflection in this version.' }}</p>
