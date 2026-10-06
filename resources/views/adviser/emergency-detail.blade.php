@@ -1,44 +1,70 @@
 @extends('layouts.app')
-
-@section('title', 'Emergency Detail - COMPASS')
-
+@section('title', 'Emergency Review - COMPASS')
 @section('content')
-<div class="adviser-page-content">
-        <a href="{{ route('adviser.emergencies') }}" class="text-sm text-gray-500 hover:text-gray-700">Back to emergencies</a>
-        <div class="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h1 class="text-2xl font-bold text-gray-800">Emergency Review</h1>
-            <p class="text-sm text-gray-500 mt-1">{{ $alert->session?->reference_number ?? 'Session' }} · {{ ucfirst($alert->status) }}</p>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 my-6 text-sm">
-                <div><span class="text-gray-400">Seeker</span><p class="font-semibold">{{ $alert->session?->seeker?->generated_alias ?? 'Anonymous' }}</p></div>
-                <div><span class="text-gray-400">Helper</span><p class="font-semibold">{{ $alert->session?->helper?->full_name ?? 'Unassigned' }}</p></div>
-                <div><span class="text-gray-400">Risk</span><p class="font-semibold text-red-600">{{ ucfirst($alert->risk_level) }}</p></div>
-            </div>
-            <div class="p-4 rounded-xl bg-red-50 text-red-800 text-sm mb-6">{{ $alert->trigger_reason }}</div>
-            <h2 class="font-semibold text-gray-800 mb-3">Supporting documentation</h2>
-            <p class="text-sm text-gray-600 whitespace-pre-wrap mb-4">{{ $alert->session?->report?->session_summary ?? 'No session summary submitted yet.' }}</p>
-            @if($alert->session)
-                <a class="text-green-700 underline" href="{{ route('adviser.session.show', $alert->session_id) }}">Review session documentation</a>
-            @endif
-            <section class="my-5"><h2 class="font-semibold">Action history</h2>@forelse(\Illuminate\Support\Facades\DB::table('emergency_review_actions')->where('emergency_alert_id',$alert->id)->orderBy('id')->get() as $action)<div class="border-t py-3 text-sm"><strong>{{ ucfirst($action->action) }}</strong> | {{ $action->created_at }} | Account #{{ $action->actor_id }}<p class="whitespace-pre-wrap mt-1">{{ $action->notes }}</p></div>@empty<p class="text-sm text-gray-500">No actions recorded yet.</p>@endforelse</section>
-            @if(!in_array($alert->status,['resolved','closed']))
-                <form method="POST" action="{{ route('adviser.emergencies.action',$alert->id) }}" class="my-4 space-y-3">@csrf<label class="block text-sm">Action<select name="action" class="block w-full rounded-lg border-gray-300">@if(!$alert->acknowledged_at)<option value="acknowledged">Acknowledge escalation</option>@endif<option value="instruction">Document instructions</option><option value="coordination">Document coordination</option></select></label><label class="block text-sm">Notes<textarea name="notes" required maxlength="2000" class="block w-full rounded-lg border-gray-300"></textarea></label><button class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm">Record action</button></form>
-
-                <form class="form-maximized" method="POST" action="{{ route('adviser.emergencies.resolve', $alert->id) }}">
-                    @csrf
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Document emergency actions</label>
-                    <textarea name="resolution_notes" required rows="4" maxlength="1000" class="w-full rounded-lg border-gray-300 text-sm" placeholder="Actions taken, coordination completed, and follow-up plan"></textarea>
-                    <button class="mt-3 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">Mark Resolved</button>
-                </form>
+@include('partials.management-ui-styles')
+@php($terminal = in_array($alert->status, ['resolved', 'closed']))
+<div class="cm-page er-page">
+    <header class="cm-header">
+        <div><h1>Emergency review</h1><p class="cm-muted">Review the report, document your response, and coordinate follow-up.</p></div>
+        <a class="cm-button" href="{{ route('adviser.emergencies') }}">Back to emergencies</a>
+    </header>
+    @if(session('success'))<div class="cm-alert" role="status">{{ session('success') }}</div>@endif
+    @if($errors->any())<div class="cm-alert cm-error" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+    <div class="er-grid">
+        <div class="er-stack">
+            <section class="cm-card" aria-labelledby="caseTitle">
+                <div class="cm-list-head"><h2 id="caseTitle">Case overview</h2><span class="cm-badge {{ $terminal ? 'off' : '' }}">{{ ucfirst($alert->status) }}</span></div>
+                <dl class="er-facts">
+                    <div><dt>Seeker alias</dt><dd>{{ $alert->session?->seeker?->generated_alias ?? 'Anonymous' }}</dd></div>
+                    <div><dt>Helper</dt><dd>{{ $alert->session?->helper?->full_name ?? 'Unassigned' }}</dd></div>
+                    <div><dt>Reported risk</dt><dd>{{ ucfirst($alert->risk_level ?? 'Not recorded') }}</dd></div>
+                </dl>
+                <div class="er-reason"><h2>Reason for escalation</h2><p class="cm-message">{{ $alert->trigger_reason }}</p></div>
+            </section>
+            <section class="cm-card" aria-labelledby="documentationTitle">
+                <h2 id="documentationTitle">Supporting documentation</h2>
+                <p class="cm-message">{{ $alert->session?->report?->session_summary ?? 'No session summary submitted yet.' }}</p>
+                @if($alert->session)<a class="cm-button" href="{{ route('adviser.session.show', $alert->session_id) }}">Review session documentation</a>@endif
+            </section>
+            <section class="cm-card" aria-labelledby="historyTitle">
+                <h2 id="historyTitle">Action history</h2><p class="cm-help">Recorded decisions and coordination notes.</p>
+                @forelse(\Illuminate\Support\Facades\DB::table('emergency_review_actions')->where('emergency_alert_id',$alert->id)->orderBy('id')->get() as $action)
+                    <article class="cm-entry"><h2>{{ ucfirst($action->action) }}</h2><p class="cm-muted">{{ $action->created_at }}</p><p class="cm-message">{{ $action->notes }}</p></article>
+                @empty<div class="er-empty">No actions recorded yet. Your saved actions will appear here.</div>@endforelse
+            </section>
+        </div>
+        <div class="er-stack">
+            @if(!$terminal)
+                <section class="cm-card" aria-labelledby="recordTitle">
+                    <h2 id="recordTitle">Record a review action</h2><p class="cm-help">Acknowledge the report or document instructions and coordination.</p>
+                    <form method="POST" action="{{ route('adviser.emergencies.action',$alert->id) }}">@csrf
+                        <div class="cm-field"><label for="reviewAction">Action</label><select id="reviewAction" name="action">@if(!$alert->acknowledged_at)<option value="acknowledged">Acknowledge escalation</option>@endif<option value="instruction" @selected(old('action')==='instruction')>Document instructions</option><option value="coordination" @selected(old('action')==='coordination')>Document coordination</option></select></div>
+                        <div class="cm-field"><label for="reviewNotes">Action notes</label><textarea id="reviewNotes" name="notes" required maxlength="2000" rows="3" placeholder="Describe your response and next steps">{{ old('action') !== 'rejected' ? old('notes') : '' }}</textarea></div>
+                        <button type="submit" class="cm-button cm-primary">Record action</button>
+                    </form>
+                </section>
+                <section class="cm-card" aria-labelledby="returnTitle">
+                    <h2 id="returnTitle">Return to Helper</h2><p class="cm-help">Request clarification or follow-up. This does not resolve the emergency.</p>
+                    @if($alert->review_decision === 'rejected')<div class="cm-alert"><strong>Returned for follow-up</strong><p class="cm-message">{{ $alert->rejection_reason }}</p></div>@else
+                    <form method="POST" action="{{ route('adviser.emergencies.action',$alert->id) }}">@csrf<input type="hidden" name="action" value="rejected">
+                        <div class="cm-field"><label for="rejectionReason">Reason and next steps</label><textarea id="rejectionReason" name="notes" required maxlength="2000" rows="3" placeholder="Explain what the Helper needs to clarify">{{ old('action') === 'rejected' ? old('notes') : '' }}</textarea></div>
+                        <button type="submit" class="cm-button">Return to Helper</button>
+                    </form>@endif
+                </section>
+                <section class="cm-card" aria-labelledby="resolveTitle">
+                    <h2 id="resolveTitle">Resolve emergency</h2><p class="cm-help">Record the actions taken, coordination completed, and follow-up plan before closing this emergency.</p>
+                    <form method="POST" action="{{ route('adviser.emergencies.resolve', $alert->id) }}">@csrf
+                        <div class="cm-field"><label for="resolutionNotes">Resolution summary</label><textarea id="resolutionNotes" name="resolution_notes" required rows="3" maxlength="1000" placeholder="Document the outcome and follow-up plan">{{ old('resolution_notes') }}</textarea></div>
+                        <button type="submit" class="cm-button cm-primary">Mark resolved</button>
+                    </form>
+                </section>
+            @else
+                <section class="cm-card"><h2>Review concluded</h2><p class="cm-help">This emergency is {{ $alert->status }}. Its documentation and action history remain available for review.</p></section>
             @endif
         </div>
+    </div>
 </div>
-@if(!in_array($alert->status,['resolved','closed']))
-<div class="bg-white rounded-2xl border border-gray-200 p-6 mt-5">
-<h2 class="font-semibold text-gray-800 mb-2">Return escalation to Helper</h2>
-@if($alert->review_decision === 'rejected')<p>Returned for follow-up: {{ $alert->rejection_reason }}</p>@else
-<p class="text-sm text-gray-500 mb-4">Explain what needs clarification and the next steps for the Helper. Returning this report does not resolve the emergency.</p>
-<form method="POST" action="{{ route('adviser.emergencies.action',$alert->id) }}">@csrf<input type="hidden" name="action" value="rejected"><label for="rejectionReason" class="block text-sm font-semibold text-gray-700 mb-2">Reason and next steps</label><textarea id="rejectionReason" name="notes" required maxlength="2000" rows="3" placeholder="Describe the clarification or follow-up needed" class="block w-full rounded-lg border-gray-300 text-sm"></textarea><button type="submit" class="mt-3 px-4 py-2 rounded-lg bg-green-600 text-white">Return to Helper</button></form>
-@endif
-</div>
-@endif
+<style>
+.er-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}.er-stack{display:grid;gap:20px;min-width:0}.er-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:20px 0}.er-facts dt{font-size:12px;color:#6b7b74;margin-bottom:5px}.er-facts dd{margin:0;font-weight:600;overflow-wrap:anywhere}.er-reason{border-left:3px solid #d36154;background:#fff6f4;padding:16px;border-radius:8px}.er-reason h2{color:#913a30;font-size:14px}.er-reason p{margin-bottom:0}.er-empty{background:#f7faf8;border-radius:10px;padding:18px;color:#6b7b74;font-size:13px}.er-page .cm-message{line-height:1.7}.er-page textarea{min-height:100px}@media(max-width:1000px){.er-grid{grid-template-columns:1fr}}@media(max-width:600px){.er-facts{grid-template-columns:1fr;gap:12px}.er-page .cm-button{width:100%}}
+</style>
 @endsection
