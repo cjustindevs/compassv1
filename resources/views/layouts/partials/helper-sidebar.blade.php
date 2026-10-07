@@ -70,13 +70,13 @@
                 <div class="user-role">{{ $assignedAdviser ? 'Supervised by ' . $assignedAdviser->full_name : 'Psychology Helper' }}</div>
             </div>
         </div>
-        <div class="user-stats">
+        <div class="user-stats" data-helper-sidebar-stats="{{ route('helper.readiness.status') }}">
             <div class="stat">
                 <span class="value" id="sessionCount">{{ $totalSessions }}</span>
                 <span class="label">Sessions</span>
             </div>
             <div class="stat">
-                <span class="value" id="compScore">{{ $competencyScore }}%</span>
+                <span class="value" id="compScore">{{ $competencyScore === null ? 'No data' : $competencyScore.'%' }}</span>
                 <span class="label">Competency</span>
             </div>
             <div class="stat">
@@ -98,3 +98,5 @@
 </aside>
 
 @include('components.confirmation-modal')
+
+<script src="{{ asset('js/helper-sidebar-stats.js') }}" defer></script>

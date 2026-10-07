@@ -62,16 +62,11 @@ class SidebarComposer
                 ];
             }
 
-            $totalSessions = Session::where('helper_id', $helper->id)->count();
-
-            $competencyHistory = HelperCompetencyHistory::where('helper_id', $helper->id)
-                ->latest('evaluation_date')
-                ->first();
-
-            $competencyScore = (int) round((float) ($competencyHistory?->overall_score ?? 0));
-
-            $availabilityStatus = $helper->latestReadiness?->availability_status ?? $helper->status ?? 'offline';
-            $availabilityLabel = ucfirst((string) $availabilityStatus);
+            $sidebarStats = app(\App\Services\HelperSidebarStats::class)->forHelper($helper);
+            $totalSessions = $sidebarStats['totalSessions'];
+            $competencyScore = $sidebarStats['competencyScore'];
+            $availabilityStatus = $sidebarStats['availabilityStatus'];
+            $availabilityLabel = $sidebarStats['availabilityLabel'];
 
             $caseBadgeCount = Session::where('helper_id', $helper->id)
                 ->whereIn('session_status', ['helper_assigned', 'active'])

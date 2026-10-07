@@ -50,10 +50,11 @@ class HelperReadinessController extends Controller
         $helper = Auth::user()->helper;
 
         return response()->json([
+            'sidebar' => app(\App\Services\HelperSidebarStats::class)->forHelper($helper),
             'status' => $helper->getReadinessStatus(),
             'ready' => $helper->isReady(),
             'valid_until' => $helper->getCurrentReadiness()?->valid_until?->toISOString(),
-        ]);
+        ])->header('Cache-Control', 'private, no-store');
     }
 
     /**
