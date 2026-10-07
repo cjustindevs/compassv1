@@ -175,7 +175,7 @@
             </div>
 
             <div class="info-note">
-                <i class="fas fa-circle-info"></i>
+
                 <p>You choose whether to participate. Withdrawing consent closes current support requests. Past records are retained for authorized safety and recordkeeping; withdrawal does not delete them.</p>
             </div>
 
@@ -243,7 +243,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             Your privacy matters to us.
         </div>
 

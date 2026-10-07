@@ -302,7 +302,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             Quality supervision leads to quality support.
         </div>
 </div>
@@ -310,9 +310,7 @@
     <div class="modal-overlay" id="approveModal">
         <div class="modal-box">
             <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                    <i class="fas fa-check text-green-600"></i>
-                </div>
+
                 <h3 class="text-xl font-bold text-gray-800">Approve Referral</h3>
             </div>
             <p class="text-gray-500 text-sm mb-4">Approve this recommendation and request the Help Seeker's consent. Professional assignment follows their decision.</p>
@@ -335,9 +333,7 @@
     <div class="modal-overlay" id="rejectModal">
         <div class="modal-box">
             <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                    <i class="fas fa-times text-red-600"></i>
-                </div>
+
                 <h3 class="text-xl font-bold text-gray-800">Return for Revision</h3>
             </div>
             <p class="text-gray-500 text-sm mb-4">Explain what the Helper must revise before you can approve this referral.</p>

@@ -176,7 +176,7 @@
         </div>
 
         @if(session('success'))
-            <div class="flash-success"><i class="fas fa-check-circle mr-1"></i> {{ session('success') }}</div>
+            <div class="flash-success"> {{ session('success') }}</div>
         @endif
 
         <div class="flex flex-wrap gap-2 mb-6" id="tabBar">

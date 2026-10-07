@@ -157,7 +157,7 @@ a.sidebar-link:hover, a.sidebar-link:focus-visible { background: var(--compass-g
 .activity-card, .logs-card { min-width: 0; padding: 22px 20px; }
 .prepared-link { display: inline-flex; align-items: center; gap: 8px; color: #356bdc; cursor: default; font-size: 10px; font-weight: 680; white-space: nowrap; }
 .activity-list, .logs-list { margin: 15px 0 0; padding: 0; list-style: none; }
-.activity-list li { display: grid; min-height: 53px; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 13px; border-bottom: 1px solid var(--admin-border-soft); }
+.activity-list li { display: grid; min-height: 53px; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 13px; border-bottom: 1px solid var(--admin-border-soft); }
 .activity-list li:last-child { border-bottom: 0; }
 .activity-icon { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 50%; }
 .activity-icon-green { background: #dff8eb; color: #0da66a; }

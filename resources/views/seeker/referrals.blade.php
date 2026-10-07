@@ -191,7 +191,7 @@
         <div class="page-card">
 
             <div class="info-note">
-                <i class="fas fa-share-nodes"></i>
+
                 <p>A referral offers support from an authorized professional. Your adviser must approve it, and you decide whether to proceed. Contact details are collected separately only when needed for coordination.</p>
             </div>
 
@@ -204,7 +204,7 @@
                 <article class="referral-card">
                     <div class="flex items-center justify-between flex-wrap gap-3 mb-2">
                         <h3>
-                            <i class="fas fa-user-doctor text-green-500 mr-2"></i>Referral #{{ $referral->id }}
+                            Referral #{{ $referral->id }}
                         </h3>
                         <span class="status-badge {{ $referral->help_seeker_consent ? '' : 'muted' }}">{{ $statusLabel }}</span>
                     </div>
@@ -213,7 +213,7 @@
                         <div class="rounded-xl bg-gray-50 p-4 my-3 text-sm">
                             @if($referral->professional && app(\App\Services\ConsentService::class)->valid($referral->session->seeker, 'identity_disclosure', $referral->id))
                                 <p class="text-xs uppercase tracking-wide text-gray-500">Your assigned professional</p>
-                                <p class="text-lg font-semibold text-green-700 my-2"><i class="fas fa-user-doctor mr-2" aria-hidden="true"></i>{{ trim(($referral->professional->first_name ?? '').' '.($referral->professional->last_name ?? '')) ?: 'Professional name awaiting profile completion' }}</p>
+                                <p class="text-lg font-semibold text-green-700 my-2">{{ trim(($referral->professional->first_name ?? '').' '.($referral->professional->last_name ?? '')) ?: 'Professional name awaiting profile completion' }}</p>
                                 <p>See Professional appointments below for your schedule and meeting instructions. All times are in Asia/Manila.</p>
                             @elseif($referral->professional)
                                 <p>Complete identity-disclosure consent to view your professional coordination details.</p>
@@ -273,7 +273,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             Every decision you make is respected.
         </div>
 

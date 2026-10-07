@@ -14,7 +14,7 @@
         <span class="stat-detail">
             @if ($trend)
                 <span class="trend-pill">
-                    <x-admin.icon name="arrow-up" :size="12" :stroke-width="2.2" />
+
                     {{ $trend }}
                 </span>
             @endif

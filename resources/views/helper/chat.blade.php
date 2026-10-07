@@ -40,7 +40,7 @@
 
         <div class="card">
             <div class="empty-state">
-                <i class="fas fa-comment-slash"></i>
+
                 <h3>No active sessions</h3>
                 <p>No active sessions. Please check your assigned cases.</p>
                 <a href="{{ route('helper.cases') }}" class="btn btn-primary btn-sm" style="margin-top:14px;">

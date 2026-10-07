@@ -7,10 +7,10 @@
 @endphp
 <div class="referral-ui connection-review">
     <header class="cr-header"><div><h1>Connection review</h1><p class="ru-muted">{{ $moderator ? 'Help Seekers reconnect with support when a chat is interrupted.' : 'Review invitations to continue an interrupted chat.' }}</p></div><a class="ru-button" href="{{ url()->current() }}"><i class="fas fa-sync-alt" aria-hidden="true"></i> Refresh</a></header>
-    @if(session('success'))<div class="cr-alert" role="status"><i class="fas fa-check-circle" aria-hidden="true"></i> {{ session('success') }}</div>@endif
+    @if(session('success'))<div class="cr-alert" role="status"> {{ session('success') }}</div>@endif
     @if($errors->any())<div class="cr-alert cr-error" role="alert">{{ $errors->first() }}</div>@endif
     <section class="cr-summary" aria-label="Connection overview">
-        <div class="cr-count"><span class="cr-count-icon" aria-hidden="true"><i class="fas fa-plug"></i></span><div><strong>{{ $incidents->total() }}</strong><span class="ru-muted">{{ $moderator ? 'Open interruptions' : 'Replacement offers' }}</span></div></div>
+        <div class="cr-count"><div><strong>{{ $incidents->total() }}</strong><span class="ru-muted">{{ $moderator ? 'Open interruptions' : 'Replacement offers' }}</span></div></div>
         <p class="ru-muted">Use Refresh to check for the latest updates.</p>
     </section>
     <div class="cr-list-heading"><h2>{{ $moderator ? 'Chats needing attention' : 'Your invitations' }}</h2><span class="ru-muted">Philippine Time (PHT)</span></div>
@@ -37,7 +37,7 @@
         </div>
     </section>
     @empty
-        <div class="ru-card cr-empty"><span class="cr-empty-icon"><i class="fas fa-check" aria-hidden="true"></i></span><h2>{{ $moderator ? 'No interruptions to review' : 'No replacement offers' }}</h2><p class="ru-muted">{{ $moderator ? 'New connection interruptions will appear here. You will also receive a notification.' : 'You will receive a notification when a Moderator sends you an offer.' }}</p><a class="ru-button" href="{{ route($moderator ? 'moderator.dashboard' : 'helper.dashboard') }}">Back to dashboard</a></div>
+        <div class="ru-card cr-empty"><h2>{{ $moderator ? 'No interruptions to review' : 'No replacement offers' }}</h2><p class="ru-muted">{{ $moderator ? 'New connection interruptions will appear here. You will also receive a notification.' : 'You will receive a notification when a Moderator sends you an offer.' }}</p><a class="ru-button" href="{{ route($moderator ? 'moderator.dashboard' : 'helper.dashboard') }}">Back to dashboard</a></div>
     @endforelse
     {{ $incidents->links() }}
 </div>

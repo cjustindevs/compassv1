@@ -182,10 +182,10 @@
         </div>
 
         @if(session('success'))
-            <div class="flash-success"><i class="fas fa-check-circle mr-1"></i> {{ session('success') }}</div>
+            <div class="flash-success"> {{ session('success') }}</div>
         @endif
         @if(session('error'))
-            <div class="flash-error"><i class="fas fa-exclamation-circle mr-1"></i> {{ session('error') }}</div>
+            <div class="flash-error"> {{ session('error') }}</div>
         @endif
 
         <!-- Stats -->
@@ -338,7 +338,7 @@
                     <a href="{{ route('moderator.manage', request()->except('adviser')) }}" class="text-xs text-gray-400 hover:text-gray-600">All</a>
                     <a href="{{ route('moderator.manage', array_merge(request()->except('adviser'), ['adviser' => 'unassigned'])) }}" class="text-xs text-gray-400 hover:text-gray-600">Unassigned</a>
                     <form method="GET" action="{{ route('moderator.manage') }}" class="relative">
-                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i>
+
                         <input type="text" name="search" value="{{ $search }}" placeholder="Search name or ID..."
                                class="search-input !pl-9 !py-2 !text-sm" style="width: 220px;">
                         @if($adviserFilter) <input type="hidden" name="adviser" value="{{ $adviserFilter }}"> @endif

@@ -77,23 +77,23 @@
         </div>
 
         @if (session('success'))
-            <div class="alert alert-success" data-flash><i class="fas fa-check-circle"></i> {{ session('success') }}</div>
+            <div class="alert alert-success" data-flash> {{ session('success') }}</div>
         @endif
         @if (session('error'))
-            <div class="alert alert-error" data-flash><i class="fas fa-exclamation-circle"></i> {{ session('error') }}</div>
+            <div class="alert alert-error" data-flash> {{ session('error') }}</div>
         @endif
         @if (session('info'))
-            <div class="alert alert-info" data-flash><i class="fas fa-info-circle"></i> {{ session('info') }}</div>
+            <div class="alert alert-info" data-flash> {{ session('info') }}</div>
         @endif
         @if (session('readiness_status'))
             <div class="alert {{ session('readiness_status') === 'ready' ? 'alert-success' : 'alert-warning' }}" data-flash>
-                <i class="fas fa-heartbeat"></i>
+
                 You are currently marked as <strong>{{ session('readiness_status') === 'ready' ? 'Ready' : 'Not Ready' }}</strong> for sessions.
             </div>
         @endif
         @if ($errors->any())
             <div class="alert alert-error" data-flash>
-                <i class="fas fa-exclamation-triangle"></i>
+
                 <div>
                     @foreach ($errors->all() as $error)
                         <div>{{ $error }}</div>

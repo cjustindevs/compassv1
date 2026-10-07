@@ -30,7 +30,7 @@
                     @endif
                 @else
                     <div class="empty-state">
-                        <i class="fas fa-chart-line"></i>
+
                         <h3>No evaluations yet</h3>
                         <p>Your competency score will appear here once your adviser evaluates your sessions.</p>
                     </div>
@@ -75,7 +75,7 @@
                         @endforeach
                     </div>
                 @else
-                    <div class="empty-state"><i class="fas fa-chart-bar"></i><p>Trend will appear once you have evaluations.</p></div>
+                    <div class="empty-state"><p>Trend will appear once you have evaluations.</p></div>
                 @endif
             </div>
 

@@ -119,7 +119,7 @@
                 <!-- ============================================ -->
                 <div id="step1" class="step-content fade-enter">
                     <div class="flex items-center gap-2 mb-2">
-                        <i class="fas fa-envelope text-green-600 text-lg"></i>
+
                         <h2 class="text-lg sm:text-xl font-bold text-gray-800">Sign in to Compass</h2>
                     </div>
                     <p class="text-gray-500 text-sm mt-1">Enter your university email to receive a verification code.</p>
@@ -139,14 +139,14 @@
                             <i class="fas fa-paper-plane mr-2"></i> Send Verification Code
                         </button>
                         <p class="text-xs text-gray-400 text-center mt-3">
-                            <i class="fas fa-lock text-green-500 mr-1"></i> We respect your privacy
+                             We respect your privacy
                         </p>
                     </form>
 
                     <!-- OTP Section (hidden initially) -->
                     <div id="otpSection" class="hidden mt-4 fade-enter">
                         <div class="flex items-center gap-2 mb-2">
-                            <i class="fas fa-inbox text-green-600 text-lg"></i>
+
                             <h3 class="font-semibold text-gray-800">Check your inbox</h3>
                         </div>
                         <p class="text-sm text-gray-500 mb-3">
@@ -164,7 +164,7 @@
 
                         <p id="otpStepError" class="text-red-500 text-sm mt-2 hidden"></p>
                         <div id="otpStepSuccess" class="hidden mt-3 p-3 bg-green-50 rounded-xl border border-green-200 text-green-700 text-sm">
-                            <i class="fas fa-check-circle text-green-500 mr-2"></i> Email verified! Proceeding to registration...
+                             Email verified! Proceeding to registration...
                         </div>
                         <button id="resendOtpBtn" class="text-green-600 text-sm mt-2 hover:underline hidden">
                             <i class="fas fa-redo mr-1"></i> Resend Code
@@ -177,7 +177,7 @@
                 <!-- ============================================ -->
                 <div id="step2" class="step-content hidden">
                     <div class="flex items-center gap-2 mb-2">
-                        <i class="fas fa-user-plus text-green-600 text-lg"></i>
+
                         <h2 class="text-lg sm:text-xl font-bold text-gray-800">Create Your Account</h2>
                     </div>
                     <p class="text-gray-500 text-sm mt-1">Choose an anonymous alias and provide basic information.</p>
@@ -252,7 +252,7 @@
                 <!-- ============================================ -->
                 <div id="step3" class="step-content hidden">
                     <div class="flex items-center gap-2 mb-2">
-                        <i class="fas fa-shield-alt text-green-600 text-lg"></i>
+
                         <h2 class="text-lg sm:text-xl font-bold text-gray-800">Privacy Notice &amp; Informed Consent</h2>
                     </div>
                     <p class="text-gray-500 text-sm mt-1">Please read the full document below before proceeding.</p>
@@ -260,31 +260,31 @@
                     <div class="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
                         <div class="consent-step-text" id="consentTextContainer">
                             <div class="consent-text">
-                                <h3><i class="fas fa-clipboard-list" aria-hidden="true"></i> Privacy Notice</h3>
+                                <h3> Privacy Notice</h3>
                                 <p>COMPASS is committed to protecting your privacy in accordance with the Data Privacy Act of 2012 (Republic Act No. 10173).</p>
                                 <ul>
-                                    <li><i class="fas fa-circle-check" aria-hidden="true"></i> Your identity is protected using a <strong>pseudonymous alias</strong>. Helpers only see your alias.</li>
-                                    <li><i class="fas fa-circle-check" aria-hidden="true"></i> Your <strong>personal information</strong> (name, email, contact) is stored separately in an <strong>Identity Vault</strong> and only accessed with your consent or in emergencies.</li>
-                                    <li><i class="fas fa-circle-check" aria-hidden="true"></i> Session records are <strong>encrypted</strong> and accessible only to authorized personnel.</li>
-                                    <li><i class="fas fa-circle-check" aria-hidden="true"></i> Voice recordings require <strong>separate explicit consent</strong> and are deleted after 12 months.</li>
-                                    <li><i class="fas fa-circle-check" aria-hidden="true"></i> You may <strong>withdraw consent</strong> at any time.</li>
+                                    <li> Your identity is protected using a <strong>pseudonymous alias</strong>. Helpers only see your alias.</li>
+                                    <li> Your <strong>personal information</strong> (name, email, contact) is stored separately in an <strong>Identity Vault</strong> and only accessed with your consent or in emergencies.</li>
+                                    <li> Session records are <strong>encrypted</strong> and accessible only to authorized personnel.</li>
+                                    <li> Voice recordings require <strong>separate explicit consent</strong> and are deleted after 12 months.</li>
+                                    <li> You may <strong>withdraw consent</strong> at any time.</li>
                                 </ul>
 
-                                <h3><i class="fas fa-clipboard-list" aria-hidden="true"></i> Informed Consent</h3>
+                                <h3> Informed Consent</h3>
                                 <p>By proceeding, you agree to participate in COMPASS, a peer-support platform designed to provide emotional support through trained psychology student helpers.</p>
                                 <ul>
-                                    <li><i class="fas fa-circle" aria-hidden="true"></i> This service is <strong>NOT</strong> a form of professional counseling, psychotherapy, diagnosis, or treatment.</li>
-                                    <li><i class="fas fa-circle" aria-hidden="true"></i> The listener is a <strong>trained psychology student helper</strong> under faculty supervision.</li>
-                                    <li><i class="fas fa-circle" aria-hidden="true"></i> Your participation is <strong>voluntary</strong> — you may end the session at any time.</li>
-                                    <li><i class="fas fa-circle" aria-hidden="true"></i> All conversations are <strong>confidential</strong>.</li>
-                                    <li><i class="fas fa-circle" aria-hidden="true"></i> In emergencies, authorized personnel may access information to <strong>protect life or safety</strong>.</li>
-                                    <li><i class="fas fa-circle" aria-hidden="true"></i> Live sessions are available <strong>6:00 PM – 11:00 PM (PHT)</strong>, Monday to Saturday.</li>
-                                    <li><i class="fas fa-circle" aria-hidden="true"></i> Sessions are limited to <strong>90 minutes</strong> to ensure equitable access.</li>
-                                    <li><i class="fas fa-circle" aria-hidden="true"></i> Abusive, threatening, or harassing behavior may result in <strong>termination of access</strong>.</li>
+                                    <li> This service is <strong>NOT</strong> a form of professional counseling, psychotherapy, diagnosis, or treatment.</li>
+                                    <li> The listener is a <strong>trained psychology student helper</strong> under faculty supervision.</li>
+                                    <li> Your participation is <strong>voluntary</strong> — you may end the session at any time.</li>
+                                    <li> All conversations are <strong>confidential</strong>.</li>
+                                    <li> In emergencies, authorized personnel may access information to <strong>protect life or safety</strong>.</li>
+                                    <li> Live sessions are available <strong>6:00 PM – 11:00 PM (PHT)</strong>, Monday to Saturday.</li>
+                                    <li> Sessions are limited to <strong>90 minutes</strong> to ensure equitable access.</li>
+                                    <li> Abusive, threatening, or harassing behavior may result in <strong>termination of access</strong>.</li>
                                 </ul>
 
                                 <p style="margin-top: 12px; font-weight: 600; color: #14532D;">
-                                    <i class="fas fa-triangle-exclamation" aria-hidden="true"></i> If you are in immediate danger, please use the Emergency Button or contact local crisis hotlines immediately.
+                                     If you are in immediate danger, please use the Emergency Button or contact local crisis hotlines immediately.
                                 </p>
                             </div>
                             <div id="consentScrollIndicator" class="consent-scroll-indicator">
@@ -308,9 +308,7 @@
                 <!-- STEP 4: Success                              -->
                 <!-- ============================================ -->
                 <div id="step4" class="step-content hidden text-center py-8">
-                    <div class="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-check text-3xl text-green-600"></i>
-                    </div>
+
                     <h2 class="text-2xl font-bold text-gray-800">Welcome to COMPASS!</h2>
                     <p class="text-gray-500 mt-2">Your anonymous account has been created.</p>
                     <p class="text-sm text-gray-400 mt-1">Alias: <span id="successAlias" class="font-semibold text-green-600"></span></p>
@@ -331,7 +329,7 @@
         </div>
 
         <p class="text-center text-xs text-gray-400 mt-6">
-            <i class="fas fa-shield-alt text-green-500 mr-1"></i>
+
             100% Confidential · Anonymous · Secure
         </p>
     </div>

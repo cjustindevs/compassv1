@@ -149,7 +149,7 @@
 
         @if(session('success'))
             <div class="flash-success">
-                <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
+                 {{ session('success') }}
             </div>
         @endif
 
@@ -204,7 +204,7 @@
                                 <div class="day-num">{{ $cell['day'] }}</div>
                                 @foreach(array_slice($cell['events'], 0, 3) as $event)
                                     <div class="event-chip" style="background:{{ $event['color'] }}">
-                                        <i class="fas {{ $event['type'] === 'session' ? 'fa-comments' : ($event['type'] === 'evaluation' ? 'fa-star' : 'fa-calendar-alt') }}"></i>
+
                                         {{ $event['title'] }}
                                     </div>
                                 @endforeach
@@ -287,7 +287,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             Quality supervision leads to quality support.
         </div>
 </div>

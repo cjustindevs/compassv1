@@ -52,21 +52,21 @@
 
     @if(session('success'))
         <div role="status" class="flex items-start gap-3 rounded-xl bg-green-50 border border-green-100 p-3 text-green-800">
-            <i class="fas fa-circle-check mt-0.5" aria-hidden="true"></i>
+
             <p class="text-sm">{{ session('success') }}</p>
         </div>
     @endif
 
     @if(session('error'))
         <div role="alert" class="flex items-start gap-3 rounded-xl bg-red-50 border border-red-100 p-3 text-red-800">
-            <i class="fas fa-circle-exclamation mt-0.5" aria-hidden="true"></i>
+
             <p class="text-sm">{{ session('error') }}</p>
         </div>
     @endif
 
     @if($errors->any())
         <div role="alert" class="flex items-start gap-3 rounded-xl bg-red-50 border border-red-100 p-3 text-red-800">
-            <i class="fas fa-circle-exclamation mt-0.5" aria-hidden="true"></i>
+
             <p class="text-sm">{{ $errors->first() }}</p>
         </div>
     @endif
@@ -141,7 +141,7 @@
 
                 @if($reassessment)
                     <div class="flex items-start gap-3 rounded-xl bg-amber-50 border border-amber-100 p-3 text-sm text-amber-800">
-                        <i class="fas fa-rotate mt-0.5" aria-hidden="true"></i>
+
                         <div>
                             <p class="font-semibold">The helper requested a reassessment</p>
                             <p class="mt-0.5">Assessed {{ $session->report?->risk_level_assessed ?? 'unspecified' }}. {{ $session->report?->observations }}</p>
@@ -162,7 +162,7 @@
                     </div>
                 @else
                     <div class="flex items-center gap-2 rounded-xl bg-green-50/60 border border-green-100 p-3 text-sm text-green-700">
-                        <i class="fas fa-check-circle" aria-hidden="true"></i>
+
                         <span>No immediate danger cues were recorded on the screening.</span>
                     </div>
                 @endif
@@ -192,7 +192,7 @@
                 </div>
 
                 <div class="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-sm text-blue-800">
-                    <i class="fas fa-lightbulb mt-0.5" aria-hidden="true"></i>
+
                     <p><span class="font-semibold">Guidance:</span> {{ $riskMeta['guidance'] }}</p>
                 </div>
 

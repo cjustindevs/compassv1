@@ -59,9 +59,7 @@
                                 <tr>
                                     <th scope="row">
                                         <span class="permission-category">
-                                            <span class="permission-category-icon" aria-hidden="true">
-                                                <x-admin.icon :name="$category['icon']" :size="20" />
-                                            </span>
+
                                             <span>{{ $category['name'] }}</span>
                                         </span>
                                     </th>
@@ -82,7 +80,7 @@
                 </div>
             @else
                 <div class="permission-empty-state">
-                    <span><x-admin.icon name="shield" :size="26" /></span>
+                    <span></span>
                     <strong>No permission categories configured</strong>
                     <p>Permission modules will appear here once they are available.</p>
                 </div>
@@ -90,7 +88,7 @@
         </section>
 
         <div class="admin-toast" data-rbac-toast role="status" aria-live="polite" hidden>
-            <span class="admin-toast-icon"><x-admin.icon name="check-circle" :size="19" /></span>
+
             <span data-rbac-toast-message></span>
         </div>
 

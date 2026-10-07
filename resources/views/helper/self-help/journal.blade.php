@@ -6,7 +6,7 @@
 
 @section('content')
     @if(session('success'))
-        <div class="alert alert-success" data-flash><i class="fas fa-check-circle"></i> {{ session('success') }}</div>
+        <div class="alert alert-success" data-flash> {{ session('success') }}</div>
     @endif
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -51,7 +51,7 @@
                 </div>
             @empty
                 <div class="empty-state">
-                    <i class="fas fa-book-open"></i>
+
                     <p>No journal entries yet. Write your first one to get started.</p>
                 </div>
             @endforelse

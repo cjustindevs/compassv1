@@ -413,7 +413,7 @@
                 <div class="space-y-1">
                     @foreach($notifications as $notification)
                         <div class="notification-item">
-                            <div class="notif-icon"><x-ui-icon :value="$notification->type_icon" /></div>
+
                             <div class="flex-1 min-w-0">
                                 <div class="notif-title">{{ $notification->title }}</div>
                                 <div class="notif-msg">{{ \Illuminate\Support\Str::limit($notification->message, 90) }}</div>
@@ -432,7 +432,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             Professional care, delivered with compassion.
         </div>
 
@@ -466,13 +466,13 @@
     </script>
 
     @if(session('success'))
-        <div class="flash-alert"><i class="fas fa-check-circle text-[#04A052] mr-2"></i>{{ session('success') }}</div>
+        <div class="flash-alert">{{ session('success') }}</div>
     @endif
     @if(session('info'))
-        <div class="flash-alert info"><i class="fas fa-info-circle text-blue-500 mr-2"></i>{{ session('info') }}</div>
+        <div class="flash-alert info">{{ session('info') }}</div>
     @endif
     @if(session('error'))
-        <div class="flash-alert error"><i class="fas fa-exclamation-circle text-red-500 mr-2"></i>{{ session('error') }}</div>
+        <div class="flash-alert error">{{ session('error') }}</div>
     @endif
 
     @include('layouts.partials.pwa-banner')

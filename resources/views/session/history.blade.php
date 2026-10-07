@@ -338,9 +338,9 @@
                                         <span class="stars">
                                             @for($i = 1; $i <= 5; $i++)
                                                 @if($i <= $session['rating'])
-                                                    <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+
                                                 @else
-                                                    <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+
                                                 @endif
                                             @endfor
                                         </span>
@@ -369,7 +369,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             Every session is a step toward healing.
         </div>
 

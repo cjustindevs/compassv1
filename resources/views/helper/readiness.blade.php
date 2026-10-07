@@ -239,7 +239,7 @@
     @if($readinessStatus === 'ready')
         <div class="rc-card">
             <div class="rc-ready">
-                <div class="check"><i class="fas fa-check"></i></div>
+
                 <h3>You're all set to help</h3>
                 <p>
                     Your readiness assessment is valid for the current duty period (4 hours).<br>
@@ -345,16 +345,16 @@
                     <div class="rc-box">
                         <label class="rc-label"><i class="fas fa-wind text-teal-600"></i> Breathing exercise <span class="req">*</span></label>
                         <div class="breath-steps">
-                            <span class="step"><i class="fas fa-circle"></i> Inhale 4s</span>
-                            <span class="step"><i class="fas fa-circle"></i> Hold 4s</span>
-                            <span class="step"><i class="fas fa-circle"></i> Exhale 4s</span>
-                            <span class="step"><i class="fas fa-circle"></i> 3 rounds</span>
+                            <span class="step"> Inhale 4s</span>
+                            <span class="step"> Hold 4s</span>
+                            <span class="step"> Exhale 4s</span>
+                            <span class="step"> 3 rounds</span>
                         </div>
                         <div class="breath-cta">
                             <button type="button" class="btn btn-secondary btn-sm" id="openExerciseBtn">
                                 <i class="fas fa-play mr-1"></i> Start Breathing Exercise
                             </button>
-                            <span class="status-tag" id="breathStatusTag"><i class="fas fa-check"></i> Completed</span>
+                            <span class="status-tag" id="breathStatusTag"> Completed</span>
                         </div>
                         <input type="hidden" name="exercise_completed" id="exercise_completed" value="{{ old('exercise_completed', '') }}">
                         @error('exercise_completed')<p class="error-text">{{ $message }}</p>@enderror
@@ -364,7 +364,7 @@
                 {{-- Helper message --}}
                 <div class="rc-box">
                     <p class="text-sm text-gray-600 leading-relaxed mb-0" style="font-size:12px;">
-                        <i class="fas fa-hand-holding-heart text-green-500 mr-1"></i>
+
                         <span class="font-semibold text-gray-700">You can't pour from an empty cup.</span>
                         If you're not feeling ready, that's okay — take a break and try a self-care tool below.
                     </p>
@@ -391,7 +391,7 @@
         </div>
 
         <div class="rc-foot-note">
-            <i class="fas fa-heart mr-1" style="color:#04A052;"></i>
+
             Your well-being matters. Take care of yourself first.
         </div>
     @endif
@@ -404,7 +404,7 @@
                 <h3 style="font-size:17px;font-weight:800;color:var(--gray-800);margin-bottom:4px;">Breathing Exercise</h3>
                 <p style="font-size:12px;color:var(--gray-500);margin-bottom:8px;">3 rounds of inhale – hold – exhale</p>
 
-                <div class="breath-circle" id="breath-circle"><i class="fas fa-wind"></i></div>
+                <div class="breath-circle" id="breath-circle"></div>
                 <div id="breath-text" style="margin:0 0 4px;">Ready?</div>
                 <p style="font-size:12px;color:var(--gray-400);margin-bottom:16px;">Round <span id="round-count">1</span> of 3</p>
 

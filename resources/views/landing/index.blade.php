@@ -369,10 +369,10 @@
 
                     <!-- Trust badges -->
                     <div class="mt-10 flex flex-wrap gap-6 text-sm text-gray-500">
-                        <span class="flex items-center gap-2"><i class="fas fa-check-circle text-green-500 text-base"></i> Confidential</span>
-                        <span class="flex items-center gap-2"><i class="fas fa-check-circle text-green-500 text-base"></i> Anonymous</span>
-                        <span class="flex items-center gap-2"><i class="fas fa-check-circle text-green-500 text-base"></i> Student Peer Support</span>
-                        <span class="flex items-center gap-2"><i class="fas fa-check-circle text-green-500 text-base"></i> Free</span>
+                        <span class="flex items-center gap-2"> Confidential</span>
+                        <span class="flex items-center gap-2"> Anonymous</span>
+                        <span class="flex items-center gap-2"> Student Peer Support</span>
+                        <span class="flex items-center gap-2"> Free</span>
                     </div>
                 </div>
 
@@ -401,7 +401,7 @@
                                 <div class="text-xs text-gray-500">You're doing well today</div>
                             </div>
                             <div class="ml-auto flex items-center gap-1">
-                                <i class="fas fa-arrow-up text-green-500 text-sm"></i>
+
                                 <span class="text-sm font-semibold text-green-600">+18%</span>
                             </div>
                         </div>
@@ -457,8 +457,8 @@
 
                         <!-- Badge -->
                         <div class="mt-4 flex items-center justify-between text-xs text-gray-500">
-                            <span><i class="fas fa-shield-alt text-green-500 mr-1"></i> Peer Support Active</span>
-                            <span><i class="fas fa-lock text-green-500 mr-1"></i> End-to-End Encrypted</span>
+                            <span> Peer Support Active</span>
+                            <span> End-to-End Encrypted</span>
                         </div>
                     </div>
                 </div>
@@ -487,54 +487,42 @@
 
                 <!-- Card 1 -->
                 <div class="card-hover p-6 md:p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group animate-fade-up delay-100">
-                    <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        <i class="fas fa-user-secret text-xl text-green-600"></i>
-                    </div>
+
                     <h3 class="text-lg font-bold text-gray-800 mb-1.5">Anonymous Conversations</h3>
                     <p class="text-sm text-gray-500 leading-relaxed">Your identity remains protected. Share openly without fear.</p>
                 </div>
 
                 <!-- Card 2 -->
                 <div class="card-hover p-6 md:p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group animate-fade-up delay-200">
-                    <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        <i class="fas fa-heart text-xl text-green-600"></i>
-                    </div>
+
                     <h3 class="text-lg font-bold text-gray-800 mb-1.5">Personalized Care</h3>
                     <p class="text-sm text-gray-500 leading-relaxed">Support tailored to your needs for timely help.</p>
                 </div>
 
                 <!-- Card 3 -->
                 <div class="card-hover p-6 md:p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group animate-fade-up delay-300">
-                    <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        <i class="fas fa-headset text-xl text-green-600"></i>
-                    </div>
+
                     <h3 class="text-lg font-bold text-gray-800 mb-1.5">Voice &amp; Chat Support</h3>
                     <p class="text-sm text-gray-500 leading-relaxed">Choose how you feel comfortable communicating.</p>
                 </div>
 
                 <!-- Card 4 -->
                 <div class="card-hover p-6 md:p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group animate-fade-up delay-400">
-                    <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        <i class="fas fa-user-graduate text-xl text-green-600"></i>
-                    </div>
+
                     <h3 class="text-lg font-bold text-gray-800 mb-1.5">Trained Student Helpers</h3>
                     <p class="text-sm text-gray-500 leading-relaxed">Verified peer supporters supervised by faculty advisers.</p>
                 </div>
 
                 <!-- Card 5 -->
                 <div class="card-hover p-6 md:p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group animate-fade-up delay-500">
-                    <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        <i class="fas fa-arrow-right text-xl text-green-600"></i>
-                    </div>
+
                     <h3 class="text-lg font-bold text-gray-800 mb-1.5">Referral Support</h3>
                     <p class="text-sm text-gray-500 leading-relaxed">Escalation for serious concerns to licensed professionals.</p>
                 </div>
 
                 <!-- Card 6 -->
                 <div class="card-hover p-6 md:p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group animate-fade-up delay-600">
-                    <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        <i class="fas fa-shield-alt text-xl text-green-600"></i>
-                    </div>
+
                     <h3 class="text-lg font-bold text-gray-800 mb-1.5">Secure &amp; Confidential</h3>
                     <p class="text-sm text-gray-500 leading-relaxed">Encrypted communication and privacy protection.</p>
                 </div>
@@ -569,9 +557,7 @@
                 </div>
 
                 <!-- Arrow -->
-                <div class="hidden md:flex items-center justify-center text-gray-300 text-2xl">
-                    <i class="fas fa-arrow-right"></i>
-                </div>
+
 
                 <!-- Step 2 -->
                 <div class="text-center animate-fade-up delay-200">
@@ -581,9 +567,7 @@
                 </div>
 
                 <!-- Arrow -->
-                <div class="hidden md:flex items-center justify-center text-gray-300 text-2xl">
-                    <i class="fas fa-arrow-right"></i>
-                </div>
+
 
                 <!-- Step 3 -->
                 <div class="text-center animate-fade-up delay-300">
@@ -593,9 +577,7 @@
                 </div>
 
                 <!-- Arrow -->
-                <div class="hidden md:flex items-center justify-center text-gray-300 text-2xl">
-                    <i class="fas fa-arrow-right"></i>
-                </div>
+
 
                 <!-- Step 4 -->
                 <div class="text-center animate-fade-up delay-400">
@@ -605,9 +587,7 @@
                 </div>
 
                 <!-- Arrow -->
-                <div class="hidden md:flex items-center justify-center text-gray-300 text-2xl">
-                    <i class="fas fa-arrow-right"></i>
-                </div>
+
 
                 <!-- Step 5 -->
                 <div class="text-center animate-fade-up delay-500">

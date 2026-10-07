@@ -150,10 +150,10 @@
         </div>
 
         @if(session('success'))
-            <div class="flash-success"><i class="fas fa-check-circle mr-1"></i> {{ session('success') }}</div>
+            <div class="flash-success"> {{ session('success') }}</div>
         @endif
         @if(session('error'))
-            <div class="flash-error"><i class="fas fa-exclamation-circle mr-1"></i> {{ session('error') }}</div>
+            <div class="flash-error"> {{ session('error') }}</div>
         @endif
 
         <!-- Back Link -->

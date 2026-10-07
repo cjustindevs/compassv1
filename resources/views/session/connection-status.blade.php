@@ -7,7 +7,7 @@
 </div>
 @if(auth()->user()->role === 'seeker')
 <dialog id="connectionDialog" aria-labelledby="connectionHeading" aria-describedby="connectionExplanation">
-    <div class="connection-heading"><i class="fas fa-plug" aria-hidden="true"></i><h2 id="connectionHeading">Your Helper is reconnecting</h2></div>
+    <div class="connection-heading"><h2 id="connectionHeading">Your Helper is reconnecting</h2></div>
     <p id="connectionExplanation" data-connection-text aria-live="polite"></p>
     <p class="connection-muted">You can stay on this page. Your existing conversation is saved, and your session timer continues.</p>
     <div data-connection-actions hidden>

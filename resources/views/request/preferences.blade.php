@@ -458,7 +458,7 @@
 
         <!-- Step Indicator -->
         <div class="step-indicator steps-compact">
-            <div class="step-dot done"><i class="fas fa-check" aria-hidden="true"></i></div>
+            <div class="step-dot done">1</div>
             <div class="step-line done"></div>
             <div class="step-dot active">2</div>
             <div class="step-line"></div>
@@ -537,7 +537,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             You are not alone. We are here for you.
         </div>
 

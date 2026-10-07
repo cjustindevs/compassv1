@@ -33,7 +33,7 @@
                 <tr class="audit-empty-row">
                     <td colspan="4">
                         <div class="audit-empty-state">
-                            <span><x-admin.icon name="file-text" :size="25" /></span>
+                            <span></span>
                             <strong>{{ $filtersApplied ? 'No matching audit events' : 'No audit events found' }}</strong>
                             <p>
                                 {{ $filtersApplied

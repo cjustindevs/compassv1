@@ -370,7 +370,7 @@
                                     <div class="note-body">{{ $note->notes }}</div>
                                     @if($note->follow_up_plan || $note->follow_up_date)
                                         <div class="follow-up">
-                                            <i class="fas fa-calendar-check mr-1"></i>
+
                                             <strong>Follow-up:</strong>
                                             @if($note->follow_up_date) {{ $note->follow_up_date->format('M d, Y') }} @endif
                                             @if($note->follow_up_plan) – {{ $note->follow_up_plan }} @endif
@@ -437,7 +437,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             Clinical documentation, kept confidential.
         </div>
 
@@ -447,9 +447,7 @@
     <div class="modal-overlay" id="statusModal">
         <div class="modal-box">
             <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                    <i class="fas fa-exchange-alt text-blue-600"></i>
-                </div>
+
                 <h3 class="text-xl font-bold text-gray-800">Update Case Status</h3>
             </div>
             <p class="text-gray-500 text-sm mb-4">Change the status of case #{{ $case->id }}. The adviser will be notified when a case is completed or closed.</p>
@@ -499,12 +497,12 @@
 
     @if($errors->any())
         <div class="flash-alert error">
-            <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+
             {{ $errors->first() }}
         </div>
     @endif
     @if(session('success'))
-        <div class="flash-alert"><i class="fas fa-check-circle text-[#04A052] mr-2"></i>{{ session('success') }}</div>
+        <div class="flash-alert">{{ session('success') }}</div>
     @endif
 
     @include('layouts.partials.pwa-banner')

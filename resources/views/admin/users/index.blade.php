@@ -39,7 +39,7 @@
     @error('account')<div class="admin-flash" role="alert">{{ $message }}</div>@enderror
     @if (session('success'))
         <div class="admin-flash admin-flash-success" role="status">
-            <x-admin.icon name="check-circle" :size="18" />
+
             {{ session('success') }}
         </div>
     @endif
@@ -166,7 +166,7 @@
                     <tr class="directory-empty-row" data-directory-empty @if ($users->isNotEmpty()) hidden @endif>
                         <td colspan="6">
                             <div class="directory-empty-state">
-                                <span><x-admin.icon name="users" :size="25" /></span>
+                                <span></span>
                                 <strong>No users found</strong>
                                 <p>Try changing your search or role filter.</p>
                                 <button type="button" data-clear-directory-filters>Clear filters</button>

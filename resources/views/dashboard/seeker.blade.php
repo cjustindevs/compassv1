@@ -741,7 +741,7 @@
             <!-- ═══════ ACTIVE SESSION / PENDING REQUEST ═══════ -->
             @if($activeSession)
                 <div class="mb-6 p-5 rounded-2xl bg-white border border-[#04A052] shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4" style="border-left: 6px solid #04A052;">
-                    <div class="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-2xl flex-shrink-0"><i class="fas fa-star" aria-hidden="true"></i></div>
+
                     <div class="flex-1 min-w-0">
                         <h3 class="font-bold text-gray-800">Your session is active</h3>
                         <p class="text-sm text-gray-500">
@@ -757,9 +757,7 @@
                 </div>
             @elseif($pendingSession)
                 <div class="mb-6 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4" style="border-left: 6px solid #F59E0B;">
-                    <div class="w-12 h-12 rounded-full bg-yellow-50 flex items-center justify-center text-2xl flex-shrink-0">
-                        <x-ui-icon :value="$pendingSession->isHelperAssigned() ? 'fa-hourglass-half' : 'fa-magnifying-glass'" />
-                    </div>
+
                     <div class="flex-1 min-w-0">
                         <h3 class="font-bold text-gray-800">
                             {{ $pendingSession->isHelperAssigned() ? 'Waiting for a helper to accept' : 'Your request is in progress' }}
@@ -875,7 +873,7 @@
             </div>
 
             <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-                <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
                 You are worthy of support. Every step counts.
             </div>
         </div>
@@ -945,7 +943,7 @@
                                     <td class="hidden sm:table-cell">{{ $session->start_time ? $session->start_time->diff($session->end_time ?? now())->format('%Hh %Im') : '—' }}</td>
                                     <td>
                                         @if($session->evaluation)
-                                            <span class="stars">@for ($star = 0; $star < (min(5, max(0, (int) round($session->evaluation->overall_score)))); $star++)<i class="fas fa-star" aria-hidden="true"></i>@endfor<span class="text-gray-300">@for ($star = 0; $star < (5 - min(5, max(0, (int) round($session->evaluation->overall_score)))); $star++)<i class="fas fa-star" aria-hidden="true"></i>@endfor</span></span>
+                                            <span class="stars">@for ($star = 0; $star < (min(5, max(0, (int) round($session->evaluation->overall_score)))); $star++)@endfor<span class="text-gray-300">@for ($star = 0; $star < (5 - min(5, max(0, (int) round($session->evaluation->overall_score)))); $star++)@endfor</span></span>
                                         @else
                                             <span class="text-gray-400">—</span>
                                         @endif

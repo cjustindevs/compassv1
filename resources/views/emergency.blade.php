@@ -144,7 +144,7 @@
 @section('content')
 <div class="emg-page">
 
-    <span class="emg-eyebrow"><i class="fas fa-heart-crack" aria-hidden="true"></i> Emergency</span>
+    <span class="emg-eyebrow"> Emergency</span>
     <h1 class="emg-title">Emergency support</h1>
     <p class="emg-lede">
         If there is an immediate threat to safety, contact an appropriate emergency service or seek help
@@ -155,7 +155,7 @@
     {{-- Immediate danger: escalate above everything else on the page. --}}
     <section class="emg-urgent" aria-labelledby="emgUrgentTitle">
         <div class="emg-urgent-head">
-            <span class="emg-urgent-icon"><i class="fas fa-phone-volume" aria-hidden="true"></i></span>
+
             <h2 id="emgUrgentTitle">If you are in danger right now</h2>
         </div>
         <p>
@@ -173,7 +173,7 @@
     </section>
 
     {{-- Published crisis lines. --}}
-    <h2 class="emg-section-title"><i class="fas fa-phone" aria-hidden="true"></i> Crisis hotlines</h2>
+    <h2 class="emg-section-title"> Crisis hotlines</h2>
     <p class="emg-section-sub">Published contacts, kept current by the COMPASS team.</p>
 
     @if ($hotlines->isNotEmpty())
@@ -181,7 +181,7 @@
             @foreach ($hotlines as $hotline)
                 <article class="emg-card">
                     <div class="emg-card-head">
-                        <span class="emg-card-icon"><i class="fas fa-life-ring" aria-hidden="true"></i></span>
+
                         <h3>{{ $hotline->agency_name }}</h3>
                     </div>
                     @if ($hotline->description)
@@ -197,7 +197,7 @@
         </div>
     @else
         <div class="emg-empty">
-            <i class="fas fa-circle-info" aria-hidden="true"></i>
+
             <h3>No published contacts are available right now</h3>
             <p>
                 Use your local emergency service, or reach out to a trusted person nearby. Crisis hotlines
@@ -207,11 +207,11 @@
     @endif
 
     {{-- What COMPASS can do. --}}
-    <h2 class="emg-section-title"><i class="fas fa-hands-holding-circle" aria-hidden="true"></i> What COMPASS can do</h2>
+    <h2 class="emg-section-title"> What COMPASS can do</h2>
     <p class="emg-section-sub">Peer support is not crisis intervention, but it can still help.</p>
 
     <div class="emg-panel">
-        <span class="emg-panel-icon"><i class="fas fa-user-shield" aria-hidden="true"></i></span>
+
         <div class="emg-panel-body">
             <h3>Talk to a peer helper</h3>
             <p>Request a support session and match with a trained peer helper who can listen and stay with you while you figure out your next step.</p>
@@ -220,7 +220,7 @@
     </div>
 
     <div class="emg-panel">
-        <span class="emg-panel-icon"><i class="fas fa-book-open" aria-hidden="true"></i></span>
+
         <div class="emg-panel-body">
             <h3>Use the self-help library</h3>
             <p>Guided grounding, breathing and coping exercises you can work through on your own time.</p>
@@ -229,7 +229,7 @@
     </div>
 
     <div class="emg-disclaimer">
-        <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
+
         <span>
             COMPASS peer sessions are not monitored continuously and are not an emergency service. If a safety
             concern is raised during a session, the assigned peer helper and a moderator are notified so the

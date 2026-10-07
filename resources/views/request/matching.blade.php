@@ -428,9 +428,9 @@
 
         <!-- Step Indicator -->
         <div class="step-indicator">
-            <div class="step-dot done"><i class="fas fa-check" aria-hidden="true"></i></div>
+            <div class="step-dot done">1</div>
             <div class="step-line done"></div>
-            <div class="step-dot done"><i class="fas fa-check" aria-hidden="true"></i></div>
+            <div class="step-dot done">2</div>
             <div class="step-line done"></div>
             <div class="step-dot active">3</div>
         </div>
@@ -471,7 +471,7 @@
 
                     @if($session->scheduled_start)
                         <div class="mt-4 p-3 bg-blue-50 rounded-xl border border-blue-200 max-w-md mx-auto">
-                            <p class="text-sm text-blue-700"><i class="fas fa-calendar-check mr-1"></i>
+                            <p class="text-sm text-blue-700">
                                 Your session is scheduled for
                                 <span class="font-semibold">{{ $session->scheduled_start->setTimezone(config('app.schedule_timezone'))->format('M d, h:i A') }}</span>
                             </p>
@@ -502,7 +502,7 @@
                     </div>
 
                     <p class="text-sm text-gray-400 mt-4">
-                        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Request {{ $session->reference_number }} · Submitted {{ $session->created_at?->diffForHumans() }}
+                         Request {{ $session->reference_number }} · Submitted {{ $session->created_at?->diffForHumans() }}
                     </p>
                     <p class="text-sm text-gray-400 mt-1">
                         You can close this page and check back later — your request is saved.
@@ -514,10 +514,10 @@
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             @foreach($resources as $resource)
                                 <div class="resource-card" onclick="window.location.href='{{ $resource['link'] }}'">
-                                    <div class="icon"><x-ui-icon :value="$resource['icon']" /></div>
+
                                     <h4>{{ $resource['title'] }}</h4>
                                     <p>{{ $resource['description'] }}</p>
-                                    <span class="duration"><i class="fas fa-clock"></i> {{ $resource['duration'] }}</span>
+                                    <span class="duration"> {{ $resource['duration'] }}</span>
                                 </div>
                             @endforeach
                         </div>
@@ -548,7 +548,7 @@
                     </p>
 
                     <div class="mt-4 text-sm text-gray-500">
-                        <p><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Request {{ $session->reference_number }} · Submitted {{ $session->created_at?->diffForHumans() }}</p>
+                        <p> Request {{ $session->reference_number }} · Submitted {{ $session->created_at?->diffForHumans() }}</p>
                         @if($currentQueueRequest?->queue_position)
                             <p class="mt-1 text-gray-600">
                                 Queue position: #{{ $currentQueueRequest->queue_position }}
@@ -556,18 +556,18 @@
                         @endif
                         @if($availableHelperCount > 0)
                             <p class="mt-1 text-green-600">
-                                <i class="fas fa-user-check" aria-hidden="true"></i> {{ $availableHelperCount }} {{ $availableHelperCount === 1 ? 'helper is' : 'helpers are' }} online now
+                                 {{ $availableHelperCount }} {{ $availableHelperCount === 1 ? 'helper is' : 'helpers are' }} online now
                             </p>
                         @elseif(!empty($matchingReason))
                             <p class="mt-2 text-left text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 inline-block" role="status">
-                                <i class="fas fa-clock mr-1" aria-hidden="true"></i> {{ $matchingReason }}
+                                 {{ $matchingReason }}
                             </p>
                         @endif
                         <p class="text-gray-400 mt-1">You can close this page. Your request is saved and you can come back anytime.</p>
                     </div>
 
                     <p class="text-xs text-gray-400 mt-2">
-                        <i class="fas fa-info-circle mr-1"></i> This page checks again automatically every 30 seconds.
+                         This page checks again automatically every 30 seconds.
                     </p>
 
                     <!-- ============================================ -->
@@ -578,10 +578,10 @@
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             @foreach($resources as $resource)
                                 <div class="resource-card" onclick="window.location.href='{{ $resource['link'] }}'">
-                                    <div class="icon"><x-ui-icon :value="$resource['icon']" /></div>
+
                                     <h4>{{ $resource['title'] }}</h4>
                                     <p>{{ $resource['description'] }}</p>
-                                    <span class="duration"><i class="fas fa-clock"></i> {{ $resource['duration'] }}</span>
+                                    <span class="duration"> {{ $resource['duration'] }}</span>
                                 </div>
                             @endforeach
                         </div>
@@ -611,7 +611,7 @@
 
         <!-- Emergency Banner -->
         <div class="mt-6 p-4 bg-red-50 rounded-xl border border-red-200 flex items-center gap-4 flex-wrap">
-            <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
+
             <div>
                 <p class="text-sm font-medium text-red-700">Need immediate help?</p>
                 <p class="text-xs text-red-600">COMPASS is not an emergency service. For urgent support, open the emergency page or call your local emergency number.</p>
@@ -621,7 +621,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             You are not alone. We are here for you.
         </div>
 

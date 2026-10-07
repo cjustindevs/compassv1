@@ -22,13 +22,13 @@
         @forelse($resources as $resource)
             <div class="card" style="display:flex;flex-direction:column;">
                 <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-                    <div style="width:48px;height:48px;border-radius:12px;background:var(--green-50);display:flex;align-items:center;justify-content:center;font-size:24px;"><x-ui-icon :value="$resource['icon']" /></div>
+                    <div style="width:48px;height:48px;border-radius:12px;background:var(--green-50);display:flex;align-items:center;justify-content:center;font-size:24px;"></div>
                     <div>
                         <div class="font-semibold text-gray-800" style="font-size:15px;">{{ $resource['title'] }}</div>
                         <div style="display:flex;gap:6px;margin-top:2px;flex-wrap:wrap;">
                             <span class="pill">{{ $resource['category'] }}</span>
                             @if($resource['featured'])
-                                <span class="pill" style="background:#FEF3C7;color:#B45309;"><i class="fas fa-star" aria-hidden="true"></i> Featured</span>
+                                <span class="pill" style="background:#FEF3C7;color:#B45309;"> Featured</span>
                             @endif
                         </div>
                     </div>
@@ -37,8 +37,8 @@
                 <hr class="divider">
                 <div style="display:flex;align-items:center;justify-content:space-between;">
                     <div class="text-xs text-gray-400">
-                        <i class="far fa-clock mr-1"></i>{{ $resource['duration'] ?? '—' }}
-                        <span class="ml-2"><i class="far fa-eye mr-1"></i>{{ $resource['views'] }}</span>
+                        {{ $resource['duration'] ?? '—' }}
+                        <span class="ml-2">{{ $resource['views'] }}</span>
                     </div>
                     <a href="{{ route('selfhelp.show', ['id' => $resource['id']]) }}" target="_blank" class="btn btn-secondary btn-sm"><i class="fas fa-external-link-alt"></i> Open</a>
                 </div>
@@ -46,7 +46,7 @@
         @empty
             <div class="card" style="grid-column:1/-1;">
                 <div class="empty-state">
-                    <i class="fas fa-book"></i>
+
                     <h3>No resources found</h3>
                     <p>Try a different category or search term.</p>
                 </div>

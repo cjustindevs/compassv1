@@ -23,7 +23,7 @@
 
         @if (session('status') === 'password-updated')
             <div class="admin-flash admin-flash-success" role="status">
-                <x-admin.icon name="check-circle" :size="18" />
+
                 Password updated successfully.
             </div>
         @endif
@@ -178,7 +178,7 @@
                     </div>
 
                     <div class="settings-policy-note" role="note">
-                        <x-admin.icon name="shield" :size="18" />
+
                         <p>Required audit, security, emergency, and institutional records are governed by system policy and cannot be disabled here.</p>
                     </div>
                 </section>
@@ -251,7 +251,7 @@
         </div>
 
         <div class="admin-toast is-warning" data-settings-toast role="alert" aria-live="assertive" hidden>
-            <span class="admin-toast-icon"><x-admin.icon name="alert-circle" :size="19" /></span>
+
             <span data-settings-toast-message></span>
         </div>
     </section>
@@ -305,14 +305,14 @@
         <div class="admin-dialog-body active-session-list">
             @if ($sessionLoadFailed)
                 <div class="settings-session-warning" role="alert">
-                    <x-admin.icon name="alert-circle" :size="18" />
+
                     Other session records could not be loaded. Your current session is shown below.
                 </div>
             @endif
 
             @foreach ($activeSessions as $session)
                 <article class="active-session-row">
-                    <span class="active-session-icon" aria-hidden="true"><x-admin.icon name="monitor" :size="20" /></span>
+
                     <div>
                         <strong>{{ $session['device'] }}</strong>
                         <time datetime="{{ $session['lastActiveIso'] }}" title="{{ $session['lastActiveTitle'] }}">
@@ -328,7 +328,7 @@
             @endforeach
 
             <div class="report-operation-note" role="note">
-                <x-admin.icon name="lock" :size="18" />
+
                 <p>Session revocation is not implemented. No Sign out control is shown until a protected backend action exists.</p>
             </div>
         </div>

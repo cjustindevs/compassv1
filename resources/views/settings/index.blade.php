@@ -108,7 +108,7 @@
 
         <!-- Account summary -->
         <div class="info-strip flex items-center gap-3 flex-wrap">
-            <i class="fas fa-user-circle text-[#04A052] text-xl"></i>
+
             Signed in as <strong class="text-gray-700">{{ $user->email }}</strong>
             @if($user->role)
                 <span class="bg-green-50 text-[#04A052] text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">{{ $user->role }}</span>
@@ -116,7 +116,7 @@
         </div>
 
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             COMPASS · Peer support made safe.
         </div>
 

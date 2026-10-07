@@ -129,11 +129,11 @@
         </div>
 
         @if(session('success'))
-            <div class="flash-success"><i class="fas fa-check-circle mr-1"></i> {{ session('success') }}</div>
+            <div class="flash-success"> {{ session('success') }}</div>
         @endif
         @if($errors->any())<div class="flash-error" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
         @if(session('error'))
-            <div class="flash-error"><i class="fas fa-exclamation-circle mr-1"></i> {{ session('error') }}</div>
+            <div class="flash-error"> {{ session('error') }}</div>
         @endif
 
         <!-- Back Link -->
@@ -240,9 +240,9 @@
                     <span class="text-gray-400 text-xs uppercase tracking-wider">Help Seeker Consent</span>
                     <p class="font-medium text-gray-800">
                         @if($referral->help_seeker_consent)
-                            <i class="fas fa-check-circle text-green-500"></i> Granted
+                             Granted
                         @else
-                            <i class="fas fa-times-circle text-red-500"></i> Not Granted
+                             Not Granted
                         @endif
                     </p>
                 </div>
@@ -250,16 +250,16 @@
                     <span class="text-gray-400 text-xs uppercase tracking-wider">Identity Disclosed</span>
                     <p class="font-medium text-gray-800">
                         @if($referral->identity_disclosed)
-                            <i class="fas fa-check-circle text-green-500"></i> Yes
+                             Yes
                         @else
-                            <i class="fas fa-times-circle text-red-500"></i> No
+                             No
                         @endif
                     </p>
                 </div>
             </div>
 
             @if($referral->clarification_requested_at && !$referral->clarification_received_at && in_array($referral->status,[\App\Models\Referral::STATUS_PENDING_ADVISER,\App\Models\Referral::STATUS_CONSENT_REQUESTED]))
-        <div class="flash-error mb-4"><i class="fas fa-comment-dots mr-1"></i> This referral was returned to the Helper for revision. Approval is blocked until the Helper responds with the requested clarification.</div>
+        <div class="flash-error mb-4"> This referral was returned to the Helper for revision. Approval is blocked until the Helper responds with the requested clarification.</div>
         @endif
 
             <!-- Actions -->
@@ -297,9 +297,7 @@
     <div class="modal-overlay" id="approveModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 999; align-items: center; justify-content: center;">
         <div class="modal-box" style="background: white; border-radius: 24px; max-width: 480px; width: 92%; padding: 32px; box-shadow: 0 40px 80px rgba(0,0,0,0.15); animation: modalSlide 0.3s ease-out;">
             <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                    <i class="fas fa-check text-green-600"></i>
-                </div>
+
                 <h3 class="text-xl font-bold text-gray-800">Approve Referral</h3>
             </div>
             <p class="text-gray-500 text-sm mb-4">Record a short review note. This is stored alongside the approval for accountability.</p>
@@ -322,9 +320,7 @@
     <div class="modal-overlay" id="reviseModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 999; align-items: center; justify-content: center;">
         <div class="modal-box" style="background: white; border-radius: 24px; max-width: 480px; width: 92%; padding: 32px; box-shadow: 0 40px 80px rgba(0,0,0,0.15); animation: modalSlide 0.3s ease-out;">
             <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                    <i class="fas fa-rotate-left text-amber-600"></i>
-                </div>
+
                 <h3 class="text-xl font-bold text-gray-800">Request Revision</h3>
             </div>
             <p class="text-gray-500 text-sm mb-4">Return this referral to the Helper with comments. The Helper can revise the recommendation, and approval stays blocked until they respond.</p>
@@ -347,9 +343,7 @@
     <div class="modal-overlay" id="rejectModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 999; align-items: center; justify-content: center;">
         <div class="modal-box" style="background: white; border-radius: 24px; max-width: 480px; width: 92%; padding: 32px; box-shadow: 0 40px 80px rgba(0,0,0,0.15); animation: modalSlide 0.3s ease-out;">
             <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                    <i class="fas fa-times text-red-600"></i>
-                </div>
+
                 <h3 class="text-xl font-bold text-gray-800">Return for Revision</h3>
             </div>
             <p class="text-gray-500 text-sm mb-4">Explain what the Helper must revise before you can approve this referral.</p>

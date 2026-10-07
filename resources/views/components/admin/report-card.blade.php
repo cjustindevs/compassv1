@@ -25,9 +25,7 @@
     data-report-records="{{ $report['sourceRecordCount'] }}"
 >
     <header class="report-card-header">
-        <span class="report-card-icon" aria-hidden="true">
-            <x-admin.icon name="file-text" :size="24" />
-        </span>
+
         <span class="report-category-badge">{{ $report['categoryLabel'] }}</span>
     </header>
 

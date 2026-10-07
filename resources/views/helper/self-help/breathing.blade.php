@@ -26,7 +26,7 @@
     <div class="card" style="max-width:520px;margin:0 auto;text-align:center;">
         <p class="text-sm text-gray-500">Inhale for 4 seconds, hold for 4 seconds, exhale for 4 seconds. Repeat for 3 rounds.</p>
 
-        <div class="breath-circle" id="breath-circle"><i class="fas fa-wind"></i></div>
+        <div class="breath-circle" id="breath-circle"></div>
         <div id="breath-text">Ready?</div>
         <p id="breath-timer">Round <span id="round-count">1</span> of 3</p>
 

@@ -4,6 +4,6 @@
         .light-mode-notice .title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
         .light-mode-notice .desc { font-size: 13px; color: #047857; }
     </style>
-    <div class="title"><i class="fas fa-sun mr-1"></i>Light Mode Enabled</div>
+    <div class="title">Light Mode Enabled</div>
     <div class="desc">COMPASS uses one consistent light interface across all roles. Theme switching has been removed.</div>
 </div>

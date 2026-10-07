@@ -129,7 +129,7 @@
         </div>
 
         @if(session('success'))
-            <div class="flash-success"><i class="fas fa-check-circle mr-1"></i> {{ session('success') }}</div>
+            <div class="flash-success"> {{ session('success') }}</div>
         @endif
 
         <!-- Back Link -->
@@ -252,7 +252,7 @@
 
                 @if($session->incidents->isNotEmpty())
                     <div class="card border-red-200">
-                        <h3 class="font-bold text-red-700 mb-4"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Incidents on this session</h3>
+                        <h3 class="font-bold text-red-700 mb-4"> Incidents on this session</h3>
                         @foreach($session->incidents as $incident)
                             <div class="mb-3 pb-3 border-b border-red-50 last:border-0 last:mb-0 last:pb-0">
                                 <div class="flex items-center gap-2 mb-1">

@@ -325,7 +325,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             Documented care, better outcomes.
         </div>
 
@@ -343,10 +343,10 @@
     </script>
 
     @if(session('success'))
-        <div class="flash-alert"><i class="fas fa-check-circle text-[#04A052] mr-2"></i>{{ session('success') }}</div>
+        <div class="flash-alert">{{ session('success') }}</div>
     @endif
     @if(session('info'))
-        <div class="flash-alert info"><i class="fas fa-info-circle text-blue-500 mr-2"></i>{{ session('info') }}</div>
+        <div class="flash-alert info">{{ session('info') }}</div>
     @endif
 
     @include('partials.workflow-notice')

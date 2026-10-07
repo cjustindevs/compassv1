@@ -34,7 +34,7 @@
         </div>
 
         @if(session('success'))
-            <div class="flash-success"><i class="fas fa-check-circle mr-1"></i> {{ session('success') }}</div>
+            <div class="flash-success"> {{ session('success') }}</div>
         @endif
 
         <!-- Back Link -->
@@ -45,7 +45,7 @@
         @php($verificationVerified = ($helper->verification_status ?? 'pending') === 'verified')
         <div class="card mb-6">
             <div class="card-header">
-                <h3><i class="fas fa-id-card-clip mr-2 text-green-700" aria-hidden="true"></i>Institutional eligibility and training</h3>
+                <h3>Institutional eligibility and training</h3>
                 <span class="pill {{ $verificationVerified ? '' : 'pill-warning' }}">
                     {{ $verificationVerified ? 'Verified' : 'Pending verification' }}
                 </span>
@@ -58,7 +58,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                     <div class="rounded-xl border border-green-100 bg-green-50 p-3">
                         <p class="text-xs uppercase tracking-wide text-green-700 font-semibold">Status</p>
-                        <p class="text-sm font-semibold text-gray-800 mt-1"><i class="fas fa-circle-check text-green-600 mr-1" aria-hidden="true"></i>Verified</p>
+                        <p class="text-sm font-semibold text-gray-800 mt-1">Verified</p>
                     </div>
                     <div class="rounded-xl border border-gray-200 bg-gray-50 p-3">
                         <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Last verified</p>
@@ -74,13 +74,13 @@
                 @endif
             @else
                 <div class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 mb-4" role="status">
-                    <i class="fas fa-triangle-exclamation text-amber-500 mt-0.5" aria-hidden="true"></i>
+
                     <p class="text-sm text-amber-800">This helper cannot receive assignments until an adviser records eligibility and training verification.</p>
                 </div>
             @endif
 
             @if($errors->any())
-                <p role="alert" class="text-sm text-red-600 mb-3"><i class="fas fa-circle-exclamation mr-1" aria-hidden="true"></i>{{ $errors->first() }}</p>
+                <p role="alert" class="text-sm text-red-600 mb-3">{{ $errors->first() }}</p>
             @endif
 
             <details class="border border-gray-200 rounded-xl p-4" {{ $verificationVerified ? '' : 'open' }}>
@@ -169,13 +169,13 @@
                 </div>
                 <div class="p-4 bg-gray-50 rounded-xl text-center">
                     <p class="text-2xl font-bold text-gray-800">
-                        <x-ui-icon :value="$helper->isOnline() ? 'fa-circle-check' : 'fa-circle-xmark'" />
+
                     </p>
                     <p class="text-xs text-gray-400">Available</p>
                 </div>
                 <div class="p-4 bg-gray-50 rounded-xl text-center">
                     <p class="text-2xl font-bold text-gray-800">
-                        <x-ui-icon :value="$helper->latestReadiness?->assessment_result === 'ready' ? 'fa-circle' : 'fa-circle'" />
+
                     </p>
                     <p class="text-xs text-gray-400">Readiness</p>
                 </div>

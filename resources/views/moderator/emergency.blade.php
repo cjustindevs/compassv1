@@ -204,7 +204,7 @@
 
         @if(session('success'))
             <div class="bg-[#EAF8F0] text-[#027039] border border-[#D0F0D8] rounded-xl px-4 py-3 text-sm font-medium mb-4">
-                <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
+                 {{ session('success') }}
             </div>
         @endif
 
@@ -249,9 +249,7 @@
                         @if($i < count($steps) - 1)
                             <div class="workflow-connector"></div>
                         @endif
-                        <div class="dot {{ $step['active'] ? 'active' : '' }}">
-                            <i class="fas {{ $step['icon'] }}"></i>
-                        </div>
+
                         <div class="count">{{ $step['count'] }}</div>
                         <div class="label">{{ $step['label'] }}</div>
                     </div>
@@ -281,7 +279,7 @@
                             <span class="font-semibold text-gray-800">#{{ str_pad($incident->id, 3, '0', STR_PAD_LEFT) }}</span>
                             <span class="text-gray-600 text-sm truncate">{{ $incident->session?->seeker?->generated_alias ?? 'Unknown' }}</span>
                             <span class="text-gray-600 text-sm truncate">
-                                <i class="fas fa-user-tie mr-1 text-gray-300"></i>{{ $incident->session?->helper?->full_name ?? 'System' }}
+                                {{ $incident->session?->helper?->full_name ?? 'System' }}
                             </span>
                             <span class="risk-badge {{ $incident->risk_level }}">{{ ucfirst($incident->risk_level) }}</span>
                             <span class="status-pill {{ $incident->status }}">

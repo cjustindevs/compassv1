@@ -515,7 +515,7 @@
                                 </div>
                                 @if($referral->decline_reason)
                                     <div class="reason">
-                                        <span class="text-red-500"><i class="fas fa-info-circle mr-1"></i></span>{{ \Illuminate\Support\Str::limit($referral->decline_reason, 70) }}
+                                        {{ \Illuminate\Support\Str::limit($referral->decline_reason, 70) }}
                                     </div>
                                 @endif
                             </div>
@@ -535,7 +535,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             Every referral is an opportunity to change a life.
         </div>
 
@@ -545,9 +545,7 @@
     <div class="modal-overlay" id="declineModal">
         <div class="modal-box">
             <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                    <i class="fas fa-times text-red-600"></i>
-                </div>
+
                 <h3 class="text-xl font-bold text-gray-800">Decline Referral</h3>
             </div>
             <p class="text-gray-500 text-sm mb-4">Provide a reason for declining this referral. The adviser will be notified.</p>
@@ -618,10 +616,10 @@
     </script>
 
     @if(session('success'))
-        <div class="flash-alert"><i class="fas fa-check-circle text-[#04A052] mr-2"></i>{{ session('success') }}</div>
+        <div class="flash-alert">{{ session('success') }}</div>
     @endif
     @if(session('info'))
-        <div class="flash-alert info"><i class="fas fa-info-circle text-blue-500 mr-2"></i>{{ session('info') }}</div>
+        <div class="flash-alert info">{{ session('info') }}</div>
     @endif
 
     @include('partials.workflow-notice')

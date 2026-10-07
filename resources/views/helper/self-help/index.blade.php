@@ -32,12 +32,12 @@
 
 @section('content')
     @if(session('warning'))
-        <div class="alert alert-warning" data-flash><i class="fas fa-heart"></i> {{ session('warning') }}</div>
+        <div class="alert alert-warning" data-flash> {{ session('warning') }}</div>
     @endif
 
     <div class="mb-6 p-4 rounded-xl" style="background:var(--green-50);border:1px solid var(--green-200);">
         <p class="text-sm font-medium" style="color:var(--green-700);">
-            <i class="fas fa-hand-holding-heart mr-1"></i>
+
             Your well-being comes first. Use these tools to recharge, then you can
             <a href="{{ route('helper.readiness') }}" style="color:var(--green-600);font-weight:700;">check in again</a>
             whenever you're ready to help.
@@ -82,7 +82,7 @@
     </div>
 
     <div class="mt-8 text-center text-sm text-gray-400">
-        <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
         Remember: You cannot pour from an empty cup.
     </div>
 @endsection

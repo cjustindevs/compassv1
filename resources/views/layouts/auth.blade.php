@@ -65,7 +65,7 @@
         </div>
 
         <p class="text-center text-xs text-gray-400 mt-6">
-            <i class="fas fa-shield-alt text-green-500 mr-1"></i>
+
             100% Confidential · Anonymous · Secure
         </p>
     </div>

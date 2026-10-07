@@ -10,7 +10,7 @@
     @if(isset($helperProfileMissing) && $helperProfileMissing)
         <div class="card mb-6">
             <div class="empty-state">
-                <i class="fas fa-user-plus"></i>
+
                 <h3 style="font-size:18px;font-weight:700;color:var(--gray-800);margin-bottom:8px;">Your helper profile is not complete</h3>
                 <p style="margin-bottom:16px;">Your account is registered as a helper, but a helper profile has not been created yet. Please contact your adviser or an administrator to complete your onboarding.</p>
                 <a href="{{ route('helper.settings') }}" class="btn btn-secondary">Go to Settings</a>
@@ -46,7 +46,7 @@
     @if(isset($emergencyCases) && count($emergencyCases) > 0)
         <div class="emergency-alert mb-6">
             <span class="alert-text">
-                <i class="fas fa-exclamation-triangle"></i>
+
                 Emergency case: {{ $emergencyCases[0]['alias'] }} ({{ $emergencyCases[0]['incident'] }}) - {{ $emergencyCases[0]['time'] }}
             </span>
             <a href="{{ route('helper.cases.show', ['id' => $emergencyCases[0]['id']]) }}" class="btn-escalate" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
@@ -60,7 +60,7 @@
         <div class="card mb-6">
             <div class="card-header">
                 <h3>Active Session</h3>
-                <span class="text-xs text-green-600 font-medium"><i class="fas fa-circle" aria-hidden="true"></i> Live</span>
+                <span class="text-xs text-green-600 font-medium"> Live</span>
             </div>
             <div class="active-session-card">
                     <div class="session-info">
@@ -161,7 +161,7 @@
                 @php($eligibility=app(\App\Services\HelperEligibilityService::class)->status(auth()->user()->helper))
                 <div class="card mb-6">
                     <div class="card-header"><h3>Assignment readiness</h3><span class="pill">{{ $eligibility['assignable'] ? 'Ready for matching' : $eligibility['label'] }}</span></div>
-                    @if(!$eligibility['assignable'])<ul class="text-sm text-gray-600 space-y-2">@foreach($eligibility['reasons'] as $reason)<li><i class="fas fa-circle-info mr-2" aria-hidden="true"></i>{{ $reason }}</li>@endforeach</ul>@else<p class="text-sm text-gray-600">You meet the current requirements for an assignment. Duty-shift capacity: {{ auth()->user()->helper->getRemainingCapacity() }}/{{ \App\Models\Helper::MAX_SESSIONS_PER_SHIFT }} remaining.</p>@endif
+                    @if(!$eligibility['assignable'])<ul class="text-sm text-gray-600 space-y-2">@foreach($eligibility['reasons'] as $reason)<li>{{ $reason }}</li>@endforeach</ul>@else<p class="text-sm text-gray-600">You meet the current requirements for an assignment. Duty-shift capacity: {{ auth()->user()->helper->getRemainingCapacity() }}/{{ \App\Models\Helper::MAX_SESSIONS_PER_SHIFT }} remaining.</p>@endif
                     <a href="{{ route('helper.readiness') }}" class="btn btn-secondary btn-sm mt-4">Review readiness</a>
                 </div>
             @endif
@@ -191,15 +191,15 @@
                         <div class="activity-item">
                             <div class="icon {{ $activity['type'] }}">
                                 @if($activity['type'] == 'emergency')
-                                    <i class="fas fa-exclamation"></i>
+
                                 @elseif($activity['type'] == 'assignment')
-                                    <i class="fas fa-user-plus"></i>
+
                                 @elseif($activity['type'] == 'feedback')
-                                    <i class="fas fa-star"></i>
+
                                 @elseif($activity['type'] == 'reminder')
-                                    <i class="fas fa-clock"></i>
+
                                 @else
-                                    <i class="fas fa-bell"></i>
+
                                 @endif
                             </div>
                             <div class="content">
@@ -210,7 +210,7 @@
                         </div>
                     @empty
                         <div class="empty-state">
-                            <i class="fas fa-inbox"></i>
+
                             <p>No recent activity</p>
                         </div>
                     @endforelse
@@ -223,7 +223,7 @@
 
     <!-- Footer -->
     <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-        <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
         You are making a difference. Keep going.
     </div>
 

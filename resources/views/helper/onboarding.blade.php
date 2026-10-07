@@ -64,7 +64,7 @@
 @section('content')
     <div class="card onboarding-card">
         <div class="intro">
-            <span class="badge"><i class="fas fa-hands-helping"></i> Helper Onboarding</span>
+            <span class="badge"> Helper Onboarding</span>
             <h2>Complete your helper profile</h2>
             <p>We just need a few details before you can take on support sessions.</p>
         </div>

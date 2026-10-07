@@ -118,7 +118,7 @@
 <dialog id="{{ $identityDialogId }}" aria-labelledby="identity-title-{{ $referral->id }}" aria-describedby="identity-sub-{{ $referral->id }}">
     <div class="rv-modal__head">
         <div>
-            <p class="rv-modal__eyebrow"><i class="fas fa-shield-halved" aria-hidden="true"></i>Referral #{{ $referral->id }}</p>
+            <p class="rv-modal__eyebrow">Referral #{{ $referral->id }}</p>
             <h2 id="identity-title-{{ $referral->id }}">Identity Disclosure Consent</h2>
             <p class="rv-modal__sub" id="identity-sub-{{ $referral->id }}">A separate, final step. It adds contact details to the referral you already approved &mdash; it does not replace it.</p>
         </div>
@@ -138,18 +138,18 @@
             </ol>
 
             <div class="rv-card">
-                <h3><i class="fas fa-file-signature" aria-hidden="true"></i>The referral consent you already accepted</h3>
+                <h3>The referral consent you already accepted</h3>
                 @include('partials.referral-consent-terms')
             </div>
 
             <div class="rv-card">
-                <h3><i class="fas fa-vault" aria-hidden="true"></i>What this step adds</h3>
+                <h3>What this step adds</h3>
                 <div class="rv-facts">
-                    <div><i class="fas fa-lock" aria-hidden="true"></i><span>Details are encrypted in the separate <strong>Identity Vault</strong>, never in the operational database, and are never shown in the chat window.</span></div>
-                    <div><i class="fas fa-user-check" aria-hidden="true"></i><span>Only your <strong>assigned adviser</strong> can authorize release, and only to the professional assigned to this referral.</span></div>
-                    <div><i class="fas fa-user-shield" aria-hidden="true"></i><span>Your helper and moderators can never view it. Submitting replaces any earlier submission, and a replacement needs a fresh release.</span></div>
-                    <div><i class="fas fa-hourglass-half" aria-hidden="true"></i><span>Stored for up to {{ config('identity_vault.retention_days') }} days, then deleted. Withdrawing referral consent stops all future professional access.</span></div>
-                    <div><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><span>If your safety is at risk, a restricted emergency procedure may still release information to protect life, and this is logged.</span></div>
+                    <div><span>Details are encrypted in the separate <strong>Identity Vault</strong>, never in the operational database, and are never shown in the chat window.</span></div>
+                    <div><span>Only your <strong>assigned adviser</strong> can authorize release, and only to the professional assigned to this referral.</span></div>
+                    <div><span>Your helper and moderators can never view it. Submitting replaces any earlier submission, and a replacement needs a fresh release.</span></div>
+                    <div><span>Stored for up to {{ config('identity_vault.retention_days') }} days, then deleted. Withdrawing referral consent stops all future professional access.</span></div>
+                    <div><span>If your safety is at risk, a restricted emergency procedure may still release information to protect life, and this is logged.</span></div>
                 </div>
             </div>
 
@@ -185,7 +185,7 @@
             <p class="rv-alert" role="alert" data-identity-result></p>
 
             <div class="rv-done" data-identity-done @if($identitySaved) data-shown="1" @endif>
-                <i class="fas fa-circle-check" aria-hidden="true"></i>
+
                 <h3>Details stored securely</h3>
                 <p data-identity-done-text>{{ $identitySaved ? "Your details are saved. Your adviser will coordinate the next step." : "" }}</p>
             </div>

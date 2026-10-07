@@ -95,7 +95,7 @@
 
         @if(session('success'))
             <div class="flash-banner show mb-4">
-                <i class="fas fa-check-circle"></i>
+
                 <span>{{ session('success') }}</span>
                 <button class="ml-auto text-lg leading-none" onclick="this.parentElement.remove()">&times;</button>
             </div>
@@ -142,7 +142,7 @@
             @forelse($notifications as $notification)
                 <div class="notif-card {{ $notification->is_read ? '' : 'unread' }}" id="notif-{{ $notification->id }}" data-id="{{ $notification->id }}">
                     <div class="icon {{ $notification->notification_type === 'session' ? 'blue' : ($notification->notification_type === 'reminder' ? 'amber' : ($notification->notification_type === 'update' ? 'purple' : '')) }}">
-                        <x-ui-icon :value="$notification->type_icon" />
+
                     </div>
                     <div class="flex-1 min-w-0">
                         <h4 class="font-semibold text-gray-800 text-sm">{{ $notification->title }}</h4>
@@ -189,7 +189,7 @@
         </div>
 
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-bell text-[#04A052] mr-1"></i>
+
             You're all caught up on your recent activity.
         </div>
 

@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function () {
         ].join(';');
 
         toast.innerHTML = `
-            <div style="width:40px;height:40px;border-radius:50%;background:${getThemeColor('--bg-active', '#EAF8F0')};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;"><i class="fas fa-comments" aria-hidden="true"></i></div>
+
             <div style="flex:1;min-width:0;">
                 <p style="margin:0;font-weight:700;font-size:14px;color:${getThemeColor('--text-primary', '#163B2D')};">${escapeHtml(title)}</p>
                 <p style="margin:4px 0 0;font-size:13px;color:${getThemeColor('--text-secondary', '#6B7280')};line-height:1.45;">${escapeHtml(message)}</p>
@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (state === 'searching') {
             container.innerHTML = `
                 <div class="text-center py-6">
-                    <div class="text-5xl mb-4"><i class="fas fa-arrows-rotate" aria-hidden="true"></i></div>
+
                     <h2 class="text-2xl font-bold text-gray-800">Helper declined. Looking for another helper...</h2>
                     <p class="text-gray-500 mt-2 max-w-md mx-auto">
                         We are searching for another available helper for your request.
@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 : '';
             container.innerHTML = `
                 <div class="text-center py-6">
-                    <div class="text-5xl mb-4"><i class="fas fa-circle-check" aria-hidden="true"></i></div>
+
                     <h2 class="text-2xl font-bold text-gray-800">New Helper Assigned!</h2>
                     <p class="text-gray-500 mt-2 max-w-md mx-auto">
                         ${name} has been assigned to your request. Waiting for them to accept...

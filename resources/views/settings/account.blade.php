@@ -86,19 +86,19 @@
 
         @if(session('success'))
             <div class="flash success">
-                <i class="fas fa-check-circle"></i> {{ session('success') }}
+                 {{ session('success') }}
                 <button class="ml-auto text-lg leading-none" onclick="this.parentElement.remove()">&times;</button>
             </div>
         @endif
         @if(session('status') === 'password-updated')
             <div class="flash success">
-                <i class="fas fa-check-circle"></i> Password updated.
+                 Password updated.
                 <button class="ml-auto text-lg leading-none" onclick="this.parentElement.remove()">&times;</button>
             </div>
         @endif
         @if($errors->any())
             <div class="flash error">
-                <i class="fas fa-exclamation-circle"></i> {{ $errors->first() }}
+                 {{ $errors->first() }}
                 <button class="ml-auto text-lg leading-none" onclick="this.parentElement.remove()">&times;</button>
             </div>
         @endif
@@ -128,7 +128,7 @@
 
         <!-- Details -->
         <div class="card">
-            <h2><i class="fas fa-user text-[#04A052] mr-2"></i>Basic information</h2>
+            <h2>Basic information</h2>
             <p class="sub">Your name, alias, and profile details.</p>
 
             <form method="POST" action="{{ route('settings.account.update') }}" class="form-container mt-5">
@@ -179,7 +179,7 @@
 
         <!-- Password -->
         <div class="card">
-            <h2><i class="fas fa-key text-[#04A052] mr-2"></i>Change password</h2>
+            <h2>Change password</h2>
             <p class="sub">Keep your account secure with a strong, unique password.</p>
 
             <form method="POST" action="{{ route('password.update') }}" class="form-container mt-5">
@@ -213,7 +213,7 @@
 
         <!-- Danger zone -->
         <div class="card border-red-200">
-            <h2 class="text-red-600"><i class="fas fa-exclamation-triangle mr-2"></i>Danger zone</h2>
+            <h2 class="text-red-600">Danger zone</h2>
             <p class="sub">Deleting your account is permanent and cannot be undone.</p>
             <div class="mt-5">
                 <form method="POST" action="{{ route('profile.delete-account') }}"

@@ -26,9 +26,7 @@
                 <x-admin.icon name="menu" :size="21" />
             </button>
 
-            <span class="context-icon" aria-hidden="true">
-                <x-admin.icon name="panel-left" :size="18" />
-            </span>
+
             <span class="context-copy">
                 <strong>{{ $pageTitle }}</strong>
                 <small>{{ $pageSubtitle }}</small>

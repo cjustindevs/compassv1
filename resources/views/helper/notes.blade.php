@@ -11,7 +11,7 @@
 
         @if(session('success'))
             <div class="alert alert-success mb-4" role="status" aria-live="polite">
-                <i class="fas fa-check-circle" aria-hidden="true"></i>
+
                 <div>{{ session('success') }}</div>
             </div>
         @endif
@@ -141,9 +141,9 @@
                 </div>
                 <hr class="divider">
                 <div class="text-sm text-gray-500 mb-3">
-                    <div class="mb-2"><i class="fas fa-calendar mr-2"></i>{{ $session->created_at?->format('M d, Y') }}</div>
-                    <div class="mb-2"><i class="fas fa-clock mr-2"></i>Started {{ $session->start_time?->format('h:i A') ?? '—' }}</div>
-                    <div><i class="fas fa-hourglass-end mr-2"></i>Ended {{ $session->end_time?->format('h:i A') ?? '—' }}</div>
+                    <div class="mb-2">{{ $session->created_at?->format('M d, Y') }}</div>
+                    <div class="mb-2">Started {{ $session->start_time?->format('h:i A') ?? '—' }}</div>
+                    <div>Ended {{ $session->end_time?->format('h:i A') ?? '—' }}</div>
                 </div>
                 <hr class="divider">
                 @if($session->session_status === 'active')
@@ -156,7 +156,7 @@
                         <button type="submit" class="btn btn-outline-danger btn-block"><i class="fas fa-stop-circle"></i> End Session</button>
                     </form>
                 @else
-                    <div class="alert alert-success" style="margin-bottom:0;"><i class="fas fa-check-circle"></i> This session is not active.</div>
+                    <div class="alert alert-success" style="margin-bottom:0;"> This session is not active.</div>
                 @endif
             </div>
 

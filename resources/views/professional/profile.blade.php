@@ -379,7 +379,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             Your credentials matter.
         </div>
 
@@ -398,11 +398,11 @@
 
     @if($errors->any())
         <div class="flash-alert" style="border-left-color:#EF4444;">
-            <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>{{ $errors->first() }}
+            {{ $errors->first() }}
         </div>
     @endif
     @if(session('success'))
-        <div class="flash-alert"><i class="fas fa-check-circle text-[#04A052] mr-2"></i>{{ session('success') }}</div>
+        <div class="flash-alert">{{ session('success') }}</div>
     @endif
 
     @include('layouts.partials.pwa-banner')

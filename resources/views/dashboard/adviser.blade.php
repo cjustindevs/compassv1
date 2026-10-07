@@ -64,7 +64,7 @@
         @if($highRiskCases->isNotEmpty())
             <div class="mb-6 p-4 bg-red-50 rounded-xl border border-red-200">
                 <div class="flex items-center gap-3">
-                    <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
+
                     <div>
                         <p class="text-sm font-medium text-red-700">High-Risk Cases Require Attention</p>
                         <p class="text-xs text-red-600">Review these cases immediately</p>
@@ -153,7 +153,7 @@
                                     <p class="font-medium text-gray-800">{{ $item['session'] }}</p>
                                     <p class="text-sm text-gray-500">{{ $item['feedback'] }}</p>
                                 </div>
-                                <span class="text-xs text-green-600 font-medium"><i class="fas fa-check" aria-hidden="true"></i> Feedback given</span>
+                                <span class="text-xs text-green-600 font-medium"> Feedback given</span>
                             </div>
                         @endforeach
                     </div>
@@ -174,13 +174,13 @@
                             <div class="activity-item">
                                 <div class="icon {{ $activity['type'] }}">
                                     @if($activity['type'] == 'emergency')
-                                        <i class="fas fa-exclamation"></i>
+
                                     @elseif($activity['type'] == 'evaluation')
-                                        <i class="fas fa-star"></i>
+
                                     @elseif($activity['type'] == 'referral')
-                                        <i class="fas fa-arrow-right"></i>
+
                                     @else
-                                        <i class="fas fa-user"></i>
+
                                     @endif
                                 </div>
                                 <div class="content">
@@ -199,7 +199,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             Quality supervision leads to quality support.
         </div>
 

@@ -227,7 +227,7 @@
                     </label>
                 </div>
                 <p class="text-xs text-gray-400">
-                    <i class="fas fa-info-circle mr-1"></i>
+
                     Fine-grained notification preferences are managed from the general
                     <a href="{{ route('settings') }}" class="text-[#04A052] font-semibold hover:underline">account settings</a> page.
                     Professional alerts (referrals, case updates) are always delivered in-app.
@@ -257,7 +257,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             Confidentiality is our foundation.
         </div>
 
@@ -273,7 +273,7 @@
     </script>
 
     @if(session('success'))
-        <div class="flash-alert"><i class="fas fa-check-circle text-[#04A052] mr-2"></i>{{ session('success') }}</div>
+        <div class="flash-alert">{{ session('success') }}</div>
     @endif
 
     @include('layouts.partials.pwa-banner')

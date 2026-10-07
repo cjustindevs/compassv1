@@ -32,7 +32,7 @@
 
         @if ($loadFailed)
             <section class="resource-state-card" role="alert">
-                <span><x-admin.icon name="alert-circle" :size="28" /></span>
+                <span></span>
                 <h2>Unable to load resources</h2>
                 <p>Please try again.</p>
                 <a class="admin-button admin-button-secondary" href="{{ route('admin.resource-library') }}">
@@ -82,14 +82,14 @@
             </div>
 
             <section class="resource-state-card resource-empty-state" data-resource-empty hidden>
-                <span><x-admin.icon name="book-open" :size="28" /></span>
+                <span></span>
                 <h2 data-resource-empty-title>No resources found</h2>
                 <p data-resource-empty-copy>Try changing your search or filters.</p>
                 <button class="admin-button admin-button-secondary" type="button" data-clear-resource-filters data-resource-empty-action>Clear filters</button>
             </section>
 
             <div class="admin-toast" data-resource-toast role="status" aria-live="polite" hidden>
-                <span class="admin-toast-icon"><x-admin.icon name="check-circle" :size="19" /></span>
+
                 <span data-resource-toast-message></span>
             </div>
 

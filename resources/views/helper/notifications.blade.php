@@ -30,7 +30,7 @@
                         $isUnread = $item->status === 'unread';
                     @endphp
                     <div class="notif-item {{ $isUnread ? 'unread' : '' }}">
-                        <div class="notif-icon"><x-ui-icon :value="$icon" /></div>
+
                         <div style="flex:1;min-width:0;">
                             <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
                                 <span class="font-semibold text-gray-800" style="font-size:14px;">
@@ -65,7 +65,7 @@
             @endif
         @else
             <div class="empty-state">
-                <i class="fas fa-bell-slash"></i>
+
                 <h3>No notifications</h3>
                 <p>New assignments and updates will appear here.</p>
             </div>

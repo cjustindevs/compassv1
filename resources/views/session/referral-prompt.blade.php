@@ -80,7 +80,7 @@
 <dialog id="referralConsentDialog" aria-labelledby="referralConsentHeading" aria-describedby="referralConsentText">
     <div class="rv-modal__head">
         <div>
-            <p class="rv-modal__eyebrow"><i class="fas fa-user-doctor" aria-hidden="true"></i>Professional support</p>
+            <p class="rv-modal__eyebrow">Professional support</p>
             <h2 id="referralConsentHeading">Referral consent</h2>
         </div>
     </div>
@@ -89,7 +89,7 @@
         <p id="referralConsentText">Please review what this means for your privacy before deciding.</p>
 
         <div id="referralConsentTerms">
-            <h3><i class="fas fa-file-signature" aria-hidden="true"></i>What you are agreeing to</h3>
+            <h3>What you are agreeing to</h3>
             @include('partials.referral-consent-terms')
             <p class="rv-consent-terms__note">Your contact details are collected in a later, separate step and only if you still want a professional to reach you.</p>
 

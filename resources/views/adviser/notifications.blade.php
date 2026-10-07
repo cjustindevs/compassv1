@@ -202,7 +202,7 @@
                     @foreach($notifications as $item)
                         @php $isUnread = $item->status === 'unread'; @endphp
                         <div class="notif-item {{ $isUnread ? 'unread' : '' }}">
-                            <div class="icon"><x-ui-icon :value="$item->type_icon ?: 'fa-bell'" /></div>
+
                             <div class="content">
                                 <div class="title-row">
                                     <span class="title">
@@ -242,7 +242,7 @@
                 </div>
             @else
                 <div class="empty-state">
-                    <i class="fas fa-bell-slash"></i>
+
                     <p class="text-lg font-medium text-gray-600">No notifications</p>
                     <p>Emergency flags and referral updates will appear here.</p>
                 </div>
@@ -251,7 +251,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             Quality supervision leads to quality support.
         </div>
 </div>

@@ -100,13 +100,13 @@
 
         @if(session('success'))
             <div class="flash success">
-                <i class="fas fa-check-circle"></i> {{ session('success') }}
+                 {{ session('success') }}
                 <button class="ml-auto text-lg leading-none" onclick="this.parentElement.remove()">&times;</button>
             </div>
         @endif
         @if($errors->any())
             <div class="flash error">
-                <i class="fas fa-exclamation-circle"></i> {{ $errors->first() }}
+                 {{ $errors->first() }}
                 <button class="ml-auto text-lg leading-none" onclick="this.parentElement.remove()">&times;</button>
             </div>
         @endif
@@ -140,7 +140,7 @@
 
             <!-- Notifications -->
             <div class="card">
-                <h2><i class="fas fa-bell text-[#04A052] mr-2"></i>Notification preferences</h2>
+                <h2>Notification preferences</h2>
                 <p class="sub">Choose how COMPASS stays in touch with you.</p>
                 <div class="mt-3">
                     <div class="toggle-row">
@@ -188,7 +188,7 @@
 
             <!-- Session preferences -->
             <div class="card">
-                <h2><i class="fas fa-comment-dots text-[#04A052] mr-2"></i>Session preferences</h2>
+                <h2>Session preferences</h2>
                 <p class="sub">Used to match you with the right helper.</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
                     <div>

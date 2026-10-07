@@ -89,7 +89,7 @@
                         @endforeach
                     </div>
                 @else
-                    <div class="empty-state"><i class="fas fa-comments"></i><p>{{ $session->isActive() ? 'No messages yet.' : 'Conversation is available during an accepted active session. Archived transcripts require adviser authorization.' }}</p></div>
+                    <div class="empty-state"><p>{{ $session->isActive() ? 'No messages yet.' : 'Conversation is available during an accepted active session. Archived transcripts require adviser authorization.' }}</p></div>
                 @endif
             </div>
 
@@ -114,7 +114,7 @@
                     </div>
                     <span class="pill">{{ $session->report->adviser_reviewed ? 'Reviewed by adviser' : 'Pending adviser review' }}</span>
                 @else
-                    <div class="empty-state"><i class="fas fa-file-alt"></i><p>No documentation yet for this case.</p></div>
+                    <div class="empty-state"><p>No documentation yet for this case.</p></div>
                 @endif
             </div>
         </div>
@@ -135,7 +135,7 @@
                 <hr class="divider">
                 @if($session->session_status === 'helper_assigned' && $session->scheduled_start)
                     <div style="text-align:center;padding:0 0 10px;">
-                        <div class="text-xs text-gray-500"><i class="fas fa-calendar-check mr-1"></i>Session scheduled</div>
+                        <div class="text-xs text-gray-500">Session scheduled</div>
                         <div class="font-bold text-emerald-600">{{ $session->scheduled_start->setTimezone(config('app.schedule_timezone'))->format('M d, h:i A') }}</div>
                     </div>
                     <hr class="divider">

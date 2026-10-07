@@ -167,7 +167,7 @@
         </div>
 
         @if(session('success'))
-            <div class="flash-success"><i class="fas fa-check-circle mr-1"></i> {{ session('success') }}</div>
+            <div class="flash-success"> {{ session('success') }}</div>
         @endif
 
         <div class="flex flex-wrap items-center gap-2 mb-6">
@@ -193,7 +193,7 @@
                         <span class="dot"></span>
                     @endif
                     <div class="icon {{ $notification->notification_type ?? 'system' }}">
-                        <span><x-ui-icon :value="$notification->type_icon" /></span>
+                        <span></span>
                     </div>
                     <div class="content">
                         <p class="title">{{ $notification->title }}</p>

@@ -25,9 +25,7 @@
             <x-admin.icon name="bookmark" :size="19" />
         </button>
 
-        <span class="resource-visual-icon" aria-hidden="true">
-            <x-admin.icon :name="$resource['icon']" :size="48" :stroke-width="1.55" />
-        </span>
+
     </div>
 
     <div class="resource-card-body">

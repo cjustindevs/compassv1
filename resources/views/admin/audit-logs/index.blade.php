@@ -62,7 +62,7 @@
 
             @if ($loadFailed)
                 <div class="audit-load-state" role="alert">
-                    <span><x-admin.icon name="alert-circle" :size="27" /></span>
+                    <span></span>
                     <strong>Unable to load audit logs</strong>
                     <p>Please try again.</p>
                     <a class="admin-button admin-button-secondary" href="{{ route('admin.audit-logs') }}">

@@ -67,12 +67,12 @@
                                 {{ $case['created'] }}
                                 <div class="text-xs text-gray-400">{{ $case['waiting'] }}</div>
                                 @if($case['scheduled_start'])
-                                    <div class="text-xs font-medium text-emerald-600 mt-1"><i class="fas fa-calendar-check"></i> {{ $case['scheduled_start']->setTimezone(config('app.schedule_timezone'))->format('M d, h:i A') }}</div>
+                                    <div class="text-xs font-medium text-emerald-600 mt-1"> {{ $case['scheduled_start']->setTimezone(config('app.schedule_timezone'))->format('M d, h:i A') }}</div>
                                 @endif
                             </td>
                             <td>
                                 @if($case['rating'])
-                                    <span class="pill" style="background:#FEF3C7;color:#B45309;"><i class="fas fa-star" aria-hidden="true"></i> {{ $case['rating'] }}</span>
+                                    <span class="pill" style="background:#FEF3C7;color:#B45309;"> {{ $case['rating'] }}</span>
                                 @else
                                     <span class="text-gray-400">—</span>
                                 @endif
@@ -109,7 +109,7 @@
                                         </form>
                                     </div>
                                 @elseif($case['expired'])
-                                    <span class="text-gray-400 text-sm"><i class="fas fa-hourglass-end"></i> Expired</span>
+                                    <span class="text-gray-400 text-sm"> Expired</span>
                                 @elseif($case['completed'])
                                     <a href="{{ route('helper.session.notes', ['id' => $case['id']]) }}" class="btn btn-secondary btn-sm"><i class="fas fa-file-alt"></i> Notes</a>
                                 @else
@@ -121,7 +121,7 @@
                         <tr>
                             <td colspan="9">
                                 <div class="empty-state">
-                                    <i class="fas fa-folder-open"></i>
+
                                     <h3>No cases assigned yet</h3>
                                     <p>When a seeker is matched to you, the case will appear here.</p>
                                 </div>

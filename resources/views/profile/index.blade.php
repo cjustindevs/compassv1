@@ -104,14 +104,14 @@
 
         @if(session('success'))
             <div class="flash-banner show mb-4" id="flashBanner">
-                <i class="fas fa-check-circle"></i>
+
                 <span>{{ session('success') }}</span>
                 <button class="ml-auto text-lg leading-none" onclick="this.parentElement.remove()">&times;</button>
             </div>
         @endif
         @if($errors->any())
             <div class="flash-banner show error mb-4">
-                <i class="fas fa-exclamation-circle"></i>
+
                 <span>{{ $errors->first() }}</span>
                 <button class="ml-auto text-lg leading-none" onclick="this.parentElement.remove()">&times;</button>
             </div>
@@ -146,29 +146,29 @@
                 <div class="flex-1 min-w-[200px]">
                     <h2 class="text-2xl font-extrabold">{{ $user->helpSeeker?->generated_alias ?? $user->name }}</h2>
                     <p class="text-sm opacity-80 mt-1">
-                        <i class="fas fa-circle text-[#7EE2A8] mr-2 text-[10px]"></i>Help Seeker
+                        Help Seeker
                     </p>
                     <div class="flex flex-wrap gap-2 mt-3 text-xs">
                         <span class="bg-white/15 px-3 py-1 rounded-full">
-                            <i class="far fa-calendar-alt mr-1"></i>Member since {{ $user->created_at?->format('M Y') ?? '—' }}
+                            Member since {{ $user->created_at?->format('M Y') ?? '—' }}
                         </span>
                         <span class="bg-white/15 px-3 py-1 rounded-full">
                             @if($user->show_email)
-                                <i class="far fa-envelope mr-1"></i>{{ $user->email }}
+                                {{ $user->email }}
                             @else
-                                <i class="fas fa-user-secret mr-1"></i>Email hidden
+                                Email hidden
                             @endif
                         </span>
                         @if($user->helpSeeker?->gender)
                             <span class="bg-white/15 px-3 py-1 rounded-full">
-                                <i class="fas fa-venus-mars mr-1"></i>{{ ucfirst($user->helpSeeker->gender) }}
+                                {{ ucfirst($user->helpSeeker->gender) }}
                             </span>
                         @endif
                     </div>
                 </div>
                 <div class="text-right">
                     <div class="text-4xl font-extrabold">{{ $stats['streak_days'] }}</div>
-                    <p class="text-xs opacity-80">day streak <i class="fas fa-fire ml-1"></i></p>
+                    <p class="text-xs opacity-80">day streak </p>
                 </div>
             </div>
         </div>
@@ -186,7 +186,7 @@
                     <div class="value">{{ $stats['average_rating'] > 0 ? number_format($stats['average_rating'], 1) : '—' }}</div>
                     <div class="label">Average rating
                         @if($stats['average_rating'] > 0)
-                            <span class="stars ml-1">@for ($star = 0; $star < ((int) round($stats['average_rating'])); $star++)<i class="fas fa-star" aria-hidden="true"></i>@endfor</span>
+                            <span class="stars ml-1">@for ($star = 0; $star < ((int) round($stats['average_rating'])); $star++)@endfor</span>
                         @endif
                     </div>
                 </div>
@@ -208,7 +208,7 @@
         <!-- Details -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="info-card">
-                <h3 class="font-bold text-gray-800 mb-2"><i class="fas fa-id-badge text-[#04A052] mr-2"></i>Account details</h3>
+                <h3 class="font-bold text-gray-800 mb-2">Account details</h3>
                 <div class="info-row"><span class="key">Alias</span><span class="val">{{ $user->helpSeeker?->generated_alias ?? '—' }}</span></div>
                 <div class="info-row"><span class="key">Email</span><span class="val">{{ $user->show_email ? $user->email : 'Hidden (privacy on)' }}</span></div>
                 <div class="info-row"><span class="key">Role</span><span class="val">Help Seeker</span></div>
@@ -216,7 +216,7 @@
                 <div class="info-row"><span class="key">Age</span><span class="val">{{ $user->helpSeeker?->age ?? '—' }}</span></div>
             </div>
             <div class="info-card">
-                <h3 class="font-bold text-gray-800 mb-2"><i class="fas fa-sliders-h text-[#04A052] mr-2"></i>Preferences</h3>
+                <h3 class="font-bold text-gray-800 mb-2">Preferences</h3>
                 <div class="info-row"><span class="key">Preferred language</span><span class="val">{{ $user->preferred_language ?? 'English' }}</span></div>
                 <div class="info-row"><span class="key">Communication mode</span><span class="val">{{ ucfirst($user->preferred_communication_mode ?? 'chat') }}</span></div>
                 <div class="info-row"><span class="key">Session duration</span><span class="val">{{ $user->session_duration_preference ?? '30' }} min</span></div>
@@ -226,7 +226,7 @@
         </div>
 
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             Making progress takes courage. You're doing great.
         </div>
 

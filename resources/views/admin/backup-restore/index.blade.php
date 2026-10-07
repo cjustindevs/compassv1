@@ -46,7 +46,7 @@
 
             @if ($loadFailed)
                 <div class="backup-state" role="alert">
-                    <span><x-admin.icon name="alert-circle" :size="28" /></span>
+                    <span></span>
                     <h3>Unable to load backup history</h3>
                     <p>Please try again.</p>
                     <a class="admin-button admin-button-secondary" href="{{ route('admin.backup-restore') }}">
@@ -55,7 +55,7 @@
                 </div>
             @elseif ($snapshots->isEmpty())
                 <div class="backup-state">
-                    <span><x-admin.icon name="backup" :size="28" /></span>
+                    <span></span>
                     <h3>No backups available</h3>
                     <p>Backup generation is not configured in this environment.</p>
                     <button class="admin-button admin-button-secondary" type="button" data-dialog-open="run-backup-dialog">
@@ -72,7 +72,7 @@
         </section>
 
         <div class="admin-toast" data-backup-toast role="status" aria-live="polite" hidden>
-            <span class="admin-toast-icon"><x-admin.icon name="check-circle" :size="19" /></span>
+
             <span data-backup-toast-message></span>
         </div>
 
@@ -84,7 +84,7 @@
         >
             <div class="admin-dialog-body">
                 <div class="backup-operation-note {{ $capabilities['create'] ? '' : 'is-unavailable' }}">
-                    <x-admin.icon :name="$capabilities['create'] ? 'check-circle' : 'alert-circle'" :size="20" />
+
                     <p>
                         @if ($capabilities['create'])
                             The configured backup provider will create a protected snapshot.
@@ -111,7 +111,7 @@
             <div class="admin-dialog-body">
                 @if ($snapshots->where('status', 'completed')->isEmpty())
                     <div class="backup-picker-empty">
-                        <x-admin.icon name="backup" :size="25" />
+
                         <strong>No completed snapshots available</strong>
                         <p>A verified snapshot is required before a restore can be prepared.</p>
                     </div>
@@ -146,7 +146,7 @@
         >
             <div class="admin-dialog-body backup-restore-warning">
                 <div class="backup-selected-snapshot">
-                    <span><x-admin.icon name="backup" :size="21" /></span>
+                    <span></span>
                     <strong data-selected-backup-summary>No snapshot selected</strong>
                 </div>
                 <p>
@@ -168,7 +168,7 @@
         >
             <div class="admin-dialog-body">
                 <div class="backup-selected-snapshot">
-                    <span><x-admin.icon name="warning" :size="21" /></span>
+                    <span></span>
                     <strong data-confirm-backup-summary>No snapshot selected</strong>
                 </div>
                 <label class="admin-field backup-confirm-field">

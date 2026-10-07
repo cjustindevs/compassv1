@@ -10,9 +10,7 @@
 @endphp
 
 <article class="backup-snapshot-row backup-status-{{ $snapshot['status'] }}" data-backup-snapshot>
-    <span class="backup-snapshot-status" aria-hidden="true">
-        <x-admin.icon :name="$statusIcon" :size="21" />
-    </span>
+
 
     <div class="backup-snapshot-copy">
         <p>

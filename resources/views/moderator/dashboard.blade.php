@@ -221,18 +221,16 @@
         </div>
 
         @if(session('success'))
-            <div class="flash-success"><i class="fas fa-check-circle mr-1"></i> {{ session('success') }}</div>
+            <div class="flash-success"> {{ session('success') }}</div>
         @endif
         @if(session('error'))
-            <div class="flash-error"><i class="fas fa-exclamation-circle mr-1"></i> {{ session('error') }}</div>
+            <div class="flash-error"> {{ session('error') }}</div>
         @endif
 
         <!-- High Risk Banner -->
         @if($highRiskSessions->isNotEmpty())
             <div class="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6 flex flex-wrap items-center gap-4">
-                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                    <i class="fas fa-exclamation-triangle text-red-600"></i>
-                </div>
+
                 <div class="flex-1 min-w-0">
                     <p class="font-semibold text-red-800 text-sm">High-risk sessions need attention</p>
                     <p class="text-xs text-red-600">
@@ -294,9 +292,9 @@
                             @endif
                         </div>
                         <div class="flex items-center gap-4">
-                            <span class="text-sm text-gray-500"><i class="fas fa-user-tie mr-1"></i>{{ $session->helper?->full_name ?? 'Unassigned' }}</span>
-                            <span class="text-sm text-gray-400"><i class="fas fa-clock mr-1"></i>{{ $session->elapsed_label ?? $session->created_date?->diffForHumans() }}</span>
-                            <span class="text-xs text-gray-400"><i class="fas fa-microphone-alt mr-1"></i>{{ $session->mode_label }}</span>
+                            <span class="text-sm text-gray-500">{{ $session->helper?->full_name ?? 'Unassigned' }}</span>
+                            <span class="text-sm text-gray-400">{{ $session->elapsed_label ?? $session->created_date?->diffForHumans() }}</span>
+                            <span class="text-xs text-gray-400">{{ $session->mode_label }}</span>
                             <span class="status-badge active">{{ $session->status_label }}</span>
                         </div>
                     </div>

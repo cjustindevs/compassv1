@@ -12,18 +12,11 @@ const TOAST_COLORS = {
     info:    'border-blue-500 text-blue-600',
 };
 
-const TOAST_ICONS = {
-    success: 'fa-check-circle',
-    error:   'fa-times-circle',
-    warning: 'fa-exclamation-triangle',
-    info:    'fa-info-circle',
-};
 
 function showToast(message, type = 'info', duration = 3500) {
     if (typeof message !== 'string' || !message.length) return;
 
     const color = TOAST_COLORS[type] || TOAST_COLORS.info;
-    const icon  = TOAST_ICONS[type] || TOAST_ICONS.info;
 
     const toast = document.createElement('div');
     toast.setAttribute('role', 'status');
@@ -36,11 +29,6 @@ function showToast(message, type = 'info', duration = 3500) {
     const wrapper = document.createElement('div');
     wrapper.className = 'p-4 flex items-start gap-3';
 
-    const iconWrap = document.createElement('div');
-    iconWrap.className = 'flex-shrink-0 mt-0.5';
-    const iconEl = document.createElement('i');
-    iconEl.className = 'fas ' + icon + ' text-lg';
-    iconWrap.appendChild(iconEl);
 
     const messageEl = document.createElement('div');
     messageEl.className = 'flex-1 text-sm text-gray-700 leading-snug';
@@ -54,7 +42,7 @@ function showToast(message, type = 'info', duration = 3500) {
     closeIcon.className = 'fas fa-times';
     closeBtn.appendChild(closeIcon);
 
-    wrapper.append(iconWrap, messageEl, closeBtn);
+    wrapper.append(messageEl, closeBtn);
     toast.appendChild(wrapper);
 
     document.body.appendChild(toast);
@@ -97,7 +85,7 @@ function confirmAction(options = {}) {
 
         titleEl.textContent  = options.title || 'Are you sure?';
         msgEl.textContent    = options.message || 'This action cannot be undone.';
-        iconEl.innerHTML     = options.icon || '<i class="fas fa-exclamation-triangle text-yellow-500 text-5xl"></i>';
+        if (iconEl) iconEl.hidden = true;
         confirmBtn.textContent = options.confirmText || 'Confirm';
         confirmBtn.className =
             'btn-modal-confirm px-6 py-2.5 text-white rounded-lg font-medium transition-colors ' +

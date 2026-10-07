@@ -106,13 +106,13 @@
 
         @if(session('success'))
             <div class="flash success">
-                <i class="fas fa-check-circle"></i> {{ session('success') }}
+                 {{ session('success') }}
                 <button class="ml-auto text-lg leading-none" onclick="this.parentElement.remove()">&times;</button>
             </div>
         @endif
         @if($errors->any())
             <div class="flash error">
-                <i class="fas fa-exclamation-circle"></i> {{ $errors->first() }}
+                 {{ $errors->first() }}
                 <button class="ml-auto text-lg leading-none" onclick="this.parentElement.remove()">&times;</button>
             </div>
         @endif

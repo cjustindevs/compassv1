@@ -148,9 +148,7 @@
 <body>
 
     <div class="thank-you-card">
-        <div class="check-circle">
-            <i class="fas fa-check"></i>
-        </div>
+
 
         <h1>Thank You!</h1>
         <p class="subtitle">
@@ -162,9 +160,9 @@
         </p>
 
         <div class="heart-line">
-            <i class="fas fa-heart"></i>
+
             <span>You matter</span>
-            <i class="fas fa-heart"></i>
+
         </div>
 
         <a href="{{ route('seeker.dashboard') }}" class="btn-primary">

@@ -7,7 +7,7 @@
 @section('content')
     <div class="mb-6 p-4 rounded-xl" style="background:#FEF2F2;border:1px solid #FECACA;">
         <p class="text-sm" style="color:var(--red-600);">
-            <i class="fas fa-exclamation-triangle mr-1"></i>
+
             If you are in immediate danger or a crisis, please contact your local emergency services right away.
         </p>
     </div>
@@ -27,7 +27,7 @@
     @empty
         <div class="card">
             <div class="empty-state">
-                <i class="fas fa-phone-alt"></i>
+
                 <p>No emergency resources are currently listed.</p>
             </div>
         </div>

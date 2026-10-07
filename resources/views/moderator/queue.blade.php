@@ -208,10 +208,10 @@
         </div>
 
         @if(session('success'))
-            <div class="flash-success"><i class="fas fa-check-circle mr-1"></i> {{ session('success') }}</div>
+            <div class="flash-success"> {{ session('success') }}</div>
         @endif
         @if(session('error'))
-            <div class="flash-error"><i class="fas fa-exclamation-circle mr-1"></i> {{ session('error') }}</div>
+            <div class="flash-error"> {{ session('error') }}</div>
         @endif
 
         <!-- Queue Status -->
@@ -247,9 +247,7 @@
             @endphp
             @foreach($metrics as $metric)
                 <div class="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
-                        <i class="fas {{ $metric['icon'] }} text-gray-400"></i>
-                    </div>
+
                     <div class="min-w-0">
                         <p class="font-bold text-gray-800 text-sm truncate" data-metric="{{ $metric['key'] }}">{{ $metric['value'] }}</p>
                         <p class="text-[11px] text-gray-400 truncate">{{ $metric['label'] }}</p>
@@ -289,10 +287,10 @@
                             <p class="text-xs text-gray-500 truncate">{{ $item->concern_name }}</p>
                         </div>
                         <span class="type-pill hidden md:inline-flex items-center">
-                            <i class="fas {{ $item->preferred_session_type === 'voice' ? 'fa-microphone-alt' : 'fa-comment-dots' }} mr-1"></i>{{ ucfirst($item->preferred_session_type) }}
+                            {{ ucfirst($item->preferred_session_type) }}
                         </span>
                         <span class="wait-chip {{ $item->wait_minutes >= 30 ? 'alert' : ($item->wait_minutes >= 15 ? 'warn' : 'ok') }}">
-                            <i class="fas fa-hourglass-half mr-1"></i>{{ $item->wait_minutes }} min
+                            {{ $item->wait_minutes }} min
                         </span>
                         <div class="queue-actions">
                             <form method="POST" action="{{ route('moderator.queue.assign') }}" class="assign-form" data-queue-id="{{ $item->id }}">
@@ -305,7 +303,7 @@
                                         @php($eligibility = app(\App\Services\HelperEligibilityService::class)->status($helper, $item->supportSession))
                                         <option @disabled(!$eligibility['assignable']) data-ineligible="{{ $eligibility['assignable'] ? '0' : '1' }}" value="{{ $helper->id }}"
                                             title="{{ $eligibility['reason'] }}">
-                                            {{ $helper->full_name }} · {{ $eligibility['assignable'] ? '✓ Ready · ' . $helper->remaining_capacity . '/' . \App\Models\Helper::MAX_SESSIONS_PER_SHIFT : $eligibility['label'] }} · {{ $helper->competency_level }}/5
+                                            {{ $helper->full_name }} · {{ $eligibility['assignable'] ? 'Ready · ' . $helper->remaining_capacity . '/' . \App\Models\Helper::MAX_SESSIONS_PER_SHIFT : $eligibility['label'] }} · {{ $helper->competency_level }}/5
                                         </option>
                                     @endforeach
                                 </select>
@@ -351,10 +349,10 @@
                             </p>
                         </div>
                         <span class="type-pill hidden md:inline-flex items-center">
-                            <i class="fas {{ $item->preferred_session_type === 'voice' ? 'fa-microphone-alt' : 'fa-comment-dots' }} mr-1"></i>{{ ucfirst($item->preferred_session_type) }}
+                            {{ ucfirst($item->preferred_session_type) }}
                         </span>
                         <span class="wait-chip ok">
-                            <i class="fas fa-calendar-check mr-1"></i>{{ $item->scheduled_date ? $item->scheduled_date->copy()->setTimezone(config('app.schedule_timezone'))->format('M d, h:i A') : 'Awaiting acceptance' }}
+                            {{ $item->scheduled_date ? $item->scheduled_date->copy()->setTimezone(config('app.schedule_timezone'))->format('M d, h:i A') : 'Awaiting acceptance' }}
                         </span>
                         <div class="queue-actions">
                             <form method="POST" action="{{ route('moderator.queue.schedule') }}">
@@ -378,7 +376,7 @@
                                         @php($eligibility = app(\App\Services\HelperEligibilityService::class)->status($helper, $item->supportSession))
                                         <option @disabled(!$eligibility['assignable']) data-ineligible="{{ $eligibility['assignable'] ? '0' : '1' }}" value="{{ $helper->id }}" {{ $item->assigned_helper_id === $helper->id ? 'selected' : '' }}
                                             title="{{ $eligibility['reason'] }}">
-                                            {{ $helper->full_name }} · {{ $eligibility['assignable'] ? '✓ Ready · ' . $helper->remaining_capacity . '/' . \App\Models\Helper::MAX_SESSIONS_PER_SHIFT : $eligibility['label'] }}
+                                            {{ $helper->full_name }} · {{ $eligibility['assignable'] ? 'Ready · ' . $helper->remaining_capacity . '/' . \App\Models\Helper::MAX_SESSIONS_PER_SHIFT : $eligibility['label'] }}
                                         </option>
                                     @endforeach
                                 </select>

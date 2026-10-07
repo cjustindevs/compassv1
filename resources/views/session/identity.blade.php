@@ -5,7 +5,7 @@
             <div class="flex items-start justify-between gap-4 px-6 py-5 border-b border-gray-100 bg-gradient-to-b from-green-50 to-white">
                 <div>
                     <p class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-green-700 mb-1.5">
-                        <i class="fas fa-shield-halved" aria-hidden="true"></i>Referral #{{ $referral->id }}
+                        Referral #{{ $referral->id }}
                     </p>
                     <h1 class="text-xl font-bold text-gray-800 leading-tight">Identity Disclosure Consent</h1>
                     <p class="text-sm text-gray-500 mt-1 leading-relaxed">
@@ -34,32 +34,32 @@
 
                 @elseif ($referral->help_seeker_consent && !$referral->identity_disclosed && !in_array($referral->status, ['closed', 'declined', 'completed']))
                     <ol class="flex items-center gap-2 text-xs text-gray-400" aria-label="Referral progress">
-                        <li class="flex items-center gap-2 text-green-700"><span class="w-5 h-5 grid place-items-center rounded-full bg-green-600 text-white text-[11px] font-bold"><i class="fas fa-check" aria-hidden="true"></i></span>Adviser approval</li>
+                        <li class="flex items-center gap-2 text-green-700">Adviser approval</li>
                         <li class="w-4 h-px bg-gray-200"></li>
-                        <li class="flex items-center gap-2 text-green-700"><span class="w-5 h-5 grid place-items-center rounded-full bg-green-600 text-white text-[11px] font-bold"><i class="fas fa-check" aria-hidden="true"></i></span>Referral consent</li>
+                        <li class="flex items-center gap-2 text-green-700">Referral consent</li>
                         <li class="w-4 h-px bg-gray-200"></li>
-                        <li class="flex items-center gap-2 text-gray-800 font-semibold"><span class="w-5 h-5 grid place-items-center rounded-full bg-green-600 text-white text-[11px] font-bold"><i class="fas fa-circle-dot" aria-hidden="true"></i></span>Identity disclosure</li>
+                        <li class="flex items-center gap-2 text-gray-800 font-semibold">Identity disclosure</li>
                         <li class="w-4 h-px bg-gray-200"></li>
-                        <li class="flex items-center gap-2"><span class="w-5 h-5 grid place-items-center rounded-full bg-gray-200 text-white text-[11px] font-bold"><i class="fas fa-circle" aria-hidden="true"></i></span>Professional release</li>
+                        <li class="flex items-center gap-2">Professional release</li>
                     </ol>
 
                     <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
                         <h2 class="flex items-center gap-2 text-sm font-bold text-gray-800 mb-2">
-                            <i class="fas fa-file-signature text-green-600" aria-hidden="true"></i>The referral consent you already accepted
+                            The referral consent you already accepted
                         </h2>
                         @include('partials.referral-consent-terms')
                     </div>
 
                     <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
                         <h2 class="flex items-center gap-2 text-sm font-bold text-gray-800 mb-2">
-                            <i class="fas fa-vault text-green-600" aria-hidden="true"></i>What this step adds
+                            What this step adds
                         </h2>
                         <div class="space-y-2 text-sm text-gray-600 leading-relaxed">
-                            <p class="flex gap-2"><i class="fas fa-lock text-green-600 mt-1 shrink-0" aria-hidden="true"></i><span>Details are encrypted in the separate <strong class="text-gray-800">Identity Vault</strong>, never in the operational database, and are never shown in the chat window.</span></p>
-                            <p class="flex gap-2"><i class="fas fa-user-check text-green-600 mt-1 shrink-0" aria-hidden="true"></i><span>Only your <strong class="text-gray-800">assigned adviser</strong> can authorize release, and only to the professional assigned to this referral.</span></p>
-                            <p class="flex gap-2"><i class="fas fa-user-shield text-green-600 mt-1 shrink-0" aria-hidden="true"></i><span>Your helper and moderators can never view it. Submitting replaces any earlier submission, and a replacement needs a fresh release.</span></p>
-                            <p class="flex gap-2"><i class="fas fa-hourglass-half text-green-600 mt-1 shrink-0" aria-hidden="true"></i><span>Stored for up to {{ config('identity_vault.retention_days') }} days, then deleted. Withdrawing referral consent stops all future professional access.</span></p>
-                            <p class="flex gap-2"><i class="fas fa-triangle-exclamation text-green-600 mt-1 shrink-0" aria-hidden="true"></i><span>If your safety is at risk, a restricted emergency procedure may still release information to protect life, and this is logged.</span></p>
+                            <p class="flex gap-2"><span>Details are encrypted in the separate <strong class="text-gray-800">Identity Vault</strong>, never in the operational database, and are never shown in the chat window.</span></p>
+                            <p class="flex gap-2"><span>Only your <strong class="text-gray-800">assigned adviser</strong> can authorize release, and only to the professional assigned to this referral.</span></p>
+                            <p class="flex gap-2"><span>Your helper and moderators can never view it. Submitting replaces any earlier submission, and a replacement needs a fresh release.</span></p>
+                            <p class="flex gap-2"><span>Stored for up to {{ config('identity_vault.retention_days') }} days, then deleted. Withdrawing referral consent stops all future professional access.</span></p>
+                            <p class="flex gap-2"><span>If your safety is at risk, a restricted emergency procedure may still release information to protect life, and this is logged.</span></p>
                         </div>
                     </div>
 

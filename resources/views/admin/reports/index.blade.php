@@ -33,7 +33,7 @@
 
         @if ($loadFailed)
             <section class="reports-state" role="alert">
-                <span><x-admin.icon name="alert-circle" :size="30" /></span>
+                <span></span>
                 <h2>Unable to load reports</h2>
                 <p>Please try again.</p>
                 <a class="admin-button admin-button-secondary" href="{{ route('admin.reports') }}">Retry</a>
@@ -49,21 +49,21 @@
                 </section>
 
                 <section class="reports-state report-filter-empty" data-report-filter-empty hidden>
-                    <span><x-admin.icon name="file-text" :size="30" /></span>
+                    <span></span>
                     <h2>No reports found</h2>
                     <p>Try changing your filters.</p>
                     <button class="admin-button admin-button-secondary" type="button" data-clear-report-filters>Clear filters</button>
                 </section>
             @else
                 <section class="reports-state">
-                    <span><x-admin.icon name="file-text" :size="30" /></span>
+                    <span></span>
                     <h2>No reports configured</h2>
                     <p>Report definitions will appear here once they are available.</p>
                 </section>
             @endif
 
             <div class="admin-toast is-info" data-report-toast role="status" aria-live="polite" hidden>
-                <span class="admin-toast-icon"><x-admin.icon name="alert-circle" :size="19" /></span>
+
                 <span data-report-toast-message></span>
             </div>
         @endif
@@ -150,7 +150,7 @@
                     </label>
 
                     <div class="report-operation-note" id="report-format-note" role="note">
-                        <x-admin.icon name="alert-circle" :size="18" />
+
                         <p>PDF, CSV, and XLSX generation are not installed. No report will be generated or stored from this dialog.</p>
                     </div>
                 </div>
@@ -168,7 +168,7 @@
         >
             <div class="admin-dialog-body report-preview-body">
                 <div class="report-preview-heading">
-                    <span><x-admin.icon name="file-text" :size="23" /></span>
+                    <span></span>
                     <div>
                         <small data-report-preview-category></small>
                         <h3 data-report-preview-title></h3>
@@ -183,12 +183,12 @@
                 </dl>
 
                 <div class="report-privacy-note" data-report-privacy-note hidden>
-                    <x-admin.icon name="lock" :size="18" />
+
                     <p>This catalog item can contain sensitive incident information. Detailed access requires a reviewed report policy and backend authorization.</p>
                 </div>
 
                 <div class="report-operation-note" role="note">
-                    <x-admin.icon name="alert-circle" :size="18" />
+
                     <p>This preview intentionally shows metadata only. Detailed aggregated report content will be connected through a protected generator.</p>
                 </div>
             </div>
@@ -205,7 +205,7 @@
         >
             <div class="admin-dialog-body">
                 <div class="report-operation-note" role="note">
-                    <x-admin.icon name="alert-circle" :size="18" />
+
                     <p><strong data-report-unavailable-action-label></strong> for <strong data-report-unavailable-title></strong> is not configured. No file was generated, printed, exposed, or downloaded.</p>
                 </div>
             </div>

@@ -361,7 +361,7 @@
         <div class="chat-window">
             <div class="chat-messages" id="chatMessages">
                 <div class="empty-chat chat-empty" id="emptyChat">
-                    <i class="fas fa-comments"></i>
+
                     <h3 style="font-size:16px;font-weight:700;color:var(--gray-800);margin-bottom:6px;">No messages yet</h3>
                     <p>Say hello to {{ $seekerName ?? 'the seeker' }} to get started.</p>
                 </div>
@@ -385,7 +385,7 @@
     <!-- ═══════════════ REFERRAL MODAL ═══════════════ -->
     <div class="modal-overlay" id="referralModal">
         <div class="modal-box">
-            <h3><i class="fas fa-arrow-right" style="color:#2563eb;"></i> Recommend a Referral</h3>
+            <h3> Recommend a Referral</h3>
             <p class="modal-sub">Recommend professional support for this seeker. Your adviser reviews the recommendation before the seeker is asked for consent.</p>
 
             <div id="referralStateChip" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;"></div>
@@ -436,7 +436,7 @@
     <!-- ═══════════════ EMERGENCY MODAL ═══════════════ -->
     <div class="modal-overlay" id="emergencyModal">
         <div class="modal-box">
-            <h3><i class="fas fa-exclamation-triangle" style="color:#dc2626;"></i> Flag as Emergency</h3>
+            <h3> Flag as Emergency</h3>
             <p class="modal-sub">This immediately notifies a support coordinator. Use only when the seeker is at immediate risk.</p>
             <div id="emergencyReferralState" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;background:#fffbeb;color:#92400e;"></div>
             <form method="POST" action="{{ route('helper.session.emergency', ['id' => $session->id]) }}">
@@ -524,7 +524,7 @@
                     chip.style.display = 'block';
                     chip.style.cssText = declined ? CHIP_STYLES.declined : CHIP_STYLES.info;
                     chip.textContent = declined
-                        ? '✕ Referral was declined. You can request consent again for a new referral.'
+                        ? 'Referral was declined. You can request consent again for a new referral.'
                         : 'Referral ' + status.replaceAll('_', ' ') + (done ? '.' : ' — no action needed right now.');
                 }
                 if (consentForm) consentForm.style.display = 'none';

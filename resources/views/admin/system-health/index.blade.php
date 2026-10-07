@@ -15,7 +15,7 @@
 
             <div class="health-page-actions">
                 <span class="health-overall health-overall-{{ $health['overallStatus']['key'] }}">
-                    <x-admin.icon name="shield" :size="17" />
+
                     Overall status: {{ $health['overallStatus']['label'] }}
                 </span>
                 <a class="admin-button admin-button-secondary" href="#health-incidents">
@@ -26,7 +26,7 @@
 
         @if ($loadFailed)
             <section class="health-load-error" role="alert">
-                <span><x-admin.icon name="alert-circle" :size="29" /></span>
+                <span></span>
                 <h2>Unable to retrieve system health</h2>
                 <p>Some monitoring information may be unavailable. Please try again.</p>
                 <a class="admin-button admin-button-secondary" href="{{ route('admin.system-health') }}">
@@ -36,7 +36,7 @@
         @else
             @if ($health['source'] === 'preview')
                 <div class="health-preview-notice" role="note">
-                    <x-admin.icon name="alert-circle" :size="17" />
+
                     Preview metrics are shown because an infrastructure monitoring provider is not configured yet.
                 </div>
             @endif

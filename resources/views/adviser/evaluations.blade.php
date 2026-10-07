@@ -205,7 +205,7 @@
                             <div class="concern">
                                 Concern: {{ $report->session->concern->concern_name ?? 'General' }}
                                 @if($report->referral_recommended)
-                                    <span class="text-yellow-600 font-medium ml-2"><i class="fas fa-bolt" aria-hidden="true"></i> Referral Recommended</span>
+                                    <span class="text-yellow-600 font-medium ml-2"> Referral Recommended</span>
                                 @endif
                             </div>
                         </div>
@@ -258,7 +258,7 @@
                         <div class="seeker-info">
                             <div class="alias text-gray-500">
                                 {{ $report->session->seeker->generated_alias ?? 'Anonymous' }}
-                                <span class="text-xs text-green-600 font-medium ml-2"><i class="fas fa-check" aria-hidden="true"></i> Reviewed</span>
+                                <span class="text-xs text-green-600 font-medium ml-2"> Reviewed</span>
                             </div>
                             <div class="details text-gray-400">
                                 {{ $report->session->helper->first_name ?? 'Unknown' }}
@@ -274,7 +274,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             Quality supervision leads to quality support.
         </div>
 </div>

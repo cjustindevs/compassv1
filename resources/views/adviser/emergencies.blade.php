@@ -35,14 +35,14 @@
         </div>
         <div class="flex items-center gap-2">
             <span class="px-3 py-1 rounded-full text-sm font-semibold bg-red-50 text-red-700">
-                <i class="fas fa-circle text-[8px] mr-2"></i>{{ $openAlerts->total() }} Active
+                {{ $openAlerts->total() }} Active
             </span>
         </div>
     </div>
 
     @if(session('success'))
         <div class="rounded-xl bg-green-50 border border-green-100 p-4 text-sm text-green-700 mb-6">
-            <i class="fas fa-check-circle mr-1"></i>{{ session('success') }}
+            {{ session('success') }}
         </div>
     @endif
 
@@ -68,7 +68,7 @@
     <!-- Open Emergency Cases -->
     <section class="card mb-6">
         <div class="card-header">
-            <h3><i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>Open Emergency Cases</h3>
+            <h3>Open Emergency Cases</h3>
             <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700">{{ $openAlerts->total() }}</span>
         </div>
         @forelse($openAlerts as $alert)
@@ -99,7 +99,7 @@
     <!-- Resolved Cases -->
     <section class="card">
         <div class="card-header">
-            <h3><i class="fas fa-check-circle text-green-500 mr-2"></i>Resolved Cases</h3>
+            <h3>Resolved Cases</h3>
             <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700">{{ $resolvedAlerts->total() }}</span>
         </div>
         @forelse($resolvedAlerts as $alert)

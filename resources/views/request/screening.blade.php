@@ -721,13 +721,13 @@
         <dialog id="safetyModal" aria-labelledby="safetyModalTitle">
             <div class="safety-modal-header">
                 <div>
-                    <h2 id="safetyModalTitle"><i class="fas fa-heart-crack mr-2"></i>You are not alone</h2>
+                    <h2 id="safetyModalTitle">You are not alone</h2>
                     <p class="text-sm text-gray-500 mt-1">Helpful resources are available right now. Please review them before continuing.</p>
                 </div>
                 <button type="button" class="consent-action" data-close-safety aria-label="Close"><i class="fas fa-xmark" aria-hidden="true"></i></button>
             </div>
             <div class="safety-modal-body">
-                <h3><i class="fas fa-phone-volume text-red-600 mr-1"></i> Crisis hotlines (available 24/7)</h3>
+                <h3> Crisis hotlines (available 24/7)</h3>
                 @forelse($hotlines as $hotline)
                     <div class="hotline-card">
                         <div>
@@ -740,10 +740,10 @@
                     <p>No hotlines are listed right now. If you are in immediate danger, call 911.</p>
                 @endforelse
 
-                <h3><i class="fas fa-book-open text-green-600 mr-1"></i> Self-help tools</h3>
+                <h3> Self-help tools</h3>
                 @forelse($selfHelp as $tool)
                     <div class="self-help-item">
-                        <i class="fas {{ $tool->icon ?? 'fa-book-open' }}" aria-hidden="true"></i>
+
                         <div>
                             <a href="{{ route('selfhelp.show', $tool->id) }}">{{ $tool->title }}</a>
                             <div class="text-xs text-gray-500">{{ $tool->description }} · {{ $tool->duration ? $tool->duration . ' min' : 'Self-paced' }}</div>
@@ -753,7 +753,7 @@
                     <p>You can browse grounding and calming activities anytime in the Self-Help section.</p>
                 @endforelse
 
-                <p class="text-xs text-gray-400 mt-4"><i class="fas fa-shield-halved mr-1"></i> COMPASS cannot guarantee an immediate emergency response. If you are in danger, contact local emergency services first.</p>
+                <p class="text-xs text-gray-400 mt-4"> COMPASS cannot guarantee an immediate emergency response. If you are in danger, contact local emergency services first.</p>
             </div>
             <div class="safety-modal-footer">
                 <button type="button" data-close-safety>Continue my request</button>
@@ -763,7 +763,7 @@
 
         <!-- Emergency Banner -->
         <div class="mt-6 p-4 bg-red-50 rounded-xl border border-red-200 flex items-center gap-4 flex-wrap">
-            <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
+
             <div>
                 <p class="text-sm font-medium text-red-700">Need immediate help?</p>
                 <p class="text-xs text-red-600">COMPASS is not an emergency service. For urgent support, open the emergency page or call your local emergency number.</p>
@@ -773,7 +773,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             You are not alone. We are here for you.
         </div>
 

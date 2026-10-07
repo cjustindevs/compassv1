@@ -15,7 +15,7 @@
                 <div class="avatar-lg" style="margin:0 auto 16px;">{{ \Illuminate\Support\Str::substr($helper->full_name, 0, 2) }}</div>
                 <div class="text-lg font-bold text-gray-800">{{ $helper->full_name }}</div>
                 <div class="text-sm text-gray-500 mt-1">Psychology Helper</div>
-                <div class="text-sm text-gray-400 mt-1"><i class="fas fa-envelope mr-1"></i>{{ $helper->email }}</div>
+                <div class="text-sm text-gray-400 mt-1">{{ $helper->email }}</div>
 
                 <hr class="divider">
 

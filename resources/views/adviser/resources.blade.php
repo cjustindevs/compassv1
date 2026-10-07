@@ -144,7 +144,7 @@
         </div>
 
         @if(session('success'))
-            <div class="flash-success"><i class="fas fa-check-circle mr-1"></i> {{ session('success') }}</div>
+            <div class="flash-success"> {{ session('success') }}</div>
         @endif
 
         @if($errors->any())<div role="alert" class="rounded-xl bg-red-50 p-4 text-sm text-red-700 mb-4">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
@@ -220,11 +220,11 @@
                     <div class="resource-card">
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex items-center gap-3">
-                                <div class="icon-box"><x-ui-icon :value="$resource->icon ?: 'fa-file-lines'" /></div>
+
                                 <div>
                                     <p class="category-tag">{{ $resource->category }}</p>
                                     @if($resource->is_featured)
-                                        <span class="text-xs text-yellow-500"><i class="fas fa-star"></i> Featured</span>
+                                        <span class="text-xs text-yellow-500"> Featured</span>
                                     @endif
                                 </div>
                             </div>
@@ -239,12 +239,12 @@
 
                         <div class="flex items-center gap-3 text-xs text-gray-400">
                             @if($resource->duration)
-                                <span><i class="far fa-clock"></i> {{ $resource->duration }}</span>
+                                <span> {{ $resource->duration }}</span>
                             @endif
-                            <span class="capitalize"><i class="fas fa-signal"></i> {{ $resource->difficulty_label }}</span>
-                            <span><i class="far fa-eye"></i> {{ number_format($resource->views_count) }}</span>
+                            <span class="capitalize"> {{ $resource->difficulty_label }}</span>
+                            <span> {{ number_format($resource->views_count) }}</span>
                             @if($resource->saved_count > 0)
-                                <span><i class="fas fa-bookmark"></i> {{ $resource->saved_count }}</span>
+                                <span> {{ $resource->saved_count }}</span>
                             @endif
                         </div>
 
@@ -291,7 +291,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-            <i class="fas fa-heart text-[#04A052] mr-1"></i>
+
             Quality supervision leads to quality support.
         </div>
 </div>

@@ -96,13 +96,13 @@
 
         @if(session('success'))
             <div class="flash success">
-                <i class="fas fa-check-circle"></i> {{ session('success') }}
+                 {{ session('success') }}
                 <button class="ml-auto text-lg leading-none" onclick="this.parentElement.remove()">&times;</button>
             </div>
         @endif
         @if($errors->any())
             <div class="flash error">
-                <i class="fas fa-exclamation-circle"></i> {{ $errors->first() }}
+                 {{ $errors->first() }}
                 <button class="ml-auto text-lg leading-none" onclick="this.parentElement.remove()">&times;</button>
             </div>
         @endif
@@ -136,7 +136,7 @@
             @method('patch')
 
             <div class="card">
-                <h2><i class="fas fa-eye text-[#04A052] mr-2"></i>Visibility &amp; data</h2>
+                <h2>Visibility &amp; data</h2>
                 <p class="sub">Control what others can see and how your data is used.</p>
                 <div class="mt-3">
                     <div class="toggle-row">
@@ -170,7 +170,7 @@
 
         <!-- Your data -->
         <div class="card">
-            <h2><i class="fas fa-database text-[#04A052] mr-2"></i>Your data</h2>
+            <h2>Your data</h2>
             <p class="sub">Access, export, or clear the information linked to your account.</p>
             <div class="flex flex-wrap gap-3 mt-5">
                 <a href="{{ route('settings.export-data') }}" class="btn btn-outline">
@@ -190,18 +190,18 @@
                 </form>
             </div>
             <p class="text-xs text-gray-400 mt-4">
-                <i class="fas fa-info-circle mr-1"></i>Clearing history removes all chat sessions, messages, and evaluations from your account.
+                Clearing history removes all chat sessions, messages, and evaluations from your account.
             </p>
         </div>
 
         <!-- Security note -->
         <div class="card border-green-200 bg-green-50/40">
-            <h2><i class="fas fa-shield-alt text-[#04A052] mr-2"></i>How COMPASS protects you</h2>
+            <h2>How COMPASS protects you</h2>
             <ul class="space-y-2 text-sm text-gray-600 mt-3">
-                <li class="flex items-center gap-2"><i class="fas fa-lock text-[#04A052] w-4"></i> Sessions are confidential between you and your helper</li>
-                <li class="flex items-center gap-2"><i class="fas fa-user-secret text-[#04A052] w-4"></i> Your real name is never shown to helpers — only your alias</li>
-                <li class="flex items-center gap-2"><i class="fas fa-id-badge text-[#04A052] w-4"></i> Verified helpers only — no bots, ever</li>
-                <li class="flex items-center gap-2"><i class="fas fa-ban text-[#04A052] w-4"></i> You can block and report anything uncomfortable</li>
+                <li class="flex items-center gap-2"> Sessions are confidential between you and your helper</li>
+                <li class="flex items-center gap-2"> Your real name is never shown to helpers — only your alias</li>
+                <li class="flex items-center gap-2"> Verified helpers only — no bots, ever</li>
+                <li class="flex items-center gap-2"> You can block and report anything uncomfortable</li>
             </ul>
         </div>
 

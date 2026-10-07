@@ -279,17 +279,17 @@
                             <span class="font-semibold text-gray-800">{{ $session->reference_number }}</span>
                             <span class="text-gray-600 truncate">{{ $session->seeker?->generated_alias ?? 'Anonymous' }}</span>
                             <span class="text-gray-600 truncate">
-                                <i class="fas fa-user-tie mr-1 text-gray-400"></i>{{ $session->helper?->full_name ?? 'Unassigned' }}
+                                {{ $session->helper?->full_name ?? 'Unassigned' }}
                             </span>
                             <span class="risk-badge {{ $session->risk_level ?? 'low' }}">{{ ucfirst($session->risk_level ?? 'Low') }}</span>
-                            <span class="text-gray-500"><i class="fas fa-clock mr-1 text-gray-300"></i>{{ $session->elapsed_label }}</span>
+                            <span class="text-gray-500">{{ $session->elapsed_label }}</span>
                             <span class="mode-pill">
-                                <i class="fas {{ $session->session_type === 'voice' ? 'fa-microphone-alt' : 'fa-comment-dots' }} mr-1"></i>{{ $session->mode_label }}
+                                {{ $session->mode_label }}
                             </span>
                             <span class="status-pill {{ $session->session_status === 'active' ? 'active' : 'assigned' }}">
                                 {{ $session->session_status === 'active' ? 'Active' : 'Awaiting Start' }}
                             </span>
-                            <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+
                         </div>
                     @empty
                         <div class="text-center py-10 text-gray-400">

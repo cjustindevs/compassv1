@@ -85,19 +85,19 @@
 
         @if(session('status') === 'profile-updated')
             <div class="flash success">
-                <i class="fas fa-check-circle"></i> Profile information updated.
+                 Profile information updated.
                 <button class="ml-auto text-lg leading-none" onclick="this.parentElement.remove()">&times;</button>
             </div>
         @endif
         @if(session('status') === 'password-updated')
             <div class="flash success">
-                <i class="fas fa-check-circle"></i> Password updated.
+                 Password updated.
                 <button class="ml-auto text-lg leading-none" onclick="this.parentElement.remove()">&times;</button>
             </div>
         @endif
         @if(session('success'))
             <div class="flash success">
-                <i class="fas fa-check-circle"></i> {{ session('success') }}
+                 {{ session('success') }}
                 <button class="ml-auto text-lg leading-none" onclick="this.parentElement.remove()">&times;</button>
             </div>
         @endif
@@ -119,7 +119,7 @@
 
         <!-- Avatar -->
         <div class="card">
-            <h2><i class="fas fa-camera text-[#04A052] mr-2"></i>Profile picture</h2>
+            <h2>Profile picture</h2>
             <p class="sub">Your photo or initials are shown to helpers and peers.</p>
             <div class="flex items-center gap-6 mt-5 flex-wrap">
                 <div class="avatar">
@@ -139,7 +139,7 @@
                         <p class="text-xs text-gray-400">JPG, PNG, GIF or WebP · max 2MB</p>
                     </div>
                     @error('avatar')
-                        <p class="form-error"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>
+                        <p class="form-error">{{ $message }}</p>
                     @enderror
                 </form>
             </div>
@@ -147,7 +147,7 @@
 
         <!-- Profile information -->
         <div class="card">
-            <h2><i class="fas fa-user text-[#04A052] mr-2"></i>Profile information</h2>
+            <h2>Profile information</h2>
             <p class="sub">Update your display name and email address.</p>
 
             <form method="POST" action="{{ route('profile.update') }}" class="mt-5">
@@ -191,7 +191,7 @@
 
         <!-- Password -->
         <div class="card">
-            <h2><i class="fas fa-key text-[#04A052] mr-2"></i>Update password</h2>
+            <h2>Update password</h2>
             <p class="sub">Use at least 8 characters. Don't reuse an old password.</p>
 
             <form method="POST" action="{{ route('password.update') }}" class="mt-5">
@@ -203,7 +203,7 @@
                         <label for="current_password" class="form-label">Current password</label>
                         <input id="current_password" name="current_password" type="password" class="form-input" required autocomplete="current-password">
                         @error('current_password')
-                            <p class="form-error"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>
+                            <p class="form-error">{{ $message }}</p>
                         @enderror
                     </div>
                     <div>
@@ -227,7 +227,7 @@
 
         <!-- Delete account -->
         <div class="card border-red-200">
-            <h2 class="text-red-600"><i class="fas fa-exclamation-triangle mr-2"></i>Delete account</h2>
+            <h2 class="text-red-600">Delete account</h2>
             <p class="sub">This permanently deletes your account, sessions, and saved resources. This cannot be undone.</p>
 
             <form method="POST" action="{{ route('profile.delete-account') }}" class="mt-5"
@@ -242,7 +242,7 @@
                         <label for="password" class="form-label">Enter your password to confirm</label>
                         <input id="password" name="password" type="password" class="form-input" required autocomplete="current-password">
                         @error('password')
-                            <p class="form-error"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>
+                            <p class="form-error">{{ $message }}</p>
                         @enderror
                     </div>
                     <div class="flex items-end pb-1">
