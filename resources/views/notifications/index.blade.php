@@ -46,14 +46,6 @@
         }
         .notif-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05); }
         .notif-card.unread { border-left: 4px solid var(--green-500); background: var(--green-50); }
-        .notif-card .icon {
-            width: 44px; height: 44px; border-radius: 12px; background: var(--green-50);
-            display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
-        }
-        .notif-card .icon.blue { background: #DBEAFE; }
-        .notif-card .icon.amber { background: #FEF3C7; }
-        .notif-card .icon.red { background: #FEE2E2; }
-        .notif-card .icon.purple { background: #EDE9FE; }
         .notif-card .link-btn {
             background: none; border: none; color: var(--green-600); font-weight: 600;
             font-size: 12px; cursor: pointer; padding: 0; transition: color 0.2s ease;
@@ -141,9 +133,6 @@
         <div id="notifList" class="space-y-3">
             @forelse($notifications as $notification)
                 <div class="notif-card {{ $notification->is_read ? '' : 'unread' }}" id="notif-{{ $notification->id }}" data-id="{{ $notification->id }}">
-                    <div class="icon {{ $notification->notification_type === 'session' ? 'blue' : ($notification->notification_type === 'reminder' ? 'amber' : ($notification->notification_type === 'update' ? 'purple' : '')) }}">
-
-                    </div>
                     <div class="flex-1 min-w-0">
                         <h4 class="font-semibold text-gray-800 text-sm">{{ $notification->title }}</h4>
                         <p class="text-sm text-gray-500 mt-1">{{ $notification->message }}</p>

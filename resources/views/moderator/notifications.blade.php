@@ -44,21 +44,6 @@
         .notif-item:hover { background: var(--bg-hover, #F9FAFB); }
         .notif-item.unread { background: #F0FDF4; }
         .notif-item.unread:hover { background: #EAF8F0; }
-        .notif-item .icon {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            font-size: 16px;
-        }
-        .notif-item .icon.emergency { background: #FEE2E2; }
-        .notif-item .icon.queue { background: #FEF3C7; }
-        .notif-item .icon.referral { background: #DBEAFE; }
-        .notif-item .icon.assignment { background: #DCFCE7; }
-        .notif-item .icon.system { background: var(--border-light, #F3F4F6); }
         .notif-item .content { flex: 1; min-width: 0; }
         .notif-item .content .title { font-weight: 600; font-size: 14px; color: var(--text-primary, #1F2937); }
         .notif-item .content .msg { font-size: 13px; color: var(--text-secondary, #6B7280); margin-top: 2px; }

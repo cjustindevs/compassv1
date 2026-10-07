@@ -62,19 +62,6 @@
         }
         .notif-item:last-child { border-bottom: none; }
         .notif-item.unread { background: var(--green-50); border-radius: 14px; padding: 14px; margin-bottom: 2px; }
-        .notif-item .icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: white;
-            border: 1px solid var(--gray-200);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-        .notif-item.unread .icon { background: white; }
         .notif-item .content { flex: 1; min-width: 0; }
         .notif-item .content .title-row {
             display: flex;
