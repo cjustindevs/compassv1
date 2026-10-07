@@ -64,38 +64,7 @@ class ModeratorEmergencyController extends Controller
 
     public function escalate(int $id): RedirectResponse
     {
-        $incident = IncidentReport::findOrFail($id);
-
-        $incident->update([
-            'status' => 'escalated',
-            'recommendation' => $incident->recommendation ?: 'Escalated by the moderator for immediate professional review.',
-        ]);
-
-        // Notify the adviser responsible for the session helper.
-        $session = $incident->session;
-        $adviserUser = $session?->helper?->adviser?->user_account_id;
-        $adviserUserId = $adviserUser ?? \App\Models\User::where('role', 'adviser')->value('id');
-
-        if ($adviserUserId) {
-            Notification::create([
-                'user_account_id' => $adviserUserId,
-                'title' => ' Emergency Escalated',
-                'message' => ($session?->seeker?->generated_alias ?? 'A seeker') . ' - escalated by the moderator. Review immediately.',
-                'notification_type' => 'emergency',
-                'type_icon' => 'fa-triangle-exclamation',
-                'link' => '/adviser/dashboard',
-                'status' => 'unread',
-            ]);
-        }
-
-        $this->broadcastSafely(new ModeratorAlert(Auth::id(), 'emergency', 'Emergency escalated', 'Case escalated to the adviser for immediate review.', '/moderator/emergency'));
-
-        // Notify the adviser in real time so they get an immediate toast.
-        if ($adviserUserId && $incident->session) {
-            $this->broadcastSafely(new EmergencyTriggered($incident->session, $incident, $adviserUserId));
-        }
-
-        return back()->with('success', 'Emergency case #' . $incident->id . ' escalated for immediate review.');
+        abort(403, 'Moderators cannot escalate incidents. Emergency review belongs to the responsible Adviser.');
     }
 
     public function resolve(int $id): RedirectResponse

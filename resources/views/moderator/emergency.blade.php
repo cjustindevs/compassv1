@@ -89,18 +89,7 @@
         .status-pill.escalated { background: #DBEAFE; color: #1D4ED8; }
         .status-pill.resolved { background: #DCFCE7; color: #166534; }
 
-        .btn-escalate {
-            background: #DC2626;
-            color: white;
-            padding: 7px 14px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 12px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-escalate:hover { background: #B91C1C; }
+
         .btn-resolve {
             background: #DCFCE7;
             color: #166534;
@@ -204,7 +193,7 @@
                 </button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-800">Emergency Alerts</h1>
-                    <p class="text-sm text-gray-500 hidden sm:block">Incident triage, escalation and resolution</p>
+                    <p class="text-sm text-gray-500 hidden sm:block">Monitor emergency reports and coordinate with the responsible Adviser</p>
                 </div>
             </div>
             <div class="flex items-center gap-2 text-xs text-gray-400">
@@ -300,16 +289,7 @@
                             </span>
                             <span class="text-xs text-gray-500">{{ $incident->created_at?->diffForHumans() }}</span>
                             <div class="flex items-center gap-2">
-                                <form method="POST" action="{{ route('moderator.emergency.escalate', $incident->id) }}"
-                                      data-confirm="Escalate emergency?"
-                                      data-confirm-message="This will alert higher authorities and cannot be undone lightly."
-                                      data-confirm-text="Escalate"
-                                      data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
-                                    @csrf
-                                    <button type="submit" class="btn-escalate" {{ $incident->status === 'escalated' ? 'disabled style=opacity:.35;cursor:not-allowed' : '' }}>
-                                        <i class="fas fa-arrow-up mr-1"></i> Escalate
-                                    </button>
-                                </form>
+
 
                             </div>
                         </div>

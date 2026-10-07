@@ -75,7 +75,7 @@ class IncidentReportService
 
     public function escalateIncident(IncidentReport $incident, array $data): IncidentReport
     {
-        abort_unless(in_array(Auth::user()?->role,['adviser','moderator']) && Auth::user()?->is_active,403);
+        abort_unless(Auth::user()?->role === 'adviser' && Auth::user()?->is_active,403);
         $incident->forceFill([
             'status' => 'escalated',
             'escalated_at' => now(),

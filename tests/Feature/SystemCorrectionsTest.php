@@ -34,6 +34,16 @@ class SystemCorrectionsTest extends TestCase {
  $u=User::factory()->create(['role'=>'moderator','is_active'=>true]);
  $this->actingAs($u)->post(route('moderator.emergency.resolve',999))->assertForbidden();
  }
+ public function test_moderator_cannot_escalate_through_either_endpoint():void {
+ $u=User::factory()->create(['role'=>'moderator','is_active'=>true]);
+ $incident=\App\Models\IncidentReport::create(['user_account_id'=>$u->id,'incident_category'=>'emergency_flag','description'=>'Support review needed','risk_level'=>'emergency','status'=>'open']);
+ $this->actingAs($u)->post(route('moderator.emergency.escalate',$incident->id))->assertForbidden();
+ $this->postJson(route('incidents.escalate',$incident),['escalated_to'=>$u->id,'reason'=>'Attempted escalation'])->assertForbidden();
+ $this->assertSame('open',$incident->fresh()->status);
+ $this->assertNull($incident->fresh()->escalated_at);
+ $this->assertDatabaseCount('notifications',0);
+ $this->get(route('moderator.emergency'))->assertOk()->assertDontSee(route('moderator.emergency.escalate',$incident->id),false);
+ }
  public function test_concern_management_is_authorized_and_inactive_categories_are_retained():void {
  $admin=User::factory()->create(['role'=>'admin','is_active'=>true]);
  $this->actingAs($admin)->post(route('concerns.store'),['concern_name'=>'New concern','description'=>'Support category','is_active'=>1])->assertSessionHasNoErrors();
