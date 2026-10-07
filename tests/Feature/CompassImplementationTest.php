@@ -56,13 +56,14 @@ class CompassImplementationTest extends TestCase
         $this->post(route('request.screening.process'), $data)->assertSessionHasErrors(['difficulty_coping']);
     }
 
-    public function test_emergency_redirects_to_resources_without_queuing(): void
+    public function test_emergency_opens_review_and_temporary_support_queue(): void
     {
         $this->actingAs($this->seeker());
         $data = $this->screening();
         $data['immediate_intent'] = 'yes';
         $this->post(route('request.screening.process'), $data)->assertRedirect(route('request.matching'));
-        $this->assertDatabaseCount('queue_requests', 0);
+        $this->assertDatabaseHas('queue_requests', ['priority_level'=>'emergency','request_status'=>'waiting']);
+        $this->assertDatabaseCount('emergency_alerts', 1);
     }
 
     public function test_expired_session_rejects_messages_and_caps_duration(): void

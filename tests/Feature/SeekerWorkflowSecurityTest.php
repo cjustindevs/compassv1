@@ -80,14 +80,15 @@ class SeekerWorkflowSecurityTest extends TestCase {
         $this->assertDatabaseHas('screening_responses',['session_id'=>$session->id,'review_status'=>'reviewed','actor_id'=>$adviserUser->id]);
         $this->get(route('adviser.screenings'))->assertViewHas('sessions',fn($rows)=>!$rows->contains('id',$session->id));
 
-        $this->assertDatabaseCount('queue_requests',0);
+        $this->assertDatabaseHas('queue_requests',['priority_level'=>'emergency','request_status'=>'waiting']);
     }
 
-    public function test_emergency_overrides_contradictions_and_bypasses_queue(): void {
+    public function test_emergency_overrides_contradictions_and_opens_parallel_support_queue(): void {
         $user=$this->seeker(); $this->actingAs($user)->post(route('request.screening.process'),$this->answers(['immediate_intent'=>'yes','current_suicide_plan'=>'yes','suicidal_thoughts'=>'no']))->assertRedirect(route('request.matching'));
-        $this->assertDatabaseHas('counseling_sessions',['workflow_state'=>'emergency_escalated']);
-        $this->assertDatabaseCount('emergency_alerts',1); $this->assertDatabaseCount('queue_requests',0);
-        $this->postJson(route('request.preferences.process'),['support_mode'=>'chat','preferred_language'=>'English'])->assertStatus(409);
+        $this->assertDatabaseHas('counseling_sessions',['workflow_state'=>'queued','requires_adviser_review'=>true,'risk_level'=>'emergency']);
+        $this->assertDatabaseCount('emergency_alerts',1); $this->assertDatabaseHas('queue_requests',['priority_level'=>'emergency','request_status'=>'waiting']);
+        $this->postJson(route('request.preferences.process'),['support_mode'=>'chat','preferred_language'=>'English'])->assertRedirect(route('request.matching'));
+        $this->assertDatabaseCount('queue_requests',1);
         $this->assertDatabaseHas('audit_logs',['action'=>'emergency_branch_activated']);
     }
     public function test_prefer_not_to_say_and_unapproved_instrument_require_review(): void {

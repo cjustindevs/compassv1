@@ -25,6 +25,94 @@ class EscalationWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_unassigned_emergency_stays_pending_and_duplicate_submission_is_idempotent(): void
+    {
+        Event::fake();
+        [$seeker, $session, $helper, $adviser] = $this->sessionWithAssignedHelper();
+        $session->update(['helper_id' => null, 'review_adviser_id' => null]);
+        $adviser->user->update(['is_active' => false]);
+        $service = app(EmergencyEscalationService::class);
+        $alert = $service->escalateEmergency($session->fresh(), $seeker);
+        $count = Notification::count();
+        $again = $service->escalateEmergency($session->fresh(), $seeker);
+        $this->assertSame($alert->id, $again->id);
+        $this->assertSame($count, Notification::count());
+        $this->assertSame('pending', $alert->status);
+        $this->assertFalse($alert->adviser_notified);
+        $this->assertSame('no_active_adviser', $alert->notification_result);
+        $this->assertNull($alert->resolved_at);
+        $this->assertDatabaseMissing('referrals', ['session_id' => $session->id]);
+    }
+
+    public function test_emergency_support_requires_open_alert_and_preserves_stale_request(): void
+    {
+        Event::fake();
+        [$seeker, $session, $helper] = $this->sessionWithAssignedHelper();
+        $session->update(['helper_id'=>null, 'created_date'=>now()->subDays(2)]);
+        $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $seeker);
+        $session->refresh();
+        $this->assertTrue($session->permitsEmergencySupport());
+        $this->assertSame('waiting', $session->session_status);
+        $this->assertSame('waiting', $session->queue->request_status);
+        $this->assertSame('emergency', $session->queue->priority_level);
+        Session::whereKey($session->id)->markAbandoned();
+        $this->assertSame('waiting', $session->fresh()->session_status);
+        $alert->update(['status'=>'resolved']);
+        $this->assertFalse($session->permitsEmergencySupport());
+    }
+
+    public function test_emergency_can_receive_temporary_helper_without_clearing_review(): void
+    {
+        Event::fake();
+        config(['app.relax_duty_hours'=>true]);
+        [$seeker, $session, $helper] = $this->sessionWithAssignedHelper();
+        $session->update(['helper_id'=>null]);
+        $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $seeker);
+        \App\Models\ReadinessCheck::create(['helper_id'=>$helper->id, 'assessment_date'=>now(),
+            'valid_until'=>now()->addHour(), 'assessment_result'=>'ready', 'is_active'=>true]);
+        $this->mock(\App\Services\ConsentService::class, function ($mock) {
+            $mock->shouldReceive('valid')->andReturn(true);
+        });
+        $session->refresh();
+        $assigned = app(\App\Services\HelperMatchingService::class)->manualAssign($session->queue, $helper->id);
+        $this->assertInstanceOf(Session::class, $assigned, is_string($assigned) ? $assigned : 'Assignment failed');
+        $this->assertTrue((bool) $assigned->requires_adviser_review);
+        $this->assertSame('emergency', $assigned->risk_level);
+        $this->assertNull($alert->fresh()->resolved_at);
+        app(\App\Services\HelperWorkflowMaintenance::class)->releaseRecommendation($assigned, 'declined');
+        $assigned->refresh();
+        $this->assertNull($assigned->helper_id);
+        $retry = app(\App\Services\HelperMatchingService::class)->manualAssign($assigned->queue->fresh(), $helper->id);
+        $this->assertIsString($retry);
+        $this->assertStringContainsString('already declined', $retry);
+        $this->assertNull($alert->fresh()->resolved_at);
+    }
+
+    public function test_reminders_are_opt_in_deduplicated_and_stop_after_acknowledgment(): void
+    {
+        Event::fake();
+        [$seeker, $session] = $this->sessionWithAssignedHelper();
+        $moderator = User::factory()->create(['role'=>'moderator','is_active'=>true]);
+        $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $seeker);
+        $service = app(\App\Services\EmergencyReviewReminders::class);
+        $this->travel(6)->minutes();
+        config(['emergency.reminder_minutes'=>0]);
+        $before = Notification::count();
+        $service->run();
+        $this->assertSame($before, Notification::count());
+        config(['emergency.reminder_minutes'=>5]);
+        $service->run();
+        $this->assertDatabaseHas('notifications',['user_account_id'=>$moderator->id,'title'=>'Emergency acknowledgment pending']);
+        $after = Notification::count();
+        $this->assertGreaterThan($before, $after);
+        $service->run();
+        $this->assertSame($after, Notification::count());
+        $alert->forceFill(['acknowledged_at'=>now()])->save();
+        $this->travel(6)->minutes();
+        $service->run();
+        $this->assertSame($after, Notification::count());
+    }
+
     public function test_risk_classification_identifies_all_levels(): void
     {
         $service = app(RiskClassificationService::class);
@@ -50,6 +138,7 @@ class EscalationWorkflowTest extends TestCase
         $this->assertDatabaseHas('counseling_sessions', ['id' => $session->id, 'risk_level' => 'emergency', 'escalation_required' => true]);
         $this->assertDatabaseHas('help_seekers', ['id' => $seeker->id, 'current_risk_level' => 'emergency', 'has_emergency' => true]);
         $this->assertDatabaseHas('identity_vault', ['seeker_id' => $seeker->id, 'emergency_override' => false]);
+        $this->assertSame(Session::STATUS_ACTIVE, $session->fresh()->session_status);
         $this->assertDatabaseMissing('referrals', ['session_id' => $session->id]);
         $this->assertGreaterThanOrEqual(2, Notification::where('notification_type', 'emergency')->count());
     }
@@ -108,6 +197,7 @@ class EscalationWorkflowTest extends TestCase
         $incident = $service->reviewIncident($incident, ['comments' => 'Review started']);
         $this->assertSame('under_review', $incident->status);
 
+        $this->actingAs($adviserUser);
         $incident = $service->escalateIncident($incident, ['escalated_to' => $adviserUser->id, 'reason' => 'Adviser review needed']);
         $this->assertSame('escalated', $incident->status);
 

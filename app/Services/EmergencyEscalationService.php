@@ -14,11 +14,15 @@ use App\Models\Referral;
 use App\Models\Session;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class EmergencyEscalationService
 {
     public function escalateEmergency(Session $session, HelpSeeker $seeker, array $context = []): EmergencyAlert
     {
+        return DB::transaction(function () use ($session, $seeker, $context) {
+        $session = Session::lockForUpdate()->findOrFail($session->id);
+        abort_unless((int) $session->seeker_id === (int) $seeker->id, 403);
         if ($existing = $session->emergencyAlerts()->latest('id')->first()) return $existing;
         $alert = $this->createEmergencyAlert($session, $seeker, $context);
 
@@ -32,6 +36,7 @@ class EmergencyEscalationService
         event(new EmergencyEscalationInitiated($alert, $seeker, $session));
 
         return $alert->refresh();
+        }, 3);
     }
 
     private function createEmergencyAlert(Session $session, HelpSeeker $seeker, array $context): EmergencyAlert
@@ -86,7 +91,7 @@ class EmergencyEscalationService
             'notification_sent' => (bool) $adviser,
             'notification_result' => $adviser ? 'in_app_delivered' : 'no_active_adviser',
             'notification_sent_at' => $adviser ? now() : null,
-            'status' => 'notified',
+            'status' => $adviser ? 'notified' : 'pending',
         ])->save();
     }
 
@@ -98,7 +103,8 @@ class EmergencyEscalationService
             return;
         }
         $session->forceFill([
-            'session_status'=>'emergency', 'workflow_state'=>'emergency_escalated',
+            'session_status'=>$session->helper_id ? $session->session_status : 'emergency',
+            'workflow_state'=>$session->helper_id ? $session->workflow_state : 'emergency_escalated',
             'risk_level' => RiskClassificationService::RISK_EMERGENCY,
             'escalation_required' => true,
             'requires_immediate_action' => true,
@@ -113,7 +119,17 @@ class EmergencyEscalationService
             'last_emergency_at' => now(),
         ])->save();
 
-        $session->queue?->update(['request_status'=>'cancelled','cancelled_at'=>now()]);
+        // Temporary peer support is separate from the emergency review.
+        if (!$session->helper_id) {
+            $queue = $session->queue ?: \App\Models\QueueRequest::create([
+                'seeker_id' => $seeker->id, 'request_status' => 'waiting',
+                'priority_level' => 'emergency', 'preferred_session_type' => 'chat',
+                'request_date' => now(), 'queued_at' => now(),
+            ]);
+            $session->update(['queue_request_id' => $queue->id, 'submitted_at' => $session->submitted_at ?? now(),
+                'session_status' => Session::STATUS_WAITING]);
+            DB::afterCommit(fn () => app(HelperMatchingService::class)->processQueueRequest($queue));
+        }
         SupportAudit::record('emergency_branch_activated',$session);
 
         $incident = IncidentReport::lockForUpdate()
@@ -129,7 +145,7 @@ class EmergencyEscalationService
                 'user_account_id' => $seeker->user_account_id,
                 'incident_category' => 'classification_emergency',
                 'description' => $context['reason'] ?? 'Emergency risk classification triggered immediate escalation.',
-                'immediate_action' => 'Immediate safety evaluation; urgent human support arranged.',
+                'immediate_action' => 'Emergency review requested; human support is not yet confirmed.',
                 'risk_level' => Referral::PRIORITY_EMERGENCY,
                 'status' => 'open',
                 'reported_at' => now(),

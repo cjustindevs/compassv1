@@ -22,6 +22,19 @@ class ModeratorAdviserModuleTest extends TestCase
     use RefreshDatabase;
     use \Tests\Concerns\SeekerWorkflowFixtures;
 
+    private function loggedInReadyDutyHelper(Helper $helper): void
+    {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('test_duty_logins')) {
+            \Illuminate\Support\Facades\Schema::create('test_duty_logins', function ($table) {
+                $table->string('id')->primary(); $table->unsignedBigInteger('user_id')->nullable(); $table->integer('last_activity');
+                $table->string('ip_address',45)->nullable(); $table->text('user_agent')->nullable(); $table->text('payload')->default('');
+            });
+        }
+        config(['session.driver'=>'database','session.table'=>'test_duty_logins','session.lifetime'=>120]);
+        \Illuminate\Support\Facades\DB::table('test_duty_logins')->insert(['id'=>'helper-'.$helper->id,'user_id'=>$helper->user_account_id,'last_activity'=>now()->timestamp]);
+        ReadinessCheck::create(['helper_id'=>$helper->id,'assessment_date'=>now(),'valid_until'=>now()->addHours(2),'assessment_result'=>'ready','is_active'=>true]);
+    }
+
     public function test_queue_explains_why_a_created_helper_cannot_be_assigned(): void
     {
         [$user] = $this->moderatorUser();
@@ -234,7 +247,9 @@ class ModeratorAdviserModuleTest extends TestCase
     {
         [$moderatorUser] = $this->moderatorUser();
         $helper = $this->helper();
+        $this->loggedInReadyDutyHelper($helper);
         $other = $this->helper();
+        $this->loggedInReadyDutyHelper($other);
         $date = now()->addDays(2)->toDateString();
 
         // The regression: the route supplies no {shift}, so the removal used to
@@ -361,7 +376,9 @@ class ModeratorAdviserModuleTest extends TestCase
     {
         [$moderatorUser] = $this->moderatorUser();
         $helper = $this->helper();
+        $this->loggedInReadyDutyHelper($helper);
         $other = $this->helper();
+        $this->loggedInReadyDutyHelper($other);
         $date = now()->toDateString();
 
         $payload = [
@@ -400,6 +417,7 @@ class ModeratorAdviserModuleTest extends TestCase
     {
         [$moderatorUser] = $this->moderatorUser();
         $helper = $this->helper();
+        $this->loggedInReadyDutyHelper($helper);
         $date = now('Asia/Manila')->toDateString();
 
         $this->actingAs($moderatorUser)->post(route('moderator.schedules.store'), [

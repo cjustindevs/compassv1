@@ -114,6 +114,42 @@ class SessionReconnectionTest extends TestCase
         $this->actingAs($this->seekerUser)->withSession(['session_id' => $this->session->id])->get('/session/chat')->assertOk()->assertViewHas('session', fn ($s) => $s->id === $next->id);
     }
 
+    public function test_emergency_replacement_preserves_original_review_without_copying_messages(): void
+    {
+        $alert = app(\App\Services\EmergencyEscalationService::class)->escalateEmergency($this->session, $this->session->seeker);
+        $i = $this->incident();
+        $i->update(['status'=>'requested']);
+        $u = $this->replacement();
+        $u->helper->update(['competency_level'=>4]);
+        $moderator = User::factory()->create(['role'=>'moderator','is_active'=>true]);
+        $this->actingAs($moderator)->post(route('reconnections.offer', $i))->assertSessionHasNoErrors();
+        $this->assertSame($u->helper->id, $i->fresh()->offered_helper_id);
+        $this->actingAs($u)->post(route('reconnections.accept', $i), ['accept'=>1])->assertSessionHasNoErrors();
+        $next = Session::findOrFail($i->fresh()->continuation_id);
+        $this->assertSame($alert->id, $next->supportEmergencyAlert->id);
+        $this->assertTrue($next->permitsEmergencySupport());
+        $this->assertSame($this->session->id, $alert->fresh()->session_id);
+        $this->assertNull($alert->fresh()->resolved_at);
+        $this->assertSame(0, $next->messages()->count());
+        $this->assertSame($alert->adviser_id, $next->review_adviser_id);
+    }
+
+    public function test_emergency_replacement_decline_does_not_repeat_or_close_review(): void
+    {
+        $alert = app(\App\Services\EmergencyEscalationService::class)->escalateEmergency($this->session, $this->session->seeker);
+        $i = $this->incident();
+        $i->update(['status'=>'requested']);
+        $u = $this->replacement();
+        $u->helper->update(['competency_level'=>4]);
+        $m = User::factory()->create(['role'=>'moderator','is_active'=>true]);
+        $this->actingAs($m)->post(route('reconnections.offer', $i))->assertSessionHasNoErrors();
+        $this->actingAs($u)->post(route('reconnections.accept', $i), ['accept'=>0])->assertSessionHasNoErrors();
+        $this->actingAs($m)->postJson(route('reconnections.offer', $i))->assertUnprocessable();
+        $this->assertNull($i->fresh()->offered_helper_id);
+        $this->assertNull($alert->fresh()->resolved_at);
+        $this->assertTrue($this->session->fresh()->isActive());
+    }
+
     public function test_emergency_cannot_be_offered_and_unrelated_roles_blocked(): void
     {
         $i = $this->incident();

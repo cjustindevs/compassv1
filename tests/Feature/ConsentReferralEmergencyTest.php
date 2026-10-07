@@ -657,7 +657,9 @@ class ConsentReferralEmergencyTest extends TestCase
             ->assertRedirect(route('request.matching'));
 
         $session = Session::where('seeker_id', $user->helpSeeker->id)->firstOrFail();
-        $this->assertSame('emergency_escalated', $session->workflow_state);
+        $this->assertSame('queued', $session->workflow_state);
+        $this->assertTrue((bool) $session->requires_adviser_review);
+        $this->assertDatabaseHas('queue_requests', ['id'=>$session->queue_request_id, 'priority_level'=>'emergency']);
         $this->assertDatabaseCount('emergency_alerts', 1);
         $this->assertDatabaseHas('incident_reports', [
             'session_id' => $session->id,

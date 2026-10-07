@@ -45,6 +45,19 @@ class Session extends Model
         self::STATUS_HELPER_ASSIGNED,
     ];
 
+    public function permitsEmergencySupport(): bool
+    {
+        return $this->risk_level === 'emergency'
+            && $this->requires_immediate_action
+            && ($this->emergencyAlerts()->whereNotIn('status', ['resolved', 'closed'])->exists()
+                || $this->supportEmergencyAlert()->whereNotIn('status', ['resolved', 'closed'])->exists());
+    }
+
+    public function supportEmergencyAlert()
+    {
+        return $this->belongsTo(EmergencyAlert::class, 'support_emergency_alert_id');
+    }
+
     protected $table = 'counseling_sessions';
 
     protected $fillable = [
@@ -236,6 +249,7 @@ class Session extends Model
     public function scopeAbandoned($query)
     {
         return $query->whereIn('session_status', [self::STATUS_PREFERENCES_SET, self::STATUS_WAITING, self::STATUS_HELPER_ASSIGNED])
+            ->whereDoesntHave('emergencyAlerts', fn ($q) => $q->whereNotIn('status', ['resolved', 'closed']))
             ->where('created_date', '<', now()->subHours(24));
     }
 
@@ -245,6 +259,7 @@ class Session extends Model
     public function scopeMarkAbandoned($query): void
     {
         $query->whereIn('session_status', [self::STATUS_PREFERENCES_SET, self::STATUS_WAITING, self::STATUS_HELPER_ASSIGNED])
+            ->whereDoesntHave('emergencyAlerts', fn ($q) => $q->whereNotIn('status', ['resolved', 'closed']))
             ->where('created_date', '<', now()->subHours(24))
             ->update([
                 'session_status' => self::STATUS_CANCELLED,

@@ -137,7 +137,7 @@ class HelperWorkflowMaintenance
             SupportAudit::record('helper_recommendation_'.$reason, $session, ['helper_id' => $helper->id]);
             $this->notify($helper->user_account_id, 'Assignment returned to the queue', 'The pending assignment is no longer reserved for you.', '/helper/cases');
             $this->notify($session->seeker?->user_account_id, 'Finding another available helper', 'Your support request remains in the queue.', '/request/matching');
-            if ($reason === 'expired') {
+            if ($reason === 'expired' || $session->risk_level === 'emergency') {
                 $this->notifyEscalation($helper, $session);
             }
             if ($queue = $session->queue) {
@@ -174,8 +174,9 @@ class HelperWorkflowMaintenance
 
     private function notifyEscalation(Helper $helper, Session $session): void
     {
-        $title = 'Helper missed a session recommendation';
+        $title = $session->risk_level === 'emergency' ? 'Emergency support needs another Helper' : 'Helper missed a session recommendation';
         $message = sprintf('%s (%s) did not respond to %s within the %d-minute brief. The request was returned to the queue.', $helper->full_name, $session->reference_number, $session->seeker?->generated_alias ?? 'a seeker', Helper::PRE_SESSION_BRIEF_MINUTES);
+        if ($session->risk_level === 'emergency') $message = 'An emergency support offer was released. Coordinate another eligible Helper; the Adviser emergency review remains open.';
         foreach (User::where('role', 'moderator')->where('is_active', true)->pluck('id') as $moderatorUserId) {
             $this->notify($moderatorUserId, $title, $message, '/moderator/queue');
         }

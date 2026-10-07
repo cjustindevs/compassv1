@@ -31,7 +31,8 @@ class SessionReconnectionService
         foreach (User::where('role', 'moderator')->where('is_active', true)->pluck('id') as $id) {
             $this->notice($id, $title, '/moderator/reconnections');
         }if ($session->requires_immediate_action || $session->risk_level === 'emergency') {
-            $this->notice($session->helper?->adviser?->user_account_id, 'Emergency session connection interrupted', '/adviser/dashboard');
+            $reviewer = $session->supportEmergencyAlert?->adviser ?? $session->emergencyAlerts()->latest('id')->first()?->adviser;
+            $this->notice($reviewer?->user_account_id ?? $session->helper?->adviser?->user_account_id, 'Emergency session connection updated', '/adviser/emergencies');
         }
     }
 
@@ -65,8 +66,9 @@ class SessionReconnectionService
 
                     return;
                 }if ($incident->status === 'offered' && $incident->offered_at?->lte(now()->subMinutes(2))) {
+                    $previousHelperId = $incident->offered_helper_id;
                     $incident->update(['status' => 'requested', 'offered_helper_id' => null]);
-                    SupportAudit::record('replacement_offer_expired', $session);
+                    SupportAudit::record('replacement_offer_expired', $session, ['helper_id'=>$previousHelperId]);
                     $this->staff($session, 'Replacement offer expired');
                 }
             });
@@ -115,9 +117,10 @@ class SessionReconnectionService
             $incident = SessionReconnection::lockForUpdate()->findOrFail($incident->id);
             if (! $session->isActive() || $incident->status !== 'requested' || app(SessionDurationService::class)->expire($session)) {
                 throw ValidationException::withMessages(['connection' => 'This request is no longer awaiting replacement.']);
-            }if ($session->requires_immediate_action || $session->risk_level === 'emergency') {
+            }if (($session->requires_immediate_action || $session->risk_level === 'emergency') && !$session->permitsEmergencySupport()) {
                 throw ValidationException::withMessages(['connection' => 'An emergency is active. Coordinate with the responsible Adviser instead of ordinary replacement matching.']);
-            }$helper = app(HelperMatchingService::class)->findBestMatch($session->seeker, $session->risk_level ?? 'low', $session->concern_category, null, $session->helper_id);
+            }$excluded = $session->permitsEmergencySupport() ? \App\Models\AuditLog::where('target_type',$session->getTable())->where('target_id',$session->id)->whereIn('action',['replacement_offer_declined','replacement_offer_expired'])->get()->map(fn($row)=>(int)($row->metadata['helper_id'] ?? 0))->all() : [];
+            $helper = app(HelperMatchingService::class)->findBestMatch($session->seeker, $session->risk_level ?? 'low', $session->concern_category, null, $session->helper_id, $excluded);
             if (! $helper) {
                 throw ValidationException::withMessages(['connection' => 'No eligible Helper is available. The Seeker remains in the current session. Try again when availability changes.']);
             }$incident->update(['status' => 'offered', 'offered_helper_id' => $helper->id, 'offered_at' => now()]);
@@ -138,13 +141,23 @@ class SessionReconnectionService
             }if (! $accept) {
                 $incident->update(['status' => 'requested', 'offered_helper_id' => null]);
                 $this->staff($session, 'Replacement offer declined');
-                SupportAudit::record('replacement_offer_declined', $session);
+                SupportAudit::record('replacement_offer_declined', $session, ['helper_id'=>$helper->id]);
 
                 return;
-            }if (! app(HelperEligibilityService::class)->allows($helper, $session) || ! $helper->canHandleRiskLevel($session->risk_level ?? 'low') || $session->requires_immediate_action || $session->risk_level === 'emergency' || DB::table('helper_conflicts')->where('helper_id', $helper->id)->where('seeker_id', $session->seeker_id)->exists()) {
+            }if (! app(HelperEligibilityService::class)->allows($helper, $session) || ! $helper->canHandleRiskLevel($session->risk_level ?? 'low') || (($session->requires_immediate_action || $session->risk_level === 'emergency') && !$session->permitsEmergencySupport()) || DB::table('helper_conflicts')->where('helper_id', $helper->id)->where('seeker_id', $session->seeker_id)->exists()) {
                 throw ValidationException::withMessages(['connection' => 'Eligibility changed. Ask the Moderator to review this replacement.']);
             }
             $continuation = Session::create(['seeker_id' => $session->seeker_id, 'helper_id' => $helper->id, 'concern_id' => $session->concern_id, 'concern_category' => $session->concern_category, 'risk_level' => $session->risk_level, 'session_type' => $session->session_type, 'peer_support_approved_at' => $session->peer_support_approved_at, 'requires_closer_monitoring' => $session->requires_closer_monitoring, 'session_status' => 'active', 'start_time' => $session->start_time, 'helper_accepted_at' => now(), 'created_date' => now(), 'submitted_at' => $session->submitted_at, 'review_adviser_id' => $helper->adviser_id]);
+            if ($session->permitsEmergencySupport()) {
+                $alert = $session->supportEmergencyAlert ?? $session->emergencyAlerts()->whereNotIn('status', ['resolved','closed'])->latest('id')->firstOrFail();
+                $continuation->forceFill([
+                    'support_emergency_alert_id'=>$alert->id,
+                    'review_adviser_id'=>$alert->adviser_id ?? $session->review_adviser_id,
+                    'requires_immediate_action'=>true, 'requires_adviser_review'=>true,
+                    'escalation_required'=>true,
+                ])->save();
+                SupportAudit::record('emergency_support_continued', $alert, ['original_session_id'=>$session->id,'continuation_id'=>$continuation->id]);
+            }
             $continuation->forceFill(['helper_heartbeat_at' => now()])->save();
             $session->forceFill(['session_status' => 'completed', 'completion_status' => 'completed', 'end_time' => now(), 'completion_reason' => 'connection_handoff'])->save();
             $incident->update(['status' => 'transferred', 'continuation_id' => $continuation->id, 'resolved_at' => now()]);

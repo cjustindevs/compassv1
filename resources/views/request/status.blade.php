@@ -2,8 +2,20 @@
 @section('content')
 <x-seeker-step title="Your support request">
 <p class="font-semibold">Reference {{ $session->reference_number }}</p>
-@switch($session->workflow_state)
-@case('emergency_escalated')<h2 class="font-semibold">Emergency resources are available</h2><p>COMPASS cannot promise an immediate emergency response and does not replace emergency or professional services. An alert has been recorded for adviser review.</p><a class="text-green-700 underline" href="{{ route('emergency') }}">View emergency resources</a>@break
+@switch($session->permitsEmergencySupport() ? 'emergency_escalated' : $session->workflow_state)
+@case('emergency_escalated')
+<div class="my-4 rounded-xl border border-green-200 bg-green-50 p-4">
+<h2 class="font-semibold">Temporary peer support</h2>
+@if($session->session_status === 'active')
+<p>Your Helper is connected while the Adviser coordinates further support.</p>
+<a class="text-green-700 underline" href="{{ route('session.chat') }}">Open chat</a>
+@elseif($session->helper_id)
+<p>{{ $session->helper_accepted_at ? 'Your Helper has accepted and is preparing the chat.' : 'An eligible Helper has been invited. Waiting for acceptance.' }}</p>
+@else
+<p>No Helper connection is confirmed yet. Your emergency review remains open while the Moderator coordinates support.</p>
+@endif
+</div>
+<h2 class="font-semibold">Emergency resources are available</h2><p>COMPASS cannot promise an immediate emergency response and does not replace emergency or professional services. An alert has been recorded for adviser review.</p><a class="text-green-700 underline" href="{{ route('emergency') }}">View emergency resources</a>@break
 @case('adviser_review_required')<h2 class="font-semibold">Awaiting adviser review</h2><p>Your responses need review before we can continue. You can still access self-help and emergency resources.</p>@break
 @case('session_ready')<h2 class="font-semibold">Your helper is preparing</h2><p>Your request has been accepted. Chat opens when the helper starts the session.</p>@break
 @case('session_active')<h2 class="font-semibold">Your helper accepted</h2>@if($session->helper_accepted_at)<a class="text-green-700 underline" href="{{ route('session.chat') }}">Open chat</a>@else<p>This older request has no recorded helper acceptance. Please contact your adviser for assistance with this request.</p>@endif@break

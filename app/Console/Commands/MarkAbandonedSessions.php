@@ -12,7 +12,7 @@ class MarkAbandonedSessions extends Command
 
     public function handle(): int
     {
-        $sessions=Session::whereIn('session_status',Session::PENDING_STATUSES)->where('created_date','<',now()->subHours(24))->get();
+        $sessions=Session::whereIn('session_status',Session::PENDING_STATUSES)->whereDoesntHave('emergencyAlerts', fn ($q) => $q->whereNotIn('status', ['resolved', 'closed']))->where('created_date','<',now()->subHours(24))->get();
         foreach($sessions as $session) app(\App\Services\SeekerWorkflowService::class)->cancel($session->seeker->user,$session,true);
         $count=$sessions->count();
 

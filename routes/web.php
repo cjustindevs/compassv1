@@ -627,7 +627,12 @@ Route::get('/session/{session}/referral-prompt', function (Session $session) {
     ]);
 })->middleware('auth')->name('session.referral-prompt');
 
-Route::get('/emergency', fn () => view('emergency', ['hotlines' => EmergencyResource::published()->get()]))->middleware('auth')->name('emergency');
+Route::get('/emergency', function () {
+    $seeker = auth()->user()->role === 'seeker' ? auth()->user()->helpSeeker : null;
+    $urgentAlert = $seeker ? EmergencyAlert::where('seeker_id', $seeker->id)
+        ->whereNotIn('status', ['resolved', 'closed'])->latest('id')->first() : null;
+    return view('emergency', ['hotlines' => EmergencyResource::published()->get(), 'urgentAlert' => $urgentAlert]);
+})->middleware('auth')->name('emergency');
 Route::middleware(['auth', 'role:seeker'])->group(function () {
     Route::get('/seeker/privacy', [SeekerConsentController::class, 'index'])->name('seeker.privacy');
     Route::post('/seeker/privacy/decision', [SeekerConsentController::class, 'decision'])->name('seeker.privacy.decision');

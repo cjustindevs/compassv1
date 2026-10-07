@@ -34,9 +34,9 @@ class HelperMatchingService
         return $this->getEligibleHelpers($riskLevel)->count();
     }
 
-    public function findBestMatch(?HelpSeeker $seeker, string $riskLevel, ?string $concernCategory, ?string $language, ?int $excludeHelperId = null): ?Helper
+    public function findBestMatch(?HelpSeeker $seeker, string $riskLevel, ?string $concernCategory, ?string $language, ?int $excludeHelperId = null, array $excludedHelperIds = []): ?Helper
     {
-        $eligibleHelpers = $this->getEligibleHelpers($riskLevel, $excludeHelperId);
+        $eligibleHelpers = $this->getEligibleHelpers($riskLevel, $excludeHelperId)->reject(fn ($helper) => in_array((int) $helper->id, $excludedHelperIds, true));
 
         if ($eligibleHelpers->isEmpty()) {
             Log::info('No eligible helpers found', ['risk_level' => $riskLevel]);
@@ -139,8 +139,12 @@ class HelperMatchingService
     {
         if ($queue->request_status !== 'waiting' || (! config('app.relax_duty_hours', false) && ! app(OperatingHoursService::class)->acceptsAssignments())) return null;
         $session=$this->pendingSessionForQueue($queue);
-        if (!$session || !$session->submitted_at || !$session->risk_level || $session->requires_adviser_review || $session->risk_level==='emergency') return null;
-        $helper=$this->findBestMatch($queue->seeker,$session->risk_level,$session->concern?->concern_name,$queue->seeker?->user?->preferred_language,$excludeHelperId);
+        if (!$session || !$session->submitted_at || !$session->risk_level || (($session->requires_adviser_review || $session->risk_level==='emergency') && !$session->permitsEmergencySupport())) return null;
+        $excluded = $this->previousEmergencyOffers($session);
+        $eligible = $this->getEligibleHelpers($session->risk_level, $excludeHelperId)
+            ->reject(fn ($candidate) => in_array($candidate->id, $excluded, true))
+            ->reject(fn ($candidate) => DB::table('helper_conflicts')->where('helper_id', $candidate->id)->where('seeker_id', $session->seeker_id)->exists());
+        $helper = $this->rankHelpers($eligible, $session->risk_level, $session->concern?->concern_name, $queue->seeker?->user?->preferred_language)->first();
         $result = $helper ? $this->manualAssign($queue,$helper->id,false,false,'automatic') : null;
         return is_string($result) ? null : $result;
     }
@@ -158,9 +162,11 @@ class HelperMatchingService
             if ($queue->request_status !== ($reassign ? 'assigned' : 'waiting')) return 'This request is no longer waiting in the queue.';
             $helper = Helper::whereKey($helperId)->lockForUpdate()->first();
             $session = $this->pendingSessionForQueue($queue);
-            if (!$session || !$session->submitted_at || !$session->risk_level || $session->risk_level === 'emergency' || $session->requires_adviser_review || ($session->risk_level === 'high' && !$session->peer_support_approved_at)) {
+            if (!$session || !$session->submitted_at || !$session->risk_level || (($session->risk_level === 'emergency' || $session->requires_adviser_review) && !$session->permitsEmergencySupport()) || ($session->risk_level === 'high' && !$session->peer_support_approved_at)) {
                 return 'This request requires a different competency or adviser review and cannot be assigned to a peer helper.';
             }
+            if (in_array($helperId, $this->previousEmergencyOffers($session), true)) return 'This Helper has already declined or missed this emergency support offer.';
+            if ($session->permitsEmergencySupport() && $emergencyOverride) return 'Emergency support requires all normal Helper eligibility checks.';
             if (!$helper) {
                 return 'The selected helper could not be found.';
             }
@@ -253,6 +259,14 @@ class HelperMatchingService
             return $session;
         });
         return $reason;
+    }
+
+    private function previousEmergencyOffers(Session $session): array
+    {
+        if ($session->risk_level !== 'emergency') return [];
+        return AuditLog::where('target_type', $session->getTable())->where('target_id', $session->id)
+            ->whereIn('action', ['helper_declined', 'helper_recommendation_declined', 'helper_recommendation_expired', 'helper_recommendation_eligibility_changed'])
+            ->get()->map(fn ($entry) => (int) ($entry->metadata['helper_id'] ?? 0))->all();
     }
 
     protected function pendingSessionForQueue(QueueRequest $queue): ?Session

@@ -146,6 +146,17 @@
 
     <span class="emg-eyebrow"> Emergency</span>
     <h1 class="emg-title">Emergency support</h1>
+    @if(isset($urgentAlert))
+        <section class="emg-urgent" aria-labelledby="urgentStatusTitle">
+            <h2 id="urgentStatusTitle">Your urgent support status</h2>
+            <p><strong>{{ $urgentAlert->acknowledged_at ? 'Staff review acknowledged' : 'Awaiting staff acknowledgment' }}</strong></p>
+            <p>{{ $urgentAlert->adviser_notified ? 'An Adviser notification has been recorded. A response is not guaranteed.' : 'An Adviser notification has not been confirmed. Use the emergency resources below if you need urgent help.' }}</p>
+            <p>Your emergency review remains open independently of Helper availability. This status does not confirm a live chat connection.</p>
+            <a href="{{ route('request.matching') }}" class="btn-secondary">View Helper connection</a>
+            <a href="{{ route('emergency') }}" class="btn-secondary">Refresh status</a>
+        </section>
+    @endif
+
     <p class="emg-lede">
         If there is an immediate threat to safety, contact an appropriate emergency service or seek help
         from someone nearby. COMPASS is a peer support network &mdash; it does not replace emergency or

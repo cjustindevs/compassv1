@@ -64,7 +64,7 @@ class RequestSupportController extends Controller {
 
         // Automated matching: retry the queue every time the seeker opens this
         // page, so waiting requests get a helper without a running scheduler.
-        if (in_array($state,['queued','matching'])) {
+        if (in_array($state,['queued','matching','emergency_escalated'])) {
             try {
                 app(HelperMatchingService::class)->matchWaitingRequests();
                 $session=$this->workflow->current($request->user());
@@ -74,7 +74,7 @@ class RequestSupportController extends Controller {
         }
         if (!$session) return redirect()->route('request.screening');
 
-        if (in_array($session->workflow_state,['adviser_review_required','emergency_escalated'])) {
+        if ($session->permitsEmergencySupport() || in_array($session->workflow_state,['adviser_review_required','emergency_escalated'])) {
             return view('request.status',['session'=>$session,'events'=>\Illuminate\Support\Facades\DB::table('request_status_events')->where('session_id',$session->id)->orderBy('id')->get()]);
         }
 

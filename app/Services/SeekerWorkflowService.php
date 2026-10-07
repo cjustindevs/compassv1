@@ -42,7 +42,7 @@ class SeekerWorkflowService {
             SupportAudit::record($review?'screening_review_required':'risk_classified',$screening,['rule_code'=>$result['rule_code']]);
             if ($emergency) app(EmergencyEscalationService::class)->escalateEmergency($session,$user->helpSeeker,['reason'=>$result['reason'],'screening_id'=>$screening->id,'rule_code'=>$result['rule_code']]);
             if ($review && $adviser) Notification::create(['user_account_id'=>$adviser->user_account_id,'title'=>'Screening review required',
-                'message'=>'A preliminary screening needs your review before peer support.','notification_type'=>'system','link'=>'/adviser/screenings#screening-'.$session->id]);
+                'message'=>$emergency ? 'An emergency screening needs your review. Temporary peer support does not replace emergency coordination.' : 'A preliminary screening needs your review before peer support.','notification_type'=>'system','link'=>'/adviser/screenings#screening-'.$session->id]);
             return $session;
         });
     }

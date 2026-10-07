@@ -16,6 +16,7 @@ class ModeratorQueueRemoval
             abort_unless(in_array($queue->request_status, ['waiting', 'assigned'], true), 409, 'This request is no longer in the queue.');
             $session = Session::where('queue_request_id', $queue->id)->lockForUpdate()->latest('id')->first();
             abort_if($session && ($session->helper_accepted_at || !in_array($session->session_status, ['waiting', 'helper_assigned'], true)), 409, 'A started or terminal session cannot be removed from the queue.');
+            abort_if($session?->permitsEmergencySupport(), 409, 'This emergency support request must remain open. Use emergency coordination.');
             $helper = $queue->assigned_helper_id ? Helper::whereKey($queue->assigned_helper_id)->lockForUpdate()->first() : null;
             $requeue = $queue->request_status === 'assigned';
             $queue->update([

@@ -49,7 +49,7 @@ class HelperEligibilityService
             $reasons[] = 'The two-session duty-shift limit has been reached.';
         }
         if ($session) {
-            if (! $helper->canHandleRiskLevel($session->risk_level) || $session->risk_level === 'emergency' || $session->requires_adviser_review || ($session->risk_level === 'high' && ! $session->peer_support_approved_at)) {
+            if (! $helper->canHandleRiskLevel($session->risk_level) || (($session->risk_level === 'emergency' || $session->requires_adviser_review) && ! $session->permitsEmergencySupport()) || ($session->risk_level === 'high' && ! $session->peer_support_approved_at)) {
                 $reasons[] = 'This request requires a different competency or adviser review.';
             }
             if (DB::table('helper_conflicts')->where('helper_id', $helper->id)->where('seeker_id', $session->seeker_id)->exists()) {

@@ -143,7 +143,14 @@ class HelperCaseController extends Controller
                 if (! $helper->activeSessions()->exists()) {
                     $helper->update(['status' => 'available']);
                 }
-                SupportAudit::record('helper_declined', $session, ['reason' => $data['reason']]);
+                SupportAudit::record('helper_declined', $session, ['reason' => $data['reason'], 'helper_id' => $helper->id]);
+                if ($session->risk_level === 'emergency') {
+                    foreach (\App\Models\User::where('role', 'moderator')->where('is_active', true)->pluck('id') as $recipient) {
+                        Notification::create(['user_account_id'=>$recipient, 'title'=>'Emergency support needs another Helper',
+                            'message'=>'A Helper declined an emergency support offer. Coordinate another connection; Adviser review remains open.',
+                            'notification_type'=>'emergency', 'link'=>'/moderator/emergency']);
+                    }
+                }
                 if ($data['reason'] === 'conflict_of_interest') {
                     DB::table('helper_conflicts')->updateOrInsert(['helper_id' => $helper->id, 'seeker_id' => $session->seeker_id], ['reported_by' => Auth::id(), 'created_at' => now()]);
                 }
