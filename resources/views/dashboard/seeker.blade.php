@@ -778,31 +778,6 @@
                 </div>
             @endif
 
-            <!-- ═══════ PRODUCT CARDS ═══════ -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6 dashboard-grid-max">
-                <a href="{{ route('request.screening') }}" class="product-card" style="text-decoration: none;">
-                    <h3>Talk to Someone</h3>
-                    <p>Connect with a trained peer helper who will listen without judgment.</p>
-                    <span class="btn-join">
-                        Get Started <i class="fas fa-arrow-right"></i>
-                    </span>
-                </a>
-                <a href="{{ route('selfhelp') }}" class="product-card" style="text-decoration: none;">
-                    <h3>Self-Care Resources</h3>
-                    <p>Guided meditations, breathing exercises, and wellness tools to support you.</p>
-                    <span class="btn-join">
-                        Explore Now <i class="fas fa-arrow-right"></i>
-                    </span>
-                </a>
-                <a href="{{ route('selfhelp') }}" class="product-card" style="text-decoration: none;">
-                    <h3>Daily Wellness</h3>
-                    <p>Track your mood, journal your thoughts, and build healthy habits.</p>
-                    <span class="btn-join">
-                        Start Today <i class="fas fa-arrow-right"></i>
-                    </span>
-                </a>
-            </div>
-
             <!-- MOOD CHECK-IN -->
             <div class="mood-section mb-6">
                 <span class="mood-heading" id="moodHeading">Daily check-in</span>
