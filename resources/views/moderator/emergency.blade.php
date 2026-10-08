@@ -262,7 +262,7 @@
             <div class="card lg:col-span-2 overflow-x-auto">
                 <div class="card-header">
                     <h3>Active Emergency Cases</h3>
-                    <span class="text-xs text-gray-400">{{ $openIncidents->total() }} active</span>
+                    <span class="text-xs text-gray-400" id="activeCaseCount">{{ $openIncidents->total() }} active</span>
                 </div>
                 <div class="min-w-[760px]">
                     <div class="case-head">
@@ -275,7 +275,7 @@
                         <span>Actions</span>
                     </div>
                     @forelse($openIncidents as $incident)
-                        <div class="case-row {{ $incident->risk_level }}">
+                        <div class="case-row {{ $incident->risk_level }}" data-emergency-incident="{{ $incident->id }}">
                             <span class="font-semibold text-gray-800">#{{ str_pad($incident->id, 3, '0', STR_PAD_LEFT) }}</span>
                             <span class="text-gray-600 text-sm truncate">{{ $incident->session?->seeker?->generated_alias ?? 'Unknown' }}</span>
                             <span class="text-gray-600 text-sm truncate">
@@ -296,6 +296,7 @@
                             <p>No open emergency cases</p>
                         </div>
                     @endforelse
+                    <p id="resolvedEmptyState" hidden class="text-center py-10 text-gray-400">No open emergency cases. Resolved cases are no longer active.</p>
                 </div>
                 {{ $openIncidents->links() }}
             </div>
@@ -380,6 +381,15 @@
                     .then((response) => response.json())
                     .then((data) => {
                         document.getElementById('statOpen').textContent = data.open;
+                        document.getElementById('activeCaseCount').textContent = data.open + ' active';
+                        if (data.open === 0 && document.querySelector('[data-emergency-incident]')) document.getElementById('resolvedEmptyState').hidden = false;
+                        if (Array.isArray(data.active_incident_ids)) {
+                            const active = new Set(data.active_incident_ids.map(String));
+                            document.querySelectorAll('[data-emergency-incident]').forEach(row => {
+                                row.hidden = !active.has(row.dataset.emergencyIncident);
+                                if (row.hidden) row.style.display = 'none';
+                            });
+                        }
                         document.getElementById('statEscalated').textContent = data.escalated_today;
                         document.getElementById('statResolved').textContent = data.resolved_30d;
 

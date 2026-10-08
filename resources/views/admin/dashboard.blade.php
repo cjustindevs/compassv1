@@ -16,6 +16,8 @@
         </div>
     @endif
 
+    <x-dashboard-overview :overview="$overview" />
+
     <section class="stats-grid" aria-label="Platform statistics">
         @foreach ($primaryStats as $stat)
             <x-admin.stat-card

@@ -17,19 +17,19 @@ class ModeratorDashboardController extends Controller
 {
     public function index(Request $request)
     {
-        $stats = Cache::remember('moderator_dashboard_stats', 60, fn () => [
+        $stats = [
             'queue_waiting' => QueueRequest::where('request_status', 'waiting')->count(),
             'queue_assigned' => QueueRequest::where('request_status', 'assigned')->count(),
             'active_sessions' => Session::where('session_status', 'active')->count(),
             'chat_sessions' => Session::where('session_status', 'active')->where('session_type', 'chat')->count(),
             'voice_sessions' => Session::where('session_status', 'active')->where('session_type', 'voice')->count(),
-            'emergency_count' => IncidentReport::whereIn('status', ['open', 'under_review', 'escalated'])->count(),
+            'emergency_count' => IncidentReport::open()->count(),
             'available_helpers' => $this->availableHelperCount(),
             'busy_helpers' => Helper::where('status', 'busy')->count(),
             'unserved' => QueueRequest::where('request_status', 'waiting')
                 ->where('request_date', '<', now()->subMinutes(30))
                 ->count(),
-        ]);
+        ];
 
         $avgWait = $this->getAverageWaitTime();
 
@@ -56,7 +56,9 @@ class ModeratorDashboardController extends Controller
 
         $monitorSession = $request->get('monitor');
 
+        $overview = app(\App\Services\DashboardOverview::class)->forUser($request->user());
         return view('moderator.dashboard', compact(
+            'overview',
             'stats',
             'avgWait',
             'sessions',
@@ -128,7 +130,7 @@ class ModeratorDashboardController extends Controller
             'queue_waiting' => QueueRequest::where('request_status', 'waiting')->count(),
             'queue_assigned' => QueueRequest::where('request_status', 'assigned')->count(),
             'active_sessions' => Session::where('session_status', 'active')->count(),
-            'emergency_open' => IncidentReport::whereIn('status', ['open', 'under_review', 'escalated'])->count(),
+            'emergency_open' => IncidentReport::open()->count(),
             'helpers_available' => $this->availableHelperCount(),
             'unserved' => QueueRequest::where('request_status', 'waiting')
                 ->where('request_date', '<', now()->subMinutes(30))
@@ -145,7 +147,7 @@ class ModeratorDashboardController extends Controller
     private function availableHelperCount(): int
     {
         return app(\App\Services\HelperEligibilityService::class)
-            ->countAvailable(Helper::where('status', 'available')->get());
+            ->countAvailable(Helper::all());
     }
 
     private function getAverageWaitTime(): string

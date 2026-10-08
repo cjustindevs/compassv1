@@ -39,7 +39,7 @@ class HelperEligibilityService
         if (! ($readiness = $helper->getCurrentReadiness()) || $readiness->assessment_result !== 'ready') {
             $reasons[] = 'A current passed readiness check is required.';
         }
-        if (! $activating && ! $relaxed && $helper->availability !== 'available') {
+        if (! $activating && $helper->availability !== 'available') {
             $reasons[] = 'Availability is not set to Available.';
         }
         if ($helper->activeSessions()->when($session, fn ($q) => $q->where('id', '!=', $session->id))->exists()) {
@@ -77,7 +77,7 @@ class HelperEligibilityService
     {
         $count = 0;
         foreach ($helpers as $helper) {
-            if ($helper->status === 'available' && $this->allows($helper)) {
+            if ($this->allows($helper)) {
                 $count++;
             }
         }

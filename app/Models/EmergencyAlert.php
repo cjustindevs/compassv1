@@ -31,6 +31,7 @@ class EmergencyAlert extends Model
 
     protected $casts = [
         'triggered_at' => 'datetime',
+        'acknowledged_at' => 'datetime',
         'adviser_notified_at' => 'datetime',
         'notification_sent_at' => 'datetime',
         'professional_referred_at' => 'datetime',

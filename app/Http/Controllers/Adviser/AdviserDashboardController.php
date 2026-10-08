@@ -47,7 +47,7 @@ class AdviserDashboardController extends Controller
         // Helper stats
         $totalHelpers = $helperIds->count();
         $activeHelpers = app(\App\Services\HelperEligibilityService::class)
-            ->countAvailable(Helper::whereIn('id', $helperIds)->where('status', 'available')->get());
+            ->countAvailable(Helper::whereIn('id', $helperIds)->get());
 
         // Pending referrals
         $pendingReferrals = Referral::whereIn('status', [Referral::STATUS_PENDING_ADVISER,Referral::STATUS_CONSENT_REQUESTED])
@@ -100,7 +100,7 @@ class AdviserDashboardController extends Controller
             ->get();
 
         // Open emergency incidents
-        $openIncidents = IncidentReport::whereIn('status', ['open', 'under_review', 'escalated'])
+        $openIncidents = IncidentReport::open()
             ->whereHas('session', fn ($query) => $query->whereIn('helper_id', $helperIds))
             ->with('session')
             ->latest()
@@ -108,6 +108,7 @@ class AdviserDashboardController extends Controller
             ->get();
 
         return view('dashboard.adviser', [
+            'overview'=>app(\App\Services\DashboardOverview::class)->forUser($user),
             'reportData'=>$reportData,
             'emergencyReviewCount'=>\App\Models\EmergencyAlert::where(fn($q)=>$q->where('adviser_id',$adviser->id)->orWhereHas('session.helper',fn($h)=>$h->where('adviser_id',$adviser->id)))->whereNotIn('status',['resolved','closed'])->count(),
             'trainingFollowUpCount'=>\App\Models\TrainingRecommendation::whereHas('helper',fn($q)=>$q->where('adviser_id',$adviser->id))->where('status','completed')->count(),

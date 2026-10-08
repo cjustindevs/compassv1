@@ -24,7 +24,7 @@ class ModeratorEmergencyController extends Controller
     public function index()
     {
         $openIncidents = IncidentReport::with(['session', 'session.seeker', 'session.helper', 'user'])
-            ->whereIn('status', ['open', 'under_review', 'escalated'])
+            ->open()
             ->orderByRaw("CASE risk_level WHEN 'emergency' THEN 0 WHEN 'high' THEN 1 WHEN 'moderate' THEN 2 ELSE 3 END")
             ->latest('created_at')
             ->paginate(20);
@@ -74,10 +74,11 @@ class ModeratorEmergencyController extends Controller
 
     public function stats(): JsonResponse
     {
-        $open = IncidentReport::whereIn('status', ['open', 'under_review', 'escalated']);
+        $open = IncidentReport::open();
 
         return response()->json([
-            'open' => $open->count(),
+            'open' => (clone $open)->count(),
+            'active_incident_ids' => (clone $open)->pluck('id'),
             'escalated_today' => IncidentReport::where('status', 'escalated')
                 ->where('created_at', '>=', now()->startOfDay())
                 ->count(),

@@ -61,14 +61,14 @@ class HelperMatchingService
                     ->orWhere('availability', 'available');
             })
             ->whereHas('user', fn ($q) => $q->where('is_active', true));
-        if (! $relaxed) {
-            $query->whereHas('currentReadiness', fn ($query) => $query->ready());
-        }
+        // The final eligibility check uses the latest submitted readiness record.
+        // Do not prefilter through a separate latest-of-many relation: legacy
+        // timestamps can disagree with the canonical latest submission by ID.
         $query->with(['currentReadiness', 'schedule', 'helperSpecialties'])
             ->withCount('activeSessions as live_active_sessions_count');
 
         if (Schema::hasColumn('helpers', 'is_under_review')) {
-            $query->where('is_under_review', false);
+            $query->where(fn ($q) => $q->where('is_under_review', false)->orWhereNull('is_under_review'));
         }
 
         if ($excludeHelperId) {

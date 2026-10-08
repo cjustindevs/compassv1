@@ -80,7 +80,13 @@ class IncidentReport extends Model
 
     public function scopeOpen(Builder $query): Builder
     {
-        return $query->whereIn('status', ['open', 'under_review', 'escalated']);
+        return $query->whereIn('status', ['open', 'under_review', 'escalated'])
+            ->where(function ($q) {
+                $q->whereNotIn('incident_category', ['emergency_flag', 'classification_emergency'])
+                    ->orWhereNull('session_id')
+                    ->orWhereDoesntHave('session.emergencyAlerts')
+                    ->orWhereHas('session.emergencyAlerts', fn ($alerts) => $alerts->whereNotIn('status', ['resolved', 'closed']));
+            });
     }
 
     public function scopePending(Builder $query): Builder

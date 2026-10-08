@@ -22,6 +22,10 @@ class HelperSidebarStatsTest extends TestCase {
         $this->getJson(route('helper.readiness.status'))->assertOk()->assertJsonPath('sidebar.availabilityLabel', 'In session');
         $session->update(['session_status' => 'completed']);
         $this->getJson(route('helper.readiness.status'))->assertOk()->assertJsonPath('sidebar.availabilityLabel', 'On break');
+        $firstSidebar = view('layouts.partials.helper-sidebar')->render();
+        $this->assertStringContainsString('On break', $firstSidebar);
+        $helper->update(['availability' => 'unavailable']);
+        $this->assertStringContainsString('Unavailable', view('layouts.partials.helper-sidebar')->render());
         $other=User::factory()->create(['role'=>'seeker']);
         $this->actingAs($other)->getJson(route('helper.readiness.status'))->assertForbidden();
     }

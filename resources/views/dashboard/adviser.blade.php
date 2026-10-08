@@ -4,15 +4,16 @@
 .adviser-page-content .card,.adviser-page-content .stat-card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px;margin-bottom:16px}
 .adviser-page-content .card-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
 .adviser-page-content .card-header h3{font-weight:700}.adviser-page-content .stat-label{font-size:13px;color:#6b7280}.adviser-page-content .stat-number{font-size:26px;font-weight:700;color:#163b2d}
-.adviser-page-content table{width:100%;font-size:13px;text-align:left}.adviser-page-content th,.adviser-page-content td{padding:12px;border-bottom:1px solid #e5e7eb}.adviser-page-content .btn-small{color:var(--green-600,#038a45);font-weight:600}
+.adviser-page-content{min-width:0}.adviser-page-content .card{overflow-x:auto}.adviser-page-content table{width:100%;font-size:13px;text-align:left}.adviser-page-content th,.adviser-page-content td{padding:12px;border-bottom:1px solid #e5e7eb}.adviser-page-content .btn-small{color:var(--green-600,#038a45);font-weight:600}
 </style>@endpush
 @section('content')
 <div class="adviser-page-content">
 <header class="mb-5"><h1 class="text-2xl font-bold text-gray-800">Adviser dashboard</h1><p class="text-sm text-gray-500 mt-1">Your supervised Helpers and authorized review tasks.</p></header>
+<x-dashboard-overview :overview="$overview" />
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
 @foreach(['Assigned Helpers'=>$totalHelpers,'Documentation awaiting review'=>$pendingEvaluationCount,'Referrals awaiting review'=>$pendingReferralCount,'Emergency reviews'=>$emergencyReviewCount] as $label=>$value)<div class="stat-card"><p class="stat-label">{{ $label }}</p><p class="stat-number">{{ $value }}</p></div>@endforeach
 </div>
-<details class="card mb-5" open><summary class="font-semibold cursor-pointer mb-4">Performance in the last 30 days</summary><x-adviser-metrics :metrics="$reportData['metrics']" :definitions="$reportData['definitions']" /><p class="text-sm text-gray-500 mt-4">Asia/Manila activity cohort. <a class="text-green-700 underline" href="{{ route('adviser.reports') }}">Metric definitions and filtered reports</a></p></details>
+<details class="card mb-5"><summary class="font-semibold cursor-pointer mb-4">Performance in the last 30 days</summary><x-adviser-metrics :metrics="$reportData['metrics']" :definitions="$reportData['definitions']" /><p class="text-sm text-gray-500 mt-4">Asia/Manila activity cohort. <a class="text-green-700 underline" href="{{ route('adviser.reports') }}">Metric definitions and filtered reports</a></p></details>
 <p class="text-sm mb-5"><a class="text-green-700 underline" href="{{ route('adviser.training') }}">{{ $trainingFollowUpCount }} training completions awaiting review</a></p>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div class="card lg:col-span-2">

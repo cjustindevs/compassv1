@@ -24,6 +24,6 @@ class DashboardController extends Controller {
         $logs=AuditLog::whereIn('module',['auth','authentication','users','system','backups'])->latest('id')->limit(6)->get();
         $activities=$logs->map(fn($log)=>['message'=>\Illuminate\Support\Str::headline($log->action),'time'=>$log->created_at->diffForHumans(),'icon'=>'activity','tone'=>'green'])->all();
         $recentLogs=$logs->map(fn($log)=>['title'=>\Illuminate\Support\Str::headline($log->action),'actor'=>'Account #'.($log->user_account_id ?? 'system'),'area'=>$log->module,'datetime'=>$log->created_at->timezone('Asia/Manila')->format('Y-m-d H:i:s'),'ip'=>$log->ip_address ?? 'Not recorded','status'=>$log->outcome ?? 'Recorded','tone'=>'blue'])->all();
-        return view('admin.dashboard',['admin'=>$request->user(),'searchQuery'=>$request->string('q')->trim()->toString(),'primaryStats'=>$primaryStats,'systemStatuses'=>[],'charts'=>$charts,'activities'=>$activities,'recentLogs'=>$recentLogs]);
+        return view('admin.dashboard',['overview'=>app(\App\Services\DashboardOverview::class)->forUser($request->user()),'admin'=>$request->user(),'searchQuery'=>$request->string('q')->trim()->toString(),'primaryStats'=>$primaryStats,'systemStatuses'=>[],'charts'=>$charts,'activities'=>$activities,'recentLogs'=>$recentLogs]);
     }
 }

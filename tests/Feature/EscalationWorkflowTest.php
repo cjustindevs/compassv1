@@ -250,6 +250,7 @@ class EscalationWorkflowTest extends TestCase
             'user_account_id' => $helperUser->id,
             'adviser_id' => $adviser->id,
             'status' => 'available',
+            'availability' => 'available',
             'competency_level' => 4,
             'max_concurrent_sessions' => 2,
         ]);

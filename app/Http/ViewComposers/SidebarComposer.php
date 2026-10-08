@@ -41,7 +41,7 @@ class SidebarComposer
         $userId = $user->id;
         $cacheKey = "sidebar_helper_{$userId}";
 
-        return Cache::remember($cacheKey, 60, function () use ($user) {
+        return (function () use ($user) {
             $helper = $user->helper;
 
             if (!$helper) {
@@ -92,7 +92,7 @@ class SidebarComposer
                 'availabilityStatus', 'availabilityLabel', 'caseBadgeCount',
                 'notifBadgeCount', 'activeSession', 'voiceUrl', 'notesUrl', 'initials'
             );
-        });
+        })();
     }
 
     private function adviserData($user): array
@@ -100,7 +100,7 @@ class SidebarComposer
         $userId = $user->id;
         $cacheKey = "sidebar_adviser_{$userId}";
 
-        return Cache::remember($cacheKey, 60, function () use ($user) {
+        return (function () use ($user) {
             $adviserProfile = $user->adviser;
             $adviserHelperIds = Helper::where('adviser_id', $adviserProfile?->id)->pluck('id');
 
@@ -132,7 +132,7 @@ class SidebarComposer
                 'evalBadge', 'referralBadge', 'notifBadge', 'totalHelpers',
                 'activeSessions', 'pendingReviews', 'avatarText', 'displayName'
             );
-        });
+        })();
     }
 
     private function moderatorData($user): array
@@ -140,10 +140,10 @@ class SidebarComposer
         $userId = $user->id;
         $cacheKey = "sidebar_moderator_{$userId}";
 
-        return Cache::remember($cacheKey, 60, function () use ($user) {
+        return (function () use ($user) {
             $queueCount = QueueRequest::where('request_status', 'waiting')->count();
             $sessionCount = Session::where('session_status', 'active')->count();
-            $emergencyCount = IncidentReport::whereIn('status', ['open', 'under_review', 'escalated'])->count();
+            $emergencyCount = IncidentReport::open()->count();
             $notifBadge = $user->unreadNotifications()->count();
 
             $moderatorProfile = $user->moderator;
@@ -157,7 +157,7 @@ class SidebarComposer
                 'queueCount', 'sessionCount', 'emergencyCount', 'notifBadge',
                 'avatarText', 'displayName'
             );
-        });
+        })();
     }
 
     private function professionalData($user): array
