@@ -11,6 +11,7 @@ class DashboardOverview
     public function forUser(User $user): array
     {
         abort_unless($user->is_active && in_array($user->role, ['admin', 'moderator', 'adviser'], true), 403);
+        if ($user->role === 'moderator') return app(ModeratorOperations::class)->overview();
         $sessions = Session::query()->select(['id', 'helper_id', 'concern_id', 'concern_category', 'session_status', 'created_date', 'created_at', 'start_time', 'end_time'])->with('concern');
         $alerts = EmergencyAlert::query()->select(['id', 'session_id', 'adviser_id', 'status', 'risk_level', 'professional_referred', 'triggered_at', 'acknowledged_at', 'resolved_at', 'created_at']);
         if ($user->role === 'adviser') {
@@ -33,48 +34,31 @@ class DashboardOverview
                 : ($case->session_status === 'active' ? 'Active' : 'Pending'));
             $caseStatus[$key]++;
         }
-        $emergencyStatus = ['Active' => 0, 'Responding' => 0, 'Resolved' => $resolved->count(), 'Escalated' => 0];
-        foreach ($open as $alert) {
-            $key = $alert->professional_referred ? 'Escalated' : ($alert->acknowledged_at ? 'Responding' : 'Active');
-            $emergencyStatus[$key]++;
-        }
         $cards = [];
         $charts = [];
         $add = function ($label, $value, $definition) use (&$cards) { $cards[] = compact('label', 'value', 'definition'); };
         $chart = function ($title, array $values, $definition) use (&$charts) { $charts[] = compact('title', 'values', 'definition'); };
-        $response = $this->averageMinutes($emergencies, 'triggered_at', 'acknowledged_at');
         $resolution = $this->averageMinutes($resolved, 'triggered_at', 'resolved_at');
-        if ($user->role === 'moderator') {
-            $add('Active emergencies', $open->count(), 'Nonterminal emergency alerts, including responding and escalated alerts.');
-            $add('Resolved emergencies', $resolved->count(), 'Resolved or closed emergency alerts.');
-            $add('Pending / unassigned', $open->filter(fn ($a) => ! $a->acknowledged_at || ! $a->adviser_id)->count(), 'Open alerts without acknowledgment or an assigned Adviser.');
-            $add('Average response', $response, 'Minutes from emergency trigger to first Adviser acknowledgment; last 30 days by acknowledgment date.');
-            $add('Average resolution', $resolution, 'Minutes from emergency trigger to recorded resolution; last 30 days by resolution date.');
-            $chart('Emergency status', $emergencyStatus, 'Each alert appears once. Active means unacknowledged; responding means acknowledged.');
-            $chart('Severity / priority', $open->groupBy(fn ($a) => ucfirst($a->risk_level ?: 'Unrecorded'))->map->count()->all(), 'Current unresolved alerts by recorded severity.');
-            $chart('Emergency trend', $this->months($emergencies, 'triggered_at'), 'Alerts triggered per month in Asia/Manila.');
-        } else {
-            $add('Active cases', $caseStatus['Active'] + $caseStatus['Escalated'], 'Active support sessions plus requests with an open emergency review. Pending requests are shown separately.');
-            $add('Resolved cases', $caseStatus['Resolved'], 'Completed or evaluated peer-support sessions. Cancelled/no-show requests are excluded.');
-            $add('Pending cases', $caseStatus['Pending'], 'Nonterminal support requests not active and without an open emergency alert.');
-            $add('Escalated cases', $caseStatus['Escalated'], 'Support requests with an open emergency alert.');
-            if ($user->role === 'adviser') {
-                $referrals = Referral::whereIn('session_id', $caseRows->pluck('id'))->forAdviser($adviser->id)->get();
-                $reviews = SessionReport::whereIn('session_id', $caseRows->pluck('id'))->get();
-                $attention = $reviews->where('adviser_reviewed', false)->pluck('session_id')
-                    ->merge($referrals->whereIn('status', [Referral::STATUS_PENDING_ADVISER, Referral::STATUS_CONSENT_REQUESTED])->pluck('session_id'))
-                    ->merge($open->whereNull('acknowledged_at')->pluck('session_id'));
-                $add('Awaiting Adviser action', $attention->filter()->unique()->count(), 'Distinct cases with unreviewed documentation, pending referral review, or unacknowledged emergency review.');
-                $samples = $this->durations($emergencies, 'triggered_at', 'acknowledged_at')
-                    ->merge($this->durations($referrals, 'created_at', 'reviewed_at'))
-                    ->merge($this->durations($reviews, 'summary_submitted_at', 'reviewed_date'));
-                $add('Average Adviser response', $this->formatAverage($samples), 'Minutes to first emergency acknowledgment, referral review, or submitted-summary review; last 30 days by response date. Only explicit recorded events are included.');
-                $add('Average resolution', $resolution, 'Emergency trigger to resolution in minutes; last 30 days by resolution date. Support-session completion is not substituted for Adviser resolution.');
-            }
-            $chart('Cases by status', $caseStatus, 'Support requests, excluding cancelled/no-show records. Each appears once. Emergency review is separate from chat closure.');
-            $chart('Case trend', $this->months($cases, 'created_date'), 'Support requests created per month, excluding cancelled/no-show records.');
-            $chart('Case categories', $cases->groupBy(fn ($s) => $s->concern?->concern_name ?: ($s->concern_category ?: 'Unrecorded'))->map->count()->all(), 'Actual recorded concern categories; unrecorded categories are not guessed.');
+        $add('Active cases', $caseStatus['Active'] + $caseStatus['Escalated'], 'Active support sessions plus requests with an open emergency review. Pending requests are shown separately.');
+        $add('Resolved cases', $caseStatus['Resolved'], 'Completed or evaluated peer-support sessions. Cancelled/no-show requests are excluded.');
+        $add('Pending cases', $caseStatus['Pending'], 'Nonterminal support requests not active and without an open emergency alert.');
+        $add('Escalated cases', $caseStatus['Escalated'], 'Support requests with an open emergency alert.');
+        if ($user->role === 'adviser') {
+            $referrals = Referral::whereIn('session_id', $caseRows->pluck('id'))->forAdviser($adviser->id)->get();
+            $reviews = SessionReport::whereIn('session_id', $caseRows->pluck('id'))->get();
+            $attention = $reviews->where('adviser_reviewed', false)->pluck('session_id')
+                ->merge($referrals->whereIn('status', [Referral::STATUS_PENDING_ADVISER, Referral::STATUS_CONSENT_REQUESTED])->pluck('session_id'))
+                ->merge($open->whereNull('acknowledged_at')->pluck('session_id'));
+            $add('Awaiting Adviser action', $attention->filter()->unique()->count(), 'Distinct cases with unreviewed documentation, pending referral review, or unacknowledged emergency review.');
+            $samples = $this->durations($emergencies, 'triggered_at', 'acknowledged_at')
+                ->merge($this->durations($referrals, 'created_at', 'reviewed_at'))
+                ->merge($this->durations($reviews, 'summary_submitted_at', 'reviewed_date'));
+            $add('Average Adviser response', $this->formatAverage($samples), 'Minutes to first emergency acknowledgment, referral review, or submitted-summary review; last 30 days by response date. Only explicit recorded events are included.');
+            $add('Average resolution', $resolution, 'Emergency trigger to resolution in minutes; last 30 days by resolution date. Support-session completion is not substituted for Adviser resolution.');
         }
+        $chart('Cases by status', $caseStatus, 'Support requests, excluding cancelled/no-show records. Each appears once. Emergency review is separate from chat closure.');
+        $chart('Case trend', $this->months($cases, 'created_date'), 'Support requests created per month, excluding cancelled/no-show records.');
+        $chart('Case categories', $cases->groupBy(fn ($s) => $s->concern?->concern_name ?: ($s->concern_category ?: 'Unrecorded'))->map->count()->all(), 'Actual recorded concern categories; unrecorded categories are not guessed.');
         if ($user->role === 'admin') {
             $users = User::select('id', 'role', 'is_active', 'created_at')->get();
             $add('Total users', $users->count(), 'Registered accounts, all roles.');
@@ -90,7 +74,7 @@ class DashboardOverview
             $chart('User registration trend', $this->months($users, 'created_at'), 'New accounts per month in Asia/Manila; not cumulative totals.');
             $chart('System activity trend', $this->months(AuditLog::select('created_at')->where('created_at', '>=', now('Asia/Manila')->startOfMonth()->subMonths(5)->utc())->get(), 'created_at'), 'Recorded audit events per month. No event narrative or identity data is shown.');
         }
-        $activity = $user->role === 'moderator' ? $emergencies : $caseRows;
+        $activity = $caseRows;
         $recent = $activity->sortByDesc(fn ($r) => ($r->resolved_at ?? $r->acknowledged_at ?? $r->end_time ?? $r->start_time ?? $r->triggered_at ?? $r->created_date ?? $r->created_at)?->timestamp)
             ->take(5)->map(fn ($r) => [
                 'label' => ($r instanceof EmergencyAlert ? 'Emergency review' : 'Support case').' - '.ucwords(str_replace('_', ' ', $r->status ?? $r->session_status)),

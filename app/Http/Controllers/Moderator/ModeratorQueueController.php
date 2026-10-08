@@ -28,13 +28,15 @@ class ModeratorQueueController extends Controller
 
     public function index()
     {
+        app(\App\Services\StaleQueueRequests::class)->expire();
         $queueItems = QueueRequest::with(['seeker', 'assignedHelper'])
-            ->whereIn('request_status', ['waiting', 'assigned'])
+            ->where('request_status', 'waiting')
             ->orderByRaw("CASE priority_level WHEN 'emergency' THEN 0 WHEN 'high' THEN 1 WHEN 'moderate' THEN 2 ELSE 3 END")
             ->orderBy('request_date')
-            ->get();
+            ->paginate(15)->withQueryString();
 
-        $queueItems->each(function (QueueRequest $queue) {
+        $recentlyMatched = QueueRequest::with('seeker','assignedHelper')->where('request_status','assigned')->latest('matched_date')->limit(5)->get();
+        $queueItems->getCollection()->concat($recentlyMatched)->each(function (QueueRequest $queue) {
             $session = Session::with('concern')->where('queue_request_id', $queue->id)->latest('id')->first();
             $queue->setRelation('supportSession', $session);
             $queue->concern_name = $session?->concern?->concern_name ?? 'General Concern';
@@ -62,7 +64,7 @@ class ModeratorQueueController extends Controller
         // Eligible, ready helpers appear first so moderators can assign in one glance.
         $availableHelpers = $availableHelpers->sortBy(fn (Helper $helper) => $helper->assignment_reason !== null)->values();
 
-        return view('moderator.queue', compact('queueItems', 'stats', 'availableHelpers'));
+        return view('moderator.queue', compact('queueItems', 'stats', 'availableHelpers','recentlyMatched'));
     }
 
     public function assign(Request $request): RedirectResponse
@@ -105,6 +107,7 @@ class ModeratorQueueController extends Controller
 
     private function assignHelper(Request $request, bool $reassign): RedirectResponse
     {
+        app(\App\Services\StaleQueueRequests::class)->expire();
         $data = $request->validate([
             'queue_id' => 'required|exists:queue_requests,id', 'helper_id' => 'required|exists:helpers,id',
             'emergency_override' => 'prohibited',

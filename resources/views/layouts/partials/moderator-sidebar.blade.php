@@ -46,9 +46,11 @@
         </a>
 
         <div class="nav-section">Records</div>
-        <a href="{{ route('moderator.reports') }}" class="nav-item {{ request()->routeIs('moderator.reports*') ? 'active' : '' }}">
+        <a href="{{ route('moderator.reports') }}" class="nav-item {{ request()->routeIs('moderator.reports*') && request('archive') !== 'archived' ? 'active' : '' }}">
             <i class="fas fa-file-alt"></i><span class="nav-text">Reports</span>
         </a>
+
+        <a href="{{ route('moderator.reports',['archive'=>'archived','tab'=>'operations']) }}" class="nav-item {{ request()->routeIs('moderator.reports*') && request('archive') === 'archived' ? 'active' : '' }}"><span class="nav-text">Archive</span></a>
 
         <div class="nav-section">Account</div>
         <a href="{{ route('moderator.notifications') }}" class="nav-item {{ request()->routeIs('moderator.notifications*') ? 'active' : '' }}">

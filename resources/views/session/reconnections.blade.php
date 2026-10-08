@@ -6,30 +6,36 @@
     $moderator = auth()->user()->role === 'moderator';
 @endphp
 <div class="referral-ui connection-review">
-    <header class="cr-header"><div><h1>Connection review</h1><p class="ru-muted">{{ $moderator ? 'Help Seekers reconnect with support when a chat is interrupted.' : 'Review invitations to continue an interrupted chat.' }}</p></div><a class="ru-button" href="{{ url()->current() }}"><i class="fas fa-sync-alt" aria-hidden="true"></i> Refresh</a></header>
+    <header class="cr-header"><div><h1>Connection review</h1><p class="ru-muted">{{ $moderator ? 'Help Seekers reconnect with support when a chat is interrupted.' : 'Review invitations to continue an interrupted chat.' }}</p></div><a class="ru-button" href="{{ url()->full() }}"><i class="fas fa-sync-alt" aria-hidden="true"></i> Refresh</a></header>
     @if(session('success'))<div class="cr-alert" role="status"> {{ session('success') }}</div>@endif
     @if($errors->any())<div class="cr-alert cr-error" role="alert">{{ $errors->first() }}</div>@endif
     <section class="cr-summary" aria-label="Connection overview">
-        <div class="cr-count"><div><strong>{{ $incidents->total() }}</strong><span class="ru-muted">{{ $moderator ? 'Open interruptions' : 'Replacement offers' }}</span></div></div>
+        <div class="cr-count"><div><strong>{{ $incidents->total() }}</strong><span class="ru-muted">{{ $moderator ? 'Connections in this view' : 'Replacement offers' }}</span></div></div>
         <p class="ru-muted">Use Refresh to check for the latest updates.</p>
     </section>
-    <div class="cr-list-heading"><h2>{{ $moderator ? 'Chats needing attention' : 'Your invitations' }}</h2><span class="ru-muted">Philippine Time (PHT)</span></div>
+    @if($moderator)
+    <form method="GET" class="cr-filter"><label for="connection-state">Connection status</label><select name="state" id="connection-state" onchange="this.form.submit()">@foreach(['active'=>'Active','declined'=>'Declined offers','cancelled'=>'Cancelled','completed'=>'Completed','all'=>'All history'] as $value=>$label)<option value="{{ $value }}" @selected($state === $value)>{{ $label }}</option>@endforeach</select><noscript><button>Apply</button></noscript></form>
+    @endif
+    <div class="cr-list-heading"><h2>{{ $moderator ? ($state==='active'?'Chats needing attention':'Connection history') : 'Your invitations' }}</h2><span class="ru-muted">Philippine Time (PHT)</span></div>
     @forelse($incidents as $incident)
     @php
         $emergency = $incident->session->requires_immediate_action || $incident->session->risk_level === 'emergency';
-        $labels = ['interrupted'=>'Reconnecting', 'waiting'=>'Seeker chose to wait', 'requested'=>'Replacement requested', 'offered'=>'Awaiting Helper response'];
-        $explanations = ['interrupted'=>'Allow the reconnection window to finish. The Seeker can then request a replacement.', 'waiting'=>'The Seeker is waiting for their original Helper. No replacement is requested.', 'requested'=>'The Seeker has requested another Helper. Find an eligible Helper to send an invitation.', 'offered'=>'An invitation has been sent. The Helper must accept before the chat is transferred.'];
+        $labels = ['interrupted'=>'Reconnecting', 'waiting'=>'Seeker chose to wait', 'requested'=>'Replacement requested', 'offered'=>'Awaiting Helper response', 'reconnected'=>'Original Helper reconnected', 'transferred'=>'Transferred to another Helper', 'closed'=>'Connection review closed'];
+        $explanations = ['interrupted'=>'Allow the reconnection window to finish. The Seeker can then request a replacement.', 'waiting'=>'The Seeker is waiting for their original Helper. No replacement is requested.', 'requested'=>'The Seeker has requested another Helper. Find an eligible Helper to send an invitation.', 'offered'=>'An invitation has been sent. The Helper must accept before the chat is transferred.', 'reconnected'=>'The original Helper reconnected.', 'transferred'=>'A replacement Helper accepted and continued the chat.', 'closed'=>'This connection review has ended.'];
+        $connectionState = in_array($incident->session->session_status, ['cancelled','no_show']) ? 'Cancelled' : (($incident->session->isActive() && in_array($incident->status,['interrupted','waiting','requested','offered'])) ? 'Active' : 'Completed');
     @endphp
     <section class="ru-card">
-        <div class="cr-header"><h2>Interrupted chat <span class="ru-muted">#{{ $incident->session_id }}</span></h2><span class="cr-badge">{{ $emergency ? 'Adviser coordination required' : ($labels[$incident->status] ?? ucfirst($incident->status)) }}</span></div>
-        <p>{{ $emergency ? 'Coordinate this emergency with the responsible Adviser. Ordinary replacement matching is unavailable.' : $explanations[$incident->status] }}</p>
+        <div class="cr-header"><h2>Interrupted chat <span class="ru-muted">#{{ $incident->session_id }}</span></h2><span class="cr-badge">{{ $moderator ? $connectionState.' | ' : '' }}{{ $labels[$incident->status] ?? ucfirst($incident->status) }}</span></div>
+        <p>{{ $emergency && $connectionState === 'Active' ? 'Coordinate this emergency with the responsible Adviser. Ordinary replacement matching is unavailable.' : ($explanations[$incident->status] ?? 'See the recorded session status.') }}</p>
+        @if($moderator && $incident->last_declined_at)<p class="ru-muted">Last replacement offer declined: {{ \Illuminate\Support\Carbon::parse($incident->last_declined_at)->timezone('Asia/Manila')->format('M j, g:i A') }} PHT. {{ $connectionState === 'Active' ? 'The request remains open for another eligible Helper.' : 'See the final session status below.' }}</p>@endif
         <dl class="cr-details"><div><dt>Interruption detected</dt><dd>{{ $incident->detected_at->timezone('Asia/Manila')->format('M j, g:i A') }} PHT</dd></div><div><dt>Session deadline</dt><dd>{{ $incident->session->start_time?->copy()->addMinutes(90)->timezone('Asia/Manila')->format('g:i A') ?? 'Unavailable' }} PHT</dd></div></dl>
         <div class="cr-bottom">
         @if($moderator)
             <p class="ru-muted">Only eligible Helpers receive an offer. The original session deadline stays the same.</p>
-            @if($incident->status === 'requested' && !$emergency)
+            @if($incident->status === 'requested' && $incident->session->isActive() && !$emergency)
             <form method="POST" action="{{ route('reconnections.offer',$incident) }}" data-connection-form>@csrf<button type="submit">Find replacement Helper</button></form>
             @endif
+            <a class="ru-button" href="{{ route('moderator.sessions.show',$incident->session_id) }}">View session status</a>
         @else
             <p class="ru-muted">Earlier private messages are not shared. Please introduce yourself when the new chat opens.</p>
             <form method="POST" action="{{ route('reconnections.accept',$incident) }}" class="ru-actions" data-connection-form>@csrf<button type="submit" name="accept" value="1">Accept and open chat</button><button type="submit" name="accept" value="0" class="cr-secondary">Decline offer</button></form>
@@ -37,7 +43,7 @@
         </div>
     </section>
     @empty
-        <div class="ru-card cr-empty"><h2>{{ $moderator ? 'No interruptions to review' : 'No replacement offers' }}</h2><p class="ru-muted">{{ $moderator ? 'New connection interruptions will appear here. You will also receive a notification.' : 'You will receive a notification when a Moderator sends you an offer.' }}</p><a class="ru-button" href="{{ route($moderator ? 'moderator.dashboard' : 'helper.dashboard') }}">Back to dashboard</a></div>
+        <div class="ru-card cr-empty"><h2>{{ $moderator ? 'No connections match this status' : 'No replacement offers' }}</h2><p class="ru-muted">{{ $moderator ? 'New connection interruptions will appear here. You will also receive a notification.' : 'You will receive a notification when a Moderator sends you an offer.' }}</p><a class="ru-button" href="{{ route($moderator ? 'moderator.dashboard' : 'helper.dashboard') }}">Back to dashboard</a></div>
     @endforelse
     {{ $incidents->links() }}
 </div>
@@ -50,6 +56,7 @@
 .cr-count{display:flex;gap:14px;align-items:center}.cr-count-icon,.cr-empty-icon{display:flex;align-items:center;justify-content:center;background:#eaf7ef;color:#078749;border-radius:12px;width:46px;height:46px;font-size:19px;flex-shrink:0}
 .cr-count strong{display:block;font-size:26px;line-height:1.2;font-weight:700;color:#203c30}.cr-count .ru-muted{display:block;margin-top:4px}.cr-summary p{margin:0}
 .cr-list-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}.cr-list-heading h2{margin:0;font-size:16px}
+.cr-filter{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:0 0 18px}.cr-filter select{min-height:42px;border:1px solid #ccd9d1;border-radius:8px;padding:8px 12px}
 .cr-badge{padding:6px 10px;background:#edf7f1;color:#17633c;border-radius:20px;font-size:12px;font-weight:600}
 .cr-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:16px;background:#f7faf8;border-radius:10px;margin:16px 0}
 .cr-bottom{border-top:1px solid #e0e9e3;padding-top:16px}.cr-bottom p{flex:1 1 280px;margin:0!important}.cr-bottom .ru-actions{margin:0}

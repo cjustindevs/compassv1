@@ -138,6 +138,7 @@ class HelperMatchingService
 
     public function matchWaitingRequests(): void
     {
+        app(StaleQueueRequests::class)->expire();
         // Reconcile helpers whose declared availability is ahead of their
         // operational status (e.g. just verified or just came on shift) so a
         // seeker refresh can match without a running scheduler.
@@ -161,6 +162,10 @@ class HelperMatchingService
 
     public function processQueueRequest(QueueRequest $queue, ?int $excludeHelperId = null): ?Session
     {
+        if ($queue->request_status === 'waiting' && $queue->request_date->lte(now()->subHours(24))) {
+            app(StaleQueueRequests::class)->expire();
+            $queue->refresh();
+        }
         if ($queue->request_status !== 'waiting' || (! config('app.relax_duty_hours', false) && ! app(OperatingHoursService::class)->acceptsAssignments())) return null;
         $session=$this->pendingSessionForQueue($queue);
         if (!$session || !$session->submitted_at || !$session->risk_level || (($session->requires_adviser_review || $session->risk_level==='emergency') && !$session->permitsEmergencySupport())) return null;

@@ -79,7 +79,8 @@
             .main-content { margin-left: 0; padding: 16px 16px 100px; }
             .filter-row { overflow-x: auto; }
         }
-    </style>
+    .moderator-emergency-notification{border-left:4px solid #c34242!important}.moderator-emergency-notification h4{color:#982e2e}.notif-card .notif-content{min-width:0;overflow-wrap:anywhere}
+</style>
 </head>
 <body>
 
@@ -132,12 +133,12 @@
         <!-- Notification list -->
         <div id="notifList" class="space-y-3">
             @forelse($notifications as $notification)
-                <div class="notif-card {{ $notification->is_read ? '' : 'unread' }}" id="notif-{{ $notification->id }}" data-id="{{ $notification->id }}">
+                <div class="notif-card {{ auth()->user()->role === 'moderator' && $notification->notification_type === 'emergency' ? 'moderator-emergency-notification' : '' }} {{ $notification->is_read ? '' : 'unread' }}" id="notif-{{ $notification->id }}" data-id="{{ $notification->id }}">
                     <div class="flex-1 min-w-0">
-                        <h4 class="font-semibold text-gray-800 text-sm">{{ $notification->title }}</h4>
-                        <p class="text-sm text-gray-500 mt-1">{{ $notification->message }}</p>
+                        <h4 class="font-semibold text-gray-800 text-sm">{{ auth()->user()->role === 'moderator' ? \Illuminate\Support\Str::limit($notification->title, 80) : $notification->title }}</h4>
+                        <p class="text-sm text-gray-500 mt-1">@if(auth()->user()->role === 'moderator'){{ \Illuminate\Support\Str::limit(preg_split('/(?<=[.!?])\s+/', strip_tags($notification->message), 2)[0], 180) }}@else{{ $notification->message }}@endif</p>
                         <div class="flex items-center gap-4 mt-2">
-                            <span class="text-xs text-gray-400">{{ $notification->created_at->diffForHumans() }}</span>
+                            <span class="text-xs text-gray-400">{{ auth()->user()->role === 'moderator' ? $notification->created_at->copy()->timezone('Asia/Manila')->format('M j, Y g:i A').' PHT' : $notification->created_at->diffForHumans() }}</span>
                             <span class="text-[10px] uppercase font-bold tracking-wide
                                 {{ $notification->notification_type === 'session' ? 'text-blue-500' : ($notification->notification_type === 'reminder' ? 'text-amber-500' : ($notification->notification_type === 'update' ? 'text-purple-500' : 'text-[#04A052]')) }}">
                                 {{ $types[$notification->notification_type]['label'] ?? ucfirst($notification->notification_type ?? 'System') }}

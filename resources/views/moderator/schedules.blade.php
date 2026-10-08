@@ -56,7 +56,7 @@
             <section class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                 <h2 class="font-semibold text-gray-800 mb-4">Duty Schedules for {{ \Illuminate\Support\Carbon::parse($date)->format('M d, Y') }}</h2>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
+                    <table class="w-full text-sm" style="min-width:580px">
                         <thead class="text-left text-gray-500 border-b">
                             <tr><th class="py-2">Duty</th><th class="py-2">Notes</th><th class="py-2">Created</th><th class="py-2">Action</th></tr>
                         </thead>
@@ -75,6 +75,14 @@
                 </div>
             </section>
         </div>
+        <section class="mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <h2 class="font-semibold text-gray-800 mb-4">Scheduled support sessions</h2>
+            <p class="text-sm text-gray-500 mb-3">Appointment times are Philippine Time (Asia/Manila). Duty roster entries are shown separately above.</p>
+            <div class="overflow-x-auto"><table class="w-full text-sm" style="min-width:580px"><thead class="text-left text-gray-500 border-b"><tr><th class="py-2">Helper</th><th>Seeker alias</th><th>Date</th><th>Time</th><th>Status</th><th>Details</th></tr></thead><tbody>
+            @forelse($scheduledSessions as $supportSession)<tr class="border-b"><td class="py-3">{{ $supportSession->helper?->full_name ?? 'Unassigned' }}</td><td>{{ $supportSession->seeker?->generated_alias ?? 'Unavailable' }}</td><td>{{ $supportSession->scheduled_start->copy()->timezone('Asia/Manila')->format('M j, Y') }}</td><td>{{ $supportSession->scheduled_start->copy()->timezone('Asia/Manila')->format('g:i A') }}</td><td>{{ ucwords(str_replace('_',' ',$supportSession->session_status)) }}</td><td><a class="text-green-700" href="{{ route('moderator.sessions.show',$supportSession->id) }}">View session status</a></td></tr>
+            @empty<tr><td colspan="6" class="py-6 text-center text-gray-500">No support sessions scheduled for this date.</td></tr>@endforelse
+            </tbody></table></div>{{ $scheduledSessions->links() }}
+        </section>
     </main>
 </body>
 </html>

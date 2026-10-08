@@ -38,9 +38,32 @@ class SessionReconnectionController extends Controller
         abort_unless($request->user()->role === ($request->routeIs('helper.*') ? 'helper' : 'moderator'), 403);
         if ($request->user()->role === 'helper') {
             abort_unless($request->user()->helper, 403);
-        }$incidents = SessionReconnection::with('session')->whereHas('session', fn ($q) => $q->where('session_status', 'active'))->whereIn('status', ['interrupted', 'waiting', 'requested', 'offered'])->when($request->user()->role === 'helper', fn ($q) => $q->where('offered_helper_id', $request->user()->helper?->id)->where('status', 'offered'))->latest()->paginate(15);
+        }
+        $state = 'active';
+        $query = SessionReconnection::with('session');
+        if ($request->user()->role === 'helper') {
+            $query->whereHas('session', fn ($q) => $q->where('session_status', 'active'))
+                ->where('offered_helper_id', $request->user()->helper->id)->where('status', 'offered');
+        } else {
+            $state = $request->validate(['state'=>'nullable|in:active,declined,cancelled,completed,all'])['state'] ?? 'active';
+            $open = ['interrupted','waiting','requested','offered'];
+            $declined = fn ($q) => $q->selectRaw('1')->from('audit_logs')->whereColumn('target_id','session_reconnections.session_id')->where('target_type','counseling_sessions')->where('action','replacement_offer_declined');
+            $query->select('session_reconnections.*')->selectSub(function ($q) {
+                $q->from('audit_logs')->selectRaw('MAX(created_at)')->whereColumn('target_id','session_reconnections.session_id')->where('target_type','counseling_sessions')->where('action','replacement_offer_declined');
+            }, 'last_declined_at');
+            if (in_array($state, ['active','declined'])) {
+                $query->whereHas('session', fn ($q) => $q->where('session_status','active'))->whereIn('status',$open);
+                if ($state === 'declined') $query->whereExists($declined);
+            } elseif ($state === 'cancelled') {
+                $query->whereHas('session', fn ($q) => $q->whereIn('session_status',['cancelled','no_show']));
+            } elseif ($state === 'completed') {
+                $query->whereHas('session', fn ($q) => $q->whereNotIn('session_status',['cancelled','no_show']))
+                    ->where(fn ($q) => $q->whereIn('status',['reconnected','transferred','closed'])->orWhereHas('session', fn ($s) => $s->whereIn('session_status',['completed','evaluated'])));
+            }
+        }
+        $incidents = $query->latest()->paginate(15)->withQueryString();
 
-        return view('session.reconnections', compact('incidents'));
+        return view('session.reconnections', compact('incidents', 'state'));
     }
 
     public function offer(SessionReconnection $incident, SessionReconnectionService $service)

@@ -36,13 +36,14 @@ class DashboardOverviewTest extends TestCase
         $case = $this->caseFor(null);
         $alert = EmergencyAlert::create(['session_id' => $case->id, 'seeker_id' => $case->seeker_id, 'trigger_reason' => 'Test observation', 'status' => 'resolved', 'triggered_at' => now()->subMinutes(30), 'resolved_at' => now()->subMinutes(10), 'risk_level' => 'emergency']);
         $alert->forceFill(['acknowledged_at' => now()->subMinutes(25)])->save();
+        $case = $this->caseFor(null);
         EmergencyAlert::create(['session_id' => $case->id, 'seeker_id' => $case->seeker_id, 'trigger_reason' => 'Test observation', 'status' => 'pending', 'triggered_at' => now(), 'risk_level' => 'emergency']);
         $overview = app(DashboardOverview::class)->forUser($user);
         $cards = $this->cards($overview);
         $this->assertSame(1, $cards['Active emergencies']);
         $this->assertSame(1, $cards['Resolved emergencies']);
-        $this->assertSame('5 min', $cards['Average response']);
-        $this->assertSame('20 min', $cards['Average resolution']);
+        $this->assertArrayNotHasKey('Average response', $cards);
+        $this->assertArrayNotHasKey('Average resolution', $cards);
         $this->assertStringNotContainsString('PrivateAlias', json_encode($overview));
     }
     public function test_empty_admin_overview_and_real_queue_rate(): void

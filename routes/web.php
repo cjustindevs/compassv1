@@ -491,6 +491,7 @@ Route::middleware(['auth', 'role:moderator,admin'])->prefix('moderator')->name('
 // MODERATOR MODULE ROUTES
 // =============================================
 Route::middleware(['auth', 'role:moderator'])->prefix('moderator')->name('moderator.')->group(function () {
+    Route::post('/archive', [\App\Http\Controllers\Moderator\ModeratorArchiveController::class, 'store'])->name('archive.store');
     // Dashboard
     Route::get('/dashboard', [ModeratorDashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/stats', [ModeratorDashboardController::class, 'stats'])->name('dashboard.stats');

@@ -192,11 +192,11 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div class="card py-4">
                 <p class="text-xs text-gray-400">Total Helpers</p>
-                <p class="text-2xl font-extrabold text-gray-800" id="statHelpers">{{ $helpers->count() }}</p>
+                <p class="text-2xl font-extrabold text-gray-800" id="statHelpers">{{ $manageStats['total_helpers'] }}</p>
             </div>
             <div class="card py-4">
                 <p class="text-xs text-gray-400">Unassigned Pool</p>
-                <p class="text-2xl font-extrabold text-amber-600" id="statUnassigned">{{ $helpers->whereNull('adviser_id')->count() }}</p>
+                <p class="text-2xl font-extrabold text-amber-600" id="statUnassigned">{{ $manageStats['unassigned_helpers'] }}</p>
             </div>
             <div class="card py-4">
                 <p class="text-xs text-gray-400">Advisers</p>
@@ -265,7 +265,6 @@
                         Helpers under <strong class="text-gray-700">{{ $workspaceAdviser->full_name }}</strong>
                     </p>
                     <div class="space-y-1 mb-6">
-                        @php $workspaceHelpers = $helpers->where('adviser_id', $workspaceAdviser->id); @endphp
                         @forelse($workspaceHelpers as $helper)
                             <div class="helper-row">
                                 <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-semibold text-xs flex-shrink-0">
@@ -292,10 +291,11 @@
                             </div>
                         @endforelse
                     </div>
+                    {{ $workspaceHelpers->links() }}
 
                     <p class="text-sm text-gray-500 mb-3">Add helpers from the unassigned pool</p>
                     <div class="space-y-1">
-                        @forelse($helpers->whereNull('adviser_id') as $helper)
+                        @forelse($poolHelpers as $helper)
                             <div class="helper-row">
                                 <div class="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 font-semibold text-xs flex-shrink-0">
                                     {{ substr($helper->first_name, 0, 1) }}{{ substr($helper->last_name, 0, 1) }}
@@ -322,6 +322,7 @@
                             </div>
                         @endforelse
                     </div>
+                    {{ $poolHelpers->links() }}
                 @else
                     <div class="text-center py-10 text-gray-400">
                         <p>Select an adviser to open the assignment workspace</p>
@@ -335,8 +336,8 @@
             <div class="card-header">
                 <h3>All Helpers</h3>
                 <div class="flex items-center gap-3">
-                    <a href="{{ route('moderator.manage', request()->except('adviser')) }}" class="text-xs text-gray-400 hover:text-gray-600">All</a>
-                    <a href="{{ route('moderator.manage', array_merge(request()->except('adviser'), ['adviser' => 'unassigned'])) }}" class="text-xs text-gray-400 hover:text-gray-600">Unassigned</a>
+                    <a href="{{ route('moderator.manage', request()->except(['adviser','page'])) }}" class="text-xs text-gray-400 hover:text-gray-600">All</a>
+                    <a href="{{ route('moderator.manage', array_merge(request()->except(['adviser','page']), ['adviser' => 'unassigned'])) }}" class="text-xs text-gray-400 hover:text-gray-600">Unassigned</a>
                     <form method="GET" action="{{ route('moderator.manage') }}" class="relative">
 
                         <input type="text" name="search" value="{{ $search }}" placeholder="Search name or ID..."
@@ -395,6 +396,7 @@
             </div>
         </div>
 
+        <div class="mt-4">{{ $helpers->links() }}</div>
     </main>
 
     <!-- Bottom Navigation -->

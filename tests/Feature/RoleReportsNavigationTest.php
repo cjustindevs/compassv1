@@ -81,6 +81,7 @@ class RoleReportsNavigationTest extends TestCase
         $s = $this->supportCase(null);
         $a = EmergencyAlert::create(['session_id' => $s->id, 'seeker_id' => $s->seeker_id, 'status' => 'resolved', 'risk_level' => 'emergency', 'trigger_reason' => 'Confidential narrative', 'triggered_at' => now()->subMinutes(30), 'resolved_at' => now()->subMinutes(10)]);
         $a->forceFill(['acknowledged_at' => now()->subMinutes(25)])->save();
+        $s = $this->supportCase(null);
         EmergencyAlert::create(['session_id' => $s->id, 'seeker_id' => $s->seeker_id, 'status' => 'open', 'risk_level' => 'high', 'trigger_reason' => 'Private details', 'triggered_at' => now()->subDays(3)]);
         $filters = ['from' => '2026-10-08', 'to' => '2026-10-08', 'emergency_status' => 'resolved', 'priority' => 'emergency'];
         $r = $this->actingAs($u)->get(route('moderator.reports', $filters));
@@ -121,7 +122,7 @@ class RoleReportsNavigationTest extends TestCase
         $this->assertStringNotContainsString(route('moderator.queue.remove', $q->id, false), $html);
         $this->assertStringNotContainsString('href="'.route('moderator.analytics').'"', $html);
         $this->get(route('moderator.schedules'))->assertOk()->assertDontSee('Shifts on this date');
-        $this->get(route('moderator.emergency'))->assertOk()->assertSee('items-start');
+        $this->get(route('moderator.emergency'))->assertOk()->assertSee('mo-emergency-grid');
     }
 
     public function test_admin_reports_render_real_current_user_and_period_totals(): void
@@ -135,8 +136,8 @@ class RoleReportsNavigationTest extends TestCase
     {
         $mod = $this->moderator();
         $this->actingAs($mod)->get(route('moderator.dashboard'))->assertOk()
-            ->assertSee('Emergency trend')->assertSee('Emergency status')->assertSee('Severity / priority')
-            ->assertSee('Recent emergency activity')->assertDontSee('href="'.route('moderator.analytics').'"', false);
+            ->assertSee('Emergency trend')->assertSee('Active emergency status')->assertSee('Severity / priority')
+            ->assertSee('Recent Activity')->assertDontSee('Recent emergency activity')->assertDontSee('Live Sessions')->assertDontSee('href="'.route('moderator.analytics').'"', false);
         $this->actingAs(User::factory()->create(['role' => 'helper', 'is_active' => false]))->get(route('helper.reports'))->assertForbidden();
     }
 }

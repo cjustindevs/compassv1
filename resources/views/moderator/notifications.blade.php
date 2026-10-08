@@ -131,7 +131,9 @@
             .bottom-nav { display: flex; }
             .card { padding: 16px; }
         }
-    </style>
+    .notification-group{border-bottom:1px solid #e5ede8;padding:14px 0}.notification-group summary{cursor:pointer;font-size:14px;font-weight:600}.moderator-emergency-notification{border-left:3px solid #c34242;padding-left:14px!important}.moderator-emergency-notification .title{color:#982e2e!important}.notif-item .content{min-width:0;overflow-wrap:anywhere}.notif-item .actions{flex-wrap:wrap}.notif-item .actions .btn-ghost{font-size:12px;min-height:40px;padding:8px 10px;width:auto}
+@media(max-width:480px){.notif-item{flex-wrap:wrap}.notif-item .actions{width:100%}.notif-item .content{flex:1 1 210px}}
+</style>
 </head>
 <body class="compass-compact">
 
@@ -172,35 +174,41 @@
         </div>
 
         <div class="card">
-            @forelse($notifications as $notification)
-                <div class="notif-item {{ $notification->status === 'unread' ? 'unread' : '' }}">
+            @php
+                // Group only identical non-emergency events in one five-minute window.
+                // Distinct destinations and read states remain separate; every child retains its own action.
+                $groups = $notifications->getCollection()->groupBy(fn($n) => $n->notification_type === 'emergency' ? 'emergency-'.$n->id : hash('sha256', implode('|',[$n->notification_type,$n->title,$n->message,$n->link,$n->status,intdiv($n->created_at->timestamp,300)])));
+            @endphp
+            @forelse($groups as $updates)
+                @if($updates->count()>1)<details class="notification-group"><summary>{{ $updates->count() }} updates: {{ \Illuminate\Support\Str::limit($updates->first()->title,80) }}</summary><p class="time">{{ $updates->first()->created_at->copy()->timezone('Asia/Manila')->format('M j, Y g:i A') }} PHT</p>@endif
+                @foreach($updates as $notification)
+                <div class="notif-item {{ $notification->notification_type === 'emergency' ? 'moderator-emergency-notification' : '' }} {{ $notification->status === 'unread' ? 'unread' : '' }}">
                     @if($notification->status === 'unread')
                         <span class="dot"></span>
                     @endif
-                    <div class="icon {{ $notification->notification_type ?? 'system' }}">
-                        <span></span>
-                    </div>
                     <div class="content">
-                        <p class="title">{{ $notification->title }}</p>
-                        <p class="msg">{{ $notification->message }}</p>
-                        <p class="time">{{ $notification->created_at->diffForHumans() }}</p>
+                        <p class="title">{{ \Illuminate\Support\Str::limit($notification->title,80) }}</p>
+                        <p class="msg">{{ \Illuminate\Support\Str::limit(preg_split('/(?<=[.!?])\s+/', strip_tags($notification->message),2)[0],180) }}</p>
+                        <p class="time">{{ $notification->created_at->copy()->timezone('Asia/Manila')->format('M j, Y g:i A') }} PHT</p>
                     </div>
                     <div class="actions">
                         <form method="POST" action="{{ route('moderator.notifications.read', $notification->id) }}">
                             @csrf
                             <button type="submit" class="btn-ghost" title="Mark as read / open">
-                                <i class="fas fa-eye"></i>
+                                {{ $notification->link ? 'Open update' : 'Mark as read' }}
                             </button>
                         </form>
                         <form method="POST" action="{{ route('moderator.notifications.destroy', $notification->id) }}">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn-ghost" title="Archive">
-                                <i class="fas fa-box-archive"></i>
+                                Archive
                             </button>
                         </form>
                     </div>
                 </div>
+                @endforeach
+                @if($updates->count()>1)</details>@endif
             @empty
                 <div class="text-center py-12 text-gray-400">
                     <p>No notifications</p>

@@ -143,7 +143,7 @@ class SidebarComposer
         return (function () use ($user) {
             $queueCount = QueueRequest::where('request_status', 'waiting')->count();
             $sessionCount = Session::where('session_status', 'active')->count();
-            $emergencyCount = IncidentReport::open()->count();
+            $emergencyCount = app(\App\Services\ModeratorEmergencyCases::class)->active()->count();
             $notifBadge = $user->unreadNotifications()->count();
 
             $moderatorProfile = $user->moderator;

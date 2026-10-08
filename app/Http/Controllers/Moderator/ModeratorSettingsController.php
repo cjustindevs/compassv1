@@ -13,7 +13,7 @@ class ModeratorSettingsController extends Controller
     public function index(): View
     {
         $user = auth()->user();
-        $moderator = $user->moderator;
+        $moderator = $user->moderator ?? new \App\Models\Moderator(['user_account_id'=>$user->id,'first_name'=>$user->name,'last_name'=>'','email'=>$user->email]);
 
         return view('moderator.settings', compact('user', 'moderator'));
     }
@@ -21,7 +21,7 @@ class ModeratorSettingsController extends Controller
     public function updateProfile(Request $request): RedirectResponse
     {
         $user = auth()->user();
-        $moderator = $user->moderator;
+        $moderator = $user->moderator ?? new \App\Models\Moderator(['user_account_id'=>$user->id,'first_name'=>$user->name,'last_name'=>'','email'=>$user->email]);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -31,17 +31,20 @@ class ModeratorSettingsController extends Controller
             'assigned_shift' => 'nullable|string|max:100',
         ]);
 
+        \DB::transaction(function () use ($user, $moderator, $validated) {
         $user->update([
             'name' => $validated['name'],
             'email' => $validated['email'],
         ]);
 
-        $moderator->update([
+        \App\Models\Moderator::updateOrCreate(['user_account_id'=>$user->id], [
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
             'email' => $validated['email'],
             'assigned_shift' => $validated['assigned_shift'] ?? $moderator->assigned_shift,
         ]);
+
+        });
 
         return back()->with('success', 'Profile updated successfully.');
     }

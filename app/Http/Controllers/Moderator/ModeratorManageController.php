@@ -14,6 +14,7 @@ class ModeratorManageController extends Controller
 {
     public function index(Request $request)
     {
+        $request->validate(['search'=>'nullable|string|max:100','adviser'=>['nullable','regex:/^(unassigned|[1-9][0-9]*)$/'],'workspace'=>'nullable|integer']);
         $search = trim($request->get('search', ''));
         $adviserFilter = $request->get('adviser');
 
@@ -24,16 +25,18 @@ class ModeratorManageController extends Controller
             ])
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('first_name', 'ilike', "%{$search}%")
-                        ->orWhere('last_name', 'ilike', "%{$search}%")
-                        ->orWhere('email', 'ilike', "%{$search}%");
+                    $term = '%'.mb_strtolower($search).'%';
+                    $q->whereRaw('LOWER(first_name) LIKE ?', [$term])
+                        ->orWhereRaw('LOWER(last_name) LIKE ?', [$term])
+                        ->orWhereRaw('LOWER(email) LIKE ?', [$term]);
+                    if (preg_match('/^(?:H-)?(\d+)$/i', $search, $match)) $q->orWhere('id',(int)$match[1]);
                 });
             })
             ->when($adviserFilter && $adviserFilter !== 'unassigned', fn ($query) => $query->where('adviser_id', $adviserFilter))
             ->when($adviserFilter === 'unassigned', fn ($query) => $query->whereNull('adviser_id'))
             ->orderBy('first_name')
-            ->get()
-            ->map(function (Helper $helper) {
+            ->paginate(15)->withQueryString()
+            ->through(function (Helper $helper) {
                 $helper->score = (float) ($helper->latestCompetency?->overall_score ?? 0);
                 // Stored status alone can lag behind readiness expiry, so the
                 // pill reflects the same eligibility rules matching enforces.
@@ -52,12 +55,15 @@ class ModeratorManageController extends Controller
                 return $adviser;
             });
 
+        $workspaceHelpers = Helper::with('adviser','latestCompetency')->where('adviser_id',$request->integer('workspace') ?: $advisers->first()?->id)->orderBy('first_name')->paginate(15,['*'],'workspace_page')->withQueryString();
+        $poolHelpers = Helper::whereNull('adviser_id')->orderBy('first_name')->paginate(15,['*'],'pool_page')->withQueryString();
+        $manageStats = $this->stats()->getData(true);
         $selectedAdviser = $request->get('workspace');
         $workspaceAdviser = $selectedAdviser
             ? $advisers->firstWhere('id', (int) $selectedAdviser)
             : $advisers->first();
 
-        return view('moderator.manage', compact('helpers', 'advisers', 'search', 'adviserFilter', 'selectedAdviser', 'workspaceAdviser'));
+        return view('moderator.manage', compact('helpers', 'advisers', 'search', 'adviserFilter', 'selectedAdviser', 'workspaceAdviser', 'workspaceHelpers','poolHelpers','manageStats'));
     }
 
     public function assignToAdviser(Request $request): RedirectResponse

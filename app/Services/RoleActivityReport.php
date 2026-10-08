@@ -27,6 +27,7 @@ class RoleActivityReport
     {
         $user = $request->user();
         abort_unless($user && $user->is_active && in_array($user->role, ['helper', 'adviser', 'moderator', 'admin'], true), 403);
+        if ($user->role === 'moderator') return app(ModeratorOperations::class)->report($request, $export);
         $data = $request->validate(['from' => 'nullable|date', 'to' => 'nullable|date|after_or_equal:from',
             'case_status' => 'nullable|in:active,completed,evaluated,waiting,helper_assigned,pending_review,emergency,cancelled,no_show',
             'emergency_status' => 'nullable|in:open,triggered,pending,under_review,responding,acknowledged,escalated,resolved,closed',

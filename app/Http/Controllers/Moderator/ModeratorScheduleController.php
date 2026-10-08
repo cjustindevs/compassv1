@@ -28,7 +28,7 @@ class ModeratorScheduleController extends Controller
 
         $helperIds=$helpers->pluck('id');
         $dutyHelpers = $helpers->filter(fn (Helper $helper) => app(\App\Services\HelperDutyCandidates::class)->allows($helper));
-        $scheduleEvents = CalendarEvent::where('event_type', CalendarEvent::TYPE_MEETING)
+        $scheduleEvents = CalendarEvent::with('helperSchedule')->where('event_type', CalendarEvent::TYPE_MEETING)
             ->whereDate('event_date', $date)
             ->when($request->filled('availability'),fn($q)=>$q->whereIn('helper_schedule_id',HelperSchedule::whereIn('helper_id',$helperIds)->select('id')))
             ->orderBy('start_time')
@@ -36,23 +36,13 @@ class ModeratorScheduleController extends Controller
 
         // A helper can hold several shifts on the same date, so the duty list
         // is grouped per helper instead of assuming a single record.
-        $shiftsByHelper = HelperSchedule::with('helper')
-            ->forDate($date)
-            ->when($request->filled('availability'),fn($q)=>$q->whereIn('helper_id',$helperIds))
-            ->orderByRaw('COALESCE(shift_start, \'00:00:00\')')
-            ->orderBy('id')
-            ->get()
-            ->groupBy('helper_id');
+        $scheduledSessions = \App\Models\Session::with('helper','seeker')
+            ->whereNotNull('scheduled_start')->whereNull('archived_at')
+            ->whereBetween('scheduled_start', [Carbon::parse($date,'Asia/Manila')->startOfDay()->utc(), Carbon::parse($date,'Asia/Manila')->endOfDay()->utc()])
+            ->when($request->filled('availability'), fn ($q) => $q->whereIn('helper_id',$helperIds))
+            ->orderBy('scheduled_start')->paginate(15)->withQueryString();
 
-        $shiftsByHelper = HelperSchedule::with('helper')
-            ->forDate($date)
-            ->when($request->filled('availability'),fn($q)=>$q->whereIn('helper_id',$helperIds))
-            ->orderByRaw('COALESCE(shift_start, \'00:00:00\')')
-            ->orderBy('id')
-            ->get()
-            ->groupBy('helper_id');
-
-        return view('moderator.schedules', compact('date', 'helpers', 'dutyHelpers', 'scheduleEvents', 'shiftsByHelper'));
+        return view('moderator.schedules', compact('date', 'helpers', 'dutyHelpers', 'scheduleEvents', 'scheduledSessions'));
     }
 
     public function store(Request $request): RedirectResponse

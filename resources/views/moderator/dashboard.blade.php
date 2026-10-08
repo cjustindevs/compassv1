@@ -228,94 +228,25 @@
         @endif
 
         <!-- High Risk Banner -->
-        @if($highRiskSessions->isNotEmpty())
-            <div class="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6 flex flex-wrap items-center gap-4">
 
-                <div class="flex-1 min-w-0">
-                    <p class="font-semibold text-red-800 text-sm">High-risk sessions need attention</p>
-                    <p class="text-xs text-red-600">
-                        @foreach($highRiskSessions as $hs)
-                            <a href="{{ route('moderator.sessions.show', $hs->id) }}" class="underline hover:text-red-800 mr-3">
-                                {{ $hs->seeker?->generated_alias ?? 'Anonymous' }} ({{ ucfirst($hs->risk_level) }})
-                            </a>
-                        @endforeach
-                    </p>
-                </div>
-                <a href="{{ route('moderator.sessions') }}" class="text-xs font-semibold text-red-700 hover:underline">Monitor →</a>
-            </div>
-        @endif
 
-        <section id="dashboard-analytics" aria-label="Emergency dashboard summaries"><x-dashboard-overview :overview="$overview" /></section>
+        <section id="dashboard-analytics" aria-label="Emergency dashboard summaries"><x-dashboard-overview :overview="$overview" :show-recent="false" /></section>
 
-        <!-- Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="stat-card">
-                <span class="stat-label">Active Sessions</span>
-                <div class="stat-number active" id="statSessions">{{ $stats['active_sessions'] }}</div>
-                <span class="text-xs text-gray-400">{{ $stats['chat_sessions'] }} chat · {{ $stats['voice_sessions'] }} voice</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Queue</span>
-                <div class="stat-number queue" id="statQueue">{{ $stats['queue_waiting'] }}</div>
-                <span class="text-xs text-gray-400">{{ $stats['queue_assigned'] }} assigned · Avg wait: <span id="avgWait">{{ $avgWait }}</span></span>
-            </div>
-
-            <div class="stat-card">
-                <span class="stat-label">Helpers</span>
-                <div class="stat-number helper" id="statHelpers">{{ $stats['available_helpers'] }}</div>
-                <span class="text-xs text-gray-400">{{ $stats['busy_helpers'] }} busy</span>
-            </div>
-        </div>
-
-        <!-- Live Sessions -->
-        <div class="card mb-6">
-            <div class="card-header">
-                <h3>Live Sessions</h3>
-                <div class="flex items-center gap-3">
-                    <span class="text-xs text-gray-400">Click a row to monitor</span>
-                    <a href="{{ route('moderator.sessions') }}" class="text-sm text-[#04A052] hover:underline">View all</a>
-                </div>
-            </div>
-            <div>
-                @forelse($sessions as $session)
-                    <div class="session-item" onclick="window.location.href='{{ route('moderator.sessions.show', $session->id) }}'">
-                        <div class="flex items-center gap-3 flex-wrap">
-                            <span class="font-semibold text-gray-800">{{ $session->reference_number }}</span>
-                            <span class="text-gray-500 text-sm">{{ $session->seeker?->generated_alias ?? 'Anonymous' }}</span>
-                            <span class="risk-badge {{ $session->risk_level ?? 'low' }}">
-                                {{ ucfirst($session->risk_level ?? 'Low') }}
-                            </span>
-                            @if($session->session_status === 'helper_assigned')
-                                <span class="status-badge assigned">Awaiting Start</span>
-                            @endif
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <span class="text-sm text-gray-500">{{ $session->helper?->full_name ?? 'Unassigned' }}</span>
-                            <span class="text-sm text-gray-400">{{ $session->elapsed_label ?? $session->created_date?->diffForHumans() }}</span>
-                            <span class="text-xs text-gray-400">{{ $session->mode_label }}</span>
-                            <span class="status-badge active">{{ $session->status_label }}</span>
-                        </div>
-                    </div>
-                @empty
-                    <div class="text-center py-8 text-gray-400">
-                        <p>No active sessions right now</p>
-                    </div>
-                @endforelse
-            </div>
+        <div class="flex flex-wrap gap-6 px-1 py-4 mb-5 border-b border-gray-200">
+            <a href="{{ route('moderator.queue') }}">Waiting requests <strong id="statQueue">{{ $stats['queue_waiting'] }}</strong></a>
+            <a href="{{ route('moderator.sessions') }}">Active Sessions <strong id="statSessions">{{ $stats['active_sessions'] }}</strong></a>
+            <a href="{{ route('moderator.manage') }}">Available Helpers <strong id="statHelpers">{{ $stats['available_helpers'] }}</strong></a>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- Recent Activity -->
             <div class="card">
                 <div class="card-header">
-                    <h3>Recent Activity</h3>
+                    <h3>Recent Activity</h3><a href="{{ route('moderator.reports',['tab'=>'activity']) }}" class="text-sm text-green-700">View All</a>
                 </div>
                 <div>
                     @forelse($recentActivity as $activity)
                         <a href="{{ $activity['link'] }}" class="activity-item no-underline">
-                            <div class="icon {{ $activity['type'] }}">
-                                <i class="{{ $activity['icon'] }}"></i>
-                            </div>
                             <div class="content">
                                 <div class="message">{{ $activity['title'] }}</div>
                                 <div class="detail">{{ $activity['message'] }}</div>
@@ -386,6 +317,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const overviewSignature = @json($overviewSignature);
 
             setInterval(function () {
                 fetch('/moderator/dashboard/stats', {
@@ -393,17 +325,16 @@
                 })
                     .then((response) => response.json())
                     .then((data) => {
+                        if (data.overview_signature && data.overview_signature !== overviewSignature) { window.location.reload(); return; }
                         const sessions = document.getElementById('statSessions');
                         const queue = document.getElementById('statQueue');
                         const emergency = document.getElementById('statEmergency');
                         const helpers = document.getElementById('statHelpers');
-                        const avgWait = document.getElementById('avgWait');
 
                         if (sessions) sessions.textContent = data.active_sessions;
                         if (queue) queue.textContent = data.queue_waiting;
-                        if (emergency) emergency.textContent = data.emergency_open;
+                        if (emergency && Number(emergency.textContent) !== data.emergency_open) { window.location.reload(); return; }
                         if (helpers) helpers.textContent = data.helpers_available;
-                        if (avgWait) avgWait.textContent = data.avg_wait;
 
                         const qb = document.getElementById('queueBadge');
                         if (qb) { qb.textContent = data.queue_waiting; qb.style.display = data.queue_waiting > 0 ? 'inline-block' : 'none'; }

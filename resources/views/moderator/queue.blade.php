@@ -214,48 +214,12 @@
             <div class="flash-error"> {{ session('error') }}</div>
         @endif
 
-        <!-- Queue Status -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="stat-card">
-                <div class="stat-label">Waiting</div>
-                <div class="stat-number text-amber-600" id="statWaiting">{{ $stats['waiting'] }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Assigned</div>
-                <div class="stat-number text-blue-600" id="statAssigned">{{ $stats['assigned'] }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Avg Wait Time</div>
-                <div class="stat-number text-emerald-600" id="statAvgWait">{{ $stats['avg_wait'] }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Unserved (30+ min)</div>
-                <div class="stat-number {{ $stats['unserved'] > 0 ? 'text-red-600' : 'text-gray-800' }}" id="statUnserved">{{ $stats['unserved'] }}</div>
-            </div>
+        <div class="flex flex-wrap gap-6 mb-5 border-b border-gray-200 pb-4">
+            <span>Waiting <strong id="statWaiting">{{ $stats['waiting'] }}</strong></span>
+            <span>Assigned <strong id="statAssigned">{{ $stats['assigned'] }}</strong></span>
+            <span>Oldest wait <strong data-metric="oldest_wait">{{ $stats['oldest_wait'] }}</strong></span>
+            <span class="text-sm text-gray-500">Unmatched requests expire after 24 hours; history is retained.</span>
         </div>
-
-        <!-- Queue Metrics -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-            @php
-                $metrics = [
-                    ['key' => 'queue_size', 'label' => 'Queue Size', 'value' => $stats['queue_size'], 'icon' => 'fa-list-ol'],
-                    ['key' => 'avg_wait', 'label' => 'Avg Wait', 'value' => $stats['avg_wait'], 'icon' => 'fa-clock'],
-                    ['key' => 'avg_holding', 'label' => 'Avg Holding', 'value' => $stats['avg_holding'], 'icon' => 'fa-pause-circle'],
-                    ['key' => 'unserved', 'label' => 'Unserved Waiting', 'value' => $stats['unserved'], 'icon' => 'fa-user-clock'],
-                    ['key' => 'oldest_wait', 'label' => 'Oldest Wait', 'value' => $stats['oldest_wait'], 'icon' => 'fa-hourglass-half'],
-                ];
-            @endphp
-            @foreach($metrics as $metric)
-                <div class="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3">
-
-                    <div class="min-w-0">
-                        <p class="font-bold text-gray-800 text-sm truncate" data-metric="{{ $metric['key'] }}">{{ $metric['value'] }}</p>
-                        <p class="text-[11px] text-gray-400 truncate">{{ $metric['label'] }}</p>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-
         <!-- Priority service targets (P1–P4) -->
         <div class="bg-white rounded-2xl border border-gray-100 p-4 mb-6">
             <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
@@ -273,7 +237,7 @@
         <div class="card mb-6">
             <div class="card-header">
                 <h3>Waiting Seekers</h3>
-                <span class="text-xs text-gray-400" id="waitingHeading">{{ $queueItems->where('request_status', 'waiting')->count() }} waiting</span>
+                <span class="text-xs text-gray-400" id="waitingHeading">{{ $queueItems->total() }} waiting</span>
             </div>
             <div>
                 @forelse($queueItems->where('request_status', 'waiting') as $item)
@@ -324,11 +288,11 @@
         <!-- Assigned -->
         <div class="card">
             <div class="card-header">
-                <h3>Recently Matched</h3>
-                <span class="text-xs text-gray-400" id="assignedHeading">{{ $queueItems->where('request_status', 'assigned')->count() }} assigned</span>
+                <h3>Recently Matched</h3><a class="text-sm text-green-700" href="{{ route('moderator.reports',['tab'=>'operations']) }}">View All</a>
+                <span class="text-xs text-gray-400" id="assignedHeading">{{ $recentlyMatched->count() }} assigned</span>
             </div>
             <div>
-                @forelse($queueItems->where('request_status', 'assigned') as $item)
+                @forelse($recentlyMatched as $item)
                     <div class="queue-item fade-in" data-queue-row="{{ $item->id }}">
                         <span class="px-2.5 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap {{ $item->priority_level==='emergency'?'bg-red-600':($item->priority_level==='high'?'bg-orange-500':($item->priority_level==='moderate'?'bg-amber-500':'bg-gray-400')) }}"
                               title="Priority class {{ \App\Models\QueueRequest::priorityClass($item->priority_level) }}">
@@ -387,6 +351,7 @@
             </div>
         </div>
 
+        <div class="mt-4">{{ $queueItems->links() }}</div>
     </main>
 
     <!-- Bottom Navigation -->
