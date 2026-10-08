@@ -37,9 +37,7 @@ class AdviserEvaluationController extends Controller
 
         // Get all session reports that haven't been reviewed
         $pendingReports = SessionReport::with(['session', 'session.seeker', 'session.helper', 'session.concern'])
-            ->where('adviser_reviewed', false)
-            ->where($documented)
-            ->whereHas('session', fn ($query) => $query->whereIn('helper_id', $helperIds)->whereIn('session_status', $evaluable))
+            ->pendingEvaluationForAdviser((int) $adviser->id)
             ->orderBy('created_at', 'asc')
             ->paginate(15, ['*'], 'pending_page')->withQueryString();
 
@@ -66,13 +64,8 @@ class AdviserEvaluationController extends Controller
 
         // Get statistics
         $totalPending = $pendingReports->total();
-        $highRiskPending = SessionReport::where('adviser_reviewed', false)
-            ->where($documented)
-            ->whereHas('session', function ($query) use ($helperIds, $evaluable) {
-                $query->whereIn('helper_id', $helperIds)
-                    ->whereIn('session_status', $evaluable)
-                    ->whereIn('risk_level', ['high', 'emergency']);
-            })
+        $highRiskPending = SessionReport::pendingEvaluationForAdviser((int) $adviser->id)
+            ->whereHas('session', fn ($query) => $query->whereIn('risk_level', ['high', 'emergency']))
             ->count();
 
         // Get adviser feedback count

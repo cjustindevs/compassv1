@@ -9,13 +9,7 @@ class ScreeningReviewController extends Controller {
     public function index(Request $request) {
         abort_unless($request->user()->role==='adviser' && $request->user()->adviser,403);
         $sessions=Session::with(['seeker','helper','concern','report','screeningResponses'])->withCount('messages')
-            ->where('review_adviser_id',$request->user()->adviser->id)
-            ->where('requires_adviser_review',true)
-            ->whereNot('session_status',Session::STATUS_CANCELLED)
-            ->where(function ($query) {
-                $query->where(fn($q)=>$q->where(fn($state)=>$state->whereIn('workflow_state',['adviser_review_required','emergency_escalated'])->orWhereHas('emergencyAlerts',fn($alert)=>$alert->whereNotIn('status',['resolved','closed'])))->whereDoesntHave('screeningResponses',fn($r)=>$r->where('review_status','reviewed')))
-                    ->orWhereHas('report', fn ($r) => $r->whereNotNull('reassessment_requested_at')->whereNull('reassessment_reviewed_at'));
-            })
+            ->pendingScreeningReviewForAdviser((int) $request->user()->adviser->id)
             ->get();
         return view('adviser.screenings',compact('sessions'));
     }

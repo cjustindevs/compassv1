@@ -17,9 +17,7 @@ class AdviserDashboardController extends Controller
         $user = Auth::user();
         $adviser = app(\App\Services\AdviserScope::class)->actor($user);
         $helperIds = Helper::where('adviser_id', $adviser->id)->pluck('id');
-        $pendingEvaluations = SessionReport::where('adviser_reviewed', false)
-            ->whereRaw("TRIM(COALESCE(session_summary, '')) <> '' OR TRIM(COALESCE(personal_reflection, '')) <> ''")
-            ->whereHas('session', fn ($q) => $q->whereIn('helper_id', $helperIds)->whereIn('session_status', ['completed', 'evaluated']))
+        $pendingEvaluations = SessionReport::pendingEvaluationForAdviser((int) $adviser->id)
             ->with(['session.seeker', 'session.helper', 'session.concern'])
             ->oldest()->limit(12)->get();
         $helpers = Helper::whereIn('id', $helperIds)->with(['user', 'currentReadiness', 'schedule'])

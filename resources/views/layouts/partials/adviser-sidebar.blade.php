@@ -1,4 +1,4 @@
-{{-- Variables provided by SidebarComposer: $evalBadge, $referralBadge, $notifBadge,
+{{-- Variables provided by SidebarComposer: $evalBadge, $screeningBadge, $referralBadge, $notifBadge,
      $totalHelpers, $activeSessions, $pendingReviews, $avatarText, $displayName --}}
 
 @include('layouts.partials.sidebar-critical')
@@ -22,8 +22,8 @@
         </a>
         <a href="{{ route('adviser.screenings') }}" class="nav-item {{ request()->routeIs('adviser.screenings*') ? 'active' : '' }}" title="Screening reviews">
             <i class="fas fa-clipboard-check" aria-hidden="true"></i><span class="nav-text">Screening reviews</span>
-            @if($pendingReviews > 0)
-                <span class="nav-badge" id="pendingReviewsBadge">{{ $pendingReviews }}</span>
+            @if($screeningBadge > 0)
+                <span class="nav-badge" id="pendingReviewsBadge">{{ $screeningBadge }}</span>
             @endif
         </a>
         <a href="{{ route('adviser.evaluations') }}" class="nav-item {{ request()->routeIs('adviser.evaluations*', 'adviser.evaluate*') ? 'active' : '' }}">
@@ -93,7 +93,7 @@
                 <span class="label">Active</span>
             </div>
             <div class="stat">
-                <span class="value" id="pendingReviews">{{ $pendingReviews }}</span>
+                <span class="value" id="pendingReviews" title="Pending evaluations">{{ $pendingReviews }}</span>
                 <span class="label">Pending</span>
             </div>
         </div>

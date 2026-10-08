@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -210,6 +211,23 @@ class Session extends Model
     public function emergencyAlerts(): HasMany
     {
         return $this->hasMany(EmergencyAlert::class, 'session_id', 'id');
+    }
+
+    /** The same outstanding screening/reassessment work shown in Screening reviews. */
+    public function scopePendingScreeningReviewForAdviser(Builder $query, int $adviserId): Builder
+    {
+        return $query->where('review_adviser_id', $adviserId)
+            ->where('requires_adviser_review', true)
+            ->whereNot('session_status', self::STATUS_CANCELLED)
+            ->where(function (Builder $q) {
+                $q->where(fn (Builder $pending) => $pending
+                    ->where(fn (Builder $state) => $state
+                        ->whereIn('workflow_state', ['adviser_review_required', 'emergency_escalated'])
+                        ->orWhereHas('emergencyAlerts', fn (Builder $alert) => $alert->whereNotIn('status', ['resolved', 'closed'])))
+                    ->whereDoesntHave('screeningResponses', fn (Builder $response) => $response->where('review_status', 'reviewed')))
+                    ->orWhereHas('report', fn (Builder $report) => $report
+                        ->whereNotNull('reassessment_requested_at')->whereNull('reassessment_reviewed_at'));
+            });
     }
 
     public function scopeForHelper($query, int $helperId)

@@ -102,11 +102,11 @@ class SidebarComposer
 
         return (function () use ($user) {
             $adviserProfile = $user->adviser;
-            $adviserHelperIds = Helper::where('adviser_id', $adviserProfile?->id)->pluck('id');
+            $adviserId = (int) ($adviserProfile?->id ?? 0);
+            $adviserHelperIds = Helper::where('adviser_id', $adviserId)->pluck('id');
 
-            $evalBadge = SessionReport::where('adviser_reviewed', false)
-                ->whereHas('session', fn ($q) => $q->whereIn('helper_id', $adviserHelperIds))
-                ->count();
+            $evalBadge = SessionReport::pendingEvaluationForAdviser($adviserId)->count();
+            $screeningBadge = Session::pendingScreeningReviewForAdviser($adviserId)->count();
 
             $referralBadge = Referral::whereIn('status', [Referral::STATUS_PENDING_ADVISER, Referral::STATUS_CONSENT_REQUESTED])
                 ->forAdviser((int) $adviserProfile?->id)
@@ -129,7 +129,7 @@ class SidebarComposer
             $displayName = $adviserProfile?->full_name ?? $user->name;
 
             return compact(
-                'evalBadge', 'referralBadge', 'notifBadge', 'totalHelpers',
+                'evalBadge', 'screeningBadge', 'referralBadge', 'notifBadge', 'totalHelpers',
                 'activeSessions', 'pendingReviews', 'avatarText', 'displayName'
             );
         })();

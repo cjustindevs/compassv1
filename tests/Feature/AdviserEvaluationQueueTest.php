@@ -88,6 +88,90 @@ class AdviserEvaluationQueueTest extends TestCase
         ];
     }
 
+    private function assertSidebarCount($response, string $id, ?int $count): void
+    {
+        $pattern = '/id="'.preg_quote($id, '/').'"[^>]*>\s*(\d+)\s*</';
+        $matched = preg_match($pattern, $response->getContent(), $matches);
+        if ($count === null) {
+            $this->assertSame(0, $matched, "Unexpected sidebar badge: {$id}");
+        } else {
+            $this->assertSame(1, $matched, "Missing sidebar count: {$id}");
+            $this->assertSame($count, (int) $matches[1]);
+        }
+    }
+
+    public function test_sidebar_separates_screening_work_from_evaluable_reports_and_updates_after_evaluation(): void
+    {
+        [$user, $helper, $session, $report] = $this->makeReport(Session::STATUS_COMPLETED);
+        [, , , $reflectionOnly] = $this->makeReport(Session::STATUS_EVALUATED, helper: $helper, adviserUser: $user);
+        $reflectionOnly->update(['session_summary' => '   ']);
+        $this->makeReport(Session::STATUS_ACTIVE, helper: $helper, adviserUser: $user);
+        $this->makeReport(Session::STATUS_COMPLETED, false, $helper, $user);
+        $this->makeReport(Session::STATUS_CANCELLED, helper: $helper, adviserUser: $user);
+        [, , , $reviewed] = $this->makeReport(Session::STATUS_COMPLETED, helper: $helper, adviserUser: $user);
+        $reviewed->update(['adviser_reviewed' => true]);
+        $this->makeReport(Session::STATUS_COMPLETED); // Another Adviser's pending report.
+        Session::create(['seeker_id' => $session->seeker_id, 'session_type' => 'chat', 'session_status' => 'pending_review',
+            'workflow_state' => 'adviser_review_required', 'requires_adviser_review' => true, 'review_adviser_id' => $user->adviser->id]);
+
+        $response = $this->actingAs($user)->get(route('adviser.evaluations'))->assertOk()
+            ->assertViewHas('totalPending', 2)->assertViewHas('pendingReports', fn ($rows) => $rows->total() === 2);
+        $this->assertSidebarCount($response, 'evalBadge', 2);
+        $this->assertSidebarCount($response, 'pendingReviewsBadge', 1);
+        $this->assertSidebarCount($response, 'pendingReviews', 2);
+
+        $this->post(route('adviser.evaluate.store', $report->id), $this->scores())->assertRedirect(route('adviser.evaluations'));
+        $updated = $this->get(route('adviser.evaluations'))->assertOk()->assertViewHas('totalPending', 1);
+        $this->assertSidebarCount($updated, 'evalBadge', 1);
+        $this->assertSidebarCount($updated, 'pendingReviewsBadge', 1);
+        $this->assertSidebarCount($updated, 'pendingReviews', 1);
+    }
+
+    public function test_evaluation_badge_counts_all_pages_and_disappears_when_no_evaluable_reports_remain(): void
+    {
+        [$user, $helper] = $this->makeReport(Session::STATUS_COMPLETED);
+        for ($i = 0; $i < 16; $i++) {
+            $this->makeReport(Session::STATUS_COMPLETED, helper: $helper, adviserUser: $user);
+        }
+        $response = $this->actingAs($user)->get(route('adviser.evaluations'))->assertOk()
+            ->assertViewHas('pendingReports', fn ($rows) => $rows->count() === 15 && $rows->total() === 17);
+        $this->assertSidebarCount($response, 'evalBadge', 17);
+        $this->assertSidebarCount($response, 'pendingReviewsBadge', null);
+        $second = $this->get(route('adviser.evaluations', ['pending_page' => 2]))->assertOk();
+        $this->assertSidebarCount($second, 'evalBadge', 17);
+
+        SessionReport::whereHas('session', fn ($q) => $q->where('helper_id', $helper->id))->update(['adviser_reviewed' => true]);
+        $empty = $this->get(route('adviser.evaluations'))->assertOk()->assertViewHas('totalPending', 0);
+        $this->assertSidebarCount($empty, 'evalBadge', null);
+        $this->assertSidebarCount($empty, 'pendingReviews', 0);
+    }
+
+    public function test_screening_badge_matches_distinct_pending_sessions_including_reassessment(): void
+    {
+        [$user, , $session, $report] = $this->makeReport(Session::STATUS_COMPLETED);
+        $attributes = ['seeker_id' => $session->seeker_id, 'session_type' => 'chat', 'session_status' => 'pending_review',
+            'workflow_state' => 'adviser_review_required', 'requires_adviser_review' => true, 'review_adviser_id' => $user->adviser->id];
+        $pending = Session::create($attributes);
+        foreach (range(1, 2) as $i) {
+            \App\Models\ScreeningResponse::create(['session_id' => $pending->id, 'seeker_id' => $pending->seeker_id,
+                'responses' => [], 'risk_level' => 'low', 'priority' => 4, 'action' => 'peer_support', 'review_status' => 'pending']);
+        }
+        Session::create(array_replace($attributes, ['session_status' => 'cancelled']));
+        Session::create(array_replace($attributes, ['requires_adviser_review' => false]));
+        $alreadyReviewed = Session::create($attributes);
+        \App\Models\ScreeningResponse::create(['session_id' => $alreadyReviewed->id, 'seeker_id' => $session->seeker_id,
+            'responses' => [], 'risk_level' => 'low', 'priority' => 4, 'action' => 'peer_support', 'review_status' => 'reviewed']);
+        $session->update(['requires_adviser_review' => true, 'review_adviser_id' => $user->adviser->id]);
+        $report->update(['reassessment_requested_at' => now()]);
+
+        $response = $this->actingAs($user)->get(route('adviser.screenings'))->assertOk()
+            ->assertViewHas('sessions', fn ($rows) => $rows->count() === 2 && $rows->contains('id', $pending->id) && $rows->contains('id', $session->id));
+        $this->assertSidebarCount($response, 'pendingReviewsBadge', 2);
+        $report->update(['reassessment_reviewed_at' => now()]);
+        $updated = $this->get(route('adviser.screenings'))->assertOk()->assertViewHas('sessions', fn ($rows) => $rows->count() === 1);
+        $this->assertSidebarCount($updated, 'pendingReviewsBadge', 1);
+    }
+
     public function test_queue_only_offers_sessions_that_can_actually_be_evaluated(): void
     {
         [$adviserUser, $helper, , $concludedReport] = $this->makeReport(Session::STATUS_COMPLETED);

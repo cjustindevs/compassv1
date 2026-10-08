@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SessionReport extends Model
@@ -48,6 +49,19 @@ class SessionReport extends Model
         'documentation_late' => 'boolean',
         'skills_applied' => 'array',
     ];
+
+    /** Reports currently offered in the Adviser's evaluation queue. */
+    public function scopePendingEvaluationForAdviser(Builder $query, int $adviserId): Builder
+    {
+        return $query->where('adviser_reviewed', false)
+            ->where(function (Builder $q) {
+                $q->whereRaw("TRIM(COALESCE(session_reports.session_summary, '')) <> ''")
+                    ->orWhereRaw("TRIM(COALESCE(session_reports.personal_reflection, '')) <> ''");
+            })
+            ->whereHas('session', fn (Builder $q) => $q
+                ->whereIn('session_status', [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED])
+                ->whereHas('helper', fn (Builder $helper) => $helper->where('adviser_id', $adviserId)));
+    }
 
     public function session(): BelongsTo
     {
