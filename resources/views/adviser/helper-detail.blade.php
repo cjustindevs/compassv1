@@ -42,6 +42,22 @@
             <i class="fas fa-arrow-left"></i> Back to Helpers
         </a>
 
+        @if($helper->is_under_review)
+            <section class="card mb-6" aria-labelledby="helper-review-title">
+                <h2 id="helper-review-title" class="text-lg font-semibold">Assignment review required</h2>
+                <p class="text-sm text-gray-600 mt-2">Automatic matching is paused for this Helper. Review the missed offers and agree on next steps before clearing the restriction.</p>
+                <p class="text-sm text-amber-800 mt-3">{{ $helper->review_reason }}</p>
+                <form method="POST" action="{{ route('adviser.helper.review.complete', $helper->id) }}" class="mt-4">
+                    @csrf
+                    <label class="form-label" for="review_resolution">Review outcome and next steps</label>
+                    <textarea class="form-control" id="review_resolution" name="review_resolution" rows="3" required minlength="10" maxlength="2000">{{ old('review_resolution') }}</textarea>
+                    @error('review_resolution')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+                    <p class="text-sm text-gray-500 mt-2">This clears the review restriction only. Verification, readiness, duty and capacity checks still apply.</p>
+                    <button type="submit" class="btn-green mt-3">Complete Adviser review</button>
+                </form>
+            </section>
+        @endif
+
         @php($verificationVerified = ($helper->verification_status ?? 'pending') === 'verified')
         <div class="card mb-6">
             <div class="card-header">

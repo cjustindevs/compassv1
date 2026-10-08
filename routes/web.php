@@ -392,6 +392,7 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
     Route::get('/helper/{id}', [AdviserHelperController::class, 'show'])->name('helper.show');
     Route::get('/helper/{id}/matching', [AdviserHelperController::class, 'matching'])->name('helper.matching');
     Route::post('/helper/{id}/verify', [AdviserHelperController::class, 'verify'])->name('helper.verify');
+    Route::post('/helper/{id}/review/complete', [AdviserHelperController::class, 'completeReview'])->name('helper.review.complete');
     Route::post('/helper/{id}/competency', [AdviserHelperController::class, 'updateCompetency'])->name('helper.competency.update');
     Route::post('/helper/{id}/assign', [AdviserHelperController::class, 'assign'])->name('helper.assign');
 

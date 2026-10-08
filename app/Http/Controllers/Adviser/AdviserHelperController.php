@@ -131,6 +131,36 @@ class AdviserHelperController extends Controller
         return back()->with('success','Institutional eligibility and training verification recorded.');
     }
 
+    public function completeReview(Request $request, int $id): RedirectResponse
+    {
+        $helper = Helper::findOrFail($id);
+        $this->authorizeHelper($helper);
+        $data = $request->validate(['review_resolution' => 'required|string|min:10|max:2000']);
+        $changed = \Illuminate\Support\Facades\DB::transaction(function () use ($helper, $data) {
+            $locked = Helper::whereKey($helper->id)->lockForUpdate()->firstOrFail();
+            $this->authorizeHelper($locked);
+            if (!$locked->is_under_review) return false;
+            \App\Services\SupportAudit::record('helper_review_completed', $locked, [
+                'previous_reason' => $locked->review_reason,
+                'previous_non_response_count' => $locked->non_response_count,
+                'resolution' => $data['review_resolution'],
+            ]);
+            $locked->update(['is_under_review' => false, 'review_reason' => null, 'non_response_count' => 0]);
+            \App\Models\Notification::create(['user_account_id' => $locked->user_account_id,
+                'title' => 'Adviser review completed',
+                'message' => 'Your Adviser completed the assignment review. Check your duty date, complete current readiness and select Available before receiving assignments.',
+                'notification_type' => 'system', 'link' => '/helper/readiness']);
+            return true;
+        }, 3);
+        if ($changed) {
+            app(\App\Services\HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh(), false);
+            app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
+        }
+        return back()->with('success', $changed
+            ? 'Review completed. Matching resumes only when all Helper eligibility requirements are met.'
+            : 'This Helper is no longer under review.');
+    }
+
     public function matching(int $id): View
     {
         $helper = Helper::with(['user', 'helperSpecialties', 'competencyHistory', 'sessions.seeker', 'sessions.queue'])->findOrFail($id);

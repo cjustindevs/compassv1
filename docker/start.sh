@@ -109,7 +109,15 @@ nginx -t
 if [ "${RUN_SCHEDULER:-true}" = "true" ]; then
     echo "[start] Starting Laravel scheduler (RUN_SCHEDULER=true)."
     # shellcheck disable=SC2024
-    php artisan schedule:work >/dev/null 2>&1 &
+    # Keep matching failures visible in Render logs, and restart the scheduler
+    # if it exits while the web service is still running.
+    (
+        while true; do
+            php artisan schedule:work || echo "[start] Scheduler failed; inspect the error above."
+            echo "[start] Scheduler exited; restarting in 5 seconds."
+            sleep 5
+        done
+    ) &
 else
     echo "[start] RUN_SCHEDULER=false -- Laravel scheduler is disabled."
 fi

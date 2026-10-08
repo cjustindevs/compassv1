@@ -39,11 +39,18 @@ class QueueManagementService
         $this->broadcastQueueUpdated();
     }
 
+    public function position(QueueRequest $queue): int
+    {
+        $ids = QueueRequest::where('request_status', 'waiting')
+            ->orderByRaw("CASE priority_level WHEN 'emergency' THEN 0 WHEN 'high' THEN 1 WHEN 'moderate' THEN 2 ELSE 3 END")
+            ->orderBy('request_date')->orderBy('id')->pluck('id');
+        $index = $ids->search(fn ($id) => (int) $id === (int) $queue->id);
+        return $index === false ? $ids->count() + 1 : $index + 1;
+    }
+
     protected function calculateQueuePosition(QueueRequest $queue): int
     {
-        return QueueRequest::where('request_status', 'waiting')
-            ->whereIn('priority_level', $this->sameOrHigherPriorities($queue->priority_level))
-            ->count() + 1;
+        return $this->position($queue);
     }
 
     protected function sameOrHigherPriorities(string $priority): array

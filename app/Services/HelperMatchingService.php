@@ -34,6 +34,20 @@ class HelperMatchingService
         return $this->getEligibleHelpers($riskLevel)->count();
     }
 
+    public function waitingMessage(Session $session): string
+    {
+        if (!config('app.relax_duty_hours', false) && !app(OperatingHoursService::class)->acceptsAssignments()) {
+            return 'Peer-helper matching accepts new sessions Monday to Saturday, 6:00 PM to before 10:30 PM (Philippine Time). Your request remains in the queue.';
+        }
+        if (!app(ConsentService::class)->valid($session->seeker, 'privacy_policy') || !app(ConsentService::class)->valid($session->seeker, 'informed_consent')) {
+            return 'Please review and accept the current Privacy Notice and Terms and Condition in Privacy and consent so automatic matching can proceed. Your request is saved.';
+        }
+        if (($session->requires_adviser_review || $session->risk_level === 'high') && !$session->permitsEmergencySupport() && !$session->peer_support_approved_at) {
+            return 'Your request needs Adviser review before a peer Helper can be assigned. Your request is saved.';
+        }
+        return 'Waiting for a Helper who is ready, on duty, verified and qualified for this request, with free session capacity. Helpers already assigned to another request cannot take a second live session. Matching retries automatically; your request is saved.';
+    }
+
     public function findBestMatch(?HelpSeeker $seeker, string $riskLevel, ?string $concernCategory, ?string $language, ?int $excludeHelperId = null, array $excludedHelperIds = []): ?Helper
     {
         $eligibleHelpers = $this->getEligibleHelpers($riskLevel, $excludeHelperId)->reject(fn ($helper) => in_array((int) $helper->id, $excludedHelperIds, true));
@@ -154,9 +168,14 @@ class HelperMatchingService
         $eligible = $this->getEligibleHelpers($session->risk_level, $excludeHelperId)
             ->reject(fn ($candidate) => in_array($candidate->id, $excluded, true))
             ->reject(fn ($candidate) => DB::table('helper_conflicts')->where('helper_id', $candidate->id)->where('seeker_id', $session->seeker_id)->exists());
-        $helper = $this->rankHelpers($eligible, $session->risk_level, $session->concern?->concern_name, $queue->seeker?->user?->preferred_language)->first();
-        $result = $helper ? $this->manualAssign($queue,$helper->id,false,false,'automatic') : null;
-        return is_string($result) ? null : $result;
+        foreach ($this->rankHelpers($eligible, $session->risk_level, $session->concern?->concern_name, $queue->seeker?->user?->preferred_language) as $helper) {
+            // Revalidate under lock. A candidate can become busy after ranking;
+            // try the next eligible candidate instead of leaving the queue stuck.
+            $result = $this->manualAssign($queue, $helper->id, false, false, 'automatic');
+            if ($result instanceof Session) return $result;
+            if ($queue->fresh()?->request_status !== 'waiting') return null;
+        }
+        return null;
     }
 
     /**
