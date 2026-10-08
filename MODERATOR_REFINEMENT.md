@@ -46,7 +46,7 @@ Migration `2026_10_09_000000_add_operational_archive_markers.php` adds nullable 
 - Active records and sessions with open emergency review cannot be archived.
 - Status and relationships are preserved. Archive/restore is audited and idempotent.
 - Restore removes the archive marker; it does not reopen a completed or resolved workflow.
-- The Moderator Archive navigation links to the existing Reports history filter; no duplicate archive page is created. History filters expose archived records. There is no permanent deletion endpoint.
+- The separate Moderator Archive navigation entry is removed. Archived records remain accessible through the Reports history filter; no duplicate archive page or permanent deletion endpoint is created. Reports remains the active navigation entry when viewing archived history.
 
 ## Other views
 - Manage helpers, workspace lists and unassigned pool use backend pagination with preserved query parameters.
