@@ -20,7 +20,7 @@
 
         .main-content {
             margin-left: 260px;
-            padding: 24px 32px 80px;
+            padding: 24px 32px 32px;
             min-height: 100vh;
         }
 
@@ -169,7 +169,7 @@
             .case-head .hide-md, .case-row .hide-md { display: none; }
         }
         @media (max-width: 768px) {
-            .main-content { margin-left: 0; padding: 16px 16px 100px; }
+            .main-content { margin-left: 0; padding: 16px 16px 32px; }
             .hamburger { display: block; }
             .bottom-nav { display: flex; }
             .case-head { display: none; }
@@ -257,7 +257,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <!-- Active Cases -->
             <div class="card lg:col-span-2 overflow-x-auto">
                 <div class="card-header">

@@ -31,7 +31,9 @@
             </div>
         </header>
 
-        @if ($loadFailed)
+        <x-role-activity-report :report="$roleReport" />
+
+    @if ($loadFailed)
             <section class="reports-state" role="alert">
                 <span></span>
                 <h2>Unable to load reports</h2>

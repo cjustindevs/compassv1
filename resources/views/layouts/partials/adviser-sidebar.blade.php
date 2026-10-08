@@ -35,9 +35,6 @@
         <a href="{{ route('adviser.helpers') }}" class="nav-item {{ request()->routeIs('adviser.helpers*', 'adviser.helper*') ? 'active' : '' }}">
             <i class="fas fa-users"></i><span class="nav-text">Manage Helpers</span>
         </a>
-        <a href="{{ route('adviser.training') }}" class="nav-item {{ request()->routeIs('adviser.training*') ? 'active' : '' }}" title="Training recommendations">
-            <i class="fas fa-graduation-cap" aria-hidden="true"></i><span class="nav-text">Training</span>
-        </a>
         <a href="{{ route('adviser.referrals') }}" class="nav-item {{ request()->routeIs('adviser.referrals*', 'adviser.referral*') ? 'active' : '' }}">
             <i class="fas fa-arrow-right"></i><span class="nav-text">Referral Queue</span>
             @if($referralBadge > 0)
@@ -49,7 +46,6 @@
         </a>
 
         <div class="nav-section">Records</div>
-        <a href="{{ route('adviser.analytics') }}" class="nav-item {{ request()->routeIs('adviser.analytics') ? 'active' : '' }}"><i class="fas fa-chart-line" aria-hidden="true"></i><span class="nav-text">Analytics</span></a>
         <a href="{{ route('adviser.reports') }}" class="nav-item {{ request()->routeIs('adviser.reports*') ? 'active' : '' }}">
             <i class="fas fa-chart-bar"></i><span class="nav-text">Reports</span>
         </a>

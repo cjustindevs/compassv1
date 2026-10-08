@@ -61,7 +61,7 @@
         .queue-item:hover { background: var(--hover-bg, #F9FAFB); }
         .queue-item:last-child { border-bottom: none; }
 
-        /* Grouped helper controls; Remove stays outside the form at the end. */
+        /* Grouped assignment controls. */
         .queue-actions {
             display: flex;
             align-items: center;
@@ -299,7 +299,7 @@
                                 <label class="sr-only" for="helper-{{ $item->id }}">Eligible helper for queue request {{ $item->id }}</label>
                                 <select id="helper-{{ $item->id }}" name="helper_id" class="assign-select" required>
                                     <option value="">Select helper…</option>
-                                    @foreach($availableHelpers->sortByDesc(fn($candidate) => $candidate->calculateMatchingScore($item->supportSession?->risk_level ?? 'low', $item->supportSession?->concern?->concern_name, $item->seeker?->user?->preferred_language)) as $helper)
+                                    @foreach($availableHelpers->filter(fn($candidate) => app(\App\Services\HelperEligibilityService::class)->allows($candidate, $item->supportSession) && (int) $candidate->id !== (int) $item->assigned_helper_id)->sortByDesc(fn($candidate) => $candidate->calculateMatchingScore($item->supportSession?->risk_level ?? 'low', $item->supportSession?->concern?->concern_name, $item->seeker?->user?->preferred_language)) as $helper)
                                         @php($eligibility = app(\App\Services\HelperEligibilityService::class)->status($helper, $item->supportSession))
                                         <option @disabled(!$eligibility['assignable']) data-ineligible="{{ $eligibility['assignable'] ? '0' : '1' }}" value="{{ $helper->id }}"
                                             title="{{ $eligibility['reason'] }}">
@@ -310,13 +310,6 @@
                                 <button type="submit" class="btn-primary whitespace-nowrap">
                                     <i class="fas fa-user-check"></i> Assign
                                 </button>
-                            </form>
-                            <form method="POST" action="{{ route('moderator.queue.remove', $item->id, false) }}" onsubmit="if (this.dataset.submitting) return false; if (!window.confirm('Remove this queue entry? Waiting requests will be cancelled; unaccepted assignments will return to waiting. Started sessions cannot be removed.')) return false; this.dataset.submitting = '1'; this.querySelector('button').disabled = true;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn-outline btn-danger whitespace-nowrap">
-                                <i class="fas fa-times"></i> Remove
-                            </button>
                             </form>
                         </div>
                     </div>
@@ -372,7 +365,7 @@
                                 <label class="sr-only" for="reassign-{{ $item->id }}">Replacement helper for queue request {{ $item->id }}</label>
                                 <select id="reassign-{{ $item->id }}" name="helper_id" class="assign-select">
                                     <option value="">Select helper…</option>
-                                    @foreach($availableHelpers->sortByDesc(fn($candidate) => $candidate->calculateMatchingScore($item->supportSession?->risk_level ?? 'low', $item->supportSession?->concern?->concern_name, $item->seeker?->user?->preferred_language)) as $helper)
+                                    @foreach($availableHelpers->filter(fn($candidate) => app(\App\Services\HelperEligibilityService::class)->allows($candidate, $item->supportSession) && (int) $candidate->id !== (int) $item->assigned_helper_id)->sortByDesc(fn($candidate) => $candidate->calculateMatchingScore($item->supportSession?->risk_level ?? 'low', $item->supportSession?->concern?->concern_name, $item->seeker?->user?->preferred_language)) as $helper)
                                         @php($eligibility = app(\App\Services\HelperEligibilityService::class)->status($helper, $item->supportSession))
                                         <option @disabled(!$eligibility['assignable']) data-ineligible="{{ $eligibility['assignable'] ? '0' : '1' }}" value="{{ $helper->id }}" {{ $item->assigned_helper_id === $helper->id ? 'selected' : '' }}
                                             title="{{ $eligibility['reason'] }}">
@@ -383,11 +376,6 @@
                                 <button type="submit" class="btn-outline whitespace-nowrap">
                                     <i class="fas fa-sync-alt"></i> Reassign
                                 </button>
-                            </form>
-                            <form method="POST" action="{{ route('moderator.queue.remove', $item->id, false) }}" onsubmit="if (this.dataset.submitting) return false; if (!window.confirm('Remove this queue entry? Waiting requests will be cancelled; unaccepted assignments will return to waiting. Started sessions cannot be removed.')) return false; this.dataset.submitting = '1'; this.querySelector('button').disabled = true;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn-outline btn-danger whitespace-nowrap"><i class="fas fa-times" aria-hidden="true"></i> Remove assignment</button>
                             </form>
                         </div>
                     </div>

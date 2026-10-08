@@ -45,10 +45,7 @@
             @endif
         </a>
 
-        <div class="nav-section">Analytics</div>
-        <a href="{{ route('moderator.analytics') }}" class="nav-item {{ request()->routeIs('moderator.analytics*') ? 'active' : '' }}">
-            <i class="fas fa-chart-line"></i><span class="nav-text">Analytics</span>
-        </a>
+        <div class="nav-section">Records</div>
         <a href="{{ route('moderator.reports') }}" class="nav-item {{ request()->routeIs('moderator.reports*') ? 'active' : '' }}">
             <i class="fas fa-file-alt"></i><span class="nav-text">Reports</span>
         </a>

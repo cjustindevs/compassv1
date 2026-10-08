@@ -39,15 +39,14 @@
         <a href="{{ route('helper.competency') }}" class="nav-item {{ request()->routeIs('helper.competency*') ? 'active' : '' }}">
             <i class="fas fa-chart-line"></i><span class="nav-text">Competency</span>
         </a>
-        <a href="{{ route('helper.training') }}" class="nav-item {{ request()->routeIs('helper.training*') ? 'active' : '' }}" title="Training recommendations">
-            <i class="fas fa-graduation-cap" aria-hidden="true"></i><span class="nav-text">Training</span>
-        </a>
         <a href="{{ route('helper.feedback') }}" class="nav-item {{ request()->routeIs('helper.feedback*') ? 'active' : '' }}">
             <i class="fas fa-star"></i><span class="nav-text">Feedback</span>
         </a>
         <a href="{{ route('helper.resources') }}" class="nav-item {{ request()->routeIs('helper.resources*') ? 'active' : '' }}">
             <i class="fas fa-book"></i><span class="nav-text">Resources</span>
         </a>
+
+        <a href="{{ route('helper.reports') }}" class="nav-item {{ request()->routeIs('helper.reports') ? 'active' : '' }}"><i class="fas fa-file-alt" aria-hidden="true"></i><span class="nav-text">Reports</span></a>
 
         <div class="nav-section">Account</div>
         <a href="{{ route('helper.notifications') }}" class="nav-item {{ request()->routeIs('helper.notifications*') ? 'active' : '' }}">

@@ -117,10 +117,11 @@
             .page-header { padding: 20px; }
         }
     </style>
+<link rel="stylesheet" href="{{ asset('css/selfhelp-mobile.css') }}?v={{ filemtime(public_path('css/selfhelp-mobile.css')) }}">
 </head>
 <body>
 
-    <main class="main-content">
+    <main class="main-content selfhelp-content">
 
         {{-- Top bar --}}
         <div class="flex items-center justify-between mb-6 gap-4 flex-wrap">

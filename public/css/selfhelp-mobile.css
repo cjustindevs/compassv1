@@ -1,0 +1,27 @@
+@media(max-width:768px){
+.main-content.selfhelp-content{margin-left:0!important;min-width:0;max-width:100%;padding:20px 20px 88px}
+.selfhelp-content .grid{grid-template-columns:minmax(0,1fr)!important;gap:16px}
+.selfhelp-content .grid>*{min-width:0;grid-column:auto!important}
+.selfhelp-content>div.flex,.selfhelp-content header{flex-wrap:wrap;gap:12px}
+.selfhelp-content>div.flex>div{min-width:0;max-width:100%}
+.selfhelp-content form[role=search]{width:100%;flex-wrap:wrap;min-width:0}
+.selfhelp-content .search-box{min-width:0;flex:1 1 100%;width:100%}
+.selfhelp-content .search-box input{min-width:0;font-size:16px}
+.selfhelp-content h1,.selfhelp-content h2,.selfhelp-content h3,.selfhelp-content p,.selfhelp-content a{overflow-wrap:anywhere}
+.selfhelp-content .hero-card,.selfhelp-content .content-card,.selfhelp-content .related-card,.selfhelp-content .resource-card,.selfhelp-content .progress-card,.selfhelp-content .type-card{min-width:0;max-width:100%;height:auto;padding:18px}
+.selfhelp-content .support-section{margin-bottom:24px}
+.selfhelp-content img,.selfhelp-content video,.selfhelp-content iframe{max-width:100%;height:auto}
+.selfhelp-content iframe{aspect-ratio:16/9;width:100%}
+.selfhelp-content .btn-primary,.selfhelp-content .link-btn,.selfhelp-content button{min-height:44px;white-space:normal;text-align:center}
+.selfhelp-content pre{white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%}
+}
+@media(max-width:480px){
+.main-content.selfhelp-content{padding:16px 16px 88px}
+.selfhelp-content>div.flex>div{min-width:0;max-width:100%;flex-wrap:wrap}
+.selfhelp-content h1{font-size:24px;line-height:1.3}
+.selfhelp-content .section-title{font-size:20px}
+.selfhelp-content .hero-card,.selfhelp-content .content-card,.selfhelp-content .related-card,.selfhelp-content .resource-card,.selfhelp-content .progress-card,.selfhelp-content .type-card{padding:16px;border-radius:16px}
+.selfhelp-content .empty-state{padding:24px 16px}
+.selfhelp-content .flash-banner{align-items:flex-start;flex-wrap:wrap}
+.selfhelp-content form[role=search]>.link-btn{flex:1 1 auto;justify-content:center}
+}

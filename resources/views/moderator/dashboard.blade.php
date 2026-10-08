@@ -245,7 +245,7 @@
             </div>
         @endif
 
-        <x-dashboard-overview :overview="$overview" :show-recent="false" />
+        <section id="dashboard-analytics" aria-label="Emergency dashboard summaries"><x-dashboard-overview :overview="$overview" /></section>
 
         <!-- Stats -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -366,13 +366,13 @@
                         </div>
                         <i class="fas fa-chevron-right text-gray-300"></i>
                     </a>
-                    <a href="{{ route('moderator.analytics') }}" class="flex items-center gap-4 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl hover:bg-emerald-100 transition no-underline">
+                    <a href="#dashboard-analytics" class="flex items-center gap-4 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl hover:bg-emerald-100 transition no-underline">
                         <div class="w-11 h-11 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
                             <i class="fas fa-chart-line text-emerald-600 text-lg"></i>
                         </div>
                         <div class="flex-1">
-                            <p class="font-semibold text-gray-800 text-sm">Analytics</p>
-                            <p class="text-xs text-gray-500">View program performance metrics</p>
+                            <p class="font-semibold text-gray-800 text-sm">Dashboard summaries</p>
+                            <p class="text-xs text-gray-500">Emergency status, priority and trends</p>
                         </div>
                         <i class="fas fa-chevron-right text-gray-300"></i>
                     </a>

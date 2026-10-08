@@ -32,6 +32,7 @@ class ReportController extends Controller
 
         return view('admin.reports.index', [
             'admin' => $request->user(),
+            'roleReport' => app(\App\Services\RoleActivityReport::class)->report($request),
             'reports' => $reports,
             'capabilities' => $capabilities,
             'loadFailed' => $loadFailed,

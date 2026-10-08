@@ -150,10 +150,11 @@
             .hero-card, .content-card { padding: 20px; }
         }
     </style>
+<link rel="stylesheet" href="{{ asset('css/selfhelp-mobile.css') }}?v={{ filemtime(public_path('css/selfhelp-mobile.css')) }}">
 </head>
 <body>
 
-    <main class="main-content">
+    <main class="main-content selfhelp-content">
 
         @if(session('success'))
             <div class="flash-banner" role="status" aria-live="polite">

@@ -647,6 +647,7 @@ Route::middleware(['auth', 'role:adviser'])->group(function () {
 });
 
 Route::middleware(['auth', 'role:helper'])->group(function () {
+    Route::get('/helper/reports', [\App\Http\Controllers\Helper\HelperReportController::class, 'index'])->name('helper.reports');
     Route::get('/helper/training', [AdviserTrainingController::class, 'index'])->name('helper.training');
     Route::patch('/helper/training/{training}', [AdviserTrainingController::class, 'update'])->name('helper.training.update');
 });

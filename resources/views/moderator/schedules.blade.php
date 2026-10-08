@@ -50,29 +50,7 @@
                     <button @disabled($dutyHelpers->isEmpty()) class="disabled:opacity-50 disabled:cursor-not-allowed w-full px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">Add Duty Day</button>
                 </form>
 
-                @if($shiftsByHelper->isNotEmpty())
-                    <h3 class="font-semibold text-gray-800 mt-6 mb-2">Shifts on this date</h3>
-                    @foreach($shiftsByHelper as $helperId => $shifts)
-                        <div class="border-t border-gray-100 py-2">
-                            <div class="text-sm font-medium text-gray-700">{{ $shifts->first()->helper?->full_name ?? 'Helper #'.$helperId }}</div>
-                            @foreach($shifts as $shift)
-                                <div class="flex items-center gap-2 text-xs text-gray-600 mt-1">
-                                    <span>{{ $shift->shift_label }}</span>
-                                    @if($shift->isWithinShift())
-                                        <span class="text-green-600">On duty now</span>
-                                    @endif
-                                    <form method="POST" action="{{ route('moderator.schedules.destroy') }}" class="ml-auto">
-                                        @csrf
-                                        <input type="hidden" name="helper_id" value="{{ $shift->helper_id }}">
-                                        <input type="hidden" name="date" value="{{ $date }}">
-                                        <input type="hidden" name="shift_id" value="{{ $shift->id }}">
-                                        <button type="submit" class="text-red-600 hover:underline">Remove</button>
-                                    </form>
-                                </div>
-                            @endforeach
-                        </div>
-                    @endforeach
-                @endif
+
             </section>
 
             <section class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
@@ -80,17 +58,17 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead class="text-left text-gray-500 border-b">
-                            <tr><th class="py-2">Duty</th><th class="py-2">Notes</th><th class="py-2">Created</th></tr>
+                            <tr><th class="py-2">Duty</th><th class="py-2">Notes</th><th class="py-2">Created</th><th class="py-2">Action</th></tr>
                         </thead>
                         <tbody>
                             @forelse($scheduleEvents as $event)
                                 <tr class="border-b last:border-0">
                                     <td class="py-3 font-medium text-gray-800">{{ $event->title }}<br><span class="text-xs text-gray-500">{{ $event->start_time && $event->end_time ? substr($event->start_time, 0, 5) . ' - ' . substr($event->end_time, 0, 5) : 'All day' }}</span></td>
                                     <td class="py-3 text-gray-600">{{ $event->description ?: '—' }}</td>
-                                    <td class="py-3 text-gray-500">{{ $event->created_at?->diffForHumans() }}</td>
+                                    <td class="py-3 text-gray-500">{{ $event->created_at?->diffForHumans() }}</td><td class="py-3">@if($event->helperSchedule)<form method="POST" action="{{ route('moderator.schedules.destroy') }}">@csrf<input type="hidden" name="helper_id" value="{{ $event->helperSchedule->helper_id }}"><input type="hidden" name="date" value="{{ $date }}"><input type="hidden" name="shift_id" value="{{ $event->helper_schedule_id }}"><button class="text-red-600 hover:underline">Remove duty</button></form>@endif</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="3" class="py-6 text-center text-gray-400">No duty schedules for this date.</td></tr>
+                                <tr><td colspan="4" class="py-6 text-center text-gray-400">No duty schedules for this date.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

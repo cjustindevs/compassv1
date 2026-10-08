@@ -10,6 +10,7 @@ class AdviserReportController extends Controller {
         $data['sessions']=$analytics->sessions($filters)->with(['helper','concern'])->latest('id')->paginate(15)->withQueryString();
         $data['categories']=ConcernCategory::orderBy('concern_name')->get();
         $data['avgResponseTime']=$data['metrics']['response_minutes']===null ? 'No data' : $data['metrics']['response_minutes'].'m';
+        $data['roleReport']=app(\App\Services\RoleActivityReport::class)->report($request);
         return view('adviser.reports',$data);
     }
     public function analytics(Request $request, AdviserAnalytics $analytics) {
