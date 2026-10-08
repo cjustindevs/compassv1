@@ -30,6 +30,16 @@ class ModeratorActivity
                 CASE WHEN e.resolved_at IS NOT NULL THEN 'emergency_resolved' WHEN e.acknowledged_at IS NOT NULL THEN 'emergency_acknowledged' ELSE 'emergency_recorded' END as action,
                 'emergencies' as type, e.source as record_type, e.id as record_id, 'System' as actor, e.status");
 
-        return DB::query()->fromSub($audit->unionAll($queue)->unionAll($emergency), 'operational_activity');
+        return DB::query()->fromSub($audit->unionAll($queue)->unionAll($emergency), 'operational_activity')
+            ->leftJoin('counseling_sessions as activity_session', fn ($join) => $join->on('activity_session.id', '=', 'operational_activity.record_id')->where('operational_activity.record_type', 'counseling_sessions'))
+            ->leftJoin('queue_requests as activity_queue', fn ($join) => $join->on('activity_queue.id', '=', 'operational_activity.record_id')->where('operational_activity.record_type', 'queue_requests'))
+            ->leftJoinSub(app(ModeratorEmergencyCases::class)->query(true), 'activity_emergency', fn ($join) => $join->on('activity_emergency.id', '=', 'operational_activity.record_id')->on('activity_emergency.source', '=', 'operational_activity.record_type'))
+            ->leftJoin('helpers as activity_helper', 'activity_helper.id', '=', DB::raw('COALESCE(activity_session.helper_id, activity_queue.assigned_helper_id, activity_emergency.helper_id)'))
+            ->select('operational_activity.*')
+            ->selectRaw('COALESCE(activity_session.risk_level,activity_queue.priority_level,activity_emergency.risk_level) as priority,
+                COALESCE(activity_session.session_status,activity_queue.request_status,activity_emergency.status) as record_status,
+                COALESCE(activity_session.archived_at,activity_queue.archived_at,activity_emergency.archived_at) as record_archived_at,
+                COALESCE(activity_session.id,activity_emergency.session_id) as linked_session_id,
+                activity_session.scheduled_start, activity_helper.first_name as helper_first_name, activity_helper.last_name as helper_last_name');
     }
 }

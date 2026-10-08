@@ -16,8 +16,13 @@ class ModeratorEmergencyCases
             e.status, COALESCE(e.risk_level,s.risk_level,'emergency') as risk_level,
             COALESCE(e.triggered_at,e.created_at) as triggered_at, e.acknowledged_at, e.resolved_at, e.archived_at,
             e.adviser_id, s.helper_id, hs.generated_alias as seeker_alias,
+            e.adviser_notified_at, e.professional_referred_at, e.professional_referred_at as escalated_at,
+            CASE WHEN e.professional_referred THEN 1 ELSE 0 END as professional_referred,
+            CASE WHEN e.adviser_notified THEN 1 ELSE 0 END as adviser_notified,
+            COALESCE(detector.role,'system') as detected_by,
             h.first_name as helper_first_name, h.last_name as helper_last_name,
             a.first_name as adviser_first_name, a.last_name as adviser_last_name")
+            ->leftJoin('users as detector', 'detector.id', '=', 'e.triggered_by')
             ->leftJoin('counseling_sessions as s', 's.id', '=', 'e.session_id')
             ->leftJoin('help_seekers as hs', 'hs.id', '=', 'e.seeker_id')
             ->leftJoin('helpers as h', 'h.id', '=', 's.helper_id')
@@ -27,8 +32,12 @@ class ModeratorEmergencyCases
             i.status, COALESCE(i.risk_level,'emergency') as risk_level,
             COALESCE(i.reported_at,i.created_at) as triggered_at, i.reviewed_at as acknowledged_at, i.resolved_at, i.archived_at,
             s.review_adviser_id as adviser_id, s.helper_id, hs.generated_alias as seeker_alias,
+            NULL as adviser_notified_at, NULL as professional_referred_at, i.escalated_at,
+            0 as professional_referred, 0 as adviser_notified,
+            COALESCE(detector.role,'system') as detected_by,
             h.first_name as helper_first_name, h.last_name as helper_last_name,
             a.first_name as adviser_first_name, a.last_name as adviser_last_name")
+            ->leftJoin('users as detector', 'detector.id', '=', 'i.user_account_id')
             ->leftJoin('counseling_sessions as s', 's.id', '=', 'i.session_id')
             ->leftJoin('help_seekers as hs', 'hs.id', '=', 's.seeker_id')
             ->leftJoin('helpers as h', 'h.id', '=', 's.helper_id')

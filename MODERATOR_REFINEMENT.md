@@ -15,10 +15,20 @@ Targeted Moderator changes using the supplied Reports and Emergency Alerts refer
 
 ## Dashboard and Reports
 - Dashboard has three emergency KPIs, a small operational strip, existing real-data charts, and one Recent Activity feed. Live session monitoring remains in Active Sessions. Average Response / Resolution were removed from the Moderator overview.
-- Reports use Operational Activity, Emergency & Safety, and Activity Log tabs, one combined Date Range control, relevant filters, backend table pagination, and filtered CSV export.
+- Reports follow the reference layout: a compact combined Date Range filter, four summary tiles, Status / Categories / Emergencies / Referrals overview tabs, a bar chart and donut showing the same records, and one always-visible Activity Log. Detailed operational/safety records and archive actions remain accessible through a disclosure beneath the overview. CSV export and backend pagination are retained.
 - The shared activity query reuses append-only audit logs and legacy business timestamps. It sorts database timestamps, not relative-time strings, and never selects clinical narratives, identity-vault contents, IP addresses, or audit metadata.
 - Date ranges are inclusive Philippine calendar dates converted to UTC query boundaries. No recorded response/resolution samples means "No data".
-- Emergency contacts are published resources below the active-case table. The page checks for changed active records every 30 seconds and reloads their complete table/charts together. Dashboard polling also checks the complete overview so an acknowledgment cannot leave its status chart stale while the active count stays unchanged. Resolution/escalation permissions remain with the responsible Adviser.
+- Emergency Alerts follow the reference layout with open / escalated-today / acknowledgment-time / resolved-30-day metrics, a recorded workflow strip, a five-record paginated active-case table beside its priority donut, and published contacts below. Average acknowledgment time is limited to actual valid first-acknowledgment timestamps within the last 30 days and is absent from the Moderator Dashboard. Escalated Today uses recorded escalation/referral timestamps, not case detection dates. The first four workflow stages partition active cases once; Closed shows explicitly resolved/closed cases in the last 30 days. Emergency contacts are published resources below the active-case table. The page checks for changed operational cases and rolling metric totals every 30 seconds and reloads their complete table/charts together. Dashboard polling also checks the complete overview so an acknowledgment cannot leave its status chart stale while the active count stays unchanged. Resolution/escalation permissions remain with the responsible Adviser.
+
+## Reference-layout validation (October 9, 2026)
+
+- Report date ranges validate their type, calendar dates and ordering on the server and are limited to 366 inclusive days. The combined date picker applies the same limit in the interface. Legacy `from` / `to` query links are retained.
+- Filter enums, search length, overview selection and paginator values are validated before queries/rendering. Empty overview values safely use the default tab. The Scheduled filter includes saved future appointments on pending requests, and Archived emergency filters include archive markers without changing the retained terminal status.
+- Pending summary and chart counts exclude future scheduled appointments. Completed includes completed/evaluated records. Zero counts and missing timestamp samples display truthful empty states.
+- Referral overview selects aggregate lifecycle counts only. It never fetches or renders referral narratives or Identity Vault fields.
+- Activity records reuse the shared audit/legacy timeline with safe relational context for priority, staff helper, linked session and current status. Event outcome remains separate from current status; historical status is not invented from an audit outcome. Date, priority, applicable status, activity type, history and search filters affect its database query. Search matches exact `R-####` case references and supports case-insensitive actions/actors.
+- Published contacts only, existing role authorization, CSRF-protected archive actions, and Adviser ownership of emergency actions remain intact.
+- The changes use SVG charts and scoped CSS without new dependencies, decorative icons, duplicate stores or schema changes.
 
 ## Queue timeout
 `StaleQueueRequests::expire()` runs every minute through the existing scheduler, before automatic matching, on stale direct matching attempts, on Moderator queue/dashboard loads, and before manual assignments.
@@ -58,6 +68,8 @@ Validation results:
 - Production `npm run build`: passed, including service-worker build.
 - Final related regression run: 81 tests passed (509 assertions). PHP syntax checks passed for 19 changed application, route and migration files. Blade template compilation and compiled-template PHP syntax checks passed. A final follow-up run passed 24 tests (180 assertions) after polling verification was added.
 - Browser/device visual review remains required; this environment currently has no controllable browser. Automated render tests verify server-side pages, not pixel layout or touch interaction.
+
+Reference-layout follow-up verification: 129 related tests passed (870 assertions), followed by 31 tests (258 assertions) after scheduled/archive filter refinements, including seven new `ModeratorReferenceLayoutTest` checks. The production build, scoped CSS parser and inline JavaScript syntax checks passed. Browser/device pixel review remains unavailable in this environment.
 
 ## Manual responsive acceptance checks
 After migration and deployment, review Dashboard, Reports, Emergency Alerts, queue, Manage, connections and schedules at desktop width, 768 px and 480 px:

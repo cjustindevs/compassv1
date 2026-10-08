@@ -17,16 +17,26 @@ class ModeratorEmergencyController extends Controller
     public function index()
     {
         $service = app(ModeratorEmergencyCases::class);
-        $openIncidents = $service->active()->orderBy('triggered_at')->paginate(15)->withQueryString();
+        $openIncidents = $service->active()->orderBy('triggered_at')->paginate(5)->withQueryString();
         $all = $service->query()->get();
         $active = $service->active()->get();
-        $stats = ['open' => $active->count(), 'escalated_today' => $active->whereIn('status', ['escalated', 'referred'])->filter(fn ($a) => Carbon::parse($a->triggered_at)->gte(now('Asia/Manila')->startOfDay()->utc()))->count(),
-            'resolved_30d' => $all->whereIn('status', ['resolved', 'closed'])->filter(fn ($a) => $a->resolved_at && Carbon::parse($a->resolved_at)->gte(now()->subDays(30)))->count()];
-        $priorityDistribution = $active->groupBy('risk_level')->map->count()->all();
-        $emergencySignature = $this->signature($active);
+        $stats = $this->metrics($all, $active);
+        $workflow = ['Detected' => 0, 'Notified' => 0, 'Reviewing' => 0, 'Referral' => 0, 'Closed' => $stats['resolved_30d']];
+        foreach ($active as $case) {
+            $stage = $case->professional_referred_at || $case->professional_referred || $case->status === 'referred' ? 'Referral'
+                : ($case->acknowledged_at || in_array($case->status, ['under_review', 'acknowledged', 'responding', 'escalated']) ? 'Reviewing'
+                    : ($case->adviser_notified_at || $case->adviser_notified || $case->status === 'notified' ? 'Notified' : 'Detected'));
+            $workflow[$stage]++;
+        }
+        $priorityDistribution = array_fill_keys(['Emergency', 'High', 'Moderate', 'Low'], 0);
+        foreach ($active as $case) {
+            $label = ucfirst($case->risk_level ?: 'Unrecorded');
+            $priorityDistribution[$label] = ($priorityDistribution[$label] ?? 0) + 1;
+        }
+        $emergencySignature = $this->signature($all);
         $contacts = EmergencyResource::published()->get();
 
-        return view('moderator.emergency', compact('openIncidents', 'stats', 'priorityDistribution', 'contacts', 'emergencySignature'));
+        return view('moderator.emergency', compact('openIncidents', 'stats', 'priorityDistribution', 'contacts', 'emergencySignature', 'workflow'));
     }
 
     public function escalate(int $id): RedirectResponse
@@ -44,11 +54,25 @@ class ModeratorEmergencyController extends Controller
         $service = app(ModeratorEmergencyCases::class);
         $active = $service->active()->get();
 
-        return response()->json(['open' => $active->count(), 'active_incident_ids' => $active->pluck('id'), 'signature' => $this->signature($active)]);
+        return response()->json(['open' => $active->count(), 'active_incident_ids' => $active->pluck('id'), 'signature' => $this->signature($service->query()->get())]);
+    }
+
+    private function metrics($all, $active): array
+    {
+        $now = now();
+        $resolved = $all->whereIn('status', ['resolved', 'closed'])->filter(fn ($case) => $case->resolved_at && Carbon::parse($case->resolved_at)->betweenIncluded($now->copy()->subDays(30), $now));
+        $responses = $all->filter(fn ($case) => $case->acknowledged_at && Carbon::parse($case->acknowledged_at)->betweenIncluded($now->copy()->subDays(30), $now) && Carbon::parse($case->acknowledged_at)->gte(Carbon::parse($case->triggered_at)))
+            ->map(fn ($case) => Carbon::parse($case->triggered_at)->diffInSeconds(Carbon::parse($case->acknowledged_at)) / 60);
+
+        return ['open' => $active->count(),
+            'escalated_today' => $all->filter(fn ($case) => $case->escalated_at && Carbon::parse($case->escalated_at)->betweenIncluded(now('Asia/Manila')->startOfDay()->utc(), $now))->count(),
+            'resolved_30d' => $resolved->count(),
+            'average_response' => $responses->isEmpty() ? 'No data' : round($responses->avg(), 1).' min',
+        ];
     }
 
     private function signature($cases): string
     {
-        return hash('sha256', $cases->sortBy(fn ($case) => $case->source.'-'.$case->id)->values()->toJson());
+        return hash('sha256', json_encode([$cases->sortBy(fn ($case) => $case->source.'-'.$case->id)->values(), $this->metrics($cases, $cases->whereNotIn('status', ModeratorEmergencyCases::TERMINAL)->whereNull('archived_at'))]));
     }
 }

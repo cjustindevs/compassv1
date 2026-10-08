@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\QueueRequest;
+use App\Models\Referral;
 use App\Models\Session;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -39,6 +40,7 @@ class ModeratorOperations
     public function report(Request $request, bool $export = false): array
     {
         abort_unless($request->user()?->is_active && $request->user()?->role === 'moderator', 403);
+        $request->validate(['date_range' => 'nullable|string|max:24']);
         if ($request->filled('date_range')) {
             if (! preg_match('/^(\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2})$/', $request->string('date_range'), $m)) {
                 throw ValidationException::withMessages(['date_range' => 'Choose a valid start and end date.']);
@@ -46,10 +48,12 @@ class ModeratorOperations
             $request->merge(['from' => $m[1], 'to' => $m[2]]);
         }
         $data = $request->validate(['from' => 'nullable|date_format:Y-m-d', 'to' => 'nullable|date_format:Y-m-d|after_or_equal:from',
-            'case_status' => 'nullable|in:active,completed,evaluated,waiting,helper_assigned,pending_review,emergency,cancelled,no_show',
+            'case_status' => 'nullable|in:active,completed,evaluated,waiting,helper_assigned,pending_review,emergency,cancelled,no_show,scheduled,screening_completed,preferences_set',
             'emergency_status' => 'nullable|in:active,pending,notified,acknowledged,responding,under_review,open,escalated,referred,resolved,closed,cancelled,archived',
             'priority' => 'nullable|in:low,moderate,high,emergency', 'activity' => 'nullable|in:cases,emergencies,queue,actions',
-            'search' => 'nullable|string|max:100', 'archive' => 'nullable|in:all,archived,current']);
+            'search' => 'nullable|string|max:100', 'archive' => 'nullable|in:all,archived,current',
+            'overview' => 'nullable|in:status,categories,emergencies,referrals', 'tab' => 'nullable|in:operations,safety,activity',
+            'cases_page' => 'nullable|integer|min:1', 'queue_page' => 'nullable|integer|min:1', 'emergency_page' => 'nullable|integer|min:1', 'activity_page' => 'nullable|integer|min:1']);
         $from = $data['from'] ?? now('Asia/Manila')->subDays(29)->toDateString();
         $to = $data['to'] ?? now('Asia/Manila')->toDateString();
         $start = Carbon::parse($from, 'Asia/Manila')->startOfDay()->utc();
@@ -57,10 +61,22 @@ class ModeratorOperations
         if ($end->lt($start)) {
             throw ValidationException::withMessages(['date_range' => 'The end date must follow the start date.']);
         }
-        $cases = Session::with('concern', 'helper')->whereBetween(\DB::raw('COALESCE(submitted_at,created_date,created_at)'), [$start, $end])->when($data['case_status'] ?? null, fn ($q, $s) => $q->where('session_status', $s))->when($data['priority'] ?? null, fn ($q, $v) => $q->where('risk_level', $v));
+        if ($start->diffInDays($end) > 366) {
+            throw ValidationException::withMessages(['date_range' => 'Choose a date range of no more than 366 days.']);
+        }
+        $caseStatusFilter = function ($query, $status) {
+            if ($status === 'scheduled') {
+                return $query->where(fn ($q) => $q->where('session_status', 'scheduled')->orWhere(fn ($q) => $q->whereIn('session_status', Session::PENDING_STATUSES)->where('scheduled_start', '>', now())));
+            }
+
+            return $query->where('session_status', $status);
+        };
+        $cases = Session::with('concern', 'helper')->whereBetween(\DB::raw('COALESCE(submitted_at,created_date,created_at)'), [$start, $end])->when($data['case_status'] ?? null, $caseStatusFilter)->when($data['priority'] ?? null, fn ($q, $v) => $q->where('risk_level', $v));
         $emergencies = app(ModeratorEmergencyCases::class)->query()->whereBetween('triggered_at', [$start, $end])->when($data['priority'] ?? null, fn ($q, $v) => $q->where('risk_level', $v));
         if (($data['emergency_status'] ?? null) === 'active') {
             $emergencies->whereNotIn('status', ModeratorEmergencyCases::TERMINAL)->whereNull('archived_at');
+        } elseif (($data['emergency_status'] ?? null) === 'archived') {
+            $emergencies->where(fn ($q) => $q->whereNotNull('archived_at')->orWhere('status', 'archived'));
         } elseif (! empty($data['emergency_status'])) {
             $emergencies->where('status', $data['emergency_status']);
         }
@@ -82,6 +98,29 @@ class ModeratorOperations
             'Queue entries' => (clone $queues)->count(), 'Successful matches' => (clone $queues)->whereNotNull('matched_date')->count()];
         $groups = ['Cases by status' => $caseRows->groupBy('session_status')->map->count()->all(), 'Case categories' => $caseRows->groupBy(fn ($s) => $s->concern?->concern_name ?? 'Unrecorded')->map->count()->all(),
             'Emergency status' => $emergencyRows->groupBy(fn ($e) => app(ModeratorEmergencyCases::class)->statusLabel($e))->map->count()->all(), 'Emergency priority' => $emergencyRows->groupBy('risk_level')->map->count()->all()];
+        $caseStatus = ['Completed' => 0, 'Pending' => 0, 'Scheduled' => 0, 'Active' => 0, 'Cancelled' => 0, 'No show' => 0];
+        foreach ($caseRows as $case) {
+            $label = match (true) {
+                in_array($case->session_status, ['completed', 'evaluated']) => 'Completed',
+                $case->session_status === 'scheduled' || (in_array($case->session_status, Session::PENDING_STATUSES) && $case->scheduled_start && $case->scheduled_start->isFuture()) => 'Scheduled',
+                in_array($case->session_status, Session::PENDING_STATUSES) || $case->session_status === 'pending_review' => 'Pending',
+                default => ucfirst(str_replace('_', ' ', $case->session_status ?: 'Unrecorded')),
+            };
+            $caseStatus[$label] = ($caseStatus[$label] ?? 0) + 1;
+        }
+        $summary['Pending requests'] = $caseStatus['Pending'];
+        // Aggregate lifecycle data only: no referral narratives or identity information.
+        $referrals = Referral::query()->whereBetween(\DB::raw('COALESCE(referral_date,created_at)'), [$start, $end])
+            ->when($data['priority'] ?? null, fn ($q, $v) => $q->where('priority_level', $v))
+            ->when($data['case_status'] ?? null, fn ($q, $v) => $q->whereHas('session', fn ($q) => $caseStatusFilter($q, $v)))
+            ->when(($data['archive'] ?? 'all') !== 'all', fn ($q) => $q->whereHas('session', fn ($q) => ($data['archive'] === 'archived' ? $q->whereNotNull('archived_at') : $q->whereNull('archived_at'))))
+            ->select('status')->selectRaw('COUNT(*) as total')->groupBy('status')->pluck('total', 'status')
+            ->mapWithKeys(fn ($count, $status) => [ucwords(str_replace('_', ' ', $status)) => (int) $count])->all();
+        $groups['Referral status'] = $referrals;
+        $charts = ['status' => ['title' => 'Case status', 'values' => $caseStatus],
+            'categories' => ['title' => 'Case categories', 'values' => $groups['Case categories']],
+            'emergencies' => ['title' => 'Emergency status', 'values' => $groups['Emergency status']],
+            'referrals' => ['title' => 'Referral status', 'values' => $referrals]];
         $date = fn ($v) => $v ? Carbon::parse($v)->timezone('Asia/Manila')->format('M d, Y g:i A') : 'Not recorded';
         $mean = function ($rows, $a, $b) {
             $values = $rows->filter(fn ($r) => $r->$a && $r->$b && Carbon::parse($r->$b)->gte(Carbon::parse($r->$a)) && Carbon::parse($r->$b)->lte(now()))->map(fn ($r) => Carbon::parse($r->$a)->diffInSeconds(Carbon::parse($r->$b)) / 60);
@@ -95,10 +134,40 @@ class ModeratorOperations
             ['title' => 'Incoming queue activity', 'group' => 'operations', 'columns' => ['Reference', 'Status', 'Priority', 'Helper', 'Entered', 'Matched'], 'records' => $records($queues->latest('request_date'), 'queue_page'), 'format' => fn ($q) => ['Queue #'.$q->id, $q->archived_at ? 'Archived ('.$q->request_status.')' : ucfirst($q->request_status), ucfirst($q->priority_level), $q->assignedHelper?->full_name ?? 'Unassigned', $date($q->request_date), $date($q->matched_date)], 'type' => 'queue_requests'],
             ['title' => 'Emergency case activity', 'group' => 'safety', 'columns' => ['Reference', 'Status', 'Priority', 'Helper', 'Detected', 'Acknowledged', 'Resolved'], 'records' => $records($emergencies->orderByDesc('triggered_at'), 'emergency_page'), 'format' => fn ($e) => [($e->source === 'incident_reports' ? 'Incident #' : 'Emergency #').$e->id, app(ModeratorEmergencyCases::class)->statusLabel($e), ucfirst($e->risk_level), trim($e->helper_first_name.' '.$e->helper_last_name) ?: 'Unassigned', $date($e->triggered_at), $date($e->acknowledged_at), $date($e->resolved_at)], 'type' => 'emergency'],
         ];
-        $activity = app(ModeratorActivity::class)->query()->whereBetween('occurred_at', [$start, $end])->when($data['activity'] ?? null, fn ($q, $v) => $q->where('type', $v))
-            ->when($data['search'] ?? null, fn ($q, $v) => $q->where(fn ($q) => $q->where('action', 'like', '%'.$v.'%')->orWhere('actor', 'like', '%'.$v.'%')->orWhere('record_type', 'like', '%'.$v.'%')->orWhereRaw('CAST(record_id AS TEXT) LIKE ?', ['%'.$v.'%'])));
-        $tables[] = ['title' => 'Activity Log', 'group' => 'activity', 'columns' => ['Activity', 'Related record', 'Actor', 'Status / outcome', 'Date (Philippine Time)'], 'records' => $records($activity->orderByDesc('occurred_at')->orderByDesc('id'), 'activity_page'), 'format' => fn ($a) => [ucwords(str_replace('_', ' ', $a->action)), ucwords(str_replace('_', ' ', $a->record_type)).' #'.$a->record_id, $a->actor, ucfirst($a->status), $date($a->occurred_at)], 'type' => null];
+        $activity = \DB::query()->fromSub(app(ModeratorActivity::class)->query(), 'report_activity')->whereBetween('occurred_at', [$start, $end])->when($data['activity'] ?? null, fn ($q, $v) => $q->where('type', $v))
+            ->when($data['search'] ?? null, function ($q, $value) {
+                if (preg_match('/^R-(\d+)$/i', $value, $reference)) {
+                    $q->where('record_type', 'counseling_sessions')->where('record_id', (int) $reference[1]);
+                } else {
+                    $q->where(fn ($q) => $q->whereRaw('LOWER(action) LIKE ?', ['%'.strtolower(str_replace(' ', '_', $value)).'%'])
+                        ->orWhereRaw('LOWER(actor) LIKE ?', ['%'.strtolower($value).'%'])
+                        ->orWhereRaw('LOWER(record_type) LIKE ?', ['%'.strtolower($value).'%'])
+                        ->orWhereRaw('CAST(record_id AS TEXT) LIKE ?', ['%'.$value.'%']));
+                }
+            });
+        $activity->when($data['priority'] ?? null, fn ($q, $v) => $q->where('priority', $v))
+            ->when($data['case_status'] ?? null, fn ($q, $v) => $q->where(fn ($q) => $q->whereNull('record_type')->orWhere('record_type', '!=', 'counseling_sessions')->orWhere(function ($q) use ($v) {
+                if ($v === 'scheduled') {
+                    $q->where('record_status', 'scheduled')->orWhere(fn ($q) => $q->whereIn('record_status', Session::PENDING_STATUSES)->where('scheduled_start', '>', now()));
+                } else {
+                    $q->where('record_status', $v);
+                }
+            })))
+            ->when($data['emergency_status'] ?? null, fn ($q, $v) => $q->where(function ($q) use ($v) {
+                $q->whereNull('record_type')->orWhereNotIn('record_type', ['emergency_alerts', 'incident_reports'])->orWhere(function ($q) use ($v) {
+                    if ($v === 'active') {
+                        $q->whereNotIn('record_status', ModeratorEmergencyCases::TERMINAL)->whereNull('record_archived_at');
+                    } elseif ($v === 'archived') {
+                        $q->where(fn ($q) => $q->whereNotNull('record_archived_at')->orWhere('record_status', 'archived'));
+                    } else {
+                        $q->where('record_status', $v);
+                    }
+                });
+            }))
+            ->when(($data['archive'] ?? 'all') === 'archived', fn ($q) => $q->whereNotNull('record_archived_at'))
+            ->when(($data['archive'] ?? 'all') === 'current', fn ($q) => $q->whereNull('record_archived_at'));
+        $tables[] = ['title' => 'Activity Log', 'group' => 'activity', 'columns' => ['Reference', 'Activity', 'Type', 'Current status', 'Priority', 'Date (Philippine Time)', 'Actor / helper', 'Event outcome'], 'records' => $records($activity->orderByDesc('occurred_at')->orderByDesc('id'), 'activity_page'), 'format' => fn ($a) => [$a->record_type === 'counseling_sessions' ? 'R-'.str_pad((string) $a->record_id, 4, '0', STR_PAD_LEFT) : ucwords(str_replace('_', ' ', $a->record_type ?: 'Account')).' #'.$a->record_id, ucwords(str_replace('_', ' ', $a->action)), ucfirst($a->type), $a->record_archived_at ? 'Archived ('.ucwords(str_replace('_', ' ', $a->record_status ?? 'Not recorded')).')' : ucwords(str_replace('_', ' ', $a->record_status ?? 'Not recorded')), ucfirst($a->priority ?? 'Not recorded'), $date($a->occurred_at), $a->actor.' / '.(trim($a->helper_first_name.' '.$a->helper_last_name) ?: 'Unassigned'), ucfirst($a->status)], 'type' => null];
 
-        return compact('summary','groups','tables','from','to') + ['role' => 'moderator'];
+        return compact('summary', 'groups', 'tables', 'from', 'to', 'charts') + ['role' => 'moderator'];
     }
 }
