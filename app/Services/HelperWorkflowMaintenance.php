@@ -236,30 +236,13 @@ class HelperWorkflowMaintenance
         }, 3);
     }
 
-    /**
-     * Track a helper who did not respond before the recommendation brief
-     * expired. After NON_RESPONSE_LIMIT consecutive misses the helper is
-     * flagged for adviser review and excluded from future matching.
-     */
+    /** Record missed offers for history without restricting future matching. */
     private function recordNonResponse(Helper $helper): void
     {
-        if ($helper->non_response_count >= Helper::NON_RESPONSE_LIMIT) {
-            return;
-        }
-        $count = $helper->non_response_count + 1;
-        $helper->update(['non_response_count' => $count]);
-        if ($count < Helper::NON_RESPONSE_LIMIT) {
-            $this->notify($helper->user_account_id, 'Missed session recommendation', sprintf('You did not respond to a session recommendation within %d minutes. %d of %d misses are recorded.', Helper::PRE_SESSION_BRIEF_MINUTES, $count, Helper::NON_RESPONSE_LIMIT), '/helper/cases');
-            return;
-        }
-        $helper->update([
-            'is_under_review' => true,
-            'review_reason' => sprintf('Did not respond to %d consecutive session recommendations within the %d-minute brief.', Helper::NON_RESPONSE_LIMIT, Helper::PRE_SESSION_BRIEF_MINUTES),
-        ]);
-        $this->notify($helper->user_account_id, 'Account placed under adviser review', 'You missed several session recommendations. Contact your adviser to resolve this before receiving new assignments.', '/helper/cases');
-        if ($adviserUserId = $helper->adviser?->user_account_id) {
-            $this->notify($adviserUserId, 'Helper placed under review', sprintf('%s missed %d consecutive session recommendations and is suspended from matching pending your review.', $helper->full_name, Helper::NON_RESPONSE_LIMIT), route('adviser.helper.show', $helper->id));
-        }
+        $helper->increment('non_response_count');
+        $this->notify($helper->user_account_id, 'Missed session recommendation',
+            sprintf('The assignment offer expired after %d minutes and was returned to the queue. You remain eligible for future offers when readiness, duty and capacity requirements are met.', Helper::PRE_SESSION_BRIEF_MINUTES),
+            '/helper/cases');
     }
 
     private function notifyEscalation(Helper $helper, Session $session): void

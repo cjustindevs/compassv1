@@ -53,3 +53,13 @@ The container scheduler now exposes its output in Render logs and restarts after
 ## Completing Helper assignment review
 
 The reported Helper status was Under review: this is an intentional matching restriction created after repeated missed offers. The recovery action was missing. Assigned active Advisers can now complete review from Manage Helpers > Helper Detail, recording a required outcome and next steps. The transaction preserves prior restriction reason/count in an audit event, resets the restriction and missed-offer counter, sends one notification and retries matching. Repeated submissions do not duplicate completion events. All other eligibility requirements remain in force; no existing database restrictions were cleared automatically. Tests cover assigned versus unrelated Adviser authority, Helper self-clear rejection, required reason, audit/notification idempotency and expired-readiness exclusion.
+
+## Missed-offer restriction removed (user-approved policy change)
+
+Repeated expired offers no longer place Helpers under review or suspend matching. Expiry still releases the reserved session, records history, notifies affected roles and retries the queue. Missed-offer counters remain historical data, not an eligibility gate.
+
+Migration `2026_10_08_130000_remove_missed_offer_restrictions` clears existing restrictions only when their reason exactly matches the system-generated missed-offer wording. It preserves counters and audits each cleared restriction; other supervision restrictions remain intact. Render startup applies this non-destructive migration after deployment. No current database was changed during development.
+
+A passed readiness check and today's duty automatically make a willing Helper eligible when verification, Adviser assignment, competency and free capacity are also valid. Adviser completion remains available for unrelated review restrictions. Regression validation: 40 tests, 531 assertions passed, including repeated missed offers and idempotent migration/history protection.
+
+Sidebar integration verified: initial sidebar rendering and the authenticated polling endpoint both use `HelperSidebarStats` and canonical eligibility. Tests confirm legacy missed-offer restriction removal changes the polling label from Under review to Available, repeated missed offers keep the label Available, and other review restrictions stay Under review. Existing polling refreshes every 15 seconds and on focus/reconnection. Sidebar integration regression run: 3 tests, 45 assertions passed.

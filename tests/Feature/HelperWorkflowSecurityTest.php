@@ -289,7 +289,7 @@ class HelperWorkflowSecurityTest extends TestCase
         $this->assertDatabaseHas('notifications', ['user_account_id' => $helper->user_account_id, 'title' => 'Missed session recommendation']);
     }
 
-    public function test_three_consecutive_non_responses_flag_helper_for_review(): void
+    public function test_repeated_missed_offers_do_not_restrict_eligible_helper(): void
     {
         $helper = $this->helper();
 
@@ -303,11 +303,41 @@ class HelperWorkflowSecurityTest extends TestCase
 
         $helper = $helper->fresh();
         $this->assertSame(Helper::NON_RESPONSE_LIMIT, $helper->non_response_count);
-        $this->assertTrue($helper->is_under_review);
-        $this->assertStringContainsString('did not respond to 3 consecutive session recommendations', strtolower((string) $helper->review_reason));
-        $this->assertFalse(app(HelperEligibilityService::class)->allows($helper));
-        $this->assertDatabaseHas('notifications', ['user_account_id' => $helper->adviser->user_account_id, 'title' => 'Helper placed under review']);
-        $this->assertDatabaseHas('notifications', ['user_account_id' => $helper->user_account_id, 'title' => 'Account placed under adviser review']);
+        $this->assertFalse($helper->is_under_review);
+        $this->assertNull($helper->review_reason);
+        $this->assertTrue(app(HelperEligibilityService::class)->allows($helper));
+        $this->actingAs($helper->user)->getJson(route('helper.readiness.status'))
+            ->assertOk()->assertJsonPath('sidebar.availabilityLabel', 'Available')
+            ->assertJsonPath('sidebar.availabilityStatus', 'available');
+        $this->get(route('helper.readiness'))->assertOk()->assertSee('id="availStatus"', false)->assertSee('Available');
+        $this->assertDatabaseMissing('notifications', ['user_account_id' => $helper->adviser->user_account_id, 'title' => 'Helper placed under review']);
+        $this->assertDatabaseMissing('notifications', ['user_account_id' => $helper->user_account_id, 'title' => 'Account placed under adviser review']);
+    }
+
+    public function test_policy_migration_clears_only_missed_offer_restrictions_and_preserves_history(): void
+    {
+        $missed = $this->helper();
+        $missed->update(['is_under_review' => true, 'review_reason' => 'Did not respond to 3 consecutive session recommendations within the 5-minute brief.', 'non_response_count' => 3]);
+        $other = $this->helper();
+        $other->update(['is_under_review' => true, 'review_reason' => 'Supervision concern requires Adviser review.']);
+        $this->actingAs($missed->user)->getJson(route('helper.readiness.status'))
+            ->assertOk()->assertJsonPath('sidebar.availabilityLabel', 'Under review');
+        $migration = require database_path('migrations/2026_10_08_130000_remove_missed_offer_restrictions.php');
+        $migration->up();
+        $migration->up();
+        $this->assertFalse($missed->fresh()->is_under_review);
+        $this->assertNull($missed->fresh()->review_reason);
+        $this->assertSame(3, $missed->fresh()->non_response_count);
+        $this->actingAs($missed->user)->getJson(route('helper.readiness.status'))
+            ->assertOk()->assertJsonPath('sidebar.availabilityLabel', 'Available')
+            ->assertJsonPath('sidebar.availabilityStatus', 'available');
+        $this->get(route('helper.readiness'))->assertOk()->assertSee('id="availStatus"', false)->assertSee('Available');
+        $this->actingAs($other->user)->getJson(route('helper.readiness.status'))
+            ->assertOk()->assertJsonPath('sidebar.availabilityLabel', 'Under review');
+        $this->assertTrue($other->fresh()->is_under_review);
+        $this->assertSame(1, DB::table('audit_logs')->where('action', 'helper_missed_offer_restriction_removed')->count());
+        $migration->down();
+        $this->assertFalse($missed->fresh()->is_under_review);
     }
 
     public function test_accepting_a_recommendation_resets_the_non_response_counter(): void
