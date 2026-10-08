@@ -80,7 +80,7 @@
                 <span class="label">Competency</span>
             </div>
             <div class="stat">
-                <span class="value" id="availStatus" style="color: {{ $availabilityStatus === 'available' ? 'var(--green-500)' : 'var(--yellow-500)' }};">{{ $availabilityLabel }}</span>
+                <span class="value" id="availStatus" role="status" aria-live="polite" style="color: {{ $availabilityStatus === 'available' ? 'var(--green-500)' : 'var(--yellow-500)' }};">{{ $availabilityLabel }}</span>
                 <span class="label">Status</span>
             </div>
         </div>
@@ -99,4 +99,4 @@
 
 @include('components.confirmation-modal')
 
-<script src="{{ asset('js/helper-sidebar-stats.js') }}" defer></script>
+<script src="{{ asset('js/helper-sidebar-stats.js').'?v='.filemtime(public_path('js/helper-sidebar-stats.js')) }}" defer></script>

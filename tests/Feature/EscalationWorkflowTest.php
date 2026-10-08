@@ -206,6 +206,37 @@ class EscalationWorkflowTest extends TestCase
         $this->assertNotNull($incident->resolved_at);
     }
 
+    public function test_adviser_resolution_synchronizes_moderator_incident_without_closing_chat(): void
+    {
+        Event::fake();
+        [$seeker, $session, $helper, $adviser] = $this->sessionWithAssignedHelper();
+        $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $seeker);
+        $incident = IncidentReport::where('session_id', $session->id)->firstOrFail();
+        $this->actingAs($adviser->user);
+        app(\App\Services\AdviserEmergencyService::class)->record($alert, 'resolved', 'Coordination completed.');
+        $this->assertSame('resolved', $incident->fresh()->status);
+        $this->assertNotNull($incident->fresh()->resolved_at);
+        $this->assertSame($adviser->user->id, $incident->fresh()->resolved_by);
+        $this->assertSame('active', $session->fresh()->session_status);
+        $this->assertSame(0, IncidentReport::open()->count());
+    }
+
+    public function test_reconciliation_repairs_existing_resolved_emergency_incidents(): void
+    {
+        Event::fake();
+        [$seeker, $session] = $this->sessionWithAssignedHelper();
+        $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $seeker);
+        $incident = IncidentReport::where('session_id', $session->id)->firstOrFail();
+        // Reproduce a legacy resolution that did not update the incident.
+        \Illuminate\Support\Facades\DB::table('emergency_alerts')->where('id', $alert->id)->update(['status' => 'resolved', 'resolved_at' => now(), 'resolution_notes' => 'Legacy resolution.']);
+        $migration = require database_path('migrations/2026_10_08_120000_reconcile_resolved_emergency_incidents.php');
+        $migration->up();
+        $this->assertSame('resolved', $incident->fresh()->status);
+        $this->assertSame('Legacy resolution.', $incident->fresh()->resolution_summary);
+        $migration->up();
+        $this->assertSame('resolved', $incident->fresh()->status);
+    }
+
     private function sessionWithAssignedHelper(): array
     {
         $seekerUser = User::factory()->create(['role' => 'seeker']);

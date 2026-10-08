@@ -4,7 +4,9 @@
 
 @push('styles')
 <style>
-    .adviser-page-content { background: #F8FBF9; }
+    .adviser-page-content { background: #F8FBF9; padding: 28px 32px; max-width: 1440px; margin: 0 auto; min-width: 0; }
+    .adviser-page-content .overflow-x-auto { max-width: 100%; }
+    @media(max-width:600px) { .adviser-page-content { padding:20px 16px; } .adviser-page-content .card { padding:16px; } }
     .card {
         background: white; border-radius: 16px; padding: 20px 24px;
         border: 1px solid #e5e7eb; box-shadow: 0 4px 20px rgba(0,0,0,0.01);

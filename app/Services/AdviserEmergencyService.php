@@ -18,7 +18,10 @@ class AdviserEmergencyService {
                 $this->append($alert,'acknowledged',$action==='acknowledged' ? $notes : 'Acknowledged when recording the first Adviser action.');
             } elseif($action==='acknowledged') abort(409,'Already acknowledged.');
             if($action!=='acknowledged') $this->append($alert,$action,$notes);
-            if($action==='resolved') $alert->update(['status'=>'resolved','resolved_at'=>now(),'resolution_notes'=>$notes]);
+            if($action==='resolved') {
+                $alert->update(['status'=>'resolved','resolved_at'=>now(),'resolution_notes'=>$notes]);
+                $alert->synchronizeIncidentResolution();
+            }
             $recipient=$alert->session?->helper?->user_account_id;
             if($recipient) Notification::create(['user_account_id'=>$recipient,'title'=>'Emergency review updated','message'=>'Your Adviser recorded an emergency review action. Review the authorized case record.','notification_type'=>'emergency','link'=>'/helper/cases/'.$alert->session_id]);
         },3);

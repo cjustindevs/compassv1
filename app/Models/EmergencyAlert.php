@@ -40,6 +40,26 @@ class EmergencyAlert extends Model
         'professional_referred' => 'boolean',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (self $alert) {
+            if ($alert->wasChanged('status') && in_array($alert->status, ['resolved', 'closed'], true)) {
+                $alert->synchronizeIncidentResolution();
+            }
+        });
+    }
+
+    public function synchronizeIncidentResolution(): void
+    {
+        if (! $this->session_id || ! in_array($this->status, ['resolved', 'closed'], true)) return;
+        if (self::where('session_id', $this->session_id)->whereNotIn('status', ['resolved', 'closed'])->exists()) return;
+        IncidentReport::where('session_id', $this->session_id)
+            ->whereIn('incident_category', ['emergency_flag', 'classification_emergency'])
+            ->whereIn('status', ['open', 'under_review', 'escalated'])
+            ->update(['status' => 'resolved', 'resolved_at' => $this->resolved_at ?? now(),
+                'resolved_by' => auth()->id(), 'resolution_summary' => $this->resolution_notes]);
+    }
+
     public function seeker(): BelongsTo
     {
         return $this->belongsTo(HelpSeeker::class, 'seeker_id', 'id');

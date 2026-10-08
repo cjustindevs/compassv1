@@ -26,7 +26,7 @@ class AdviserEmergencyController extends Controller
             })
             ->latest('triggered_at');
 
-        $openAlerts = (clone $baseQuery)->where('status', '!=', 'resolved')->paginate(15, ['*'], 'open_page')->withQueryString();
+        $openAlerts = (clone $baseQuery)->whereNotIn('status', ['resolved', 'closed'])->paginate(15, ['*'], 'open_page')->withQueryString();
         $resolvedAlerts = (clone $baseQuery)->where('status', 'resolved')->paginate(15, ['*'], 'resolved_page')->withQueryString();
         $totalEmergencies = $baseQuery->count();
 

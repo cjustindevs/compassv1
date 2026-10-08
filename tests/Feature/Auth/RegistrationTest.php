@@ -17,6 +17,34 @@ class RegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['otp.demo_mode' => false]);
+    }
+
+    public function test_demo_otp_is_displayed_without_email_and_still_requires_verification(): void
+    {
+        config(['otp.demo_mode' => true]);
+        Mail::fake();
+        $response = $this->postJson(route('registration.otp.send'), ['email' => 'demo-mode@example.com'])->assertOk()->assertJsonPath('demo_mode', true);
+        Mail::assertNothingSent();
+        preg_match('/Verification code: (\d{6})/', $response->json('message'), $matches);
+        $this->assertCount(2, $matches);
+        $this->assertNotSame($matches[1], session('registration_otp.hash'));
+        $this->postJson(route('registration.otp.verify'), ['otp' => $matches[1]])->assertOk();
+        $this->postJson(route('registration.otp.verify'), ['otp' => $matches[1]])->assertStatus(422);
+    }
+
+    public function test_nickname_reminder_and_login_spelling_are_consistent(): void
+    {
+        $this->get(route('seeker.register'))->assertOk()->assertSee('Remember your nickname')->assertSee('Nickname@compasslocal');
+        $this->get(route('login'))->assertOk()->assertSee('placeholder="Nickname@compasslocal"', false);
+        $user = User::factory()->create(['role' => 'seeker', 'email' => 'demoseeker@compass.local', 'password' => Hash::make('DemoPassword!1'), 'is_active' => true]);
+        $this->post(route('login'), ['email' => 'demoseeker@compasslocal', 'password' => 'DemoPassword!1']);
+        $this->assertAuthenticatedAs($user);
+    }
+
     public function test_registration_retries_have_a_separate_limit_and_return_to_the_form(): void
     {
         $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.71']);

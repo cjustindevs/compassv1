@@ -44,6 +44,11 @@ class LoginRequest extends FormRequest
 
         $credentials = $this->only('email', 'password');
         $credentials['is_active'] = true;
+        $credentials['email'] = trim($credentials['email']);
+        // Public nickname spelling maps to existing pseudonymous accounts; no account migration.
+        if (str_ends_with(strtolower($credentials['email']), '@compasslocal')) {
+            $credentials['email'] = strtolower(substr($credentials['email'], 0, -strlen('@compasslocal'))).'@compass.local';
+        }
         if (! str_contains($credentials['email'], '@')) {
             $credentials['email'] = strtolower($credentials['email']).'@compass.local';
         }

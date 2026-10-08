@@ -24,15 +24,16 @@ class OTPController extends Controller
         try {
             RateLimiter::hit($key, 60);
             $otp = (string) random_int(100000, 999999);
+            $demo = (bool) config('otp.demo_mode', false);
             $mailer = (string) config('mail.default');
-            if (! app()->environment('testing') && ! app(OtpMailConfiguration::class)->canDeliver($mailer)) {
+            if (! $demo && ! app()->environment('testing') && ! app(OtpMailConfiguration::class)->canDeliver($mailer)) {
                 RateLimiter::clear($key);
                 Log::warning('Registration OTP mail configuration invalid', ['reason' => 'non_delivering_mailer', 'mailer' => $mailer]);
 
                 return response()->json(['message' => 'Email delivery is not configured on this server. Please contact the administrator.'], 503);
             }
             try {
-                retry(2, function () use ($otp, $email) {
+                if (! $demo) retry(2, function () use ($otp, $email) {
                     Mail::send('emails.otp', ['otp' => $otp], function ($message) use ($email) {
                         $message->to($email)->subject('COMPASS - Email Verification Code');
                     });
@@ -57,7 +58,11 @@ class OTPController extends Controller
 
             $payload = ['message' => 'Verification code sent. Check your inbox and spam folder. It expires in 10 minutes.', 'retry_after' => 60];
 
-            return response()->json($payload);
+            if ($demo) {
+                $payload['demo_mode'] = true;
+                $payload['message'] = 'DEMO ONLY - Verification code: '.$otp.'. No email was sent. Expires in 10 minutes.';
+            }
+            return response()->json($payload)->header('Cache-Control', 'private, no-store');
         } catch (\Throwable $exception) {
             RateLimiter::clear($key);
             Log::error('Registration OTP send failed unexpectedly', ['exception_type' => get_class($exception), 'path' => $request->path()]);

@@ -35,6 +35,7 @@
 <div class="registration-columns">
 <section class="verification-panel space-y-4">
     <h2 class="text-base font-semibold text-gray-800">2. Email verification</h2>
+    @if(config('otp.demo_mode'))<p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3">Demo Mode: your generated code will be displayed here. No email delivery is required.</p>@endif
     <p class="text-sm text-gray-600">Verify your Gmail or other email address before creating your account.</p>
     <button type="button" id="open-verification" class="registration-action registration-action-solid">Verify email address</button>
     <p id="email-summary" class="text-sm text-green-700" role="status"></p>
@@ -70,7 +71,7 @@
         <input id="alias" name="alias" value="{{ session('registration_alias') }}" readonly required class="input-focus w-full px-4 py-3 rounded-xl border border-gray-200 bg-green-50">
         <button id="shuffle-alias" type="button" class="registration-action"><i class="fas fa-shuffle" aria-hidden="true"></i> Shuffle alias</button>
         </div>
-        <p id="alias-status" role="status" class="text-xs text-gray-500">Shuffle until you find an alias you like.</p>
+        <p id="alias-status" role="status" class="text-xs text-gray-500">Shuffle until you find a nickname you like. Remember your nickname: you will use Nickname@compasslocal to log in.</p>
         @error('alias') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
     </div>
     <div>

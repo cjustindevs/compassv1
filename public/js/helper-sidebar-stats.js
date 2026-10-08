@@ -1,8 +1,7 @@
 (() => {
-    if (window.compassHelperStatsStarted) return;
-    window.compassHelperStatsStarted = true;
     const panel = document.querySelector('[data-helper-sidebar-stats]');
-    if (!panel) return;
+    if (!panel || window.compassHelperStatsStarted) return;
+    window.compassHelperStatsStarted = true;
     let busy = false;
     let stopped = false;
     async function refresh() {
