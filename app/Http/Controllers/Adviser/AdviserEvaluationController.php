@@ -27,7 +27,7 @@ class AdviserEvaluationController extends Controller
 
         $helperIds = Helper::where('adviser_id', $adviser->id)->pluck('id');
 
-        // The store/skip actions only accept concluded sessions, so the queue
+        // The evaluation action only accepts concluded sessions, so the queue
         // must not offer reports that would only fail with a 409.
         $evaluable = [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED];
 
@@ -147,72 +147,6 @@ class AdviserEvaluationController extends Controller
 
         return redirect()->route('adviser.evaluations')
             ->with('success', 'Competency evaluation submitted successfully!');
-    }
-
-    /**
-     * Skip evaluation (mark as reviewed without feedback)
-     */
-    public function skip(Request $request, $id)
-    {
-        $report = SessionReport::findOrFail($id);
-
-        $this->authorizeReport($report);
-
-        abort_unless(in_array($report->session->session_status, ['completed', 'evaluated'], true), 409);
-        $note = trim((string) $request->input('review_note'));
-
-        $report->update(['adviser_reviewed' => true, 'reviewed_date' => now(), 'adviser_review_note' => $note ?: null]);
-        SupportAudit::record('documentation_reviewed_without_new_score', $report, $note ? ['note' => $note] : []);
-
-        return redirect()->route('adviser.evaluations')
-            ->with('info', 'Evaluation marked as reviewed.');
-    }
-
-    /**
-     * Mark several pending reports reviewed at once. Only concluded sessions
-     * with submitted documentation can be bulk-completed; anything ineligible
-     * is left in the queue, never silently discarded.
-     */
-    public function bulkComplete(Request $request)
-    {
-        abort_unless(Auth::user()?->role === 'adviser' && Auth::user()?->is_active, 403);
-        $adviser = app(AdviserScope::class)->actor();
-        $validated = $request->validate([
-            'report_ids' => ['required', 'array', 'min:1', 'max:50'],
-            'report_ids.*' => ['integer'],
-            'review_note' => ['nullable', 'string', 'max:1000'],
-        ]);
-        $note = trim((string) ($validated['review_note'] ?? ''));
-
-        $helperIds = Helper::where('adviser_id', $adviser->id)->pluck('id');
-        $evaluable = [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED];
-
-        $ids = array_unique(array_map('intval', $validated['report_ids']));
-        $completed = 0;
-        $skipped = 0;
-
-        SessionReport::with('session')
-            ->whereIn('id', $ids)
-            ->eachById(function (SessionReport $report) use ($helperIds, $evaluable, $note, &$completed, &$skipped) {
-                $session = $report->session;
-                if (! $session || ! $helperIds->contains($session->helper_id)
-                    || ! in_array($session->session_status, $evaluable, true)
-                    || trim((string) $report->session_summary) === '' && trim((string) $report->personal_reflection) === '') {
-                    $skipped++;
-
-                    return;
-                }
-                $report->update(['adviser_reviewed' => true, 'reviewed_date' => now(), 'adviser_review_note' => $note ?: null]);
-                SupportAudit::record('documentation_reviewed_in_bulk', $report, $note ? ['note' => $note] : []);
-                $completed++;
-            });
-
-        $message = $completed === 1 ? '1 evaluation marked as reviewed.' : "{$completed} evaluations marked as reviewed.";
-        if ($skipped > 0) {
-            $message .= ' '.($skipped === 1 ? '1 item' : "{$skipped} items").' was left in the queue because it is not ready for review.';
-        }
-
-        return back()->with($completed > 0 ? 'success' : 'info', $message);
     }
 
     private function authorizeReport(SessionReport $report): void

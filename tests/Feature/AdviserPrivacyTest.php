@@ -56,12 +56,38 @@ class AdviserPrivacyTest extends TestCase
         // No transcription consent record is created: adviser supervision review
         // is covered by the seeker's general consent captured at the start of the flow.
         $this->actingAs($user)->post($url, $data)->assertOk()->assertSee('PRIVATE CONVERSATION SENTINEL');
-        $this->post($url, ['purpose' => 'anything', 'reason' => 'A sufficiently long reason'])->assertUnprocessable();
+        $this->postJson($url, ['purpose' => 'anything', 'reason' => 'A sufficiently long reason'])->assertUnprocessable()->assertJsonValidationErrors('purpose');
         $this->get(route('chat.transcript', $session->id))->assertOk();
         $this->assertDatabaseHas('audit_logs', ['action' => 'transcript_access_authorized', 'target_id' => $session->id]);
         // A transcription-purpose withdrawal no longer revokes supervision review.
         $this->consent($session, 'withdrawn');
         $this->get(route('chat.transcript', $session->id))->assertOk();
+    }
+
+    public function test_invalid_transcript_access_returns_to_its_form_without_granting_access(): void
+    {
+        [$user, $session] = $this->records();
+        $list = route('adviser.transcripts');
+        $this->actingAs($user)->from($list)->post(route('adviser.transcript.access', $session->id), [
+            'purpose' => 'referral_review', 'reason' => '   short   ', 'access_session_id' => 999999,
+        ])->assertRedirect($list)->assertSessionHasErrors('reason')->assertSessionHasInput('access_session_id', $session->id);
+        $this->get($list)->assertOk()->assertSee('Explain your reason for access in at least 10 characters.')->assertSee('selected', false)->assertDontSee('PRIVATE CONVERSATION SENTINEL');
+        $this->get(route('chat.transcript', $session->id))->assertForbidden();
+        $this->assertDatabaseMissing('audit_logs', ['action' => 'transcript_access_authorized', 'target_id' => $session->id]);
+    }
+
+    public function test_transcript_verification_returns_to_access_list_without_completing_evaluation(): void
+    {
+        [$user, $session] = $this->records();
+        $this->actingAs($user)->post(route('adviser.transcript.verify', $session->id))->assertForbidden();
+        $this->post(route('adviser.transcript.access', $session->id), [
+            'purpose' => 'quality_assurance', 'reason' => 'Check the accuracy of this recorded conversation.',
+        ])->assertOk()->assertSee('Test Helper')->assertSee('PrivateSeeker');
+        $this->post(route('adviser.transcript.verify', $session->id))->assertRedirect(route('adviser.transcripts'))->assertSessionHas('success');
+        $this->assertTrue((bool) $session->fresh()->transcript_verified);
+        $this->assertSame('completed', $session->fresh()->session_status);
+        $this->assertFalse((bool) $session->fresh()->adviser_reviewed);
+        $this->get(route('adviser.transcripts'))->assertOk()->assertSee('No transcripts awaiting verification');
     }
 
     public function test_missing_profile_and_unrelated_adviser_cannot_access_records(): void

@@ -156,7 +156,9 @@ class ChatTranscriptionService
             ->where('transcript_verified', false)->with('helper')->latest('id')->get()
             ->map(fn (Session $session) => [
                 'session_id' => $session->id,
-                'helper_name' => $session->helper?->public_alias,
+                'reference_number' => $session->reference_number,
+                'helper_name' => $session->helper?->full_name ?: 'Name not recorded',
+                'session_status' => $session->session_status,
                 'session_date' => $session->created_date ?? $session->created_at,
                 'eligible' => app(AdviserTranscriptAccess::class)->eligible($session),
             ])->all();

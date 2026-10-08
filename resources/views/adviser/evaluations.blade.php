@@ -115,26 +115,13 @@
         }
         .btn-outline:hover { background: var(--gray-50); border-color: var(--gray-300); }
 
-        .btn-skip {
-            background: transparent;
-            color: var(--gray-400);
-            padding: 8px 18px;
-            border-radius: 20px;
-            border: none;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-        }
-        .btn-skip:hover { color: var(--gray-600); text-decoration: underline; }
         @media (max-width: 768px) {
             .stat-number { font-size: 22px; }
             .grid-cols-3 { grid-template-columns: 1fr; }
             .eval-item { flex-direction: column; align-items: flex-start; gap: 10px; }
             .eval-item .actions { width: 100%; }
             .eval-item .actions .btn-primary,
-            .eval-item .actions .btn-outline,
-            .eval-item .actions .btn-skip { width: 100%; justify-content: center; }
+            .eval-item .actions .btn-outline { width: 100%; justify-content: center; }
         }
         @media (max-width: 480px) {
             .grid-cols-3 { grid-template-columns: 1fr; }
@@ -188,15 +175,8 @@
             </div>
 
             @if($pendingReports->isNotEmpty())
-                <div class="flex items-center justify-between mb-2">
-                    <label class="flex items-center gap-2 text-sm text-gray-600">
-                        <input type="checkbox" id="select-all-pending" class="w-4 h-4 accent-[#04A052]">
-                        Select all on this page
-                    </label>
-                </div>
                 @foreach($pendingReports as $report)
                     <div class="eval-item">
-                        <input type="checkbox" class="pending-check w-4 h-4 accent-[#04A052] mr-3 shrink-0" form="bulkCompleteForm" name="report_ids[]" value="{{ $report->id }}">
                         <div class="seeker-info flex-1">
                             <div class="alias">
                                 {{ $report->session->seeker->generated_alias ?? 'Anonymous' }}
@@ -223,27 +203,9 @@
                             <a href="{{ route('adviser.session.show', $report->session_id) }}" class="btn-outline">
                                 <i class="fas fa-eye mr-1"></i> View Session
                             </a>
-                            <form class="inline" method="POST" action="{{ route('adviser.evaluations.skip', $report->id) }}">
-                                @csrf
-                                <button type="submit" class="btn-skip">
-                                    <i class="fas fa-forward mr-1"></i> Skip
-                                </button>
-                            </form>
                         </div>
                     </div>
                 @endforeach
-                <form id="bulkCompleteForm" method="POST" action="{{ route('adviser.evaluations.bulk-complete') }}"
-                      class="flex flex-wrap items-center gap-2 mt-4 p-3 rounded-xl bg-gray-50 border border-gray-200"
-                      data-confirm="Mark selected sessions as reviewed?"
-                      data-confirm-message="The selected reports will move to Recently Completed. No competency score is recorded for reports completed without an evaluation.">
-                    @csrf
-                    <span id="bulkSelectedCount" class="text-sm font-semibold text-gray-600 min-w-[110px]">0 selected</span>
-                    <input type="text" name="review_note" maxlength="1000" placeholder="Completion reason (optional)"
-                           class="flex-1 min-w-[200px] rounded-lg border-gray-300 text-sm px-3 py-2">
-                    <button type="submit" class="btn-primary" id="bulkCompleteSubmit" disabled>
-                        <i class="fas fa-check-double mr-1"></i> Mark as reviewed
-                    </button>
-                </form>
                 {{ $pendingReports->links() }}
             @else
                 <div class="text-center py-12 text-gray-400">
@@ -303,24 +265,4 @@
             Quality supervision leads to quality support.
         </div>
 </div>
-<script>
-    (function () {
-        const checks = Array.from(document.querySelectorAll('.pending-check'));
-        const selectAll = document.getElementById('select-all-pending');
-        const counter = document.getElementById('bulkSelectedCount');
-        const submit = document.getElementById('bulkCompleteSubmit');
-        if (!checks.length || !selectAll || !counter || !submit) return;
-        const refresh = () => {
-            const count = checks.filter((c) => c.checked).length;
-            counter.textContent = count + ' selected';
-            submit.disabled = count === 0;
-        };
-        checks.forEach((c) => c.addEventListener('change', refresh));
-        selectAll.addEventListener('change', () => {
-            checks.forEach((c) => { c.checked = selectAll.checked; });
-            refresh();
-        });
-        refresh();
-    })();
-</script>
 @endsection

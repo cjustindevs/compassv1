@@ -373,8 +373,6 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
     Route::get('/evaluations', [AdviserEvaluationController::class, 'index'])->name('evaluations');
     Route::get('/evaluate/{id}', [AdviserEvaluationController::class, 'show'])->name('evaluate');
     Route::post('/evaluate/{id}', [AdviserEvaluationController::class, 'store'])->name('evaluate.store');
-    Route::post('/evaluations/{id}/skip', [AdviserEvaluationController::class, 'skip'])->name('evaluations.skip');
-    Route::post('/evaluations/bulk-complete', [AdviserEvaluationController::class, 'bulkComplete'])->name('evaluations.bulk-complete');
 
     // Referral Queue
     Route::get('/referrals', [AdviserReferralController::class, 'index'])->name('referrals');

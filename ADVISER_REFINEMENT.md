@@ -45,3 +45,17 @@ It adds nullable archive metadata to duty records without changing duty coverage
 - Responsive styles provide single-column stacking, readable scrollable tables, and accessible actions. Browser/device visual inspection was unavailable in this session and remains a manual QA step.
 
 Existing unrelated changes in `OPENCODE_HANDOFF.md` were left untouched.
+
+## Review shortcut removal
+
+Removed the bulk Mark as reviewed control, selection checkboxes, optional shortcut note, and the Skip action. Both shortcut endpoints and controller methods are removed. Pending reports now require the existing structured competency evaluation to complete the review. Previously recorded reviews, completion notes, and audit history remain unchanged. Helper eligibility-review completion is a separate workflow and remains available.
+
+Verification for shortcut removal: 32 related feature tests passed (235 assertions), including rejected legacy shortcut requests and successful structured evaluation submission.
+
+## Transcript access UI
+
+The Adviser transcript queue now uses compact expandable session rows with registered Helper names, recorded status, and Philippine Time dates. Each row retains the existing purpose-based access form. Failed validation returns to the relevant row with its purpose/reason preserved; whitespace-only or too-short reasons cannot grant access.
+
+The authorized reading view separates Helper and Seeker messages, preserves the Seeker alias, shows recorded message timestamps in Philippine Time, and provides a readable scrollable conversation. Mobile layouts stack the form fields and keep actions accessible. Ten-minute authorization, current-supervision checks, and audit logging remain unchanged. Transcript verification returns to the access list and does not complete the separate competency evaluation.
+
+Verification: 29 related feature tests passed (227 assertions), including invalid access, grant expiry, scope/privacy checks, verification authorization, and the verification redirect. Changed PHP files passed syntax checks; CSS and the accordion script parsed successfully. Browser/device visual inspection remains a manual QA step.

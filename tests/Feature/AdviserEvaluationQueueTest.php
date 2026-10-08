@@ -17,7 +17,7 @@ use Tests\TestCase;
 
 /**
  * The adviser evaluation queue previously listed session reports for sessions
- * that were still running, even though both the store and skip actions only
+ * that were still running, even though the evaluation action only
  * accept concluded sessions. Advisers therefore clicked through to a dead end,
  * and a fully handled queue looked identical to a broken one.
  */
@@ -259,62 +259,44 @@ class AdviserEvaluationQueueTest extends TestCase
         $this->assertNotContains($declined->id, $visible);
     }
 
-    public function test_bulk_complete_marks_only_eligible_concluded_reports(): void
+    public function test_pending_queue_requires_evaluation_and_has_no_mark_reviewed_shortcuts(): void
     {
-        [$adviserUser, $helper, , $eligible] = $this->makeReport(Session::STATUS_COMPLETED);
-        [, , , $secondEligible] = $this->makeReport(Session::STATUS_EVALUATED, helper: $helper, adviserUser: $adviserUser);
-        // Running session must be left alone even when passed in.
-        [, , , $running] = $this->makeReport(Session::STATUS_ACTIVE, helper: $helper, adviserUser: $adviserUser);
-        // Undocumented report cannot be bulk-completed either.
-        [, , , $undocumented] = $this->makeReport(Session::STATUS_COMPLETED, false, $helper, $adviserUser);
-
-        $this->actingAs($adviserUser)
-            ->post(route('adviser.evaluations.bulk-complete'), [
-                'report_ids' => [$eligible->id, $secondEligible->id, $running->id, $undocumented->id],
-                'review_note' => 'Documentation reviewed; no new competency score recorded.',
-            ])
-            ->assertRedirect()
-            ->assertSessionHas('success');
-
-        $this->assertTrue((bool) $eligible->fresh()->adviser_reviewed);
-        $this->assertTrue((bool) $secondEligible->fresh()->adviser_reviewed);
-        $this->assertSame('Documentation reviewed; no new competency score recorded.', $eligible->fresh()->adviser_review_note);
-        $this->assertFalse((bool) $running->fresh()->adviser_reviewed);
-        $this->assertFalse((bool) $undocumented->fresh()->adviser_reviewed);
-        $this->assertDatabaseHas('audit_logs', ['action' => 'documentation_reviewed_in_bulk']);
+        [$user, , , $report] = $this->makeReport(Session::STATUS_COMPLETED);
+        $this->actingAs($user)->get(route('adviser.evaluations'))
+            ->assertOk()->assertSee('Evaluate')->assertSee('View Session')
+            ->assertDontSee('Mark as reviewed')->assertDontSee('Select all on this page')
+            ->assertDontSee('bulkCompleteForm')->assertDontSee('pending-check')
+            ->assertDontSee('btn-skip');
+        $this->assertFalse((bool) $report->fresh()->adviser_reviewed);
+        $this->assertNull($report->fresh()->reviewed_date);
     }
 
-    public function test_bulk_complete_rejects_empty_selection_and_leaves_out_of_scope_reports_alone(): void
+    public function test_removed_review_shortcut_endpoints_cannot_change_report_state(): void
     {
-        [$adviserUser1, , , $ownReport] = $this->makeReport(Session::STATUS_COMPLETED);
-        [$adviserUser2, , , $otherReport] = $this->makeReport(Session::STATUS_COMPLETED);
-
-        $this->actingAs($adviserUser1)
-            ->post(route('adviser.evaluations.bulk-complete'), ['report_ids' => []])
-            ->assertSessionHasErrors('report_ids');
-
-        $this->actingAs($adviserUser1)
-            ->post(route('adviser.evaluations.bulk-complete'), ['report_ids' => [$ownReport->id, $otherReport->id]])
-            ->assertRedirect()
-            ->assertSessionHas('success');
-
-        $this->assertTrue((bool) $ownReport->fresh()->adviser_reviewed);
-        $this->assertFalse((bool) $otherReport->fresh()->adviser_reviewed);
+        [$user, , , $report] = $this->makeReport(Session::STATUS_COMPLETED);
+        $this->actingAs($user)
+            ->post('/adviser/evaluations/bulk-complete', ['report_ids'=>[$report->id]])->assertNotFound();
+        $this->post('/adviser/evaluations/'.$report->id.'/skip', ['review_note'=>'Old shortcut request'])
+            ->assertNotFound();
+        $this->assertFalse((bool) $report->fresh()->adviser_reviewed);
+        $this->assertNull($report->fresh()->reviewed_date);
+        $this->assertDatabaseMissing('audit_logs', ['action'=>'documentation_reviewed_in_bulk']);
+        $this->assertDatabaseMissing('audit_logs', ['action'=>'documentation_reviewed_without_new_score']);
+        $this->assertDatabaseCount('helper_competency_history', 0);
     }
 
-    public function test_skip_records_an_optional_completion_reason(): void
+    public function test_review_is_completed_only_after_a_valid_evaluation_is_submitted(): void
     {
-        [$adviserUser, , , $report] = $this->makeReport(Session::STATUS_COMPLETED);
-
-        $this->actingAs($adviserUser)
-            ->post(route('adviser.evaluations.skip', $report->id), [
-                'review_note' => 'Reviewed with the helper instead of scoring this session.',
-            ])
-            ->assertRedirect(route('adviser.evaluations'))
-            ->assertSessionHas('info');
-
-        $fresh = $report->fresh();
-        $this->assertTrue((bool) $fresh->adviser_reviewed);
-        $this->assertSame('Reviewed with the helper instead of scoring this session.', $fresh->adviser_review_note);
+        [$user, $helper, $session, $report] = $this->makeReport(Session::STATUS_COMPLETED);
+        $this->actingAs($user)->post(route('adviser.evaluate.store', $report->id), [])
+            ->assertSessionHasErrors('active_listening');
+        $this->assertFalse((bool) $report->fresh()->adviser_reviewed);
+        $this->post(route('adviser.evaluate.store', $report->id), $this->scores())
+            ->assertRedirect(route('adviser.evaluations'))->assertSessionHas('success');
+        $this->assertTrue((bool) $report->fresh()->adviser_reviewed);
+        $this->assertNotNull($report->fresh()->reviewed_date);
+        $this->assertSame(Session::STATUS_EVALUATED, $session->fresh()->session_status);
+        $this->assertDatabaseHas('helper_competency_history', ['report_id'=>$report->id,'helper_id'=>$helper->id]);
+        $this->assertDatabaseHas('adviser_feedback', ['report_id'=>$report->id,'adviser_id'=>$user->adviser->id]);
     }
 }
