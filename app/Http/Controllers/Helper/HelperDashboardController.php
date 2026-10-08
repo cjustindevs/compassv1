@@ -26,6 +26,17 @@ class HelperDashboardController extends Controller
                 ->with('helperProfileMissing', true);
         }
 
+        // A returning eligible Helper should wake the queue immediately, even
+        // when the scheduler or the Seeker's browser is not currently polling.
+        if (app(\App\Services\HelperEligibilityService::class)->allows($helper)) {
+            try {
+                app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
+                $helper = $helper->fresh();
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
         $helperId = $helper->id;
 
         // ── CACHED STATS ────────────────────────────────────────────────

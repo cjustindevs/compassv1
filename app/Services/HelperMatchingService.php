@@ -127,12 +127,22 @@ class HelperMatchingService
         // Reconcile helpers whose declared availability is ahead of their
         // operational status (e.g. just verified or just came on shift) so a
         // seeker refresh can match without a running scheduler.
-        app(HelperWorkflowMaintenance::class)->reconcileAllReadyHelpers();
+        $maintenance = app(HelperWorkflowMaintenance::class);
+        $maintenance->releaseUnavailableRecommendations();
+        $maintenance->reconcileAllReadyHelpers();
 
         QueueRequest::where('request_status', 'waiting')
             ->orderByRaw("CASE priority_level WHEN 'emergency' THEN 0 WHEN 'high' THEN 1 WHEN 'moderate' THEN 2 ELSE 3 END")
             ->orderBy('request_date')->orderBy('id')->get()
-            ->each(fn (QueueRequest $queue) => $this->processQueueRequest($queue));
+            ->each(function (QueueRequest $queue) {
+                try {
+                    $this->processQueueRequest($queue);
+                } catch (\Throwable $e) {
+                    // A failed transaction for one request must not stop all
+                    // other waiting Seekers from receiving an eligible Helper.
+                    report($e);
+                }
+            });
     }
 
     public function processQueueRequest(QueueRequest $queue, ?int $excludeHelperId = null): ?Session

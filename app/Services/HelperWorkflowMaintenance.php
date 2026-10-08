@@ -16,14 +16,7 @@ class HelperWorkflowMaintenance
     {
         $this->reconcileAllReadyHelpers();
         $this->reconcileStaleAvailability();
-        Session::where('session_status', Session::STATUS_HELPER_ASSIGNED)->whereNull('helper_accepted_at')
-            ->eachById(function ($session) {
-                if ($session->pre_session_brief_expires_at?->isPast()) {
-                    $this->releaseRecommendation($session, 'expired');
-                } elseif ($session->helper && ! app(HelperEligibilityService::class)->allows($session->helper, $session)) {
-                    $this->releaseRecommendation($session, 'eligibility_changed');
-                }
-            });
+        $this->releaseUnavailableRecommendations();
         ReadinessCheck::where('is_active', true)->whereNull('expiry_notified_at')->where('valid_until', '<=', now())->eachById(function ($check) {
             DB::transaction(function () use ($check) {
                 $helper = Helper::lockForUpdate()->findOrFail($check->helper_id);
@@ -51,6 +44,19 @@ class HelperWorkflowMaintenance
                     $this->notify($session->helper->user_account_id, 'Session documentation is overdue', 'Complete the summary and reflection for session #'.$session->id.'.', '/helper/session/'.$session->id.'/notes');
                     SupportAudit::record('documentation_reminder_sent', $session);
                 }, 3);
+            });
+    }
+
+    /** Release expired or ineligible pending offers before retrying the queue. */
+    public function releaseUnavailableRecommendations(): void
+    {
+        Session::where('session_status', Session::STATUS_HELPER_ASSIGNED)->whereNull('helper_accepted_at')
+            ->eachById(function ($session) {
+                if ($session->pre_session_brief_expires_at?->isPast()) {
+                    $this->releaseRecommendation($session, 'expired');
+                } elseif ($session->helper && ! app(HelperEligibilityService::class)->allows($session->helper, $session)) {
+                    $this->releaseRecommendation($session, 'eligibility_changed');
+                }
             });
     }
 
