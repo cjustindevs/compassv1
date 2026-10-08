@@ -16,20 +16,9 @@
         </div>
     @endif
 
-    <x-dashboard-overview :overview="$overview" />
+    <x-dashboard-overview :overview="$overview" :show-recent="false" />
 
-    <section class="stats-grid" aria-label="Platform statistics">
-        @foreach ($primaryStats as $stat)
-            <x-admin.stat-card
-                :label="$stat['label']"
-                :value="$stat['value']"
-                :detail="$stat['detail']"
-                :icon="$stat['icon']"
-                :tone="$stat['tone']"
-                :trend="$stat['trend'] ?? null"
-            />
-        @endforeach
-    </section>
+    <div class="co-task-links"><span><strong>{{ $primaryStats[2]['value'] }}</strong> Active sessions</span><a href="{{ route('admin.users') }}"><strong>{{ $primaryStats[3]['value'] }}</strong> Unverified accounts</a></div>
 
     <section class="status-grid" aria-label="System status">
         @foreach ($systemStatuses as $status)

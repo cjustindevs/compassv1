@@ -245,10 +245,10 @@
             </div>
         @endif
 
-        <x-dashboard-overview :overview="$overview" />
+        <x-dashboard-overview :overview="$overview" :show-recent="false" />
 
         <!-- Stats -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="stat-card">
                 <span class="stat-label">Active Sessions</span>
                 <div class="stat-number active" id="statSessions">{{ $stats['active_sessions'] }}</div>
@@ -259,11 +259,7 @@
                 <div class="stat-number queue" id="statQueue">{{ $stats['queue_waiting'] }}</div>
                 <span class="text-xs text-gray-400">{{ $stats['queue_assigned'] }} assigned · Avg wait: <span id="avgWait">{{ $avgWait }}</span></span>
             </div>
-            <div class="stat-card">
-                <span class="stat-label">Emergency</span>
-                <div class="stat-number emergency" id="statEmergency">{{ $stats['emergency_count'] }}</div>
-                <span class="text-xs text-gray-400">Open emergencies</span>
-            </div>
+
             <div class="stat-card">
                 <span class="stat-label">Helpers</span>
                 <div class="stat-number helper" id="statHelpers">{{ $stats['available_helpers'] }}</div>

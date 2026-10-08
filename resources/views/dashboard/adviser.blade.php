@@ -9,10 +9,13 @@
 @section('content')
 <div class="adviser-page-content">
 <header class="mb-5"><h1 class="text-2xl font-bold text-gray-800">Adviser dashboard</h1><p class="text-sm text-gray-500 mt-1">Your supervised Helpers and authorized review tasks.</p></header>
-<x-dashboard-overview :overview="$overview" />
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-@foreach(['Assigned Helpers'=>$totalHelpers,'Documentation awaiting review'=>$pendingEvaluationCount,'Referrals awaiting review'=>$pendingReferralCount,'Emergency reviews'=>$emergencyReviewCount] as $label=>$value)<div class="stat-card"><p class="stat-label">{{ $label }}</p><p class="stat-number">{{ $value }}</p></div>@endforeach
+<div class="co-task-links">
+<a href="{{ route('adviser.helpers') }}"><strong>{{ $totalHelpers }}</strong> Assigned Helpers</a>
+<a href="{{ route('adviser.evaluations') }}"><strong>{{ $pendingEvaluationCount }}</strong> Documentation awaiting review</a>
+<a href="{{ route('adviser.referrals') }}"><strong>{{ $pendingReferralCount }}</strong> Referrals awaiting review</a>
+<a href="{{ route('adviser.emergencies') }}"><strong>{{ $emergencyReviewCount }}</strong> Emergency reviews</a>
 </div>
+<x-dashboard-overview :overview="$overview" :show-recent="false" />
 <details class="card mb-5"><summary class="font-semibold cursor-pointer mb-4">Performance in the last 30 days</summary><x-adviser-metrics :metrics="$reportData['metrics']" :definitions="$reportData['definitions']" /><p class="text-sm text-gray-500 mt-4">Asia/Manila activity cohort. <a class="text-green-700 underline" href="{{ route('adviser.reports') }}">Metric definitions and filtered reports</a></p></details>
 <p class="text-sm mb-5"><a class="text-green-700 underline" href="{{ route('adviser.training') }}">{{ $trainingFollowUpCount }} training completions awaiting review</a></p>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

@@ -111,7 +111,11 @@ class DashboardOverviewTest extends TestCase
     public function test_dashboards_render_with_real_overviews(): void
     {
         $helper = $this->helper();
-        $this->actingAs($helper->adviser->user)->get(route('adviser.dashboard'))->assertOk()->assertSee('At a glance')->assertSee('No data');
+        $this->caseFor($helper, 'completed');
+        $this->actingAs($helper->adviser->user)->get(route('adviser.dashboard'))
+            ->assertOk()->assertSee('Cases by status')->assertSee('No data')
+            ->assertSee('<polyline', false)->assertSee('co-donut-total')->assertSee('View chart data and definition')
+            ->assertSee('css/dashboard-overview.css')->assertDontSee('At a glance');
         $moderator = User::factory()->create(['role' => 'moderator', 'is_active' => true]);
         \App\Models\Moderator::create(['user_account_id' => $moderator->id, 'first_name' => 'Test', 'last_name' => 'Moderator', 'email' => $moderator->email]);
         $this->actingAs($moderator)->get(route('moderator.dashboard'))->assertOk()->assertSee('Emergency trend');
