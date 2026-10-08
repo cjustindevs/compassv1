@@ -195,6 +195,9 @@
             if (response.status === 419) throw new Error('Your session expired or cookies are blocked. Refresh this page before sending again.');
             if (!response.ok) throw new Error(Object.values(result.errors || {}).flat()[0] || result.message || 'Please try again.');
             output.textContent = result.message || 'New alias generated.';
+            if (output.id === 'verification-status') {
+                output.classList.toggle('demo-code-visible', result.demo_mode === true);
+            }
             return result;
         } catch (error) {
             output.textContent = error.message || 'Unable to connect. Please try again.';
@@ -278,5 +281,11 @@
     .agreement-check input { margin-top: 2px; width: 18px; height: 18px; flex-shrink: 0; accent-color: #15803d; }
     .agreement-check input:disabled { opacity: .55; }
     @media (max-width: 639px) { .agreement-scroll { max-height: 340px; padding: 14px; } }
+</style>
+@endpush
+
+@push('styles')
+<style>
+#verification-status.demo-code-visible{padding:12px;border:1px solid #bde3cb;border-radius:10px;background:#fff;color:#166534;font-weight:600;line-height:1.6;overflow-wrap:anywhere}
 </style>
 @endpush

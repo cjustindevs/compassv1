@@ -138,8 +138,9 @@ services:
       - key: RUN_SCHEDULER
         value: "true"
       # Demo account seeding does not provide email verification.
-      # A delivering mail transport must be configured; OTPs are never
-      # displayed in the browser or logged as a delivery substitute.
+      # For an explicitly configured demonstration, set OTP_DEMO_MODE=true
+      # in the Dashboard to display the OTP without requiring email delivery.
+      # Otherwise a delivering mail transport must be configured.
       - key: RUN_SEED_DEMO
         value: "true"
       # Testing mode: DEFAULT true. Skips duty-hour gatekeeping (verification,
