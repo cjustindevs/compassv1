@@ -116,31 +116,21 @@ services:
       # every rate-limited AJAX call (OTP, alias shuffle).
       - key: CACHE_STORE
         value: file
-      # Render Free blocks SMTP ports 25/465/587. For Free, use an HTTPS
-      # email API with its required driver installed. Gmail SMTP requires
-      # a hosting plan that allows SMTP. Set the mailer in the Dashboard.
-      - key: MAIL_MAILER
+      # OTP uses Resend HTTPS, not SMTP. Supply the key securely in Render.
+      - key: OTP_DEMO_MODE
+        value: "false"
+      - key: OTP_DELIVERY_DRIVER
+        value: resend
+      - key: RESEND_API_KEY
         sync: false
-      - key: MAIL_HOST
-        value: smtp.gmail.com
-      - key: MAIL_PORT
-        value: "587"
-      - key: MAIL_USERNAME
-        value: projectdialafriendorganization@gmail.com
-      - key: MAIL_ENCRYPTION
-        value: tls
       - key: MAIL_FROM_ADDRESS
-        value: projectdialafriendorganization@gmail.com
-      # 16-char Gmail App Password — set in the Dashboard (NEVER in Git).
-      # Without it Gmail rejects the login and OTP sending returns 503.
-      - key: MAIL_PASSWORD
-        sync: false
+        value: otp@projectcompass.help
+      - key: MAIL_FROM_NAME
+        value: COMPASS Support
       - key: RUN_SCHEDULER
         value: "true"
       # Demo account seeding does not provide email verification.
-      # For an explicitly configured demonstration, set OTP_DEMO_MODE=true
-      # in the Dashboard to display the OTP without requiring email delivery.
-      # Otherwise a delivering mail transport must be configured.
+      # OTP demos are limited to local/testing; production always sends mail.
       - key: RUN_SEED_DEMO
         value: "true"
       # Testing mode: DEFAULT true. Skips duty-hour gatekeeping (verification,

@@ -35,7 +35,7 @@
 <div class="registration-columns">
 <section class="verification-panel space-y-4">
     <h2 class="text-base font-semibold text-gray-800">2. Email verification</h2>
-    @if(config('otp.demo_mode'))<p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3">Demo Mode: your generated code will be displayed here. No email delivery is required.</p>@endif
+    @if(app(\App\Services\OtpMailConfiguration::class)->demoEnabled())<p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3">Demo Mode: your generated code will be displayed here. No email delivery is required.</p>@endif
     <p class="text-sm text-gray-600">Verify your Gmail or other email address before creating your account.</p>
     <button type="button" id="open-verification" class="registration-action registration-action-solid">Verify email address</button>
     <p id="email-summary" class="text-sm text-green-700" role="status"></p>
@@ -221,7 +221,7 @@
     document.getElementById('send-code').addEventListener('click', async function () {
         const email = document.getElementById('verification-email');
         if (!email.value || !email.reportValidity()) { email.focus(); return; }
-        status.textContent = 'Sending your code. Please wait...';
+        status.textContent = 'Sending verification code...';
         const result = await post(@json(route('registration.otp.send', [], false)), {email: email.value.trim()}, this, status);
         if (result) { verifiedUntil = 0; updateSummary(); startCooldown(result.retry_after || 60); }
     });

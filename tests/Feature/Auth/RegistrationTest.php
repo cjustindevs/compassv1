@@ -8,6 +8,7 @@ use App\Services\ConsentService;
 use App\Services\OtpMailConfiguration;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Symfony\Component\Mailer\Exception\TransportException;
@@ -20,7 +21,7 @@ class RegistrationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['otp.demo_mode' => false]);
+        config(['otp.demo_mode' => false, 'otp.delivery_driver' => 'laravel', 'services.resend.key' => null]);
     }
 
     public function test_demo_otp_is_displayed_without_email_and_still_requires_verification(): void
@@ -34,6 +35,39 @@ class RegistrationTest extends TestCase
         $this->assertNotSame($matches[1], session('registration_otp.hash'));
         $this->postJson(route('registration.otp.verify'), ['otp' => $matches[1]])->assertOk();
         $this->postJson(route('registration.otp.verify'), ['otp' => $matches[1]])->assertStatus(422);
+    }
+
+    public function test_production_ignores_demo_flag_and_sends_real_mail_without_disclosing_code(): void
+    {
+        $this->app->instance('env', 'production');
+        config(['otp.demo_mode' => true, 'mail.default' => 'smtp',
+            'mail.mailers.smtp.host' => 'smtp.resend.com', 'mail.mailers.smtp.port' => 587,
+            'mail.from.address' => 'otp@projectcompass.help', 'mail.from.name' => 'COMPASS Support']);
+        $this->withSession(['_token' => 'production-otp'])->withHeader('X-CSRF-TOKEN', 'production-otp');
+        config(['services.resend.key' => 'test-only-key']);
+        Http::fake(['https://api.resend.com/emails' => Http::response(['id' => 'test-message-id'], 200)]);
+        Mail::shouldReceive('send')->never();
+        $response = $this->postJson(route('registration.otp.send'), ['email' => 'real-path@example.test'])
+            ->assertOk()->assertJsonMissingPath('demo_mode')->assertHeader('Cache-Control', 'no-store, private');
+        $html = Http::recorded()[0][0]['html'];
+        preg_match('/class="code">\s*([0-9]{6})\s*</', $html, $matches);
+        $code = $matches[1];
+        $this->assertStringNotContainsString($code, $response->getContent());
+        $this->assertTrue(Hash::check($code, session('registration_otp.hash')));
+        $this->get(route('register'))->assertOk()->assertDontSee('Demo Mode:');
+    }
+
+    public function test_failed_resend_preserves_previous_code_and_releases_cooldown(): void
+    {
+        config(['mail.default' => 'smtp']);
+        $state = ['hash' => Hash::make('234567'), 'expires' => now()->addMinutes(5)->timestamp, 'attempts' => 1];
+        Mail::shouldReceive('send')->twice()->andThrow(new \RuntimeException('private transport failure'));
+        $this->withSession(['registration_otp' => $state]);
+        for ($i = 0; $i < 2; $i++) {
+            $this->postJson(route('registration.otp.send'), ['email' => 'retry-failure@example.test'])
+                ->assertStatus(503)->assertJsonMissingPath('demo_mode')->assertDontSee('private transport failure');
+            $this->assertSame($state, session('registration_otp'));
+        }
     }
 
     public function test_nickname_reminder_and_login_spelling_are_consistent(): void
@@ -221,11 +255,11 @@ class RegistrationTest extends TestCase
         $this->assertNull(session('registration_otp'));
     }
 
-    public function test_hosted_log_mailer_never_returns_a_code_or_claims_delivery(): void
+    public function test_production_missing_api_key_never_returns_a_code_or_claims_delivery(): void
     {
         $this->app->instance('env', 'production');
         $this->withSession(['_token' => 'hosted-csrf-test'])->withHeader('X-CSRF-TOKEN', 'hosted-csrf-test');
-        config(['mail.default' => 'log']);
+        config(['mail.default' => 'log', 'otp.demo_mode' => true]);
         Mail::shouldReceive('send')->never();
         $this->postJson(route('registration.otp.send'), ['email' => 'hosted@example.test'])
             ->assertStatus(503)->assertJsonMissingPath('debug_otp');

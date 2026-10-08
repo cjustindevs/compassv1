@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\OtpMailConfiguration;
+use App\Services\ResendOtpMail;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 use Symfony\Component\Mailer\Transport\Smtp\SmtpTransport;
@@ -15,11 +16,28 @@ class DiagnoseOtpMail extends Command
 
     public function handle(): int
     {
+        if (app(OtpMailConfiguration::class)->usesResendApi()) {
+            $ready = app(ResendOtpMail::class)->configured();
+            $this->table(['Check', 'Effective value'], [
+                ['Environment', app()->environment()],
+                ['Config cached', app()->configurationIsCached() ? 'yes' : 'no'],
+                ['OTP delivery', 'Resend HTTPS API'],
+                ['OTP demo enabled', app(OtpMailConfiguration::class)->demoEnabled() ? 'yes (local/testing only)' : 'no'],
+                ['Resend API key configured', filled(config('services.resend.key')) ? 'yes' : 'no'],
+                ['Key and sender configured', $ready ? 'yes (delivery not tested)' : 'NO'],
+            ]);
+            $this->info('No email sent. Verify delivery using registration and the Resend dashboard. SMTP is not used for OTP.');
+            if ($this->option('connect')) {
+                $this->warn('--connect is SMTP-only and does not probe the Resend API or send a test email.');
+            }
+            return $ready ? self::SUCCESS : self::FAILURE;
+        }
         $name = (string) config('mail.default');
         $config = config('mail.mailers.'.$name, []);
         $ready = app(OtpMailConfiguration::class)->canDeliver($name);
         $this->table(['Check', 'Effective value'], [
             ['Environment', app()->environment()], ['Config cached', app()->configurationIsCached() ? 'yes' : 'no'],
+            ['OTP demo enabled', app(OtpMailConfiguration::class)->demoEnabled() ? 'yes (local/testing only)' : 'no'],
             ['Application URL', preg_replace('/[?#].*/', '', (string) config('app.url'))],
             ['Mailer', $name], ['Transport', $config['transport'] ?? 'missing'], ['Delivery-capable configuration', $ready ? 'yes (delivery not yet tested)' : 'NO'],
             ['SMTP port', (string) ($config['port'] ?? 'not applicable')], ['SMTP scheme', (string) ($config['scheme'] ?? 'automatic')],

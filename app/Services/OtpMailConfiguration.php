@@ -4,6 +4,16 @@ namespace App\Services;
 
 class OtpMailConfiguration
 {
+    public function demoEnabled(): bool
+    {
+        return app()->environment(['local', 'testing']) && (bool) config('otp.demo_mode', false);
+    }
+
+    public function usesResendApi(): bool
+    {
+        return ! app()->environment(['local', 'testing']) || config('otp.delivery_driver') !== 'laravel';
+    }
+
     public function canDeliver(string $name, array $seen = []): bool
     {
         if ($name === '' || in_array($name, $seen, true)) {

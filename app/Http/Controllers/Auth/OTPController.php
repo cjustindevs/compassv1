@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Services\OtpMailConfiguration;
+use App\Services\ResendOtpMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -24,16 +25,19 @@ class OTPController extends Controller
         try {
             RateLimiter::hit($key, 60);
             $otp = (string) random_int(100000, 999999);
-            $demo = (bool) config('otp.demo_mode', false);
+            $demo = app(OtpMailConfiguration::class)->demoEnabled();
+            $resendApi = app(OtpMailConfiguration::class)->usesResendApi();
             $mailer = (string) config('mail.default');
-            if (! $demo && ! app()->environment('testing') && ! app(OtpMailConfiguration::class)->canDeliver($mailer)) {
+            if (! $demo && ! $resendApi && ! app()->environment('testing') && ! app(OtpMailConfiguration::class)->canDeliver($mailer)) {
                 RateLimiter::clear($key);
                 Log::warning('Registration OTP mail configuration invalid', ['reason' => 'non_delivering_mailer', 'mailer' => $mailer]);
 
                 return response()->json(['message' => 'Email delivery is not configured on this server. Please contact the administrator.'], 503);
             }
             try {
-                if (! $demo) retry(2, function () use ($otp, $email) {
+                if (! $demo && $resendApi) {
+                    app(ResendOtpMail::class)->send($email, $otp);
+                } elseif (! $demo) retry(2, function () use ($otp, $email) {
                     Mail::send('emails.otp', ['otp' => $otp], function ($message) use ($email) {
                         $message->to($email)->subject('COMPASS - Email Verification Code');
                     });
@@ -41,7 +45,7 @@ class OTPController extends Controller
                     && $this->failureReason($e) === 'connection');
             } catch (\Throwable $exception) {
                 RateLimiter::clear($key);
-                Log::warning('Registration OTP mail transport failed', ['exception_type' => get_class($exception), 'reason' => $this->failureReason($exception), 'mailer' => $mailer]);
+                Log::warning('Registration OTP mail transport failed', ['exception_type' => get_class($exception), 'reason' => $this->failureReason($exception), 'mailer' => $resendApi ? 'resend_https' : $mailer]);
                 $message = match ($this->failureReason($exception)) {
                     'authentication' => 'The email provider rejected the server login. The administrator needs to update the mail credentials before OTP can be sent.',
                     'certificate' => 'The server could not establish a secure email connection. Please contact the administrator.',
