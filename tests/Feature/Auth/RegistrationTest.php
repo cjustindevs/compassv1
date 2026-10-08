@@ -38,8 +38,8 @@ class RegistrationTest extends TestCase
 
     public function test_nickname_reminder_and_login_spelling_are_consistent(): void
     {
-        $this->get(route('seeker.register'))->assertOk()->assertSee('Remember your nickname')->assertSee('Nickname@compasslocal');
-        $this->get(route('login'))->assertOk()->assertSee('placeholder="Nickname@compasslocal"', false);
+        $this->get(route('seeker.register'))->assertOk()->assertSee('Remember your nickname')->assertSee('Nickname@compass.local');
+        $this->get(route('login'))->assertOk()->assertSee('placeholder="Nickname@compass.local"', false);
         $user = User::factory()->create(['role' => 'seeker', 'email' => 'demoseeker@compass.local', 'password' => Hash::make('DemoPassword!1'), 'is_active' => true]);
         $this->post(route('login'), ['email' => 'demoseeker@compasslocal', 'password' => 'DemoPassword!1']);
         $this->assertAuthenticatedAs($user);

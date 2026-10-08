@@ -20,7 +20,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1.5">Email or alias</label>
                         <input type="text" name="email" value="{{ old('email') }}"
                                class="input-focus w-full px-4 py-3 rounded-xl border border-gray-200 outline-none transition-all"
-                               placeholder="Nickname@compasslocal" required autofocus>
+                               placeholder="Nickname@compass.local" required autofocus>
                     </div>
 
                     <div class="mb-4">
