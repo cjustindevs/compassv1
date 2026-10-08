@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -26,10 +27,34 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
-        $request->session()->regenerate();
-
-        // Get the authenticated user
         $user = $request->user();
+
+        $staleBefore = now()->subMinutes(5)->getTimestamp();
+
+        $currentSessionId = $request->session()->getId();
+
+        DB::table('sessions')
+            ->where('user_id', $user->id)
+            ->where('id', '!=', $currentSessionId)
+            ->where('last_activity', '<', $staleBefore)
+            ->delete();
+
+        $liveOtherSession = DB::table('sessions')
+            ->where('user_id', $user->id)
+            ->where('id', '!=', $currentSessionId)
+            ->exists();
+
+        if ($liveOtherSession) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()->withErrors([
+                'email' => 'This account is already signed in on another device. Sign out there first, or try again in a few minutes.',
+            ]);
+        }
+
+        $request->session()->regenerate();
 
         // Role-based redirection
         $redirectTo = match ($user->role) {

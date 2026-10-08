@@ -50,21 +50,23 @@ document.addEventListener('DOMContentLoaded',()=>{
  if(helper)await fetch(@json(route('reconnections.heartbeat',$session)),{method:'POST',headers});
  const response=await fetch(@json(route('reconnections.state',$session)),{headers:{Accept:'application/json'}});if(!response.ok)return;const data=await response.json();
  if(data.transferred){location.assign(helper?'/helper/cases':'/session/chat');return;}
+ const active=Boolean(data.active);
  const interrupted=['interrupted','waiting','requested','offered'].includes(data.status);
- const recovered=data.status==='reconnected';
- box.hidden=!interrupted&&!recovered;
- const text=recovered?'Your Helper is connected again. You can continue your conversation.':data.status==='offered'?'A replacement Helper is reviewing the offer. We will open the new chat when they accept.':data.status==='requested'?'Your Moderator has been notified that you would like another Helper. Please wait while they review availability.':data.status==='waiting'?'You chose to keep waiting. We will let you know when your Helper reconnects.':data.can_choose?'Your Helper has not reconnected yet. You can keep waiting or ask the Moderator to find another available Helper.':'We have lost contact with your Helper and notified the Moderator. Please allow two minutes for reconnection before choosing another Helper.';
+ const ended=!active&&(interrupted||data.status==='reconnected');
+ const recovered=data.status==='reconnected'&&active;
+ box.hidden=!interrupted&&!recovered&&!ended;
+ const text=ended?'This conversation has ended. If you still need support, you can start a new request.':recovered?'Your Helper is connected again. You can continue your conversation.':data.status==='offered'?'A replacement Helper is reviewing the offer. We will open the new chat when they accept.':data.status==='requested'?'Your Moderator has been notified that you would like another Helper. Please wait while they review availability.':data.status==='waiting'?'You chose to keep waiting. We will let you know when your Helper reconnects.':data.can_choose?'Your Helper has not reconnected yet. You can keep waiting or ask the Moderator to find another available Helper.':'We have lost contact with your Helper and notified the Moderator. Please allow two minutes for reconnection before choosing another Helper.';
  box.querySelector('[data-connection-text]').textContent=text;
  if(dialog){
  dialog.querySelector('[data-connection-text]').textContent=text;
- dialog.querySelector('h2').textContent=recovered?'Your Helper is back':data.status==='offered'?'Replacement offer sent':data.status==='requested'?'Replacement requested':'Your Helper is reconnecting';
+ dialog.querySelector('h2').textContent=ended?'This conversation has ended':recovered?'Your Helper is back':data.status==='offered'?'Replacement offer sent':data.status==='requested'?'Replacement requested':'Your Helper is reconnecting';
  dialog.querySelector('[data-connection-actions]').hidden=!interrupted||!data.can_choose;
  dialog.querySelector('[data-choice=replace]').hidden=['requested','offered'].includes(data.status);
  dialog.querySelector('[data-choice=wait]').textContent=['requested','offered'].includes(data.status)?'Cancel replacement and keep waiting':'Keep waiting';
- const state=String(data.status)+':'+Boolean(data.can_choose);
+ const state=String(data.status)+':'+Boolean(data.can_choose)+':'+Boolean(active);
  // Open once per meaningful change, allowing dismissal without repeated polling popups.
- if(state!==lastState && (interrupted || (recovered && lastState!==null)))openDialog();
- if(!interrupted&&!recovered&&dialog.open)dialog.close();
+ if(state!==lastState && !ended && (interrupted || (recovered && lastState!==null)))openDialog();
+ if((ended||!interrupted)&&!recovered&&dialog.open)dialog.close();
  lastState=state;
  }
  }catch(e){}finally{polling=false;}}

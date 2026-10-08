@@ -14,6 +14,11 @@ use Illuminate\Validation\ValidationException;
 
 class SessionReconnectionService
 {
+    // Helpers post a heartbeat every 15 seconds, but background tabs throttle
+    // timers to about once a minute, so only prolonged silence is treated as a
+    // real disconnection instead of flagging an alive helper on every tick.
+    public const HEARTBEAT_STALE_SECONDS = 120;
+
     public function current(Session $session)
     {
         return SessionReconnection::where('session_id', $session->id)->latest('id')->first();
@@ -73,10 +78,10 @@ class SessionReconnectionService
                 }
             });
         });
-        Session::where('session_status', 'active')->where('session_type', 'chat')->whereNotNull('helper_heartbeat_at')->where('helper_heartbeat_at', '<=', now()->subSeconds(60))->eachById(function ($row) {
+        Session::where('session_status', 'active')->where('session_type', 'chat')->whereNotNull('helper_heartbeat_at')->where('helper_heartbeat_at', '<=', now()->subSeconds(self::HEARTBEAT_STALE_SECONDS))->eachById(function ($row) {
             DB::transaction(function () use ($row) {
                 $session = Session::lockForUpdate()->findOrFail($row->id);
-                if (! $session->isActive() || ! $session->helper_heartbeat_at || Carbon::parse($session->helper_heartbeat_at)->gt(now()->subSeconds(60))) {
+                if (! $session->isActive() || ! $session->helper_heartbeat_at || Carbon::parse($session->helper_heartbeat_at)->gt(now()->subSeconds(self::HEARTBEAT_STALE_SECONDS))) {
                     return;
                 }if (app(SessionDurationService::class)->expire($session)) {
                     return;

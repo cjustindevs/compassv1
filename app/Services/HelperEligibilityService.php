@@ -66,6 +66,26 @@ class HelperEligibilityService
     }
 
     /**
+     * Count helpers whose stored status claims Available but who are
+     * genuinely assignable right now. The stored status alone can lag behind
+     * readiness expiry, so operational counts run it through the same
+     * eligibility rules the matching engine uses.
+     *
+     * @param  iterable<Helper>  $helpers
+     */
+    public function countAvailable(iterable $helpers): int
+    {
+        $count = 0;
+        foreach ($helpers as $helper) {
+            if ($helper->status === 'available' && $this->allows($helper)) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
+    /**
      * Single source of truth for how helpers are presented to moderators,
      * advisers, helpers themselves, and the matching engine.
      *

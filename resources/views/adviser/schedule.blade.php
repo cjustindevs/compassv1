@@ -13,7 +13,7 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-gray-800">Schedule Management</h1>
-                <p class="text-sm text-gray-500">Plan helper duty dates and monitor readiness-based attendance.</p>
+                <p class="text-sm text-gray-500">Plan helper duty dates and monitor helper readiness on each duty day.</p>
             </div>
             <form method="GET" action="{{ route('adviser.schedule') }}" class="flex gap-2">
                 <input type="date" name="date" value="{{ $date->toDateString() }}" class="rounded-lg border-gray-300 text-sm">
@@ -38,7 +38,7 @@
                     <select name="helper_id" required class="w-full rounded-lg border-gray-300 text-sm">
                         <option value="">Select helper</option>
                         @foreach($helpers as $helper)
-                            <option value="{{ $helper->id }}" @selected((string) old('helper_id') === (string) $helper->id)>{{ $helper->full_name }} · {{ ucfirst($helper->status) }}</option>
+                            <option value="{{ $helper->id }}" @selected((string) old('helper_id') === (string) $helper->id)>{{ $helper->full_name }} · {{ app(\App\Services\HelperEligibilityService::class)->status($helper)['label'] }}</option>
                         @endforeach
                     </select>
                     <input type="date" name="date" value="{{ old('date', $date->toDateString()) }}" required class="w-full rounded-lg border-gray-300 text-sm">
@@ -86,7 +86,7 @@
                                         @endif
                                     </td>
                                     <td class="py-3">
-                                        <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $data['availability'] === 'available' ? 'bg-green-50 text-green-700' : ($data['availability'] === 'break' ? 'bg-yellow-50 text-yellow-700' : 'bg-red-50 text-red-700') }}">{{ ucfirst($data['availability']) }}</span>
+                                        <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $data['can_accept_sessions'] ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600' }}">{{ $data['can_accept_sessions'] ? 'Available' : $data['status_label'] }}</span>
                                         <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $data['is_ready'] ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700' }} ml-1">{{ $data['is_ready'] ? 'Ready' : 'Not Ready' }}</span>
                                         <div class="text-xs text-gray-500 mt-1">
                                             {{ $data['current_sessions'] }}/{{ $data['max_sessions'] }} sessions · {{ $data['status_label'] }}
@@ -101,30 +101,6 @@
                 </div>
             </section>
         </div>
-
-        <section class="mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-            <h2 class="font-semibold text-gray-800 mb-4">Attendance and Duty Hours</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="text-left text-gray-500 border-b">
-                        <tr><th class="py-2">Helper</th><th class="py-2">Availability</th><th class="py-2">Readiness</th><th class="py-2">Shift</th><th class="py-2">Duty Hours</th></tr>
-                    </thead>
-                    <tbody>
-                        @forelse($attendance as $row)
-                            <tr class="border-b last:border-0">
-                                <td class="py-3 font-medium text-gray-800">{{ $row['helper'] }}</td>
-                                <td class="py-3">{{ ucfirst($row['status']) }}</td>
-                                <td class="py-3">{{ $row['result'] }}</td>
-                                <td class="py-3">{{ $row['shift_start'] ?? '—' }} - {{ $row['shift_end'] ?? '—' }}</td>
-                                <td class="py-3">{{ $row['duty_hours'] !== null ? $row['duty_hours'] . 'h' : '—' }}</td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="5" class="py-6 text-center text-gray-400">No readiness attendance records for this date.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
     </main>
 
     <script>

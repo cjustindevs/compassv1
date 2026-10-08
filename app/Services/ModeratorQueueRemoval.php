@@ -38,7 +38,7 @@ class ModeratorQueueRemoval
             }
             if ($helper) {
                 $helper->syncSessionCounters();
-                if (!$helper->activeSessions()->exists() && $helper->status === 'busy') $helper->update(['status' => 'available']);
+                if (!$helper->activeSessions()->exists() && $helper->status === 'busy') app(HelperWorkflowMaintenance::class)->restoreOperationalStatus($helper);
             }
             foreach (array_filter([$queue->seeker?->user_account_id, $helper?->user_account_id]) as $userId) {
                 Notification::create([

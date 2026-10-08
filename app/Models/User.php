@@ -47,6 +47,7 @@ class User extends Authenticatable
         'font_size',
         'high_contrast',
         'reduced_motion',
+        'auto_archive_read_days',
     ];
 
     /**
@@ -78,6 +79,7 @@ class User extends Authenticatable
             'marketing_emails' => 'boolean',
             'high_contrast' => 'boolean',
             'reduced_motion' => 'boolean',
+            'auto_archive_read_days' => 'integer',
         ];
     }
 

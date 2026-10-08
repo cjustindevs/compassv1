@@ -236,7 +236,7 @@ class HelperMatchingService
             $helper->syncSessionCounters();
             if ($oldHelperId && $oldHelperId !== $helper->id && ($old = Helper::find($oldHelperId))) {
                 $old->syncSessionCounters();
-                if ($old->status === 'busy' && !$old->activeSessions()->exists()) $old->update(['status' => 'available']);
+                if ($old->status === 'busy' && !$old->activeSessions()->exists()) app(HelperWorkflowMaintenance::class)->restoreOperationalStatus($old);
             }
             $this->logAssignment($queue, $helper, $method);
             SupportAudit::record('match_recommended',$session);

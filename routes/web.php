@@ -374,6 +374,7 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
     Route::get('/evaluate/{id}', [AdviserEvaluationController::class, 'show'])->name('evaluate');
     Route::post('/evaluate/{id}', [AdviserEvaluationController::class, 'store'])->name('evaluate.store');
     Route::post('/evaluations/{id}/skip', [AdviserEvaluationController::class, 'skip'])->name('evaluations.skip');
+    Route::post('/evaluations/bulk-complete', [AdviserEvaluationController::class, 'bulkComplete'])->name('evaluations.bulk-complete');
 
     // Referral Queue
     Route::get('/referrals', [AdviserReferralController::class, 'index'])->name('referrals');
@@ -689,3 +690,5 @@ Route::post('/emergency-notice/dismiss', [\App\Http\Controllers\EmergencyNoticeC
 Route::post('/helper/duty', [\App\Http\Controllers\Helper\HelperCalendarController::class,'declareDuty'])->middleware('auth')->name('helper.duty.declare');
 
 Route::get('/notification-archive', [\App\Http\Controllers\NotificationArchiveController::class,'index'])->middleware('auth')->name('notifications.archive');
+Route::post('/notification-archive/{id}/restore', [\App\Http\Controllers\NotificationArchiveController::class,'restore'])->middleware('auth')->name('notifications.restore');
+Route::post('/notification-archive/auto-archive', [\App\Http\Controllers\NotificationArchiveController::class,'updateAutoArchive'])->middleware('auth')->name('notifications.auto-archive');

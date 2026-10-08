@@ -258,4 +258,63 @@ class AdviserEvaluationQueueTest extends TestCase
         $this->assertContains($closed->id, $visible);
         $this->assertNotContains($declined->id, $visible);
     }
+
+    public function test_bulk_complete_marks_only_eligible_concluded_reports(): void
+    {
+        [$adviserUser, $helper, , $eligible] = $this->makeReport(Session::STATUS_COMPLETED);
+        [, , , $secondEligible] = $this->makeReport(Session::STATUS_EVALUATED, helper: $helper, adviserUser: $adviserUser);
+        // Running session must be left alone even when passed in.
+        [, , , $running] = $this->makeReport(Session::STATUS_ACTIVE, helper: $helper, adviserUser: $adviserUser);
+        // Undocumented report cannot be bulk-completed either.
+        [, , , $undocumented] = $this->makeReport(Session::STATUS_COMPLETED, false, $helper, $adviserUser);
+
+        $this->actingAs($adviserUser)
+            ->post(route('adviser.evaluations.bulk-complete'), [
+                'report_ids' => [$eligible->id, $secondEligible->id, $running->id, $undocumented->id],
+                'review_note' => 'Documentation reviewed; no new competency score recorded.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertTrue((bool) $eligible->fresh()->adviser_reviewed);
+        $this->assertTrue((bool) $secondEligible->fresh()->adviser_reviewed);
+        $this->assertSame('Documentation reviewed; no new competency score recorded.', $eligible->fresh()->adviser_review_note);
+        $this->assertFalse((bool) $running->fresh()->adviser_reviewed);
+        $this->assertFalse((bool) $undocumented->fresh()->adviser_reviewed);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'documentation_reviewed_in_bulk']);
+    }
+
+    public function test_bulk_complete_rejects_empty_selection_and_leaves_out_of_scope_reports_alone(): void
+    {
+        [$adviserUser1, , , $ownReport] = $this->makeReport(Session::STATUS_COMPLETED);
+        [$adviserUser2, , , $otherReport] = $this->makeReport(Session::STATUS_COMPLETED);
+
+        $this->actingAs($adviserUser1)
+            ->post(route('adviser.evaluations.bulk-complete'), ['report_ids' => []])
+            ->assertSessionHasErrors('report_ids');
+
+        $this->actingAs($adviserUser1)
+            ->post(route('adviser.evaluations.bulk-complete'), ['report_ids' => [$ownReport->id, $otherReport->id]])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertTrue((bool) $ownReport->fresh()->adviser_reviewed);
+        $this->assertFalse((bool) $otherReport->fresh()->adviser_reviewed);
+    }
+
+    public function test_skip_records_an_optional_completion_reason(): void
+    {
+        [$adviserUser, , , $report] = $this->makeReport(Session::STATUS_COMPLETED);
+
+        $this->actingAs($adviserUser)
+            ->post(route('adviser.evaluations.skip', $report->id), [
+                'review_note' => 'Reviewed with the helper instead of scoring this session.',
+            ])
+            ->assertRedirect(route('adviser.evaluations'))
+            ->assertSessionHas('info');
+
+        $fresh = $report->fresh();
+        $this->assertTrue((bool) $fresh->adviser_reviewed);
+        $this->assertSame('Reviewed with the helper instead of scoring this session.', $fresh->adviser_review_note);
+    }
 }

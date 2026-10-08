@@ -147,6 +147,54 @@ class HelpSeekerModuleTest extends TestCase
             ->assertSee('Waiting for an available helper')->assertDontSee('Estimated wait:');
     }
 
+    public function test_request_status_view_reports_closed_and_unsubmitted_requests_honestly(): void
+    {
+        [$user, $seeker] = $this->seekerUser();
+        view()->share('errors', new \Illuminate\Support\ViewErrorBag());
+
+        // A closed (cancelled) request must never claim the seeker is still waiting.
+        $closed = Session::create([
+            'seeker_id' => $seeker->id,
+            'session_type' => 'chat',
+            'session_status' => Session::STATUS_CANCELLED,
+            'workflow_state' => 'closed',
+            'risk_level' => 'low',
+            'created_date' => now(),
+            'completion_status' => 'cancelled',
+        ]);
+        $html = view('request.status', ['session' => $closed, 'events' => collect()])->render();
+        $this->assertStringContainsString('This request has ended', $html);
+        $this->assertStringNotContainsString('Waiting for an available helper', $html);
+
+        // Requests still being set up are told to continue instead of waiting.
+        $draft = Session::create([
+            'seeker_id' => $seeker->id,
+            'session_type' => 'chat',
+            'session_status' => Session::STATUS_SCREENING_COMPLETED,
+            'workflow_state' => 'concern_required',
+            'risk_level' => 'low',
+            'created_date' => now(),
+            'completion_status' => 'pending',
+        ]);
+        $html = view('request.status', ['session' => $draft, 'events' => collect()])->render();
+        $this->assertStringContainsString('not submitted yet', $html);
+        $this->assertStringNotContainsString('Waiting for an available helper', $html);
+
+        // A session waiting for evaluation reads as ended, not still queued.
+        $done = Session::create([
+            'seeker_id' => $seeker->id,
+            'session_type' => 'chat',
+            'session_status' => Session::STATUS_COMPLETED,
+            'workflow_state' => 'evaluation_pending',
+            'risk_level' => 'low',
+            'created_date' => now(),
+            'completion_status' => 'completed',
+        ]);
+        $html = view('request.status', ['session' => $done, 'events' => collect()])->render();
+        $this->assertStringContainsString('Your conversation has ended', $html);
+        $this->assertStringNotContainsString('Waiting for an available helper', $html);
+    }
+
     public function test_chat_page_uses_persisted_session_start_time_for_timer(): void
     {
         [$user, $seeker] = $this->seekerUser();

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\CalendarEvent;
 use App\Models\Helper;
 use App\Models\HelperSchedule;
-use App\Models\ReadinessCheck;
 use App\Services\HelperShiftService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,27 +44,15 @@ class ModeratorScheduleController extends Controller
             ->get()
             ->groupBy('helper_id');
 
-        $attendance = ReadinessCheck::with('helper')
-            ->whereDate('assessment_date', $date)
+        $shiftsByHelper = HelperSchedule::with('helper')
+            ->forDate($date)
             ->when($request->filled('availability'),fn($q)=>$q->whereIn('helper_id',$helperIds))
-            ->latest('assessment_date')
+            ->orderByRaw('COALESCE(shift_start, \'00:00:00\')')
+            ->orderBy('id')
             ->get()
-            ->map(function (ReadinessCheck $check) {
-                $dutyMinutes = $check->shift_start && $check->shift_end
-                    ? max(0, $check->shift_start->diffInMinutes($check->shift_end))
-                    : null;
+            ->groupBy('helper_id');
 
-                return [
-                    'helper' => $check->helper?->full_name ?? 'Unknown helper',
-                    'status' => $check->availability_status,
-                    'result' => $check->result_label,
-                    'shift_start' => $check->shift_start?->format('H:i'),
-                    'shift_end' => $check->shift_end?->format('H:i'),
-                    'duty_hours' => $dutyMinutes !== null ? round($dutyMinutes / 60, 2) : null,
-                ];
-            });
-
-        return view('moderator.schedules', compact('date', 'helpers', 'dutyHelpers', 'scheduleEvents', 'attendance', 'shiftsByHelper'));
+        return view('moderator.schedules', compact('date', 'helpers', 'dutyHelpers', 'scheduleEvents', 'shiftsByHelper'));
     }
 
     public function store(Request $request): RedirectResponse

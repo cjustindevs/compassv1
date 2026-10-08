@@ -15,14 +15,14 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-gray-800">Schedule Management</h1>
-                <p class="text-sm text-gray-500">Plan helper duty dates and monitor readiness-based attendance.</p>
+                <p class="text-sm text-gray-500">Plan helper duty dates and monitor helper readiness on each duty day.</p>
             </div>
             <form method="GET" action="{{ route('moderator.schedules') }}" class="flex flex-wrap items-center gap-2">
                 <input type="date" name="date" value="{{ $date }}" class="rounded-lg border-gray-300 text-sm">
                 <label for="availability" class="sr-only">Current availability</label>
                 <select id="availability" name="availability" class="rounded-lg border-gray-300 text-sm">
                     <option value="">All availability</option>
-                    @foreach(['available'=>'Available now','busy'=>'Handling a session','offline'=>'Unavailable / off duty'] as $value=>$label)
+                    @foreach(['available'=>'Available','busy'=>'Handling a session','offline'=>'Offline'] as $value=>$label)
                         <option value="{{ $value }}" @selected(request('availability') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
@@ -97,30 +97,6 @@
                 </div>
             </section>
         </div>
-
-        <section class="mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-            <h2 class="font-semibold text-gray-800 mb-4">Attendance and Duty Hours</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="text-left text-gray-500 border-b">
-                        <tr><th class="py-2">Helper</th><th class="py-2">Availability</th><th class="py-2">Readiness</th><th class="py-2">Shift</th><th class="py-2">Duty Hours</th></tr>
-                    </thead>
-                    <tbody>
-                        @forelse($attendance as $row)
-                            <tr class="border-b last:border-0">
-                                <td class="py-3 font-medium text-gray-800">{{ $row['helper'] }}</td>
-                                <td class="py-3">{{ ucfirst($row['status']) }}</td>
-                                <td class="py-3">{{ $row['result'] }}</td>
-                                <td class="py-3">{{ $row['shift_start'] ?? '—' }} - {{ $row['shift_end'] ?? '—' }}</td>
-                                <td class="py-3">{{ $row['duty_hours'] !== null ? $row['duty_hours'] . 'h' : '—' }}</td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="5" class="py-6 text-center text-gray-400">No readiness attendance records for this date.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
     </main>
 </body>
 </html>

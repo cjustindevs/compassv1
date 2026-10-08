@@ -24,7 +24,7 @@ class ModeratorDashboardController extends Controller
             'chat_sessions' => Session::where('session_status', 'active')->where('session_type', 'chat')->count(),
             'voice_sessions' => Session::where('session_status', 'active')->where('session_type', 'voice')->count(),
             'emergency_count' => IncidentReport::whereIn('status', ['open', 'under_review', 'escalated'])->count(),
-            'available_helpers' => Helper::where('status', 'available')->count(),
+            'available_helpers' => $this->availableHelperCount(),
             'busy_helpers' => Helper::where('status', 'busy')->count(),
             'unserved' => QueueRequest::where('request_status', 'waiting')
                 ->where('request_date', '<', now()->subMinutes(30))
@@ -129,12 +129,23 @@ class ModeratorDashboardController extends Controller
             'queue_assigned' => QueueRequest::where('request_status', 'assigned')->count(),
             'active_sessions' => Session::where('session_status', 'active')->count(),
             'emergency_open' => IncidentReport::whereIn('status', ['open', 'under_review', 'escalated'])->count(),
-            'helpers_available' => Helper::where('status', 'available')->count(),
+            'helpers_available' => $this->availableHelperCount(),
             'unserved' => QueueRequest::where('request_status', 'waiting')
                 ->where('request_date', '<', now()->subMinutes(30))
                 ->count(),
             'avg_wait' => $this->getAverageWaitTime(),
         ]);
+    }
+
+    /**
+     * Helpers shown as Available must also pass the eligibility rules
+     * (current readiness, duty shift, capacity); a stored status alone can
+     * lag behind readiness expiry.
+     */
+    private function availableHelperCount(): int
+    {
+        return app(\App\Services\HelperEligibilityService::class)
+            ->countAvailable(Helper::where('status', 'available')->get());
     }
 
     private function getAverageWaitTime(): string

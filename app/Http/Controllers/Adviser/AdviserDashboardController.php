@@ -46,7 +46,8 @@ class AdviserDashboardController extends Controller
 
         // Helper stats
         $totalHelpers = $helperIds->count();
-        $activeHelpers = Helper::whereIn('id', $helperIds)->where('status', 'available')->count();
+        $activeHelpers = app(\App\Services\HelperEligibilityService::class)
+            ->countAvailable(Helper::whereIn('id', $helperIds)->where('status', 'available')->get());
 
         // Pending referrals
         $pendingReferrals = Referral::whereIn('status', [Referral::STATUS_PENDING_ADVISER,Referral::STATUS_CONSENT_REQUESTED])

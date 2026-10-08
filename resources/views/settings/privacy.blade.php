@@ -171,27 +171,15 @@
         <!-- Your data -->
         <div class="card">
             <h2>Your data</h2>
-            <p class="sub">Access, export, or clear the information linked to your account.</p>
+            <p class="sub">Access or export the information linked to your account.</p>
             <div class="flex flex-wrap gap-3 mt-5">
                 <a href="{{ route('settings.export-data') }}" class="btn btn-outline">
                     <i class="fas fa-download mr-1"></i> Download my data (JSON)
                 </a>
-                <form method="POST" action="{{ route('settings.privacy.update') }}"
-                      data-confirm="Delete session history?"
-                      data-confirm-message="This will permanently delete ALL your session history. This cannot be undone."
-                      data-confirm-text="Delete all"
-                      data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
-                    @csrf
-                    @method('patch')
-                    <input type="hidden" name="clear_sessions" value="1">
-                    <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-trash-alt mr-1"></i> Clear all session history
-                    </button>
-                </form>
             </div>
-            <p class="text-xs text-gray-400 mt-4">
-                Clearing history removes all chat sessions, messages, and evaluations from your account.
-            </p>
+            <div class="mt-4 p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm text-gray-600">
+                Session history is retained for authorized institutional recordkeeping. You can withdraw consent from Privacy and consent at any time.
+            </div>
         </div>
 
         <!-- Security note -->

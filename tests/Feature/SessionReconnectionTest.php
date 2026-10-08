@@ -39,7 +39,7 @@ class SessionReconnectionTest extends TestCase
         $this->seekerUser->unsetRelations();
         $this->consentFixture($this->seekerUser);
         $this->session = Session::create(['helper_id' => $helper->id, 'seeker_id' => $seeker->id, 'session_status' => 'active', 'session_type' => 'chat', 'risk_level' => 'low', 'start_time' => now()->subMinutes(10), 'helper_accepted_at' => now()->subMinutes(10), 'created_date' => now()]);
-        $this->session->forceFill(['helper_heartbeat_at' => now()->subSeconds(61)])->save();
+        $this->session->forceFill(['helper_heartbeat_at' => now()->subSeconds(\App\Services\SessionReconnectionService::HEARTBEAT_STALE_SECONDS + 1)])->save();
     }
 
     private function incident(): SessionReconnection
@@ -91,6 +91,32 @@ class SessionReconnectionTest extends TestCase
         $this->postJson(route('reconnections.choose', $this->session), ['decision' => 'replace'])->assertOk();
         $this->assertSame($count, Notification::count());
         $this->assertSame('requested', $i->fresh()->status);
+    }
+
+    public function test_state_reports_whether_the_session_is_still_active(): void
+    {
+        $this->incident();
+        $this->actingAs($this->seekerUser)->getJson(route('reconnections.state', $this->session))
+            ->assertOk()->assertJson(['status' => 'interrupted', 'active' => true, 'can_choose' => false, 'transferred' => false]);
+
+        // A session that ends while the incident is still open must expose the ended
+        // state so the UI stops describing the helper as "reconnecting".
+        $this->session->update(['session_status' => 'completed', 'ended_at' => now()]);
+        $this->getJson(route('reconnections.state', $this->session))
+            ->assertOk()->assertJson(['status' => 'interrupted', 'active' => false, 'can_choose' => false]);
+    }
+
+    public function test_a_recently_heartbeating_helper_is_not_flagged_as_interrupted(): void
+    {
+        // A throttled background tab may miss several 15-second ticks without
+        // actually disconnecting, so silence below the stale threshold is ignored.
+        $this->session->forceFill(['helper_heartbeat_at' => now()->subSeconds(90)])->save();
+        app(SessionReconnectionService::class)->detect();
+        $this->assertDatabaseCount('session_reconnections', 0);
+
+        $this->session->forceFill(['helper_heartbeat_at' => now()->subSeconds(SessionReconnectionService::HEARTBEAT_STALE_SECONDS + 1)])->save();
+        app(SessionReconnectionService::class)->detect();
+        $this->assertDatabaseCount('session_reconnections', 1);
     }
 
     public function test_handoff_preserves_deadline_and_isolates_chat(): void

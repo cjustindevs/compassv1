@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Events\MessageSent;
 use App\Events\ModeratorAlert;
 use App\Events\SessionEnded;
-use App\Models\Helper;
 use App\Models\HelpSeekerEvaluation;
 use App\Models\Message;
 use App\Models\Notification;
@@ -183,11 +182,10 @@ class SessionController extends Controller
 
         // Free the helper for future matches and notify them
         if ($session->helper_id) {
-            Helper::where('id', $session->helper_id)
-                ->where('status', 'busy')
-                ->update(['status' => 'available']);
-
             $helper = $session->helper;
+            if ($helper && ! $helper->activeSessions()->exists()) {
+                app(\App\Services\HelperWorkflowMaintenance::class)->restoreOperationalStatus($helper);
+            }
             if ($helper && $helper->user_account_id) {
                 Notification::create([
                     'user_account_id' => $helper->user_account_id,

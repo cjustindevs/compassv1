@@ -368,8 +368,8 @@
                         </span>
                         <span class="text-xs text-gray-500 hidden md:inline">{{ $helper->score }}% score</span>
                         <span class="text-xs text-gray-500">{{ $helper->active_cases }} active · {{ $helper->total_cases }} total</span>
-                        <span class="status-pill {{ $helper->status }}">
-                            {{ ucfirst($helper->status) }}
+                        <span class="status-pill {{ $helper->eligibility['assignable'] ? 'available' : ($helper->status === 'busy' ? 'busy' : 'offline') }}">
+                            {{ $helper->eligibility['assignable'] ? 'Available' : $helper->eligibility['label'] }}
                         </span>
                         @if(! $helper->adviser)
                             <form method="POST" action="{{ route('moderator.manage.assign') }}" class="flex items-center gap-2">

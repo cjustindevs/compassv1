@@ -14,7 +14,7 @@ class SessionReconnectionController extends Controller
         abort_unless($request->user()->is_active && (($request->user()->role === 'seeker' && $request->user()->helpSeeker?->id === $session->seeker_id) || ($request->user()->role === 'helper' && $request->user()->helper?->id === $session->helper_id)), 403);
         $incident = $service->current($session);
 
-        return response()->json(['status' => $incident?->status, 'can_choose' => $session->isActive() && $incident && in_array($incident->status, ['interrupted', 'waiting', 'requested', 'offered']) && $incident->detected_at->lte(now()->subMinutes(2)), 'transferred' => (bool) $incident?->continuation_id]);
+        return response()->json(['status' => $incident?->status, 'active' => $session->isActive(), 'can_choose' => $session->isActive() && $incident && in_array($incident->status, ['interrupted', 'waiting', 'requested', 'offered']) && $incident->detected_at->lte(now()->subMinutes(2)), 'transferred' => (bool) $incident?->continuation_id]);
     }
 
     public function heartbeat(Session $session, SessionReconnectionService $service)

@@ -116,8 +116,11 @@ services:
       # every rate-limited AJAX call (OTP, alias shuffle).
       - key: CACHE_STORE
         value: file
+      # Render Free blocks SMTP ports 25/465/587. For Free, use an HTTPS
+      # email API with its required driver installed. Gmail SMTP requires
+      # a hosting plan that allows SMTP. Set the mailer in the Dashboard.
       - key: MAIL_MAILER
-        value: smtp
+        sync: false
       - key: MAIL_HOST
         value: smtp.gmail.com
       - key: MAIL_PORT
@@ -134,10 +137,9 @@ services:
         sync: false
       - key: RUN_SCHEDULER
         value: "true"
-      # Seeds the documented demo accounts on first boot only (guarded: the
-      # seeder runs only while the demo accounts are still missing). With
-      # MAIL_MAILER=log (or blank), OTP verification codes are DISPLAYED ON
-      # SCREEN inside the register dialog instead of being emailed.
+      # Demo account seeding does not provide email verification.
+      # A delivering mail transport must be configured; OTPs are never
+      # displayed in the browser or logged as a delivery substitute.
       - key: RUN_SEED_DEMO
         value: "true"
       # Testing mode: DEFAULT true. Skips duty-hour gatekeeping (verification,

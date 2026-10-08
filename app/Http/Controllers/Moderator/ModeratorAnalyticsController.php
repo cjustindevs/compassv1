@@ -134,7 +134,8 @@ class ModeratorAnalyticsController extends Controller
             'avg_length' => round((float) ($avgLength ?? 0)),
             'avg_rating' => round((float) ($avgRating ?? 0), 2),
             'competency_growth' => $growthCount ? round($avgGrowth / $growthCount, 1) : 0,
-            'active_helpers' => Helper::where('status', 'available')->count(),
+            'active_helpers' => app(\App\Services\HelperEligibilityService::class)
+                ->countAvailable(Helper::where('status', 'available')->get()),
             'queue_served' => \App\Models\QueueRequest::where('request_status', 'assigned')
                 ->whereBetween('matched_date', [$from . ' 00:00:00', $to . ' 23:59:59'])
                 ->count(),

@@ -34,6 +34,87 @@ class CompassImplementationTest extends TestCase
         $this->assertAuthenticated();
     }
 
+    public function test_registration_and_settings_age_are_limited_to_13_through_60(): void
+    {
+        $this->get('/register')->assertOk();
+        $alias = session('registration_alias');
+        $base = [
+            'gender' => 'prefer-not-to-say', 'preferred_language' => 'Tagalog',
+            'password' => 'StrongPass123!', 'password_confirmation' => 'StrongPass123!',
+            'agree_privacy' => 1, 'agree_terms' => 1,
+        ];
+
+        $this->withSession(['registration_verified_until' => now()->addMinutes(10)->timestamp])
+            ->post(route('seeker.onboarding.store'), ['alias' => $alias, 'age' => 61] + $base)
+            ->assertSessionHasErrors('age');
+        $this->assertDatabaseCount('users', 0);
+
+        $this->withSession(['registration_verified_until' => now()->addMinutes(10)->timestamp])
+            ->post(route('seeker.onboarding.store'), ['alias' => $alias, 'age' => 60] + $base)
+            ->assertRedirect(route('request.screening'));
+
+        $seeker = HelpSeeker::firstOrFail();
+        $this->assertSame(60, $seeker->age);
+
+        $this->actingAs($seeker->user)
+            ->patch(route('settings.account.update'), ['gender' => 'male', 'age' => 61])
+            ->assertSessionHasErrors('age');
+        $this->actingAs($seeker->user)
+            ->patch(route('settings.account.update'), ['gender' => 'male', 'age' => 13])
+            ->assertSessionHasNoErrors();
+        $this->assertSame(13, $seeker->fresh()->age);
+    }
+
+    public function test_settings_pages_and_profiles_work_for_every_staff_role(): void
+    {
+        $moderatorUser = User::factory()->create(['role' => 'moderator', 'is_active' => true]);
+        \App\Models\Moderator::create([
+            'user_account_id' => $moderatorUser->id, 'first_name' => 'Mod', 'last_name' => 'Erator',
+            'email' => 'mod@compass.test', 'assigned_shift' => 'Morning',
+        ]);
+        $adviserUser = User::factory()->create(['role' => 'adviser', 'is_active' => true]);
+        \App\Models\Adviser::create([
+            'user_account_id' => $adviserUser->id, 'first_name' => 'Adv', 'last_name' => 'Iser',
+            'email' => 'adv@compass.test',
+        ]);
+
+        $this->actingAs($moderatorUser)->get(route('moderator.settings'))->assertOk();
+        $this->actingAs($moderatorUser)->put(route('moderator.settings.profile'), [
+            'name' => 'Herald 05', 'email' => 'herald@compass.test',
+            'first_name' => 'Mod', 'last_name' => 'Erator', 'assigned_shift' => 'Evening',
+        ])->assertRedirect();
+        $this->assertSame('herald@compass.test', $moderatorUser->fresh()->email);
+
+        $this->actingAs($adviserUser)->get(route('adviser.settings'))->assertOk();
+        $this->actingAs($adviserUser)->put(route('adviser.settings.profile'), [
+            'name' => 'Adv Iser', 'email' => 'adv@compass.test',
+            'first_name' => 'Adv', 'last_name' => 'Iser',
+        ])->assertRedirect();
+        $this->assertSame('Adv Iser', $adviserUser->fresh()->name);
+
+        $this->actingAs($moderatorUser)->put(route('moderator.settings.password'), [
+            'current_password' => 'wrong-password',
+            'new_password' => 'NewSecret123!', 'new_password_confirmation' => 'NewSecret123!',
+        ])->assertSessionHasErrors('current_password');
+
+        $seeker = User::factory()->create(['role' => 'seeker', 'is_active' => true]);
+        \App\Models\HelpSeeker::create(['user_account_id' => $seeker->id, 'generated_alias' => 'Star_42', 'age' => 21]);
+
+        foreach (['settings.account', 'settings.preferences', 'settings.privacy', 'settings.appearance'] as $route) {
+            $this->actingAs($seeker)->get(route($route))->assertOk();
+        }
+
+        $this->actingAs($seeker)->patch(route('settings.preferences.update'), [
+            'preferred_language' => 'English/Tagalog',
+            'preferred_communication_mode' => 'chat',
+            'session_duration_preference' => '30',
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($seeker)->patch(route('settings.privacy.update'), ['clear_sessions' => 1])
+            ->assertRedirect()
+            ->assertSessionHasErrors('clear_sessions');
+    }
+
     public function test_optional_description_and_private_risk_classification(): void
     {
         $user = $this->seeker();

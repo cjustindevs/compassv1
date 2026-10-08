@@ -206,7 +206,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Age</label>
-                                <input type="number" id="age" name="age" min="13" max="99"
+                                <input type="number" id="age" name="age" min="13" max="60"
                                        class="input-focus w-full px-4 py-3 rounded-xl border border-gray-200 outline-none transition-all"
                                        placeholder="18" required>
                                 <p id="ageError" class="text-red-500 text-sm mt-1 hidden"></p>
@@ -649,7 +649,7 @@
 
                 let valid = true;
                 if (!alias) { showError(aliasError, 'Please generate an alias.'); valid = false; } else { hideError(aliasError); }
-                if (!age || age < 13 || age > 99) { showError(ageError, 'Enter a valid age (13-99).'); valid = false; } else { hideError(ageError); }
+                if (!age || age < 13 || age > 60) { showError(ageError, 'Enter a valid age (13-60).'); valid = false; } else { hideError(ageError); }
                 if (!gender) { showError(genderError, 'Please select your gender.'); valid = false; } else { hideError(genderError); }
                 if (!password || password.length < 6) { showError(passwordError, 'Password must be at least 6 characters.'); valid = false; } else if (password !== passwordConf) { showError(passwordError, 'Passwords do not match.'); valid = false; } else { hideError(passwordError); }
 

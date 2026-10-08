@@ -159,10 +159,21 @@
             <!-- Assignment readiness (single source: HelperEligibilityService) -->
             @if(auth()->user()->helper)
                 @php($eligibility=app(\App\Services\HelperEligibilityService::class)->status(auth()->user()->helper))
+                @php($currentReadiness=auth()->user()->helper->getCurrentReadiness())
                 <div class="card mb-6">
                     <div class="card-header"><h3>Assignment readiness</h3><span class="pill">{{ $eligibility['assignable'] ? 'Ready for matching' : $eligibility['label'] }}</span></div>
-                    @if(!$eligibility['assignable'])<ul class="text-sm text-gray-600 space-y-2">@foreach($eligibility['reasons'] as $reason)<li>{{ $reason }}</li>@endforeach</ul>@else<p class="text-sm text-gray-600">You meet the current requirements for an assignment. Duty-shift capacity: {{ auth()->user()->helper->getRemainingCapacity() }}/{{ \App\Models\Helper::MAX_SESSIONS_PER_SHIFT }} remaining.</p>@endif
-                    <a href="{{ route('helper.readiness') }}" class="btn btn-secondary btn-sm mt-4">Review readiness</a>
+                    @if($eligibility['assignable'])
+                        <p class="text-sm text-gray-600">You meet the current requirements for an assignment. Duty-shift capacity: {{ auth()->user()->helper->getRemainingCapacity() }}/{{ \App\Models\Helper::MAX_SESSIONS_PER_SHIFT }} remaining.</p>
+                        @if($currentReadiness?->valid_until)
+                            <p class="text-sm text-gray-500 mt-2"><i class="fas fa-hourglass-half mr-1" aria-hidden="true"></i> Readiness check valid until {{ $currentReadiness->valid_until->timezone('Asia/Manila')->format('M j, Y g:i A') }}.</p>
+                        @endif
+                    @else
+                        <ul class="text-sm text-gray-600 space-y-2">@foreach($eligibility['reasons'] as $reason)<li>{{ $reason }}</li>@endforeach</ul>
+                    @endif
+                    <div class="flex flex-wrap gap-2 mt-4">
+                        <a href="{{ route('helper.readiness') }}" class="btn btn-secondary btn-sm">Review readiness</a>
+                        <a href="{{ route('helper.readiness.history') }}" class="btn btn-secondary btn-sm">Readiness history</a>
+                    </div>
                 </div>
             @endif
 

@@ -208,6 +208,8 @@
             @endforelse
         </div>
 
+        <div class="mt-6">{{ $notifications->links() }}</div>
+
     </main>
 
     <!-- Bottom Navigation -->

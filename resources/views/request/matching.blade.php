@@ -566,9 +566,9 @@
                         <p class="text-gray-400 mt-1">You can close this page. Your request is saved and you can come back anytime.</p>
                     </div>
 
-                    <p class="text-xs text-gray-400 mt-2">
-                         This page checks again automatically every 30 seconds.
-                    </p>
+<p class="text-xs text-gray-400 mt-2">
+                         This page checks again automatically every 15 seconds.
+                     </p>
 
                     <!-- ============================================ -->
                     <!-- RESOURCES WHILE WAITING                     -->
@@ -598,12 +598,6 @@
                             <i class="fas fa-redo mr-2"></i> Check Status
                         </button>
                     </div>
-                    <div class="mt-4">
-
-                    </div>
-                    <p class="text-xs text-gray-400 mt-3">
-                        Leaving this page keeps your place in the queue — you can come back anytime.
-                    </p>
                 </div>
             @endif
 
@@ -633,14 +627,15 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // ── Auto re-check for an available helper while waiting ──
-            // The server queries the helpers table; when one becomes
-            // available the session is assigned and this page reloads.
+            // Auto re-check for an available helper while waiting. The server
+            // runs the matching check on each load, so a single guarded reload
+            // loop keeps the queue fresh, including local setups without a
+            // scheduler. Hidden pages and open dialogs are left alone.
             const noHelperSection = document.getElementById('noHelperSection');
             if (noHelperSection) {
-                setTimeout(function() {
-                    window.location.reload();
-                }, 30000);
+                setInterval(function() {
+                    if (!document.hidden && !document.querySelector('dialog[open]')) window.location.reload();
+                }, 15000);
             }
         });
     </script>
@@ -649,12 +644,3 @@
 
 </body>
 </html>
-
-@if($session->session_status === \App\Models\Session::STATUS_WAITING)
-<script>
-// Re-enter the server matching check while waiting, including local setups without a scheduler.
-setInterval(() => {
-    if (!document.hidden && !document.querySelector('dialog[open]')) window.location.reload();
-}, 15000);
-</script>
-@endif

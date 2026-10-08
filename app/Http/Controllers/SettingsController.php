@@ -11,7 +11,7 @@ use Illuminate\View\View;
 
 class SettingsController extends Controller
 {
-    public const LANGUAGES = ['English', 'Tagalog'];
+    public const LANGUAGES = ['English', 'Tagalog', 'English/Tagalog'];
 
     public const DURATIONS = ['15', '30', '45', '60'];
 
@@ -75,7 +75,7 @@ class SettingsController extends Controller
             abort_unless($user->helpSeeker, 403);
             $data = $request->validate([
                 'gender' => ['nullable', 'in:female,male,non-binary,prefer-not-to-say'],
-                'age' => ['nullable', 'integer', 'min:13', 'max:120'],
+                'age' => ['nullable', 'integer', 'min:13', 'max:60'],
             ]);
             $user->helpSeeker->update($data);
             return back()->with('success', 'Account preferences updated. Your generated alias remains your sign-in identity.');
@@ -86,7 +86,7 @@ class SettingsController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'alias' => ['nullable', 'string', 'max:60', 'alpha_dash', 'unique:help_seekers,generated_alias,' . optional($user->helpSeeker)->id],
             'gender' => ['nullable', 'string', 'in:female,male,non-binary,prefer-not-to-say'],
-            'age' => ['nullable', 'integer', 'min:13', 'max:120'],
+            'age' => ['nullable', 'integer', 'min:13', 'max:60'],
         ]);
 
         $user->fill([
@@ -121,7 +121,7 @@ class SettingsController extends Controller
             'push_notifications' => 'nullable|boolean',
             'session_reminders' => 'nullable|boolean',
             'marketing_emails' => 'nullable|boolean',
-            'preferred_language' => ['required', 'string', 'in:English,Tagalog'],
+            'preferred_language' => ['required', 'string', 'in:English,Tagalog,English/Tagalog'],
             'preferred_communication_mode' => ['required', 'string', 'in:chat,voice'],
             'preferred_helper_gender' => ['nullable', 'string', 'max:20'],
             'session_duration_preference' => ['required', 'string', 'in:15,30,45,60'],
@@ -146,6 +146,12 @@ class SettingsController extends Controller
      */
     public function updatePrivacy(Request $request): RedirectResponse
     {
+        if ($request->boolean('clear_sessions')) {
+            return back()->withErrors([
+                'clear_sessions' => 'Session history is retained for authorized institutional recordkeeping. You can withdraw consent from Privacy and consent.',
+            ]);
+        }
+
         $validated = $request->validate([
             'show_email' => 'nullable|boolean',
             'allow_data_research' => 'nullable|boolean',
@@ -155,10 +161,6 @@ class SettingsController extends Controller
             'show_email' => $request->boolean('show_email'),
             'allow_data_research' => $request->boolean('allow_data_research'),
         ]);
-
-        if ($request->boolean('clear_sessions')) {
-            $this->clearSessionHistory($request->user());
-        }
 
         return back()->with('success', 'Privacy settings updated.');
     }
@@ -189,20 +191,6 @@ class SettingsController extends Controller
         }
 
         return back()->with('success', 'Appearance updated.');
-    }
-
-    /**
-     * Permanently delete all session history for the current user.
-     */
-    public function clearSessionHistory($user): void
-    {
-        $helpSeeker = $user->helpSeeker;
-
-        if (! $helpSeeker) {
-            return;
-        }
-
-        abort(409,'Session history is retained for authorized institutional recordkeeping. You can withdraw consent from Privacy and consent.');
     }
 
     /**

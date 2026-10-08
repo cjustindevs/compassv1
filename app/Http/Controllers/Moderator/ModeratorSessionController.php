@@ -56,14 +56,19 @@ class ModeratorSessionController extends Controller
             'helper',
             'helper.latestCompetency',
             'concern',
-            'messages' => fn ($q) => $q->orderBy('created_at')->limit(100),
+            'messages' => fn ($q) => $q->orderByDesc('created_at')->limit(100),
             'callLog',
             'report',
             'evaluation',
             'incidents' => fn ($q) => $q->latest()->limit(5),
         ])->findOrFail($id);
 
+        // Show the newest messages first, then restore chronological order so the
+        // monitor reflects the latest conversation even after the 100th message.
+        $session->setRelation('messages', $session->messages->reverse()->values());
         $session->elapsed_label = $this->elapsed($session);
+
+        \App\Services\SupportAudit::record('moderator_session_content_viewed', $session, ['messages_shown' => $session->messages->count()]);
 
         return view('moderator.session-detail', compact('session'));
     }

@@ -187,7 +187,8 @@ class ModeratorReportController extends Controller
             ->selectRaw('AVG(' . \App\Support\DatabaseHelper::secondsBetween('matched_date', 'request_date') . ') as avg_wait')
             ->first();
 
-        $helpers = Helper::where('status', 'available')->count();
+        $helpers = app(\App\Services\HelperEligibilityService::class)
+            ->countAvailable(Helper::where('status', 'available')->get());
         $totalSlots = max(1, $helpers * 2);
         $inUse = Session::whereIn('session_status', ['active', 'helper_assigned'])->count();
 

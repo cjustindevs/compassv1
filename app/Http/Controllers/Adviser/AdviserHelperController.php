@@ -7,7 +7,6 @@ use App\Models\AuditLog;
 use App\Models\Helper;
 use App\Models\HelperCompetencyHistory;
 use App\Models\HelperSchedule;
-use App\Models\ReadinessCheck;
 use App\Models\Session;
 use App\Services\HelperMatchingService;
 use App\Services\HelperShiftService;
@@ -57,6 +56,8 @@ class AdviserHelperController extends Controller
             ];
         });
 
+        $availableHelpers = $helperData->where('status', 'available')->count();
+
         if ($statusFilter !== 'all') {
             $helperData = $helperData->where('status', $statusFilter);
         }
@@ -64,7 +65,6 @@ class AdviserHelperController extends Controller
         $helperData = $helperData->sortByDesc('competency_score')->values();
 
         $totalHelpers = $helpers->count();
-        $availableHelpers = $helpers->where('status', 'available')->count();
         $highCompetency = $helpers->filter(fn (Helper $helper) => $helper->competency_level >= 4)->count();
 
         return view('adviser.helpers', compact(
@@ -197,7 +197,6 @@ class AdviserHelperController extends Controller
             return [
                 'helper_id' => $helper->id,
                 'name' => $helper->user?->name ?? $helper->full_name,
-                'availability' => $helper->availability ?? $helper->status ?? 'offline',
                 'is_ready' => (bool) $helper->getCurrentReadiness(),
                 'current_sessions' => $helper->current_shift_sessions ?? 0,
                 'max_sessions' => Helper::MAX_SESSIONS_PER_SHIFT,
@@ -215,27 +214,7 @@ class AdviserHelperController extends Controller
             ];
         });
 
-        $attendance = ReadinessCheck::with('helper')
-            ->whereHas('helper', fn ($query) => $query->whereIn('id', $helperIds))
-            ->whereDate('assessment_date', $date->toDateString())
-            ->latest('assessment_date')
-            ->get()
-            ->map(function (ReadinessCheck $check) {
-                $dutyMinutes = $check->shift_start && $check->shift_end
-                    ? max(0, $check->shift_start->diffInMinutes($check->shift_end))
-                    : null;
-
-                return [
-                    'helper' => $check->helper?->full_name ?? 'Unknown helper',
-                    'status' => $check->availability_status,
-                    'result' => $check->result_label,
-                    'shift_start' => $check->shift_start?->format('H:i'),
-                    'shift_end' => $check->shift_end?->format('H:i'),
-                    'duty_hours' => $dutyMinutes !== null ? round($dutyMinutes / 60, 2) : null,
-                ];
-            });
-
-        return view('adviser.schedule', compact('scheduleData', 'helpers', 'date', 'attendance'));
+        return view('adviser.schedule', compact('scheduleData', 'helpers', 'date'));
     }
 
     public function updateSchedule(Request $request): RedirectResponse

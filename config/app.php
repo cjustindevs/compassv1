@@ -20,17 +20,17 @@ return [
     | Duty Hours Relaxation (testing mode)
     |--------------------------------------------------------------------------
     |
-    | While true, helper matching skips the duty-hour gatekeeping normally
-    | required before assignment: institutional verification & training,
-    | being on an official duty shift, a current readiness check, the
-    | two-session duty-shift limit, the availability toggle, and the
-    | 6:00-10:30 PM operating-hours window are all bypassed so that every
-    | feature can be exercised end to end.
+    | While true, the following eligibility gates are skipped so features can
+    | be exercised end to end: institutional verification & training, being
+    | on an official duty shift, the operating-hours window, the availability
+    | toggle, and the two-session duty-shift limit.
     |
-    | Hard safety rules are ALWAYS enforced regardless of this flag: the
-    | account must be active, a helper must have an active primary adviser,
-    | must not be under review, must not have a declared conflict, must not
-    | hold a concurrent active assignment, and risk/competency gates apply.
+    | These rules are ALWAYS enforced regardless of this flag, including in
+    | relaxed mode: the account must be active and belong to a helper, a
+    | helper must have an active primary adviser, must not be under review,
+    | must hold a current passed readiness check (scheduling or assignment
+    | before readiness is never possible), must not hold a concurrent active
+    | assignment, and session risk/competency/conflict gates apply.
     |
     | Set RELAX_DUTY_HOURS=false in production to restore full enforcement.
     |
@@ -43,9 +43,10 @@ return [
     | Duty Hours Enforcement
     |--------------------------------------------------------------------------
     |
-    | The 6:00-10:30 PM (Mon-Sat) operating-hours window is currently not
-    | enforced so features can be tested at any hour. Set ENFORCE_DUTY_HOURS=true
-    | in the environment to restore the window immediately.
+    | The 6:00-10:30 PM (Mon-Sat) operating-hours window is enforced when
+    | this flag is true. It currently defaults to false so features can be
+    | tested at any hour. Set ENFORCE_DUTY_HOURS=true in the environment to
+    | restore the window immediately.
     |
     */
 

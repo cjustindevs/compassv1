@@ -2,9 +2,15 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\HelpSeeker;
+use App\Models\User;
+use App\Services\ConsentService;
+use App\Services\OtpMailConfiguration;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
+use Symfony\Component\Mailer\Exception\TransportException;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
@@ -48,7 +54,9 @@ class RegistrationTest extends TestCase
     public function test_sent_code_is_hashed_and_can_only_be_verified_once(): void
     {
         $code = null;
-        Mail::shouldReceive('send')->once()->andReturnUsing(function ($view, $data, $callback) use (&$code) { $code = $data['otp']; });
+        Mail::shouldReceive('send')->once()->andReturnUsing(function ($view, $data, $callback) use (&$code) {
+            $code = $data['otp'];
+        });
         $this->withSession(['registration_verified_until' => now()->addMinutes(10)->timestamp])
             ->postJson(route('registration.otp.send'), ['email' => 'otp-test@example.com'])->assertOk();
         $this->assertNull(session('registration_verified_until'));
@@ -98,19 +106,19 @@ class RegistrationTest extends TestCase
             $this->assertAuthenticated();
             $this->assertNull(session('registration_verified_until'));
 
-            $seeker = \App\Models\HelpSeeker::where('generated_alias', $alias)->firstOrFail();
+            $seeker = HelpSeeker::where('generated_alias', $alias)->firstOrFail();
             $this->assertSame(2, $seeker->consentRecords()->where('consent_given', true)->count());
             $this->assertSame(
                 ['privacy_policy', 'informed_consent'],
                 $seeker->consentRecords()->where('consent_given', true)->orderBy('id')->pluck('purpose')->all()
             );
             $this->assertTrue(
-                $seeker->consentRecords()->where('consent_given', true)->get()->every(fn ($r) => $r->version === \App\Services\ConsentService::VERSION)
+                $seeker->consentRecords()->where('consent_given', true)->get()->every(fn ($r) => $r->version === ConsentService::VERSION)
             );
             $this->post('/logout');
         }
 
-        $this->assertSame(2, \App\Models\HelpSeeker::where('registration_ip', '127.0.0.1')->count());
+        $this->assertSame(2, HelpSeeker::where('registration_ip', '127.0.0.1')->count());
     }
 
     public function test_registration_persists_the_otp_verification_time(): void
@@ -128,7 +136,7 @@ class RegistrationTest extends TestCase
             'password_confirmation' => 'StrongPass123!',
             'agree_privacy' => 1, 'agree_terms' => 1,
         ])->assertRedirect(route('request.screening'));
-        $user = \App\Models\User::firstOrFail();
+        $user = User::firstOrFail();
         $this->assertSame($verifiedAt->timestamp, $user->email_verified_at->timestamp);
         $this->assertTrue($user->email_verified_at->lt($user->created_at));
         $this->assertNull(session('registration_verified_at'));
@@ -160,21 +168,55 @@ class RegistrationTest extends TestCase
     public function test_transient_smtp_failure_retries_with_the_same_code(): void
     {
         config(['mail.default' => 'smtp']);
-        $firstCode=null;$attempts=0;
-        Mail::shouldReceive('send')->twice()->andReturnUsing(function($view,$data) use (&$firstCode,&$attempts) {
+        $firstCode = null;
+        $attempts = 0;
+        Mail::shouldReceive('send')->twice()->andReturnUsing(function ($view, $data) use (&$firstCode, &$attempts) {
             $attempts++;
-            if ($attempts===1) { $firstCode=$data['otp']; throw new \Symfony\Component\Mailer\Exception\TransportException('Connection timed out'); }
-            $this->assertSame($firstCode,$data['otp']);
+            if ($attempts === 1) {
+                $firstCode = $data['otp'];
+                throw new TransportException('Connection timed out');
+            }
+            $this->assertSame($firstCode, $data['otp']);
         });
-        $this->postJson(route('registration.otp.send'),['email'=>'retry@example.com'])->assertOk();
-        $this->postJson(route('registration.otp.verify'),['otp'=>$firstCode])->assertOk();
+        $this->postJson(route('registration.otp.send'), ['email' => 'retry@example.com'])->assertOk();
+        $this->postJson(route('registration.otp.verify'), ['otp' => $firstCode])->assertOk();
     }
+
     public function test_rejected_smtp_login_is_clear_and_does_not_lock_resending(): void
     {
         config(['mail.default' => 'smtp']);
-        Mail::shouldReceive('send')->twice()->andThrow(new \Symfony\Component\Mailer\Exception\TransportException('535 authentication rejected secret-should-not-be-returned'));
-        for($i=0;$i<2;$i++) $this->postJson(route('registration.otp.send'),['email'=>'auth-failure@example.com'])
-            ->assertStatus(503)->assertJsonPath('message','The email provider rejected the server login. The administrator needs to update the mail credentials before OTP can be sent.')->assertDontSee('secret-should-not-be-returned');
+        Mail::shouldReceive('send')->twice()->andThrow(new TransportException('535 authentication rejected secret-should-not-be-returned'));
+        for ($i = 0; $i < 2; $i++) {
+            $this->postJson(route('registration.otp.send'), ['email' => 'auth-failure@example.com'])
+                ->assertStatus(503)->assertJsonPath('message', 'The email provider rejected the server login. The administrator needs to update the mail credentials before OTP can be sent.')->assertDontSee('secret-should-not-be-returned');
+        }
         $this->assertNull(session('registration_otp'));
+    }
+
+    public function test_hosted_log_mailer_never_returns_a_code_or_claims_delivery(): void
+    {
+        $this->app->instance('env', 'production');
+        $this->withSession(['_token' => 'hosted-csrf-test'])->withHeader('X-CSRF-TOKEN', 'hosted-csrf-test');
+        config(['mail.default' => 'log']);
+        Mail::shouldReceive('send')->never();
+        $this->postJson(route('registration.otp.send'), ['email' => 'hosted@example.test'])
+            ->assertStatus(503)->assertJsonMissingPath('debug_otp');
+        $this->assertNull(session('registration_otp'));
+        $this->assertFalse(RateLimiter::tooManyAttempts('registration-otp:'.hash('sha256', 'hosted@example.test'), 1));
+    }
+
+    public function test_log_fallback_is_not_a_delivery_capable_configuration(): void
+    {
+        config(['mail.mailers.failover' => ['transport' => 'failover', 'mailers' => ['smtp', 'log']]]);
+        $this->assertFalse(app(OtpMailConfiguration::class)->canDeliver('failover'));
+        $this->assertTrue(app(OtpMailConfiguration::class)->canDeliver('smtp'));
+    }
+
+    public function test_registration_otp_urls_are_same_origin_behind_https_proxy(): void
+    {
+        $this->get(route('register'))->assertOk()
+            ->assertSee(json_encode('/api/send-otp'), false)
+            ->assertSee(json_encode('/api/verify-otp'), false)
+            ->assertDontSee('http://127.0.0.1:8000/api/send-otp',false);
     }
 }

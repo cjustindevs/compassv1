@@ -7,7 +7,7 @@
 <h1 class="text-xl font-bold text-gray-800 mb-2">Create Your Account</h1>
 <p class="text-gray-500 text-sm mb-6">Read and accept the Terms and Condition and Privacy Notice first, then verify your email and create your account.</p>
 @if ($errors->any())
-    <div role="alert" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">{{ $errors->first('registration') ?: 'Please check the highlighted fields below.' }}</div>
+    <div role="alert" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">{{ $errors->first('registration') ?: ($errors->first('email') ?: 'Please check the highlighted fields below.') }}</div>
 @endif
 
 <!-- STEP 1: Terms and Condition + Privacy Notice (verbatim, consent first) -->
@@ -75,7 +75,7 @@
     </div>
     <div>
         <label for="age" class="block text-sm font-medium text-gray-700 mb-1.5">Age <span class="text-red-500" aria-hidden="true">*</span></label>
-        <input type="number" id="age" name="age" required class="input-focus w-full px-4 py-3 rounded-xl border border-gray-200 bg-white outline-none transition-all" aria-invalid="{{ $errors->has('age') ? 'true' : 'false' }}" @error('age') aria-describedby="age-error" @enderror min="13" max="99" value="{{ old('age') }}" placeholder="Enter your age (13-99)">
+        <input type="number" id="age" name="age" required class="input-focus w-full px-4 py-3 rounded-xl border border-gray-200 bg-white outline-none transition-all" aria-invalid="{{ $errors->has('age') ? 'true' : 'false' }}" @error('age') aria-describedby="age-error" @enderror min="13" max="60" value="{{ old('age') }}" placeholder="Enter your age (13-60)">
         @error('age') <p id="age-error" class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
     </div>
     <div>
@@ -185,12 +185,13 @@
         button.setAttribute('aria-busy', 'true');
         try {
             const response = await fetch(url, {
-                method: 'POST', headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content},
+                method: 'POST', credentials: 'same-origin', headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content},
                 body: JSON.stringify(data)
             });
             const result = response.headers.get('content-type')?.includes('application/json')
                 ? await response.json() : {message: 'Your session may have expired. Refresh the page and try again.'};
             if (result.retry_after) startCooldown(result.retry_after);
+            if (response.status === 419) throw new Error('Your session expired or cookies are blocked. Refresh this page before sending again.');
             if (!response.ok) throw new Error(Object.values(result.errors || {}).flat()[0] || result.message || 'Please try again.');
             output.textContent = result.message || 'New alias generated.';
             return result;
@@ -216,19 +217,19 @@
     document.getElementById('send-code').addEventListener('click', async function () {
         const email = document.getElementById('verification-email');
         if (!email.value || !email.reportValidity()) { email.focus(); return; }
-        status.textContent = 'Sending your code. Please wait?';
-        const result = await post(@json(route('registration.otp.send')), {email: email.value.trim()}, this, status);
+        status.textContent = 'Sending your code. Please wait...';
+        const result = await post(@json(route('registration.otp.send', [], false)), {email: email.value.trim()}, this, status);
         if (result) { verifiedUntil = 0; updateSummary(); startCooldown(result.retry_after || 60); }
     });
     document.getElementById('verify-code').addEventListener('click', async function () {
-        const result = await post(@json(route('registration.otp.verify')), {otp: document.getElementById('verification-code').value}, this, status);
+        const result = await post(@json(route('registration.otp.verify', [], false)), {otp: document.getElementById('verification-code').value}, this, status);
         if (result) { verifiedUntil = result.verified_until; updateSummary(); dialog.close(); }
     });
     document.getElementById('shuffle-alias').addEventListener('click', async function () {
         const submit = form.querySelector('button[type="submit"]');
         const aliasStatus = document.getElementById('alias-status');
         submit.disabled = true;
-        const result = await post(@json(route('registration.alias.shuffle')), {}, this, aliasStatus);
+        const result = await post(@json(route('registration.alias.shuffle', [], false)), {}, this, aliasStatus);
         if (result && typeof result.alias === 'string' && result.alias.length) {
             document.getElementById('alias').value = result.alias;
         } else if (result && !aliasStatus.textContent) {

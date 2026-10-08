@@ -81,6 +81,28 @@ class ModeratorAdviserModuleTest extends TestCase
         $this->assertNull($session->fresh()->risk_level);
     }
 
+    public function test_moderator_session_monitor_shows_the_latest_messages_and_logs_content_access(): void
+    {
+        [$modUser] = $this->moderatorUser();
+        [$seeker] = $this->seeker();
+        $session = Session::create(['seeker_id' => $seeker->id, 'session_type' => 'chat', 'session_status' => 'active', 'risk_level' => 'low', 'created_date' => now()]);
+
+        \App\Models\Message::create(['session_id' => $session->id, 'sender_id' => $seeker->user_account_id, 'sender' => 'seeker', 'message_text' => 'Earliest message that should age out.', 'sent_datetime' => now()->subHours(3)]);
+        \App\Models\Message::create(['session_id' => $session->id, 'sender_id' => $seeker->user_account_id, 'sender' => 'seeker', 'message_text' => 'Second message that should age out.', 'sent_datetime' => now()->subHours(2)]);
+        foreach (range(3, 104) as $n) {
+            \App\Models\Message::create(['session_id' => $session->id, 'sender_id' => $seeker->user_account_id, 'sender' => 'seeker', 'message_text' => "Filler message {$n}", 'sent_datetime' => now()->subMinutes(100 - $n)]);
+        }
+        \App\Models\Message::create(['session_id' => $session->id, 'sender_id' => $seeker->user_account_id, 'sender' => 'seeker', 'message_text' => 'Most recent message in the conversation.', 'sent_datetime' => now()]);
+
+        $this->actingAs($modUser)->get(route('moderator.sessions.show', $session))->assertOk()
+            ->assertSee('Most recent message in the conversation.')
+            ->assertSee('Filler message 20', false)
+            ->assertDontSee('Second message that should age out.')
+            ->assertDontSee('Earliest message that should age out.');
+
+        $this->assertDatabaseHas('audit_logs', ['action' => 'moderator_session_content_viewed', 'target_id' => $session->id, 'user_account_id' => $modUser->id]);
+    }
+
     public function test_reviewing_adviser_can_read_the_chat_conversation_for_a_screening_review(): void
     {
         [$ownerUser, $owner] = $this->adviserUser('conv-owner@example.com');

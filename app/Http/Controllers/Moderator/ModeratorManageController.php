@@ -35,6 +35,9 @@ class ModeratorManageController extends Controller
             ->get()
             ->map(function (Helper $helper) {
                 $helper->score = (float) ($helper->latestCompetency?->overall_score ?? 0);
+                // Stored status alone can lag behind readiness expiry, so the
+                // pill reflects the same eligibility rules matching enforces.
+                $helper->eligibility = app(\App\Services\HelperEligibilityService::class)->status($helper);
 
                 return $helper;
             });

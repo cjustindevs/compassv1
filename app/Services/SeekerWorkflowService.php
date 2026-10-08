@@ -96,7 +96,7 @@ class SeekerWorkflowService {
             $session->update(['session_status'=>'cancelled','completion_status'=>'cancelled','workflow_state'=>'closed',
                 $expired?'expired_at':'cancelled_at'=>now(),'end_time'=>$session->isActive()?now():null]);
             $session->queue?->update(['request_status'=>$expired?'expired':'cancelled',$expired?'expired_at':'cancelled_at'=>now()]);
-            if ($assignedHelper) { $assignedHelper->syncSessionCounters(); if (!$assignedHelper->activeSessions()->exists() && $assignedHelper->status==='busy') $assignedHelper->update(['status'=>'available']); }
+            if ($assignedHelper) { $assignedHelper->syncSessionCounters(); if (!$assignedHelper->activeSessions()->exists() && $assignedHelper->status==='busy') app(HelperWorkflowMaintenance::class)->restoreOperationalStatus($assignedHelper); }
             if ($pendingRecommendation && $assignedHelper->user) Notification::create(['user_account_id'=>$assignedHelper->user->id,'title'=>'Request withdrawn','message'=>'A recommendation was withdrawn before you could accept it. You may receive another match.','notification_type'=>'system','link'=>'/helper/cases']);
             SupportAudit::record($expired?'request_expired':'request_cancelled',$session);
             Notification::create(['user_account_id'=>$session->seeker->user_account_id,'title'=>$expired?'Request expired':'Request cancelled',

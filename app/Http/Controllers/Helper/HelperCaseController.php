@@ -141,7 +141,7 @@ class HelperCaseController extends Controller
                 $session->queue?->update(['request_status' => 'waiting', 'assigned_helper_id' => null, 'matched_date' => null, 'helper_declined_at' => now()]);
                 $helper->syncSessionCounters();
                 if (! $helper->activeSessions()->exists()) {
-                    $helper->update(['status' => 'available']);
+                    app(\App\Services\HelperWorkflowMaintenance::class)->restoreOperationalStatus($helper);
                 }
                 SupportAudit::record('helper_declined', $session, ['reason' => $data['reason'], 'helper_id' => $helper->id]);
                 if ($session->risk_level === 'emergency') {

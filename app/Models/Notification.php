@@ -39,6 +39,13 @@ class Notification extends Model
         \App\Services\SupportAudit::record('notification_archived', $this);
     }
 
+    public function restoreToInbox(): void
+    {
+        $this->update(['archived_at' => null]);
+        \Illuminate\Support\Facades\Cache::forget('unread_count_'.$this->user_account_id);
+        \App\Services\SupportAudit::record('notification_restored', $this);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_account_id', 'id');

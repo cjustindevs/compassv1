@@ -47,7 +47,7 @@ class SeekerOnboardingController extends Controller
         }
         $data = $request->validate([
             'alias' => ['required', 'string', 'in:'.$request->session()->get('registration_alias'), 'unique:help_seekers,generated_alias'],
-            'age' => 'required|integer|min:13|max:99',
+            'age' => 'required|integer|min:13|max:60',
             'gender' => 'required|in:male,female,non-binary,prefer-not-to-say',
             'preferred_language' => 'required|in:English,Tagalog,English/Tagalog',
             'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],

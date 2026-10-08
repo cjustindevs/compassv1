@@ -1323,10 +1323,12 @@ class HelperModuleTest extends TestCase
         $this->assertSame('evaluated', $session->session_status);
         $this->assertSame('completed', $session->completion_status);
 
-        // The helper must be freed so they can take new cases.
+        // The helper is not freed by the evaluation: the seeder leaves them
+        // with two more open assignments, so they must stay engaged rather
+        // than being force-marked available by the session bookkeeping.
         $this->assertDatabaseHas('helpers', [
             'id' => $this->helperUser->helper->id,
-            'status' => 'available',
+            'status' => 'busy',
         ]);
     }
 

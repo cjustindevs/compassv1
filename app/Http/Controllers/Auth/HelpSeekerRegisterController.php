@@ -93,7 +93,7 @@ class HelpSeekerRegisterController extends Controller
             $request->validate([
                 'alias' => 'required|string|max:255|unique:help_seekers,generated_alias',
                 'email' => 'required|email|unique:users,email',
-                'age' => 'required|integer|min:13|max:99',
+                'age' => 'required|integer|min:13|max:60',
                 'gender' => 'required|string|in:male,female,non-binary,prefer-not-to-say',
                 'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
                 'consent' => 'accepted',

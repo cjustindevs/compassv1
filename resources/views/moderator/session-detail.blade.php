@@ -182,7 +182,10 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Conversation Preview -->
             <div class="card lg:col-span-2">
-                <h3 class="font-bold text-gray-800 mb-4">Recent Messages <span class="text-xs font-normal text-gray-400">({{ $session->messages->count() }} shown)</span></h3>
+                <div class="flex flex-wrap items-baseline justify-between gap-2 mb-4">
+                    <h3 class="font-bold text-gray-800">Recent Messages <span class="text-xs font-normal text-gray-400">({{ $session->messages->count() }} shown)</span></h3>
+                    <p class="text-xs text-gray-400">Confidential support conversation. Moderator views are logged.</p>
+                </div>
                 <div class="space-y-3 max-h-96 overflow-y-auto">
                     @forelse($session->messages as $message)
                         <div class="flex {{ $message->is_helper ? 'justify-end' : 'justify-start' }}">

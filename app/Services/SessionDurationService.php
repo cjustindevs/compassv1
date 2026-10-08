@@ -43,7 +43,7 @@ class SessionDurationService
                 'duration'=>min(self::MAX_MINUTES,max(1,(int)$locked->start_time->diffInMinutes(now())))]);
             $locked->queue?->update(['completed_at'=>now()]);
             SupportAudit::record('session_completed',$locked);
-            if ($helper=$locked->helper) { $helper->syncSessionCounters(); if (!$helper->activeSessions()->exists()) $helper->update(['status'=>'available']); }
+            if ($helper=$locked->helper) { $helper->syncSessionCounters(); if (!$helper->activeSessions()->exists()) app(HelperWorkflowMaintenance::class)->restoreOperationalStatus($helper); }
             $session->refresh(); return true;
         });
     }
@@ -76,7 +76,7 @@ class SessionDurationService
             if ($helper = $locked->helper) {
                 $helper->syncSessionCounters();
                 if ($helper->status === 'busy' && $helper->activeSessions()->doesntExist()) {
-                    $helper->update(['status' => 'available']);
+                    app(HelperWorkflowMaintenance::class)->restoreOperationalStatus($helper);
                 }
             }
             return true;

@@ -154,7 +154,7 @@
                     </div>
                     <div>
                         <label for="age" class="form-label">Age (optional)</label>
-                        <input id="age" name="age" type="number" min="13" max="120" class="form-input" value="{{ old('age', $user->helpSeeker?->age ?? '') }}">
+                        <input id="age" name="age" type="number" min="13" max="60" class="form-input" value="{{ old('age', $user->helpSeeker?->age ?? '') }}">
                         @error('age') <p class="form-error">{{ $message }}</p> @enderror
                     </div>
                     <div class="md:col-span-2">

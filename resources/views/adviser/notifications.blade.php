@@ -236,6 +236,8 @@
             @endif
         </div>
 
+        <div class="mt-6">{{ $notifications->links() }}</div>
+
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
 

@@ -31,7 +31,7 @@
                         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                             <div>
                                 <p class="font-medium text-gray-800">{{ $helper->user?->name ?? $helper->full_name }}</p>
-                                <p class="text-xs text-gray-500">{{ ucfirst($helper->availability ?? $helper->status) }} · {{ str_replace('_', ' ', $helper->getReadinessStatus()) }}</p>
+                                <p class="text-xs text-gray-500">{{ app(\App\Services\HelperEligibilityService::class)->status($helper)['label'] }} · {{ str_replace('_', ' ', $helper->getReadinessStatus()) }}</p>
                             </div>
                             <div class="flex items-center gap-3">
                                 <span class="text-xs text-gray-500">{{ $helper->current_shift_sessions }}/{{ \App\Models\Helper::MAX_SESSIONS_PER_SHIFT }}</span>

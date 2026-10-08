@@ -463,4 +463,70 @@ class HelperWorkflowSecurityTest extends TestCase
         $this->assertTrue(app(HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh()));
         $this->assertSame('available', $helper->fresh()->status, 'Scheduling the duty date flips a ready helper available.');
     }
+
+    public function test_expired_readiness_removes_helper_from_the_available_pool(): void
+    {
+        $helper = $this->helper();
+        $this->assertSame('available', $helper->status);
+
+        $this->travelTo(Carbon::parse('2026-09-17 00:30', 'Asia/Manila')->utc());
+        app(HelperWorkflowMaintenance::class)->run();
+
+        $helper = $helper->fresh();
+        $this->assertFalse($helper->isReady());
+        $this->assertSame('offline', $helper->status, 'An unready helper must not hold a stale available status.');
+        $this->assertNull($helper->available_since);
+        $this->assertFalse(app(HelperEligibilityService::class)->allows($helper));
+        $this->assertSame(0, app(HelperEligibilityService::class)->countAvailable(Helper::where('status', 'available')->get()));
+        $this->assertDatabaseHas('notifications', ['user_account_id' => $helper->user_account_id, 'title' => 'Readiness check expired']);
+    }
+
+    public function test_ending_a_session_restores_availability_only_when_still_eligible(): void
+    {
+        $helper = $this->helper();
+        $session = $this->supportSession($helper);
+        $helper->update(['status' => 'busy']);
+
+        // Readiness lapses mid-session.
+        $helper->getCurrentReadiness()->update(['valid_until' => now()->subHour()]);
+
+        $this->post(route('helper.session.end', $session->id))->assertRedirect();
+
+        $this->assertSame('completed', $session->fresh()->session_status);
+        $this->assertSame('offline', $helper->fresh()->status, 'A helper whose readiness lapsed mid-session must not return to the pool.');
+    }
+
+    public function test_ending_a_session_restores_a_still_eligible_helper(): void
+    {
+        $helper = $this->helper();
+        $session = $this->supportSession($helper);
+        $helper->update(['status' => 'busy']);
+
+        $this->post(route('helper.session.end', $session->id))->assertRedirect();
+
+        $this->assertSame('completed', $session->fresh()->session_status);
+        $this->assertSame('available', $helper->fresh()->status, 'A still-eligible helper returns to the pool after the session.');
+    }
+
+    public function test_manage_pill_and_operational_counts_reflect_current_readiness(): void
+    {
+        $helper = $this->helper();
+        $moderator = User::factory()->create(['role' => 'moderator', 'is_active' => true]);
+        $this->actingAs($moderator);
+
+        $this->get(route('moderator.manage'))->assertOk()
+            ->assertSee('<span class="status-pill available">', false)
+            ->assertSeeText('Available');
+        $this->assertSame(1, app(HelperEligibilityService::class)->countAvailable(Helper::where('status', 'available')->get()));
+
+        // The stored status is still 'available', but readiness has expired:
+        // the pill and operational counts must immediately reflect it.
+        $helper->getCurrentReadiness()->update(['valid_until' => now()->subHour()]);
+        $this->assertSame('available', $helper->fresh()->status);
+        $this->get(route('moderator.manage'))->assertOk()
+            ->assertSee('<span class="status-pill offline">', false)
+            ->assertSeeText('Readiness required')
+            ->assertDontSee('<span class="status-pill available">', false);
+        $this->assertSame(0, app(HelperEligibilityService::class)->countAvailable(Helper::where('status', 'available')->get()));
+    }
 }

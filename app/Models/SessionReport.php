@@ -28,6 +28,7 @@ class SessionReport extends Model
         'skills_applied',
         'adviser_reviewed',
         'reviewed_date',
+        'adviser_review_note',
         'created_date',
         'documented_at',
         'documentation_late',

@@ -15,6 +15,7 @@ class HelperWorkflowMaintenance
     public function run(): void
     {
         $this->reconcileAllReadyHelpers();
+        $this->reconcileStaleAvailability();
         Session::where('session_status', Session::STATUS_HELPER_ASSIGNED)->whereNull('helper_accepted_at')
             ->eachById(function ($session) {
                 if ($session->pre_session_brief_expires_at?->isPast()) {
@@ -34,6 +35,7 @@ class HelperWorkflowMaintenance
                 if ($helper->readinessChecks()->latest('id')->value('id') === $check->id) {
                     $helper->update(['is_ready' => false]);
                 }
+                $this->restoreOperationalStatus($helper);
                 SupportAudit::record('readiness_expired', $check);
                 $this->notify($helper->user_account_id, 'Readiness check expired', 'Complete a new readiness check before accepting another session.', '/helper/readiness');
             }, 3);
@@ -113,6 +115,88 @@ class HelperWorkflowMaintenance
             ->eachById(fn (Helper $helper) => $this->reconcileHelperAvailability($helper, false));
     }
 
+    /**
+     * Take a helper out of the available pool when the current readiness
+     * check, duty shift, capacity, or any other eligibility rule no longer
+     * passes, and put them back only when every rule passes again.
+     *
+     * This is the single write point for operational status after a session,
+     * queue, or readiness transition, so dashboards, filters, and assignment
+     * dropdowns never present an unready helper as available. Helpers with an
+     * active session are left alone; the session-end flow reconciles them.
+     */
+    public function restoreOperationalStatus(Helper $helper): void
+    {
+        if ($helper->activeSessions()->exists()) {
+            return;
+        }
+
+        // Everything but the system-wide service-hours closure must be met;
+        // closure is enforced at assignment time by the matching engine.
+        $eligible = $helper->availability === 'available'
+            && $this->operationalEligibility($helper)->isEmpty();
+
+        if ($eligible) {
+            if ($helper->status !== 'available') {
+                $helper->update([
+                    'status' => 'available',
+                    'available_since' => $helper->available_since ?? now(),
+                    'break_started_at' => null,
+                ]);
+            }
+
+            return;
+        }
+
+        if ($helper->status === 'available') {
+            $helper->update(['status' => 'offline', 'available_since' => null]);
+            SupportAudit::record('helper_availability_revoked', $helper, [
+                'reason' => $this->operationalEligibility($helper)->first() ?? 'Availability is not set to Available.',
+            ]);
+        } elseif ($helper->status === 'busy') {
+            $helper->update(['status' => 'offline', 'available_since' => null]);
+        }
+    }
+
+    /**
+     * Blocking eligibility reasons for pool membership, ignoring the
+     * system-wide service-hours closure (matching enforces that separately).
+     *
+     * @return \Illuminate\Support\Collection<int, string>
+     */
+    private function operationalEligibility(Helper $helper)
+    {
+        return collect(app(HelperEligibilityService::class)->reasons($helper))
+            ->reject(fn (string $reason) => str_contains($reason, 'Service is closed for new assignments.'))
+            ->values();
+    }
+
+    /**
+     * Batch pass for the scheduled maintenance run: any helper still holding
+     * a stale available/busy status without an active session is re-checked
+     * against the eligibility rules (readiness expiry is the usual cause) and
+     * either restored or moved offline. Locks are taken per helper so a
+     * concurrent session start is never overwritten.
+     */
+    public function reconcileStaleAvailability(): void
+    {
+        Helper::whereIn('status', ['available', 'busy'])
+            ->whereDoesntHave('activeSessions')
+            ->eachById(function (Helper $helper) {
+                if ($helper->availability === 'available'
+                    && $this->operationalEligibility($helper)->isEmpty()) {
+                    return;
+                }
+                DB::transaction(function () use ($helper) {
+                    $locked = Helper::whereKey($helper->id)->lockForUpdate()->first();
+                    if (! $locked || ! in_array($locked->status, ['available', 'busy'], true) || $locked->activeSessions()->exists()) {
+                        return;
+                    }
+                    $this->restoreOperationalStatus($locked);
+                }, 3);
+            });
+    }
+
     public function releaseRecommendation(Session $session, string $reason): void
     {
         DB::transaction(function () use ($session, $reason) {
@@ -130,7 +214,7 @@ class HelperWorkflowMaintenance
             $session->update(['helper_id' => null, 'session_status' => Session::STATUS_WAITING, 'match_status' => $reason, 'pre_session_brief_expires_at' => null]);
             $session->queue?->update(['assigned_helper_id' => null, 'request_status' => 'waiting', 'helper_proposed_at' => null]);
             $helper->syncSessionCounters();
-            $helper->update(['status' => $helper->availability === 'available' ? 'available' : 'offline']);
+            $this->restoreOperationalStatus($helper);
             if ($reason === 'expired') {
                 $this->recordNonResponse($helper);
             }
