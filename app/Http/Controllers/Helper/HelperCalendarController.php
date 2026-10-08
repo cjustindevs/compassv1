@@ -18,22 +18,19 @@ class HelperCalendarController extends Controller
         abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $helper = Auth::user()->helper;
 
-        $month = $request->integer('month', now()->month);
-        $year = $request->integer('year', now()->year);
+        $month = $request->integer('month', now('Asia/Manila')->month);
+        $year = $request->integer('year', now('Asia/Manila')->year);
 
         $month = max(1, min(12, $month));
         $year = min(2100, max(2000, $year));
 
-        $firstDay = CarbonImmutable::create($year, $month, 1)->startOfDay();
+        $firstDay = CarbonImmutable::create($year, $month, 1, 0, 0, 0, 'Asia/Manila')->startOfDay();
         $lastDay = $firstDay->endOfMonth();
+        $utcStart=$firstDay->utc(); $utcEnd=$lastDay->utc();
 
         $sessions = Session::with(['seeker', 'concern'])
             ->where('helper_id', $helper->id)
-            ->where(function ($query) use ($firstDay, $lastDay) {
-                $query->whereBetween('scheduled_start', [$firstDay, $lastDay])
-                    ->orWhereBetween('start_time', [$firstDay, $lastDay])
-                    ->orWhereBetween('created_date', [$firstDay, $lastDay]);
-            })
+            ->whereBetween(\Illuminate\Support\Facades\DB::raw('COALESCE(scheduled_start,start_time,created_date,created_at)'), [$utcStart,$utcEnd])
             ->get()
             ->map(fn (Session $session) => [
                 'id' => $session->id,
@@ -45,17 +42,22 @@ class HelperCalendarController extends Controller
                 'risk' => 'Assigned support',
                 'concern' => $session->concern->concern_name ?? 'Session',
                 'mode' => $session->mode_label,
-                'date' => ($session->scheduled_start ?? $session->start_time ?? $session->created_date)->format('Y-m-d'),
-                'time' => ($session->scheduled_start ?? $session->start_time)?->format('h:i A'),
+                'date' => ($session->scheduled_start ?? $session->start_time ?? $session->created_date ?? $session->created_at)->copy()->timezone('Asia/Manila')->format('Y-m-d'),
+                'time' => ($session->scheduled_start ?? $session->start_time)?->copy()->timezone('Asia/Manila')->format('h:i A'),
             ]);
 
         $prev = $firstDay->subMonth();
         $next = $firstDay->addMonth();
 
-        $grid = $this->buildMonthGrid($year, $month, $sessions->groupBy('date'));
+        $schedules=$helper->schedules()->whereBetween('date', [$firstDay->toDateString(), $lastDay->toDateString()])->orderBy('date')->get();
+        $events=$sessions->map(fn($s)=>$s+['kind'=>'session']);
+        foreach($schedules as $shift) $events->push(['kind'=>'duty','date'=>$shift->date->format('Y-m-d'),'time'=>$shift->shift_label,
+            'status'=>$shift->is_active ? ($shift->isOnDuty() ? 'current' : ($shift->window()[1]->isPast() ? 'past' : 'upcoming')) : 'inactive',
+            'reference'=>'Duty','alias'=>'Assigned duty']);
+        $grid = $this->buildMonthGrid($year, $month, $events->groupBy('date'));
 
         return view('helper.calendar', [
-            'schedules' => $helper->schedules()->whereBetween('date', [$firstDay->toDateString(), $lastDay->toDateString()])->orderBy('date')->get(),
+            'schedules' => $schedules,
             'sessions' => $sessions,
             'grid' => $grid,
             'adviser' => $helper->adviser?->loadMissing('user'),
@@ -69,36 +71,20 @@ class HelperCalendarController extends Controller
         ]);
     }
 
-    public function declareDuty(Request $request)
-    {
-        abort_unless($request->user()?->is_active && $request->user()->role === 'helper' && $request->user()->helper,403);
-        $data=$request->validate(['date'=>['required','date_format:Y-m-d','after_or_equal:'.now('Asia/Manila')->toDateString()]]);
-        $helper=$request->user()->helper;
-        \Illuminate\Support\Facades\DB::transaction(function()use($helper,$data){
-            $helper=\App\Models\Helper::lockForUpdate()->findOrFail($helper->id);
-            $readiness=$helper->getCurrentReadiness();
-            if(!$readiness || $readiness->assessment_result!=='ready') throw \Illuminate\Validation\ValidationException::withMessages(['date'=>'Complete and pass your readiness check before declaring duty.']);
-            $shift=app(\App\Services\HelperShiftService::class)->scheduleDuty($helper,$data['date'],attributes:['created_by'=>auth()->id()]);
-            \App\Services\SupportAudit::record('helper_duty_declared',$shift);
-        });
-        app(\App\Services\HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh());
-        return back()->with('success','Duty date recorded. Your Moderator can now see it. Readiness must remain valid before assignment.');
-    }
-
     /**
      * Build the 6-week calendar grid cells.
      */
     private function buildMonthGrid(int $year, int $month, $eventsByDay): array
     {
-        $first = CarbonImmutable::create($year, $month, 1);
+        $first = CarbonImmutable::create($year, $month, 1, 0, 0, 0, 'Asia/Manila');
         $start = $first->startOfMonth()->startOfWeek(CarbonImmutable::SUNDAY);
         $end = $first->endOfMonth()->endOfWeek(CarbonImmutable::SATURDAY);
 
-        $weeks = [];
+        $days = [];
 
         for ($day = $start; $day->lte($end); $day = $day->addDay()) {
             $key = $day->format('Y-m-d');
-            $weeks[$day->format('W')][] = [
+            $days[] = [
                 'day' => $day->day,
                 'date' => $key,
                 'in_month' => $day->month === $month,
@@ -107,6 +93,6 @@ class HelperCalendarController extends Controller
             ];
         }
 
-        return array_values($weeks);
+        return array_chunk($days, 7);
     }
 }

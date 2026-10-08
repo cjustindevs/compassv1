@@ -26,6 +26,8 @@
         })();
     </script>
 
+    <link rel="stylesheet" href="{{ asset('css/helper-refinement.css') }}?v={{ filemtime(public_path('css/helper-refinement.css')) }}">
+    <script src="{{ asset('js/helper-refinement.js') }}?v={{ filemtime(public_path('js/helper-refinement.js')) }}" defer></script>
     @yield('styles')
     <style>
         body.helper-layout > .main-content { margin-left: var(--sidebar-w); padding: 24px 28px 40px; min-width: 0; width: auto; }
@@ -66,13 +68,8 @@
                 </div>
             </div>
             <div style="display:flex;align-items:center;gap:12px;">
-                <span style="font-size:12px;color:var(--gray-400);">{{ now()->format('M d, Y') }}</span>
-                <a href="{{ route('helper.notifications') }}" class="notif-bell" style="position:relative;width:36px;height:36px;border-radius:50%;background:white;border:1px solid var(--gray-200);display:flex;align-items:center;justify-content:center;color:var(--gray-500);">
-                    <i class="fas fa-bell"></i>
-                    @if(($unreadBadge = optional(auth()->user())->unreadNotifications()->count()) > 0)
-                        <span style="position:absolute;top:-4px;right:-4px;background:var(--red-600);color:white;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 4px;">{{ $unreadBadge }}</span>
-                    @endif
-                </a>
+                <span style="font-size:12px;color:var(--gray-400);">{{ now('Asia/Manila')->format('M d, Y') }}</span>
+
             </div>
         </div>
 

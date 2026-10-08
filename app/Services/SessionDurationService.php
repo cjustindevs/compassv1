@@ -43,6 +43,7 @@ class SessionDurationService
                 'duration'=>min(self::MAX_MINUTES,max(1,(int)$locked->start_time->diffInMinutes(now())))]);
             $locked->queue?->update(['completed_at'=>now()]);
             SupportAudit::record('session_completed',$locked);
+            $this->notifyDocumentationCompletion($locked);
             if ($helper=$locked->helper) { $helper->syncSessionCounters(); if (!$helper->activeSessions()->exists()) app(HelperWorkflowMaintenance::class)->restoreOperationalStatus($helper); }
             $session->refresh(); return true;
         });
@@ -73,6 +74,7 @@ class SessionDurationService
             ]);
             $locked->queue?->update(['completed_at'=>now()]);
             SupportAudit::record('session_completed',$locked,['reason'=>'duration_limit']);
+            $this->notifyDocumentationCompletion($locked);
             if ($helper = $locked->helper) {
                 $helper->syncSessionCounters();
                 if ($helper->status === 'busy' && $helper->activeSessions()->doesntExist()) {
@@ -87,5 +89,15 @@ class SessionDurationService
             $this->broadcastSafely(new SessionEnded($session, 'system'));
         }
         return $expired;
+    }
+    private function notifyDocumentationCompletion(Session $session): void
+    {
+        if (!$session->helper?->user_account_id) return;
+        // Called while the session row is locked: repeated completion/expiry is idempotent.
+        \App\Models\Notification::withoutGlobalScope('unarchived')->firstOrCreate([
+            'user_account_id'=>$session->helper->user_account_id,
+            'title'=>'Session completed', 'notification_type'=>'reminder',
+            'link'=>'/helper/session/'.$session->id.'/notes',
+        ], ['message'=>'Complete the summary and reflection for '.$session->reference_number.'.']);
     }
 }

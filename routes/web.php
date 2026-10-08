@@ -650,6 +650,7 @@ Route::middleware(['auth', 'role:adviser'])->group(function () {
 
 Route::middleware(['auth', 'role:helper'])->group(function () {
     Route::get('/helper/reports', [\App\Http\Controllers\Helper\HelperReportController::class, 'index'])->name('helper.reports');
+    Route::get('/helper/reports/export', [\App\Http\Controllers\Helper\HelperReportController::class, 'export'])->name('helper.reports.export');
     Route::get('/helper/training', [AdviserTrainingController::class, 'index'])->name('helper.training');
     Route::patch('/helper/training/{training}', [AdviserTrainingController::class, 'update'])->name('helper.training.update');
 });
@@ -691,7 +692,7 @@ Route::middleware('auth')->group(function () {
 Route::get('/emergency-notice', [\App\Http\Controllers\EmergencyNoticeController::class,'next'])->middleware('auth')->name('emergency-notice.next');
 Route::post('/emergency-notice/dismiss', [\App\Http\Controllers\EmergencyNoticeController::class,'dismiss'])->middleware('auth')->name('emergency-notice.dismiss');
 
-Route::post('/helper/duty', [\App\Http\Controllers\Helper\HelperCalendarController::class,'declareDuty'])->middleware('auth')->name('helper.duty.declare');
+
 
 Route::get('/notification-archive', [\App\Http\Controllers\NotificationArchiveController::class,'index'])->middleware('auth')->name('notifications.archive');
 Route::post('/notification-archive/{id}/restore', [\App\Http\Controllers\NotificationArchiveController::class,'restore'])->middleware('auth')->name('notifications.restore');

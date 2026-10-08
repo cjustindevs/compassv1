@@ -6,8 +6,9 @@
 @section('subheading', 'Your helper information and practice overview.')
 
 @section('content')
+<div class="hf-page">
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 hf-profile-grid">
 
         <!-- Profile card -->
         <div class="lg:col-span-1">
@@ -76,7 +77,7 @@
                     @csrf
                     @method('PUT')
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 hf-form-grid">
                         <div class="form-group">
                             <label class="form-label">First name</label>
                             <input type="text" name="first_name" class="form-control" value="{{ old('first_name', $helper->first_name) }}" required>
@@ -92,10 +93,10 @@
                         <textarea name="bio" class="form-control" placeholder="Short intro about yourself">{{ old('bio', $helper->bio ?? '') }}</textarea>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 hf-form-grid">
                         <div class="form-group">
-                            <label class="form-label">Phone</label>
-                            <input type="text" name="phone" class="form-control" value="{{ old('phone', $helper->phone ?? '') }}">
+                            <label class="form-label" for="profile-phone">Phone Number / Read-only</label>
+                            <input type="text" id="profile-phone" class="form-control" readonly value="{{ $helper->phone ?? 'Not recorded' }}">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Preferred language</label>
@@ -110,58 +111,22 @@
 
                     <hr class="divider">
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 hf-form-grid">
+
                         <div class="form-group">
-                            <label class="form-label">Account name</label>
-                            <input type="text" name="name" class="form-control" value="{{ old('name', $user->name) }}">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Email</label>
-                            <input type="email" name="email" class="form-control" value="{{ old('email', $user->email) }}">
+                            <label class="form-label" for="profile-email">Email / Read-only</label>
+                            <input type="email" id="profile-email" class="form-control" readonly value="{{ $user->email }}">
                         </div>
                     </div>
 
+                    <p class="hf-muted" style="margin-bottom:16px">Email and phone are managed by the system. Contact your Adviser or administrator if a correction is needed.</p>
                     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
                 </form>
             </div>
 
-            <!-- Recent sessions -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Recent Sessions</h3>
-                    <a href="{{ route('helper.cases') }}" class="link">View all</a>
-                </div>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Seeker</th>
-                                <th>Concern</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($recentSessions as $session)
-                                <tr>
-                                    <td class="font-medium">{{ $session->reference_number }}</td>
-                                    <td>{{ $session->seeker->generated_alias ?? 'Seeker' }}</td>
-                                    <td class="text-sm text-gray-500">{{ Illuminate\Support\Str::limit($session->concern->concern_name ?? '—', 24) }}</td>
-                                    <td><span class="status-badge {{ str_replace('_', '-', $session->session_status) }}">{{ $session->status_label }}</span></td>
-                                    <td>{{ $session->created_at?->format('M d, Y') }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center py-6 text-gray-400">No sessions yet.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
 
     </div>
 
+</div>
 @endsection

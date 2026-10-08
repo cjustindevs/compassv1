@@ -19,11 +19,11 @@ class HelperNotificationController extends Controller
     public function index(): View
     {
         abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
-        $notifications = Notification::where('user_account_id', Auth::id())
+        $notifications = Notification::withoutDuplicateCompletionReminders()->where('user_account_id', Auth::id())
             ->latest()
             ->paginate(15)->withQueryString();
 
-        $unreadCount = Notification::where('user_account_id', Auth::id())
+        $unreadCount = Notification::withoutDuplicateCompletionReminders()->where('user_account_id', Auth::id())
             ->unread()
             ->count();
 
@@ -36,18 +36,17 @@ class HelperNotificationController extends Controller
     public function markAsRead(Request $request, int $id): RedirectResponse|JsonResponse
     {
         abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
-        $notification = Notification::where('user_account_id', Auth::id())
+        $notification = Notification::withoutDuplicateCompletionReminders()->where('user_account_id', Auth::id())
             ->findOrFail($id);
 
         $notification->markAsRead();
+        Cache::forget('unread_count_'.Auth::id());
 
         if ($request->expectsJson()) {
             return response()->json(['read' => true]);
         }
 
-        return $notification->link
-            ? redirect($notification->link)
-            : back();
+        return back()->with('success','Notification marked as read.');
     }
 
     /**
@@ -56,13 +55,14 @@ class HelperNotificationController extends Controller
     public function markAllAsRead(): RedirectResponse|JsonResponse
     {
         abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
-        Notification::where('user_account_id', Auth::id())
+        Notification::withoutDuplicateCompletionReminders()->where('user_account_id', Auth::id())
             ->unread()
             ->update([
                 'status' => 'read',
                 'read_at' => now(),
             ]);
 
+        Cache::forget('unread_count_'.Auth::id());
         if (request()->expectsJson()) {
             return response()->json(['read_all' => true]);
         }
@@ -77,7 +77,7 @@ class HelperNotificationController extends Controller
     {
         abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $count = Cache::remember('unread_count_'.auth()->id(), 30, function () {
-            return Notification::where('user_account_id', Auth::id())
+            return Notification::withoutDuplicateCompletionReminders()->where('user_account_id', Auth::id())
                 ->unread()
                 ->count();
         });

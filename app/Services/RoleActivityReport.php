@@ -29,7 +29,7 @@ class RoleActivityReport
         abort_unless($user && $user->is_active && in_array($user->role, ['helper', 'adviser', 'moderator', 'admin'], true), 403);
         if ($user->role === 'moderator') return app(ModeratorOperations::class)->report($request, $export);
         $data = $request->validate(['from' => 'nullable|date', 'to' => 'nullable|date|after_or_equal:from',
-            'case_status' => 'nullable|in:active,completed,evaluated,waiting,helper_assigned,pending_review,emergency,cancelled,no_show',
+            'case_status' => 'nullable|in:active,completed,evaluated,waiting,helper_assigned,pending_review,emergency,cancelled,no_show'.($user->role==='helper' ? ',scheduled,screening_completed,preferences_set' : ''),
             'emergency_status' => 'nullable|in:open,triggered,pending,under_review,responding,acknowledged,escalated,resolved,closed',
             'priority' => 'nullable|in:low,moderate,high,emergency', 'helper_id' => 'nullable|integer', 'concern_id' => 'nullable|integer|exists:concern_categories,id', 'referral_status' => 'nullable|in:'.implode(',', Referral::STATUSES)]);
         $start = ! empty($data['from']) ? Carbon::parse($data['from'], 'Asia/Manila') : now('Asia/Manila')->subDays(30)->startOfDay();

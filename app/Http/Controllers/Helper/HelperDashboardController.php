@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Helper;
 use App\Http\Controllers\Controller;
 use App\Models\HelperCompetencyHistory;
 use App\Models\Notification;
-use App\Models\ReadinessCheck;
 use App\Models\Session;
 use Illuminate\Support\Facades\Auth;
 
@@ -42,7 +41,6 @@ class HelperDashboardController extends Controller
         // ── CACHED STATS ────────────────────────────────────────────────
         $stats = (function () use ($helperId) {
             return [
-                'total_sessions' => Session::where('helper_id', $helperId)->count(),
                 'active_sessions' => Session::where('helper_id', $helperId)
                     ->where('session_status', 'active')
                     ->count(),
@@ -62,12 +60,12 @@ class HelperDashboardController extends Controller
         $stats['competency_score'] = $competencyScore;
 
         // ── READINESS FROM DATABASE ──────────────────────────────────────
-        $readiness = (function () use ($helperId) {
-            return ReadinessCheck::where('helper_id', $helperId)
-                ->latest('assessment_date')
-                ->first();
-        })();
-        $availabilityStatus = ucfirst($helper->availability ?? 'unavailable');
+        $sidebarStats = app(\App\Services\HelperSidebarStats::class)->forHelper($helper);
+        $currentReadiness = $helper->getCurrentReadiness();
+        $upcomingSession = $helper->sessions()->whereNotNull('scheduled_start')->where('scheduled_start', '>=', now())
+            ->whereIn('session_status', ['scheduled', 'helper_assigned'])->orderBy('scheduled_start')->first();
+        $recentSessions = $helper->sessions()->with('concern')->whereIn('session_status', ['completed','evaluated','cancelled','no_show'])
+            ->orderByRaw('COALESCE(end_time,start_time,created_date,created_at) DESC')->orderByDesc('id')->limit(5)->get();
 
         // ── ACTIVE CASES FROM DATABASE ───────────────────────────────────
         $activeCases = Session::with([
@@ -134,7 +132,9 @@ class HelperDashboardController extends Controller
             });
 
         // ── RECENT ACTIVITY FROM DATABASE ────────────────────────────────
-        $recentActivity = Notification::where('user_account_id', $user->id)
+        $recentActivity = Notification::withoutDuplicateCompletionReminders()->where('user_account_id', $user->id)
+            ->where(fn ($q) => $q->whereIn('notification_type', ['emergency','assignment','evaluation','referral','session'])
+                ->orWhere('title','Session completed')->orWhere('title','like','%Readiness%')->orWhere('title','like','%documentation%')->orWhere('title','like','%Referral%'))
             ->orderByDesc('created_at')
             ->limit(4)
             ->get()
@@ -145,6 +145,7 @@ class HelperDashboardController extends Controller
                 'message' => $n->title,
                 'detail' => $n->message,
                 'time' => $n->created_at?->diffForHumans() ?? 'just now',
+                'link' => $n->link,
             ]);
 
         if ($recentActivity->isEmpty()) {
@@ -171,7 +172,7 @@ class HelperDashboardController extends Controller
         $documentationTasks = $helper->sessions()->whereNotNull('start_time')->where('documentation_status', '!=', 'submitted')->whereIn('session_status', ['completed', 'evaluated', 'cancelled', 'no_show'])->orderBy('end_time')->limit(8)->get();
 
         return view('dashboard.helper', compact(
-            'documentationTasks',
+            'documentationTasks', 'sidebarStats', 'currentReadiness', 'upcomingSession', 'recentSessions',
             'user',
             'helper',
             'stats',
@@ -180,8 +181,7 @@ class HelperDashboardController extends Controller
             'activeSessionData',
             'recentActivity',
             'quickActions',
-            'competency',
-            'readiness'
+            'competency'
         ));
     }
 }

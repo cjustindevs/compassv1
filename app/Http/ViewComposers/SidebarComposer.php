@@ -72,7 +72,7 @@ class SidebarComposer
                 ->whereIn('session_status', ['helper_assigned', 'active'])
                 ->count();
 
-            $notifBadgeCount = $user->unreadNotifications()->count();
+            $notifBadgeCount = \App\Models\Notification::withoutDuplicateCompletionReminders()->where('user_account_id',$user->id)->unread()->count();
 
             $activeSession = Session::where('helper_id', $helper->id)
                 ->whereIn('session_status', ['active', 'helper_assigned'])

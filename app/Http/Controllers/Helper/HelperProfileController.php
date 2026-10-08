@@ -34,12 +34,6 @@ class HelperProfileController extends Controller
             ->first();
         $competencyScore = $latestCompetency ? round($latestCompetency->normalized_score * 20, 1) : null;
 
-        $recentSessions = Session::with(['seeker', 'concern'])
-            ->where('helper_id', $helper->id)
-            ->orderByDesc('created_date')
-            ->limit(5)
-            ->get();
-
         $readiness = $helper->latestReadiness;
 
         return view('helper.profile', compact(
@@ -49,7 +43,6 @@ class HelperProfileController extends Controller
             'completedSessions',
             'reportsCount',
             'competencyScore',
-            'recentSessions',
             'readiness'
         ));
     }
@@ -67,28 +60,20 @@ class HelperProfileController extends Controller
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
             'bio' => 'nullable|string|max:1000',
-            'phone' => 'nullable|string|max:30',
+            'phone' => 'prohibited',
             'specializations' => 'nullable|string|max:500',
             'preferred_language' => 'nullable|string|max:50',
-            'name' => 'nullable|string|max:100',
-            'email' => 'nullable|email|max:255|unique:users,email,'.$user->id,
+            'name' => 'prohibited',
+            'email' => 'prohibited',
         ]);
 
         $helper->update([
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
             'bio' => $validated['bio'] ?? null,
-            'phone' => $validated['phone'] ?? null,
             'declared_specializations' => $validated['specializations'] ?? null,
             'preferred_language' => $validated['preferred_language'] ?? 'English',
         ]);
-
-        if (! empty($validated['name']) || ! empty($validated['email'])) {
-            $user->update([
-                'name' => $validated['name'] ?? $user->name,
-                'email' => $validated['email'] ?? $user->email,
-            ]);
-        }
 
         return back()->with('success', 'Profile updated successfully.');
     }

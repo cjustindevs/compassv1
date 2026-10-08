@@ -6,6 +6,7 @@
 @section('subheading', 'All sessions assigned to you, straight from the database.')
 
 @section('content')
+<div class="hf-page">
 
     <!-- Summary stats -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -38,7 +39,6 @@
                         <th>ID</th>
                         <th>Seeker</th>
                         <th>Concern</th>
-                        <th>Risk</th>
                         <th>Mode</th>
                         <th>Status</th>
                         <th>Requested</th>
@@ -60,7 +60,6 @@
                                 </div>
                             </td>
                             <td class="text-sm text-gray-500">{{ Illuminate\Support\Str::limit($case['concern'], 24) }}</td>
-                            <td><span class="risk-badge {{ $case['risk_class'] }}">{{ $case['risk'] }}</span></td>
                             <td>{{ $case['mode'] }}</td>
                             <td><span class="status-badge {{ str_replace('_', '-', $case['status']) }}">{{ $case['status_label'] }}</span></td>
                             <td class="text-sm text-gray-500">
@@ -119,11 +118,11 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9">
+                            <td colspan="8">
                                 <div class="empty-state">
 
                                     <h3>No cases assigned yet</h3>
-                                    <p>When a seeker is matched to you, the case will appear here.</p>
+                                    <p>No action is needed right now. New assignments will appear here when a case becomes available.</p>
                                 </div>
                             </td>
                         </tr>
@@ -133,6 +132,7 @@
         </div>
     </div>
 
+</div>
 @endsection
 
 @section('scripts')

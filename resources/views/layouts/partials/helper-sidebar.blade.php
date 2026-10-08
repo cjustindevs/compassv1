@@ -28,9 +28,7 @@
             <span class="nav-badge" id="caseBadge" style="{{ $caseBadgeCount > 0 ? '' : 'display:none;' }}">{{ $caseBadgeCount }}</span>
         </a>
         <a href="{{ route('helper.reconnections') }}" class="nav-item {{ request()->routeIs('helper.reconnections') ? 'active' : '' }}" title="Connection review"><i class="fas fa-plug" aria-hidden="true"></i><span class="nav-text">Connection review</span></a>
-        <a href="{{ $notesUrl }}" class="nav-item {{ request()->routeIs('helper.notes', 'helper.session.notes*') ? 'active' : '' }}">
-            <i class="fas fa-edit"></i><span class="nav-text">Session Notes</span>
-        </a>
+
         <a href="{{ route('helper.calendar') }}" class="nav-item {{ request()->routeIs('helper.calendar*') ? 'active' : '' }}">
             <i class="fas fa-calendar-alt"></i><span class="nav-text">Calendar</span>
         </a>

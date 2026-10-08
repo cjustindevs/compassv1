@@ -191,3 +191,86 @@ npm run build
 - Adviser: acknowledge and resolve an authorized emergency; verify action history and appropriate authorization.
 - UI: inspect notification cards and emergency review on mobile and desktop, including focus, wrapping, empty states, and reachable controls.
 - Deployment: confirm the expected commit, successful migration logs, scheduler operation if reminders are enabled, and absence of new application exceptions.
+
+
+## Helper UI and functional refinement - October 9, 2026
+
+The current working tree contains the Helper refinement requested with Dashboard,
+Competency, and Feedback reference images. Publication target: `origin/deploy`,
+authorized by the user on October 9, 2026. Verify the remote commit and Render
+deployment separately. Preserve unrelated existing Dockerfile/mail/Adviser changes
+and inaccessible PDF-tool deletions when reviewing or staging.
+
+### Implemented scope
+
+- Dashboard: four summary items (real upcoming session, active sessions, pending
+  assignments, existing competency score); separate Readiness and Availability;
+  live availability label/reason and readiness updates; no duplicate Adviser card
+  or top-right notification bell. Retains emergency support and documentation
+  tasks, concise recent activity, and five recent terminal sessions with Reports
+  access. Sidebar Adviser assignment remains intact.
+- Assigned Cases: removed only the Risk table column; retained case actions,
+  authorized context and underlying risk classification. Improved empty state.
+- Sidebar: removed standalone Session Notes navigation. Per-session documentation
+  endpoints, case documentation controls and workflow remain available.
+- Calendar: removed Helper self-declared duty UI and POST endpoint. Moderator and
+  Adviser scheduling remain unchanged. Duty and session events share the calendar;
+  Sunday-first weeks and month/date boundaries use Philippine Time. Retains month
+  selection, previous/next navigation, and assigned Adviser contact; mobile uses
+  a date-grouped agenda. No monthly session-summary duplication.
+- Reports: four visible summary cards, combined Date Range picker, Case Status,
+  Case Category, paginated Case Activity, and collapsible existing duty/availability
+  histories. PDF (existing DomPDF) and CSV exports reuse the filtered, owned report
+  queries. CSV cells escape spreadsheet formula prefixes. Exports do not contain
+  private Seeker identities or confidential narratives.
+- Notifications: Archived button, 15-record pagination, concise previews/type
+  labels, existing read/archive actions. Completion/documentation reminders are
+  emitted centrally once per Helper/session/action under the existing session
+  transaction/lock. Retries and archived reminders do not cause recreation.
+  Legacy duplicates are collapsed in the Helper inbox, activity and unread counts;
+  records remain retained in history.
+- Profile: removed Account Name and Recent Sessions. First/last names and existing
+  permitted fields remain editable. Account name, email and phone edits are
+  rejected server-side; email and phone display read-only without submitted names.
+- Competency/Feedback: reference-based organization, owned paginated history,
+  actual score trend and skill breakdown, date/search filters. Existing normalized
+  competency/rubric calculations are unchanged. Legacy percentage scores display
+  consistently on a 5-point scale; missing skills show Not recorded. Seeker
+  evaluations retain their existing 10-point reporting scale instead of copying
+  the reference's 5-point example.
+- Responsive CSS is scoped to Helper refinement views, with layouts at 1024,
+  768 and 480px; small-screen tables/charts scroll inside their own containers.
+
+### Implementation and validation
+
+New reusable files: `app/Services/HelperViewDateRange.php`,
+`resources/views/components/helper-date-range.blade.php`,
+`public/css/helper-refinement.css`, `public/js/helper-refinement.js`,
+`resources/views/helper/report-export.blade.php`, and
+`tests/Feature/HelperRefinementTest.php`.
+
+- No migration or new dependency is required. Public assets are referenced with
+  file modification timestamps from the Helper layout; existing Vite assets remain.
+- Broad regression run: 133 tests passed (1026 assertions), covering Helper module,
+  sidebar, readiness/eligibility security, role reports, session expiry and
+  reconnection, and system corrections. Old test expectations were adjusted only
+  for requested label/removal/contact restrictions and the removed duty endpoint.
+- Follow-up checks passed for final rendered pages, exports and pagination (7 tests,
+  102 assertions), legacy skill scaling/missing scores, and important-activity filtering.
+- PHP syntax, JavaScript syntax, CSS parsing and scoped Git whitespace checks pass.
+- Browser inventory was empty and the in-app browser reported unavailable. Actual
+  desktop/tablet/mobile visual verification and browser-console inspection remain
+  pending; do not describe them as completed. Existing local logs had earlier
+  unrelated October 7 errors, not fresh production evidence for this change.
+
+Run the targeted regression command against the existing isolated test database:
+
+```powershell
+& 'C:\xampp\php\php.exe' artisan test --filter='HelperModuleTest|HelperSidebarStatsTest|HelperWorkflowSecurityTest|RoleReportsNavigationTest|HelperRefinementTest|SessionDurationTest|SessionReconnectionTest|SystemCorrectionsTest'
+```
+
+Manual follow-up: inspect all eight affected pages at desktop, tablet (768px), and
+phone (480px/375px); exercise the Date Range picker, long table rows, empty states,
+read/archive actions, report downloads and live readiness/availability changes.
+Publish only after an explicit push request, with a reviewed task-specific file
+list. A GitHub push alone does not establish successful Render deployment.

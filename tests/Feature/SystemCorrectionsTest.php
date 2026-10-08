@@ -87,14 +87,11 @@ class SystemCorrectionsTest extends TestCase {
  $this->assertDatabaseHas('audit_logs',['action'=>'emergency_rejected']);
  $this->actingAs($su)->post(route('adviser.emergencies.resolve',$alert),['resolution_notes'=>'Attempted self resolution'])->assertForbidden();
  }
- public function test_helper_declares_date_only_duty_after_readiness():void {
+ public function test_helper_cannot_declare_their_own_duty():void {
  $u=User::factory()->create(['role'=>'helper','is_active'=>true]);$h=Helper::create(['user_account_id'=>$u->id,'email'=>$u->email,'first_name'=>'Test','last_name'=>'Helper']);$this->verifiedHelperFixture($h);
- $data=['date'=>now('Asia/Manila')->toDateString()];
- $this->actingAs($u)->post(route('helper.duty.declare'),$data)->assertSessionHasErrors('date');
  ReadinessCheck::create(['helper_id'=>$h->id,'assessment_date'=>now(),'valid_until'=>now()->addHours(2),'assessment_result'=>'ready','availability_status'=>'available','is_active'=>true]);
- $this->post(route('helper.duty.declare'),$data)->assertSessionHasNoErrors();
- $this->assertDatabaseHas('helper_schedules',['helper_id'=>$h->id,'shift_start'=>null,'shift_end'=>null]);
- $this->post(route('helper.duty.declare'),$data)->assertSessionHasErrors('date');
+ $this->actingAs($u)->post('/helper/duty',['date'=>now('Asia/Manila')->toDateString()])->assertNotFound();
+ $this->assertDatabaseCount('helper_schedules',0);
  }
  public function test_adviser_reports_and_analytics_render_separately():void {
  $u=User::factory()->create(['role'=>'adviser','is_active'=>true]);\App\Models\Adviser::create(['user_account_id'=>$u->id,'first_name'=>'Test','last_name'=>'Adviser','email'=>$u->email]);

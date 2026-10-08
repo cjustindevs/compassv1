@@ -1,75 +1,48 @@
 @extends('layouts.helper')
-
-@section('title', 'Notifications')
-
-@section('heading', 'Notifications')
-@section('subheading', 'Stay up to date with assignments, evaluations, and reminders.')
-
+@section('title','Notifications')
+@section('heading','Notifications')
+@section('subheading','Assignments, reminders and important session updates.')
 @section('content')
-<a href="{{ route('notifications.archive') }}" class="inline-block mb-4 text-green-700 underline">Archived notifications</a>
-
-    <div class="card">
-        <div class="card-header">
-            <h3>All Notifications</h3>
-            <div style="display:flex;gap:8px;align-items:center;">
-                <span class="pill" style="{{ $unreadCount > 0 ? 'background:#FEF3C7;color:#B45309;' : '' }}">{{ $unreadCount }} unread</span>
-                @if($unreadCount > 0)
-                    <form method="POST" action="{{ route('helper.notifications.read-all') }}">
-                        @csrf
-                        <button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-check-double"></i> Mark all read</button>
-                    </form>
-                @endif
-            </div>
-        </div>
-
-        @if($notifications->isNotEmpty())
-            <div style="display:flex;flex-direction:column;">
-                @foreach($notifications as $item)
-                    @php
-                        $icon = $item->type_icon ?: 'fa-bell';
-                        $isUnread = $item->status === 'unread';
-                    @endphp
-                    <div class="notif-item {{ $isUnread ? 'unread' : '' }}">
-
-                        <div style="flex:1;min-width:0;">
-                            <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
-                                <span class="font-semibold text-gray-800" style="font-size:14px;">
-                                    {{ $item->title }}
-                                    @if($isUnread)
-                                        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green-500);margin-left:6px;"></span>
-                                    @endif
-                                </span>
-                                <span class="text-xs text-gray-400" style="flex-shrink:0;">{{ $item->created_at?->diffForHumans() }}</span>
-                            </div>
-                            <div class="text-sm text-gray-500 mt-1">{{ $item->message }}</div>
-                            <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;">
-                                @if($item->link)
-                                    <a href="{{ $item->link }}" class="btn btn-secondary btn-sm"><i class="fas fa-external-link-alt"></i> View</a>
-                                @endif
-                                @if($isUnread)
-                                    <form method="POST" action="{{ route('helper.notifications.read', ['id' => $item->id]) }}">
-                                        @csrf
-                                        <button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-check"></i> Mark read</button>
-                                    </form>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-
-            @if($notifications->hasPages())
-                <div style="margin-top:16px;">
-                    {{ $notifications->links() }}
-                </div>
-            @endif
-        @else
-            <div class="empty-state">
-
-                <h3>No notifications</h3>
-                <p>New assignments and updates will appear here.</p>
-            </div>
-        @endif
-    </div>
-
+<div class="hf-page">
+<section class="card">
+<header class="card-header">
+<h3>Inbox <span class="hf-muted">{{ $unreadCount }} unread</span>
+</h3>
+<div class="hf-actions">
+<a class="btn btn-secondary btn-sm" href="{{ route('notifications.archive') }}">Archived</a>
+@if($unreadCount)
+<form method="POST" action="{{ route('helper.notifications.read-all') }}">@csrf<button class="btn btn-secondary btn-sm">Mark all as read</button>
+</form>
+@endif</div>
+</header>
+@forelse($notifications as $item)
+@php
+$type=str_contains(strtolower($item->title),'overdue') ? 'Overdue' : (str_contains(strtolower($item->title),'completed') ? 'Completed action' : ucwords(str_replace('_',' ',$item->notification_type)));
+@endphp
+<article class="hf-notification {{ !$item->is_read ? 'hf-notification-unread' : '' }}">
+<header>
+<h3>{{ $item->title }}</h3>
+<span class="hf-status {{ $item->notification_type==='emergency' || $type==='Overdue' ? 'hf-status-danger' : 'hf-status-muted' }}">{{ $type }}</span>
+<time datetime="{{ $item->created_at?->toIso8601String() }}" title="{{ $item->created_at?->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') }} PHT">{{ $item->created_at?->diffForHumans() }}</time>
+</header>
+<p class="hf-muted">{{ \Illuminate\Support\Str::limit($item->message,180) }}</p>
+<div class="hf-actions">
+@if($item->link)
+<a class="btn btn-secondary btn-sm" href="{{ $item->link }}">Open update</a>
+@endif @if(!$item->is_read)
+<form method="POST" action="{{ route('helper.notifications.read',$item->id) }}">@csrf<button class="btn btn-secondary btn-sm">Mark as Read</button>
+</form>
+@endif<form method="POST" action="{{ route('notifications.destroy',$item->id) }}">@csrf @method('DELETE')
+<button class="btn btn-secondary btn-sm">Archive</button>
+</form>
+</div>
+</article>
+@empty<div class="empty-state">
+<h3>No notifications</h3>
+<p>New assignments and important updates will appear here.</p>
+</div>
+@endforelse
+<div class="hf-record-count">Showing {{ $notifications->firstItem() ?? 0 }}-{{ $notifications->lastItem() ?? 0 }} of {{ $notifications->total() }} updates</div>{{ $notifications->links() }}
+</section>
+</div>
 @endsection

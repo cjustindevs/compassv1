@@ -86,7 +86,7 @@ class HelperModuleTest extends TestCase
         $response = $this->actingAs($this->helperUser)->get(route('helper.dashboard'));
 
         $response->assertOk();
-        $response->assertSee('Total Sessions');
+        $response->assertSee('Upcoming Session')->assertDontSee('Total Sessions');
     }
 
     public function test_helper_sees_assigned_adviser_across_the_module(): void
@@ -97,7 +97,7 @@ class HelperModuleTest extends TestCase
         $this->actingAs($this->helperUser)
             ->get(route('helper.dashboard'))
             ->assertOk()
-            ->assertSee('Your Adviser')
+            ->assertDontSee('Your Adviser')
             ->assertSee($adviser->full_name);
 
         $this->actingAs($this->helperUser)
@@ -311,7 +311,7 @@ class HelperModuleTest extends TestCase
 
         $this->actingAs($this->helperUser)
             ->get(route('helper.dashboard'))
-            ->assertOk()->assertSee('Assignment readiness');
+            ->assertOk()->assertSee('Readiness')->assertSee('Availability');
     }
 
     public function test_ready_helper_can_access_dashboard(): void
@@ -1222,7 +1222,6 @@ class HelperModuleTest extends TestCase
                 'first_name' => 'Helper',
                 'last_name' => 'Updated',
                 'bio' => 'A short bio.',
-                'phone' => '09170000000',
                 'preferred_language' => 'Filipino',
             ])
             ->assertRedirect();

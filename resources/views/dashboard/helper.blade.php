@@ -1,243 +1,212 @@
 @extends('layouts.helper')
-
-@section('title', 'Dashboard')
-
-@section('heading', 'Good ' . (now()->hour < 12 ? 'morning' : (now()->hour < 18 ? 'afternoon' : 'evening')) . ', ' . ($helper?->first_name ?? 'Helper'))
-
-@section('subheading', 'Here is what is happening with your sessions today.')
-
+@section('title','Dashboard')
+@section('heading','Good '.(now('Asia/Manila')->hour < 12 ? 'morning' : (now('Asia/Manila')->hour < 18 ? 'afternoon' : 'evening')).', '.(($helper ?? null)?->first_name ?? 'Helper'))
+@section('subheading','Here is what is happening with your sessions today.')
 @section('content')
-    @if(isset($helperProfileMissing) && $helperProfileMissing)
-        <div class="card mb-6">
-            <div class="empty-state">
-
-                <h3 style="font-size:18px;font-weight:700;color:var(--gray-800);margin-bottom:8px;">Your helper profile is not complete</h3>
-                <p style="margin-bottom:16px;">Your account is registered as a helper, but a helper profile has not been created yet. Please contact your adviser or an administrator to complete your onboarding.</p>
-                <a href="{{ route('helper.settings') }}" class="btn btn-secondary">Go to Settings</a>
-            </div>
-        </div>
-    @else
-
-    <!-- ─── STATS ─── -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 dashboard-grid-max">
-        <div class="stat-card">
-            <span class="stat-label">Total Sessions</span>
-            <div class="stat-number">{{ $stats['total_sessions'] }}</div>
-            <span class="text-xs text-gray-400">All time</span>
-        </div>
-        <div class="stat-card">
-            <span class="stat-label">Active Sessions</span>
-            <div class="stat-number">{{ $stats['active_sessions'] }}</div>
-            <span class="text-xs text-gray-400">Currently ongoing</span>
-        </div>
-        <div class="stat-card">
-            <span class="stat-label">Pending Requests</span>
-            <div class="stat-number">{{ $stats['pending_requests'] }}</div>
-            <span class="text-xs text-gray-400">Awaiting your action</span>
-        </div>
-        <div class="stat-card">
-            <span class="stat-label">Competency Score</span>
-            <div class="stat-number">{{ $stats['competency_score'] !== null ? $stats['competency_score'].'%' : 'Not evaluated' }}</div>
-            <span class="text-xs text-gray-400">{{ optional($competency)->level_label ?: 'Not yet evaluated' }}</span>
-        </div>
-    </div>
-
-    <!-- ─── EMERGENCY ALERT ─── -->
-    @if(isset($emergencyCases) && count($emergencyCases) > 0)
-        <div class="emergency-alert mb-6">
-            <span class="alert-text">
-
-                Emergency case: {{ $emergencyCases[0]['alias'] }} ({{ $emergencyCases[0]['incident'] }}) - {{ $emergencyCases[0]['time'] }}
-            </span>
-            <a href="{{ route('helper.cases.show', ['id' => $emergencyCases[0]['id']]) }}" class="btn-escalate" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
-                <i class="fas fa-eye"></i> Review now
-            </a>
-        </div>
-    @endif
-
-    <!-- ─── ACTIVE SESSION ─── -->
-    @if(isset($activeSessionData) && $activeSessionData)
-        <div class="card mb-6">
-            <div class="card-header">
-                <h3>Active Session</h3>
-                <span class="text-xs text-green-600 font-medium"> Live</span>
-            </div>
-            <div class="active-session-card">
-                    <div class="session-info">
-                        <div class="alias">{{ $activeSessionData['alias'] }}</div>
-                        <div class="mode">{{ $activeSessionData['mode'] }} · {{ $activeSessionData['elapsed'] }} elapsed</div>
-                        @if(($activeSessionData['elapsed_minutes'] ?? 0) >= 85)
-                            <div class="text-xs {{ $activeSessionData['elapsed_minutes'] >= 90 ? 'text-red-600' : 'text-yellow-600' }} mt-1">
-                                {{ $activeSessionData['elapsed_minutes'] >= 90 ? '90-minute limit exceeded. End and document this session.' : 'Approaching the 90-minute session limit.' }}
-                            </div>
-                        @endif
-                    </div>
-                <a href="{{ route('helper.session.chat', ['id' => $activeSessionData['id']]) }}" class="btn-resume">
-                    <i class="fas fa-play mr-1"></i> Resume chat
-                </a>
-            </div>
-        </div>
-    @endif
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 dashboard-grid-max">
-
-        <!-- ─── LEFT COLUMN (2/3) ─── -->
-        <div class="lg:col-span-2">
-
-            <!-- Assigned Cases -->
-            <div class="card mb-6">
-                <div class="card-header">
-                    <h3>Assigned Cases</h3>
-                    <a href="{{ route('helper.cases') }}" class="link">View all</a>
-                </div>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Alias</th>
-                                <th>Risk</th>
-                                <th class="hidden sm:table-cell">Mode</th>
-                                <th class="hidden md:table-cell">Language</th>
-                                <th class="hidden lg:table-cell">Waiting</th>
-                                <th>Notes</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($activeCases as $case)
-                                <tr>
-                                    <td class="font-medium">{{ $case['reference'] }}</td>
-                                    <td>{{ $case['alias'] }}</td>
-                                    <td><span class="risk-badge {{ strtolower($case['risk']) }}">{{ $case['risk'] }}</span></td>
-                                    <td class="hidden sm:table-cell">{{ $case['mode'] }}</td>
-                                    <td class="hidden md:table-cell">{{ $case['language'] }}</td>
-                                    <td class="hidden lg:table-cell">{{ $case['waiting'] }}</td>
-                                    <td class="text-sm text-gray-500">{{ Illuminate\Support\Str::limit($case['notes'], 30) }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="text-center py-6 text-gray-400">No active cases</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Quick Actions</h3>
-                </div>
-                <div class="quick-actions">
-                    @foreach($quickActions as $action)
-                        <a href="{{ route($action['route'], $action['params']) }}" class="btn-action">
-                            <i class="fas {{ $action['icon'] }}"></i> {{ $action['label'] }}
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-
-        </div>
-
-        <!-- ─── RIGHT COLUMN (1/3) ─── -->
-        <div class="lg:col-span-1">
-
-            <!-- Documentation to complete -->
-            @if(isset($documentationTasks) && $documentationTasks->isNotEmpty())
-                <div class="card mb-6">
-                    <div class="card-header"><h3>Documentation to complete</h3></div>
-                    @foreach($documentationTasks as $task)
-                        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 py-3 text-sm">
-                            <span>{{ $task->reference_number }} &middot; {{ $task->end_time?->lt(now()->subHours(24)) ? 'Overdue' : 'Summary or reflection pending' }}</span>
-                            <a class="btn btn-secondary btn-sm" href="{{ route('helper.session.notes',$task->id) }}">Open documentation</a>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-
-            <!-- Assignment readiness (single source: HelperEligibilityService) -->
-            @if(auth()->user()->helper)
-                @php($eligibility=app(\App\Services\HelperEligibilityService::class)->status(auth()->user()->helper))
-                @php($currentReadiness=auth()->user()->helper->getCurrentReadiness())
-                <div class="card mb-6">
-                    <div class="card-header"><h3>Assignment readiness</h3><span class="pill">{{ $eligibility['assignable'] ? 'Ready for matching' : $eligibility['label'] }}</span></div>
-                    @if($eligibility['assignable'])
-                        <p class="text-sm text-gray-600">You meet the current requirements for an assignment. Duty-shift capacity: {{ auth()->user()->helper->getRemainingCapacity() }}/{{ \App\Models\Helper::MAX_SESSIONS_PER_SHIFT }} remaining.</p>
-                        @if($currentReadiness?->valid_until)
-                            <p class="text-sm text-gray-500 mt-2"><i class="fas fa-hourglass-half mr-1" aria-hidden="true"></i> Readiness check valid until {{ $currentReadiness->valid_until->timezone('Asia/Manila')->format('M j, Y g:i A') }}.</p>
-                        @endif
-                    @else
-                        <ul class="text-sm text-gray-600 space-y-2">@foreach($eligibility['reasons'] as $reason)<li>{{ $reason }}</li>@endforeach</ul>
-                    @endif
-                    <div class="flex flex-wrap gap-2 mt-4">
-                        <a href="{{ route('helper.readiness') }}" class="btn btn-secondary btn-sm">Review readiness</a>
-                        <a href="{{ route('helper.readiness.history') }}" class="btn btn-secondary btn-sm">Readiness history</a>
-                    </div>
-                </div>
-            @endif
-
-            <!-- Your Adviser -->
-            @if($helper && $helper->adviser)
-                <div class="card mb-6">
-                    <div class="card-header"><h3>Your Adviser</h3></div>
-                    <div class="flex items-center gap-3">
-                        <div class="avatar-lg" style="width:44px;height:44px;font-size:16px;">{{ Illuminate\Support\Str::upper(Illuminate\Support\Str::substr(($helper->adviser->first_name ?? 'A'), 0, 1)) }}</div>
-                        <div>
-                            <div class="font-semibold text-gray-800">{{ $helper->adviser->full_name }}</div>
-                            <div class="text-sm text-gray-500"><a class="link" href="mailto:{{ $helper->adviser->email ?? $helper->adviser->user?->email }}">{{ $helper->adviser->email ?? $helper->adviser->user?->email }}</a></div>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            <!-- Recent Activity -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Recent Activity</h3>
-                    <a href="{{ route('helper.notifications') }}" class="link">View all</a>
-                </div>
-                <div>
-                    @forelse($recentActivity as $activity)
-                        <div class="activity-item">
-                            <div class="icon {{ $activity['type'] }}">
-                                @if($activity['type'] == 'emergency')
-
-                                @elseif($activity['type'] == 'assignment')
-
-                                @elseif($activity['type'] == 'feedback')
-
-                                @elseif($activity['type'] == 'reminder')
-
-                                @else
-
-                                @endif
-                            </div>
-                            <div class="content">
-                                <div class="message">{{ $activity['message'] }}</div>
-                                <div class="detail">{{ $activity['detail'] }}</div>
-                                <div class="time">{{ $activity['time'] }}</div>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="empty-state">
-
-                            <p>No recent activity</p>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-
-        </div>
-
-    </div>
-
-    <!-- Footer -->
-    <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-
-        You are making a difference. Keep going.
-    </div>
-
-    @endif
-
+<div class="hf-page">
+@if(isset($helperProfileMissing) && $helperProfileMissing)
+<section class="card empty-state">
+<h3>Your Helper profile is incomplete</h3>
+<p>Contact your Adviser or administrator to finish onboarding.</p>
+</section>
+@else
+<div class="hf-kpis">
+    <article class="hf-kpi">
+<span>Upcoming Session</span>
+@if($upcomingSession)
+<strong class="hf-upcoming">{{ $upcomingSession->scheduled_start->copy()->timezone('Asia/Manila')->format('M d, g:i A') }}</strong>
+<small>{{ $upcomingSession->reference_number }} / Philippine Time</small>
+@else<strong class="hf-upcoming">No upcoming sessions</strong>
+<small>Your next scheduled session will appear here.</small>
+@endif</article>
+    <article class="hf-kpi">
+<span>Active Sessions</span>
+<strong>{{ $stats['active_sessions'] }}</strong>
+<small>Currently ongoing</small>
+</article>
+    <article class="hf-kpi">
+<span>Pending Requests</span>
+<strong>{{ $stats['pending_requests'] }}</strong>
+<small>Awaiting your action</small>
+</article>
+    <article class="hf-kpi">
+<span>Competency Score</span>
+<strong>{{ $stats['competency_score']!==null ? $stats['competency_score'].'%' : 'Not evaluated' }}</strong>
+<small>{{ $competency?->level_label ?? 'No evaluation recorded' }}</small>
+</article>
+</div>
+@if(count($emergencyCases))
+<section class="card">
+<header class="card-header">
+<h3>Emergency support</h3>
+<span class="hf-status hf-status-danger">Attention required</span>
+</header>
+<p class="hf-muted">{{ $emergencyCases[0]['alias'] }} / {{ $emergencyCases[0]['incident'] }}</p>
+<a href="{{ route('helper.cases.show',$emergencyCases[0]['id']) }}" class="btn btn-secondary btn-sm">Open assigned case</a>
+</section>
+@endif
+<div class="hf-grid" style="margin-bottom:20px">
+    <section class="card hf-availability">
+<header class="card-header">
+<h3>Availability</h3>
+<a href="{{ route('helper.calendar') }}" class="link">Duty schedule</a>
+</header>
+<strong data-dashboard-availability style="color:{{ $sidebarStats['availabilityStatus']==='available' ? 'var(--green-500)' : 'var(--yellow-500)' }}">{{ $sidebarStats['availabilityLabel'] }}</strong>
+<p class="hf-muted" data-dashboard-availability-reason>{{ $sidebarStats['availabilityReason'] }}</p>
+<div class="hf-actions" style="margin-top:12px">
+<a class="btn btn-secondary btn-sm" href="{{ route('helper.availability') }}">View availability</a>
+</div>
+</section>
+    <section class="card">
+<header class="card-header">
+<h3>Readiness</h3>
+<strong data-dashboard-readiness class="hf-status {{ $helper->isReady() ? '' : 'hf-status-warning' }}">{{ $helper->getReadinessStatus()==='ready' ? 'Ready' : ($helper->getReadinessStatus()==='not_ready' ? 'Not ready' : 'Readiness required') }}</strong>
+</header>
+<p class="hf-muted" data-dashboard-readiness-until>
+@if($currentReadiness?->assessment_result==='ready')Valid until {{ $currentReadiness->valid_until?->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') }} PHT.@else Complete a current readiness check before accepting cases.@endif</p>
+<div class="hf-actions" style="margin-top:12px">
+<a class="btn btn-secondary btn-sm" href="{{ route('helper.readiness') }}">Review readiness</a>
+<a class="btn btn-secondary btn-sm" href="{{ route('helper.readiness.history') }}">Readiness history</a>
+</div>
+</section>
+</div>
+@if($activeSessionData)
+<section class="card">
+<header class="card-header">
+<h3>Active Session</h3>
+<span class="hf-status">Live</span>
+</header>
+<p>{{ $activeSessionData['alias'] }} / {{ $activeSessionData['mode'] }} / {{ $activeSessionData['elapsed'] }} elapsed</p>
+@if($activeSessionData['elapsed_minutes']>=85)
+<p class="hf-muted">{{ $activeSessionData['elapsed_minutes']>=90 ? '90-minute limit exceeded. End and document this session.' : 'Approaching the 90-minute session limit.' }}</p>
+@endif<a class="btn btn-primary btn-sm" href="{{ route('helper.cases.show',$activeSessionData['id']) }}">Resume session</a>
+</section>
+@endif
+<div class="hf-grid" style="margin-bottom:20px">
+    <div>
+<section class="card">
+<header class="card-header">
+<h3>Documentation to complete</h3>
+</header>
+<ul class="hf-list">
+@forelse($documentationTasks as $task)
+<li>
+<div class="hf-actions" style="justify-content:space-between">
+<span>{{ $task->reference_number }} / {{ $task->end_time?->lt(now()->subHours(24)) ? 'Overdue' : 'Pending' }}</span>
+<a class="btn btn-secondary btn-sm" href="{{ route('helper.session.notes',$task->id) }}">Open documentation</a>
+</div>
+</li>
+@empty<li class="hf-muted">No session documentation is waiting for you.</li>
+@endforelse</ul>
+</section>
+<section class="card">
+<header class="card-header">
+<h3>Quick Actions</h3>
+</header>
+<div class="hf-actions">
+@foreach($quickActions as $action)
+<a class="btn btn-secondary btn-sm" href="{{ route($action['route'],$action['params']) }}">{{ $action['label']==='Session Notes' ? 'Session documentation' : $action['label'] }}</a>
+@endforeach</div>
+</section>
+</div>
+    <section class="card">
+<header class="card-header">
+<h3>Recent Activity</h3>
+<a class="link" href="{{ route('helper.notifications') }}">View all</a>
+</header>
+<ul class="hf-list">
+@forelse($recentActivity as $activity)
+<li>
+<header>
+<strong>{{ $activity['message'] }}</strong>
+<time>{{ $activity['time'] }}</time>
+</header>
+<p class="hf-muted">{{ \Illuminate\Support\Str::limit($activity['detail'],160) }}</p>
+@if(!empty($activity['link']))
+<a class="link" href="{{ $activity['link'] }}">Open update</a>
+@endif</li>
+@empty<li class="hf-muted">No important updates yet.</li>
+@endforelse</ul>
+</section>
+</div>
+<section class="card">
+<header class="card-header">
+<h3>Assigned Cases</h3>
+<a class="link" href="{{ route('helper.cases') }}">View all</a>
+</header>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Seeker alias</th>
+<th>Concern</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+@forelse($activeCases as $case)
+<tr>
+<td>{{ $case['reference'] }}</td>
+<td>{{ $case['alias'] }}</td>
+<td>{{ $case['notes'] }}</td>
+<td>
+<span class="hf-status">{{ ucwords(str_replace('_',' ',$case['status'])) }}</span>
+</td>
+<td>
+<a class="btn btn-secondary btn-sm" href="{{ route('helper.cases.show',$case['id']) }}">Open case</a>
+</td>
+</tr>
+@empty<tr>
+<td colspan="5">
+<div class="empty-state">
+<h3>No assigned cases</h3>
+<p>You do not need to take action. New assignments will appear here when a case becomes available.</p>
+</div>
+</td>
+</tr>
+@endforelse</tbody>
+</table>
+</div>
+</section>
+<section class="card">
+<header class="card-header">
+<h3>Recent Sessions</h3>
+<a class="link" href="{{ route('helper.reports') }}">View all</a>
+</header>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Session</th>
+<th>Category</th>
+<th>Status</th>
+<th>Date (PHT)
+</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+@forelse($recentSessions as $session)
+<tr>
+<td>{{ $session->reference_number }}</td>
+<td>{{ $session->concern?->concern_name ?? 'Unrecorded' }}</td>
+<td>
+<span class="hf-status hf-status-muted">{{ $session->status_label }}</span>
+</td>
+<td>{{ ($session->end_time ?? $session->created_date ?? $session->created_at)?->copy()->timezone('Asia/Manila')->format('M d, Y') }}</td>
+<td>
+<a class="link" href="{{ route('helper.cases.show',$session->id) }}">View session</a>
+</td>
+</tr>
+@empty<tr>
+<td colspan="5" class="empty-state">Your recent session history will appear here.</td>
+</tr>
+@endforelse</tbody>
+</table>
+</div>
+</section>
+@endif
+</div>
 @endsection

@@ -51,6 +51,24 @@ class Notification extends Model
         return $this->belongsTo(User::class, 'user_account_id', 'id');
     }
 
+    /** Collapse only duplicate completion/documentation reminders for the same session/action. */
+    public function scopeWithoutDuplicateCompletionReminders(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q) {
+            $q->where('notifications.title','!=','Session completed')
+                ->orWhereNull('notifications.link')
+                ->orWhere('notifications.link','not like','/helper/session/%/notes')
+                ->orWhereNotExists(function ($older) {
+                    $older->selectRaw('1')->from('notifications as earlier')
+                        ->whereColumn('earlier.user_account_id','notifications.user_account_id')
+                        ->whereColumn('earlier.title','notifications.title')
+                        ->whereColumn('earlier.notification_type','notifications.notification_type')
+                        ->whereColumn('earlier.link','notifications.link')
+                        ->whereColumn('earlier.id','<','notifications.id');
+                });
+        });
+    }
+
     public function scopeUnread(Builder $query): Builder
     {
         return $query->where('status', 'unread');

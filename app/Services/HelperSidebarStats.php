@@ -11,12 +11,15 @@ class HelperSidebarStats
         // Current workload and explicit availability take precedence over eligibility reasons.
         if ($helper->sessions()->where('session_status', 'active')->exists()) {
             $state['label'] = 'In session';
+            $state['reason'] = 'Your current session occupies your assignment capacity.';
             $state['assignable'] = false;
         } elseif ($helper->activeSessions()->exists()) {
             $state['label'] = 'Assignment pending';
+            $state['reason'] = 'Respond to your current assignment before receiving another case.';
             $state['assignable'] = false;
         } elseif (in_array($helper->availability, ['break', 'unavailable', 'offline'], true)) {
             $state['label'] = $helper->availability === 'break' ? 'On break' : ($helper->availability === 'offline' ? 'Offline' : 'Unavailable');
+            $state['reason'] = 'Your availability is set to '.$state['label'].'.';
             $state['assignable'] = false;
         }
         return [
@@ -24,6 +27,7 @@ class HelperSidebarStats
             'competencyScore'=>$latest ? round($latest->normalized_score * 20, 1) : null,
             'availabilityStatus'=>$state['assignable'] ? 'available' : 'unavailable',
             'availabilityLabel'=>$state['label'],
+            'availabilityReason'=>$state['reason'] ?? 'You can receive a case under the current assignment rules.',
         ];
     }
 }
