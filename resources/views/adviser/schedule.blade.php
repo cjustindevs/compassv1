@@ -1,120 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schedule Management - COMPASS</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="compass-compact bg-gray-50">
-    @include('layouts.partials.adviser-sidebar')
-
-    <main class="main-content p-6">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-800">Schedule Management</h1>
-                <p class="text-sm text-gray-500">Plan helper duty dates and monitor helper readiness on each duty day.</p>
-            </div>
-            <form method="GET" action="{{ route('adviser.schedule') }}" class="flex gap-2">
-                <input type="date" name="date" value="{{ $date->toDateString() }}" class="rounded-lg border-gray-300 text-sm">
-                <button class="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">View</button>
-            </form>
-        </div>
-
-        @if(session('success')) <div class="mb-4 p-3 rounded-lg bg-green-50 text-green-700">{{ session('success') }}</div> @endif
-        @if(session('error')) <div class="mb-4 p-3 rounded-lg bg-red-50 text-red-700">{{ session('error') }}</div> @endif
-        @if($errors->any())
-            <div role="alert" class="mb-4 p-3 rounded-lg bg-red-50 text-red-700">
-                @foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach
-            </div>
-        @endif
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                <h2 class="font-semibold text-gray-800 mb-4">Schedule Helper Duty</h2>
-                <form method="POST" action="{{ route('adviser.schedule.update') }}" class="space-y-3">
-                    @csrf
-                    <input type="hidden" name="shift_id" value="{{ old('shift_id') }}">
-                    <select name="helper_id" required class="w-full rounded-lg border-gray-300 text-sm">
-                        <option value="">Select helper</option>
-                        @foreach($helpers as $helper)
-                            <option value="{{ $helper->id }}" @selected((string) old('helper_id') === (string) $helper->id)>{{ $helper->full_name }} · {{ app(\App\Services\HelperEligibilityService::class)->status($helper)['label'] }}</option>
-                        @endforeach
-                    </select>
-                    <input type="date" name="date" value="{{ old('date', $date->toDateString()) }}" required class="w-full rounded-lg border-gray-300 text-sm">
-                    <button class="w-full px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">Add Duty Day</button>
-                </form>
-            </section>
-
-            <section class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                <h2 class="font-semibold text-gray-800 mb-4">Duty Schedules for {{ $date->format('M d, Y') }}</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="text-left text-gray-500 border-b">
-                            <tr><th class="py-2">Helper</th><th class="py-2">Duty shifts</th><th class="py-2">Status &amp; Readiness</th></tr>
-                        </thead>
-                        <tbody>
-                            @forelse($scheduleData as $data)
-                                <tr class="border-b last:border-0">
-                                    <td class="py-3 font-medium text-gray-800">{{ $data['name'] }}</td>
-                                    <td class="py-3">
-                                        @forelse($data['shifts'] as $shift)
-                                            <div class="flex items-center gap-2 mb-1">
-                                                <span class="font-medium text-gray-700">{{ $shift['label'] }}</span>
-                                                @if($shift['on_shift'])
-                                                    <span class="text-xs text-green-600">On duty now</span>
-                                                @endif
-                                                <button type="button"
-                                                        class="ml-auto text-xs text-red-600 hover:underline"
-                                                        data-shift-edit
-                                                        data-helper-id="{{ $data['helper_id'] }}"
-                                                        data-date="{{ $date->toDateString() }}"
-                                                        data-shift-id="{{ $shift['id'] }}">Edit</button>
-                                                <form method="POST" action="{{ route('adviser.schedule.destroy') }}" class="inline">
-                                                    @csrf
-                                                    <input type="hidden" name="helper_id" value="{{ $data['helper_id'] }}">
-                                                    <input type="hidden" name="date" value="{{ $date->toDateString() }}">
-                                                    <input type="hidden" name="shift_id" value="{{ $shift['id'] }}">
-                                                    <button type="submit" class="text-xs text-red-600 hover:underline">Remove</button>
-                                                </form>
-                                            </div>
-                                        @empty
-                                            <span class="text-gray-400">Not scheduled</span>
-                                        @endforelse
-                                        @if($data['has_schedule'] && ! $data['is_on_shift'])
-                                            <span class="text-xs text-yellow-600">Not on duty at this time</span>
-                                        @endif
-                                    </td>
-                                    <td class="py-3">
-                                        <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $data['can_accept_sessions'] ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600' }}">{{ $data['can_accept_sessions'] ? 'Available' : $data['status_label'] }}</span>
-                                        <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $data['is_ready'] ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700' }} ml-1">{{ $data['is_ready'] ? 'Ready' : 'Not Ready' }}</span>
-                                        <div class="text-xs text-gray-500 mt-1">
-                                            {{ $data['current_sessions'] }}/{{ $data['max_sessions'] }} sessions · {{ $data['status_label'] }}
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="3" class="py-6 text-center text-gray-400">No supervised helpers found for scheduling.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-        </div>
-    </main>
-
-    <script>
-        // Clicking Edit loads the shift back into the form with its id, so the
-        // next submit updates that row instead of adding a second one.
-        document.querySelectorAll('[data-shift-edit]').forEach(function (button) {
-            button.addEventListener('click', function () {
-                const form = document.querySelector('form[action="{{ route('adviser.schedule.update') }}"]');
-                form.querySelector('[name="shift_id"]').value = button.dataset.shiftId;
-                form.querySelector('[name="helper_id"]').value = button.dataset.helperId;
-                form.querySelector('[name="date"]').value = button.dataset.date;
-                form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            });
-        });
-    </script>
-</body>
-</html>
+@extends('layouts.app')
+@section('title','Helper Schedules - COMPASS')
+@section('content')
+<div class="adviser-page-content av-page">
+<header><div><h1>Helper schedules</h1><p class="av-muted">Plan duty days and check current availability. Dates use Philippine Time.</p></div></header>
+@if(session('success'))<p class="av-note" role="status">{{ session('success') }}</p>@endif
+@if($errors->any())<p class="av-note" role="alert">{{ $errors->first() }}</p>@endif
+<form method="GET" class="av-panel av-filter"><label>Duty date<input type="date" name="date" value="{{ $date->toDateString() }}" required></label><label>Records<select name="history">@foreach(['current'=>'Unarchived duty days','archived'=>'Archived duty days','all'=>'All duty days'] as $key=>$label)<option value="{{ $key }}" @selected(request('history','current')===$key)>{{ $label }}</option>@endforeach</select></label><button class="av-button av-button-primary">View schedules</button></form>
+<div class="av-schedule">
+<section class="av-panel"><header class="av-heading"><h2>Schedule duty</h2></header><p class="av-muted mb-4">Duty covers the selected day. Availability still requires readiness and the existing matching rules.</p>
+<form method="POST" action="{{ route('adviser.schedule.update') }}" class="av-filter" id="adviserDutyForm">
+@csrf
+<input type="hidden" name="shift_id" value="{{ old('shift_id') }}">
+<label>Helper<select name="helper_id" required><option value="">Select Helper</option>@foreach($helpers as $helper)<option value="{{ $helper->id }}" @selected((string)old('helper_id')===(string)$helper->id)>{{ $helper->full_name ?: 'Name not recorded' }}</option>@endforeach</select></label>
+<label>Duty date<input type="date" name="date" value="{{ old('date',$date->toDateString()) }}" required></label>
+<div class="av-actions"><button class="av-button av-button-primary" type="submit" id="dutySubmit">{{ old('shift_id') ? 'Save duty day' : 'Add duty day' }}</button><button class="av-button" type="button" id="dutyReset" @if(!old('shift_id')) hidden @endif>Cancel edit</button></div>
+</form></section>
+<section class="av-panel"><header class="av-heading"><div><h2>Duty schedules for {{ $date->format('M d, Y') }}</h2><p class="av-muted">{{ $dutySchedules->total() }} duty records</p></div></header>
+<div class="av-table-wrap" role="region" aria-label="Duty schedules" tabindex="0"><table class="av-table"><thead><tr><th>Helper / Date</th><th>Duty period</th><th>Schedule status</th><th>Current availability</th><th>Actions</th></tr></thead><tbody>
+@forelse($dutySchedules as $shift)
+@php
+    $status = !$shift->is_active ? 'Cancelled' : ($shift->isWithinShift() ? 'On duty now' : ($shift->window()[1]->lte(now()) ? 'Past duty' : 'Scheduled'));
+    $eligibility = app(\App\Services\HelperEligibilityService::class)->status($shift->helper);
+@endphp
+<tr><td class="font-semibold">{{ $shift->helper->full_name ?: 'Name not recorded' }}<p class="av-muted">{{ $shift->date->format('M d, Y') }}</p></td><td>{{ $shift->shift_label }}</td><td><span class="av-badge {{ !$shift->is_active ? 'av-badge-muted' : '' }}">{{ $status }}</span>@if($shift->archived_at)<p class="av-muted">Archived</p>@endif</td><td>{{ $eligibility['label'] }}<p class="av-muted">Readiness: {{ ucwords(str_replace('_',' ', $shift->helper->getReadinessStatus())) }}</p></td><td><div class="av-actions">
+@if(!$shift->archived_at && $shift->is_active)<button type="button" class="av-button" data-shift-edit data-helper-id="{{ $shift->helper_id }}" data-date="{{ $shift->date->toDateString() }}" data-shift-id="{{ $shift->id }}">Edit duty</button><form method="POST" action="{{ route('adviser.schedule.destroy') }}">@csrf<input type="hidden" name="helper_id" value="{{ $shift->helper_id }}"><input type="hidden" name="date" value="{{ $shift->date->toDateString() }}"><input type="hidden" name="shift_id" value="{{ $shift->id }}"><button class="av-button" type="submit">Remove duty</button></form>@endif
+@include('adviser.partials.archive-action',['record'=>$shift])
+</div></td></tr>
+@empty<tr><td colspan="5" class="av-empty">No duty schedules match this date and record filter.</td></tr>@endforelse
+</tbody></table></div><div class="av-pagination">{{ $dutySchedules->links() }}</div></section>
+</div></div>
+@endsection
+@push('scripts')
+<script>
+(() => {
+ const form=document.getElementById('adviserDutyForm'), submit=document.getElementById('dutySubmit'), reset=document.getElementById('dutyReset');
+ document.querySelectorAll('[data-shift-edit]').forEach(button=>button.addEventListener('click',()=>{
+  form.elements.shift_id.value=button.dataset.shiftId;form.elements.helper_id.value=button.dataset.helperId;form.elements.date.value=button.dataset.date;
+  submit.textContent='Save duty day';reset.hidden=false;form.elements.helper_id.focus();
+ }));
+ reset.addEventListener('click',()=>{form.elements.shift_id.value='';submit.textContent='Add duty day';reset.hidden=true;});
+})();
+</script>
+@endpush

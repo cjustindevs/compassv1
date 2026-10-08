@@ -14,7 +14,7 @@ class AdviserAnalytics {
         'period'=>'Activity date is end_time, otherwise start_time, otherwise submitted_at, otherwise legacy created_date/created_at. Completed/evaluated are completed; cancelled/abandoned are excluded from completed counts.',
     ];
     public function filters(Request $request): array {
-        $data=$request->validate(['case_status'=>'nullable|in:active,completed,evaluated,waiting,helper_assigned,pending_review,emergency,cancelled,no_show','period'=>'nullable|in:weekly,monthly,quarterly,yearly','from'=>'nullable|required_with:to|date','to'=>'nullable|required_with:from|date|after_or_equal:from','helper_id'=>'nullable|integer','concern_id'=>'nullable|integer|exists:concern_categories,id','referral_status'=>'nullable|in:'.implode(',',Referral::STATUSES),'competency_metric'=>'nullable|in:overall_score,active_listening_score,empathy_score,respect_score,ethical_practices_score,referral_accuracy_score','format'=>'nullable|in:pdf,csv']);
+        $data=$request->validate(['case_status'=>'nullable|in:active,completed,evaluated,waiting,helper_assigned,pending_review,emergency,cancelled,no_show','period'=>'nullable|in:weekly,monthly,quarterly,yearly','from'=>'nullable|required_with:to|date','to'=>'nullable|required_with:from|date|after_or_equal:from','helper_id'=>'nullable|integer','concern_id'=>'nullable|integer|exists:concern_categories,id','referral_status'=>'nullable|in:'.implode(',',Referral::STATUSES),'competency_metric'=>'nullable|in:overall_score,active_listening_score,empathy_score,respect_score,ethical_practices_score,referral_accuracy_score','format'=>'nullable|in:pdf,csv','history'=>'nullable|in:current,archived,all']);
         $adviser=app(AdviserScope::class)->actor();
         if(!empty($data['helper_id'])) abort_unless(Helper::whereKey($data['helper_id'])->where('adviser_id',$adviser->id)->exists(),403);
         $days=['weekly'=>7,'monthly'=>30,'quarterly'=>90,'yearly'=>365][$data['period'] ?? 'monthly'];
@@ -28,7 +28,10 @@ class AdviserAnalytics {
         return Session::query()->where(fn($q)=>$q->whereHas('helper',fn($h)=>$h->where('adviser_id',$id))->orWhere('review_adviser_id',$id)->orWhereHas('referrals',fn($r)=>$r->where('adviser_id',$id)->whereNotIn('status',['closed','declined','completed'])));
     }
     public function sessions(array $f) {
-        return $this->scoped()->whereBetween(\Illuminate\Support\Facades\DB::raw('COALESCE(end_time,start_time,submitted_at,created_date,created_at)'),[$f['start'],$f['end']])
+        return $this->scoped()
+            ->when(($f['history'] ?? 'current')==='current', fn($q)=>$q->whereNull('archived_at'))
+            ->when(($f['history'] ?? '')==='archived', fn($q)=>$q->whereNotNull('archived_at'))
+            ->whereBetween(\Illuminate\Support\Facades\DB::raw('COALESCE(end_time,start_time,submitted_at,created_date,created_at)'),[$f['start'],$f['end']])
             ->when($f['case_status'] ?? null,fn($q,$status)=>$q->where('session_status',$status))
             ->when($f['helper_id'] ?? null,fn($q,$id)=>$q->where('helper_id',$id))
             ->when($f['concern_id'] ?? null,fn($q,$id)=>$q->where('concern_id',$id))
@@ -51,11 +54,11 @@ class AdviserAnalytics {
         $ratings=HelpSeekerEvaluation::whereIn('session_id',$completed->pluck('id'))->whereBetween(\Illuminate\Support\Facades\DB::raw('COALESCE(submitted_at,created_at)'),[$f['start'],$f['end']])->get();
         $average=fn($values)=>count($values) ? round(array_sum($values)/count($values),2) : null;
         $ratio=fn($n,$d)=>$d ? round(100*$n/$d,2) : null;
-        $helperQuery=Helper::where('adviser_id',app(AdviserScope::class)->actor()->id)->when($f['case_status'] ?? null,fn($q,$status)=>$q->where('session_status',$status))
+        $helperQuery=Helper::where('adviser_id',app(AdviserScope::class)->actor()->id)
             ->when($f['helper_id'] ?? null,fn($q,$id)=>$q->whereKey($id));
         $helperIds=(clone $helperQuery)->pluck('id');
         $evaluations=HelperCompetencyHistory::whereIn('helper_id',$helperIds)->whereBetween('evaluation_date',[$f['start'],$f['end']])
-            ->when(($f['concern_id'] ?? null) || ($f['referral_status'] ?? null),fn($q)=>$q->whereIn('report_id',$rows->pluck('report.id')->filter()))->orderBy('evaluation_date')->get();
+            ->when(($f['case_status'] ?? null) || ($f['concern_id'] ?? null) || ($f['referral_status'] ?? null),fn($q)=>$q->whereIn('report_id',$rows->pluck('report.id')->filter()))->orderBy('evaluation_date')->get();
         $hours=0;
         foreach(HelperSchedule::whereIn('helper_id',$helperIds)->where('is_active',true)->whereBetween('date',[$f['start']->copy()->timezone('Asia/Manila')->toDateString(),$f['end']->copy()->timezone('Asia/Manila')->toDateString()])->get() as $shift) {
             // Date-only duty schedules carry no times; planned coverage falls

@@ -81,7 +81,7 @@
                         <span class="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">{{ $alert->triggered_at?->diffForHumans() }}</span>
                     </div>
                     <p class="font-semibold text-gray-800">{{ $alert->session?->seeker?->generated_alias ?? 'Unknown seeker' }}</p>
-                    <p class="text-sm text-gray-600"><strong>Helper:</strong> {{ $alert->session?->helper?->user?->name ?? $alert->session?->helper?->full_name ?? 'N/A' }}</p>
+                    <p class="text-sm text-gray-600"><strong>Helper:</strong> {{ $alert->session?->helper?->full_name ?: 'Unassigned' }}</p>
                     <p class="text-sm text-gray-500"><strong>Reason:</strong> {{ $alert->trigger_reason ?? 'Emergency detected' }}</p>
                     <p class="text-xs text-gray-400 mt-1">Triggered {{ $alert->triggered_at?->format('M d, Y h:i A') ?? 'recently' }}</p>
                 </div>
@@ -109,7 +109,7 @@
                 <div>
                     <span class="font-semibold text-gray-800">#{{ $alert->id }}</span>
                     <span class="text-gray-600">
-                        {{ $alert->session?->seeker?->generated_alias ?? 'Unknown seeker' }} with {{ $alert->session?->helper?->user?->name ?? $alert->session?->helper?->full_name ?? 'N/A' }}
+                        {{ $alert->session?->seeker?->generated_alias ?? 'Unknown seeker' }} with {{ $alert->session?->helper?->full_name ?: 'Unassigned' }}
                     </span>
                 </div>
                 <div class="flex items-center gap-3">

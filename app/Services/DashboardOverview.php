@@ -46,10 +46,6 @@ class DashboardOverview
         if ($user->role === 'adviser') {
             $referrals = Referral::whereIn('session_id', $caseRows->pluck('id'))->forAdviser($adviser->id)->get();
             $reviews = SessionReport::whereIn('session_id', $caseRows->pluck('id'))->get();
-            $attention = $reviews->where('adviser_reviewed', false)->pluck('session_id')
-                ->merge($referrals->whereIn('status', [Referral::STATUS_PENDING_ADVISER, Referral::STATUS_CONSENT_REQUESTED])->pluck('session_id'))
-                ->merge($open->whereNull('acknowledged_at')->pluck('session_id'));
-            $add('Awaiting Adviser action', $attention->filter()->unique()->count(), 'Distinct cases with unreviewed documentation, pending referral review, or unacknowledged emergency review.');
             $samples = $this->durations($emergencies, 'triggered_at', 'acknowledged_at')
                 ->merge($this->durations($referrals, 'created_at', 'reviewed_at'))
                 ->merge($this->durations($reviews, 'summary_submitted_at', 'reviewed_date'));

@@ -17,6 +17,6 @@ thead { display: table-header-group; } tr { page-break-inside: avoid; }
 @foreach($metrics as $name=>$value)<span>{{ ucfirst(str_replace('_',' ',$name)) }}: {{ $value ?? 'No data' }} | </span>@endforeach
 <table><thead><tr><th>Session</th><th>Helper</th><th>Concern</th><th>Risk</th><th>Status</th><th>Minutes</th><th>Rating / 5</th></tr></thead><tbody>
 @forelse($sessions as $session)
-<tr><td>{{ $session->reference_number }}</td><td>{{ $session->helper?->public_alias }}</td><td>{{ $session->concern?->concern_name }}</td><td>{{ ucfirst($session->risk_level) }}</td><td>{{ $session->status_label }}</td><td>{{ $session->duration }}</td><td>{{ \App\Services\AdviserAnalytics::rating($session->evaluation?->overall_score) }}</td></tr>
+<tr><td>{{ $session->reference_number }}</td><td>{{ $session->helper?->full_name }}</td><td>{{ $session->concern?->concern_name }}</td><td>{{ ucfirst($session->risk_level) }}</td><td>{{ $session->status_label }}</td><td>{{ $session->duration }}</td><td>{{ \App\Services\AdviserAnalytics::rating($session->evaluation?->overall_score) }}</td></tr>
 @empty<tr><td colspan="7">No sessions in this period.</td></tr>@endforelse
 </tbody></table></body></html>

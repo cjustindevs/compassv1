@@ -4,7 +4,7 @@
 
 @push('styles')
 <style>
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        .adviser-page-content { font-family: 'Inter', sans-serif; box-sizing: border-box; }
 
         :root {
             --green-50: #EAF8F0;
@@ -265,12 +265,13 @@
             @endif
         </div>
 
+        <div class="av-actions mb-4"><a class="av-button" href="{{ route('adviser.evaluations') }}">Recent reviews</a><a class="av-button" href="{{ route('adviser.evaluations',['history'=>'archived']) }}">Archived reviews</a></div>
         <!-- Recently Completed -->
         @if($completedReports->isNotEmpty())
             <div class="card">
                 <div class="card-header">
-                    <h3>Recently Completed</h3>
-                    <span class="text-sm text-gray-400">Last 10 reviews</span>
+                    <h3>{{ request('history')==='archived' ? 'Archived reviews' : 'Recently Completed' }}</h3>
+                    <span class="text-sm text-gray-400">{{ $completedReports->total() }} reviews</span>
                 </div>
                 @foreach($completedReports as $report)
                     <div class="eval-item">
@@ -280,18 +281,20 @@
                                 <span class="text-xs text-green-600 font-medium ml-2"> Reviewed</span>
                             </div>
                             <div class="details text-gray-400">
-                                {{ $report->session->helper->first_name ?? 'Unknown' }}
+                                {{ $report->session->helper?->full_name ?: 'Unassigned' }}
                                 · {{ $report->updated_at->format('M d, Y') }}
                             </div>
                             @if($report->adviser_review_note)
                                 <div class="text-xs text-gray-500 mt-1">Completion reason: {{ $report->adviser_review_note }}</div>
                             @endif
                         </div>
-                        <span class="text-xs text-gray-400">{{ $report->updated_at->diffForHumans() }}</span>
+                        <div class="av-actions"><span class="text-xs text-gray-400">{{ $report->updated_at->diffForHumans() }}</span>@include('adviser.partials.archive-action',['record'=>$report->session])</div>
                     </div>
                 @endforeach
                 {{ $completedReports->links() }}
             </div>
+        @else
+            <section class="av-panel av-empty">{{ request('history')==='archived' ? 'No completed reviews have been archived.' : 'No completed reviews to show.' }}</section>
         @endif
 
         <!-- Footer -->

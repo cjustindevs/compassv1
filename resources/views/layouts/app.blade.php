@@ -61,6 +61,9 @@
         </style>
 
         @stack('styles')
+        @if(auth()->user()?->role === 'adviser')
+        <link rel="stylesheet" href="{{ asset('css/adviser-refinement.css') }}?v={{ filemtime(public_path('css/adviser-refinement.css')) }}">
+        @endif
     </head>
     <body class="compass-compact font-sans antialiased">
         @auth

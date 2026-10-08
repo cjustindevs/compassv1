@@ -18,9 +18,13 @@ class AdviserNotificationController extends Controller
      */
     public function index(Request $request): View
     {
+        $request->validate(['type'=>'nullable|string|max:60', 'history'=>'nullable|in:inbox,archived']);
         $typeFilter = $request->get('type');
+        $history = $request->input('history','inbox');
+        $query = Notification::where('user_account_id', Auth::id());
+        if ($history==='archived') $query->withoutGlobalScope('unarchived')->whereNotNull('archived_at');
 
-        $notifications = Notification::where('user_account_id', Auth::id())
+        $notifications = $query
             ->ofType($typeFilter)
             ->latest()
             ->paginate(15)->withQueryString();
@@ -29,13 +33,13 @@ class AdviserNotificationController extends Controller
             ->unread()
             ->count();
 
-        $types = Notification::where('user_account_id', Auth::id())
+        $types = Notification::withoutGlobalScope('unarchived')->where('user_account_id', Auth::id())
             ->select('notification_type')
             ->distinct()
             ->whereNotNull('notification_type')
             ->pluck('notification_type');
 
-        return view('adviser.notifications', compact('notifications', 'unreadCount', 'types', 'typeFilter'));
+        return view('adviser.notifications', compact('notifications', 'unreadCount', 'types', 'typeFilter', 'history'));
     }
 
     /**
@@ -47,6 +51,7 @@ class AdviserNotificationController extends Controller
             ->findOrFail($id);
 
         $notification->markAsRead();
+        Cache::forget('unread_count_'.Auth::id());
 
         if ($request->expectsJson()) {
             return response()->json(['read' => true]);
@@ -68,6 +73,8 @@ class AdviserNotificationController extends Controller
                 'status' => 'read',
                 'read_at' => now(),
             ]);
+
+        Cache::forget('unread_count_'.Auth::id());
 
         if (request()->expectsJson()) {
             return response()->json(['read_all' => true]);
@@ -105,4 +112,11 @@ class AdviserNotificationController extends Controller
 
         return back()->with('success', 'Notification archived.');
     }
+    public function restore(int $id): RedirectResponse
+    {
+        Notification::withoutGlobalScope('unarchived')->where('user_account_id', Auth::id())
+            ->whereNotNull('archived_at')->findOrFail($id)->restoreToInbox();
+        return back()->with('success', 'Notification restored to the inbox.');
+    }
+
 }

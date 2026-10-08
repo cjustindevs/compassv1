@@ -12,7 +12,7 @@
     </header>
     <section class="bg-white rounded-2xl border border-gray-200 p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
         <div><p class="text-gray-500">Session</p><p class="font-semibold">{{ $session->reference_number }}</p></div>
-        <div><p class="text-gray-500">Helper</p><p class="font-semibold">{{ $session->helper?->public_alias ?? 'Unassigned' }}</p></div>
+        <div><p class="text-gray-500">Helper</p><p class="font-semibold">{{ $session->helper?->full_name ?? 'Unassigned' }}</p></div>
         <div><p class="text-gray-500">Documentation</p><p class="font-semibold">{{ ucfirst($session->documentation_status ?? 'Pending') }}</p></div>
     </section>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">

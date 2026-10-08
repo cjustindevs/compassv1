@@ -4,7 +4,7 @@
 
 @push('styles')
 <style>
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        .adviser-page-content { font-family: 'Inter', sans-serif; box-sizing: border-box; }
         body { background: #F8FBF9; }
 
         .card {

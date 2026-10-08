@@ -4,7 +4,7 @@
 
 @push('styles')
 <style>
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        .adviser-page-content { font-family: 'Inter', sans-serif; box-sizing: border-box; }
         body { background: #F8FBF9; }
 
         .form-card {
@@ -467,12 +467,12 @@
                         @php($isSeeker = $message->sender === 'seeker')
                         <div class="flex gap-3 pt-3 {{ $isSeeker ? '' : 'bg-green-50/30 -mx-3 px-3 rounded-xl' }}">
                             <span class="shrink-0 mt-0.5 h-8 w-8 rounded-full {{ $isSeeker ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-700' }} flex items-center justify-center text-xs font-semibold">
-                                {{ $isSeeker ? mb_substr($report->session->seeker->generated_alias ?? 'S', 0, 1) : mb_substr($report->session->helper->public_alias ?? 'H', 0, 1) }}
+                                {{ $isSeeker ? mb_substr($report->session->seeker->generated_alias ?? 'S', 0, 1) : mb_substr($report->session->helper->full_name ?? 'H', 0, 1) }}
                             </span>
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-baseline gap-2">
                                     <span class="text-xs font-semibold {{ $isSeeker ? 'text-gray-700' : 'text-green-700' }}">
-                                        {{ $isSeeker ? ($report->session->seeker->generated_alias ?? 'Seeker') : ($report->session->helper->public_alias ?? 'Peer Helper') }}
+                                        {{ $isSeeker ? ($report->session->seeker->generated_alias ?? 'Seeker') : ($report->session->helper->full_name ?? 'Peer Helper') }}
                                     </span>
                                     <span class="text-xs text-gray-400">{{ ($message->sent_datetime ?? $message->created_at)?->timezone('Asia/Manila')->format('M d, Y \a\t g:i A') }}</span>
                                 </div>

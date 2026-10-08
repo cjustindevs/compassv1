@@ -4,7 +4,7 @@
 
 @push('styles')
 <style>
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        .adviser-page-content { font-family: 'Inter', sans-serif; box-sizing: border-box; }
         body { background: #F8FBF9; }
         .card { background: white; border-radius: 20px; padding: 24px; border: 1px solid #e5e7eb; box-shadow: 0 4px 20px rgba(0,0,0,0.01); }
         .competency-level { padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }

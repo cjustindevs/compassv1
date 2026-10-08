@@ -77,6 +77,11 @@ class RoleActivityReport
         if (! empty($data['helper_id'])) {
             $alerts->whereHas('session', fn ($q) => $q->where('helper_id', $data['helper_id']));
         }
+        if ($user->role === 'adviser') {
+            $request->validate(['history'=>'nullable|in:current,archived,all']);
+            $sessions->when($request->input('history', 'current')==='current', fn($q)=>$q->whereNull('archived_at'))
+                ->when($request->input('history')==='archived', fn($q)=>$q->whereNotNull('archived_at'));
+        }
         $rows = (clone $sessions)->with('concern')->get();
         $emergencies = (clone $alerts)->get();
         $mean = function ($records, $a, $b) {
@@ -93,7 +98,7 @@ class RoleActivityReport
             'Case outcome trend' => $rows->groupBy(fn ($s) => ($s->end_time ?? $s->start_time ?? $s->submitted_at ?? $s->created_date ?? $s->created_at)->timezone('Asia/Manila')->format('Y-m'))->sortKeys()->map->count()->all()];
         $tables = [];
         $tables[] = ['title' => 'Case activity', 'columns' => ['Reference', 'Status', 'Category', 'Activity date (Philippine Time)'],
-            'records' => $this->records((clone $sessions)->with('concern')->orderByDesc('id'), $export, 'cases_page'),
+            'records' => $this->records((clone $sessions)->with($user->role === 'adviser' ? ['concern','helper','report','referrals','emergencyAlerts'] : ['concern'])->orderByDesc('id'), $export, 'cases_page'),
             'format' => fn ($s) => [$s->reference_number, ucwords(str_replace('_', ' ', $s->session_status)), $s->concern?->concern_name ?? $s->concern_category ?? 'Unrecorded', ($s->end_time ?? $s->start_time ?? $s->submitted_at ?? $s->created_date ?? $s->created_at)?->timezone('Asia/Manila')->format('M d, Y g:i A')]];
         if ($user->role !== 'helper') {
             $terminal = $emergencies->whereIn('status', ['resolved', 'closed']);
@@ -102,7 +107,7 @@ class RoleActivityReport
             $groups += ['Emergency status' => $emergencies->groupBy('status')->map->count()->all(), 'Emergency priority' => $emergencies->groupBy('risk_level')->map->count()->all()];
             $tables[] = ['title' => 'Emergency case activity', 'columns' => ['Reference', 'Status', 'Priority', 'Helper assignment', 'Triggered (Philippine Time)', 'Acknowledged', 'Resolved'],
                 'records' => $this->records((clone $alerts)->with('session.helper')->orderByDesc('triggered_at'), $export, 'emergency_page'),
-                'format' => fn ($a) => ['Emergency #'.$a->id, ucwords(str_replace('_', ' ', $a->status)), ucfirst($a->risk_level), $a->session?->helper?->public_alias ?? 'Unassigned', $a->triggered_at?->timezone('Asia/Manila')->format('M d, Y g:i A') ?? 'Unrecorded', $a->acknowledged_at?->timezone('Asia/Manila')->format('M d, Y g:i A') ?? 'Not acknowledged', $a->resolved_at?->timezone('Asia/Manila')->format('M d, Y g:i A') ?? 'Not resolved']];
+                'format' => fn ($a) => ['Emergency #'.$a->id, ucwords(str_replace('_', ' ', $a->status)), ucfirst($a->risk_level), ($user->role === 'adviser' ? $a->session?->helper?->full_name : $a->session?->helper?->public_alias) ?? 'Unassigned', $a->triggered_at?->timezone('Asia/Manila')->format('M d, Y g:i A') ?? 'Unrecorded', $a->acknowledged_at?->timezone('Asia/Manila')->format('M d, Y g:i A') ?? 'Not acknowledged', $a->resolved_at?->timezone('Asia/Manila')->format('M d, Y g:i A') ?? 'Not resolved']];
         }
         if ($user->role === 'adviser') {
             $referrals = Referral::whereIn('session_id', $rows->pluck('id'))->forAdviser(app(AdviserScope::class)->actor()->id)->get();

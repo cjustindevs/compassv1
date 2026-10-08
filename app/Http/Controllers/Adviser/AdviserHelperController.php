@@ -24,7 +24,7 @@ class AdviserHelperController extends Controller
     public function index(Request $request): View
     {
         $statusFilter = $request->get('status', 'all');
-        $adviserId = Auth::user()->adviser?->id;
+        $adviserId = app(\App\Services\AdviserScope::class)->actor()->id;
 
         $helpers = Helper::with(['user:id,id,name', 'latestReadiness', 'adviser'])
             ->withCount(['activeSessions as active_cases'])
@@ -192,11 +192,11 @@ class AdviserHelperController extends Controller
 
     public function availability()
     {
-        $adviserId = Auth::user()->adviser?->id;
+        $adviserId = app(\App\Services\AdviserScope::class)->actor()->id;
 
         return response()->json(Helper::where('adviser_id', $adviserId)->with('user')->get()->map(fn (Helper $helper) => [
             'id' => $helper->id,
-            'name' => $helper->user?->name ?? $helper->full_name,
+            'name' => $helper->full_name ?: ($helper->user?->name ?? 'Name not recorded'),
             'availability' => $helper->availability ?? ($helper->status === 'available' ? 'available' : 'unavailable'),
             'is_ready' => (bool) $helper->getCurrentReadiness(),
             'current_sessions' => $helper->current_shift_sessions,
@@ -212,39 +212,16 @@ class AdviserHelperController extends Controller
 
     public function manageSchedule(Request $request): View
     {
-        $helperIds = Helper::where('adviser_id', Auth::user()->adviser?->id)->pluck('id');
-        $request->validate(['date' => 'nullable|date_format:Y-m-d']);
-        $date = Carbon::parse($request->get('date', now(config('app.schedule_timezone'))->toDateString()))->startOfDay();
-        $schedules = HelperSchedule::whereIn('helper_id', $helperIds)->whereDate('date', $date->toDateString())->with(['helper.user'])->get();
-        $helpers = Helper::whereIn('id', $helperIds)->with(['user', 'latestReadiness'])->orderBy('first_name')->get();
-
-        $scheduleData = $helpers->map(function (Helper $helper) use ($schedules) {
-            // Several shifts may exist for the same helper and date, so duty is
-            // summarised across all of them rather than read off the first row.
-            $shifts = $schedules->where('helper_id', $helper->id)->values();
-            $covering = $shifts->first(fn (HelperSchedule $shift) => $shift->isWithinShift());
-
-            return [
-                'helper_id' => $helper->id,
-                'name' => $helper->user?->name ?? $helper->full_name,
-                'is_ready' => (bool) $helper->getCurrentReadiness(),
-                'current_sessions' => $helper->current_shift_sessions ?? 0,
-                'max_sessions' => Helper::MAX_SESSIONS_PER_SHIFT,
-                'has_schedule' => $shifts->isNotEmpty(),
-                'is_on_shift' => $covering !== null,
-                'can_accept_sessions' => app(\App\Services\HelperEligibilityService::class)->status($helper)['assignable'],
-                'status_label' => app(\App\Services\HelperEligibilityService::class)->status($helper)['label'],
-                'shift_count' => $shifts->count(),
-                'shift_labels' => $shifts->map(fn (HelperSchedule $shift) => $shift->shift_label)->all(),
-                'shifts' => $shifts->map(fn (HelperSchedule $shift) => [
-                    'id' => $shift->id,
-                    'label' => $shift->shift_label,
-                    'on_shift' => $shift->isWithinShift(),
-                ])->all(),
-            ];
-        });
-
-        return view('adviser.schedule', compact('scheduleData', 'helpers', 'date'));
+        $adviser = app(\App\Services\AdviserScope::class)->actor();
+        $request->validate(['date'=>'nullable|date_format:Y-m-d', 'history'=>'nullable|in:current,archived,all']);
+        $date = Carbon::parse($request->input('date', now(config('app.schedule_timezone'))->toDateString()), config('app.schedule_timezone'))->startOfDay();
+        $helpers = Helper::where('adviser_id', $adviser->id)->with(['user','currentReadiness'])->orderBy('first_name')->get();
+        $dutySchedules = HelperSchedule::whereIn('helper_id', $helpers->pluck('id'))
+            ->whereDate('date', $date->toDateString())
+            ->when($request->input('history','current')==='current', fn($q)=>$q->whereNull('archived_at'))
+            ->when($request->input('history')==='archived', fn($q)=>$q->whereNotNull('archived_at'))
+            ->with(['helper.user','helper.currentReadiness'])->orderBy('helper_id')->paginate(15)->withQueryString();
+        return view('adviser.schedule', compact('dutySchedules','helpers','date'));
     }
 
     public function updateSchedule(Request $request): RedirectResponse
@@ -260,6 +237,10 @@ class AdviserHelperController extends Controller
         $helper = Helper::where('id', $validated['helper_id'])
             ->where('adviser_id', Auth::user()->adviser?->id)
             ->firstOrFail();
+
+        if (!empty($validated['shift_id']) && HelperSchedule::whereKey($validated['shift_id'])->where('helper_id',$helper->id)->whereNotNull('archived_at')->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['shift_id'=>'Restore this archived duty day before editing it.']);
+        }
 
         // Rostering without a shift_id adds the helper for that day. Passing one
         // edits that day in place, and the duplicate check then ignores itself.
@@ -295,6 +276,10 @@ class AdviserHelperController extends Controller
             ->where('adviser_id', Auth::user()->adviser?->id)
             ->firstOrFail();
 
+        if (HelperSchedule::whereKey($validated['shift_id'])->where('helper_id',$helper->id)->whereNotNull('archived_at')->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['shift_id'=>'Restore this archived duty day before removing it.']);
+        }
+
         app(HelperShiftService::class)->removeDuty($helper, (int) $validated['shift_id']);
 
         app(\App\Services\HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh());
@@ -327,7 +312,7 @@ class AdviserHelperController extends Controller
     public function export(Request $request)
     {
         $statusFilter = $request->get('status', 'all');
-        $adviserId = Auth::user()->adviser?->id;
+        $adviserId = app(\App\Services\AdviserScope::class)->actor()->id;
 
         $helpers = Helper::with(['adviser'])
             ->where('adviser_id', $adviserId)

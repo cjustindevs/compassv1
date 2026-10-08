@@ -406,6 +406,8 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
     Route::post('/transcript/{sessionId}/verify', [AdviserTranscriptController::class, 'verify'])->name('transcript.verify');
     Route::post('/transcripts/{sessionId}/access', [AdviserTranscriptController::class, 'access'])->name('transcript.access');
 
+    Route::post('/archive', [\App\Http\Controllers\Adviser\AdviserArchiveController::class, 'store'])->name('archive.store');
+
     // Reports
     Route::get('/reports', [AdviserReportController::class, 'index'])->name('reports');
     Route::get('/analytics', [AdviserReportController::class, 'analytics'])->name('analytics');
@@ -433,6 +435,7 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
     Route::post('/notifications/{id}/read', [AdviserNotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [AdviserNotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
     Route::delete('/notifications/{id}', [AdviserNotificationController::class, 'destroy'])->name('notifications.destroy');
+    Route::post('/notifications/{id}/restore', [AdviserNotificationController::class, 'restore'])->name('notifications.restore');
     Route::get('/notifications/unread-count', [AdviserNotificationController::class, 'unreadCount'])->name('notifications.unread-count');
 
     // Settings

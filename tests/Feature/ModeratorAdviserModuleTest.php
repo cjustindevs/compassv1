@@ -118,8 +118,8 @@ class ModeratorAdviserModuleTest extends TestCase
             ->assertSee('Sent an assessment tip.')
             ->assertSee('Your suggestion helped, thank you.')
             ->assertSee($session->seeker->generated_alias)
-            ->assertSee($helper->public_alias)
-            ->assertDontSee('Helen');
+            ->assertSee($helper->full_name)
+            ->assertDontSee($helper->public_alias);
         $this->assertDatabaseHas('audit_logs', ['action' => 'screening_conversation_viewed', 'target_id' => $session->id]);
         $this->assertSame(1, \App\Models\ConsentRecord::count());
     }

@@ -38,16 +38,6 @@
                 peer-support outcome. Original responses are always retained.
             </p>
         </div>
-        <div class="flex items-center gap-3 text-sm">
-            <div class="bg-white rounded-2xl border border-gray-200 px-4 py-2.5 text-center">
-                <div class="text-2xl font-bold text-gray-800 leading-none">{{ $counts['all'] }}</div>
-                <div class="text-xs text-gray-400 mt-1">to review</div>
-            </div>
-            <div class="bg-white rounded-2xl border border-gray-200 px-4 py-2.5 text-center">
-                <div class="text-2xl font-bold text-amber-600 leading-none">{{ $counts['reassessment'] }}</div>
-                <div class="text-xs text-gray-400 mt-1">reassessments</div>
-            </div>
-        </div>
     </header>
 
     @if(session('success'))
@@ -81,7 +71,7 @@
         @php
             $screening = $session->screeningResponses->sortByDesc('id')->first();
             $alias = $session->seeker?->generated_alias ?? 'Seeker';
-            $helperAlias = $session->helper?->public_alias ?? 'Unassigned';
+            $helperAlias = $session->helper?->full_name ?? 'Unassigned';
             $submitted = ($session->created_date ?? $session->created_at)?->timezone('Asia/Manila')->format('M d, Y \a\t g:i A');
             $approved = (bool) $session->peer_support_approved_at;
             $reassessment = (bool) ($session->report?->reassessment_requested_at);

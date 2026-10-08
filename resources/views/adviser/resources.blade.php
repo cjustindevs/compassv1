@@ -4,7 +4,7 @@
 
 @push('styles')
 <style>
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        .adviser-page-content { font-family: 'Inter', sans-serif; box-sizing: border-box; }
 
         :root {
             --green-50: #EAF8F0;
@@ -168,24 +168,7 @@
             </div>
         </div>
 
-        <details class="card mb-6">
-            <summary class="font-semibold text-gray-800 cursor-pointer">Manage emergency information</summary>
-            <p class="text-sm text-gray-500 my-3">Use agency-verified telephone numbers. Active contacts appear on the emergency resources page.</p>
-            @foreach($hotlines->concat([null]) as $hotline)
-                <form method="POST" action="{{ route('adviser.emergency-resources.save') }}" class="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-gray-200 py-4">
-                    @csrf
-                    @if($hotline)<input type="hidden" name="id" value="{{ $hotline->id }}">@endif
-                    <label class="text-sm font-medium">Agency name<input name="agency_name" value="{{ $hotline?->agency_name }}" required maxlength="255" class="form-input block w-full mt-1"></label>
-                    <label class="text-sm font-medium">Telephone number<input name="hotline" value="{{ $hotline?->hotline }}" required maxlength="50" class="form-input block w-full mt-1"></label>
-                    <label class="text-sm font-medium">Description<input name="description" value="{{ $hotline?->description }}" maxlength="1000" class="form-input block w-full mt-1"></label>
-                    <label class="text-sm font-medium">Publication status<select name="status" class="form-input block w-full mt-1"><option value="active">Active</option><option value="inactive" @selected($hotline?->status === 'inactive')>Inactive</option></select></label>
-                    <label class="text-sm font-medium">Audience<select name="visibility" class="form-input block w-full mt-1"><option value="public">Public</option><option value="internal" @selected($hotline?->visibility === 'internal')>Internal</option></select></label>
-                    <label class="text-sm font-medium">Review due<input type="date" name="review_date" value="{{ $hotline?->review_date }}" class="form-input block w-full mt-1"></label>
-                    <div><button type="submit" class="btn-primary">{{ $hotline ? 'Save contact' : 'Add contact' }}</button></div>                    @if($hotline)<div class="md:col-span-2"><x-supervision-history :record="$hotline" /></div>@endif
-
-                </form>
-            @endforeach
-        </details>
+        <div class="av-actions mb-5"><a class="av-button" href="{{ route('adviser.resources',['section'=>'emergency']) }}">Manage emergency contacts</a></div>
         <!-- Toolbar -->
         <div class="card mb-6">
             <div class="flex flex-wrap items-center justify-between gap-4">
@@ -318,7 +301,7 @@
                     <label class="form-label">Description</label>
                     <textarea name="description" rows="2" class="form-input" placeholder="Short summary shown in the library"></textarea>
                 </div>
-                <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="form-label">Category *</label>
                         <select name="category" class="form-input" id="categorySelect">
@@ -337,7 +320,7 @@
                         <input type="text" name="icon" maxlength="50" class="form-input" placeholder="e.g. fa-book-open">
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="form-label">Duration</label>
                         <input type="text" name="duration" maxlength="50" class="form-input" placeholder="e.g. 10 min">

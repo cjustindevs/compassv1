@@ -12,6 +12,11 @@ class AdviserResourceController extends Controller
 {
     public function index(Request $request): View
     {
+        app(\App\Services\AdviserScope::class)->actor();
+        $request->validate(['section'=>'nullable|in:resources,emergency']);
+        if ($request->input('section')==='emergency') {
+            return view('adviser.emergency-resources', ['hotlines'=>\App\Models\EmergencyResource::orderBy('agency_name')->get()]);
+        }
         $query = SelfHelpResource::query();
 
         if ($request->filled('search')) {
@@ -37,8 +42,7 @@ class AdviserResourceController extends Controller
             'featured' => SelfHelpResource::featured()->count(),
         ];
 
-        $hotlines = \App\Models\EmergencyResource::orderBy('agency_name')->get();
-        return view('adviser.resources', compact('resources', 'categories', 'stats', 'hotlines'));
+        return view('adviser.resources', compact('resources', 'categories', 'stats'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -105,7 +109,7 @@ class AdviserResourceController extends Controller
         app(\App\Services\AdviserResourceService::class)->save($resource,$data,'Emergency directory entry reviewed and updated');
         \App\Models\AuditLog::create(['user_account_id' => auth()->id(), 'module' => 'adviser',
             'action' => 'emergency_resource_saved', 'description' => 'Emergency resource #'.$resource->id.' updated.']);
-        return redirect()->route('adviser.resources')->with('success', 'Emergency information saved.');
+        return redirect()->route('adviser.resources',['section'=>'emergency'])->with('success', 'Emergency information saved.');
     }
 
     private function rules(): array

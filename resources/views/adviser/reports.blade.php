@@ -1,168 +1,64 @@
 @extends('layouts.app')
-
-@section('title', 'COMPASS – Reports & Analytics')
-
-@push('styles')
-<style>
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #F8FBF9; }
-
-        .stat-card {
-            background: white;
-            border-radius: 16px;
-            padding: 20px 24px;
-            border: 1px solid var(--gray-200);
-            transition: all 0.3s ease;
-        }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.04); }
-        .stat-number { font-size: 28px; font-weight: 800; color: var(--gray-800); }
-        .stat-label { font-size: 13px; color: var(--gray-500); }
-
-        .card {
-            background: white;
-            border-radius: 20px;
-            padding: 24px;
-            border: 1px solid var(--gray-200);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.01);
-        }
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-        .card-header h3 { font-weight: 700; font-size: 16px; color: var(--gray-800); }
-
-        .filter-select {
-            padding: 8px 14px;
-            border-radius: 12px;
-            border: 1px solid var(--gray-200);
-            outline: none;
-            font-size: 13px;
-            background: white;
-        }
-        .filter-select:focus { border-color: var(--green-500); }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--green-500), var(--green-600));
-            color: white;
-            font-weight: 600;
-            padding: 8px 18px;
-            border-radius: 20px;
-            border: none;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-primary:hover { background: var(--green-700); transform: scale(1.02); }
-        .btn-outline {
-            background: transparent;
-            color: var(--gray-600);
-            padding: 8px 18px;
-            border-radius: 20px;
-            border: 1px solid var(--gray-200);
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-outline:hover { background: var(--gray-50); border-color: var(--gray-300); }
-
-        .chart-bar {
-            display: flex;
-            align-items: flex-end;
-            height: 120px;
-            gap: 6px;
-        }
-        .chart-bar .bar {
-            flex: 1;
-            border-radius: 4px 4px 0 0;
-            min-height: 8px;
-            transition: height 0.5s ease;
-            background: linear-gradient(180deg, #04A052, #38C172);
-        }
-        .chart-bar .bar-label {
-            font-size: 10px;
-            text-align: center;
-            color: var(--gray-400);
-            margin-top: 4px;
-        }
-
-        .ranking-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 12px;
-            border-radius: 12px;
-            transition: background 0.2s;
-        }
-        .ranking-item:hover { background: var(--gray-50); }
-        .ranking-item .rank { font-weight: 700; font-size: 14px; color: var(--gray-400); width: 24px; }
-        .ranking-item .avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-            font-size: 12px;
-            flex-shrink: 0;
-        }
-        .ranking-item .info { flex: 1; }
-        .ranking-item .info .name { font-weight: 500; font-size: 14px; color: var(--gray-800); }
-        .ranking-item .info .detail { font-size: 12px; color: var(--gray-400); }
-        .ranking-item .score { font-weight: 600; font-size: 14px; color: var(--gray-800); }
-
-        .competency-level {
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        .competency-level.expert { background: #dcfce7; color: #166534; }
-        .competency-level.advanced { background: #dbeafe; color: #1e40af; }
-        .competency-level.intermediate { background: #fef3c7; color: #92400e; }
-        .competency-level.beginner { background: #fee2e2; color: #991b1b; }
-        .competency-level.trainee { background: #e5e7eb; color: #6b7280; }
-        @media (max-width: 768px) {
-            .stat-number { font-size: 22px; }
-            .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
-            .card { padding: 16px; }
-        }
-        @media (max-width: 480px) {
-            .grid-cols-4 { grid-template-columns: 1fr 1fr; gap: 10px; }
-            .stat-number { font-size: 18px; }
-        }
-    </style>
-@endpush
-
+@section('title', 'Reports - COMPASS')
 @section('content')
-<div class="adviser-page-content space-y-5">
-<header class="flex flex-wrap justify-between items-start gap-3"><div><h1 class="text-2xl font-bold text-gray-800">Reports</h1><p class="text-sm text-gray-500 mt-1">Authorized supervision records. {{ $filters['start']->copy()->timezone('Asia/Manila')->format('M d, Y H:i') }} to {{ $filters['end']->copy()->timezone('Asia/Manila')->format('M d, Y H:i') }} (Asia/Manila).</p></div>
-<div class="flex gap-2"><a class="btn-outline" href="{{ route('adviser.reports.export', array_merge(request()->except('page'),['format'=>'csv'])) }}">Export CSV</a><a class="btn-primary" href="{{ route('adviser.reports.export', array_merge(request()->except('page'),['format'=>'pdf'])) }}">Export PDF</a></div></header>
-@if($errors->any())<p role="alert" class="text-red-700">{{ $errors->first() }}</p>@endif
-<form method="GET" class="card grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-<label class="text-sm">Period<select name="period" class="filter-select w-full mt-1">@foreach(['weekly'=>'Last 7 days','monthly'=>'Last 30 days','quarterly'=>'Last 90 days','yearly'=>'Last year'] as $key=>$label)<option value="{{ $key }}" @selected(($filters['period'] ?? 'monthly')===$key)>{{ $label }}</option>@endforeach</select></label>
-<label class="text-sm">Helper<select name="helper_id" class="filter-select w-full mt-1"><option value="">All supervised Helpers</option>@foreach(\App\Models\Helper::where('adviser_id',auth()->user()->adviser->id)->get() as $helper)<option value="{{ $helper->id }}" @selected(request('helper_id')==$helper->id)>{{ $helper->public_alias }}</option>@endforeach</select></label>
-<label class="text-sm">Concern<select name="concern_id" class="filter-select w-full mt-1"><option value="">All concerns</option>@foreach($categories as $category)<option value="{{ $category->id }}" @selected(request('concern_id')==$category->id)>{{ $category->concern_name }}</option>@endforeach</select></label>
-<label class="text-sm">From (Asia/Manila)<input name="from" type="datetime-local" value="{{ request('from') }}" class="filter-select w-full mt-1"></label>
-<label class="text-sm">To (Asia/Manila)<input name="to" type="datetime-local" value="{{ request('to') }}" class="filter-select w-full mt-1"></label>
-<label class="text-sm">Referral status<select name="referral_status" class="filter-select w-full mt-1"><option value="">All referrals</option>@foreach(\App\Models\Referral::STATUSES as $status)<option value="{{ $status }}" @selected(request('referral_status')===$status)>{{ ucfirst(str_replace('_',' ',$status)) }}</option>@endforeach</select></label>
-<label class="text-sm">Competency metric<select name="competency_metric" class="filter-select w-full mt-1">@foreach(['overall_score'=>'Overall competency'] + collect(\App\Services\CompetencyRubric::CRITERIA)->mapWithKeys(fn($c)=>[$c[2]=>$c[0]])->all() as $key=>$label)<option value="{{ $key }}" @selected(($filters['competency_metric'] ?? 'overall_score')===$key)>{{ $label }}</option>@endforeach</select></label>
-<div class="flex items-end gap-3"><button class="btn-primary" type="submit">Apply filters</button><a href="{{ route('adviser.reports') }}" class="text-sm text-green-700">Reset</a></div>
+<div class="adviser-page-content av-page">
+<header><div><h1>Reports</h1><p class="av-muted">Authorized supervision records. {{ $filters['start']->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') }} to {{ $filters['end']->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') }} (Philippine Time).</p></div><div class="av-actions"><a class="av-button" href="{{ route('adviser.reports.export', array_merge(request()->except(['page','cases_page']),['format'=>'csv'])) }}">Export case CSV</a><a class="av-button" href="{{ route('adviser.reports.export', array_merge(request()->except(['page','cases_page']),['format'=>'pdf'])) }}">Export case PDF</a></div></header>
+@if(session('success'))<p class="av-note" role="status">{{ session('success') }}</p>@endif
+@if($errors->any())<p role="alert" class="av-note">{{ $errors->first() }}</p>@endif
+<nav class="av-tabs" aria-label="Report groups">
+@foreach(['cases'=>'Sessions / Cases','performance'=>'Helper Performance','safety'=>'Emergency / Safety','activity'=>'Activity History'] as $key=>$label)<a href="{{ route('adviser.reports', array_merge(request()->except(['page','cases_page','actions_page','emergency_page']),['tab'=>$key])) }}" @if($tab===$key) aria-current="page" @endif>{{ $label }}</a>@endforeach
+</nav>
+<form method="GET" class="av-panel av-filter">
+<input type="hidden" name="tab" value="{{ $tab }}">
+<label>Period<select name="period">@foreach(['weekly'=>'Last 7 days','monthly'=>'Last 30 days','quarterly'=>'Last 90 days','yearly'=>'Last year'] as $key=>$label)<option value="{{ $key }}" @selected(($filters['period'] ?? 'monthly')===$key)>{{ $label }}</option>@endforeach</select></label>
+<label>From (Philippine Time)<input name="from" type="datetime-local" value="{{ request('from') ? \Illuminate\Support\Carbon::parse(request('from'),'Asia/Manila')->format('Y-m-d\TH:i') : '' }}"></label>
+<label>To (Philippine Time)<input name="to" type="datetime-local" value="{{ request('to') ? \Illuminate\Support\Carbon::parse(request('to'),'Asia/Manila')->format('Y-m-d\TH:i') : '' }}"></label>
+@if($tab!=='activity')
+<label>Helper<select name="helper_id"><option value="">All supervised Helpers</option>@foreach($filterHelpers as $helper)<option value="{{ $helper->id }}" @selected(request('helper_id')==$helper->id)>{{ $helper->full_name ?: 'Name not recorded' }}</option>@endforeach</select></label>
+<label>Concern<select name="concern_id"><option value="">All concerns</option>@foreach($categories as $category)<option value="{{ $category->id }}" @selected(request('concern_id')==$category->id)>{{ $category->concern_name }}</option>@endforeach</select></label>
+@endif
+@if(in_array($tab,['cases','performance']))
+<label>Case status<select name="case_status"><option value="">All statuses</option>@foreach(['active','completed','evaluated','waiting','helper_assigned','pending_review','emergency','cancelled','no_show'] as $state)<option value="{{ $state }}" @selected(request('case_status')===$state)>{{ ucwords(str_replace('_',' ',$state)) }}</option>@endforeach</select></label>
+<label>Referral status<select name="referral_status"><option value="">All referrals</option>@foreach(\App\Models\Referral::STATUSES as $status)<option value="{{ $status }}" @selected(request('referral_status')===$status)>{{ ucwords(str_replace('_',' ',$status)) }}</option>@endforeach</select></label>
+<label>Case history<select name="history">@foreach(['current'=>'Unarchived records','archived'=>'Archived cases','all'=>'All records'] as $key=>$label)<option value="{{ $key }}" @selected(request('history','current')===$key)>{{ $label }}</option>@endforeach</select></label>
+@endif
+@if($tab==='performance')<label>Competency metric<select name="competency_metric">@foreach(['overall_score'=>'Overall competency'] + collect(\App\Services\CompetencyRubric::CRITERIA)->mapWithKeys(fn($c)=>[$c[2]=>$c[0]])->all() as $key=>$label)<option value="{{ $key }}" @selected(($filters['competency_metric'] ?? 'overall_score')===$key)>{{ $label }}</option>@endforeach</select></label>@endif
+@if($tab==='safety')
+<label>Emergency status<select name="emergency_status"><option value="">All statuses</option>@foreach(['open','triggered','pending','under_review','responding','acknowledged','escalated','resolved','closed'] as $state)<option value="{{ $state }}" @selected(request('emergency_status')===$state)>{{ ucwords(str_replace('_',' ',$state)) }}</option>@endforeach</select></label>
+<label>Priority<select name="priority"><option value="">All priorities</option>@foreach(['emergency','high','moderate','low'] as $priority)<option value="{{ $priority }}" @selected(request('priority')===$priority)>{{ ucfirst($priority) }}</option>@endforeach</select></label>
+@endif
+<div class="av-actions"><button class="av-button av-button-primary" type="submit">Apply filters</button><a class="av-button" href="{{ route('adviser.reports',['tab'=>$tab]) }}">Reset</a></div>
 </form>
-<section class="card"><h2 class="font-semibold mb-3">Session records</h2><p class="text-xs text-gray-500 mb-4">{{ $definitions['period'] }}</p><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-gray-500 border-b"><th class="p-3">Session</th><th class="p-3">Helper</th><th class="p-3">Concern</th><th class="p-3">Status</th><th class="p-3">Documentation</th></tr></thead><tbody>@forelse($sessions as $session)<tr class="border-b"><td class="p-3">{{ $session->reference_number }}</td><td class="p-3">{{ $session->helper?->public_alias ?? 'Unassigned' }}</td><td class="p-3">{{ $session->concern?->concern_name ?? 'Not recorded' }}</td><td class="p-3">{{ ucfirst(str_replace('_',' ',$session->session_status)) }}</td><td class="p-3"><a class="text-green-700 underline" href="{{ route('adviser.session.show',$session->id) }}">Review</a></td></tr>@empty<tr><td colspan="5" class="p-5 text-gray-500">No records match these filters.</td></tr>@endforelse</tbody></table></div><div class="mt-4">{{ $sessions->links() }}</div></section>
-<details class="card"><summary class="font-semibold cursor-pointer">Metric definitions</summary>@foreach($definitions as $name=>$definition)<p class="text-sm mt-3"><strong>{{ ucfirst(str_replace('_',' ',$name)) }}:</strong> {{ $definition }}</p>@endforeach<p class="text-sm mt-3">Durations use minutes; duty coverage uses hours; rates use percentages. Calculations round to two decimals. Missing or invalid intervals are excluded. Empty denominators show No data.</p></details>
+@if($tab==='cases')
+<dl class="av-stats">@foreach(['Cases in period','Completed cases','Active sessions','Pending requests'] as $label)<div><dt>{{ $label }}</dt><dd>{{ $roleReport['summary'][$label] }}</dd></div>@endforeach</dl>
+<section class="av-panel"><header class="av-heading"><div><h2>Session records</h2><p class="av-muted">{{ $sessions->total() }} records. Archiving preserves history and never reopens or closes a case.</p></div></header>
+<div class="av-table-wrap" role="region" aria-label="Session records" tabindex="0"><table class="av-table"><thead><tr><th>Reference</th><th>Helper</th><th>Concern</th><th>Status</th><th>Activity date</th><th>Actions</th></tr></thead><tbody>
+@forelse($sessions as $session)<tr><td>{{ $session->reference_number }}</td><td>{{ $session->helper?->full_name ?? 'Unassigned' }}</td><td>{{ $session->concern?->concern_name ?? 'Not recorded' }}</td><td><span class="av-badge">{{ ucwords(str_replace('_',' ',$session->session_status)) }}</span>@if($session->archived_at)<p class="av-muted">Archived</p>@endif</td><td>{{ ($session->end_time ?? $session->start_time ?? $session->submitted_at ?? $session->created_date ?? $session->created_at)?->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') }}</td><td><div class="av-actions"><a class="av-link" href="{{ route('adviser.session.show',$session->id) }}">View documentation</a>@include('adviser.partials.archive-action',['record'=>$session])</div></td></tr>
+@empty<tr><td colspan="6" class="av-empty">No records match these filters.</td></tr>@endforelse
+</tbody></table></div><div class="av-pagination">{{ $sessions->links() }}</div></section>
+<details class="av-panel"><summary class="font-semibold cursor-pointer">Case outcomes and categories</summary><div class="av-grid mt-4">@foreach(['Cases by status','Case categories','Case outcome trend'] as $title)<section><h2>{{ $title }}</h2><table class="av-table"><tbody>@forelse($roleReport['groups'][$title] as $label=>$count)<tr><td>{{ ucwords(str_replace('_',' ',$label)) }}</td><td>{{ $count }}</td></tr>@empty<tr><td class="av-empty">No recorded data.</td></tr>@endforelse</tbody></table></section>@endforeach</div></details>
+@elseif($tab==='performance')
+<section class="av-panel"><header class="av-heading"><h2>Service performance</h2></header><p class="av-muted">Actual supervised service records in the selected period. Scheduled duty is planned coverage, not attendance.</p><div class="av-table-wrap mt-4"><table class="av-table"><thead><tr><th>Measure</th><th>Recorded result</th></tr></thead><tbody>
+@foreach(['total'=>['Session records',''],'completed'=>['Completed sessions',''],'completion_rate'=>['Completion rate','%'],'referral_rate'=>['Referral rate','%'],'response_minutes'=>['Helper first response',' min'],'waiting_minutes'=>['Queue waiting time',' min'],'duration_minutes'=>['Completed session duration',' min'],'satisfaction'=>['Seeker satisfaction',' / 5'],'referral_approval_rate'=>['Referral approval rate','%'],'duty_hours'=>['Scheduled duty coverage',' h']] as $key=>$label)<tr><td>{{ $label[0] }}</td><td>{{ $metrics[$key]===null ? 'No data' : $metrics[$key].$label[1] }}</td></tr>@endforeach
+</tbody></table></div></section>
+<section class="av-panel"><h2>Competency in the selected period</h2><p class="av-muted">{{ ucwords(str_replace('_',' ', $filters['competency_metric'])) }} from recorded evaluations, on the 1-5 scale.</p><div class="av-table-wrap mt-4"><table class="av-table"><thead><tr><th>Month</th><th>Average evaluation score</th></tr></thead><tbody>@forelse($competency as $row)<tr><td>{{ $row['month'] }}</td><td>{{ $row['score'] }} / 5</td></tr>@empty<tr><td colspan="2" class="av-empty">No evaluations match these filters.</td></tr>@endforelse</tbody></table></div></section>
+<details class="av-panel"><summary class="font-semibold cursor-pointer">Calculation definitions</summary>@foreach($definitions as $label=>$definition)<p class="av-muted mt-3"><strong>{{ ucwords(str_replace('_',' ',$label)) }}:</strong> {{ $definition }}</p>@endforeach</details>
+@else
+@php
+    $reportTable = collect($roleReport['tables'])->firstWhere('title', $tab==='safety' ? 'Emergency case activity' : 'Your recorded actions');
+    $summaryLabels = $tab==='safety' ? ['Emergencies','Resolved emergencies','Unresolved emergencies','Emergency resolution time'] : [];
+@endphp
+@if($summaryLabels)<dl class="av-stats">@foreach($summaryLabels as $label)<div><dt>{{ $label }}</dt><dd>{{ $roleReport['summary'][$label] }}</dd></div>@endforeach</dl>@endif
+<section class="av-panel"><header class="av-heading"><h2>{{ $tab==='safety' ? 'Emergency case activity' : 'Your recorded actions' }}</h2></header>
+@if($tab==='activity')<p class="av-muted mb-4">Your auditable Adviser actions, including archive and restore events. Case and emergency records are available in their report groups.</p>@endif
+<div class="av-table-wrap" role="region" aria-label="{{ $reportTable['title'] }}" tabindex="0"><table class="av-table"><thead><tr>@foreach($reportTable['columns'] as $column)<th>{{ $column }}</th>@endforeach</tr></thead><tbody>
+@forelse($reportTable['records'] as $record)
+@php
+    $cells = call_user_func($reportTable['format'], $record);
+@endphp
+<tr>@foreach($cells as $cell)<td>{{ $cell ?? 'Not recorded' }}</td>@endforeach</tr>
+@empty<tr><td colspan="{{ count($reportTable['columns']) }}" class="av-empty">No records match these filters.</td></tr>@endforelse
+</tbody></table></div><div class="av-pagination">{{ $reportTable['records']->links() }}</div></section>
+@endif
 </div>
-<x-role-activity-report :report="$roleReport" :show-cases="false" />
 @endsection

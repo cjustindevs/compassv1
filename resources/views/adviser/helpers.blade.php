@@ -4,7 +4,7 @@
 
 @push('styles')
 <style>
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        .adviser-page-content { font-family: 'Inter', sans-serif; box-sizing: border-box; }
 
         :root {
             --green-50: #EAF8F0;
@@ -165,8 +165,8 @@
             </div>
             <div class="stat-card">
                 <div class="flex items-center justify-between">
-                    <span class="stat-label">Advanced+ Competency</span>
-                    <span class="text-2xl">⭐</span>
+                    <span class="stat-label">Advanced / Expert competency</span>
+
                 </div>
                 <div class="stat-number">{{ $highCompetency }}</div>
             </div>

@@ -24,6 +24,7 @@ class HelperSchedule extends Model
     ];
 
     protected $casts = [
+        'archived_at' => 'datetime',
         'date' => 'date',
         'is_recurring' => 'boolean',
         'recurrence_pattern' => 'array',

@@ -1,4 +1,4 @@
-@props(['overview', 'showRecent' => true])
+@props(['overview', 'showRecent' => true, 'showDefinitions' => true])
 @php
     $primaryLabels = auth()->user()?->role === 'admin'
         ? ['Total users', 'Active accounts', 'Available Helpers', 'Matching success rate']
@@ -19,7 +19,7 @@
 <section class="co-overview" aria-label="Dashboard summaries">
     <div class="co-kpis">@foreach($primary as $card)<article class="stat-card dashboard-card co-kpi"><h3 title="{{ $card['definition'] }}">{{ $card['label'] }}</h3><strong @if(auth()->user()?->role === 'moderator' && $card['label'] === 'Active emergencies') id="statEmergency" @endif>{{ $formatValue($card['value']) }}</strong></article>@endforeach</div>
     <div class="co-secondary">@foreach($secondary as $card)<div><span title="{{ $card['definition'] }}">{{ $card['label'] }}</span><strong title="{{ $card['value'] }}">{{ $formatValue($card['value']) }}</strong></div>@endforeach</div>
-    <details class="co-definitions"><summary>Metric definitions</summary><dl>@foreach($overview['cards'] as $card)<dt>{{ $card['label'] }}: {{ $card['value'] }}</dt><dd>{{ $card['definition'] }}</dd>@endforeach</dl></details>
+    @if($showDefinitions)<details class="co-definitions"><summary>Metric definitions</summary><dl>@foreach($overview['cards'] as $card)<dt>{{ $card['label'] }}: {{ $card['value'] }}</dt><dd>{{ $card['definition'] }}</dd>@endforeach</dl></details>@endif
     <div class="co-charts">@foreach($orderedCharts as $chart)<x-dashboard-chart :chart="$chart" />@endforeach</div>
     @if($showRecent)<article class="card dashboard-card co-recent"><header class="card-header"><h3>{{ auth()->user()?->role === 'moderator' ? 'Recent emergency activity' : 'Recent case activity' }}</h3></header><ul>@forelse($overview['recent'] as $item)<li><span>{{ $item['label'] }}</span><time>{{ $item['at'] }}</time></li>@empty<li>No recorded case activity yet.</li>@endforelse</ul></article>@endif
 </section>

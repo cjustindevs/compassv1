@@ -4,7 +4,7 @@
 <div class="max-w-6xl mx-auto p-6 space-y-6">
     <div class="bg-white rounded-xl shadow p-6">
         <a href="{{ route('adviser.helpers') }}" class="text-sm text-gray-500 hover:text-gray-700">Back to helpers</a>
-        <h1 class="text-2xl font-bold mt-2">Matching Profile: {{ $helper->user?->name ?? $helper->full_name }}</h1>
+        <h1 class="text-2xl font-bold mt-2">Matching Profile: {{ $helper->full_name ?: ($helper->user?->name ?? 'Name not recorded') }}</h1>
         <p class="text-gray-600">Current display score: {{ number_format($matchingScore, 2) }}%</p>
     </div>
 
