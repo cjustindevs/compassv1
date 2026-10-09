@@ -10,7 +10,7 @@
             <x-brand-mark />
         </a>
         <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Collapse sidebar" title="Collapse / expand sidebar">
-            <i class="fas fa-chevron-left" id="toggleIcon"></i>
+            <x-ui-icon name="chevron-left" class="sidebar-chevron" id="toggleIcon" />
         </button>
         {{-- theme toggle moved to Settings → Appearance --}}
     </div>
@@ -18,60 +18,60 @@
     <nav class="sidebar-nav">
         <div class="nav-section">Evaluation</div>
         <a href="{{ route('adviser.dashboard') }}" class="nav-item {{ request()->routeIs('adviser.dashboard') ? 'active' : '' }}">
-            <i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span>
+            <x-ui-icon name="dashboard"  /><span class="nav-text">Dashboard</span>
         </a>
         <a href="{{ route('adviser.screenings') }}" class="nav-item {{ request()->routeIs('adviser.screenings*') ? 'active' : '' }}" title="Screening reviews">
-            <i class="fas fa-clipboard-check" aria-hidden="true"></i><span class="nav-text">Screening reviews</span>
+            <x-ui-icon name="clipboard"  /><span class="nav-text">Screening reviews</span>
             @if($screeningBadge > 0)
                 <span class="nav-badge" id="pendingReviewsBadge">{{ $screeningBadge }}</span>
             @endif
         </a>
         <a href="{{ route('adviser.evaluations') }}" class="nav-item {{ request()->routeIs('adviser.evaluations*', 'adviser.evaluate*') ? 'active' : '' }}">
-            <i class="fas fa-clipboard-list"></i><span class="nav-text">Pending Evaluations</span>
+            <x-ui-icon name="clipboard"  /><span class="nav-text">Pending Evaluations</span>
             @if($evalBadge > 0)
                 <span class="nav-badge" id="evalBadge">{{ $evalBadge }}</span>
             @endif
         </a>
         <a href="{{ route('adviser.helpers') }}" class="nav-item {{ request()->routeIs('adviser.helpers*', 'adviser.helper*') ? 'active' : '' }}">
-            <i class="fas fa-users"></i><span class="nav-text">Manage Helpers</span>
+            <x-ui-icon name="users"  /><span class="nav-text">Manage Helpers</span>
         </a>
         <a href="{{ route('adviser.referrals') }}" class="nav-item {{ request()->routeIs('adviser.referrals*', 'adviser.referral*') ? 'active' : '' }}">
-            <i class="fas fa-arrow-right"></i><span class="nav-text">Referral Queue</span>
+            <x-ui-icon name="arrow-right"  /><span class="nav-text">Referral Queue</span>
             @if($referralBadge > 0)
                 <span class="nav-badge" id="referralBadge">{{ $referralBadge }}</span>
             @endif
         </a>
         <a href="{{ route('adviser.emergencies') }}" class="nav-item {{ request()->routeIs('adviser.emergencies*') ? 'active' : '' }}">
-            <i class="fas fa-exclamation-triangle"></i><span class="nav-text">Emergencies</span>
+            <x-ui-icon name="warning"  /><span class="nav-text">Emergencies</span>
         </a>
 
         <div class="nav-section">Records</div>
         <a href="{{ route('adviser.reports') }}" class="nav-item {{ request()->routeIs('adviser.reports*') ? 'active' : '' }}">
-            <i class="fas fa-chart-bar"></i><span class="nav-text">Reports</span>
+            <x-ui-icon name="bar-chart"  /><span class="nav-text">Reports</span>
         </a>
         <a href="{{ route('adviser.calendar') }}" class="nav-item {{ request()->routeIs('adviser.calendar*') ? 'active' : '' }}">
-            <i class="fas fa-calendar-alt"></i><span class="nav-text">Calendar</span>
+            <x-ui-icon name="calendar"  /><span class="nav-text">Calendar</span>
         </a>
         <a href="{{ route('adviser.schedule') }}" class="nav-item {{ request()->routeIs('adviser.schedule*') ? 'active' : '' }}">
-            <i class="fas fa-clock"></i><span class="nav-text">Helper Schedules</span>
+            <x-ui-icon name="clock"  /><span class="nav-text">Helper Schedules</span>
         </a>
         <a href="{{ route('adviser.transcripts') }}" class="nav-item {{ request()->routeIs('adviser.transcripts*', 'adviser.transcript*') ? 'active' : '' }}">
-            <i class="fas fa-file-alt"></i><span class="nav-text">Transcripts</span>
+            <x-ui-icon name="file-text"  /><span class="nav-text">Transcripts</span>
         </a>
         <a href="{{ route('adviser.resources') }}" class="nav-item {{ request()->routeIs('adviser.resources*') ? 'active' : '' }}">
-            <i class="fas fa-book"></i><span class="nav-text">Resources</span>
+            <x-ui-icon name="book-open"  /><span class="nav-text">Resources</span>
         </a>
-<a href="{{ route('concerns.manage') }}" class="nav-item {{ request()->routeIs('concerns.*') ? 'active' : '' }}"><i class="fas fa-list" aria-hidden="true"></i><span class="nav-text">Areas of concern</span></a>
+<a href="{{ route('concerns.manage') }}" class="nav-item {{ request()->routeIs('concerns.*') ? 'active' : '' }}"><x-ui-icon name="list"  /><span class="nav-text">Areas of concern</span></a>
 
         <div class="nav-section">Account</div>
         <a href="{{ route('adviser.notifications') }}" class="nav-item {{ request()->routeIs('adviser.notifications*') ? 'active' : '' }}">
-            <i class="fas fa-bell"></i><span class="nav-text">Notifications</span>
+            <x-ui-icon name="bell"  /><span class="nav-text">Notifications</span>
             @if($notifBadge > 0)
                 <span class="nav-badge" id="notifBadge">{{ $notifBadge }}</span>
             @endif
         </a>
         <a href="{{ route('adviser.settings') }}" class="nav-item {{ request()->routeIs('adviser.settings*') ? 'active' : '' }}">
-            <i class="fas fa-cog"></i><span class="nav-text">Settings</span>
+            <x-ui-icon name="settings"  /><span class="nav-text">Settings</span>
         </a>
     </nav>
 
@@ -104,7 +104,7 @@
               data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
             @csrf
             <button type="submit" class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i><span class="logout-text">Log out</span>
+                <x-ui-icon name="logout"  /><span class="logout-text">Log out</span>
             </button>
         </form>
     </div>

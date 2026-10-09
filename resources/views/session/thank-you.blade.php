@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
@@ -8,14 +8,7 @@
     <title>COMPASS – Thank You</title>
 
     <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -144,6 +137,8 @@
             h1 { font-size: 22px; }
         }
     </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body>
 
@@ -166,12 +161,12 @@
         </div>
 
         <a href="{{ route('seeker.dashboard') }}" class="btn-primary">
-            <i class="fas fa-home mr-2"></i> Go to Dashboard
+            <x-ui-icon name="home" class="mr-2" /> Go to Dashboard
         </a>
 
         <div>
             <a href="{{ route('request.screening') }}" class="btn-ghost">
-                <i class="fas fa-comment-dots mr-1"></i> Need more support? Start a new session
+                <x-ui-icon name="message" class="mr-1" /> Need more support? Start a new session
             </a>
         </div>
     </div>

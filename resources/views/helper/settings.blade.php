@@ -69,7 +69,7 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Settings</button>
+            <button type="submit" class="btn btn-primary"><x-ui-icon name="save"  /> Save Settings</button>
         </form>
     </div>
 

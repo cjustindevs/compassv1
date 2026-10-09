@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
@@ -8,14 +8,7 @@
     <title>COMPASS – Session Preferences</title>
 
     <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -102,15 +95,15 @@
             text-decoration: none;
             margin-bottom: 2px;
         }
-        .sidebar .nav .nav-item i { width: 20px; text-align: center; font-size: 16px; color: var(--gray-400); }
+        .sidebar .nav .nav-item :is(i, .compass-icon) { width: 20px; text-align: center; font-size: 16px; color: var(--gray-400); }
         .sidebar .nav .nav-item:hover { background: var(--green-50); color: var(--gray-800); }
-        .sidebar .nav .nav-item:hover i { color: var(--green-500); }
+        .sidebar .nav .nav-item:hover :is(i, .compass-icon) { color: var(--green-500); }
         .sidebar .nav .nav-item.active {
             background: var(--green-50);
             color: var(--green-700);
             font-weight: 600;
         }
-        .sidebar .nav .nav-item.active i { color: var(--green-500); }
+        .sidebar .nav .nav-item.active :is(i, .compass-icon) { color: var(--green-500); }
         .sidebar .nav .nav-item .badge {
             margin-left: auto;
             background: var(--green-500);
@@ -173,7 +166,7 @@
             background: #FEE2E2;
             color: #DC2626;
         }
-        .sidebar .user-section .logout-btn i { width: 20px; text-align: center; }
+        .sidebar .user-section .logout-btn :is(i, .compass-icon) { width: 20px; text-align: center; }
 
         .main-content {
             margin-left: 260px;
@@ -378,9 +371,9 @@
             padding: 4px 12px;
             transition: all 0.2s ease;
         }
-        .bottom-nav .nav-item i { font-size: 20px; }
+        .bottom-nav .nav-item :is(i, .compass-icon) { font-size: 20px; }
         .bottom-nav .nav-item.active { color: var(--green-500); }
-        .bottom-nav .nav-item.active i { color: var(--green-500); }
+        .bottom-nav .nav-item.active :is(i, .compass-icon) { color: var(--green-500); }
 
         .hamburger {
             display: none;
@@ -424,6 +417,8 @@
             .step-dot { width: 24px; height: 24px; font-size: 10px; }
         }
     </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body class="compass-compact">
 
@@ -441,8 +436,8 @@
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
+                    <x-ui-icon name="menu"  />
                 </button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-800">Request Peer Support</h1>
@@ -486,7 +481,7 @@
                             <div class="mode-content">
                                 <div class="label">Chat</div>
                                 <div class="sub">Private text-based conversation</div>
-                                <div class="checkmark"><i class="fas fa-check-circle"></i></div>
+                                <div class="checkmark"><x-ui-icon name="check-circle"  /></div>
                             </div>
                         </label>
                     </div>
@@ -522,12 +517,12 @@
                 </div>
                 <div class="actions-compact">
                     <a href="{{ route('request.screening') }}" class="text-gray-500 hover:text-gray-700 transition font-medium text-sm">
-                        <i class="fas fa-arrow-left mr-2"></i> Back
+                        <x-ui-icon name="arrow-left" class="mr-2" /> Back
                     </a>
 
                     <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                         <button type="submit" id="preferencesSubmit" class="btn-primary w-full sm:w-auto">
-                            Find a Helper <i class="fas fa-arrow-right"></i>
+                            Find a Helper <x-ui-icon name="arrow-right"  />
                         </button>
                     </div>
                 </div>

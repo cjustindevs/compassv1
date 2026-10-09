@@ -14,7 +14,7 @@
 @endif
 
 
-        <a href="{{ route('helper.cases') }}" class="btn btn-secondary btn-sm mb-4"><i class="fas fa-arrow-left"></i> Back to cases</a>
+        <a href="{{ route('helper.cases') }}" class="btn btn-secondary btn-sm mb-4"><x-ui-icon name="arrow-left"  /> Back to cases</a>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -77,7 +77,7 @@
             <div class="card mb-6">
                 <div class="card-header">
                     <h3>Conversation</h3>
-                    <a href="{{ route('helper.session.chat', ['id' => $session->id]) }}" class="link"><i class="fas fa-comment-dots"></i> Open chat</a>
+                    <a href="{{ route('helper.session.chat', ['id' => $session->id]) }}" class="link"><x-ui-icon name="message"  /> Open chat</a>
                 </div>
                 @if(optional($session->messages)->isNotEmpty())
                     <div style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;" id="msgPreview">
@@ -146,7 +146,7 @@
                     @elseif($session->session_status === 'helper_assigned')
                         <form method="POST" action="{{ route('helper.cases.accept', ['id' => $session->id]) }}">
                             @csrf
-                            <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-check"></i> Accept Case</button>
+                            <button type="submit" class="btn btn-primary btn-block"><x-ui-icon name="check"  /> Accept Case</button>
                         </form>
                         <form method="POST" action="{{ route('helper.cases.decline', ['id' => $session->id]) }}"
                               data-confirm="Decline case?"
@@ -154,12 +154,12 @@
                               data-confirm-text="Decline"
                               data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                             @csrf<label class="sr-only" for="decline-{{ $session->id ?? $case['id'] }}">Reason for declining</label><select id="decline-{{ $session->id ?? $case['id'] }}" name="reason" class="form-control" required><option value="">Choose a reason</option>@foreach(['fatigue'=>'Fatigue','illness'=>'Illness','personal_emergency'=>'Personal emergency','academic_conflict'=>'Academic conflict','conflict_of_interest'=>'Conflict of interest','unavailable'=>'Unavailable'] as $value=>$label)<option value="{{ $value }}">{{ $label }}</option>@endforeach</select>
-                            <button type="submit" class="btn btn-outline-danger btn-block"><i class="fas fa-times"></i> Decline Case</button>
+                            <button type="submit" class="btn btn-outline-danger btn-block"><x-ui-icon name="close"  /> Decline Case</button>
                         </form>
                     @else
-                        <a href="{{ route('helper.session.chat', ['id' => $session->id]) }}" class="btn btn-primary btn-block"><i class="fas fa-comment-dots"></i> Open Chat</a>
-                        <a href="{{ route('helper.session.voice', ['id' => $session->id]) }}" class="btn btn-secondary btn-block"><i class="fas fa-phone"></i> Voice unavailable</a>
-                        <a href="{{ route('helper.session.notes', ['id' => $session->id]) }}" class="btn btn-secondary btn-block"><i class="fas fa-edit"></i> Session Notes</a>
+                        <a href="{{ route('helper.session.chat', ['id' => $session->id]) }}" class="btn btn-primary btn-block"><x-ui-icon name="message"  /> Open Chat</a>
+                        <a href="{{ route('helper.session.voice', ['id' => $session->id]) }}" class="btn btn-secondary btn-block"><x-ui-icon name="phone"  /> Voice unavailable</a>
+                        <a href="{{ route('helper.session.notes', ['id' => $session->id]) }}" class="btn btn-secondary btn-block"><x-ui-icon name="edit"  /> Session Notes</a>
                         @if($session->session_status === 'active')
                             <form method="POST" action="{{ route('helper.session.end', ['id' => $session->id]) }}"
                                   data-confirm="End session?"
@@ -167,7 +167,7 @@
                                   data-confirm-text="End session"
                                   data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                                 @csrf
-                                <button type="submit" class="btn btn-outline-danger btn-block"><i class="fas fa-stop-circle"></i> End Session</button>
+                                <button type="submit" class="btn btn-outline-danger btn-block"><x-ui-icon name="stop-circle"  /> End Session</button>
                             </form>
                         @endif
                     @endif

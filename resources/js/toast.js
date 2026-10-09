@@ -1,3 +1,4 @@
+import { uiIcon } from './ui-icon';
 // ─────────────────────────────────────────────────────────────
 //  COMPASS — Global UI helpers: toasts, confirmation modals,
 //  declarative [data-confirm] wiring, and flash-message toasts.
@@ -38,9 +39,7 @@ function showToast(message, type = 'info', duration = 3500) {
     closeBtn.type = 'button';
     closeBtn.setAttribute('aria-label', 'Dismiss');
     closeBtn.className = 'flex-shrink-0 text-gray-400 hover:text-gray-600 transition';
-    const closeIcon = document.createElement('i');
-    closeIcon.className = 'fas fa-times';
-    closeBtn.appendChild(closeIcon);
+    closeBtn.innerHTML = uiIcon('close');
 
     wrapper.append(messageEl, closeBtn);
     toast.appendChild(wrapper);
@@ -135,7 +134,7 @@ function initConfirmDelegation() {
             message: form.dataset.confirmMessage || 'This action cannot be undone.',
             confirmText: form.dataset.confirmText || 'Confirm',
             confirmClass: form.dataset.confirmClass || 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
-            icon:     form.dataset.confirmIcon || '<i class="fas fa-exclamation-triangle text-yellow-500 text-5xl"></i>',
+            icon:     form.dataset.confirmIcon || '' + uiIcon('warning', 'text-yellow-500 text-5xl') + '',
         });
 
         if (ok) {
@@ -155,7 +154,7 @@ function initConfirmDelegation() {
             message: trigger.dataset.confirmMessage || 'This action cannot be undone.',
             confirmText: trigger.dataset.confirmText || 'Confirm',
             confirmClass: trigger.dataset.confirmClass || 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
-            icon:     trigger.dataset.confirmIcon || '<i class="fas fa-exclamation-triangle text-yellow-500 text-5xl"></i>',
+            icon:     trigger.dataset.confirmIcon || '' + uiIcon('warning', 'text-yellow-500 text-5xl') + '',
         });
 
         if (!ok) return;
@@ -206,7 +205,7 @@ function initLoadingButtons() {
             btn.disabled = true;
             const label = btn.innerHTML;
             btn.dataset.loadingLabel = label;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (btn.dataset.loadingText || 'Please wait…');
+            btn.innerHTML = '' + uiIcon('spinner', 'ui-spin') + ' ' + (btn.dataset.loadingText || 'Please wait…');
             // Re-enable if the page doesn't navigate away (validation error, etc.)
             setTimeout(() => {
                 if (document.body.contains(btn)) {

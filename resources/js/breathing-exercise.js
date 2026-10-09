@@ -1,9 +1,10 @@
+import { uiIcon } from './ui-icon';
 class BreathingExercise {
     constructor(options = {}) {
         this.steps = [
-            { name: 'Inhale', duration: 4000, icon: '⬆️', instruction: 'Inhale through your nose' },
-            { name: 'Hold', duration: 2000, icon: 'fa-pause', instruction: 'Hold your breath' },
-            { name: 'Exhale', duration: 4000, icon: '⬇️', instruction: 'Exhale slowly through your mouth' },
+            { name: 'Inhale', duration: 4000, icon: 'arrow-up', instruction: 'Inhale through your nose' },
+            { name: 'Hold', duration: 2000, icon: 'pause', instruction: 'Hold your breath' },
+            { name: 'Exhale', duration: 4000, icon: 'arrow-down', instruction: 'Exhale slowly through your mouth' },
         ];
         this.totalCycles = options.totalCycles ?? 3;
         this.totalSteps = this.steps.length * this.totalCycles;
@@ -89,7 +90,7 @@ class BreathingExercise {
     }
 
     updateUI(step) {
-        if (this.$('breath-icon')) this.$('breath-icon').textContent = step.icon;
+        if (this.$('breath-icon')) this.$('breath-icon').innerHTML = uiIcon(step.icon);
         if (this.$('breath-text')) this.$('breath-text').textContent = step.name + '...';
         if (this.$('breath-instruction')) this.$('breath-instruction').textContent = step.instruction;
         if (this.$('breath-timer')) this.$('breath-timer').textContent = (step.duration / 1000) + 's';
@@ -175,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const status = $('exercise-status');
         if (status) {
-            status.textContent = exercise.result === 'skipped' ? '⏭️ Skipped' : ' Completed';
+            status.textContent = exercise.result === 'skipped' ? 'Skipped' : 'Completed';
             status.classList.remove('text-gray-400');
             status.classList.add(exercise.result === 'skipped' ? 'text-amber-600' : 'text-green-600');
         }

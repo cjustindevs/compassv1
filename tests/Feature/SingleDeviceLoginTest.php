@@ -70,12 +70,16 @@ class SingleDeviceLoginTest extends TestCase
     {
         $user = User::factory()->create(['role' => 'moderator']);
 
-        $this->seedOtherSession($user, now()->subMinutes(4)->getTimestamp());
+        $liveId = $this->seedOtherSession($user, now()->subMinutes(4)->getTimestamp());
         $this->post('/login', $this->loginPayload($user))->assertSessionHasErrors('email');
         $this->assertGuest();
 
+        // Age the previously live device past the threshold too. Otherwise
+        // that four-minute session correctly continues to block this login.
+        $this->travel(2)->minutes();
         $staleId = $this->seedOtherSession($user, now()->subMinutes(6)->getTimestamp());
         $this->post('/login', $this->loginPayload($user))->assertRedirect(route('moderator.dashboard'));
+        $this->assertDatabaseMissing('sessions', ['id' => $liveId]);
         $this->assertDatabaseMissing('sessions', ['id' => $staleId]);
     }
 }

@@ -121,7 +121,9 @@ class DashboardOverviewTest extends TestCase
         \App\Models\Moderator::create(['user_account_id' => $moderator->id, 'first_name' => 'Test', 'last_name' => 'Moderator', 'email' => $moderator->email]);
         $this->actingAs($moderator)->get(route('moderator.dashboard'))->assertOk()->assertSee('Emergency trend');
         $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
-        $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()->assertSee('Users by role');
+        // The existing Administrator reference uses account KPIs; its detailed
+        // role distribution remains in Reports rather than the Dashboard.
+        $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()->assertSee('Total Users')->assertSee('Active Accounts');
     }
 
     public function test_overview_rejects_other_roles(): void

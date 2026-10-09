@@ -39,7 +39,7 @@
 
         <!-- Back Link -->
         <a href="{{ route('adviser.helpers') }}" class="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6 text-sm font-medium">
-            <i class="fas fa-arrow-left"></i> Back to Helpers
+            <x-ui-icon name="arrow-left"  /> Back to Helpers
         </a>
 
         @if($helper->is_under_review)
@@ -101,14 +101,14 @@
 
             <details class="border border-gray-200 rounded-xl p-4" {{ $verificationVerified ? '' : 'open' }}>
                 <summary class="font-semibold text-sm text-gray-700 cursor-pointer">
-                    <i class="fas fa-pen-to-square mr-1" aria-hidden="true"></i>{{ $verificationVerified ? 'Update verification' : 'Record verification' }}
+                    <x-ui-icon name="edit" class="mr-1" />{{ $verificationVerified ? 'Update verification' : 'Record verification' }}
                 </summary>
                 <form method="POST" action="{{ route('adviser.helper.verify', $helper->id) }}" class="form-container mt-4">
                     @csrf
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
                         <label class="checkbox-group requirement-card">
                             <input type="checkbox" name="currently_enrolled" value="1" required>
-                            <span class="requirement-icon"><i class="fas fa-graduation-cap" aria-hidden="true"></i></span>
+                            <span class="requirement-icon"><x-ui-icon name="graduation"  /></span>
                             <span>
                                 <strong class="block text-sm font-semibold text-gray-800">Current DWCC psychology enrollment</strong>
                                 <span class="text-xs text-gray-500">Enrollment confirmed for this term</span>
@@ -116,7 +116,7 @@
                         </label>
                         <label class="checkbox-group requirement-card">
                             <input type="checkbox" name="recognized_member" value="1" required>
-                            <span class="requirement-icon"><i class="fas fa-id-badge" aria-hidden="true"></i></span>
+                            <span class="requirement-icon"><x-ui-icon name="badge"  /></span>
                             <span>
                                 <strong class="block text-sm font-semibold text-gray-800">Recognized membership</strong>
                                 <span class="text-xs text-gray-500">Member of a recognized organization</span>
@@ -124,7 +124,7 @@
                         </label>
                         <label class="checkbox-group requirement-card">
                             <input type="checkbox" name="training_completed" value="1" required>
-                            <span class="requirement-icon"><i class="fas fa-clipboard-check" aria-hidden="true"></i></span>
+                            <span class="requirement-icon"><x-ui-icon name="clipboard"  /></span>
                             <span>
                                 <strong class="block text-sm font-semibold text-gray-800">Training and orientation</strong>
                                 <span class="text-xs text-gray-500">Completed required orientation or training</span>
@@ -141,7 +141,7 @@
                     </div>
                     <div class="flex justify-end">
                         <button class="btn btn-primary" type="submit">
-                            <i class="fas fa-user-check" aria-hidden="true"></i> {{ $verificationVerified ? 'Update verification' : 'Record verification' }}
+                            <x-ui-icon name="user-check"  /> {{ $verificationVerified ? 'Update verification' : 'Record verification' }}
                         </button>
                     </div>
                 </form>

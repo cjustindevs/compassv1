@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
@@ -8,14 +8,7 @@
     <title>COMPASS – Request Support</title>
 
     <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -103,15 +96,15 @@
             text-decoration: none;
             margin-bottom: 2px;
         }
-        .sidebar .nav .nav-item i { width: 20px; text-align: center; font-size: 16px; color: var(--gray-400); }
+        .sidebar .nav .nav-item :is(i, .compass-icon) { width: 20px; text-align: center; font-size: 16px; color: var(--gray-400); }
         .sidebar .nav .nav-item:hover { background: var(--green-50); color: var(--gray-800); }
-        .sidebar .nav .nav-item:hover i { color: var(--green-500); }
+        .sidebar .nav .nav-item:hover :is(i, .compass-icon) { color: var(--green-500); }
         .sidebar .nav .nav-item.active {
             background: var(--green-50);
             color: var(--green-700);
             font-weight: 600;
         }
-        .sidebar .nav .nav-item.active i { color: var(--green-500); }
+        .sidebar .nav .nav-item.active :is(i, .compass-icon) { color: var(--green-500); }
         .sidebar .nav .nav-item .badge {
             margin-left: auto;
             background: var(--green-500);
@@ -174,7 +167,7 @@
             background: #FEE2E2;
             color: #DC2626;
         }
-        .sidebar .user-section .logout-btn i { width: 20px; text-align: center; }
+        .sidebar .user-section .logout-btn :is(i, .compass-icon) { width: 20px; text-align: center; }
 
         .main-content {
             margin-left: 260px;
@@ -436,9 +429,9 @@
             padding: 4px 12px;
             transition: all 0.2s ease;
         }
-        .bottom-nav .nav-item i { font-size: 20px; }
+        .bottom-nav .nav-item :is(i, .compass-icon) { font-size: 20px; }
         .bottom-nav .nav-item.active { color: var(--green-500); }
-        .bottom-nav .nav-item.active i { color: var(--green-500); }
+        .bottom-nav .nav-item.active :is(i, .compass-icon) { color: var(--green-500); }
 
         .hamburger {
             display: none;
@@ -543,7 +536,7 @@
             font-size: 13px;
             color: #374151;
         }
-        .self-help-item i { color: var(--green-500); margin-top: 3px; }
+        .self-help-item :is(i, .compass-icon) { color: var(--green-500); margin-top: 3px; }
         .self-help-item a { color: var(--green-600); font-weight: 600; text-decoration: none; }
         .safety-modal-footer {
             display: flex;
@@ -568,6 +561,8 @@
         }
         .safety-modal-footer button.primary, .safety-modal-footer a:hover.primary { background: #04a052; color: white; border-color: #04a052; }
     </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body class="compass-compact">
 
@@ -585,8 +580,8 @@
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
+                    <x-ui-icon name="menu"  />
                 </button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-800">Request Peer Support</h1>
@@ -705,11 +700,11 @@
                 <!-- ============================================ -->
                 <div class="actions-compact">
                     <a href="{{ route('seeker.dashboard') }}" class="text-gray-500 hover:text-gray-700 transition font-medium text-sm">
-                        <i class="fas fa-arrow-left mr-2"></i> Back
+                        <x-ui-icon name="arrow-left" class="mr-2" /> Back
                     </a>
                     <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                         <button type="submit" class="btn-primary w-full sm:w-auto">
-                            Continue <i class="fas fa-arrow-right"></i>
+                            Continue <x-ui-icon name="arrow-right"  />
                         </button>
                     </div>
                 </div>
@@ -724,7 +719,7 @@
                     <h2 id="safetyModalTitle">You are not alone</h2>
                     <p class="text-sm text-gray-500 mt-1">Helpful resources are available right now. Please review them before continuing.</p>
                 </div>
-                <button type="button" class="consent-action" data-close-safety aria-label="Close"><i class="fas fa-xmark" aria-hidden="true"></i></button>
+                <button type="button" class="consent-action" data-close-safety aria-label="Close"><x-ui-icon name="close"  /></button>
             </div>
             <div class="safety-modal-body">
                 <h3> Crisis hotlines (available 24/7)</h3>

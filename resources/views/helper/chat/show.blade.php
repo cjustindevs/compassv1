@@ -326,7 +326,7 @@
         <!-- Room header -->
         <div class="room-header">
             <a href="{{ route('helper.chat') }}" class="back-link">
-                <i class="fas fa-arrow-left"></i> Back to Chats
+                <x-ui-icon name="arrow-left"  /> Back to Chats
             </a>
             <div class="peer-info">
                 <div class="avatar">{{ \Illuminate\Support\Str::substr($seekerName ?? 'S', 0, 1) }}</div>
@@ -341,17 +341,17 @@
                 @endif
                 <span class="status-badge {{ $session->session_status === 'active' ? 'active' : 'helper-assigned' }}">{{ $session->status_label }}</span>
                 @if($session->isReferralEligible())
-                    <button type="button" class="action-btn referral-btn" id="referralBtn"><i class="fas fa-arrow-right"></i> Referral</button>
+                    <button type="button" class="action-btn referral-btn" id="referralBtn"><x-ui-icon name="arrow-right"  /> Referral</button>
                 @endif
                 @if($session->session_status !== 'completed')
-                    <button type="button" class="action-btn emergency-btn" id="emergencyBtn"><i class="fas fa-exclamation-triangle"></i> Emergency</button>
+                    <button type="button" class="action-btn emergency-btn" id="emergencyBtn"><x-ui-icon name="warning"  /> Emergency</button>
                     <form method="POST" action="{{ route('helper.session.end', ['id' => $session->id]) }}"
                           data-confirm="End session?"
                           data-confirm-message="This will end the session for both you and the seeker."
                           data-confirm-text="End session"
                           data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                         @csrf
-                        <button type="submit" class="end-btn"><i class="fas fa-stop-circle"></i> End</button>
+                        <button type="submit" class="end-btn"><x-ui-icon name="stop-circle"  /> End</button>
                     </form>
                 @endif
             </div>
@@ -376,7 +376,7 @@
             <!-- Input -->
             <div class="chat-input-row">
                 <input type="text" id="messageInput" class="form-control" placeholder="Type a message..." autocomplete="off">
-                <button id="sendButton" class="btn btn-primary" style="padding:10px 20px;"><i class="fas fa-paper-plane"></i> Send</button>
+                <button id="sendButton" class="btn btn-primary" style="padding:10px 20px;"><x-ui-icon name="send"  /> Send</button>
             </div>
         </div>
 
@@ -425,7 +425,7 @@
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-cancel modal-close" data-modal="referralModal">Cancel</button>
-                    <button type="submit" class="btn btn-info" id="requestConsentBtn"><i class="fas fa-paper-plane" style="margin-right:6px;"></i> Submit for Adviser Review</button>
+                    <button type="submit" class="btn btn-info" id="requestConsentBtn"><x-ui-icon name="send" style="margin-right:6px;" /> Submit for Adviser Review</button>
                 </div>
             </form>
 
@@ -447,7 +447,7 @@
                 <textarea id="emergencyAction" name="immediate_action" rows="2" placeholder="Record the immediate support or escalation steps you took..."></textarea>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-cancel modal-close" data-modal="emergencyModal">Cancel</button>
-                    <button type="submit" class="btn btn-danger"><i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i> Flag Emergency</button>
+                    <button type="submit" class="btn btn-danger"><x-ui-icon name="warning" style="margin-right:6px;" /> Flag Emergency</button>
                 </div>
             </form>
         </div>

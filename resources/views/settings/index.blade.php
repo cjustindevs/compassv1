@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     @vite(['resources/js/app.js'])
@@ -7,11 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>COMPASS – Settings</title>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -55,6 +50,8 @@
             .main-content { margin-left: 0; padding: 16px 16px 100px; }
         }
     </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body class="compass-compact">
 
@@ -63,8 +60,8 @@
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
+                    <x-ui-icon name="menu"  />
                 </button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-extrabold text-gray-800">Settings</h1>
@@ -81,28 +78,28 @@
                     <h3>Account</h3>
                     <p>Email, name, password, and account deletion.</p>
                 </div>
-                <i class="fas fa-chevron-right chevron"></i>
+                <x-ui-icon name="chevron-right" class="chevron" />
             </a>
             <a href="{{ route('settings.preferences') }}" class="settings-card">
                 <div>
                     <h3>Preferences</h3>
                     <p>Notifications and session preferences for matching.</p>
                 </div>
-                <i class="fas fa-chevron-right chevron"></i>
+                <x-ui-icon name="chevron-right" class="chevron" />
             </a>
             <a href="{{ route('settings.privacy') }}" class="settings-card">
                 <div>
                     <h3>Privacy</h3>
                     <p>Visibility, data usage, history, and exports.</p>
                 </div>
-                <i class="fas fa-chevron-right chevron"></i>
+                <x-ui-icon name="chevron-right" class="chevron" />
             </a>
             <a href="{{ route('settings.appearance') }}" class="settings-card">
                 <div>
                     <h3>Appearance</h3>
                     <p>Dark mode, font size, and accessibility.</p>
                 </div>
-                <i class="fas fa-chevron-right chevron"></i>
+                <x-ui-icon name="chevron-right" class="chevron" />
             </a>
         </div>
 

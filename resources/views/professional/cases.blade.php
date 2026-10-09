@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
@@ -8,10 +8,6 @@
     <title>COMPASS – Active Cases</title>
 
     @vite(['resources/js/app.js'])
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -173,9 +169,9 @@
             font-weight: 500;
             padding: 4px 12px;
         }
-        .bottom-nav .nav-item i { font-size: 20px; }
+        .bottom-nav .nav-item :is(i, .compass-icon) { font-size: 20px; }
         .bottom-nav .nav-item.active { color: var(--green-500); }
-        .bottom-nav .nav-item.active i { color: var(--green-500); }
+        .bottom-nav .nav-item.active :is(i, .compass-icon) { color: var(--green-500); }
 
         .flash-alert {
             position: fixed;
@@ -232,6 +228,8 @@
             .card { padding: 16px; }
         }
     </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body class="compass-compact">
 
@@ -244,8 +242,8 @@
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
+                    <x-ui-icon name="menu"  />
                 </button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-800">Active Cases</h1>
@@ -304,7 +302,7 @@
                                     </td>
                                     <td data-label="">
                                         <a href="{{ route('professional.cases.show', $case->case_reference) }}" class="btn-outline open-btn">
-                                            <i class="fas fa-arrow-right mr-1"></i> Open
+                                            <x-ui-icon name="arrow-right" class="mr-1" /> Open
                                         </a>
                                     </td>
                                 </tr>
@@ -317,7 +315,7 @@
                     <p class="text-lg font-medium text-gray-600">No active cases</p>
                     <p class="text-sm mb-4">Accept a referral to start a case</p>
                     <a href="{{ route('professional.referrals') }}" class="btn-primary">
-                        <i class="fas fa-clipboard-list mr-1"></i> View Referrals
+                        <x-ui-icon name="clipboard" class="mr-1" /> View Referrals
                     </a>
                 </div>
             @endif

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
@@ -8,10 +8,6 @@
     <title>COMPASS – Referrals</title>
 
     @vite(['resources/js/app.js'])
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -241,9 +237,9 @@
             font-weight: 500;
             padding: 4px 12px;
         }
-        .bottom-nav .nav-item i { font-size: 20px; }
+        .bottom-nav .nav-item :is(i, .compass-icon) { font-size: 20px; }
         .bottom-nav .nav-item.active { color: var(--green-500); }
-        .bottom-nav .nav-item.active i { color: var(--green-500); }
+        .bottom-nav .nav-item.active :is(i, .compass-icon) { color: var(--green-500); }
 
         .flash-alert {
             position: fixed;
@@ -282,6 +278,8 @@
             .modal-box { padding: 20px 16px; }
         }
     </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body class="compass-compact">
 
@@ -294,8 +292,8 @@
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
+                    <x-ui-icon name="menu"  />
                 </button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-800">Referral Management</h1>
@@ -310,19 +308,19 @@
         <!-- Pipeline Tabs -->
         <div class="pipeline-tabs">
             <a href="#pending" class="pipeline-tab active" data-tab="pending">
-                <i class="fas fa-clock"></i> Pending <span class="count">{{ $pending->count() }}</span>
+                <x-ui-icon name="clock"  /> Pending <span class="count">{{ $pending->count() }}</span>
             </a>
             <a href="#accepted" class="pipeline-tab" data-tab="accepted">
-                <i class="fas fa-check"></i> Accepted <span class="count">{{ $accepted->count() }}</span>
+                <x-ui-icon name="check"  /> Accepted <span class="count">{{ $accepted->count() }}</span>
             </a>
             <a href="#in_progress" class="pipeline-tab" data-tab="in_progress">
-                <i class="fas fa-spinner"></i> In Progress <span class="count">{{ $inProgress->count() }}</span>
+                <x-ui-icon name="spinner" class="ui-spin" /> In Progress <span class="count">{{ $inProgress->count() }}</span>
             </a>
             <a href="#completed" class="pipeline-tab" data-tab="completed">
-                <i class="fas fa-check-circle"></i> Completed <span class="count">{{ $completed->count() }}</span>
+                <x-ui-icon name="check-circle"  /> Completed <span class="count">{{ $completed->count() }}</span>
             </a>
             <a href="#declined" class="pipeline-tab" data-tab="declined">
-                <i class="fas fa-times-circle"></i> Declined <span class="count">{{ $declined->count() }}</span>
+                <x-ui-icon name="close"  /> Declined <span class="count">{{ $declined->count() }}</span>
             </a>
         </div>
 
@@ -354,11 +352,11 @@
                             </div>
                             <div class="actions flex gap-2 flex-wrap">
                                 <a href="{{ route('professional.referral.show', $referral->id) }}" class="btn-outline">
-                                    <i class="fas fa-eye mr-1"></i> View
+                                    <x-ui-icon name="eye" class="mr-1" /> View
                                 </a>
                                 <a class="btn-primary" href="{{ route('professional.referral.show', $referral->id) }}#acceptSchedule">Schedule and accept</a>
                                 <button class="btn-danger" onclick="openDeclineModal({{ $referral->id }})">
-                                    <i class="fas fa-times mr-1"></i> Decline
+                                    <x-ui-icon name="close" class="mr-1" /> Decline
                                 </button>
                             </div>
                         </div>
@@ -398,12 +396,12 @@
                             </div>
                             <div class="actions flex gap-2 flex-wrap">
                                 <a href="{{ route('professional.cases.show', $referral->case_reference) }}" class="btn-outline">
-                                    <i class="fas fa-eye mr-1"></i> View
+                                    <x-ui-icon name="eye" class="mr-1" /> View
                                 </a>
                                 <form method="POST" action="{{ route('professional.referral.start', $referral->id) }}">
                                     @csrf
                                     <button type="submit" class="btn-primary">
-                                        <i class="fas fa-play mr-1"></i> Start Case
+                                        <x-ui-icon name="play" class="mr-1" /> Start Case
                                     </button>
                                 </form>
                             </div>
@@ -443,7 +441,7 @@
                                 </div>
                             </div>
                             <a href="{{ route('professional.cases.show', $referral->case_reference) }}" class="btn-outline">
-                                <i class="fas fa-arrow-right mr-1"></i> Open Case
+                                <x-ui-icon name="arrow-right" class="mr-1" /> Open Case
                             </a>
                         </div>
                     @endforeach
@@ -481,7 +479,7 @@
                                 </div>
                             </div>
                             <a href="{{ route('professional.referral.show', $referral->id) }}" class="btn-outline">
-                                <i class="fas fa-eye mr-1"></i> View
+                                <x-ui-icon name="eye" class="mr-1" /> View
                             </a>
                         </div>
                     @endforeach
@@ -520,7 +518,7 @@
                                 @endif
                             </div>
                             <a href="{{ route('professional.referral.show', $referral->id) }}" class="btn-outline">
-                                <i class="fas fa-eye mr-1"></i> View
+                                <x-ui-icon name="eye" class="mr-1" /> View
                             </a>
                         </div>
                     @endforeach

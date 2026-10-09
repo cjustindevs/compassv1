@@ -58,14 +58,14 @@
         display: flex; align-items: center; gap: 7px; margin: 0 0 8px;
         font-size: 13px; font-weight: 700; color: #163b2d;
     }
-    #{{ $identityDialogId }} .rv-card h3 i { color: #04a052; }
+    #{{ $identityDialogId }} .rv-card h3 :is(i, .compass-icon) { color: #04a052; }
     #{{ $identityDialogId }} .rv-consent-terms__list { margin: 0; padding-left: 18px; }
     #{{ $identityDialogId }} .rv-consent-terms__list li { font-size: 13px; line-height: 1.7; color: #475569; margin-bottom: 5px; }
     #{{ $identityDialogId }} .rv-consent-terms__list li:last-child { margin-bottom: 0; }
     #{{ $identityDialogId }} .rv-consent-terms__list strong { color: #163b2d; }
     #{{ $identityDialogId }} .rv-facts { display: grid; gap: 8px; margin: 0; }
     #{{ $identityDialogId }} .rv-facts div { display: flex; gap: 9px; font-size: 13px; line-height: 1.6; color: #475569; }
-    #{{ $identityDialogId }} .rv-facts i { color: #04a052; margin-top: 3px; flex-shrink: 0; }
+    #{{ $identityDialogId }} .rv-facts :is(i, .compass-icon) { color: #04a052; margin-top: 3px; flex-shrink: 0; }
     #{{ $identityDialogId }} fieldset { border: 0; padding: 0; margin: 0 0 14px; }
     #{{ $identityDialogId }} legend { padding: 0; font-size: 13px; font-weight: 700; color: #163b2d; margin-bottom: 4px; }
     #{{ $identityDialogId }} .rv-hint { margin: 0 0 12px; font-size: 12px; line-height: 1.6; color: #64748b; }
@@ -91,7 +91,7 @@
     #{{ $identityDialogId }} .rv-alert:empty { display: none; }
     #{{ $identityDialogId }} .rv-done { display: none; text-align: center; padding: 8px 0 4px; }
     #{{ $identityDialogId }} .rv-done[data-shown] { display: block; }
-    #{{ $identityDialogId }} .rv-done i { font-size: 34px; color: #04a052; margin-bottom: 12px; }
+    #{{ $identityDialogId }} .rv-done :is(i, .compass-icon) { font-size: 34px; color: #04a052; margin-bottom: 12px; }
     #{{ $identityDialogId }} .rv-done h3 { margin: 0 0 6px; font-size: 17px; font-weight: 700; }
     #{{ $identityDialogId }} .rv-done p { margin: 0; font-size: 13px; line-height: 1.7; color: #64748b; }
     #{{ $identityDialogId }} .rv-modal__foot {
@@ -123,7 +123,7 @@
             <p class="rv-modal__sub" id="identity-sub-{{ $referral->id }}">A separate, final step. It adds contact details to the referral you already approved &mdash; it does not replace it.</p>
         </div>
         <button type="button" class="rv-icon-btn" data-identity-close aria-label="Close identity disclosure consent">
-            <i class="fas fa-xmark" aria-hidden="true"></i>
+            <x-ui-icon name="close"  />
         </button>
     </div>
 
@@ -194,7 +194,7 @@
         <div class="rv-modal__foot">
             <button type="button" class="rv-btn" data-identity-close data-identity-dismiss>Not now</button>
             <button type="submit" class="rv-btn primary" data-identity-submit disabled @if($identitySaved) hidden @endif>
-                <i class="fas fa-lock" aria-hidden="true"></i>Submit details securely
+                <x-ui-icon name="lock"  />Submit details securely
             </button>
         </div>
     </form>

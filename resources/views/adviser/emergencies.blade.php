@@ -86,7 +86,7 @@
                     <p class="text-xs text-gray-400 mt-1">Triggered {{ $alert->triggered_at?->format('M d, Y h:i A') ?? 'recently' }}</p>
                 </div>
                 <a href="{{ route('adviser.emergencies.show', $alert->id) }}" class="btn btn-primary btn-sm whitespace-nowrap">
-                    <i class="fas fa-eye mr-1"></i>View Details
+                    <x-ui-icon name="eye" class="mr-1" />View Details
                 </a>
             </div>
         @empty

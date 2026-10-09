@@ -1,14 +1,5 @@
 :root {
     color-scheme: light;
-    --compass-green: #04a052;
-    --compass-green-dark: #027039;
-    --compass-green-soft: #eaf8f0;
-    --compass-background: #f8fbf9;
-    --compass-card: #fff;
-    --compass-border: #e5e7eb;
-    --compass-text: #1f2937;
-    --compass-muted: #6b7280;
-    --compass-danger: #dc2626;
     --admin-bg: var(--compass-background);
     --admin-card: #fff;
     --admin-border: var(--compass-border);
@@ -72,7 +63,7 @@ a.sidebar-link:hover, a.sidebar-link:focus-visible { background: var(--compass-g
 .avatar-blue { background: linear-gradient(135deg,#30b650,#46bbd5); }
 .sidebar-account-copy strong, .profile-copy strong { overflow: hidden; color: #1f2937; font-size: 14px; font-weight: 600; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
 .sidebar-account-copy small, .profile-copy small { overflow: hidden; margin-top: 2px; color: #9ca3af; font-size: 12px; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
-.sidebar-account-copy small i { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: var(--admin-green); }
+.sidebar-account-copy small :is(i, .compass-icon) { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: var(--admin-green); }
 .sidebar-profile-link { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px; padding: 5px; border-radius: 8px; color: var(--admin-green-dark); font-size: 11px; font-weight: 600; text-decoration: none; transition: background .2s,color .2s; }
 .sidebar-profile-link:hover, .sidebar-profile-link:focus-visible { background: var(--compass-green-soft); color: var(--admin-green-dark); outline: none; }
 .sidebar-logout-form { margin-top: 10px; }
@@ -151,7 +142,7 @@ a.sidebar-link:hover, a.sidebar-link:focus-visible { background: var(--compass-g
 .chart-axis-label { fill: #758195; font-family: inherit; font-size: 10px; }
 .chart-legend { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 17px; margin-top: -4px; color: var(--admin-muted); font-size: 10px; }
 .chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
-.chart-legend i { display: inline-block; width: 13px; height: 3px; border-radius: 99px; background: var(--legend-color); }
+.chart-legend :is(i, .compass-icon) { display: inline-block; width: 13px; height: 3px; border-radius: 99px; background: var(--legend-color); }
 
 .dashboard-bottom-grid { display: grid; grid-template-columns: minmax(0,2fr) minmax(300px,1fr); gap: 16px; align-items: stretch; }
 .activity-card, .logs-card { min-width: 0; padding: 22px 20px; }
@@ -294,7 +285,7 @@ a.sidebar-link:hover, a.sidebar-link:focus-visible { background: var(--compass-g
 .user-role-badge, .user-status-badge { display: inline-flex; max-width: 100%; min-height: 25px; align-items: center; gap: 5px; padding: 4px 8px; border-radius: 999px; font-size: 9px; font-weight: 650; line-height: 1.2; }
 .user-role-badge { background: #e3f4fc; color: #10a65d; }
 .user-role-badge .admin-icon { flex: none; }
-.user-status-badge i { width: 6px; height: 6px; flex: none; border-radius: 50%; background: currentColor; }
+.user-status-badge :is(i, .compass-icon) { width: 6px; height: 6px; flex: none; border-radius: 50%; background: currentColor; }
 .user-status-available { background: #ddf8e4; color: #23aa56; }
 .user-status-busy { background: #fff1cb; color: #e68a06; }
 .user-status-offline { background: #eef1f5; color: #687386; }
@@ -1136,9 +1127,9 @@ a.sidebar-link:hover, a.sidebar-link:focus-visible { background: var(--compass-g
 .admin-app .directory-user-copy small { font-size: 13px; }
 .admin-app .user-role-badge,.admin-app .user-status-badge { font-size: 12px; font-weight: 500; line-height: 1.5; }
 .admin-app .user-status-active { color: var(--admin-accent-dark); background: var(--admin-accent-soft); }
-.admin-app .user-status-active i { background: var(--admin-accent); }
+.admin-app .user-status-active :is(i, .compass-icon) { background: var(--admin-accent); }
 .admin-app .user-status-inactive { color: var(--admin-muted); background: var(--admin-bg); }
-.admin-app .user-status-inactive i { background: var(--admin-muted); }
+.admin-app .user-status-inactive :is(i, .compass-icon) { background: var(--admin-muted); }
 .admin-deactivate-button { border: 1px solid #fecaca; border-radius: 8px; background: var(--admin-card); color: var(--admin-red); font-size: 13px; padding: 8px 10px; min-height: 40px; cursor: pointer; }
 .admin-deactivate-button:hover { background: #fef2f2; }
 .admin-account-note { color: var(--admin-muted); font-size: 13px; }

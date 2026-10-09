@@ -22,7 +22,7 @@
 #connectionNotice{padding:12px 16px;background:#f0faf4;border:1px solid #cce6d7;border-radius:12px;margin:8px 12px;font:13px/1.5 Inter,system-ui,sans-serif}
 #connectionDialog{width:min(480px,calc(100vw - 32px));max-height:calc(100dvh - 40px);overflow:auto;padding:24px;border:1px solid #dce8e0;border-radius:18px;margin:auto;background:#fff;color:#203c30;font:14px/1.6 Inter,system-ui,sans-serif}
 #connectionDialog::backdrop{background:rgba(15,35,25,.45)}
-#connectionDialog .connection-heading>i{display:grid;place-items:center;flex:0 0 42px;height:42px;background:#eaf7ef;border-radius:12px}#connectionDialog .connection-heading{display:flex;align-items:center;gap:12px;color:#087642}
+#connectionDialog .connection-heading>:is(i, .compass-icon){display:grid;place-items:center;flex:0 0 42px;height:42px;background:#eaf7ef;border-radius:12px}#connectionDialog .connection-heading{display:flex;align-items:center;gap:12px;color:#087642}
 #connectionDialog h2{font-size:19px;line-height:1.4;margin:0}
 #connectionDialog p{margin:14px 0}#connectionDialog .connection-muted{color:#62736a;font-size:13px}
 #connectionDialog [data-connection-actions]:not([hidden]){display:flex;flex-wrap:wrap;gap:8px}

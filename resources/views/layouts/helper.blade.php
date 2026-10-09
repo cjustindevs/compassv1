@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html class="compass-ui" lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
@@ -7,13 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="user-id" content="{{ auth()->id() }}">
     <title>@yield('title', 'COMPASS') – Helper</title>
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     @vite(['resources/css/app.css', 'resources/css/helper-components.css', 'resources/js/app.js', 'resources/js/helper-notifications.js'])
 
     <script>
@@ -48,6 +42,7 @@
             body.helper-layout > .main-content { margin-left: 0; padding: 20px 16px 88px; }
         }
     </style>
+    @include('partials.ui-assets')
 </head>
 <body class="helper-layout compass-compact font-sans antialiased">
 
@@ -60,7 +55,7 @@
         <div class="top-bar">
             <div class="greeting">
                 <div style="display:flex;align-items:center;gap:12px;">
-                    <button class="hamburger" id="hamburgerBtn"><i class="fas fa-bars"></i></button>
+                    <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar"><x-ui-icon name="menu"  /></button>
                     <div>
                         <h1>@yield('heading', 'Helper')</h1>
                         <p>@yield('subheading', '')</p>

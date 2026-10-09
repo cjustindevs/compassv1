@@ -154,17 +154,18 @@ class SelfHelpToolsPresentationTest extends TestCase
         $this->assertSame("\u{1FAA8}", $resource->fresh()->icon);
     }
 
-    public function test_selfhelp_keeps_the_shared_icon_font_for_the_sidebar_chrome(): void
+    public function test_selfhelp_uses_shared_outline_icons_for_the_sidebar_chrome(): void
     {
-        // The sidebar, bottom nav, and confirmation modal are shared by every
-        // module and still use icon classes, so the self-help pages must keep
-        // loading the icon font even though their own content has no icons.
+        // Navigation remains functional while content stays text-only. The
+        // shared sprite replaces the old external icon font across all roles.
         $resource = $this->resource(['category' => 'exercise']);
 
         foreach ([route('selfhelp'), route('selfhelp.show', $resource->id)] as $url) {
             $html = $this->actingAs($this->seeker())->get($url)->assertOk()->getContent();
 
-            $this->assertMatchesRegularExpression('/font-?awesome/i', $html);
+            $this->assertStringContainsString('images/compass-icons.svg', $html);
+            $this->assertStringContainsString('class="compass-icon', $html);
+            $this->assertDoesNotMatchRegularExpression('/font-?awesome/i', $html);
             $this->assertMatchesRegularExpression('/id="sidebarToggle"/', $html);
         }
     }

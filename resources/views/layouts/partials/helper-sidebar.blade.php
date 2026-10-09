@@ -10,7 +10,7 @@
             <x-brand-mark />
         </a>
         <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Collapse sidebar" title="Collapse / expand sidebar">
-            <i class="fas fa-chevron-left" id="toggleIcon"></i>
+            <x-ui-icon name="chevron-left" class="sidebar-chevron" id="toggleIcon" />
         </button>
         {{-- theme toggle moved to Settings → Appearance --}}
     </div>
@@ -18,44 +18,44 @@
     <nav class="sidebar-nav">
         <div class="nav-section">Workspace</div>
         <a href="{{ route('helper.dashboard') }}" class="nav-item {{ request()->routeIs('helper.dashboard') ? 'active' : '' }}">
-            <i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span>
+            <x-ui-icon name="dashboard"  /><span class="nav-text">Dashboard</span>
         </a>
         <a href="{{ route('helper.readiness') }}" class="nav-item {{ request()->routeIs('helper.readiness*') ? 'active' : '' }}">
-            <i class="fas fa-heartbeat"></i><span class="nav-text">Readiness Check</span>
+            <x-ui-icon name="heart-pulse"  /><span class="nav-text">Readiness Check</span>
         </a>
         <a href="{{ route('helper.cases') }}" class="nav-item {{ request()->routeIs('helper.cases*') ? 'active' : '' }}">
-            <i class="fas fa-folder-open"></i><span class="nav-text">Assigned Cases</span>
+            <x-ui-icon name="folder"  /><span class="nav-text">Assigned Cases</span>
             <span class="nav-badge" id="caseBadge" style="{{ $caseBadgeCount > 0 ? '' : 'display:none;' }}">{{ $caseBadgeCount }}</span>
         </a>
-        <a href="{{ route('helper.reconnections') }}" class="nav-item {{ request()->routeIs('helper.reconnections') ? 'active' : '' }}" title="Connection review"><i class="fas fa-plug" aria-hidden="true"></i><span class="nav-text">Connection review</span></a>
+        <a href="{{ route('helper.reconnections') }}" class="nav-item {{ request()->routeIs('helper.reconnections') ? 'active' : '' }}" title="Connection review"><x-ui-icon name="plug"  /><span class="nav-text">Connection review</span></a>
 
         <a href="{{ route('helper.calendar') }}" class="nav-item {{ request()->routeIs('helper.calendar*') ? 'active' : '' }}">
-            <i class="fas fa-calendar-alt"></i><span class="nav-text">Calendar</span>
+            <x-ui-icon name="calendar"  /><span class="nav-text">Calendar</span>
         </a>
 
         <div class="nav-section">Growth</div>
         <a href="{{ route('helper.competency') }}" class="nav-item {{ request()->routeIs('helper.competency*') ? 'active' : '' }}">
-            <i class="fas fa-chart-line"></i><span class="nav-text">Competency</span>
+            <x-ui-icon name="chart-line"  /><span class="nav-text">Competency</span>
         </a>
         <a href="{{ route('helper.feedback') }}" class="nav-item {{ request()->routeIs('helper.feedback*') ? 'active' : '' }}">
-            <i class="fas fa-star"></i><span class="nav-text">Feedback</span>
+            <x-ui-icon name="star"  /><span class="nav-text">Feedback</span>
         </a>
         <a href="{{ route('helper.resources') }}" class="nav-item {{ request()->routeIs('helper.resources*') ? 'active' : '' }}">
-            <i class="fas fa-book"></i><span class="nav-text">Resources</span>
+            <x-ui-icon name="book-open"  /><span class="nav-text">Resources</span>
         </a>
 
-        <a href="{{ route('helper.reports') }}" class="nav-item {{ request()->routeIs('helper.reports') ? 'active' : '' }}"><i class="fas fa-file-alt" aria-hidden="true"></i><span class="nav-text">Reports</span></a>
+        <a href="{{ route('helper.reports') }}" class="nav-item {{ request()->routeIs('helper.reports') ? 'active' : '' }}"><x-ui-icon name="file-text"  /><span class="nav-text">Reports</span></a>
 
         <div class="nav-section">Account</div>
         <a href="{{ route('helper.notifications') }}" class="nav-item {{ request()->routeIs('helper.notifications*') ? 'active' : '' }}">
-            <i class="fas fa-bell"></i><span class="nav-text">Notifications</span>
+            <x-ui-icon name="bell"  /><span class="nav-text">Notifications</span>
             <span class="nav-badge danger" id="notifBadge" style="{{ $notifBadgeCount > 0 ? '' : 'display:none;' }}">{{ $notifBadgeCount }}</span>
         </a>
         <a href="{{ route('helper.profile') }}" class="nav-item {{ request()->routeIs('helper.profile*') ? 'active' : '' }}">
-            <i class="fas fa-user-circle"></i><span class="nav-text">Profile</span>
+            <x-ui-icon name="user"  /><span class="nav-text">Profile</span>
         </a>
         <a href="{{ route('helper.settings') }}" class="nav-item {{ request()->routeIs('helper.settings*') ? 'active' : '' }}">
-            <i class="fas fa-cog"></i><span class="nav-text">Settings</span>
+            <x-ui-icon name="settings"  /><span class="nav-text">Settings</span>
         </a>
     </nav>
 
@@ -88,7 +88,7 @@
               data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
             @csrf
             <button type="submit" class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i><span class="logout-text">Log out</span>
+                <x-ui-icon name="logout"  /><span class="logout-text">Log out</span>
             </button>
         </form>
     </div>

@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>COMPASS – Register</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Inter', sans-serif; }
         .gradient-bg { background: linear-gradient(135deg, #ECFDF5 0%, #DCFCE7 50%, #FFFFFF 100%); }
@@ -85,6 +82,8 @@
             .otp-digit { -webkit-appearance: none; -moz-appearance: textfield; appearance: textfield; }
         }
     </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body class="gradient-bg min-h-screen flex items-center justify-center py-6 md:py-12">
 
@@ -136,7 +135,7 @@
                         </div>
                         <button type="submit" id="sendOtpBtn"
                                 class="btn-primary w-full mt-4 py-3 rounded-xl text-white font-semibold transition-all">
-                            <i class="fas fa-paper-plane mr-2"></i> Send Verification Code
+                            <x-ui-icon name="send" class="mr-2" /> Send Verification Code
                         </button>
                         <p class="text-xs text-gray-400 text-center mt-3">
                              We respect your privacy
@@ -167,7 +166,7 @@
                              Email verified! Proceeding to registration...
                         </div>
                         <button id="resendOtpBtn" class="text-green-600 text-sm mt-2 hover:underline hidden">
-                            <i class="fas fa-redo mr-1"></i> Resend Code
+                            <x-ui-icon name="refresh" class="mr-1" /> Resend Code
                         </button>
                     </div>
                 </div>
@@ -194,8 +193,8 @@
                                        class="input-focus flex-1 px-4 py-3 rounded-xl border border-gray-200 outline-none transition-all"
                                        readonly required>
                                 <button type="button" id="generateAliasBtn"
-                                        class="px-4 py-3 rounded-xl border border-gray-200 hover:border-green-400 hover:bg-green-50 transition-all">
-                                    <i class="fas fa-shuffle text-green-600"></i>
+                                        class="px-4 py-3 rounded-xl border border-gray-200 hover:border-green-400 hover:bg-green-50 transition-all" aria-label="Shuffle alias" title="Shuffle alias">
+                                    <x-ui-icon name="shuffle" class="text-green-600" />
                                 </button>
                             </div>
                             <p class="text-xs text-gray-400 mt-1">Your alias protects your identity</p>
@@ -242,7 +241,7 @@
 
                         <button type="button" id="nextToConsentBtn"
                                 class="btn-primary w-full py-3 rounded-xl text-white font-semibold transition-all">
-                            <i class="fas fa-arrow-right mr-2"></i> Next: Review & Consent
+                            <x-ui-icon name="arrow-right" class="mr-2" /> Next: Review & Consent
                         </button>
                     </form>
                 </div>
@@ -295,10 +294,10 @@
 
                     <div class="flex flex-col sm:flex-row gap-3 mt-4">
                         <button id="backToStep2Btn" class="w-full sm:flex-1 py-3 rounded-xl btn-secondary font-semibold transition-all">
-                            <i class="fas fa-arrow-left mr-2"></i> Back
+                            <x-ui-icon name="arrow-left" class="mr-2" /> Back
                         </button>
                         <button id="agreeAndSubmitBtn" class="w-full sm:flex-1 py-3 rounded-xl btn-primary text-white font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                            <i class="fas fa-check mr-2"></i> I Agree &amp; Create Account
+                            <x-ui-icon name="check" class="mr-2" /> I Agree &amp; Create Account
                         </button>
                     </div>
                     <p id="consentStepError" class="text-red-500 text-sm mt-2 hidden"></p>
@@ -313,7 +312,7 @@
                     <p class="text-gray-500 mt-2">Your anonymous account has been created.</p>
                     <p class="text-sm text-gray-400 mt-1">Alias: <span id="successAlias" class="font-semibold text-green-600"></span></p>
                     <a href="{{ route('login') }}" class="btn-primary inline-block w-full sm:w-auto text-center mt-6 px-8 py-3 rounded-xl text-white font-semibold transition-all">
-                        <i class="fas fa-sign-in-alt mr-2"></i> Go to Login
+                        <x-ui-icon name="arrow-right" class="mr-2" /> Go to Login
                     </a>
                 </div>
 
@@ -561,7 +560,7 @@
                 if (!currentEmail) return;
 
                 resendOtpBtn.disabled = true;
-                resendOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Sending...';
+                resendOtpBtn.innerHTML = '<x-ui-icon name="spinner" class="mr-1 ui-spin" /> Sending...';
 
                 fetch('/api/resend-otp', {
                     method: 'POST',
@@ -574,7 +573,7 @@
                 .then(res => res.json())
                 .then(data => {
                     resendOtpBtn.disabled = false;
-                    resendOtpBtn.innerHTML = '<i class="fas fa-redo mr-1"></i> Resend Code';
+                    resendOtpBtn.innerHTML = '<x-ui-icon name="refresh" class="mr-1" /> Resend Code';
                     if (data.success) {
                         showSuccess(emailSuccess, data.message);
                         hideError(otpError);
@@ -586,7 +585,7 @@
                 })
                 .catch(() => {
                     resendOtpBtn.disabled = false;
-                    resendOtpBtn.innerHTML = '<i class="fas fa-redo mr-1"></i> Resend Code';
+                    resendOtpBtn.innerHTML = '<x-ui-icon name="refresh" class="mr-1" /> Resend Code';
                     showError(otpError, 'Network error.');
                 });
             });
@@ -601,7 +600,7 @@
                 }
 
                 sendOtpBtn.disabled = true;
-                sendOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Sending...';
+                sendOtpBtn.innerHTML = '<x-ui-icon name="spinner" class="mr-2 ui-spin" /> Sending...';
                 hideError(emailError);
                 hideSuccess(emailSuccess);
 
@@ -616,7 +615,7 @@
                 .then(res => res.json())
                 .then(data => {
                     sendOtpBtn.disabled = false;
-                    sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Send Verification Code';
+                    sendOtpBtn.innerHTML = '<x-ui-icon name="send" class="mr-2" /> Send Verification Code';
 
                     if (data.success) {
                         showSuccess(emailSuccess, data.message);
@@ -634,7 +633,7 @@
                 })
                 .catch(() => {
                     sendOtpBtn.disabled = false;
-                    sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Send Verification Code';
+                    sendOtpBtn.innerHTML = '<x-ui-icon name="send" class="mr-2" /> Send Verification Code';
                     showError(emailError, 'Network error. Please try again.');
                 });
             });
@@ -703,7 +702,7 @@
             agreeAndSubmitBtn.addEventListener('click', function() {
                 // Disable button to prevent double submission
                 agreeAndSubmitBtn.disabled = true;
-                agreeAndSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Creating Account...';
+                agreeAndSubmitBtn.innerHTML = '<x-ui-icon name="spinner" class="mr-2 ui-spin" /> Creating Account...';
 
                 const data = {
                     alias: aliasInput.value,
@@ -745,7 +744,7 @@
                     showError(consentStepError, msg);
 
                     agreeAndSubmitBtn.disabled = false;
-                    agreeAndSubmitBtn.innerHTML = '<i class="fas fa-check mr-2"></i> I Agree & Create Account';
+                    agreeAndSubmitBtn.innerHTML = '<x-ui-icon name="check" class="mr-2" /> I Agree & Create Account';
                     // Re-enable based on scroll
                     const atBottom = consentTextContainer.scrollTop + consentTextContainer.clientHeight >= consentTextContainer.scrollHeight - 10;
                     if (atBottom) {
@@ -755,7 +754,7 @@
                 .catch(() => {
                     showError(consentStepError, 'Network error. Please try again.');
                     agreeAndSubmitBtn.disabled = false;
-                    agreeAndSubmitBtn.innerHTML = '<i class="fas fa-check mr-2"></i> I Agree & Create Account';
+                    agreeAndSubmitBtn.innerHTML = '<x-ui-icon name="check" class="mr-2" /> I Agree & Create Account';
                 });
             });
 

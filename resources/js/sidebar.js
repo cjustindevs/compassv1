@@ -47,32 +47,38 @@ class SidebarController {
             this.updateToggleIcon(false);
             return;
         }
-        const collapsed = localStorage.getItem(STORAGE_KEY) === 'true';
+        let collapsed = false;
+        try { collapsed = localStorage.getItem(STORAGE_KEY) === 'true'; } catch (error) { /* optional preference */ }
         this.sidebar.classList.toggle('collapsed', collapsed);
         this.updateToggleIcon(collapsed);
     }
 
     updateToggleIcon(collapsed) {
         if (!this.toggleIcon) return;
-        this.toggleIcon.classList.toggle('fa-chevron-left', !collapsed);
-        this.toggleIcon.classList.toggle('fa-chevron-right', collapsed);
+        this.toggleIcon.classList.toggle('is-collapsed', collapsed);
+        this.toggle?.setAttribute('aria-expanded', String(!collapsed));
+        this.toggle?.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
     }
 
     toggleCollapse() {
         if (this.isMobile()) return; // collapse is a desktop-only affordance
         const collapsed = this.sidebar.classList.toggle('collapsed');
-        localStorage.setItem(STORAGE_KEY, collapsed ? 'true' : 'false');
+        try { localStorage.setItem(STORAGE_KEY, collapsed ? 'true' : 'false'); } catch (error) { /* optional preference */ }
         this.updateToggleIcon(collapsed);
     }
 
     // ── Mobile drawer ──
     openMobile() {
         this.sidebar.classList.add('open');
+        this.hamburger?.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('sidebar-open');
         if (this.overlay) this.overlay.classList.add('active');
     }
 
     closeMobile() {
         this.sidebar.classList.remove('open');
+        this.hamburger?.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('sidebar-open');
         if (this.overlay) this.overlay.classList.remove('active');
     }
 

@@ -25,7 +25,7 @@
                     </div>
                     <div class="flex flex-wrap gap-3">
                         <button id="consentYes" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700">
-                            <i class="fas fa-check" aria-hidden="true"></i>I consent to this referral
+                            <x-ui-icon name="check"  />I consent to this referral
                         </button>
                         <button id="consentNo" class="px-5 py-2.5 rounded-xl bg-white border border-green-100 text-sm font-semibold text-green-700 hover:bg-green-50">
                             Decline referral
@@ -101,7 +101,7 @@
 
                         <div class="flex flex-wrap gap-3 mt-5">
                             <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700">
-                                <i class="fas fa-lock" aria-hidden="true"></i>Store details securely
+                                <x-ui-icon name="lock"  />Store details securely
                             </button>
                         </div>
                     </form>

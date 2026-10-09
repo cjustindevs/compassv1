@@ -1,16 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>COMPASS – Edit Profile</title>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -78,6 +73,8 @@
             .card { padding: 20px; }
         }
     </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body class="compass-compact">
 
@@ -105,12 +102,12 @@
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
+                    <x-ui-icon name="menu"  />
                 </button>
                 <div>
                     <a href="{{ route('profile.show') }}" class="text-xs font-semibold text-[#04A052] hover:underline">
-                        <i class="fas fa-arrow-left mr-1"></i>Back to profile
+                        <x-ui-icon name="arrow-left" class="mr-1" />Back to profile
                     </a>
                     <h1 class="text-xl md:text-2xl font-extrabold text-gray-800 mt-1">Edit Profile</h1>
                 </div>
@@ -133,7 +130,7 @@
                     @csrf
                     <div class="flex items-center gap-3 flex-wrap">
                         <label for="avatar" class="btn btn-primary text-sm cursor-pointer">
-                            <i class="fas fa-upload mr-1"></i> Upload new picture
+                            <x-ui-icon name="upload" class="mr-1" /> Upload new picture
                         </label>
                         <input type="file" id="avatar" name="avatar" accept="image/*" class="hidden" onchange="this.form.submit()">
                         <p class="text-xs text-gray-400">JPG, PNG, GIF or WebP · max 2MB</p>
@@ -169,7 +166,7 @@
 
                 <div class="flex items-center gap-4 mt-5">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save mr-1"></i> Save changes
+                        <x-ui-icon name="save" class="mr-1" /> Save changes
                     </button>
                     @if($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
                         <div>
@@ -219,7 +216,7 @@
 
                 <div class="flex items-center gap-4 mt-5">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-key mr-1"></i> Update password
+                        <x-ui-icon name="key" class="mr-1" /> Update password
                     </button>
                 </div>
             </form>
@@ -255,7 +252,7 @@
 
                 <div class="mt-5">
                     <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-trash-alt mr-1"></i> Permanently delete my account
+                        <x-ui-icon name="trash" class="mr-1" /> Permanently delete my account
                     </button>
                 </div>
             </form>

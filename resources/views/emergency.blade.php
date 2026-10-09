@@ -65,7 +65,7 @@
         margin: 32px 0 4px;
         font-size: 18px; font-weight: 800; color: var(--gray-800);
     }
-    .emg-section-title i { color: var(--red-500); font-size: 16px; }
+    .emg-section-title :is(:is(i, .compass-icon), .compass-icon) { color: var(--red-500); font-size: 16px; }
     .emg-section-sub { margin: 0 0 16px; font-size: 13px; line-height: 1.6; color: var(--gray-500); }
 
     /* ── Hotline cards ── */
@@ -100,7 +100,7 @@
         padding: 36px 24px;
         background: var(--card-bg); border: 1px dashed var(--gray-300); border-radius: 20px;
     }
-    .emg-empty i { font-size: 26px; color: var(--gray-400); }
+    .emg-empty :is(:is(i, .compass-icon), .compass-icon) { font-size: 26px; color: var(--gray-400); }
     .emg-empty h3 { margin: 14px 0 6px; font-size: 15px; font-weight: 700; color: var(--gray-700); }
     .emg-empty p { margin: 0; max-width: 46ch; font-size: 13px; line-height: 1.6; color: var(--gray-500); }
 
@@ -130,7 +130,7 @@
         background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 16px;
         font-size: 12.5px; line-height: 1.6; color: #92400E;
     }
-    .emg-disclaimer i { margin-top: 2px; flex: none; }
+    .emg-disclaimer :is(:is(i, .compass-icon), .compass-icon) { margin-top: 2px; flex: none; }
 
     @media (max-width: 768px) {
         .emg-page { padding: 20px 16px 72px; }
@@ -175,10 +175,10 @@
         </p>
         <div class="emg-urgent-actions">
             <a class="emg-urgent-btn" href="{{ route('selfhelp') }}">
-                <i class="fas fa-heart" aria-hidden="true"></i> Self-help tools
+                <x-ui-icon name="heart"  /> Self-help tools
             </a>
             <a class="emg-urgent-btn ghost" href="{{ route('session.history') }}">
-                <i class="fas fa-comments" aria-hidden="true"></i> My sessions
+                <x-ui-icon name="message"  /> My sessions
             </a>
         </div>
     </section>
@@ -201,7 +201,7 @@
                         <p>Contact this agency for confidential crisis support.</p>
                     @endif
                     <a class="emg-call" href="tel:{{ preg_replace('/[^+0-9]/', '', $hotline->hotline) }}">
-                        <i class="fas fa-phone" aria-hidden="true"></i> {{ $hotline->hotline }}
+                        <x-ui-icon name="phone"  /> {{ $hotline->hotline }}
                     </a>
                 </article>
             @endforeach
@@ -226,7 +226,7 @@
         <div class="emg-panel-body">
             <h3>Talk to a peer helper</h3>
             <p>Request a support session and match with a trained peer helper who can listen and stay with you while you figure out your next step.</p>
-            <a class="emg-panel-link" href="{{ route('request.screening') }}">Request support <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+            <a class="emg-panel-link" href="{{ route('request.screening') }}">Request support <x-ui-icon name="arrow-right"  /></a>
         </div>
     </div>
 
@@ -235,7 +235,7 @@
         <div class="emg-panel-body">
             <h3>Use the self-help library</h3>
             <p>Guided grounding, breathing and coping exercises you can work through on your own time.</p>
-            <a class="emg-panel-link" href="{{ route('selfhelp') }}">Browse self-help tools <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+            <a class="emg-panel-link" href="{{ route('selfhelp') }}">Browse self-help tools <x-ui-icon name="arrow-right"  /></a>
         </div>
     </div>
 

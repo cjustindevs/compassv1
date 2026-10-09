@@ -158,7 +158,7 @@
 
         <!-- Back Link -->
         <a href="{{ route('adviser.evaluations') }}" class="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6 text-sm font-medium">
-            <i class="fas fa-arrow-left"></i> Back to Evaluations
+            <x-ui-icon name="arrow-left"  /> Back to Evaluations
         </a>
 
         <div class="form-card">
@@ -171,7 +171,7 @@
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     <button type="button" onclick="openConversation()" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                        <i class="fas fa-comments text-green-600" aria-hidden="true"></i> View conversation
+                        <x-ui-icon name="message" class="text-green-600" /> View conversation
                     </button>
                     <span class="risk-badge {{ $report->session->risk_level ?? 'low' }}">
                         {{ ucfirst($report->session->risk_level ?? 'Low') }} Risk
@@ -435,10 +435,10 @@
                         </div>
                         <div class="flex items-center gap-3">
                             <a href="{{ route('adviser.evaluations') }}" class="btn-outline">
-                                <i class="fas fa-times mr-2"></i> Cancel
+                                <x-ui-icon name="close" class="mr-2" /> Cancel
                             </a>
                             <button type="submit" class="btn-primary">
-                                <i class="fas fa-check mr-2"></i> Submit Evaluation
+                                <x-ui-icon name="check" class="mr-2" /> Submit Evaluation
                             </button>
                         </div>
                     </div>
@@ -459,7 +459,7 @@
                         <p class="text-xs text-gray-500 mt-0.5">Read-only record from the session for this evaluation. Access is audited and uses aliases only — it does not use voice transcription.</p>
                     </div>
                     <button type="button" onclick="closeConversation()" class="rounded-lg p-2 hover:bg-gray-100 text-gray-500" aria-label="Close conversation window">
-                        <i class="fas fa-xmark" aria-hidden="true"></i>
+                        <x-ui-icon name="close"  />
                     </button>
                 </div>
                 <div class="overflow-y-auto p-4 space-y-3 divide-y divide-gray-100" style="max-height: 70vh;">

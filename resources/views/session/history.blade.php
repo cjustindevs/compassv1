@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
@@ -8,14 +8,7 @@
     <title>COMPASS – Session History</title>
 
     <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -96,14 +89,14 @@
             text-decoration: none;
             margin-bottom: 2px;
         }
-        .sidebar .nav .nav-item i { width: 20px; text-align: center; font-size: 16px; color: var(--gray-400); }
+        .sidebar .nav .nav-item :is(i, .compass-icon) { width: 20px; text-align: center; font-size: 16px; color: var(--gray-400); }
         .sidebar .nav .nav-item:hover { background: var(--green-50); color: var(--gray-800); }
         .sidebar .nav .nav-item.active {
             background: var(--green-50);
             color: var(--green-700);
             font-weight: 600;
         }
-        .sidebar .nav .nav-item.active i { color: var(--green-500); }
+        .sidebar .nav .nav-item.active :is(i, .compass-icon) { color: var(--green-500); }
 
         .sidebar .user-section {
             border-top: 1px solid rgba(4,160,82,0.06);
@@ -255,7 +248,7 @@
             padding: 4px 12px;
             transition: all 0.2s ease;
         }
-        .bottom-nav .nav-item i { font-size: 20px; }
+        .bottom-nav .nav-item :is(i, .compass-icon) { font-size: 20px; }
         .bottom-nav .nav-item.active { color: var(--green-500); }
 
         @media (min-width: 769px) {
@@ -277,6 +270,8 @@
             .history-card { padding: 16px 12px; }
         }
     </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body>
 
@@ -294,8 +289,8 @@
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
+                    <x-ui-icon name="menu"  />
                 </button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-800">Session History</h1>

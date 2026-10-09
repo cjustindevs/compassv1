@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
@@ -9,10 +9,6 @@
     <title>COMPASS – Monitoring {{ $session->reference_number }}</title>
 
     @vite(['resources/js/app.js', 'resources/js/moderator-notifications.js'])
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
         body { background: var(--bg-primary, #F8FBF9); }
@@ -97,9 +93,9 @@
             font-weight: 500;
             padding: 4px 12px;
         }
-        .bottom-nav .nav-item i { font-size: 20px; }
+        .bottom-nav .nav-item :is(i, .compass-icon) { font-size: 20px; }
         .bottom-nav .nav-item.active { color: #04A052; }
-        .bottom-nav .nav-item.active i { color: #04A052; }
+        .bottom-nav .nav-item.active :is(i, .compass-icon) { color: #04A052; }
 
         @media (max-width: 1024px) { .main-content { padding: 20px 24px 80px; } }
         @media (max-width: 768px) {
@@ -109,6 +105,8 @@
             .card { padding: 16px; }
         }
     </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body class="compass-compact">
 
@@ -119,8 +117,8 @@
     <main class="main-content">
 
         <div class="flex items-center gap-4 mb-6">
-            <button class="hamburger" id="hamburgerBtn">
-                <i class="fas fa-bars"></i>
+            <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
+                <x-ui-icon name="menu"  />
             </button>
             <div>
                 <h1 class="text-xl md:text-2xl font-bold text-gray-800">Monitoring {{ $session->reference_number }}</h1>
@@ -134,7 +132,7 @@
 
         <!-- Back Link -->
         <a href="{{ route('moderator.sessions') }}" class="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6 text-sm font-medium">
-            <i class="fas fa-arrow-left"></i> Back to Active Sessions
+            <x-ui-icon name="arrow-left"  /> Back to Active Sessions
         </a>
 
         <!-- Header -->
@@ -271,7 +269,7 @@
                             </div>
                         @endforeach
                         <a href="{{ route('moderator.emergency') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-red-600 hover:underline mt-2">
-                            <i class="fas fa-exclamation-triangle"></i> Go to Emergency Workspace
+                            <x-ui-icon name="warning"  /> Go to Emergency Workspace
                         </a>
                     </div>
                 @endif

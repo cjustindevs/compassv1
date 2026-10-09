@@ -5,5 +5,5 @@
 
 <!-- ── PWA Install Button (shown on beforeinstallprompt) ── -->
 <button type="button" id="installPwaBtn" style="display:none;position:fixed;bottom:24px;right:24px;z-index:9998;align-items:center;gap:10px;padding:12px 20px;background:#04A052;color:#fff;border:none;border-radius:50px;font-weight:600;font-size:14px;cursor:pointer;box-shadow:0 8px 30px rgba(4,160,82,0.35);font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-    <i class="fas fa-download" style="margin-right:8px;"></i>Install App
+    <x-ui-icon name="download" style="margin-right:8px;" />Install App
 </button>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
@@ -9,10 +9,6 @@
     <title>COMPASS – Settings</title>
 
     @vite(['resources/js/app.js', 'resources/js/moderator-notifications.js'])
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
         body { background: var(--bg-primary, #F8FBF9); }
@@ -144,9 +140,9 @@
             font-weight: 500;
             padding: 4px 12px;
         }
-        .bottom-nav .nav-item i { font-size: 20px; }
+        .bottom-nav .nav-item :is(i, .compass-icon) { font-size: 20px; }
         .bottom-nav .nav-item.active { color: #04A052; }
-        .bottom-nav .nav-item.active i { color: #04A052; }
+        .bottom-nav .nav-item.active :is(i, .compass-icon) { color: #04A052; }
 
         @media (max-width: 1024px) { .main-content { padding: 20px 24px 80px; } }
         @media (max-width: 768px) {
@@ -156,6 +152,8 @@
             .card { padding: 16px; }
         }
     </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body class="compass-compact">
 
@@ -166,8 +164,8 @@
     <main class="main-content">
 
         <div class="flex items-center gap-4 mb-6">
-            <button class="hamburger" id="hamburgerBtn">
-                <i class="fas fa-bars"></i>
+            <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
+                <x-ui-icon name="menu"  />
             </button>
             <div>
                 <h1 class="text-xl md:text-2xl font-bold text-gray-800">Settings</h1>
@@ -216,7 +214,7 @@
                         <input type="text" name="assigned_shift" class="form-input" value="{{ old('assigned_shift', $moderator->assigned_shift) }}" placeholder="e.g. Morning Shift">
                     </div>
                 </div>
-                <button type="submit" class="btn-primary"><i class="fas fa-save mr-1"></i> Save Profile</button>
+                <button type="submit" class="btn-primary"><x-ui-icon name="save" class="mr-1" /> Save Profile</button>
             </form>
         </div>
 
@@ -242,7 +240,7 @@
                         <input type="password" name="new_password_confirmation" class="form-input" required>
                     </div>
                 </div>
-                <button type="submit" class="btn-primary"><i class="fas fa-key mr-1"></i> Update Password</button>
+                <button type="submit" class="btn-primary"><x-ui-icon name="key" class="mr-1" /> Update Password</button>
             </form>
         </div>
 
@@ -280,7 +278,7 @@
                         </div>
                     @endforeach
                 </div>
-                <button type="submit" class="btn-primary"><i class="fas fa-save mr-1"></i> Save Preferences</button>
+                <button type="submit" class="btn-primary"><x-ui-icon name="save" class="mr-1" /> Save Preferences</button>
             </form>
         </div>
 

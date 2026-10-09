@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
@@ -8,14 +8,7 @@
     <title>COMPASS – Privacy and Consent</title>
 
     <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -78,7 +71,7 @@
             font-size: 14px;
             line-height: 1.7;
         }
-        .info-note i { color: var(--green-500); margin-top: 3px; }
+        .info-note :is(i, .compass-icon) { color: var(--green-500); margin-top: 3px; }
 
         .consent-record {
             display: flex;
@@ -137,6 +130,8 @@
             .table-wrap table { min-width: 460px; }
         }
     </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body>
 
@@ -151,8 +146,8 @@
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
+                    <x-ui-icon name="menu"  />
                 </button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-800">Privacy and Consent</h1>
@@ -170,7 +165,7 @@
             <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
                 <h2 class="text-base font-semibold text-gray-800">Your privacy choices</h2>
                 <button type="button" class="page-button light" data-open-seeker-consent>
-                    <i class="fas fa-file-shield"></i> Terms and Privacy
+                    <x-ui-icon name="shield"  /> Terms and Privacy
                 </button>
             </div>
 

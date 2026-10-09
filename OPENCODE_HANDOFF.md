@@ -1,8 +1,14 @@
 # COMPASS handoff for OpenCode
 
-Updated: October 7, 2026 (Asia/Manila)
+Updated: October 9, 2026 (Asia/Manila)
 
 This document records the recent changes and their verification status so development can continue without rebuilding existing features or losing unrelated work. It is a handoff, not a claim that every historical requirement has been completed.
+
+Current work: system-wide UI standardization and public entry-screen refinement.
+Publication to `origin/deploy` was requested on October 9. The validation notes
+below record the pre-push state; use the latest Git commit and remote branch to
+verify publication. The baseline was `e24912d`; older publication notes are
+historical. Browser/device visual acceptance and live deployment remain unverified.
 
 ## Repository and publication status
 
@@ -360,3 +366,66 @@ establish successful Render deployment.
 Final checks: PHP syntax, JavaScript syntax, PostCSS parsing and scoped Git
 whitespace checks passed. Follow-up render/data checks passed (3 tests, 29
 assertions) after the final table accessibility and dialog back-navigation fixes.
+# System-wide UI standardization — October 9, 2026
+
+The latest request uses the existing Administrator UI as the visual reference
+for all six roles. Implementation and tests were completed locally before the
+October 9 publication request; verify the latest `origin/deploy` commit.
+See `UI_STANDARDIZATION_PLAN.md` for the inspected view inventory and validation.
+
+Shared screen assets are `partials.ui-assets`, `public/css/compass-ui.css` and
+`public/js/compass-ui.js`. They load after page-specific CSS in every screen
+document; inherited pages receive them through their layout. PDF reports and
+OTP emails retain their delivery styles. No route/controller/model/migration
+or permission/matching/readiness/emergency workflow was changed.
+
+`public/images/compass-icons.svg` is the canonical Administrator-style outline
+set. `x-ui-icon` and the backward-compatible `x-admin.icon` wrapper use it;
+`resources/js/ui-icon.js` renders the same set for runtime controls. `UiIcon`
+still accepts stored legacy values. Do not reintroduce Font Awesome CDN links
+or decorative emoji. Keep functional icon controls accessible and preserve IDs.
+
+The existing Vite/Tailwind build now styles legacy standalone screens as well.
+`tailwind.config.js` includes JavaScript templates. Shared accessibility
+preferences are presentation-only metadata. The PWA precaches shared assets,
+accepts their version query and revisions offline HTML by its content.
+
+Validation: full suite 562 passed / 4,853 assertions; final focused suite 27
+passed / 803 assertions, including 59 authorized screens. Production build,
+Blade compilation, PHP/JavaScript syntax, CSS parsing and whitespace pass.
+The new preference test was added after the full suite and passes in the final
+focused suite. Fixture HTML can be captured with `COMPASS_UI_CAPTURE=1` while
+running `UiStandardizationTest`; then run
+`node --experimental-vm-modules scripts/check-ui.mjs`. These are syntax/asset
+checks, not browser rendering tests.
+
+Browser visual/device/console QA remains pending: computer-use has no browser
+surface and `iab` is unavailable. Review desktop/tablet/phone alignment, dialog
+sizes, charts, chat and report overflow before calling visual acceptance done.
+Preserve the pre-existing unrelated Dockerfile, mail config and local edits.
+
+## Public landing and authentication follow-up
+
+The landing page and active login/registration process now use the shared public
+screen styling in `public/css/compass-ui.css`. `partials.auth-brand` is shared by
+authentication layouts. Password reset, email verification and password-confirm
+screens retain their existing forms with clearer headings and the same shell.
+
+The live registration route still renders `auth.pseudonymous-register`: consent
+gate, email OTP verification, generated alias/shuffle, profile/password validation,
+CSRF tokens, cooldown and account creation are unchanged. Added progress/focus
+presentation and a permanent nickname reminder. Do not revive retired legacy
+email registration endpoints. Login retains `Nickname@compass.local` and now
+supports browser username/password autofill and accessible validation feedback.
+
+Landing retains its actual entry links/features/support process; removed the
+sample wellness dashboard and decorative animation. Footer privacy/terms display
+the existing registration documents. Mobile navigation uses the same anchors
+and now announces its state and closes with Escape. No new backend route exists.
+
+Follow-up authentication/registration/OTP/UI suite: 49 passed, 961 assertions.
+Public-entry contract rerun: 1 passed, 32 assertions. Vite/PWA build and static
+rendered-script/CSS/icon checks pass across 65 fixture screens. Browser/device
+visual review remains pending because the session has no browser surface.
+This validation was recorded before the October 9 publication request. Verify
+the latest `origin/deploy` commit for publication; Render deployment is separate.

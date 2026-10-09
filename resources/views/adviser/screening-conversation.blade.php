@@ -4,7 +4,7 @@
 <div class="adviser-page-content space-y-5">
     <header class="flex flex-wrap justify-between items-start gap-4">
         <div>
-            <a href="{{ route('adviser.screenings') }}" class="text-sm text-green-700"><i class="fas fa-arrow-left mr-1" aria-hidden="true"></i>Back to screening reviews</a>
+            <a href="{{ route('adviser.screenings') }}" class="text-sm text-green-700"><x-ui-icon name="arrow-left" class="mr-1" />Back to screening reviews</a>
             <h1 class="text-2xl font-bold text-gray-800 mt-2">Session conversation</h1>
             <p class="text-sm text-gray-500 mt-1">Read-only view for this screening review. Access is audited and uses aliases only.</p>
         </div>

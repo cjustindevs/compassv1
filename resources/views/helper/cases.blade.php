@@ -82,10 +82,10 @@
                                 @elseif($case['pending'])
                                     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
                                         <div style="display:flex;gap:6px;justify-content:flex-end;">
-                                            <button type="button" class="btn btn-secondary btn-sm" data-toggle-decline="{{ $case['id'] }}" aria-expanded="false" aria-controls="decline-form-{{ $case['id'] }}"><i class="fas fa-times"></i> Decline</button>
+                                            <button type="button" class="btn btn-secondary btn-sm" data-toggle-decline="{{ $case['id'] }}" aria-expanded="false" aria-controls="decline-form-{{ $case['id'] }}"><x-ui-icon name="close"  /> Decline</button>
                                             <form method="POST" action="{{ route('helper.cases.accept', ['id' => $case['id']]) }}">
                                                 @csrf
-                                                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-check"></i> Accept</button>
+                                                <button type="submit" class="btn btn-primary btn-sm"><x-ui-icon name="check"  /> Accept</button>
                                             </form>
                                         </div>
                                         <form method="POST" action="{{ route('helper.cases.decline', ['id' => $case['id']]) }}"
@@ -103,16 +103,16 @@
                                             </select>
                                             <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px;">
                                                 <button type="button" class="btn btn-secondary btn-sm" data-cancel-decline="{{ $case['id'] }}">Cancel</button>
-                                                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-times"></i> Confirm decline</button>
+                                                <button type="submit" class="btn btn-outline-danger btn-sm"><x-ui-icon name="close"  /> Confirm decline</button>
                                             </div>
                                         </form>
                                     </div>
                                 @elseif($case['expired'])
                                     <span class="text-gray-400 text-sm"> Expired</span>
                                 @elseif($case['completed'])
-                                    <a href="{{ route('helper.session.notes', ['id' => $case['id']]) }}" class="btn btn-secondary btn-sm"><i class="fas fa-file-alt"></i> Notes</a>
+                                    <a href="{{ route('helper.session.notes', ['id' => $case['id']]) }}" class="btn btn-secondary btn-sm"><x-ui-icon name="file-text"  /> Notes</a>
                                 @else
-                                    <a href="{{ route('helper.session.chat', ['id' => $case['id']]) }}" class="btn btn-secondary btn-sm"><i class="fas fa-comment-dots"></i> Open</a>
+                                    <a href="{{ route('helper.session.chat', ['id' => $case['id']]) }}" class="btn btn-secondary btn-sm"><x-ui-icon name="message"  /> Open</a>
                                 @endif
                             </td>
                         </tr>

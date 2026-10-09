@@ -198,10 +198,10 @@
                         </div>
                         <div class="actions">
                             <a href="{{ route('adviser.evaluate', $report->id) }}" class="btn-primary">
-                                <i class="fas fa-check mr-1"></i> Evaluate
+                                <x-ui-icon name="check" class="mr-1" /> Evaluate
                             </a>
                             <a href="{{ route('adviser.session.show', $report->session_id) }}" class="btn-outline">
-                                <i class="fas fa-eye mr-1"></i> View Session
+                                <x-ui-icon name="eye" class="mr-1" /> View Session
                             </a>
                         </div>
                     </div>

@@ -38,7 +38,7 @@
         display: flex; align-items: center; gap: 7px; margin: 0 0 8px;
         font-size: 13px; font-weight: 700; color: #163b2d;
     }
-    #referralConsentTerms h3 i { color: #04a052; }
+    #referralConsentTerms h3 :is(i, .compass-icon) { color: #04a052; }
     #referralConsentTerms .rv-consent-terms__list { margin: 0; padding-left: 18px; }
     #referralConsentTerms .rv-consent-terms__list li { font-size: 13px; line-height: 1.7; color: #475569; margin-bottom: 5px; }
     #referralConsentTerms .rv-consent-terms__list li:last-child { margin-bottom: 0; }

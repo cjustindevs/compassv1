@@ -1,3 +1,4 @@
+import { uiIcon } from './ui-icon';
 // ─────────────────────────────────────────────────────────────
 //  COMPASS — Button loading helpers
 //  Imported once by app.js. Exposes window.* helpers so classic
@@ -10,12 +11,14 @@ export function setButtonLoading(button, text = 'Processing…') {
         button.dataset.originalHtml = button.innerHTML;
     }
     button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + text;
+    button.setAttribute('aria-busy', 'true');
+    button.innerHTML = '' + uiIcon('spinner', 'ui-spin') + ' ' + text;
 }
 
 export function resetButton(button) {
     if (!button) return;
     button.disabled = false;
+    button.removeAttribute('aria-busy');
     if (button.dataset.originalHtml !== undefined) {
         button.innerHTML = button.dataset.originalHtml;
     }

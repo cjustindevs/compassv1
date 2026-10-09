@@ -30,7 +30,7 @@
                                 </div>
                             @endif
                         </div>
-                        <i class="fas fa-chevron-right text-gray-300"></i>
+                        <x-ui-icon name="chevron-right" class="text-gray-300" />
                     </a>
                 @endforeach
             </div>
@@ -44,7 +44,7 @@
                 <h3>No active sessions</h3>
                 <p>No active sessions. Please check your assigned cases.</p>
                 <a href="{{ route('helper.cases') }}" class="btn btn-primary btn-sm" style="margin-top:14px;">
-                    <i class="fas fa-folder-open mr-1"></i> View Assigned Cases
+                    <x-ui-icon name="folder" class="mr-1" /> View Assigned Cases
                 </a>
             </div>
         </div>

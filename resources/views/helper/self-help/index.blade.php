@@ -46,38 +46,38 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         <a href="{{ route('helper.self-help.breathing') }}" class="selfcare-card" style="text-decoration:none;color:inherit;">
-            <div class="icon icon-green"><i class="fas fa-wind"></i></div>
+            <div class="icon icon-green"><x-ui-icon name="wind"  /></div>
             <h3>Breathing Exercise</h3>
             <p>Calm your mind and body with a guided 4-4-4 breathing session.</p>
-            <span class="btn btn-primary mt-auto"><i class="fas fa-play mr-1"></i> Start</span>
+            <span class="btn btn-primary mt-auto"><x-ui-icon name="play" class="mr-1" /> Start</span>
         </a>
 
         <a href="{{ route('helper.self-help.grounding') }}" class="selfcare-card" style="text-decoration:none;color:inherit;">
-            <div class="icon icon-blue"><i class="fas fa-tree"></i></div>
+            <div class="icon icon-blue"><x-ui-icon name="leaf"  /></div>
             <h3>Grounding Exercise</h3>
             <p>Bring yourself back to the present moment with a 5-4-3-2-1 check-in.</p>
-            <span class="btn btn-primary mt-auto"><i class="fas fa-play mr-1"></i> Start</span>
+            <span class="btn btn-primary mt-auto"><x-ui-icon name="play" class="mr-1" /> Start</span>
         </a>
 
         <a href="{{ route('helper.self-help.journal') }}" class="selfcare-card" style="text-decoration:none;color:inherit;">
-            <div class="icon icon-amber"><i class="fas fa-book-open"></i></div>
+            <div class="icon icon-amber"><x-ui-icon name="book-open"  /></div>
             <h3>Private Journal</h3>
             <p>Write down your thoughts and feelings. Only you can see these entries.</p>
-            <span class="btn btn-primary mt-auto"><i class="fas fa-edit mr-1"></i> Write</span>
+            <span class="btn btn-primary mt-auto"><x-ui-icon name="edit" class="mr-1" /> Write</span>
         </a>
 
         <a href="{{ route('helper.self-help.hotlines') }}" class="selfcare-card" style="text-decoration:none;color:inherit;">
-            <div class="icon icon-red"><i class="fas fa-phone-alt"></i></div>
+            <div class="icon icon-red"><x-ui-icon name="phone"  /></div>
             <h3>Emergency Resources</h3>
             <p>If you need immediate support, find hotlines and crisis resources here.</p>
-            <span class="btn btn-primary mt-auto"><i class="fas fa-arrow-right mr-1"></i> View</span>
+            <span class="btn btn-primary mt-auto"><x-ui-icon name="arrow-right" class="mr-1" /> View</span>
         </a>
 
         <a href="{{ route('helper.readiness') }}" class="selfcare-card" style="text-decoration:none;color:inherit;">
-            <div class="icon icon-purple"><i class="fas fa-heartbeat"></i></div>
+            <div class="icon icon-purple"><x-ui-icon name="heart-pulse"  /></div>
             <h3>Check In Again</h3>
             <p>Feeling better? Complete the readiness check to resume taking sessions.</p>
-            <span class="btn btn-outline-danger mt-auto" style="border:1px solid var(--green-500);color:var(--green-600);"><i class="fas fa-sync mr-1"></i> Readiness Check</span>
+            <span class="btn btn-outline-danger mt-auto" style="border:1px solid var(--green-500);color:var(--green-600);"><x-ui-icon name="refresh" class="mr-1" /> Readiness Check</span>
         </a>
     </div>
 

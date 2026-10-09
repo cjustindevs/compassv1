@@ -76,7 +76,7 @@
         background: #D1FAE5;
     }
 
-    #confirmationModal .modal-icon.success i {
+    #confirmationModal .modal-icon.success :is(i, .compass-icon) {
         color: #04A052;
     }
 
@@ -84,7 +84,7 @@
         background: #FEE2E2;
     }
 
-    #confirmationModal .modal-icon.error i {
+    #confirmationModal .modal-icon.error :is(i, .compass-icon) {
         color: #DC2626;
     }
 
@@ -92,7 +92,7 @@
         background: #FEF3C7;
     }
 
-    #confirmationModal .modal-icon.warning i {
+    #confirmationModal .modal-icon.warning :is(i, .compass-icon) {
         color: #F59E0B;
     }
 
@@ -100,7 +100,7 @@
         background: #DBEAFE;
     }
 
-    #confirmationModal .modal-icon.info i {
+    #confirmationModal .modal-icon.info :is(i, .compass-icon) {
         color: #3B82F6;
     }
 

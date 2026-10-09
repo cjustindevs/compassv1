@@ -1,4 +1,6 @@
 <x-guest-layout>
+    <h1 class="auth-title">Choose a new password</h1>
+    <p class="auth-intro">Enter and confirm your new password below.</p>
     <form method="POST" action="{{ route('password.store') }}">
         @csrf
 

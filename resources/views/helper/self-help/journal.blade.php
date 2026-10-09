@@ -32,7 +32,7 @@
                     <textarea name="content" class="form-control" rows="7" placeholder="What's on your mind? This is just for you...">{{ old('content') }}</textarea>
                     @error('content')<p class="text-sm text-red-500 mt-1">{{ $message }}</p>@enderror
                 </div>
-                <button type="submit" class="btn btn-primary" style="width:100%;"><i class="fas fa-save mr-1"></i> Save Entry</button>
+                <button type="submit" class="btn btn-primary" style="width:100%;"><x-ui-icon name="save" class="mr-1" /> Save Entry</button>
             </form>
         </div>
 
@@ -61,7 +61,7 @@
 
     <div class="mt-6 text-center">
         <a href="{{ route('helper.self-help') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left mr-1"></i> Back to Self-Care
+            <x-ui-icon name="arrow-left" class="mr-1" /> Back to Self-Care
         </a>
     </div>
 @endsection

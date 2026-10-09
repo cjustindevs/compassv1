@@ -5,7 +5,7 @@
 @section('subheading', 'Referral #' . $referral->id . ' · ' . ($referral->session?->seeker?->generated_alias ?? 'Seeker'))
 
 @section('content')
-        <a href="{{ route('helper.cases.show', ['id' => $referral->session_id]) }}" class="btn btn-secondary btn-sm mb-4"><i class="fas fa-arrow-left"></i> Back to case</a>
+        <a href="{{ route('helper.cases.show', ['id' => $referral->session_id]) }}" class="btn btn-secondary btn-sm mb-4"><x-ui-icon name="arrow-left"  /> Back to case</a>
 
     <div class="card">
         <div class="card-header">

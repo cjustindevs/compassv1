@@ -10,7 +10,7 @@
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
         <form method="GET" action="{{ route('helper.resources') }}" style="display:flex;gap:8px;flex:1;min-width:220px;">
             <input type="text" name="search" value="{{ $search }}" class="form-control" placeholder="Search resources..." style="flex:1;">
-            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
+            <button type="submit" class="btn btn-primary" aria-label="Search" title="Search"><x-ui-icon name="search"  /></button>
         </form>
         <a href="{{ route('helper.resources') }}" class="btn btn-secondary" style="{{ $activeCategory ? '' : 'background:var(--green-500);color:white;border-color:var(--green-500);' }}">All</a>
         @foreach($categories as $category)
@@ -40,7 +40,7 @@
                         {{ $resource['duration'] ?? '—' }}
                         <span class="ml-2">{{ $resource['views'] }}</span>
                     </div>
-                    <a href="{{ route('selfhelp.show', ['id' => $resource['id']]) }}" target="_blank" class="btn btn-secondary btn-sm"><i class="fas fa-external-link-alt"></i> Open</a>
+                    <a href="{{ route('selfhelp.show', ['id' => $resource['id']]) }}" target="_blank" class="btn btn-secondary btn-sm"><x-ui-icon name="external-link"  /> Open</a>
                 </div>
             </div>
         @empty

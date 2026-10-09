@@ -4,11 +4,11 @@
 @section('subtitle', 'Sign in to your account')
 
 @section('content')
-                <h2 class="text-xl font-bold text-gray-800 mb-2">Welcome Back</h2>
-                <p class="text-gray-500 text-sm mb-6">Enter your credentials to continue.</p>
+                <h1 class="auth-title">Welcome back</h1>
+                <p class="auth-intro">Sign in with your email or your COMPASS nickname.</p>
 
                 @if ($errors->any())
-                    <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+                    <div id="login-error" role="alert" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
                         {{ $errors->first() }}
                     </div>
                 @endif
@@ -17,17 +17,18 @@
                     @csrf
 
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Email or alias</label>
-                        <input type="text" name="email" value="{{ old('email') }}"
+                        <label for="login-email" class="block text-sm font-medium text-gray-700 mb-1.5">Email or alias</label>
+                        <input id="login-email" type="text" name="email" value="{{ old('email') }}"
                                class="input-focus w-full px-4 py-3 rounded-xl border border-gray-200 outline-none transition-all"
-                               placeholder="Nickname@compass.local" required autofocus>
+                               placeholder="Nickname@compass.local" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus
+                               aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}" @if($errors->any()) aria-describedby="login-error" @endif>
                     </div>
 
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-                        <input type="password" name="password"
+                        <label for="login-password" class="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                        <input id="login-password" type="password" name="password"
                                class="input-focus w-full px-4 py-3 rounded-xl border border-gray-200 outline-none transition-all"
-                               placeholder="Enter your password" required>
+                               placeholder="Enter your password" autocomplete="current-password" required>
                     </div>
 
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
@@ -41,7 +42,7 @@
                     </div>
 
                     <button type="submit" class="btn-primary w-full py-3 rounded-xl text-white font-semibold transition-all">
-                        <i class="fas fa-sign-in-alt mr-2"></i> Sign In
+                        <x-ui-icon name="arrow-right" class="mr-2" /> Sign In
                     </button>
                 </form>
 @endsection

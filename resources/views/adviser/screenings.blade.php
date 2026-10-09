@@ -103,7 +103,7 @@
                         @if(app(\App\Services\AdviserTranscriptAccess::class)->allowed($session))
                             <a href="{{ route('adviser.screenings.conversation', $session) }}"
                                class="inline-flex items-center gap-1.5 rounded-lg bg-white border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
-                                <i class="fas fa-comments" aria-hidden="true"></i> View chat session
+                                <x-ui-icon name="message"  /> View chat session
                             </a>
                         @endif
                     </div>
@@ -160,7 +160,7 @@
                 <div class="rounded-xl border border-gray-200 p-3">
                     <details class="text-sm">
                         <summary class="cursor-pointer font-medium text-gray-700">
-                            <i class="fas fa-list-check mr-1 text-gray-400" aria-hidden="true"></i>
+                            <x-ui-icon name="clipboard" class="mr-1 text-gray-400" />
                             View original screening answers
                         </summary>
                         <dl class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
@@ -189,8 +189,8 @@
                 <div class="rounded-xl border border-gray-200">
                     <details class="group">
                         <summary class="cursor-pointer flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-800">
-                            <span><i class="fas fa-clipboard-check mr-2 text-green-600" aria-hidden="true"></i>Record your decision</span>
-                            <i class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform" aria-hidden="true"></i>
+                            <span><x-ui-icon name="clipboard" class="mr-2 text-green-600" />Record your decision</span>
+                            <x-ui-icon name="chevron-down" class="text-gray-400 group-open:rotate-180 transition-transform" />
                         </summary>
                         <form method="POST" action="{{ route('adviser.screenings.review', $session) }}"
                               data-confirm="Record this review?"
@@ -234,7 +234,7 @@
                             <div class="flex justify-end gap-2">
                                 <button type="reset" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Reset</button>
                                 <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-2 text-sm font-semibold text-white hover:bg-green-700">
-                                    <i class="fas fa-clipboard-check" aria-hidden="true"></i> Record review
+                                    <x-ui-icon name="clipboard"  /> Record review
                                 </button>
                             </div>
                         </form>

@@ -120,7 +120,7 @@
                     </div>
 
                     <p class="hf-muted" style="margin-bottom:16px">Email and phone are managed by the system. Contact your Adviser or administrator if a correction is needed.</p>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+                    <button type="submit" class="btn btn-primary"><x-ui-icon name="save"  /> Save Changes</button>
                 </form>
             </div>
 

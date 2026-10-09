@@ -19,7 +19,7 @@
 .seeker-badge {display:inline-flex;padding:5px 10px;border-radius:20px;background:#eaf8f0;color:#027039;font-size:12px;font-weight:600;}
 .seeker-badge.muted {background:#f3f4f6;color:#64748b;}
 .seeker-empty {padding:40px 16px;text-align:center;color:#64748b;}
-.seeker-empty i {display:block;font-size:28px;color:#04a052;margin-bottom:14px;}
+.seeker-empty :is(i, .compass-icon) {display:block;font-size:28px;color:#04a052;margin-bottom:14px;}
 .seeker-notice {padding:16px;background:#eaf8f0;border:1px solid #d4eee0;border-radius:12px;margin-bottom:24px;}
 .seeker-record {padding:20px;border:1px solid #e5e7eb;border-radius:14px;margin-top:16px;}
 .seeker-actions {display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}

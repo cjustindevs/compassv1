@@ -1,5 +1,6 @@
 <!doctype html>
-<html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Identity disclosure</title></head><body>
+<html class="compass-ui" lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Identity disclosure</title>    @include('partials.ui-assets')
+</head><body>
 @include('partials.referral-identity-modal')
 <script>
 const modal = document.querySelector('dialog');

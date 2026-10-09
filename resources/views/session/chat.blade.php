@@ -1,16 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>COMPASS – Chat with {{ $helperName }}</title>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #F8FBF9; height: 100vh; overflow: hidden; }
@@ -337,6 +332,8 @@
     </style>
 
     @vite(['resources/js/app.js', 'resources/js/chat.js'])
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body>
 
@@ -350,7 +347,7 @@
         <!-- Header -->
         <div class="chat-header">
             <a href="{{ route('seeker.dashboard') }}" class="back-btn">
-                <i class="fas fa-arrow-left"></i> <span>Back</span>
+                <x-ui-icon name="arrow-left"  /> <span>Back</span>
             </a>
             <div class="helper-info">
                 <div class="avatar">{{ substr($helperName, 0, 1) }}</div>
@@ -366,7 +363,7 @@
                   data-confirm-text="End session"
                   data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                 @csrf
-                <button type="submit" class="end-btn"><i class="fas fa-phone-slash"></i> End</button>
+                <button type="submit" class="end-btn"><x-ui-icon name="phone-off"  /> End</button>
             </form>
         </div>
 
@@ -406,7 +403,7 @@
         <!-- Input -->
         <div class="chat-input">
             <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off" autofocus>
-            <button id="sendButton"><i class="fas fa-paper-plane"></i> Send</button>
+            <button id="sendButton"><x-ui-icon name="send"  /> Send</button>
         </div>
 
     </div>
@@ -437,7 +434,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Unable to save your answer.');
             card.classList.add('checkin-saved');
-            card.innerHTML = '<p class="checkin-saved"><i class="fas fa-check-circle" aria-hidden="true"></i> Thank you. Your answer was saved.</p>';
+            card.innerHTML = '<p class="checkin-saved"><x-ui-icon name="check-circle"  /> Thank you. Your answer was saved.</p>';
         } catch (e) {
             error.textContent = e.message;
         }

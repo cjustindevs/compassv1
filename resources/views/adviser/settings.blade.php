@@ -130,10 +130,10 @@
 
         <!-- Tabs -->
         <div class="flex items-center gap-2 mb-6 flex-wrap">
-            <button class="tab-btn active" data-tab="profile"><i class="fas fa-user mr-1"></i> Profile</button>
-            <button class="tab-btn" data-tab="password"><i class="fas fa-lock mr-1"></i> Password</button>
-            <button class="tab-btn" data-tab="appearance"><i class="fas fa-palette mr-1"></i> Appearance</button>
-            <button class="tab-btn" data-tab="notifications"><i class="fas fa-bell mr-1"></i> Notifications</button>
+            <button class="tab-btn active" data-tab="profile"><x-ui-icon name="user" class="mr-1" /> Profile</button>
+            <button class="tab-btn" data-tab="password"><x-ui-icon name="lock" class="mr-1" /> Password</button>
+            <button class="tab-btn" data-tab="appearance"><x-ui-icon name="palette" class="mr-1" /> Appearance</button>
+            <button class="tab-btn" data-tab="notifications"><x-ui-icon name="bell" class="mr-1" /> Notifications</button>
         </div>
 
         <!-- Profile -->
@@ -165,7 +165,7 @@
                             <input type="email" name="email" required class="form-input" value="{{ old('email', $user->email) }}">
                         </div>
                     </div>
-                    <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Profile</button>
+                    <button type="submit" class="btn-primary"><x-ui-icon name="save"  /> Save Profile</button>
                 </form>
             </div>
         </div>
@@ -193,7 +193,7 @@
                             <input type="password" name="new_password_confirmation" required class="form-input" autocomplete="new-password">
                         </div>
                     </div>
-                    <button type="submit" class="btn-primary"><i class="fas fa-key"></i> Update Password</button>
+                    <button type="submit" class="btn-primary"><x-ui-icon name="key"  /> Update Password</button>
                 </form>
             </div>
         </div>
@@ -241,7 +241,7 @@
                     @endforeach
 
                     <div class="mt-6">
-                        <button type="submit" class="btn-primary"><i class="fas fa-bell"></i> Save Preferences</button>
+                        <button type="submit" class="btn-primary"><x-ui-icon name="bell"  /> Save Preferences</button>
                     </div>
                 </form>
             </div>

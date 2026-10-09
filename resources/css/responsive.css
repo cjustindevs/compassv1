@@ -54,11 +54,11 @@ img { max-width: 100%; height: auto; }
     padding-right: 0;
     font-size: 0;
 }
-.sidebar.collapsed .nav-item i { margin: 0; font-size: 16px; }
+.sidebar.collapsed .nav-item :is(i, .compass-icon) { margin: 0; font-size: 16px; }
 .sidebar.collapsed .nav-item .badge { font-size: 10px; }
 .sidebar.collapsed .logo { justify-content: center; }
 .sidebar.collapsed .logout-btn { font-size: 0; justify-content: center; }
-.sidebar.collapsed .logout-btn i { font-size: 16px; }
+.sidebar.collapsed .logout-btn :is(i, .compass-icon) { font-size: 16px; }
 .sidebar.collapsed .user-card { justify-content: center; }
 
 /* Active-state left border indicator (in addition to bg) */

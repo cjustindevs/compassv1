@@ -21,7 +21,7 @@
                 @endif
             </div>
             <a href="tel:{{ $resource->hotline }}" class="btn btn-outline-danger">
-                <i class="fas fa-phone-alt mr-1"></i> {{ $resource->hotline }}
+                <x-ui-icon name="phone" class="mr-1" /> {{ $resource->hotline }}
             </a>
         </div>
     @empty
@@ -35,7 +35,7 @@
 
     <div class="mt-6 text-center">
         <a href="{{ route('helper.self-help') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left mr-1"></i> Back to Self-Care
+            <x-ui-icon name="arrow-left" class="mr-1" /> Back to Self-Care
         </a>
     </div>
 @endsection

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
@@ -8,10 +8,6 @@
     <title>COMPASS – Referral #{{ $referral->id }}</title>
 
     @vite(['resources/js/app.js'])
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -207,6 +203,8 @@
             .modal-box { padding: 24px 20px; }
         }
     </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body class="compass-compact">
 
@@ -229,8 +227,8 @@
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
+                    <x-ui-icon name="menu"  />
                 </button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-800">
@@ -244,7 +242,7 @@
                 </div>
             </div>
             <a href="{{ route('professional.referrals') }}" class="btn-outline">
-                <i class="fas fa-arrow-left mr-1"></i> Back to Referrals
+                <x-ui-icon name="arrow-left" class="mr-1" /> Back to Referrals
             </a>
         </div>
 
@@ -263,11 +261,11 @@
                     @if($errors->any())<p role="alert" class="text-red-700">{{ $errors->first() }}</p>@endif
                     @csrf
                     <button type="submit" class="btn-primary">
-                        <i class="fas fa-check mr-1"></i> Schedule and accept
+                        <x-ui-icon name="check" class="mr-1" /> Schedule and accept
                     </button>
                 </form>
                 <button class="btn-danger" onclick="openDeclineModal()">
-                    <i class="fas fa-times mr-1"></i> Decline
+                    <x-ui-icon name="close" class="mr-1" /> Decline
                 </button>
             @endif
 
@@ -275,14 +273,14 @@
                 <form method="POST" action="{{ route('professional.referral.start', $referral->id) }}">
                     @csrf
                     <button type="submit" class="btn-primary">
-                        <i class="fas fa-play mr-1"></i> Start Case
+                        <x-ui-icon name="play" class="mr-1" /> Start Case
                     </button>
                 </form>
             @endif
 
             @if(in_array($referral->status, \App\Models\Referral::ACTIVE_STATUSES, true))
                 <a href="{{ route('professional.cases.show', $referral->case_reference) }}" class="btn-outline">
-                    <i class="fas fa-folder-open mr-1"></i> Open Case File
+                    <x-ui-icon name="folder" class="mr-1" /> Open Case File
                 </a>
             @endif
         </div>

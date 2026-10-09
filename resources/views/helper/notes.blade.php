@@ -7,7 +7,7 @@
 
 @section('content')
 
-        <a href="{{ route('helper.cases.show', ['id' => $session->id]) }}" class="btn btn-secondary btn-sm mb-4"><i class="fas fa-arrow-left"></i> Back to case</a>
+        <a href="{{ route('helper.cases.show', ['id' => $session->id]) }}" class="btn btn-secondary btn-sm mb-4"><x-ui-icon name="arrow-left"  /> Back to case</a>
 
         @if(session('success'))
             <div class="alert alert-success mb-4" role="status" aria-live="polite">
@@ -111,7 +111,7 @@
                     @if($report?->session_summary || $report?->personal_reflection)
                         <div class="form-group"><label class="form-label">Reason for correction</label><input name="correction_reason" class="form-control" maxlength="1000" required></div>
                     @endif
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Submit session documentation</button>
+                    <button type="submit" class="btn btn-primary"><x-ui-icon name="save"  /> Submit session documentation</button>
                 </form>
             </div>
         </div>
@@ -153,7 +153,7 @@
                           data-confirm-text="End session"
                           data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                         @csrf
-                        <button type="submit" class="btn btn-outline-danger btn-block"><i class="fas fa-stop-circle"></i> End Session</button>
+                        <button type="submit" class="btn btn-outline-danger btn-block"><x-ui-icon name="stop-circle"  /> End Session</button>
                     </form>
                 @else
                     <div class="alert alert-success" style="margin-bottom:0;"> This session is not active.</div>

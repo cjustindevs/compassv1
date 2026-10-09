@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
@@ -9,14 +9,7 @@
     <title>COMPASS – Seeker Dashboard</title>
 
     <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Font Awesome 6 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
     <!-- Google Fonts: Inter + Playfair Display -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-
     <!-- Real-time seeker notifications (Echo + Reverb) -->
     @vite(['resources/js/app.js', 'resources/js/seeker-notifications.js'])
 
@@ -119,15 +112,15 @@
             text-decoration: none;
             margin-bottom: 2px;
         }
-        .sidebar .nav .nav-item i { width: 20px; text-align: center; font-size: 16px; color: var(--gray-400); }
+        .sidebar .nav .nav-item :is(i, .compass-icon) { width: 20px; text-align: center; font-size: 16px; color: var(--gray-400); }
         .sidebar .nav .nav-item:hover { background: var(--green-50); color: var(--gray-800); }
-        .sidebar .nav .nav-item:hover i { color: var(--green-500); }
+        .sidebar .nav .nav-item:hover :is(i, .compass-icon) { color: var(--green-500); }
         .sidebar .nav .nav-item.active {
             background: var(--green-50);
             color: var(--green-700);
             font-weight: 600;
         }
-        .sidebar .nav .nav-item.active i { color: var(--green-500); }
+        .sidebar .nav .nav-item.active :is(i, .compass-icon) { color: var(--green-500); }
         .sidebar .nav .nav-item .badge {
             margin-left: auto;
             background: var(--green-500);
@@ -190,7 +183,7 @@
             background: #FEE2E2;
             color: #DC2626;
         }
-        .sidebar .user-section .logout-btn i { width: 20px; text-align: center; }
+        .sidebar .user-section .logout-btn :is(i, .compass-icon) { width: 20px; text-align: center; }
 
         /* ─── Main Content ─── */
         .main-content {
@@ -221,7 +214,7 @@
         .hero-section .hero-content { position: relative; z-index: 1; }
 
         .hero-title {
-            font-family: 'Playfair Display', serif;
+            font-family: var(--compass-font);
             font-size: 2.5rem;
             font-weight: 700;
             color: var(--green-800);
@@ -306,8 +299,8 @@
             transition: all 0.3s ease;
             text-decoration: none;
         }
-        .product-card .btn-join i { transition: transform 0.3s ease; }
-        .product-card:hover .btn-join i { transform: translateX(6px); }
+        .product-card .btn-join :is(i, .compass-icon) { transition: transform 0.3s ease; }
+        .product-card:hover .btn-join :is(i, .compass-icon) { transform: translateX(6px); }
         .product-card .btn-join:hover { color: var(--green-700); }
 
         /* Mood check-in: text-only, no icons or emoji. */
@@ -407,7 +400,7 @@
             position: relative;
         }
         .quote-card .quote-mark {
-            font-family: 'Playfair Display', serif;
+            font-family: var(--compass-font);
             font-size: 3.5rem;
             color: var(--green-300);
             opacity: 0.3;
@@ -566,9 +559,9 @@
             padding: 4px 12px;
             transition: all 0.2s ease;
         }
-        .bottom-nav .nav-item i { font-size: 20px; }
+        .bottom-nav .nav-item :is(i, .compass-icon) { font-size: 20px; }
         .bottom-nav .nav-item.active { color: var(--green-500); }
-        .bottom-nav .nav-item.active i { color: var(--green-500); }
+        .bottom-nav .nav-item.active :is(i, .compass-icon) { color: var(--green-500); }
 
         /* ─── Hamburger ─── */
         .hamburger {
@@ -666,6 +659,8 @@
         .bg-green-soft { background: var(--green-50); }
         .border-green-soft { border-color: var(--green-200); }
     </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body class="compass-compact">
 
@@ -684,8 +679,8 @@
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
+                    <x-ui-icon name="menu"  />
                 </button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-800" id="pageTitle">Home</h1>
@@ -696,8 +691,8 @@
             </div>
             <div class="flex items-center gap-3">
                 <span class="text-xs text-gray-400 hidden sm:inline">{{ now()->format('M d, Y') }}</span>
-                <a href="{{ route('notifications') }}" class="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition" title="Notifications">
-                    <i class="fas fa-bell"></i>
+                <a href="{{ route('notifications') }}" class="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition" title="Notifications" aria-label="Notifications">
+                    <x-ui-icon name="bell"  />
                 </a>
             </div>
         </div>
@@ -727,10 +722,10 @@
                             </p>
                             <div class="flex flex-wrap gap-3 mt-5">
                                 <a href="{{ route('request.screening') }}" class="btn-primary">
-                                    <i class="fas fa-comment-dots mr-2"></i> Talk to Someone
+                                    <x-ui-icon name="message" class="mr-2" /> Talk to Someone
                                 </a>
                                 <a href="{{ route('selfhelp') }}" class="btn-outline">
-                                    <i class="fas fa-heart mr-2"></i> Self-Help
+                                    <x-ui-icon name="heart" class="mr-2" /> Self-Help
                                 </a>
                             </div>
                         </div>
@@ -750,7 +745,7 @@
                     </div>
                     <div class="flex gap-3 flex-shrink-0">
                         <a href="{{ route($activeSession->session_type === 'voice' ? 'session.voice' : 'session.chat') }}" class="btn-primary" style="text-decoration:none;">
-                            <i class="fas fa-comment mr-2"></i> Go to Chat
+                            <x-ui-icon name="message" class="mr-2" /> Go to Chat
                         </a>
                         <a href="{{ route('session.evaluation') }}" class="btn-outline" style="text-decoration:none;">End &amp; Evaluate</a>
                     </div>
@@ -772,7 +767,7 @@
                     </div>
                     <div class="flex gap-3 flex-shrink-0">
                         <a href="{{ $pendingSession->session_status === \App\Models\Session::STATUS_SCREENING_COMPLETED ? route('request.preferences') : route('request.matching') }}" class="btn-primary" style="text-decoration:none;">
-                            <i class="fas fa-arrow-right mr-2"></i> Continue
+                            <x-ui-icon name="arrow-right" class="mr-2" /> Continue
                         </a>
                     </div>
                 </div>

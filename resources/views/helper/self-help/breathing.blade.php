@@ -32,13 +32,13 @@
 
         <div class="flex flex-col gap-3 mt-4">
             <button type="button" class="btn btn-primary" id="begin-btn" style="width:100%;">
-                <i class="fas fa-play mr-1"></i> Begin
+                <x-ui-icon name="play" class="mr-1" /> Begin
             </button>
             <button type="button" class="btn btn-primary" id="reset-btn" style="width:100%;display:none;background:var(--gray-500);">
-                <i class="fas fa-redo mr-1"></i> Do Again
+                <x-ui-icon name="refresh" class="mr-1" /> Do Again
             </button>
             <a href="{{ route('helper.self-help') }}" class="btn btn-secondary" style="width:100%;">
-                <i class="fas fa-arrow-left mr-1"></i> Back to Self-Care
+                <x-ui-icon name="arrow-left" class="mr-1" /> Back to Self-Care
             </a>
         </div>
     </div>

@@ -142,7 +142,7 @@
     flex-shrink: 0;
 }
 .sidebar-toggle:hover { background: var(--green-100); }
-.sidebar-toggle i { transition: transform 0.2s ease; }
+.sidebar-toggle :is(i, .compass-icon) { transition: transform 0.2s ease; }
 
 /* ───────────── Navigation ───────────── */
 .sidebar-nav {
@@ -180,7 +180,7 @@
     white-space: nowrap;
     transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
-.nav-item i {
+.nav-item :is(i, .compass-icon) {
     width: 20px;
     text-align: center;
     font-size: 16px;
@@ -193,14 +193,14 @@
     color: var(--gray-800);
     transform: translateX(2px);
 }
-.nav-item:hover i { color: var(--green-500); }
+.nav-item:hover :is(i, .compass-icon) { color: var(--green-500); }
 .nav-item.active {
     background: var(--green-50);
     color: var(--green-700);
     font-weight: 600;
     box-shadow: inset 3px 0 0 var(--green-500);
 }
-.nav-item.active i { color: var(--green-500); }
+.nav-item.active :is(i, .compass-icon) { color: var(--green-500); }
 .nav-text { white-space: nowrap; }
 
 .nav-badge {
@@ -267,7 +267,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.user-role i { font-size: 10px; color: var(--green-500); margin-right: 4px; }
+.user-role :is(i, .compass-icon) { font-size: 10px; color: var(--green-500); margin-right: 4px; }
 
 .user-stats {
     display: flex;
@@ -335,7 +335,7 @@
     box-shadow: 0 6px 20px rgba(220, 38, 38, 0.25);
     transform: translateY(-1px);
 }
-.logout-btn i { width: 20px; text-align: center; }
+.logout-btn :is(i, .compass-icon) { width: 20px; text-align: center; }
 
 .view-profile {
     display: flex;
@@ -377,7 +377,7 @@
     }
     .sidebar.collapsed .sidebar-toggle { display: inline-flex; }
     .sidebar.collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
-    .sidebar.collapsed .nav-item i { margin: 0; }
+    .sidebar.collapsed .nav-item :is(i, .compass-icon) { margin: 0; }
     .sidebar.collapsed .nav-badge {
         position: absolute;
         top: 6px;
@@ -445,9 +445,9 @@
     padding: 4px 12px;
     transition: color 0.2s ease;
 }
-.bottom-nav .nav-item i { font-size: 20px; }
+.bottom-nav .nav-item :is(i, .compass-icon) { font-size: 20px; }
 .bottom-nav .nav-item.active { color: var(--green-500); }
-.bottom-nav .nav-item.active i { color: var(--green-500); }
+.bottom-nav .nav-item.active :is(i, .compass-icon) { color: var(--green-500); }
 
 /* ───────────── Responsive ───────────── */
 @media (min-width: 769px) {

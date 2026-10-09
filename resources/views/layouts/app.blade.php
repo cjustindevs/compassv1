@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html class="compass-ui" lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
         @include('layouts.partials.pwa-meta')
         <meta charset="utf-8">
@@ -9,17 +9,11 @@
         <title>@yield('title', config('app.name', 'COMPASS'))</title>
 
         <!-- Fonts -->
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
         <!-- Styles / Scripts -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         @vite(['resources/css/app.css', 'resources/css/helper-components.css', 'resources/js/app.js'])
 
         <style>
             body, body input, body select, body button, body textarea { font-family: 'Inter', sans-serif; }
-            .fa, .fas, .far, .fab, .fa-solid, .fa-regular, .fa-brands, .fa-solid::before, .fas::before {
-                font-family: 'Font Awesome 6 Free' !important;
-            }
             .mobile-appbar {
                 display: none;
                 align-items: center;
@@ -64,7 +58,8 @@
         @if(auth()->user()?->role === 'adviser')
         <link rel="stylesheet" href="{{ asset('css/adviser-refinement.css') }}?v={{ filemtime(public_path('css/adviser-refinement.css')) }}">
         @endif
-    </head>
+        @include('partials.ui-assets')
+</head>
     <body class="compass-compact font-sans antialiased">
         @auth
             @php($roleSidebar = 'layouts.partials.' . auth()->user()->role . '-sidebar')
@@ -76,7 +71,7 @@
             @auth
                 <div class="mobile-appbar">
                     <button type="button" class="hamburger" id="hamburgerBtn" aria-label="Open sidebar">
-                        <i class="fas fa-bars"></i>
+                        <x-ui-icon name="menu"  />
                     </button>
                 </div>
             @endauth

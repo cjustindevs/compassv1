@@ -1,4 +1,5 @@
-<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your Professional Support</title>@vite(['resources/css/app.css'])</head><body class="referral-ui" style="background:#f8fbf9;padding:20px;margin:0">
+<!doctype html><html class="compass-ui" lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your Professional Support</title>@vite(['resources/css/app.css'])    @include('partials.ui-assets')
+</head><body class="referral-ui" style="background:#f8fbf9;padding:20px;margin:0">
 @include('partials.referral-ui-styles')
 <h1 class="text-xl font-semibold mb-4">Your Professional Support</h1>
 @if(session('success'))<p role="status" class="p-3 bg-green-50 rounded-lg">{{ session('success') }}</p>@endif

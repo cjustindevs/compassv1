@@ -22,12 +22,12 @@
 #seekerConsentDialog details.see-more {border-top:1px solid #eef2ef;margin-top:10px;padding-top:8px;}
 #seekerConsentDialog details.see-more summary {font-size:12px;font-weight:600;color:#027039;cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;user-select:none;}
 #seekerConsentDialog details.see-more summary::-webkit-details-marker {display:none;}
-#seekerConsentDialog details.see-more summary::after {content:'\e01a';font-family:'Font Awesome 6 Free';font-weight:900;font-size:11px;transition:transform .2s;}
-#seekerConsentDialog details.see-more[open] summary::after {transform:rotate(180deg);}
+#seekerConsentDialog details.see-more summary::after {content:'';width:7px;height:7px;border-right:1.8px solid currentColor;border-bottom:1.8px solid currentColor;transform:rotate(45deg);margin-left:4px;}
+#seekerConsentDialog details.see-more[open] summary::after {content:'';width:7px;height:7px;border-right:1.8px solid currentColor;border-bottom:1.8px solid currentColor;transform:rotate(45deg);margin-left:4px;}
 #seekerConsentDialog details.see-more .see-more-body {padding:10px 4px 4px;}
 </style>
 <dialog id="seekerConsentDialog" aria-labelledby="seekerConsentTitle">
-<div class="consent-header"><div><h2 id="seekerConsentTitle">Terms and Privacy</h2><p>Understand your choices before requesting support.</p></div><button type="button" class="consent-action" data-close-seeker-consent aria-label="Close terms and privacy"><i class="fas fa-xmark" aria-hidden="true"></i></button></div>
+<div class="consent-header"><div><h2 id="seekerConsentTitle">Terms and Privacy</h2><p>Understand your choices before requesting support.</p></div><button type="button" class="consent-action" data-close-seeker-consent aria-label="Close terms and privacy"><x-ui-icon name="close"  /></button></div>
 <form id="seekerConsentForm" action="{{ route('seeker.consent.accept') }}" method="POST">@csrf
 <div class="consent-body">
 @include('partials.terms-text')

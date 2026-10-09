@@ -8,7 +8,7 @@
 @section('content')
 
     <a href="{{ route('helper.cases.show', ['id' => $session->id]) }}" class="btn btn-secondary btn-sm mb-4">
-        <i class="fas fa-arrow-left"></i> Back to case
+        <x-ui-icon name="arrow-left"  /> Back to case
     </a>
 
     <div class="card" style="padding:32px 28px;">
@@ -45,7 +45,7 @@
         <form method="POST" action="{{ $session->helper_accepted_at ? route('helper.session.start', $session->id) : route('helper.cases.accept',$session->id) }}">
             @csrf
             <button type="submit" class="btn btn-primary">
-                <i class="fas fa-play"></i> {{ $session->helper_accepted_at ? 'Start session' : 'Accept assignment' }}
+                <x-ui-icon name="play"  /> {{ $session->helper_accepted_at ? 'Start session' : 'Accept assignment' }}
             </button>
         </form>
     </div>

@@ -125,7 +125,7 @@
             </div>
 
             <button type="submit" class="btn btn-primary btn-block" style="margin-top:20px;">
-                <i class="fas fa-check-circle"></i> Create my profile
+                <x-ui-icon name="check-circle"  /> Create my profile
             </button>
         </form>
     </div>

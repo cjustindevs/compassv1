@@ -177,16 +177,16 @@
         <div class="card">
             <div class="card-header">
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('adviser.calendar', ['month' => $prevMonth->month, 'year' => $prevMonth->year]) }}" class="btn-outline"><i class="fas fa-chevron-left"></i></a>
-                    <a href="{{ route('adviser.calendar', ['month' => $nextMonth->month, 'year' => $nextMonth->year]) }}" class="btn-outline"><i class="fas fa-chevron-right"></i></a>
-                    <a href="{{ route('adviser.calendar') }}" class="btn-outline"><i class="fas fa-calendar-day"></i> Today</a>
+                    <a href="{{ route('adviser.calendar', ['month' => $prevMonth->month, 'year' => $prevMonth->year]) }}" class="btn-outline"><x-ui-icon name="chevron-left"  /></a>
+                    <a href="{{ route('adviser.calendar', ['month' => $nextMonth->month, 'year' => $nextMonth->year]) }}" class="btn-outline"><x-ui-icon name="chevron-right"  /></a>
+                    <a href="{{ route('adviser.calendar') }}" class="btn-outline"><x-ui-icon name="calendar"  /> Today</a>
                 </div>
                 <h3 class="text-lg font-bold text-gray-800">{{ now()->setDate($year, $month, 1)->format('F Y') }}</h3>
                 <div class="flex items-center gap-3 text-xs text-gray-500">
                     <span><span class="legend-dot" style="background:#04A052;"></span> Session</span>
                     <span><span class="legend-dot" style="background:#3B82F6;"></span> Evaluation</span>
                     <span><span class="legend-dot" style="background:#F59E0B;"></span> Event</span>
-                    <button class="btn-primary" id="openEventModal"><i class="fas fa-plus"></i> Add Event</button>
+                    <button class="btn-primary" id="openEventModal"><x-ui-icon name="plus"  /> Add Event</button>
                 </div>
             </div>
 
@@ -224,7 +224,7 @@
         <div class="card mt-6" id="dayPanel" style="display:none;">
             <div class="card-header">
                 <h3 id="dayPanelTitle">Events</h3>
-                <button class="btn-outline" id="closeDayPanel"><i class="fas fa-times"></i> Close</button>
+                <button class="btn-outline" id="closeDayPanel"><x-ui-icon name="close"  /> Close</button>
             </div>
             <div id="dayPanelList" style="display:flex;flex-direction:column;"></div>
         </div>
@@ -234,7 +234,7 @@
             <div class="modal-box">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="font-bold text-gray-800 text-lg">Add Calendar Event</h3>
-                    <button class="btn-outline" id="closeEventModal"><i class="fas fa-times"></i></button>
+                    <button class="btn-outline" id="closeEventModal" aria-label="Close dialog" title="Close dialog"><x-ui-icon name="close"  /></button>
                 </div>
 
                 <form class="form-maximized" method="POST" action="{{ route('adviser.calendar.event.store') }}">
@@ -280,7 +280,7 @@
                             <span class="text-xs text-gray-400">Pick a highlight color for this event</span>
                         </div>
                     </div>
-                    <button type="submit" class="btn-primary w-full justify-center"><i class="fas fa-save"></i> Save Event</button>
+                    <button type="submit" class="btn-primary w-full justify-center"><x-ui-icon name="save"  /> Save Event</button>
                 </form>
             </div>
         </div>
@@ -324,7 +324,7 @@
                 dayPanelList.innerHTML = '';
 
                 if (events.length === 0) {
-                    dayPanelList.innerHTML = '<p class="text-gray-400 text-sm text-center py-8"><i class="fas fa-calendar-minus text-2xl block mb-2 opacity-50"></i>No events on this day</p>';
+                    dayPanelList.innerHTML = '<p class="text-gray-400 text-sm text-center py-8"><x-ui-icon name="calendar" class="text-2xl block mb-2 opacity-50" />No events on this day</p>';
                 } else {
                     events.forEach(function (ev) {
                         const row = document.createElement('div');

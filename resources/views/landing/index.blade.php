@@ -1,863 +1,135 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="COMPASS – A calm place to talk. A safe place to heal. Peer support for students." />
-    <meta name="theme-color" content="#16A34A" />
-    <title>COMPASS – Peer Support, Student Wellness</title>
-
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-
-    <!-- Tailwind CSS via CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <style>
-        /* ──────────────── BASE ──────────────── */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #FAFAFA;
-            color: #1F2937;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        /* ──────────────── COLORS ──────────────── */
-        :root {
-            --green-primary: #16A34A;
-            --green-deep: #14532D;
-            --green-light: #DCFCE7;
-            --green-mint: #ECFDF5;
-            --green-gradient: linear-gradient(135deg, #16A34A, #22C55E);
-            --gray-50: #F9FAFB;
-            --gray-100: #F3F4F6;
-            --gray-200: #E5E7EB;
-            --gray-300: #D1D5DB;
-            --gray-400: #9CA3AF;
-            --gray-500: #6B7280;
-            --gray-600: #4B5563;
-            --gray-700: #374151;
-            --gray-800: #1F2937;
-            --gray-900: #111827;
-            --white: #FFFFFF;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
-            --shadow-lg: 0 10px 25px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.03);
-            --shadow-xl: 0 20px 50px -8px rgba(0,0,0,0.12);
-            --shadow-2xl: 0 25px 60px -12px rgba(0,0,0,0.15);
-            --radius-sm: 8px;
-            --radius-md: 16px;
-            --radius-lg: 24px;
-            --radius-xl: 32px;
-        }
-
-        /* ──────────────── UTILITIES ──────────────── */
-        .gradient-text {
-            background: var(--green-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .gradient-bg {
-            background: var(--green-gradient);
-        }
-
-        .glass {
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .glass-dark {
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-        }
-
-        .card-hover {
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .card-hover:hover {
-            transform: translateY(-8px);
-            box-shadow: var(--shadow-2xl);
-        }
-
-        .btn-primary {
-            background: var(--green-gradient);
-            color: white;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 20px rgba(22, 163, 74, 0.35);
-        }
-
-        .btn-primary:hover {
-            transform: scale(1.04);
-            box-shadow: 0 8px 40px rgba(22, 163, 74, 0.45);
-        }
-
-        .btn-outline {
-            border: 2px solid var(--green-primary);
-            color: var(--green-primary);
-            transition: all 0.3s ease;
-        }
-
-        .btn-outline:hover {
-            background: var(--green-primary);
-            color: white;
-            transform: scale(1.04);
-            box-shadow: 0 8px 30px rgba(22, 163, 74, 0.25);
-        }
-
-        /* ──────────────── SCROLLBAR ──────────────── */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--gray-100);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--green-primary);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--green-deep);
-        }
-
-        /* ──────────────── ANIMATIONS ──────────────── */
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-16px); }
-        }
-        @keyframes floatSlow {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-12px) rotate(2deg); }
-        }
-        @keyframes pulseGlow {
-            0%, 100% { opacity: 0.5; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.05); }
-        }
-        @keyframes countUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .animate-fade-up {
-            animation: fadeUp 0.8s ease-out forwards;
-            opacity: 0;
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.8s ease-out forwards;
-            opacity: 0;
-        }
-        .animate-float {
-            animation: float 6s ease-in-out infinite;
-        }
-        .animate-float-slow {
-            animation: floatSlow 8s ease-in-out infinite;
-        }
-        .animate-pulse-glow {
-            animation: pulseGlow 4s ease-in-out infinite;
-        }
-        .animate-count-up {
-            animation: countUp 0.6s ease-out forwards;
-        }
-
-        .delay-100 { animation-delay: 0.1s; }
-        .delay-200 { animation-delay: 0.2s; }
-        .delay-300 { animation-delay: 0.3s; }
-        .delay-400 { animation-delay: 0.4s; }
-        .delay-500 { animation-delay: 0.5s; }
-        .delay-600 { animation-delay: 0.6s; }
-        .delay-700 { animation-delay: 0.7s; }
-        .delay-800 { animation-delay: 0.8s; }
-
-        /* ──────────────── NAV ──────────────── */
-        .nav-scrolled {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            box-shadow: var(--shadow-sm);
-        }
-
-        /* ──────────────── STAT COUNTER ──────────────── */
-        .stat-number {
-            font-size: 2.75rem;
-            font-weight: 800;
-            line-height: 1.1;
-            background: var(--green-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        /* ──────────────── TESTIMONIAL QUOTE ──────────────── */
-        .quote-mark {
-            font-size: 3rem;
-            line-height: 1;
-            color: var(--green-primary);
-            opacity: 0.3;
-            font-family: Georgia, serif;
-        }
-
-        /* ──────────────── RESPONSIVE ──────────────── */
-        @media (max-width: 768px) {
-            .stat-number {
-                font-size: 2rem;
-            }
-        }
-
-        /* ──────────────── MISC ──────────────── */
-        .section-badge {
-            display: inline-block;
-            padding: 0.375rem 1rem;
-            border-radius: 9999px;
-            background: var(--green-mint);
-            color: var(--green-primary);
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.025em;
-            text-transform: uppercase;
-        }
-
-        .section-title {
-            font-size: 2.25rem;
-            font-weight: 800;
-            letter-spacing: -0.025em;
-            line-height: 1.2;
-        }
-
-        .section-title .highlight {
-            background: var(--green-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .section-sub {
-            font-size: 1.125rem;
-            color: var(--gray-500);
-            max-width: 560px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        @media (min-width: 1024px) {
-            .section-title {
-                font-size: 2.75rem;
-            }
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="COMPASS connects students with supervised peer support and self-help resources.">
+    <title>COMPASS - Peer Support, Student Wellness</title>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
-<body>
-
-    <!-- ══════════════════════════════════════════════ -->
-    <!--  HEADER / NAVIGATION                         -->
-    <!-- ══════════════════════════════════════════════ -->
-
-    <header id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-transparent">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16 md:h-20">
-
-                <!-- Logo -->
-                <a href="/" class="inline-flex items-center group">
-                    <img src="{{ asset('images/compass/logo-wordmark.png') }}" alt="COMPASS"
-                         class="h-7 md:h-9 w-auto transition-transform group-hover:scale-105">
-                </a>
-
-                <!-- Desktop Nav -->
-                <nav class="hidden lg:flex items-center gap-8">
-                    <a href="#home" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors">Home</a>
-                    <a href="#features" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors">Features</a>
-                    <a href="#how-it-works" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors">How It Works</a>
-                    <a href="#contact" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors">Contact</a>
-                </nav>
-
-                <!-- Right buttons -->
-                <div class="flex items-center gap-3">
-                    <a href="{{ route('login') }}" class="hidden sm:inline-block text-sm font-medium text-gray-600 hover:text-green-600 transition-colors px-3 py-2">
-                        Log In
-                    </a>
-                    <a href="{{ route('register') }}" class="px-5 py-2.5 text-sm font-semibold rounded-xl btn-primary shadow-lg">
-                        Get Started
-                    </a>
-                    <!-- Mobile toggle -->
-                    <button id="mobileToggle" class="lg:hidden text-gray-600 hover:text-green-600 p-2 -mr-2">
-                        <i class="fas fa-bars text-xl"></i>
-                    </button>
-                </div>
-
-            </div>
-
-            <!-- Mobile menu -->
-            <div id="mobileMenu" class="hidden lg:hidden pb-4 pt-2 border-t border-gray-200/50 bg-white/95 backdrop-blur-lg rounded-b-2xl shadow-lg">
-                <div class="flex flex-col gap-2">
-                    <a href="#home" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors px-3 py-2 rounded-lg hover:bg-green-50">Home</a>
-                    <a href="#features" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors px-3 py-2 rounded-lg hover:bg-green-50">Features</a>
-                    <a href="#how-it-works" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors px-3 py-2 rounded-lg hover:bg-green-50">How It Works</a>
-                    <a href="#contact" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors px-3 py-2 rounded-lg hover:bg-green-50">Contact</a>
-                    <hr class="border-gray-200/50 my-1" />
-                    <a href="{{ route('login') }}" class="text-sm font-medium text-gray-600 hover:text-green-600 transition-colors px-3 py-2">Log In</a>
-                    <a href="{{ route('register') }}" class="px-4 py-2.5 text-sm font-semibold rounded-xl btn-primary text-center">Get Started</a>
-                </div>
+<body class="landing-page">
+    <header id="navbar" class="landing-header">
+        <div class="landing-container landing-nav">
+            <a href="{{ url('/') }}" class="landing-brand" aria-label="COMPASS home">
+                <img src="{{ asset('images/compass/logo-wordmark.png') }}" alt="COMPASS" width="190" height="46">
+            </a>
+            <nav class="landing-desktop-nav" aria-label="Main navigation">
+                <a href="#home">Home</a>
+                <a href="#features">Features</a>
+                <a href="#how-it-works">How it works</a>
+                <a href="#contact">About</a>
+            </nav>
+            <div class="landing-nav-actions">
+                <a href="{{ route('login') }}" class="landing-sign-in">Log in</a>
+                <a href="{{ route('register') }}" class="btn-primary">Get started</a>
+                <button id="mobileToggle" type="button" class="landing-menu-toggle" aria-label="Open navigation" aria-controls="mobileMenu" aria-expanded="false">
+                    <x-ui-icon name="menu" />
+                </button>
             </div>
         </div>
+        <nav id="mobileMenu" class="landing-container landing-mobile-menu hidden" aria-label="Mobile navigation">
+            <a href="#home">Home</a>
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How it works</a>
+            <a href="#contact">About</a>
+            <a href="{{ route('login') }}">Log in</a>
+        </nav>
     </header>
-
-    <!-- ══════════════════════════════════════════════ -->
-    <!--  HERO SECTION                                -->
-    <!-- ══════════════════════════════════════════════ -->
-
-    <section id="home" class="relative pt-28 md:pt-36 pb-16 md:pb-24 overflow-hidden bg-gradient-to-b from-green-50/60 via-white to-white">
-        <!-- Background blur shapes -->
-        <div class="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-green-200/30 blur-3xl animate-float-slow"></div>
-        <div class="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-emerald-200/25 blur-3xl animate-float-slow" style="animation-delay: 2s;"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-green-100/20 blur-3xl"></div>
-
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="grid lg:grid-cols-2 gap-12 xl:gap-16 items-center">
-
-                <!-- ─── LEFT ─── -->
-                <div class="animate-fade-up">
-                    <span class="section-badge mb-6 inline-flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                        Project Dial-A-Friend
-                    </span>
-
-                    <h1 class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.08] tracking-tight text-gray-900">
-                        A Calm Place to <span class="gradient-text">Talk</span>.<br />
-                        A Safe Place to <span class="gradient-text">Heal</span>.
-                    </h1>
-
-                    <p class="mt-6 text-lg text-gray-500 leading-relaxed max-w-lg">
-                        COMPASS connects students with trained peer supporters through confidential chat and voice sessions, providing a safe space for emotional support and early intervention.
-                    </p>
-
-                    <!-- CTA buttons -->
-                    <div class="mt-8 flex flex-wrap gap-4">
-                        <a href="{{ route('register') }}" class="px-8 py-3.5 rounded-xl btn-primary font-semibold text-base shadow-lg shadow-green-500/25">
-                            <i class="fas fa-comment-dots mr-2"></i>Get Started
-                        </a>
-                        <a href="#features" class="px-8 py-3.5 rounded-xl btn-outline font-semibold text-base">
-                            Learn More
-                        </a>
-                    </div>
-
-                    <!-- Trust badges -->
-                    <div class="mt-10 flex flex-wrap gap-6 text-sm text-gray-500">
-                        <span class="flex items-center gap-2"> Confidential</span>
-                        <span class="flex items-center gap-2"> Anonymous</span>
-                        <span class="flex items-center gap-2"> Student Peer Support</span>
-                        <span class="flex items-center gap-2"> Free</span>
-                    </div>
-                </div>
-
-                <!-- ─── RIGHT ─── -->
-                <div class="relative flex justify-center lg:justify-end animate-fade-up delay-200">
-                    <!-- Floating green circles -->
-                    <div class="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-green-300/20 blur-2xl animate-float-slow"></div>
-                    <div class="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-emerald-300/20 blur-2xl animate-float-slow" style="animation-delay: 3s;"></div>
-                    <div class="absolute top-1/2 right-0 w-20 h-20 rounded-full bg-green-200/20 blur-xl animate-pulse-glow"></div>
-
-                    <!-- Dashboard Mockup -->
-                    <div class="relative w-full max-w-lg glass-dark rounded-2xl p-6 shadow-2xl border border-white/50 backdrop-blur-xl">
-                        <!-- Top bar -->
-                        <div class="flex items-center justify-between mb-5">
-                            <div class="flex items-center gap-2.5">
-                                <span class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></span>
-                                <span class="text-sm font-semibold text-gray-800">Live Support Session</span>
-                            </div>
-                            <span class="text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">Active</span>
-                        </div>
-
-                        <!-- Mood indicator -->
-                        <div class="flex items-center gap-4 p-4 rounded-xl bg-green-50/70 border border-green-100/50">
-                            <div>
-                                <div class="text-sm font-semibold text-gray-800">Feeling Better</div>
-                                <div class="text-xs text-gray-500">You're doing well today</div>
-                            </div>
-                            <div class="ml-auto flex items-center gap-1">
-
-                                <span class="text-sm font-semibold text-green-600">+18%</span>
-                            </div>
-                        </div>
-
-                        <!-- Progress -->
-                        <div class="mt-4 p-4 rounded-xl bg-white/60 border border-gray-100/50">
-                            <div class="flex justify-between text-sm mb-1.5">
-                                <span class="text-gray-600 font-medium">Wellness Progress</span>
-                                <span class="text-gray-800 font-semibold">72%</span>
-                            </div>
-                            <div class="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                                <div class="h-full w-[72%] bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-1000"></div>
-                            </div>
-                        </div>
-
-                        <!-- Weekly Chart mini -->
-                        <div class="mt-4 p-4 rounded-xl bg-white/60 border border-gray-100/50">
-                            <div class="flex items-center justify-between text-sm mb-3">
-                                <span class="text-gray-600 font-medium">Weekly Wellness</span>
-                                <span class="text-xs text-gray-400">Last 7 days</span>
-                            </div>
-                            <div class="flex items-end gap-2 h-10">
-                                <div class="flex-1 flex flex-col items-center gap-1">
-                                    <div class="w-full h-6 bg-green-200 rounded-sm"></div>
-                                    <span class="text-[10px] text-gray-400">M</span>
-                                </div>
-                                <div class="flex-1 flex flex-col items-center gap-1">
-                                    <div class="w-full h-8 bg-green-300 rounded-sm"></div>
-                                    <span class="text-[10px] text-gray-400">T</span>
-                                </div>
-                                <div class="flex-1 flex flex-col items-center gap-1">
-                                    <div class="w-full h-4 bg-green-200 rounded-sm"></div>
-                                    <span class="text-[10px] text-gray-400">W</span>
-                                </div>
-                                <div class="flex-1 flex flex-col items-center gap-1">
-                                    <div class="w-full h-10 bg-green-400 rounded-sm"></div>
-                                    <span class="text-[10px] text-gray-400">T</span>
-                                </div>
-                                <div class="flex-1 flex flex-col items-center gap-1">
-                                    <div class="w-full h-7 bg-green-300 rounded-sm"></div>
-                                    <span class="text-[10px] text-gray-400">F</span>
-                                </div>
-                                <div class="flex-1 flex flex-col items-center gap-1">
-                                    <div class="w-full h-9 bg-green-300 rounded-sm"></div>
-                                    <span class="text-[10px] text-gray-400">S</span>
-                                </div>
-                                <div class="flex-1 flex flex-col items-center gap-1">
-                                    <div class="w-full h-5 bg-green-200 rounded-sm"></div>
-                                    <span class="text-[10px] text-gray-400">S</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Badge -->
-                        <div class="mt-4 flex items-center justify-between text-xs text-gray-500">
-                            <span> Peer Support Active</span>
-                            <span> End-to-End Encrypted</span>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- ══════════════════════════════════════════════ -->
-    <!--  SECTION 2 – FEATURES                        -->
-    <!-- ══════════════════════════════════════════════ -->
-
-    <section id="features" class="py-20 md:py-28 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-2xl mx-auto mb-14">
-                <span class="section-badge mb-4">Trusted Features</span>
-                <h2 class="section-title">
-                    Designed for <span class="highlight">Student Wellness</span>
-                </h2>
-                <p class="section-sub mt-3">
-                    Everything you need for safe, confidential, and effective peer support.
-                </p>
-            </div>
-
-            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-
-                <!-- Card 1 -->
-                <div class="card-hover p-6 md:p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group animate-fade-up delay-100">
-
-                    <h3 class="text-lg font-bold text-gray-800 mb-1.5">Anonymous Conversations</h3>
-                    <p class="text-sm text-gray-500 leading-relaxed">Your identity remains protected. Share openly without fear.</p>
-                </div>
-
-                <!-- Card 2 -->
-                <div class="card-hover p-6 md:p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group animate-fade-up delay-200">
-
-                    <h3 class="text-lg font-bold text-gray-800 mb-1.5">Personalized Care</h3>
-                    <p class="text-sm text-gray-500 leading-relaxed">Support tailored to your needs for timely help.</p>
-                </div>
-
-                <!-- Card 3 -->
-                <div class="card-hover p-6 md:p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group animate-fade-up delay-300">
-
-                    <h3 class="text-lg font-bold text-gray-800 mb-1.5">Voice &amp; Chat Support</h3>
-                    <p class="text-sm text-gray-500 leading-relaxed">Choose how you feel comfortable communicating.</p>
-                </div>
-
-                <!-- Card 4 -->
-                <div class="card-hover p-6 md:p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group animate-fade-up delay-400">
-
-                    <h3 class="text-lg font-bold text-gray-800 mb-1.5">Trained Student Helpers</h3>
-                    <p class="text-sm text-gray-500 leading-relaxed">Verified peer supporters supervised by faculty advisers.</p>
-                </div>
-
-                <!-- Card 5 -->
-                <div class="card-hover p-6 md:p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group animate-fade-up delay-500">
-
-                    <h3 class="text-lg font-bold text-gray-800 mb-1.5">Referral Support</h3>
-                    <p class="text-sm text-gray-500 leading-relaxed">Escalation for serious concerns to licensed professionals.</p>
-                </div>
-
-                <!-- Card 6 -->
-                <div class="card-hover p-6 md:p-8 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group animate-fade-up delay-600">
-
-                    <h3 class="text-lg font-bold text-gray-800 mb-1.5">Secure &amp; Confidential</h3>
-                    <p class="text-sm text-gray-500 leading-relaxed">Encrypted communication and privacy protection.</p>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- ══════════════════════════════════════════════ -->
-    <!--  SECTION 3 – HOW IT WORKS                    -->
-    <!-- ══════════════════════════════════════════════ -->
-
-    <section id="how-it-works" class="py-20 md:py-28 bg-gray-50/60">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-2xl mx-auto mb-14">
-                <span class="section-badge mb-4">How It Works</span>
-                <h2 class="section-title">
-                    Your Path to <span class="highlight">Support</span>
-                </h2>
-                <p class="section-sub mt-3">
-                    Five simple steps to connect with a trained peer helper.
-                </p>
-            </div>
-
-            <div class="relative grid md:grid-cols-5 gap-6 md:gap-8">
-
-                <!-- Step 1 -->
-                <div class="text-center animate-fade-up delay-100">
-                    <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-green-100 to-green-50 border border-green-200/50 flex items-center justify-center text-2xl font-extrabold text-green-600 shadow-sm mb-4">1</div>
-                    <h4 class="text-base font-bold text-gray-800 mb-1.5">Choose Concern</h4>
-                    <p class="text-sm text-gray-500 leading-relaxed">Select what you'd like to talk about.</p>
-                </div>
-
-                <!-- Arrow -->
-
-
-                <!-- Step 2 -->
-                <div class="text-center animate-fade-up delay-200">
-                    <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-green-100 to-green-50 border border-green-200/50 flex items-center justify-center text-2xl font-extrabold text-green-600 shadow-sm mb-4">2</div>
-                    <h4 class="text-base font-bold text-gray-800 mb-1.5">Get Matched</h4>
-                    <p class="text-sm text-gray-500 leading-relaxed">Connect with a trained helper.</p>
-                </div>
-
-                <!-- Arrow -->
-
-
-                <!-- Step 3 -->
-                <div class="text-center animate-fade-up delay-300">
-                    <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-green-100 to-green-50 border border-green-200/50 flex items-center justify-center text-2xl font-extrabold text-green-600 shadow-sm mb-4">3</div>
-                    <h4 class="text-base font-bold text-gray-800 mb-1.5">Chat or Voice</h4>
-                    <p class="text-sm text-gray-500 leading-relaxed">Connect in a way that feels right.</p>
-                </div>
-
-                <!-- Arrow -->
-
-
-                <!-- Step 4 -->
-                <div class="text-center animate-fade-up delay-400">
-                    <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-green-100 to-green-50 border border-green-200/50 flex items-center justify-center text-2xl font-extrabold text-green-600 shadow-sm mb-4">4</div>
-                    <h4 class="text-base font-bold text-gray-800 mb-1.5">Receive Guidance</h4>
-                    <p class="text-sm text-gray-500 leading-relaxed">Support and coping strategies.</p>
-                </div>
-
-                <!-- Arrow -->
-
-
-                <!-- Step 5 -->
-                <div class="text-center animate-fade-up delay-500">
-                    <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-green-100 to-green-50 border border-green-200/50 flex items-center justify-center text-2xl font-extrabold text-green-600 shadow-sm mb-4">5</div>
-                    <h4 class="text-base font-bold text-gray-800 mb-1.5">Feedback &amp; Resources</h4>
-                    <p class="text-sm text-gray-500 leading-relaxed">Wellness tools and follow-up.</p>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- ══════════════════════════════════════════════ -->
-    <!--  SECTION 7 – FINAL CTA                       -->
-    <!-- ══════════════════════════════════════════════ -->
-
-    <section class="relative py-20 md:py-28 overflow-hidden">
-        <!-- Background -->
-        <div class="absolute inset-0 bg-gradient-to-br from-green-900 via-green-800 to-emerald-900"></div>
-        <div class="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-green-500/20 blur-3xl"></div>
-        <div class="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-emerald-500/20 blur-3xl"></div>
-
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-            <h2 class="text-3xl md:text-5xl font-extrabold text-white leading-tight animate-fade-up">
-                You don't have to face<br />
-                life's challenges <span class="text-green-300">alone</span>.
-            </h2>
-            <p class="mt-4 text-lg text-green-200/80 max-w-lg mx-auto animate-fade-up delay-200">
-                Reach out today and connect with someone who cares.
-            </p>
-            <div class="mt-8 flex flex-wrap justify-center gap-4 animate-fade-up delay-300">
-                <a href="{{ route('register') }}" class="px-10 py-4 rounded-xl bg-white text-green-800 font-semibold text-base shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
-                    Start Your Journey
-                </a>
-                <a href="#features" class="px-10 py-4 rounded-xl border-2 border-white/30 text-white font-semibold text-base hover:bg-white/10 transition-all duration-300 hover:scale-105">
-                    Learn More
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- ══════════════════════════════════════════════ -->
-    <!--  FOOTER                                      -->
-    <!-- ══════════════════════════════════════════════ -->
-
-    <footer id="contact" class="bg-gray-900 border-t border-gray-800 py-12 md:py-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-
-                <!-- Brand -->
+    <main id="landing-main">
+        <section id="home" class="landing-hero">
+            <div class="landing-container landing-hero-grid">
                 <div>
-                    <a href="/" class="inline-flex mb-4">
-                        <img src="{{ asset('images/compass/logo-wordmark.png') }}" alt="COMPASS" class="h-7 md:h-8 w-auto">
-                    </a>
-                    <p class="text-sm text-gray-400 leading-relaxed max-w-xs">
-                        A calm place to talk. A safe place to heal.
-                    </p>
-                </div>
-
-                <!-- Platform -->
-                <div>
-                    <h4 class="text-white font-semibold text-sm mb-4">Platform</h4>
-                    <ul class="space-y-2.5 text-sm text-gray-400">
-                        <li><a href="#home" class="hover:text-green-400 transition-colors">Home</a></li>
-                        <li><a href="#features" class="hover:text-green-400 transition-colors">Features</a></li>
+                    <p class="landing-eyebrow">Project Dial-A-Friend</p>
+                    <h1 class="landing-title">A calm place to <span>talk</span>.<br>A safe place to <span>heal</span>.</h1>
+                    <p class="landing-lead">COMPASS connects students with trained peer supporters through confidential chat and voice sessions, providing a space for emotional support.</p>
+                    <div class="landing-actions">
+                        <a href="{{ route('register') }}" class="btn-primary">Get started <x-ui-icon name="arrow-right" /></a>
+                        <a href="#features" class="btn-outline">Explore COMPASS</a>
+                    </div>
+                    <ul class="landing-trust" aria-label="About peer support">
+                        <li>Pseudonymous accounts</li><li>Supervised support</li><li>Free for students</li>
                     </ul>
                 </div>
-
-                <!-- Support -->
-                <div>
-                    <h4 class="text-white font-semibold text-sm mb-4">Support</h4>
-                    <ul class="space-y-2.5 text-sm text-gray-400">
-                        <li><a href="#" class="hover:text-green-400 transition-colors">Help Center</a></li>
-                        <li><a href="#" class="hover:text-green-400 transition-colors">FAQs</a></li>
-                        <li><a href="#contact" class="hover:text-green-400 transition-colors">Contact</a></li>
-                    </ul>
-                </div>
-
-                <!-- Legal -->
-                <div>
-                    <h4 class="text-white font-semibold text-sm mb-4">Legal</h4>
-                    <ul class="space-y-2.5 text-sm text-gray-400">
-                        <li><a href="#" class="hover:text-green-400 transition-colors">Privacy Policy</a></li>
-                        <li><a href="#" class="hover:text-green-400 transition-colors">Terms of Service</a></li>
-                        <li><a href="#" class="hover:text-green-400 transition-colors">Cookie Policy</a></li>
-                    </ul>
-                </div>
-
+                <aside class="landing-support-panel" aria-labelledby="support-panel-title">
+                    <p class="landing-eyebrow">At your own pace</p>
+                    <h2 id="support-panel-title">A place to start</h2>
+                    <p>You can share what is on your mind and find support that fits your needs.</p>
+                    <dl class="landing-support-list">
+                        <div><dt>Talk with a peer helper</dt><dd>Request a session with a trained student helper under adviser supervision.</dd></div>
+                        <div><dt>Explore self-help resources</dt><dd>Find breathing exercises, grounding tools, and other wellness resources.</dd></div>
+                        <div><dt>Get further support</dt><dd>Advisers coordinate professional referrals when appropriate.</dd></div>
+                    </dl>
+                    <a href="#how-it-works" class="landing-text-link">See how it works <x-ui-icon name="arrow-right" /></a>
+                </aside>
             </div>
-
-            <!-- Bottom bar -->
-            <div class="border-t border-gray-800 mt-10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p class="text-sm text-gray-500">
-                    &copy; 2026 <span class="text-green-400 font-medium">COMPASS</span> · Project Dial-A-Friend.
-                </p>
-                <div class="flex items-center gap-4 text-gray-500">
-                    <a href="#" class="hover:text-green-400 transition-colors"><i class="fab fa-facebook text-lg"></i></a>
-                    <a href="#" class="hover:text-green-400 transition-colors"><i class="fab fa-twitter text-lg"></i></a>
-                    <a href="#" class="hover:text-green-400 transition-colors"><i class="fab fa-instagram text-lg"></i></a>
-                    <a href="#" class="hover:text-green-400 transition-colors"><i class="fab fa-youtube text-lg"></i></a>
+        </section>
+        <section id="features" class="landing-section">
+            <div class="landing-container">
+                <header class="landing-section-heading">
+                    <p class="landing-eyebrow">Features</p>
+                    <h2>Designed for student wellness</h2>
+                    <p>Peer support, practical resources, and supervised care in one place.</p>
+                </header>
+                <div class="landing-feature-grid">
+                    <article><h3>Anonymous conversations</h3><p>Use your COMPASS nickname to share what you feel comfortable discussing.</p></article>
+                    <article><h3>Personalized care</h3><p>Request support for the concerns you want to talk about.</p></article>
+                    <article><h3>Voice &amp; chat support</h3><p>Choose the supported way of communicating that feels right for you.</p></article>
+                    <article><h3>Trained student helpers</h3><p>Peer supporters work under adviser supervision.</p></article>
+                    <article><h3>Referral support</h3><p>Advisers coordinate further support for concerns that need professional attention.</p></article>
+                    <article><h3>Privacy &amp; consent</h3><p>Review how your information is used before creating your account.</p></article>
                 </div>
             </div>
+        </section>
+        <section id="how-it-works" class="landing-section landing-section-soft">
+            <div class="landing-container">
+                <header class="landing-section-heading">
+                    <p class="landing-eyebrow">How it works</p>
+                    <h2>Your path to support</h2>
+                    <p>Create your account, then request peer support through the existing COMPASS process.</p>
+                </header>
+                <ol class="landing-steps">
+                    <li><span aria-hidden="true">1</span><div><h3>Choose a concern</h3><p>Select what you would like to talk about.</p></div></li>
+                    <li><span aria-hidden="true">2</span><div><h3>Get matched</h3><p>Your request is matched when an eligible helper is available.</p></div></li>
+                    <li><span aria-hidden="true">3</span><div><h3>Chat or voice</h3><p>Connect in a way that feels comfortable.</p></div></li>
+                    <li><span aria-hidden="true">4</span><div><h3>Receive guidance</h3><p>Talk through your concerns and explore coping strategies.</p></div></li>
+                    <li><span aria-hidden="true">5</span><div><h3>Feedback &amp; resources</h3><p>Share feedback and explore wellness tools.</p></div></li>
+                </ol>
+            </div>
+        </section>
+        <section class="landing-container landing-callout" aria-labelledby="start-heading">
+            <div><h2 id="start-heading">You do not have to face challenges alone.</h2><p>Take the first step when you feel ready.</p></div>
+            <a href="{{ route('register') }}" class="btn-primary">Create an account <x-ui-icon name="arrow-right" /></a>
+        </section>
+    </main>
+    <footer id="contact" class="landing-footer">
+        <div class="landing-container">
+            <div class="landing-footer-grid">
+                <div><h2>About COMPASS</h2><p>Project Dial-A-Friend provides supervised student peer support and wellness resources.</p></div>
+                <nav aria-label="Explore COMPASS"><h3>Explore</h3><a href="#features">Features</a><a href="#how-it-works">How it works</a><a href="{{ route('login') }}">Log in</a><a href="{{ route('register') }}">Create an account</a></nav>
+                <div class="landing-policies"><h3>Privacy &amp; terms</h3><p>Read the same documents used during registration.</p><details><summary>Privacy Notice</summary><div class="landing-policy-text">@include('partials.privacy-text')</div></details><details><summary>Terms and Condition</summary><div class="landing-policy-text">@include('partials.terms-text')</div></details></div>
+            </div>
+            <p class="landing-copyright">&copy; {{ now()->year }} COMPASS &middot; Project Dial-A-Friend.</p>
         </div>
     </footer>
-
-    <!-- ══════════════════════════════════════════════ -->
-    <!--  SCRIPTS                                     -->
-    <!-- ══════════════════════════════════════════════ -->
-
     <script>
-        (function() {
-            'use strict';
-
-            // ── MOBILE MENU ──
+        (() => {
             const toggle = document.getElementById('mobileToggle');
             const menu = document.getElementById('mobileMenu');
-
-            if (toggle && menu) {
-                toggle.addEventListener('click', function() {
-                    menu.classList.toggle('hidden');
-                });
-
-                // Close on link click
-                menu.querySelectorAll('a').forEach(function(link) {
-                    link.addEventListener('click', function() {
-                        menu.classList.add('hidden');
-                    });
-                });
-            }
-
-            // ── NAVBAR SCROLL EFFECT ──
-            const navbar = document.getElementById('navbar');
-
-            window.addEventListener('scroll', function() {
-                if (window.scrollY > 20) {
-                    navbar.classList.add('nav-scrolled');
-                    navbar.classList.remove('bg-transparent');
-                } else {
-                    navbar.classList.remove('nav-scrolled');
-                    navbar.classList.add('bg-transparent');
-                }
+            const setOpen = (open) => {
+                menu.classList.toggle('hidden', !open);
+                toggle.setAttribute('aria-expanded', String(open));
+                toggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+            };
+            toggle.addEventListener('click', () => setOpen(menu.classList.contains('hidden')));
+            menu.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => setOpen(false)));
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && !menu.classList.contains('hidden')) { setOpen(false); toggle.focus(); }
             });
-
-            // ── SMOOTH SCROLL ──
-            document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
-                anchor.addEventListener('click', function(e) {
-                    const href = this.getAttribute('href');
-                    if (href === '#') return;
-                    const target = document.querySelector(href);
-                    if (target) {
-                        e.preventDefault();
-                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                });
-            });
-
-            // ── ANIMATED COUNTERS (simple) ──
-            const counters = document.querySelectorAll('.stat-number');
-
-            function animateCounter(el) {
-                const text = el.textContent;
-                const isPercent = text.includes('%');
-                const isSlash = text.includes('/');
-                const num = parseFloat(text);
-
-                if (isNaN(num)) return;
-
-                let current = 0;
-                const target = num;
-                const duration = 1500;
-                const step = Math.max(1, Math.floor(target / 60));
-
-                const update = () => {
-                    current += step;
-                    if (current >= target) {
-                        el.textContent = text;
-                        return;
-                    }
-                    if (isPercent) {
-                        el.textContent = Math.floor(current) + '%';
-                    } else if (isSlash) {
-                        el.textContent = Math.floor(current) + '/' + text.split('/')[1];
-                    } else {
-                        el.textContent = Math.floor(current);
-                    }
-                    requestAnimationFrame(update);
-                };
-
-                // Start when visible
-                const observer = new IntersectionObserver(function(entries) {
-                    entries.forEach(function(entry) {
-                        if (entry.isIntersecting) {
-                            update();
-                            observer.unobserve(el);
-                        }
-                    });
-                }, { threshold: 0.3 });
-
-                observer.observe(el);
-            }
-
-            counters.forEach(animateCounter);
-
-            // ── SCROLL REVEAL (Intersection Observer) ──
-            const hiddenElements = document.querySelectorAll('.animate-fade-up, .animate-fade-in');
-
-            const revealObserver = new IntersectionObserver(function(entries) {
-                entries.forEach(function(entry) {
-                    if (entry.isIntersecting) {
-                        entry.target.style.opacity = '1';
-                    }
-                });
-            }, {
-                threshold: 0.15,
-                rootMargin: '0px 0px -50px 0px'
-            });
-
-            hiddenElements.forEach(function(el) {
-                // Set initial opacity to 0 so we can fade in
-                if (!el.classList.contains('counter')) {
-                    el.style.opacity = '0';
-                    revealObserver.observe(el);
-                }
-            });
-
-            // ── BUTTON RIPPLE EFFECT ──
-            document.querySelectorAll('.btn-primary, .btn-outline').forEach(function(btn) {
-                btn.addEventListener('click', function(e) {
-                    const ripple = document.createElement('span');
-                    const rect = this.getBoundingClientRect();
-                    const size = Math.max(rect.width, rect.height);
-                    const x = e.clientX - rect.left - size / 2;
-                    const y = e.clientY - rect.top - size / 2;
-
-                    ripple.style.cssText = `
-                        position: absolute;
-                        width: ${size}px;
-                        height: ${size}px;
-                        left: ${x}px;
-                        top: ${y}px;
-                        border-radius: 50%;
-                        background: rgba(255,255,255,0.3);
-                        transform: scale(0);
-                        animation: rippleAnim 0.6s ease-out forwards;
-                        pointer-events: none;
-                    `;
-
-                    this.style.position = 'relative';
-                    this.style.overflow = 'hidden';
-                    this.appendChild(ripple);
-
-                    setTimeout(function() {
-                        ripple.remove();
-                    }, 700);
-                });
-            });
-
-            // ── INJECT RIPPLE KEYFRAMES ──
-            const styleSheet = document.createElement('style');
-            styleSheet.textContent = `
-                @keyframes rippleAnim {
-                    to { transform: scale(4); opacity: 0; }
-                }
-            `;
-            document.head.appendChild(styleSheet);
-
+            window.addEventListener('resize', () => { if (window.innerWidth >= 1024) setOpen(false); });
         })();
     </script>
-
     @include('layouts.partials.pwa-banner')
-
 </body>
 </html>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
@@ -8,10 +8,6 @@
     <title>COMPASS – Case #{{ $case->id }}</title>
 
     @vite(['resources/js/app.js'])
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -252,6 +248,8 @@
             .modal-box { padding: 24px 20px; }
         }
     </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body class="compass-compact">
 
@@ -264,8 +262,8 @@
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
+                    <x-ui-icon name="menu"  />
                 </button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-800">
@@ -280,11 +278,11 @@
             </div>
             <div class="flex gap-2">
                 <a href="{{ route('professional.cases') }}" class="btn-outline">
-                    <i class="fas fa-arrow-left mr-1"></i> Back
+                    <x-ui-icon name="arrow-left" class="mr-1" /> Back
                 </a>
                 @if(in_array($case->status, \App\Models\Referral::ACTIVE_STATUSES, true))
                     <button class="btn-outline" onclick="openStatusModal()">
-                        <i class="fas fa-exchange-alt mr-1"></i> Update Status
+                        <x-ui-icon name="connection" class="mr-1" /> Update Status
                     </button>
                 @endif
             </div>
@@ -427,7 +425,7 @@
                             </div>
 
                             <button type="submit" class="btn-primary w-full justify-center">
-                                <i class="fas fa-save mr-1"></i> Save Intervention Note
+                                <x-ui-icon name="save" class="mr-1" /> Save Intervention Note
                             </button>
                         </form>
                     </div>

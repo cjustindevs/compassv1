@@ -101,7 +101,7 @@
             padding: 4px 10px; border-radius: 999px;
             background: var(--gray-50); border: 1px solid var(--gray-200); color: var(--gray-600);
         }
-        .breath-steps .step i { color: var(--green-600); font-size: 10px; }
+        .breath-steps .step :is(i, .compass-icon) { color: var(--green-600); font-size: 10px; }
         .breath-cta { display: flex; align-items: center; gap: 12px; }
         .breath-cta .status-tag { font-size: 12px; font-weight: 600; color: var(--green-700); display: none; }
         .breathing-done { background: var(--green-500) !important; color: white !important; }
@@ -231,7 +231,7 @@
         </div>
         @if($readinessStatus === 'ready')
             <a href="{{ route('helper.dashboard') }}" class="btn btn-primary btn-sm action">
-                Dashboard <i class="fas fa-arrow-right ml-1"></i>
+                Dashboard <x-ui-icon name="arrow-right" class="ml-1" />
             </a>
         @endif
     </div>
@@ -247,10 +247,10 @@
                 </p>
                 <div class="flex justify-center gap-2 flex-wrap">
                     <a href="{{ route('helper.dashboard') }}" class="btn btn-primary">
-                        <i class="fas fa-arrow-right mr-1"></i> Go to Dashboard
+                        <x-ui-icon name="arrow-right" class="mr-1" /> Go to Dashboard
                     </a>
                     <a href="{{ route('helper.readiness') }}?refresh=1" class="btn btn-secondary">
-                        <i class="fas fa-sync mr-1"></i> Check In Again
+                        <x-ui-icon name="refresh" class="mr-1" /> Check In Again
                     </a>
                 </div>
             </div>
@@ -262,7 +262,7 @@
 
                 {{-- Skills --}}
                 <div class="rc-box" style="margin-bottom:14px;">
-                    <label class="rc-label"><i class="fas fa-circle-check text-green-600"></i> Listener skills <span class="req">*</span></label>
+                    <label class="rc-label"><x-ui-icon name="check-circle" class="text-green-600" /> Listener skills <span class="req">*</span></label>
                     <div class="skill-chips">
                         @foreach(\App\Services\HelperReadinessService::SKILLS as $skill)
                             <input type="checkbox" id="skill_{{ $loop->index }}" name="skills_confirmed[]" value="{{ $skill }}" @checked(in_array($skill,old('skills_confirmed',[])))>
@@ -275,7 +275,7 @@
                 {{-- 1. Emotional readiness + 2. Willingness --}}
                 <div class="rc-grid">
                     <div class="rc-box">
-                        <label class="rc-label"><i class="fas fa-heart text-red-500"></i> Emotionally ready? <span class="req">*</span></label>
+                        <label class="rc-label"><x-ui-icon name="heart" class="text-red-500" /> Emotionally ready? <span class="req">*</span></label>
                         <div class="seg">
                             <div class="seg-opt">
                                 <input type="radio" id="emotionally_ready_yes" name="emotionally_ready" value="1" {{ old('emotionally_ready') == '1' ? 'checked' : '' }}>
@@ -290,7 +290,7 @@
                     </div>
 
                     <div class="rc-box">
-                        <label class="rc-label"><i class="fas fa-handshake text-green-600"></i> Willing to listen <span class="req">*</span></label>
+                        <label class="rc-label"><x-ui-icon name="connection" class="text-green-600" /> Willing to listen <span class="req">*</span></label>
                         <div class="seg">
                             <div class="seg-opt">
                                 <input type="radio" id="willing_yes" name="willing_to_listen" value="1" {{ old('willing_to_listen') == '1' ? 'checked' : '' }}>
@@ -307,7 +307,7 @@
 
                 {{-- 3. Stress level --}}
                 <div class="rc-section">
-                    <label class="rc-label"><i class="fas fa-water text-blue-500"></i> My current stress level is <span class="req">*</span></label>
+                    <label class="rc-label"><x-ui-icon name="water" class="text-blue-500" /> My current stress level is <span class="req">*</span></label>
                     <div class="seg">
                         <div class="seg-opt">
                             <input type="radio" id="stress_low" name="stress_level" value="low" {{ old('stress_level') == 'low' ? 'checked' : '' }}>
@@ -328,7 +328,7 @@
                 {{-- 4. Availability + 5. Breathing exercise --}}
                 <div class="rc-grid">
                     <div class="rc-box">
-                        <label class="rc-label"><i class="fas fa-toggle-on text-green-600"></i> Availability status <span class="req">*</span></label>
+                        <label class="rc-label"><x-ui-icon name="toggle" class="text-green-600" /> Availability status <span class="req">*</span></label>
                         <div class="seg">
                             <div class="seg-opt">
                                 <input type="radio" id="avail_available" name="availability_status" value="available" {{ old('availability_status') == 'available' ? 'checked' : '' }}>
@@ -343,7 +343,7 @@
                     </div>
 
                     <div class="rc-box">
-                        <label class="rc-label"><i class="fas fa-wind text-teal-600"></i> Breathing exercise <span class="req">*</span></label>
+                        <label class="rc-label"><x-ui-icon name="wind" class="text-teal-600" /> Breathing exercise <span class="req">*</span></label>
                         <div class="breath-steps">
                             <span class="step"> Inhale 4s</span>
                             <span class="step"> Hold 4s</span>
@@ -352,7 +352,7 @@
                         </div>
                         <div class="breath-cta">
                             <button type="button" class="btn btn-secondary btn-sm" id="openExerciseBtn">
-                                <i class="fas fa-play mr-1"></i> Start Breathing Exercise
+                                <x-ui-icon name="play" class="mr-1" /> Start Breathing Exercise
                             </button>
                             <span class="status-tag" id="breathStatusTag"> Completed</span>
                         </div>
@@ -373,20 +373,20 @@
                 {{-- Actions --}}
                 <div class="rc-actions">
                     <a href="{{ route('helper.dashboard') }}" class="back">
-                        <i class="fas fa-arrow-left mr-1"></i> Back to Dashboard
+                        <x-ui-icon name="arrow-left" class="mr-1" /> Back to Dashboard
                     </a>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-check mr-1"></i> Submit Readiness
+                        <x-ui-icon name="check" class="mr-1" /> Submit Readiness
                     </button>
                 </div>
             </form>
 
             {{-- Self-care resources --}}
             <div class="rc-care">
-                <a href="{{ route('helper.self-help.breathing') }}" class="care-btn"><i class="fas fa-wind"></i> Breathing</a>
-                <a href="{{ route('helper.self-help.grounding') }}" class="care-btn"><i class="fas fa-tree"></i> Grounding</a>
-                <a href="{{ route('helper.self-help.journal') }}" class="care-btn"><i class="fas fa-book-open"></i> Journal</a>
-                <a href="{{ route('helper.self-help.hotlines') }}" class="care-btn danger"><i class="fas fa-phone-alt"></i> Hotlines</a>
+                <a href="{{ route('helper.self-help.breathing') }}" class="care-btn"><x-ui-icon name="wind"  /> Breathing</a>
+                <a href="{{ route('helper.self-help.grounding') }}" class="care-btn"><x-ui-icon name="leaf"  /> Grounding</a>
+                <a href="{{ route('helper.self-help.journal') }}" class="care-btn"><x-ui-icon name="book-open"  /> Journal</a>
+                <a href="{{ route('helper.self-help.hotlines') }}" class="care-btn danger"><x-ui-icon name="phone"  /> Hotlines</a>
             </div>
         </div>
 
@@ -399,7 +399,7 @@
     {{-- Breathing exercise modal --}}
     <div class="modal-overlay" id="exercise-modal">
         <div class="modal-box">
-            <button type="button" class="modal-close" id="closeExerciseBtn" aria-label="Close"><i class="fas fa-times"></i></button>
+            <button type="button" class="modal-close" id="closeExerciseBtn" aria-label="Close"><x-ui-icon name="close"  /></button>
             <div style="text-align:center;">
                 <h3 style="font-size:17px;font-weight:800;color:var(--gray-800);margin-bottom:4px;">Breathing Exercise</h3>
                 <p style="font-size:12px;color:var(--gray-500);margin-bottom:8px;">3 rounds of inhale – hold – exhale</p>
@@ -410,10 +410,10 @@
 
                 <div class="flex items-center justify-center gap-2">
                     <button type="button" class="btn btn-primary btn-sm" id="begin-lesson-btn">
-                        <i class="fas fa-play mr-1"></i> Begin Lesson
+                        <x-ui-icon name="play" class="mr-1" /> Begin Lesson
                     </button>
                     <button type="button" class="btn btn-primary btn-sm" id="continue-btn" style="display:none;">
-                        <i class="fas fa-check mr-1"></i> Continue
+                        <x-ui-icon name="check" class="mr-1" /> Continue
                     </button>
                     <button type="button" class="btn btn-secondary btn-sm" id="skipExerciseBtn">
                         Skip
@@ -506,7 +506,7 @@
                 closeModal();
 
                 // Reflect completion on the start button
-                openBtn.innerHTML = '<i class="fas fa-check mr-1"></i> Breathing Done';
+                openBtn.innerHTML = '<x-ui-icon name="check" class="mr-1" /> Breathing Done';
                 openBtn.classList.remove('btn-secondary');
                 openBtn.classList.add('breathing-done');
                 if (statusTag) statusTag.style.display = 'inline-flex';

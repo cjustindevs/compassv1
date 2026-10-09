@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
@@ -8,14 +8,7 @@
     <title>COMPASS – Request History</title>
 
     <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -139,7 +132,7 @@
             padding: 4px 12px;
             transition: all 0.2s ease;
         }
-        .bottom-nav .nav-item i { font-size: 20px; }
+        .bottom-nav .nav-item :is(i, .compass-icon) { font-size: 20px; }
         .bottom-nav .nav-item.active { color: var(--green-500); }
 
         @media (min-width: 769px) { .sidebar-overlay { display: none !important; } }
@@ -155,6 +148,8 @@
             .table-wrap table { min-width: 520px; }
         }
     </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body>
 
@@ -169,8 +164,8 @@
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
+                    <x-ui-icon name="menu"  />
                 </button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-800">Request History</h1>
@@ -191,7 +186,7 @@
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700">{{ $requests->count() }}</span>
                 </h2>
                 <a href="{{ route('request.screening') }}" class="page-button">
-                    <i class="fas fa-comment-dots"></i> Request support
+                    <x-ui-icon name="message"  /> Request support
                 </a>
             </div>
 
@@ -220,14 +215,14 @@
                                     <td>
                                         @if($item->session_status === 'completed')
                                             <a href="{{ route('session.evaluation', ['session_id' => $item->id]) }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-green-50 text-green-700 hover:bg-green-100 transition">
-                                                Give feedback <i class="fas fa-arrow-right text-[10px]"></i>
+                                                Give feedback <x-ui-icon name="arrow-right" class="text-[10px]" />
                                             </a>
                                         @elseif($closed)
                                             <span class="text-gray-400 text-sm">Closed</span>
                                         @else
                                             <div class="flex items-center gap-2">
                                                 <a href="{{ route('request.matching') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-white text-green-700 border border-green-100 hover:bg-green-50 transition">
-                                                    View request <i class="fas fa-arrow-right text-[10px]"></i>
+                                                    View request <x-ui-icon name="arrow-right" class="text-[10px]" />
                                                 </a>
 
                                             </div>

@@ -187,7 +187,7 @@
                     @endforeach
                 </div>
                 <a href="{{ route('adviser.helpers.export', ['status' => $statusFilter]) }}" class="btn-outline">
-                    <i class="fas fa-file-csv"></i> Export CSV
+                    <x-ui-icon name="file-spreadsheet"  /> Export CSV
                 </a>
             </div>
         </div>
@@ -237,7 +237,7 @@
                                     </td>
                                     <td>
                                         <a href="{{ route('adviser.helper.show', ['id' => $helper->id]) }}" class="btn-outline">
-                                            <i class="fas fa-eye"></i> View
+                                            <x-ui-icon name="eye"  /> View
                                         </a>
                                     </td>
                                 </tr>

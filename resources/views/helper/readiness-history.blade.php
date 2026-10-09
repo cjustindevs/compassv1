@@ -10,7 +10,7 @@
     <div class="card">
         <div class="card-header">
             <h3>Past Check-ins</h3>
-            <a href="{{ route('helper.readiness') }}" class="link"><i class="fas fa-plus"></i> New check-in</a>
+            <a href="{{ route('helper.readiness') }}" class="link"><x-ui-icon name="plus"  /> New check-in</a>
         </div>
         <div class="table-container">
             <table>

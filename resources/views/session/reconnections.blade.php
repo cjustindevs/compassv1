@@ -6,7 +6,7 @@
     $moderator = auth()->user()->role === 'moderator';
 @endphp
 <div class="referral-ui connection-review">
-    <header class="cr-header"><div><h1>Connection review</h1><p class="ru-muted">{{ $moderator ? 'Help Seekers reconnect with support when a chat is interrupted.' : 'Review invitations to continue an interrupted chat.' }}</p></div><a class="ru-button" href="{{ url()->full() }}"><i class="fas fa-sync-alt" aria-hidden="true"></i> Refresh</a></header>
+    <header class="cr-header"><div><h1>Connection review</h1><p class="ru-muted">{{ $moderator ? 'Help Seekers reconnect with support when a chat is interrupted.' : 'Review invitations to continue an interrupted chat.' }}</p></div><a class="ru-button" href="{{ url()->full() }}"><x-ui-icon name="refresh"  /> Refresh</a></header>
     @if(session('success'))<div class="cr-alert" role="status"> {{ session('success') }}</div>@endif
     @if($errors->any())<div class="cr-alert cr-error" role="alert">{{ $errors->first() }}</div>@endif
     <section class="cr-summary" aria-label="Connection overview">

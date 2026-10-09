@@ -4,7 +4,11 @@ import { CacheFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 
 // Precache all build assets (injected by vite-plugin-pwa at build time).
-precacheAndRoute(self.__WB_MANIFEST);
+// Screen assets use ?v= for deployment cache busting. Match that parameter to
+// the revisioned precache too, so shared controls/icons work while offline.
+precacheAndRoute(self.__WB_MANIFEST, {
+    ignoreURLParametersMatching: [/^utm_/, /^fbclid$/, /^v$/],
+});
 
 // ── Offline page fallback ──
 // Cache-first for previously visited pages, network otherwise,

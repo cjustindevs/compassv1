@@ -1,18 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>COMPASS – Self-Help Tools</title>
-
-    <script src="https://cdn.tailwindcss.com"></script>
     {{-- Loaded only for the shared sidebar/nav chrome, which still uses icon
          classes. No icon markup is used inside <main> on this page. --}}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -161,6 +156,8 @@
         }
     </style>
 <link rel="stylesheet" href="{{ asset('css/selfhelp-mobile.css') }}?v={{ filemtime(public_path('css/selfhelp-mobile.css')) }}">
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body>
 
@@ -176,7 +173,7 @@
         {{-- Page header and search --}}
         <div class="flex items-center justify-between mb-6 gap-4 flex-wrap">
             <div class="flex items-center gap-4">
-                <button type="button" class="menu-btn" id="hamburgerBtn">Menu</button>
+                <button type="button" class="menu-btn" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">Menu</button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-extrabold text-gray-800">Self-Help Tools</h1>
                     <p class="text-sm text-gray-500 hidden sm:block">Exercises, reading, and tools to support your wellbeing.</p>

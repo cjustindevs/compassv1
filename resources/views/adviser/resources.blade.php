@@ -175,17 +175,17 @@
                 <form class="form-maximized flex items-center gap-2 flex-1 min-w-[220px]" method="GET" action="{{ route('adviser.resources') }}">
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Search resources..."
                            class="form-input flex-1">
-                    <button type="submit" class="btn-outline"><i class="fas fa-search"></i></button>
+                    <button type="submit" class="btn-outline" aria-label="Search" title="Search"><x-ui-icon name="search"  /></button>
                     @if(request()->has('category'))
                         <input type="hidden" name="category" value="{{ request('category') }}">
                     @endif
                 </form>
-                <button class="btn-primary" id="openAddModal"><i class="fas fa-plus"></i> Add Resource</button>
+                <button class="btn-primary" id="openAddModal"><x-ui-icon name="plus"  /> Add Resource</button>
             </div>
 
             <div class="flex items-center gap-2 mt-4 flex-wrap">
                 <a href="{{ route('adviser.resources') }}" class="category-pill {{ !request('category') || request('category') === 'all' ? 'active' : '' }}">
-                    <i class="fas fa-th-large"></i> All
+                    <x-ui-icon name="dashboard"  /> All
                 </a>
                 @foreach($categories as $category)
                     <a href="{{ route('adviser.resources', ['category' => $category, 'search' => request('search')]) }}"
@@ -244,7 +244,7 @@
                                     data-featured="{{ $resource->is_featured ? '1' : '0' }}"
                                     data-published="{{ $resource->is_published ? '1' : '0' }}"
                                     data-visibility="{{ $resource->visibility }}" data-review="{{ $resource->review_date }}" data-content="{{ $resource->content }}">
-                                <i class="fas fa-edit"></i> Edit
+                                <x-ui-icon name="edit"  /> Edit
                             </button>
                             <form class="form-maximized" method="POST" action="{{ route('adviser.resources.destroy', ['id' => $resource->id]) }}"
                                   data-confirm="Archive resource?"
@@ -253,7 +253,7 @@
                                   data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn-outline" style="color:var(--red-500);border-color:#FECACA;"><i class="fas fa-trash"></i> Archive</button>
+                                <button type="submit" class="btn-outline" style="color:var(--red-500);border-color:#FECACA;"><x-ui-icon name="trash"  /> Archive</button>
                             </form>
                         </div>
                     </div>
@@ -284,7 +284,7 @@
         <div class="modal-box">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="font-bold text-gray-800 text-lg" id="modalTitle">Add Resource</h3>
-                <button class="btn-outline" id="closeModal"><i class="fas fa-times"></i></button>
+                <button class="btn-outline" id="closeModal" aria-label="Close dialog" title="Close dialog"><x-ui-icon name="close"  /></button>
             </div>
 
             <form class="form-maximized" method="POST" action="{{ route('adviser.resources.store') }}" id="resourceForm">
@@ -350,7 +350,7 @@
                         <input type="checkbox" name="is_published" value="1" checked class="accent-[#04A052]"> Published
                     </label>
                 </div>
-                <button type="submit" class="btn-primary w-full justify-center"><i class="fas fa-save"></i> Save Resource</button>
+                <button type="submit" class="btn-primary w-full justify-center"><x-ui-icon name="save"  /> Save Resource</button>
             </form>
         </div>
     </div>

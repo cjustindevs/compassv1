@@ -4,8 +4,12 @@
 @section('subtitle', 'Join COMPASS Peer Support System')
 
 @section('content')
-<h1 class="text-xl font-bold text-gray-800 mb-2">Create Your Account</h1>
-<p class="text-gray-500 text-sm mb-6">Read and accept the Terms and Condition and Privacy Notice first, then verify your email and create your account.</p>
+<h1 class="auth-title">Create your account</h1>
+<p class="auth-intro">Read the terms and privacy notice, then verify your email and choose your account details.</p>
+<ol class="auth-progress" aria-label="Registration progress">
+    <li id="registration-progress-terms" @if(!$errors->any()) aria-current="step" @endif><span aria-hidden="true">1</span> Terms &amp; privacy</li>
+    <li id="registration-progress-account" @if($errors->any()) aria-current="step" @endif><span aria-hidden="true">2</span> Verify &amp; create</li>
+</ol>
 @if ($errors->any())
     <div role="alert" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">{{ $errors->first('registration') ?: ($errors->first('email') ?: 'Please check the highlighted fields below.') }}</div>
 @endif
@@ -15,7 +19,7 @@
     <section class="agreement-panel" aria-label="Terms and Condition and Privacy Notice">
         <h2 class="text-base font-semibold text-gray-800 mb-2">1. Terms and Condition &amp; Privacy Notice</h2>
         <p class="text-sm text-gray-600 mb-3">Please read the full documents below carefully before you create your account.</p>
-        <div class="agreement-scroll" id="agreementScroll">
+        <div class="agreement-scroll" id="agreementScroll" tabindex="0" aria-label="Terms and privacy documents" aria-describedby="agreement-hint">
             @include('partials.terms-text')
             <hr class="my-4 border-gray-200">
             @include('partials.privacy-text')
@@ -26,7 +30,7 @@
             <span>I have read and understood the Terms and Condition and the Privacy Notice, and I agree to them.</span>
         </label>
         <p id="agree-error" class="text-sm text-red-600 mt-1" role="alert"></p>
-        <button type="button" id="agree-continue" class="registration-action registration-action-solid" disabled><i class="fas fa-check mr-2" aria-hidden="true"></i> Agree and continue</button>
+        <button type="button" id="agree-continue" class="registration-action registration-action-solid" disabled><x-ui-icon name="check" class="mr-2" /> Agree and continue</button>
     </section>
 </div>
 
@@ -34,7 +38,7 @@
 <div id="registrationStep2" class="{{ $errors->any() ? '' : 'hidden' }}">
 <div class="registration-columns">
 <section class="verification-panel space-y-4">
-    <h2 class="text-base font-semibold text-gray-800">2. Email verification</h2>
+    <h2 id="registration-account-heading" tabindex="-1" class="text-base font-semibold text-gray-800">2. Email verification</h2>
     @if(app(\App\Services\OtpMailConfiguration::class)->demoEnabled())<p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3">Demo Mode: your generated code will be displayed here. No email delivery is required.</p>@endif
     <p class="text-sm text-gray-600">Verify your Gmail or other email address before creating your account.</p>
     <button type="button" id="open-verification" class="registration-action registration-action-solid">Verify email address</button>
@@ -48,7 +52,7 @@
         <label for="verification-email" class="block text-sm font-medium text-gray-700 mb-1.5">Email for verification <span class="text-red-500">*</span></label>
         <div class="registration-input-action">
         <input id="verification-email" type="email" autocomplete="email" class="input-focus w-full px-4 py-3 rounded-xl border border-gray-200" placeholder="Enter your email">
-        <button id="send-code" type="button" class="registration-action registration-action-solid"><i class="fas fa-paper-plane" aria-hidden="true"></i> <span>Send OTP</span></button>
+        <button id="send-code" type="button" class="registration-action registration-action-solid"><x-ui-icon name="send"  /> <span>Send OTP</span></button>
         </div>
         <p class="text-xs text-gray-500 mt-1">Used only to send your code. Sign in with your alias after registration.</p>
         @error('email') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
@@ -57,7 +61,7 @@
         <label for="verification-code" class="block text-sm font-medium text-gray-700 mb-1.5">Verification code</label>
         <div class="registration-input-action">
         <input id="verification-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" class="input-focus w-full px-4 py-3 rounded-xl border border-gray-200" placeholder="6-digit code">
-        <button id="verify-code" type="button" class="registration-action registration-action-solid"><i class="fas fa-check-circle" aria-hidden="true"></i> Verify OTP</button>
+        <button id="verify-code" type="button" class="registration-action registration-action-solid"><x-ui-icon name="check-circle"  /> Verify OTP</button>
         </div>
     </div>
     <p id="verification-status" role="status" aria-live="polite" class="text-sm text-gray-600">{{ session('registration_verified_until', 0) > now()->timestamp ? 'Email verified. You can now create your account.' : '' }}</p>
@@ -68,10 +72,11 @@
     <div class="registration-full">
         <label for="alias" class="block text-sm font-medium text-gray-700 mb-1.5">Your sign-in alias</label>
         <div class="registration-input-action">
-        <input id="alias" name="alias" value="{{ session('registration_alias') }}" readonly required class="input-focus w-full px-4 py-3 rounded-xl border border-gray-200 bg-green-50">
-        <button id="shuffle-alias" type="button" class="registration-action"><i class="fas fa-shuffle" aria-hidden="true"></i> Shuffle alias</button>
+        <input id="alias" name="alias" value="{{ session('registration_alias') }}" readonly required aria-describedby="nickname-reminder alias-status" class="input-focus w-full px-4 py-3 rounded-xl border border-gray-200 bg-green-50">
+        <button id="shuffle-alias" type="button" class="registration-action"><x-ui-icon name="shuffle"  /> Shuffle alias</button>
         </div>
-        <p id="alias-status" role="status" class="text-xs text-gray-500">Shuffle until you find a nickname you like. Remember your nickname: you will use Nickname@compass.local to log in.</p>
+        <p id="nickname-reminder" class="nickname-reminder">Remember your nickname: you will use <strong>Nickname@compass.local</strong> to log in.</p>
+        <p id="alias-status" role="status" class="text-xs text-gray-500">Shuffle until you find a nickname you like.</p>
         @error('alias') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
     </div>
     <div>
@@ -112,7 +117,7 @@
         @error('password_confirmation') <p id="password_confirmation-error" class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
     </div>
     <div class="registration-full pt-2">
-        <button type="submit" class="btn-primary w-full py-3 rounded-xl text-white font-semibold transition-all"><i class="fas fa-user-plus mr-2" aria-hidden="true"></i> Create Account</button>
+        <button type="submit" class="btn-primary w-full py-3 rounded-xl text-white font-semibold transition-all"><x-ui-icon name="user-plus" class="mr-2" /> Create Account</button>
     </div>
     <input type="hidden" name="agree_privacy" value="1">
     <input type="hidden" name="agree_terms" value="1">
@@ -150,7 +155,10 @@
             if (agreeError) agreeError.textContent = '';
             step1.classList.add('hidden');
             step2.classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.getElementById('registration-progress-terms').removeAttribute('aria-current');
+            document.getElementById('registration-progress-account').setAttribute('aria-current', 'step');
+            window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+            document.getElementById('registration-account-heading').focus({ preventScroll: true });
         });
     }
 })();
@@ -179,7 +187,7 @@
     window.addEventListener('pageshow', () => {
         const button = form.querySelector('button[type="submit"]');
         button.disabled = false;
-        button.innerHTML = '<i class="fas fa-user-plus mr-2" aria-hidden="true"></i> Create Account';
+        button.innerHTML = '<x-ui-icon name="user-plus" class="mr-2" /> Create Account';
     });
     async function post(url, data, button, output) {
         button.disabled = true;
@@ -243,49 +251,4 @@
     });
 })();
 </script>
-@endpush
-
-@push('styles')
-<style>
-    .email-dialog { position: fixed; inset: 0; margin: auto; width: min(480px, calc(100% - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; border: 0; border-radius: 20px; padding: 20px; }
-    .email-dialog::backdrop { background: rgba(15, 23, 42, .5); }
-    .email-dialog > button { margin: 0 0 12px auto; display: flex; }
-    .registration-divider { border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 4px; }
-    .registration-input-action { display: flex; align-items: stretch; gap: 8px; }
-    .registration-input-action input { min-width: 0; flex: 1; width: 0; }
-    .registration-input-action .registration-action { margin: 0; width: auto; flex-shrink: 0; }
-    .registration-fields button[type="submit"]:disabled { opacity: .6; cursor: wait; }
-    @media (max-width: 479px) { .registration-input-action { flex-direction: column; } .registration-input-action input { width: 100%; } }
-    .registration-columns { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
-    .verification-panel { padding: 20px; background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 16px; align-self: start; }
-    .registration-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; }
-    .registration-fields > div { min-width: 0; }
-    .registration-full { grid-column: 1 / -1; }
-    .registration-action { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; margin-top: 10px; padding: 10px 16px; border: 1px solid #16a34a; border-radius: 10px; background: white; color: #15803d; font-size: 14px; font-weight: 600; cursor: pointer; }
-    .registration-action:hover { background: #dcfce7; }
-    .registration-action-solid { background: #15803d; color: white; border-color: #15803d; width: 100%; }
-    .registration-action-solid:hover { background: #166534; }
-    .registration-action:focus-visible { outline: 3px solid #22c55e; outline-offset: 3px; }
-    .registration-action:disabled { opacity: .6; cursor: wait; }
-    #alias-status { margin-top: 8px; }
-    @media (min-width: 640px) { .registration-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (min-width: 900px) { .registration-columns { grid-template-columns: minmax(0, 1fr) minmax(0, 1.65fr); gap: 32px; } }
-    @media (max-width: 639px) { .registration-action { width: 100%; } }
-    .agreement-panel { padding: 20px; background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 16px; }
-    .agreement-scroll { max-height: 420px; overflow-y: auto; padding: 18px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 14px; line-height: 1.7; color: #374151; }
-    .agreement-scroll h3 { margin-top: 14px; }
-    .agreement-scroll h3:first-child { margin-top: 0; }
-    .agreement-scroll ul { padding-left: 20px; margin-top: 8px; }
-    .agreement-scroll li { margin-bottom: 8px; }
-    .agreement-check { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0 6px; font-size: 14px; font-weight: 500; color: #1f2937; cursor: pointer; }
-    .agreement-check input { margin-top: 2px; width: 18px; height: 18px; flex-shrink: 0; accent-color: #15803d; }
-    .agreement-check input:disabled { opacity: .55; }
-    @media (max-width: 639px) { .agreement-scroll { max-height: 340px; padding: 14px; } }
-</style>
-@endpush
-
-@push('styles')
-<style>
-#verification-status.demo-code-visible{padding:12px;border:1px solid #bde3cb;border-radius:10px;background:#fff;color:#166534;font-weight:600;line-height:1.6;overflow-wrap:anywhere}
-</style>
 @endpush

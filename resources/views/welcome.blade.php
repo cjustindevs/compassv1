@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html class="compass-ui" lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
         @include('layouts.partials.pwa-meta')
         <meta charset="utf-8">
@@ -15,7 +15,8 @@
         @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
             @vite(['resources/css/app.css', 'resources/js/app.js'])
         @endif
-    </head>
+        @include('partials.ui-assets')
+</head>
     <body class="font-sans antialiased bg-gray-50 text-gray-900 min-h-screen flex flex-col">
         <header class="w-full max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
             <a href="/" class="inline-flex">

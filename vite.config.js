@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -85,9 +87,12 @@ export default defineConfig({
             },
             injectManifest: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,woff,ttf,json}'],
-                additionalManifestEntries: [
-                    { url: '/offline.html', revision: '2026-08-19' }
-                ],
+                // Laravel disables Vite's publicDir; explicitly revision these
+                // public assets instead of relying on includeAssets discovery.
+                additionalManifestEntries: ['offline.html', 'css/compass-ui.css', 'js/compass-ui.js', 'images/compass-icons.svg'].map((file) => ({
+                    url: '/' + file,
+                    revision: createHash('sha256').update(readFileSync(new URL('./public/' + file, import.meta.url))).digest('hex'),
+                })),
                 maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
             },
             devOptions: {

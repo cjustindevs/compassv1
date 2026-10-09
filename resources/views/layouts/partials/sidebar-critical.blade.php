@@ -39,10 +39,15 @@
                 function openDrawer() {
                     sidebar.classList.remove('closed', 'collapsed');
                     sidebar.classList.add('open');
+                    document.body.classList.add('sidebar-open');
+                    if (hamburger) hamburger.setAttribute('aria-expanded', 'true');
+                    if (toggle) toggle.setAttribute('aria-label', 'Close navigation');
                     if (overlay) overlay.classList.add('active');
                 }
                 function closeDrawer() {
                     sidebar.classList.remove('open');
+                    document.body.classList.remove('sidebar-open');
+                    if (hamburger) hamburger.setAttribute('aria-expanded', 'false');
                     if (overlay) overlay.classList.remove('active');
                 }
                 function toggleDrawer() {
@@ -51,9 +56,12 @@
                 }
                 function setCollapsed(collapsed) {
                     sidebar.classList.toggle('collapsed', collapsed);
+                    if (toggle) {
+                        toggle.setAttribute('aria-expanded', String(!collapsed));
+                        toggle.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+                    }
                     if (toggleIcon) {
-                        toggleIcon.classList.toggle('fa-chevron-left', !collapsed);
-                        toggleIcon.classList.toggle('fa-chevron-right', collapsed);
+                        toggleIcon.classList.toggle('is-collapsed', collapsed);
                     }
                 }
 
@@ -64,6 +72,12 @@
                     });
                 }
                 if (overlay) overlay.addEventListener('click', closeDrawer);
+                document.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape' && sidebar.classList.contains('open')) {
+                        closeDrawer();
+                        if (hamburger) hamburger.focus();
+                    }
+                });
                 if (toggle) {
                     toggle.addEventListener('click', function () {
                         if (isMobile()) { toggleDrawer(); return; }
@@ -87,6 +101,7 @@
                         closeDrawer();
                     } else {
                         sidebar.classList.remove('open');
+                        document.body.classList.remove('sidebar-open');
                         if (overlay) overlay.classList.remove('active');
                         var collapsed = false;
                         try { collapsed = localStorage.getItem(STORAGE_KEY) === 'true'; } catch (err) {}

@@ -9,7 +9,7 @@
             <x-brand-mark />
         </a>
         <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Collapse sidebar" title="Collapse / expand sidebar">
-            <i class="fas fa-chevron-left" id="toggleIcon"></i>
+            <x-ui-icon name="chevron-left" class="sidebar-chevron" id="toggleIcon" />
         </button>
         {{-- theme toggle moved to Settings → Appearance --}}
     </div>
@@ -17,16 +17,16 @@
     <nav class="sidebar-nav">
         <div class="nav-section">Clinical Work</div>
         <a href="{{ route('professional.dashboard') }}" class="nav-item {{ request()->routeIs('professional.dashboard') ? 'active' : '' }}">
-            <i class="fas fa-th-large"></i><span class="nav-text">Dashboard</span>
+            <x-ui-icon name="dashboard"  /><span class="nav-text">Dashboard</span>
         </a>
         <a href="{{ route('professional.referrals') }}" class="nav-item {{ request()->routeIs('professional.referrals*', 'professional.referral*') ? 'active' : '' }}">
-            <i class="fas fa-clipboard-list"></i><span class="nav-text">Referrals</span>
+            <x-ui-icon name="clipboard"  /><span class="nav-text">Referrals</span>
             @if($pending > 0)
                 <span class="nav-badge warning" id="pendingBadge">{{ $pending }}</span>
             @endif
         </a>
         <a href="{{ route('professional.cases') }}" class="nav-item {{ request()->routeIs('professional.cases*') ? 'active' : '' }}">
-            <i class="fas fa-folder-open"></i><span class="nav-text">Active Cases</span>
+            <x-ui-icon name="folder"  /><span class="nav-text">Active Cases</span>
             @if($active > 0)
                 <span class="nav-badge" id="activeBadge">{{ $active }}</span>
             @endif
@@ -34,15 +34,15 @@
 
         <div class="nav-section">Reports</div>
         <a href="{{ route('professional.reports') }}" class="nav-item {{ request()->routeIs('professional.reports*') ? 'active' : '' }}">
-            <i class="fas fa-chart-bar"></i><span class="nav-text">Reports</span>
+            <x-ui-icon name="bar-chart"  /><span class="nav-text">Reports</span>
         </a>
 
         <div class="nav-section">Account</div>
         <a href="{{ route('professional.profile') }}" class="nav-item {{ request()->routeIs('professional.profile*') ? 'active' : '' }}">
-            <i class="fas fa-user-circle"></i><span class="nav-text">Profile</span>
+            <x-ui-icon name="user"  /><span class="nav-text">Profile</span>
         </a>
         <a href="{{ route('professional.settings') }}" class="nav-item {{ request()->routeIs('professional.settings*') ? 'active' : '' }}">
-            <i class="fas fa-cog"></i><span class="nav-text">Settings</span>
+            <x-ui-icon name="settings"  /><span class="nav-text">Settings</span>
         </a>
     </nav>
 
@@ -79,7 +79,7 @@
               data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
             @csrf
             <button type="submit" class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i><span class="logout-text">Log out</span>
+                <x-ui-icon name="logout"  /><span class="logout-text">Log out</span>
             </button>
         </form>
     </div>

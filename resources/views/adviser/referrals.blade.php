@@ -250,13 +250,13 @@
                             </div>
                             <div class="actions">
                                 <a href="{{ route('adviser.referral.show', $referral->case_reference) }}" class="btn-outline">
-                                    <i class="fas fa-eye mr-1"></i> View
+                                    <x-ui-icon name="eye" class="mr-1" /> View
                                 </a>
                                 <button class="btn-primary" onclick="openApproveModal({{ $referral->id }})">
-                                    <i class="fas fa-check mr-1"></i> Approve
+                                    <x-ui-icon name="check" class="mr-1" /> Approve
                                 </button>
                                 <button class="btn-danger" onclick="openRejectModal({{ $referral->id }})">
-                                    <i class="fas fa-times mr-1"></i> Reject
+                                    <x-ui-icon name="close" class="mr-1" /> Reject
                                 </button>
                             </div>
                         </div>
@@ -293,7 +293,7 @@
                             </div>
                         </div>
                         <a href="{{ route('adviser.referral.show', $referral->case_reference) }}" class="btn-outline">
-                            <i class="fas fa-eye mr-1"></i> View
+                            <x-ui-icon name="eye" class="mr-1" /> View
                         </a>
                     </div>
                 @endforeach

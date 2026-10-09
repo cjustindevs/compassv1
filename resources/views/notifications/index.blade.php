@@ -1,16 +1,11 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>COMPASS - Notifications</title>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -81,6 +76,8 @@
         }
     .moderator-emergency-notification{border-left:4px solid #c34242!important}.moderator-emergency-notification h4{color:#982e2e}.notif-card .notif-content{min-width:0;overflow-wrap:anywhere}
 </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body>
 
@@ -97,8 +94,8 @@
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6 gap-4 flex-wrap">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
+                    <x-ui-icon name="menu"  />
                 </button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-extrabold text-gray-800">Notifications</h1>
@@ -113,7 +110,7 @@
             </div>
             @if($unreadCount > 0)
                 <button class="mark-all-btn" id="markAllBtn" onclick="markAllRead()">
-                    <i class="fas fa-check-double mr-1"></i> Mark all read
+                    <x-ui-icon name="check-circle" class="mr-1" /> Mark all read
                 </button>
             @endif
         </div>
@@ -121,7 +118,7 @@
         <!-- Type filters -->
         <div class="flex items-center gap-2 mb-6 filter-row">
             <a href="{{ route('notifications') }}" class="filter-btn {{ $activeType === null ? 'active' : '' }}">
-                <i class="fas fa-stream"></i> All
+                <x-ui-icon name="list"  /> All
             </a>
             @foreach($types as $slug => $meta)
                 <a href="{{ route('notifications', ['type' => $slug]) }}" class="filter-btn {{ $activeType === $slug ? 'active' : '' }}">
@@ -147,7 +144,7 @@
                         @if(! $notification->is_read && $notification->link)
                             <div class="mt-2">
                                 <button class="link-btn" data-link="{{ $notification->link }}" onclick="markRead({{ $notification->id }}, true)">
-                                    <i class="fas fa-arrow-right mr-1"></i>Open &amp; mark as read
+                                    <x-ui-icon name="arrow-right" class="mr-1" />Open &amp; mark as read
                                 </button>
                             </div>
                         @endif
@@ -155,11 +152,11 @@
                     <div class="flex flex-col items-end gap-2 self-stretch">
                         @if(! $notification->is_read)
                             <button class="link-btn" onclick="markRead({{ $notification->id }}, false)" title="Mark as read">
-                                <i class="fas fa-check"></i>
+                                <x-ui-icon name="check"  />
                             </button>
                         @endif
                         <button class="delete-btn" onclick="deleteNotif({{ $notification->id }})" title="Archive">
-                            <i class="fas fa-box-archive"></i>
+                            <x-ui-icon name="archive"  />
                         </button>
                     </div>
                 </div>

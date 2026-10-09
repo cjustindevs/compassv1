@@ -5,7 +5,7 @@
 @section('subheading', 'Adviser evaluation notes and training recommendations.')
 
 @section('content')
-        <a href="{{ route('helper.feedback') }}" class="btn btn-secondary btn-sm mb-4"><i class="fas fa-arrow-left"></i> Back to feedback</a>
+        <a href="{{ route('helper.feedback') }}" class="btn btn-secondary btn-sm mb-4"><x-ui-icon name="arrow-left"  /> Back to feedback</a>
 
     <div class="card">
         <div class="card-header">

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
     @vite(['resources/js/app.js'])
@@ -7,11 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>COMPASS – Privacy</title>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -89,6 +84,8 @@
             .card { padding: 20px; }
         }
     </style>
+    @vite(['resources/css/app.css'])
+    @include('partials.ui-assets')
 </head>
 <body class="compass-compact">
 
@@ -110,12 +107,12 @@
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6 gap-4 flex-wrap">
             <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn">
-                    <i class="fas fa-bars"></i>
+                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
+                    <x-ui-icon name="menu"  />
                 </button>
                 <div>
                     <a href="{{ route('settings') }}" class="text-xs font-semibold text-[#04A052] hover:underline">
-                        <i class="fas fa-arrow-left mr-1"></i>All settings
+                        <x-ui-icon name="arrow-left" class="mr-1" />All settings
                     </a>
                     <h1 class="text-xl md:text-2xl font-extrabold text-gray-800 mt-1">Privacy</h1>
                 </div>
@@ -124,10 +121,10 @@
 
         <!-- Tabs -->
         <div class="tab-nav">
-            <a href="{{ route('settings.account') }}" class="tab-link"><i class="fas fa-user-cog"></i>Account</a>
-            <a href="{{ route('settings.preferences') }}" class="tab-link"><i class="fas fa-sliders-h"></i>Preferences</a>
-            <a href="{{ route('settings.privacy') }}" class="tab-link active"><i class="fas fa-shield-alt"></i>Privacy</a>
-            <a href="{{ route('settings.appearance') }}" class="tab-link"><i class="fas fa-palette"></i>Appearance</a>
+            <a href="{{ route('settings.account') }}" class="tab-link"><x-ui-icon name="users"  />Account</a>
+            <a href="{{ route('settings.preferences') }}" class="tab-link"><x-ui-icon name="sliders"  />Preferences</a>
+            <a href="{{ route('settings.privacy') }}" class="tab-link active"><x-ui-icon name="role"  />Privacy</a>
+            <a href="{{ route('settings.appearance') }}" class="tab-link"><x-ui-icon name="palette"  />Appearance</a>
         </div>
 
         <!-- Visibility -->
@@ -162,7 +159,7 @@
                 </div>
                 <div class="mt-5">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save mr-1"></i> Save privacy settings
+                        <x-ui-icon name="save" class="mr-1" /> Save privacy settings
                     </button>
                 </div>
             </div>
@@ -174,7 +171,7 @@
             <p class="sub">Access or export the information linked to your account.</p>
             <div class="flex flex-wrap gap-3 mt-5">
                 <a href="{{ route('settings.export-data') }}" class="btn btn-outline">
-                    <i class="fas fa-download mr-1"></i> Download my data (JSON)
+                    <x-ui-icon name="download" class="mr-1" /> Download my data (JSON)
                 </a>
             </div>
             <div class="mt-4 p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm text-gray-600">

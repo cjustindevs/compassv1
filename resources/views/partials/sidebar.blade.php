@@ -40,7 +40,7 @@
         </a>
         {{-- theme toggle moved to Settings → Appearance --}}
         <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Collapse sidebar" title="Collapse / expand sidebar">
-            <i class="fas fa-chevron-left" id="toggleIcon"></i>
+            <x-ui-icon name="chevron-left" class="sidebar-chevron" id="toggleIcon" />
         </button>
     </div>
 
@@ -49,25 +49,25 @@
         <a href="{{ route('seeker.dashboard') }}{{ $dashboardTabs ? '#home' : '' }}"
            class="nav-item {{ $isActive('seeker.dashboard') ? 'active' : '' }}"
            @if($dashboardTabs) data-tab="home" @endif>
-            <i class="fas fa-home"></i><span class="nav-text">Home</span>
+            <x-ui-icon name="home"  /><span class="nav-text">Home</span>
         </a>
         <a href="{{ route('seeker.dashboard') }}#dashboard"
            class="nav-item nav-item-dashboard {{ $isActive('seeker.dashboard') ? 'active' : '' }}"
            @if($dashboardTabs) data-tab="dashboard" @endif>
-            <i class="fas fa-chart-pie"></i><span class="nav-text">Dashboard</span>
+            <x-ui-icon name="pie-chart"  /><span class="nav-text">Dashboard</span>
         </a>
 
         <div class="nav-section">Support</div>
         <a href="{{ route('request.screening') }}"
            class="nav-item {{ $anyActive(['request.screening*', 'request.preferences*', 'request.matching*', 'request.voice-consent*']) || $anyActive(['session.chat', 'session.voice', 'session.evaluation*']) ? 'active' : '' }}">
-            <i class="fas fa-comment-dots"></i><span class="nav-text">Request Help</span>
+            <x-ui-icon name="message"  /><span class="nav-text">Request Help</span>
         </a>
-        <a href="{{ route('seeker.requests') }}" title="Request history" class="nav-item {{ $isActive('seeker.requests') ? 'active' : '' }}"><i class="fas fa-list-check" aria-hidden="true"></i><span class="nav-text">Request history</span></a>
-        <a href="{{ route('seeker.privacy') }}" title="Privacy and consent" class="nav-item {{ $isActive('seeker.privacy') ? 'active' : '' }}"><i class="fas fa-shield-halved" aria-hidden="true"></i><span class="nav-text">Privacy and consent</span></a>
-        <a href="{{ route('seeker.referrals') }}" title="Referral decisions" class="nav-item {{ $isActive('seeker.referrals') ? 'active' : '' }}"><i class="fas fa-share-nodes" aria-hidden="true"></i><span class="nav-text">Referral decisions</span></a>
+        <a href="{{ route('seeker.requests') }}" title="Request history" class="nav-item {{ $isActive('seeker.requests') ? 'active' : '' }}"><x-ui-icon name="clipboard"  /><span class="nav-text">Request history</span></a>
+        <a href="{{ route('seeker.privacy') }}" title="Privacy and consent" class="nav-item {{ $isActive('seeker.privacy') ? 'active' : '' }}"><x-ui-icon name="role"  /><span class="nav-text">Privacy and consent</span></a>
+        <a href="{{ route('seeker.referrals') }}" title="Referral decisions" class="nav-item {{ $isActive('seeker.referrals') ? 'active' : '' }}"><x-ui-icon name="share"  /><span class="nav-text">Referral decisions</span></a>
         <a href="{{ route('session.history') }}"
            class="nav-item {{ $isActive('session.history') ? 'active' : '' }}">
-            <i class="fas fa-list-ul"></i><span class="nav-text">My Sessions</span>
+            <x-ui-icon name="list"  /><span class="nav-text">My Sessions</span>
             @if($badgeSessions > 0)
                 <span class="nav-badge">{{ $badgeSessions }}</span>
             @endif
@@ -76,28 +76,28 @@
         <div class="nav-section">Resources</div>
         <a href="{{ route('selfhelp') }}"
            class="nav-item {{ $anyActive(['selfhelp*']) ? 'active' : '' }}">
-            <i class="fas fa-heart"></i><span class="nav-text">Self-Help</span>
+            <x-ui-icon name="heart"  /><span class="nav-text">Self-Help</span>
         </a>
         <a href="{{ route('emergency') }}"
            class="nav-item {{ $isActive('emergency') ? 'active' : '' }}">
-            <i class="fas fa-exclamation-triangle"></i><span class="nav-text">Emergency</span>
+            <x-ui-icon name="warning"  /><span class="nav-text">Emergency</span>
         </a>
 
         <div class="nav-section">Account</div>
         <a href="{{ route('notifications') }}"
            class="nav-item {{ $anyActive(['notifications*']) ? 'active' : '' }}">
-            <i class="fas fa-bell"></i><span class="nav-text">Notifications</span>
+            <x-ui-icon name="bell"  /><span class="nav-text">Notifications</span>
             @if($badgeNotifications > 0)
                 <span class="nav-badge" id="notificationBadge">{{ $badgeNotifications }}</span>
             @endif
         </a>
         <a href="{{ route('profile.edit') }}"
            class="nav-item {{ $anyActive(['profile*']) ? 'active' : '' }}">
-            <i class="fas fa-user-circle"></i><span class="nav-text">Profile</span>
+            <x-ui-icon name="user"  /><span class="nav-text">Profile</span>
         </a>
         <a href="{{ route('settings') }}"
            class="nav-item {{ $anyActive(['settings*']) ? 'active' : '' }}">
-            <i class="fas fa-cog"></i><span class="nav-text">Settings</span>
+            <x-ui-icon name="settings"  /><span class="nav-text">Settings</span>
         </a>
     </nav>
 
@@ -112,11 +112,11 @@
             </div>
             <div class="user-info">
                 <div class="user-name">{{ $userName }}</div>
-                <div class="user-role"><i class="fas fa-circle"></i>{{ $role }}</div>
+                <div class="user-role"><x-ui-icon name="circle"  />{{ $role }}</div>
             </div>
         </a>
         <a href="{{ route('profile.edit') }}" class="view-profile">
-            <i class="fas fa-user-edit"></i> View Profile &amp; Settings
+            <x-ui-icon name="edit"  /> View Profile &amp; Settings
         </a>
         <form method="POST" action="{{ route('logout') }}"
               data-confirm="Log out?"
@@ -125,7 +125,7 @@
               data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
             @csrf
             <button type="submit" class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i><span class="logout-text">Log out</span>
+                <x-ui-icon name="logout"  /><span class="logout-text">Log out</span>
             </button>
         </form>
     </div>
@@ -143,28 +143,28 @@
     <a href="{{ route('seeker.dashboard') }}{{ $dashboardTabs ? '#home' : '' }}"
        class="nav-item {{ $isActive('seeker.dashboard') ? 'active' : '' }}"
        @if($dashboardTabs) data-tab="home" @endif>
-        <i class="fas fa-home"></i>
+        <x-ui-icon name="home"  />
         <span>Home</span>
     </a>
     <a href="{{ route('seeker.dashboard') }}#dashboard"
        class="nav-item nav-item-dashboard {{ $isActive('seeker.dashboard') ? 'active' : '' }}"
        @if($dashboardTabs) data-tab="dashboard" @endif>
-        <i class="fas fa-chart-pie"></i>
+        <x-ui-icon name="pie-chart"  />
         <span>Stats</span>
     </a>
     <a href="{{ route('request.screening') }}"
        class="nav-item {{ $anyActive(['request.screening*', 'request.preferences*', 'request.matching*', 'request.voice-consent*']) ? 'active' : '' }}">
-        <i class="fas fa-comment-dots"></i>
+        <x-ui-icon name="message"  />
         <span>Support</span>
     </a>
     <a href="{{ route('session.history') }}"
        class="nav-item {{ $isActive('session.history') ? 'active' : '' }}">
-        <i class="fas fa-list-ul"></i>
+        <x-ui-icon name="list"  />
         <span>Sessions</span>
     </a>
     <a href="{{ route('selfhelp') }}"
        class="nav-item {{ $isActive('selfhelp') ? 'active' : '' }}">
-        <i class="fas fa-heart"></i>
+        <x-ui-icon name="heart"  />
         <span>Wellness</span>
     </a>
 </nav>

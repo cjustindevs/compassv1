@@ -1,3 +1,4 @@
+import { uiIcon } from './ui-icon';
 /**
  * Real-time notifications for the Helper workspace.
  *
@@ -125,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <p style="margin:4px 0 0;font-size:13px;color:${getThemeColor('--text-secondary', '#6B7280')};line-height:1.45;">${escapeHtml(message)}</p>
                 ${safePath(link, '') ? `<a href="${escapeHtml(safePath(link, ''))}" style="display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:#04A052;text-decoration:none;">View Cases →</a>` : ''}
             </div>
-            <button type="button" style="background:none;border:none;color:${getThemeColor('--text-muted', '#9CA3AF')};font-size:14px;cursor:pointer;padding:2px;" aria-label="Dismiss"><i class="fas fa-xmark" aria-hidden="true"></i></button>
+            <button type="button" style="background:none;border:none;color:${getThemeColor('--text-muted', '#9CA3AF')};font-size:14px;cursor:pointer;padding:2px;" aria-label="Dismiss">${uiIcon('close', '')}</button>
         `;
 
         toast.querySelector('button').addEventListener('click', () => dismiss(toast));
