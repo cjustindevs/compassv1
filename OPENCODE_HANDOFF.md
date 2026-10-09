@@ -274,3 +274,89 @@ phone (480px/375px); exercise the Date Range picker, long table rows, empty stat
 read/archive actions, report downloads and live readiness/availability changes.
 Publish only after an explicit push request, with a reviewed task-specific file
 list. A GitHub push alone does not establish successful Render deployment.
+
+
+## Administrator refinement (October 9, 2026)
+
+Delivery branch: `deploy` on `origin`. Check the latest branch commit for publication
+status; Render deployment and browser verification require separate confirmation.
+Scope: Administrator Dashboard, Users, Roles & Permissions, Audit Logs, Reports,
+and requested navigation removals. No migration or dependency is needed.
+
+- Dashboard now has three real account KPIs (total, active/enabled, unverified)
+  and one recent administrative activity table with actors and Philippine Time.
+  Removed case overview/definitions/categories and all three old bottom panels:
+  User Growth, Infrastructure monitoring, Access and security. The Dashboard no
+  longer invokes DashboardOverview or queries session totals/growth series.
+  Existing reporting data and other roles' dashboards are unchanged.
+- Users now distinguishes account Active/Inactive from Helper availability and
+  email verification. Search, role/status filtering, and 25-row pagination are
+  backend-driven; visible-row selection and existing creation/import-preview
+  controls are retained. Deactivate is visible for active accounts other than the
+  signed-in administrator, opens the existing confirmation dialog, and requires
+  confirm_deactivation=1 in the POST body. The UI blocks repeated submissions.
+- Deactivation retains accounts/profiles/history. It locks administrator rows in
+  deterministic order, checks the acting administrator again, prevents self/final
+  administrator deactivation, and preserves existing Helper assignment,
+  documentation, referral, and emergency handoff restrictions. Repeated confirmed
+  requests are idempotent. AuditLogger now accepts an optional target; deactivation
+  records actor, target account, timestamp and success in the existing immutable
+  audit structure. No reactivation feature was added. Existing login credentials
+  require is_active=true and EnsureActiveAccount blocks inactive authenticated users.
+- Roles & Permissions is a read-only six-role summary using User::ROLE_LABELS and
+  registered role middleware for actual operations. Controller restrictions were
+  inspected: Moderator emergency resolution is prohibited despite a legacy route.
+  Ownership, Adviser scope, readiness, consent and workflow remain authoritative.
+  Removed the fake local permission switch/duplicate/save UI and its draft JS.
+- Removed Administrator Resource Library and Areas of Concern navigation. Retired
+  /admin/resource-library route; shared self-help resources/bookmarks and concern
+  management routes/data remain available under their existing rules. The old
+  admin-only resource controller/view are unregistered legacy files, not a new
+  access path. Historical resource audit events remain retained/searchable.
+- Audit table wraps long actors/details, retains protected clinical narrative
+  masking and append-only events, shows target User references when recorded,
+  paginates stably, and displays full Philippine Time timestamps. Today filtering
+  now uses Manila midnight converted to UTC. Added Helper/Seeker actor filters.
+- Reports reuse RoleActivityReport queries, real calculations, validated period/
+  status/priority filters and existing 15-row per-table pagination. A new view-only
+  component (components/admin/activity-report.blade.php) groups headline totals,
+  additional measures, distributions, and detailed tables in expandable sections.
+  The existing report catalog and its metadata previews/filters remain separate
+  from period activity. Removed the unimplemented New Report generator dialog;
+  catalog exports were already unavailable and remain clearly labelled. No new
+  reporting backend or fake files were introduced. Catalog times use Manila.
+- Typography uses existing Inter with system fallbacks. Administrator-only CSS
+  improves cards/tables/controls and layouts at 768/480px with contained table
+  scrolling, 16px mobile side padding, and visible actions. CSS/JS asset links are
+  cache-versioned. Global header searches retain applicable filters.
+
+Validation: 110 tests passed (889 assertions), covering tests/Feature/Admin,
+AdminSidebarParityTest, SystemCorrectionsTest, RoleReportsNavigationTest,
+HelperRefinementTest, AdviserRefinementTest, and ModeratorRefinementTest. New
+AdminRefinementTest covers live account totals without case overview queries,
+backend directory filters/pagination, confirmation/idempotence/audit history,
+self/final administrator safety, Helper handoff/history retention, cross-role
+access denial, inactive login/access, actual permission summaries, Manila date
+boundaries and filtered report pagination. Existing expectations were updated only
+for requested removals/status labels/timezone behavior.
+
+Browser surfaces were unavailable in this session. Desktop/tablet/mobile visual
+verification and browser-console inspection are pending; do not claim they were
+completed. Manually check the five Administrator pages at desktop, 768px and
+375/480px, especially long tables, pagination, permission role selection, catalog
+filters/preview, and deactivation dialog/error/success states.
+
+Run regression tests in the existing isolated test database:
+
+```powershell
+& 'C:\xampp\php\php.exe' artisan test tests/Feature/Admin tests/Feature/AdminSidebarParityTest.php tests/Feature/SystemCorrectionsTest.php tests/Feature/RoleReportsNavigationTest.php tests/Feature/HelperRefinementTest.php tests/Feature/AdviserRefinementTest.php tests/Feature/ModeratorRefinementTest.php
+```
+
+Do not include unrelated pre-existing changes in Dockerfile, config/mail.php,
+resources/views/adviser/emergency-detail.blade.php or storage/tools/pdf-reader
+when committing. Push only after an explicit request; a GitHub push does not
+establish successful Render deployment.
+
+Final checks: PHP syntax, JavaScript syntax, PostCSS parsing and scoped Git
+whitespace checks passed. Follow-up render/data checks passed (3 tests, 29
+assertions) after the final table accessibility and dialog back-navigation fixes.

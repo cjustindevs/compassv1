@@ -16,19 +16,30 @@ class UserController extends Controller
 {
     public function index(Request $request): View
     {
+        $filters = $request->validate([
+            'q' => 'nullable|string|max:120',
+            'role' => 'nullable|in:'.implode(',', array_keys(User::ROLE_LABELS)),
+            'status' => 'nullable|in:active,inactive',
+        ]);
         $users = User::query()
-            ->with('helper')
+            ->when($filters['q'] ?? null, fn ($query, $search) => $query->where(fn ($q) => $q
+                ->whereRaw('LOWER(name) LIKE ?', ['%'.Str::lower(trim($search)).'%'])
+                ->orWhereRaw('LOWER(email) LIKE ?', ['%'.Str::lower(trim($search)).'%'])))
+            ->when($filters['role'] ?? null, fn ($q, $role) => $q->where('role', $role))
+            ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('is_active', $status === 'active'))
             ->latest()
-            ->get()
-            ->map(fn (User $user) => $this->toDirectoryUser($user));
+            ->orderByDesc('id')
+            ->paginate(25)->withQueryString()
+            ->through(fn (User $user) => $this->toDirectoryUser($user));
 
         return view('admin.users.index', [
             'admin' => $request->user(),
             'users' => $users,
             'roleOptions' => User::ROLE_LABELS,
+            'filters' => $filters,
             'userSummary' => [
                 'registered' => User::count(),
-                'pendingInvitations' => User::whereNull('email_verified_at')->count(),
+                'unverified' => User::whereNull('email_verified_at')->count(),
             ],
         ]);
     }
@@ -80,13 +91,21 @@ class UserController extends Controller
     /**
      * @return array<string, mixed>
      */
-    public function deactivate(Request $request, User $user): RedirectResponse
+    public function deactivate(Request $request, User $user, AuditLogger $auditLogger): RedirectResponse
     {
         abort_unless($request->user()?->role==='admin' && $request->user()->is_active,403);
         abort_if($request->user()->id===$user->id,403,'You cannot deactivate your own account.');
-        DB::transaction(function()use($user){
+        $request->validate(['confirm_deactivation' => 'required|accepted']);
+        DB::transaction(function()use($user, $request, $auditLogger){
+            // Lock administrators in a consistent order so concurrent requests
+            // cannot remove the final active administrator or act as an inactive one.
+            $administrators = User::where('role', 'admin')->orderBy('id')->lockForUpdate()->get();
+            abort_unless($administrators->firstWhere('id', $request->user()->id)?->is_active, 403);
             $user=User::lockForUpdate()->findOrFail($user->id);
             if(!$user->is_active)return;
+            if ($user->role === 'admin' && $administrators->where('is_active', true)->count() <= 1) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['account' => 'The last active administrator cannot be deactivated.']);
+            }
             if($helper=$user->helper){
                 $helper=\App\Models\Helper::lockForUpdate()->findOrFail($helper->id);
                 $pendingDocumentation=$helper->sessions()->whereNotNull('start_time')->whereIn('session_status',['completed','evaluated','cancelled','no_show'])->where(fn($q)=>$q->whereNull('documentation_status')->orWhere('documentation_status','!=','submitted'))->exists();
@@ -95,16 +114,14 @@ class UserController extends Controller
                 if($helper->activeSessions()->exists() || $pendingDocumentation || $pendingReferral || $pendingEmergency)throw \Illuminate\Validation\ValidationException::withMessages(['account'=>'This Helper has an active assignment or pending documentation, referral, or emergency obligation. Complete or authorize a handoff before deactivation.']);
             }
             $user->update(['is_active'=>false]);
-            \App\Services\SupportAudit::record('account_deactivated',$user);
+            $auditLogger->record($request->user(), 'account_deactivated', 'users', 'Account deactivated: '.$user->name, $request, $user);
         });
         return back()->with('success','Account deactivated.');
     }
 
     private function toDirectoryUser(User $user): array
     {
-        $status = !$user->is_active ? 'offline' : ($user->role === 'helper'
-            ? ($user->helper?->status ?? 'offline')
-            : ($user->email_verified_at ? 'available' : 'offline'));
+        $status = $user->is_active ? 'active' : 'inactive';
 
         return [
             'id' => (string) $user->id,
@@ -112,7 +129,7 @@ class UserController extends Controller
             'email' => $user->email,
             'role' => $user->role,
             'roleLabel' => User::ROLE_LABELS[$user->role] ?? Str::headline($user->role),
-            'status' => in_array($status, ['available', 'busy', 'offline'], true) ? $status : 'offline',
+            'status' => $status,
             'statusLabel' => Str::headline($status),
             'joined' => $user->created_at?->format('M Y') ?? '—',
             'avatarUrl' => $user->avatar_path ? asset($user->avatar_path) : null,

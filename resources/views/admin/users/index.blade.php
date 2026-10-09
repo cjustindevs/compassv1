@@ -3,7 +3,9 @@
     page-title="Users"
     page-subtitle="Account directory and access"
     active-nav="users"
-    search-placeholder="Search sessions, helpers, resources, users..."
+    search-placeholder="Search user accounts..."
+    :search-query="$filters['q'] ?? ''"
+    :search-action="route('admin.users')"
     :admin="$admin"
 >
     <nav class="admin-breadcrumb" aria-label="Breadcrumb">
@@ -20,7 +22,7 @@
             <p>
                 {{ number_format($userSummary['registered']) }} registered {{ Str::plural('user', $userSummary['registered']) }}
                 <span aria-hidden="true">·</span>
-                {{ number_format($userSummary['pendingInvitations']) }} pending {{ Str::plural('invitation', $userSummary['pendingInvitations']) }}
+                {{ number_format($userSummary['unverified']) }} {{ Str::plural('account', $userSummary['unverified']) }} awaiting email verification
             </p>
         </div>
 
@@ -36,6 +38,8 @@
         </div>
     </header>
 
+    @foreach(['q','role','status'] as $filter) @error($filter)<div class="admin-flash" role="alert">{{ $message }}</div>@enderror @endforeach
+    @error('confirm_deactivation')<div class="admin-flash" role="alert">{{ $message }}</div>@enderror
     @error('account')<div class="admin-flash" role="alert">{{ $message }}</div>@enderror
     @if (session('success'))
         <div class="admin-flash admin-flash-success" role="status">
@@ -46,34 +50,37 @@
 
     <div class="admin-flash admin-flash-info" data-users-feedback role="status" hidden></div>
 
-    <section class="directory-card" aria-labelledby="directory-title" data-user-directory>
+    <section class="directory-card" aria-labelledby="directory-title" data-user-directory data-server-directory>
         <header class="directory-header">
             <div>
                 <h2 id="directory-title">Directory</h2>
                 <p class="selection-summary" data-selection-summary aria-live="polite">No users selected</p>
             </div>
 
-            <div class="directory-controls">
+            <form method="GET" action="{{ route('admin.users') }}" class="directory-controls">
                 <label class="directory-search" for="directory-search">
                     <x-admin.icon name="search" :size="18" />
                     <span class="sr-only">Search directory</span>
-                    <input id="directory-search" type="search" placeholder="Search..." autocomplete="off" data-directory-search>
+                    <input id="directory-search" name="q" value="{{ $filters['q'] ?? '' }}" maxlength="120" type="search" placeholder="Name or email..." autocomplete="off" data-directory-search>
                 </label>
 
                 <label class="role-filter" for="directory-role-filter">
                     <span class="sr-only">Filter by role</span>
-                    <select id="directory-role-filter" data-role-filter>
+                    <select id="directory-role-filter" name="role" data-role-filter>
                         <option value="">All roles</option>
                         @foreach ($roleOptions as $role => $label)
-                            <option value="{{ $role }}">{{ $label }}</option>
+                            <option value="{{ $role }}" @selected(($filters['role'] ?? '') === $role)>{{ $label }}</option>
                         @endforeach
                     </select>
                     <x-admin.icon name="chevron-down" :size="15" />
                 </label>
-            </div>
+                <label class="role-filter"><span class="sr-only">Account status</span><select id="directory-status-filter" name="status"><option value="">All account statuses</option><option value="active" @selected(($filters['status'] ?? '') === 'active')>Active</option><option value="inactive" @selected(($filters['status'] ?? '') === 'inactive')>Inactive</option></select></label>
+                <button class="admin-button admin-button-primary" type="submit">Search</button>
+                <a class="admin-text-link" href="{{ route('admin.users') }}">Reset</a>
+            </form>
         </header>
 
-        <div class="user-table-shell">
+        <div class="user-table-shell" tabindex="0" role="region" aria-label="User accounts">
             <table class="user-directory-table">
                 <thead>
                     <tr>
@@ -82,7 +89,7 @@
                         </th>
                         <th scope="col">Name</th>
                         <th scope="col">Role</th>
-                        <th scope="col">Status</th>
+                        <th scope="col">Account status</th>
                         <th scope="col">Joined</th>
                         <th class="actions-column" scope="col">Actions</th>
                     </tr>
@@ -123,6 +130,13 @@
                             <td><x-admin.user-status-badge :status="$user['status']" :label="$user['statusLabel']" /></td>
                             <td class="joined-cell">{{ $user['joined'] }}</td>
                             <td class="actions-column">
+                                @if ($user['status'] === 'active' && (string) $admin->id !== $user['id'])
+                                    <button class="admin-deactivate-button" type="button" data-deactivate-user data-deactivate-url="{{ route('admin.users.deactivate', $user['id']) }}" data-user-name="{{ $user['name'] }}" aria-label="Deactivate {{ $user['name'] }}">Deactivate user</button>
+                                @elseif ((string) $admin->id === $user['id'])
+                                    <span class="admin-account-note">Your account</span>
+                                @else
+                                    <span class="admin-account-note">Deactivated</span>
+                                @endif
                                 <div class="user-actions" data-user-actions>
                                     <button
                                         class="user-actions-trigger"
@@ -147,16 +161,7 @@
                                         <button type="button" role="menuitem" data-prepared-action="Reset password">
                                             <x-admin.icon name="key" :size="16" /> Reset password
                                         </button>
-                                        <button
-                                            class="danger-menu-item"
-                                            type="button"
-                                            role="menuitem"
-                                            data-deactivate-user
-                                            data-deactivate-url="{{ route('admin.users.deactivate',$user['id']) }}"
-                                            data-user-name="{{ $user['name'] }}"
-                                        >
-                                            <x-admin.icon name="user-minus" :size="16" /> Deactivate user
-                                        </button>
+
                                     </div>
                                 </div>
                             </td>
@@ -169,13 +174,14 @@
                                 <span></span>
                                 <strong>No users found</strong>
                                 <p>Try changing your search or role filter.</p>
-                                <button type="button" data-clear-directory-filters>Clear filters</button>
+                                <a href="{{ route('admin.users') }}">Clear filters</a>
                             </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
+        <footer class="admin-directory-pagination">{{ $users->links() }}</footer>
     </section>
 
     <x-admin.dialog
@@ -286,11 +292,11 @@
         size="small"
     >
         <div class="admin-dialog-body">
-            <p class="confirmation-copy">You are preparing to deactivate <strong data-deactivate-name>this user</strong>. They would no longer be able to sign in.</p>
+            <p class="confirmation-copy">You are preparing to deactivate <strong data-deactivate-name>this user</strong>. They will no longer be able to sign in. Existing records and history will be retained.</p>
         </div>
         <footer class="admin-dialog-footer">
             <button class="admin-button admin-button-secondary" type="button" data-dialog-close>Cancel</button>
-            <form method="POST" data-deactivate-form>@csrf<button class="admin-button admin-button-danger" type="submit">Confirm deactivation</button></form>
+            <form method="POST" data-deactivate-form>@csrf<input type="hidden" name="confirm_deactivation" value="1"><button class="admin-button admin-button-danger" type="submit">Confirm deactivation</button></form>
         </footer>
     </x-admin.dialog>
 </x-admin.layout>

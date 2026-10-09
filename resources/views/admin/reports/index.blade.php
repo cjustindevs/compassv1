@@ -1,9 +1,9 @@
 <x-admin.layout
     title="Reports"
     page-title="Reports"
-    page-subtitle="Administrative reporting and exports"
+    page-subtitle="Account and operational records"
     active-nav="reports"
-    search-placeholder="Search sessions, helpers, resources, users..."
+    search-placeholder="Search report catalog..."
     :search-query="$searchQuery"
     :search-action="route('admin.reports')"
     :admin="$admin"
@@ -16,22 +16,15 @@
         <header class="reports-page-heading">
             <div>
                 <h1>Reports</h1>
-                <p>Generate exports for the counseling office, university admin, or research team.</p>
+                <p>Review actual system activity, account totals, and operational records.</p>
             </div>
 
-            <div class="reports-page-actions">
-                <button class="admin-button admin-button-secondary" type="button" data-dialog-open="report-filters-dialog">
-                    <x-admin.icon name="filter" :size="17" />
-                    Filters
-                    <span class="report-filter-count" data-report-filter-count hidden>0</span>
-                </button>
-                <button class="admin-button admin-button-primary" type="button" data-dialog-open="new-report-dialog">
-                    <span aria-hidden="true">+</span> New report
-                </button>
-            </div>
         </header>
 
-        <x-role-activity-report :report="$roleReport" />
+        <x-admin.activity-report :report="$roleReport" />
+        <details class="admin-report-catalog" data-report-catalog @if($searchQuery !== '') open @endif>
+            <summary>Report catalog <span>Source summaries and available report actions</span></summary>
+            <div class="admin-catalog-heading"><p>Catalog totals cover all source records. Use the activity report above for period-filtered records.</p><button class="admin-button admin-button-secondary" type="button" data-dialog-open="report-filters-dialog">Catalog filters <span class="report-filter-count" data-report-filter-count hidden>0</span></button></div>
 
     @if ($loadFailed)
             <section class="reports-state" role="alert">
@@ -69,6 +62,7 @@
                 <span data-report-toast-message></span>
             </div>
         @endif
+        </details>
     </section>
 
     @unless ($loadFailed)
@@ -118,52 +112,6 @@
         </x-admin.dialog>
 
         <x-admin.dialog
-            id="new-report-dialog"
-            title="New report"
-            description="Choose a predefined report and date range."
-        >
-            <form data-new-report-form>
-                <div class="admin-dialog-body">
-                    <label class="admin-field">
-                        <span>Report type</span>
-                        <select data-new-report-type>
-                            @foreach ($reports as $report)
-                                <option value="{{ $report['id'] }}">{{ $report['title'] }}</option>
-                            @endforeach
-                        </select>
-                    </label>
-
-                    <div class="form-grid form-grid-two">
-                        <label class="admin-field">
-                            <span>Start date</span>
-                            <input type="date" data-new-report-start>
-                        </label>
-                        <label class="admin-field">
-                            <span>End date</span>
-                            <input type="date" data-new-report-end>
-                        </label>
-                    </div>
-
-                    <label class="admin-field">
-                        <span>Output format</span>
-                        <select disabled aria-describedby="report-format-note">
-                            <option>No secure formats configured</option>
-                        </select>
-                    </label>
-
-                    <div class="report-operation-note" id="report-format-note" role="note">
-
-                        <p>PDF, CSV, and XLSX generation are not installed. No report will be generated or stored from this dialog.</p>
-                    </div>
-                </div>
-                <footer class="admin-dialog-footer">
-                    <button class="admin-button admin-button-secondary" type="button" data-dialog-close>Cancel</button>
-                    <button class="admin-button admin-button-primary" type="submit" disabled>Generate report</button>
-                </footer>
-            </form>
-        </x-admin.dialog>
-
-        <x-admin.dialog
             id="report-preview-dialog"
             title="Report preview"
             description="Catalog metadata and source readiness."
@@ -191,7 +139,7 @@
 
                 <div class="report-operation-note" role="note">
 
-                    <p>This preview intentionally shows metadata only. Detailed aggregated report content will be connected through a protected generator.</p>
+                    <p>This preview intentionally shows metadata only. Use the activity report above for filtered operational records. Catalog exports are not configured.</p>
                 </div>
             </div>
             <footer class="admin-dialog-footer">

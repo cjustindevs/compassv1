@@ -110,7 +110,6 @@ class AdminSidebarParityTest extends TestCase
             'admin.dashboard',
             'admin.users',
             'admin.roles-permissions',
-            'admin.resource-library',
             'admin.audit-logs',
             'admin.backup-restore',
             'admin.system-health',

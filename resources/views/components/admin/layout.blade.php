@@ -49,7 +49,7 @@
         })();
     </script>
 
-    <link rel="stylesheet" href="{{ asset('css/admin-dashboard.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/admin-dashboard.css') }}?v={{ filemtime(public_path('css/admin-dashboard.css')) }}">
 </head>
 <body>
     <div class="admin-app" data-admin-app>
@@ -73,6 +73,6 @@
         </div>
     </div>
 
-    <script src="{{ asset('js/admin-dashboard.js') }}" defer></script>
+    <script src="{{ asset('js/admin-dashboard.js') }}?v={{ filemtime(public_path('js/admin-dashboard.js')) }}" defer></script>
 </body>
 </html>

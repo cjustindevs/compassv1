@@ -150,8 +150,11 @@
             syncSelection();
         };
 
-        search.addEventListener('input', filterRows);
-        roleFilter.addEventListener('change', filterRows);
+        const serverDirectory = directory.hasAttribute('data-server-directory');
+        if (!serverDirectory) {
+            search.addEventListener('input', filterRows);
+            roleFilter.addEventListener('change', filterRows);
+        }
         directory.querySelector('[data-clear-directory-filters]')?.addEventListener('click', () => {
             search.value = '';
             roleFilter.value = '';
@@ -175,7 +178,8 @@
             syncSelection();
         });
 
-        filterRows();
+        if (serverDirectory) syncSelection();
+        else filterRows();
     }
 
     const actionMenus = [...document.querySelectorAll('[data-user-actions]')];
@@ -245,12 +249,30 @@
     const deactivateDialog = document.getElementById('deactivate-user-dialog');
     document.querySelectorAll('[data-deactivate-user]').forEach((button) => {
         button.addEventListener('click', () => {
-            const trigger = button.closest('[data-user-actions]')?.querySelector('[data-user-actions-trigger]');
+            const trigger = button;
             closeActionMenus();
             deactivateDialog.querySelector('[data-deactivate-name]').textContent = button.dataset.userName;
             deactivateDialog.querySelector('[data-deactivate-form]').action = button.dataset.deactivateUrl;
             openDialog(deactivateDialog, trigger);
         });
+    });
+
+    deactivateDialog?.querySelector('[data-deactivate-form]')?.addEventListener('submit', (event) => {
+        const form = event.currentTarget;
+        if (form.dataset.submitting === 'true') { event.preventDefault(); return; }
+        form.dataset.submitting = 'true';
+        const button = form.querySelector('button[type="submit"]');
+        button.disabled = true;
+        button.textContent = 'Deactivating...';
+    });
+
+    window.addEventListener('pageshow', () => {
+        const form = deactivateDialog?.querySelector('[data-deactivate-form]');
+        if (!form) return;
+        delete form.dataset.submitting;
+        const button = form.querySelector('button[type="submit"]');
+        button.disabled = false;
+        button.textContent = 'Confirm deactivation';
     });
 
     const csvInput = document.querySelector('[data-csv-input]');
@@ -281,165 +303,6 @@
         document.getElementById('import-users-dialog')?.close();
         announce('CSV validated locally. Preview and import submission require the future reviewed backend workflow.');
     });
-
-    const permissionsPage = document.querySelector('[data-permissions-page]');
-    if (permissionsPage) {
-        const matrix = permissionsPage.querySelector('[data-permission-matrix]');
-        const switches = [...matrix.querySelectorAll('[data-permission-switch]')];
-        const saveButton = permissionsPage.querySelector('[data-save-permissions]');
-        const resetButton = permissionsPage.querySelector('[data-reset-permissions]');
-        const saveState = permissionsPage.querySelector('[data-permission-save-state]');
-        const toast = permissionsPage.querySelector('[data-rbac-toast]');
-        const toastMessage = permissionsPage.querySelector('[data-rbac-toast-message]');
-        const resetDialog = document.getElementById('reset-permissions-dialog');
-        const duplicateDialog = document.getElementById('duplicate-role-dialog');
-        const duplicateForm = permissionsPage.querySelector('[data-duplicate-role-form]');
-        const duplicateName = permissionsPage.querySelector('[data-duplicate-role-name]');
-        const duplicateError = permissionsPage.querySelector('[data-duplicate-role-error]');
-        const dependentActions = new Set(['create', 'update', 'delete', 'approve', 'export']);
-        const localRoleDrafts = new Map();
-        let toastTimer = null;
-
-        const showPermissionToast = (message, tone = 'success') => {
-            window.clearTimeout(toastTimer);
-            toastMessage.textContent = message;
-            toast.classList.toggle('is-info', tone === 'info');
-            toast.classList.toggle('is-warning', tone === 'warning');
-            toast.hidden = false;
-            toastTimer = window.setTimeout(() => {
-                toast.hidden = true;
-            }, 5000);
-        };
-
-        const setSwitch = (permissionSwitch, checked) => {
-            permissionSwitch.setAttribute('aria-checked', String(checked));
-            permissionSwitch.classList.toggle('is-enabled', checked);
-        };
-
-        const readMatrixState = () => {
-            const state = {};
-
-            switches.forEach((permissionSwitch) => {
-                const category = permissionSwitch.dataset.category;
-                state[category] ??= {};
-                state[category][permissionSwitch.dataset.action] = permissionSwitch.getAttribute('aria-checked') === 'true';
-            });
-
-            return state;
-        };
-
-        const cloneState = (state) => JSON.parse(JSON.stringify(state));
-        const stateSignature = (state) => JSON.stringify(state);
-        let savedMatrixState = cloneState(readMatrixState());
-
-        const syncDirtyState = () => {
-            const dirty = stateSignature(readMatrixState()) !== stateSignature(savedMatrixState);
-            saveButton.disabled = !dirty;
-            resetButton.disabled = !dirty;
-            saveState.textContent = dirty ? 'Unsaved changes' : 'All changes saved';
-            saveState.classList.toggle('is-dirty', dirty);
-        };
-
-        const applyMatrixState = (state) => {
-            switches.forEach((permissionSwitch) => {
-                const checked = Boolean(state[permissionSwitch.dataset.category]?.[permissionSwitch.dataset.action]);
-                setSwitch(permissionSwitch, checked);
-            });
-        };
-
-        switches.forEach((permissionSwitch) => {
-            permissionSwitch.addEventListener('click', () => {
-                const category = permissionSwitch.dataset.category;
-                const action = permissionSwitch.dataset.action;
-                const currentlyEnabled = permissionSwitch.getAttribute('aria-checked') === 'true';
-                const categorySwitches = switches.filter((candidate) => candidate.dataset.category === category);
-
-                if (action === 'read' && currentlyEnabled) {
-                    const activeDependency = categorySwitches.some((candidate) => (
-                        dependentActions.has(candidate.dataset.action)
-                        && candidate.getAttribute('aria-checked') === 'true'
-                    ));
-
-                    if (activeDependency) {
-                        showPermissionToast('Read is required while another permission in this category is enabled.', 'warning');
-                        return;
-                    }
-                }
-
-                setSwitch(permissionSwitch, !currentlyEnabled);
-
-                if (!currentlyEnabled && dependentActions.has(action)) {
-                    const readSwitch = categorySwitches.find((candidate) => candidate.dataset.action === 'read');
-                    if (readSwitch) setSwitch(readSwitch, true);
-                }
-
-                syncDirtyState();
-            });
-        });
-
-        saveButton.addEventListener('click', () => {
-            if (saveButton.disabled) return;
-            savedMatrixState = cloneState(readMatrixState());
-            syncDirtyState();
-            showPermissionToast('Permissions updated successfully. The draft is saved locally pending RBAC backend integration.');
-        });
-
-        resetButton.addEventListener('click', () => {
-            if (!resetButton.disabled) openDialog(resetDialog, resetButton);
-        });
-
-        permissionsPage.querySelector('[data-confirm-permission-reset]')?.addEventListener('click', () => {
-            applyMatrixState(savedMatrixState);
-            syncDirtyState();
-            resetDialog.close();
-            showPermissionToast('Unsaved permission changes were reset.', 'info');
-        });
-
-        let existingRoles = [];
-        try {
-            existingRoles = JSON.parse(permissionsPage.dataset.existingRoles || '[]');
-        } catch {
-            existingRoles = [];
-        }
-        const knownRoleNames = new Set(existingRoles.map((role) => role.trim().toLowerCase()));
-
-        const setDuplicateError = (message = '') => {
-            duplicateError.textContent = message;
-            duplicateError.hidden = message === '';
-            duplicateName.setAttribute('aria-invalid', String(message !== ''));
-        };
-
-        duplicateName?.addEventListener('input', () => setDuplicateError());
-        duplicateForm?.addEventListener('submit', (event) => {
-            event.preventDefault();
-            const roleName = duplicateName.value.trim().replace(/\s+/g, ' ');
-
-            if (roleName === '') {
-                setDuplicateError('Enter a role name.');
-                duplicateName.focus();
-                return;
-            }
-
-            if (knownRoleNames.has(roleName.toLowerCase()) || localRoleDrafts.has(roleName.toLowerCase())) {
-                setDuplicateError('A role with this name already exists.');
-                duplicateName.focus();
-                return;
-            }
-
-            localRoleDrafts.set(roleName.toLowerCase(), cloneState(readMatrixState()));
-            duplicateDialog.close();
-            duplicateForm.reset();
-            setDuplicateError();
-            showPermissionToast(`${roleName} was duplicated as a local role draft.`, 'info');
-        });
-
-        duplicateDialog?.addEventListener('close', () => {
-            duplicateForm?.reset();
-            setDuplicateError();
-        });
-
-        syncDirtyState();
-    }
 
     const resourceLibrary = document.querySelector('[data-resource-library]');
     if (resourceLibrary) {
@@ -754,9 +617,13 @@
             filterReports();
         };
 
-        search?.addEventListener('input', filterReports);
+        search?.addEventListener('input', () => {
+            reportsPage.querySelector('[data-report-catalog]')?.setAttribute('open', '');
+            filterReports();
+        });
         filterForm?.addEventListener('submit', (event) => {
             event.preventDefault();
+            reportsPage.querySelector('[data-report-catalog]')?.setAttribute('open', '');
             filterReports();
             filterDialog?.close();
         });

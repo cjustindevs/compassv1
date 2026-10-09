@@ -66,12 +66,12 @@ class SystemCorrectionsTest extends TestCase {
  $h=Helper::create(['user_account_id'=>$u->id,'email'=>$u->email,'first_name'=>'Test','last_name'=>'Helper']);
  $seekerUser=User::factory()->create(['role'=>'seeker']);$seeker=\App\Models\HelpSeeker::create(['user_account_id'=>$seekerUser->id,'generated_alias'=>'SafeAlias']);
  \App\Models\Session::create(['helper_id'=>$h->id,'seeker_id'=>$seeker->id,'session_status'=>'active','start_time'=>now()]);
- $this->actingAs($admin)->post(route('admin.users.deactivate',$u))->assertSessionHasErrors('account');$this->assertTrue($u->fresh()->is_active);
+ $this->actingAs($admin)->post(route('admin.users.deactivate',$u),['confirm_deactivation'=>1])->assertSessionHasErrors('account');$this->assertTrue($u->fresh()->is_active);
  }
  public function test_admin_can_deactivate_account_without_obligations():void {
  $admin=User::factory()->create(['role'=>'admin','is_active'=>true]);$u=User::factory()->create(['role'=>'helper','is_active'=>true]);
  Helper::create(['user_account_id'=>$u->id,'email'=>$u->email,'first_name'=>'Test','last_name'=>'Helper']);
- $this->actingAs($admin)->post(route('admin.users.deactivate',$u))->assertSessionHasNoErrors();$this->assertFalse($u->fresh()->is_active);$this->assertDatabaseHas('audit_logs',['action'=>'account_deactivated']);
+ $this->actingAs($admin)->post(route('admin.users.deactivate',$u),['confirm_deactivation'=>1])->assertSessionHasNoErrors();$this->assertFalse($u->fresh()->is_active);$this->assertDatabaseHas('audit_logs',['action'=>'account_deactivated']);
  }
  public function test_emergency_is_separate_and_rejection_is_audited_without_resolution():void {
  \Illuminate\Support\Facades\Event::fake();

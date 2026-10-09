@@ -57,7 +57,7 @@ class UserManagementTest extends TestCase
             ->assertSee('Directory')
             ->assertSee('Maya Cordero')
             ->assertSee('maya.c@university.edu')
-            ->assertSee('Busy')
+            ->assertSee('Active')
             ->assertSee('Create user')
             ->assertSee('Import CSV')
             ->assertSee('aria-current="page"', false)

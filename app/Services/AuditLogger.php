@@ -25,7 +25,8 @@ class AuditLogger
         string $action,
         ?string $module = null,
         ?string $description = null,
-        ?Request $request = null
+        ?Request $request = null,
+        ?\Illuminate\Database\Eloquent\Model $target = null
     ): AuditLog {
         $request ??= request();
 
@@ -36,6 +37,11 @@ class AuditLogger
         $auditLog->description = $description;
         $auditLog->ip_address = $request->ip();
         $auditLog->user_agent = $request->userAgent();
+        if ($target) {
+            $auditLog->target_type = $target->getTable();
+            $auditLog->target_id = $target->getKey();
+            $auditLog->outcome = 'success';
+        }
         $auditLog->save();
 
         return $auditLog;

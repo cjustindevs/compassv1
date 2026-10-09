@@ -3,14 +3,14 @@
     'filtersApplied' => false,
 ])
 
-<div class="audit-table-shell">
+<div class="audit-table-shell" tabindex="0" role="region" aria-label="Audit records">
     <table class="audit-log-table">
         <thead>
             <tr>
                 <th scope="col">Actor</th>
                 <th scope="col">Action</th>
                 <th scope="col">Target</th>
-                <th scope="col">Time</th>
+                <th scope="col">Date (Philippine Time)</th>
             </tr>
         </thead>
         <tbody>
@@ -22,7 +22,7 @@
                     <td>
                         <span class="audit-action">{{ $log['action'] }}</span>
                     </td>
-                    <td class="audit-target-cell">{{ $log['target'] }}</td>
+                    <td class="audit-target-cell">@if($log['recordReference'])<strong class="admin-record-reference">{{ $log['recordReference'] }}</strong>@endif{{ $log['target'] }}</td>
                     <td class="audit-time-cell">
                         <time datetime="{{ $log['timestampIso'] }}" title="{{ $log['timestampTitle'] }}">
                             {{ $log['timeLabel'] }}

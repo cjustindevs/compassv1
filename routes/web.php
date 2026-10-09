@@ -4,7 +4,6 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BackupRestoreController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ReportController;
-use App\Http\Controllers\Admin\ResourceLibraryController;
 use App\Http\Controllers\Admin\RolePermissionController;
 use App\Http\Controllers\Admin\SystemHealthController;
 use App\Http\Controllers\Admin\UserController;
@@ -661,7 +660,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::post('/users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
     Route::get('/roles-permissions', RolePermissionController::class)->name('roles-permissions');
-    Route::get('/resource-library', ResourceLibraryController::class)->name('resource-library');
     Route::get('/audit-logs', AuditLogController::class)->name('audit-logs');
     Route::get('/backup-restore', BackupRestoreController::class)->name('backup-restore');
     Route::get('/system-health', SystemHealthController::class)->name('system-health');

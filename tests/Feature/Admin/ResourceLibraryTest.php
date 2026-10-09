@@ -12,68 +12,21 @@ class ResourceLibraryTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_is_redirected_to_the_shared_login(): void
+    public function test_retired_admin_resource_page_is_not_exposed(): void
     {
-        $this->get(route('admin.resource-library'))
-            ->assertRedirect(route('login'));
+        $this->get('/admin/resource-library')->assertNotFound();
+        foreach (['admin', 'helper', 'seeker'] as $role) {
+            $this->actingAs(User::factory()->create(['role' => $role]))->get('/admin/resource-library')->assertNotFound();
+        }
     }
 
-    public function test_non_administrator_cannot_access_the_resource_library(): void
+    public function test_shared_published_resources_remain_available(): void
     {
-        $helper = User::factory()->create(['role' => 'helper']);
-
-        $this->actingAs($helper)
-            ->get(route('admin.resource-library'))
-            ->assertForbidden();
-    }
-
-    public function test_administrator_can_browse_real_published_resources_and_bookmarks(): void
-    {
-        $administrator = User::factory()->create(['role' => 'admin']);
-        $grounding = $this->resource([
-            'title' => 'Grounding Techniques for Anxiety',
-            'description' => 'A practical grounding exercise.',
-            'category' => 'exercise',
-            'duration' => '6 min',
-            'tags' => ['anxiety', 'grounding'],
-        ]);
-        $sleep = $this->resource([
-            'title' => 'Sleep Hygiene Checklist',
-            'category' => 'article',
-            'duration' => '5 min',
-            'tags' => ['sleep', 'health'],
-        ]);
-        $unpublished = $this->resource([
-            'title' => 'Unreviewed Clinical Draft',
-            'is_published' => false,
-        ]);
-
-        UserSavedResource::create([
-            'user_id' => $administrator->id,
-            'resource_id' => $grounding->id,
-            'saved_at' => now(),
-        ]);
-
-        $response = $this->actingAs($administrator)
-            ->get(route('admin.resource-library'));
-
-        $response
-            ->assertOk()
-            ->assertSee('Resource library')
-            ->assertSee('Articles, videos, and exercises curated by the counseling team.')
-            ->assertSee('Search resources...')
-            ->assertSee('My bookmarks')
-            ->assertSee('Grounding Techniques for Anxiety')
-            ->assertSee('Sleep Hygiene Checklist')
-            ->assertDontSee($unpublished->title)
-            ->assertSee('data-resource-category="anxiety"', false)
-            ->assertSee('data-resource-type="exercise"', false)
-            ->assertSee('data-resource-bookmarked="true"', false)
-            ->assertSee('aria-current="page"', false)
-            ->assertSee(route('selfhelp.show', $grounding->id))
-            ->assertSee(route('selfhelp.save', $sleep->id))
-            ->assertSee(route('selfhelp.unsave', $grounding->id))
-            ->assertSee(route('admin.resource-library'));
+        $user = User::factory()->create(['role' => 'seeker']);
+        $published = $this->resource(['title' => 'Guided Grounding']);
+        $draft = $this->resource(['title' => 'Unpublished Draft', 'is_published' => false]);
+        $this->actingAs($user)->get(route('selfhelp'))->assertOk()->assertSee($published->title)->assertDontSee($draft->title);
+        $this->assertDatabaseCount('self_help_resources', 2);
     }
 
     public function test_existing_bookmark_endpoints_persist_admin_bookmarks(): void
@@ -100,18 +53,6 @@ class ResourceLibraryTest extends TestCase
             'user_id' => $administrator->id,
             'resource_id' => $resource->id,
         ]);
-    }
-
-    public function test_empty_library_renders_a_contained_empty_state(): void
-    {
-        $administrator = User::factory()->create(['role' => 'admin']);
-
-        $this->actingAs($administrator)
-            ->get(route('admin.resource-library'))
-            ->assertOk()
-            ->assertSee('No resources found')
-            ->assertSee('Try changing your search or filters.')
-            ->assertSee('Clear filters');
     }
 
     /**

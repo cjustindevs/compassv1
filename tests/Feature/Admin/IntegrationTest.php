@@ -14,7 +14,7 @@ class IntegrationTest extends TestCase {
     public function test_all_imported_pages_block_every_non_admin_role(): void {
         foreach(['seeker','helper','moderator','adviser','professional'] as $role) {
             $user=User::factory()->create(['role'=>$role]);
-            foreach(['dashboard','users','roles-permissions','resource-library','audit-logs','backup-restore','system-health','reports','settings'] as $page) $this->actingAs($user)->get(route('admin.'.$page))->assertForbidden();
+            foreach(['dashboard','users','roles-permissions','audit-logs','backup-restore','system-health','reports','settings'] as $page) $this->actingAs($user)->get(route('admin.'.$page))->assertForbidden();
         }
     }
     public function test_provisioning_creates_required_profiles_without_clinical_approval(): void {

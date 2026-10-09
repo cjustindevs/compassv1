@@ -38,25 +38,14 @@ class RolePermissionTest extends TestCase
         $response
             ->assertOk()
             ->assertSee('Roles &amp; Permissions', false)
-            ->assertSee('Role-based access control matrix')
-            ->assertSee('Duplicate role')
-            ->assertSee('Reset')
-            ->assertSee('Save')
-            ->assertSee('Current role')
-            ->assertSee('Administrator')
-            ->assertSee('Referral Access')
-            ->assertSee('Clinical Notes')
-            ->assertSee('Completed Cases')
-            ->assertSee('aria-current="page"', false)
-            ->assertSee('role="switch"', false)
-            ->assertSee('Toggle Read permission for Dashboard')
-            ->assertSee(route('admin.roles-permissions'));
-
-        $content = $response->getContent();
-
-        $this->assertSame(60, substr_count($content, 'role="switch"'));
-        $this->assertSame(9, substr_count($content, 'aria-checked="true"'));
-        $this->assertSame(51, substr_count($content, 'aria-checked="false"'));
+            ->assertSee('Existing role responsibilities and access rules.')
+            ->assertSee('Read-only summary')
+            ->assertSee('Deactivate accounts')
+            ->assertSee('Allowed in scope')
+            ->assertSee('Not allowed')
+            ->assertDontSee('role="switch"', false)
+            ->assertDontSee('Duplicate role');
+        foreach (User::ROLE_LABELS as $label) $response->assertSee($label);
     }
 
     public function test_permission_page_does_not_expose_an_unimplemented_save_endpoint(): void

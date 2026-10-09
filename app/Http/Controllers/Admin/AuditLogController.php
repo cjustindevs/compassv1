@@ -21,6 +21,8 @@ class AuditLogController extends Controller
         'moderator' => 'Moderator',
         'adviser' => 'Adviser',
         'professional' => 'Professional',
+        'helper' => 'Helper',
+        'seeker' => 'Help Seeker',
         'system' => 'System',
     ];
 
@@ -83,7 +85,7 @@ class AuditLogController extends Controller
      */
     private function realLogs(Request $request, array $filters): LengthAwarePaginator
     {
-        $query = AuditLog::query()->with('actor')->latest('created_at');
+        $query = AuditLog::query()->with('actor')->latest('created_at')->latest('id');
 
         $this->applySearch($query, $filters['search']);
         $this->applyActorFilter($query, $filters['actor']);
@@ -188,7 +190,7 @@ class AuditLogController extends Controller
     private function dateThreshold(string $date): CarbonImmutable
     {
         return match ($date) {
-            'today' => CarbonImmutable::now()->startOfDay(),
+            'today' => CarbonImmutable::now('Asia/Manila')->startOfDay()->utc(),
             '7-days' => CarbonImmutable::now()->subDays(7),
             default => CarbonImmutable::now()->subDays(30),
         };
@@ -209,6 +211,7 @@ class AuditLogController extends Controller
             'action' => $this->humanizeAction($log->action),
             'category' => $this->eventCategory($log->module, $log->action),
             'target' => $this->displayTarget($log),
+            'recordReference' => $log->target_type === 'users' && $log->target_id ? 'User #'.$log->target_id : null,
             'createdAt' => CarbonImmutable::instance($log->created_at),
         ]);
     }
@@ -291,15 +294,9 @@ class AuditLogController extends Controller
     private function formatRecord(array $record): array
     {
         /** @var CarbonImmutable $createdAt */
-        $createdAt = $record['createdAt'];
-        $today = CarbonImmutable::now()->startOfDay();
-
-        $record['timeLabel'] = match (true) {
-            $createdAt->greaterThanOrEqualTo($today) => $createdAt->format('h:i A'),
-            $createdAt->greaterThanOrEqualTo($today->subDay()) => 'yesterday',
-            default => $createdAt->format('M j, Y'),
-        };
-        $record['timestampTitle'] = $createdAt->format('F j, Y \a\t h:i A');
+        $createdAt = $record['createdAt']->timezone('Asia/Manila');
+        $record['timeLabel'] = $createdAt->format('M d, Y g:i A');
+        $record['timestampTitle'] = $createdAt->format('F j, Y \a\t h:i A').' (Philippine Time)';
         $record['timestampIso'] = $createdAt->toIso8601String();
 
         return $record;

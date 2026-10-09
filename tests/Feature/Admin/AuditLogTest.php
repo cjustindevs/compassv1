@@ -74,8 +74,8 @@ class AuditLogTest extends TestCase
             ->assertSee('moderator: Ivan Reyes')
             ->assertSee('Password reset')
             ->assertSee('helper: Rina A.')
-            ->assertSee('10:42 AM')
-            ->assertSee('August 14, 2026 at 10:42 AM');
+            ->assertSee('6:42 PM')
+            ->assertSee('August 14, 2026 at 06:42 PM');
     }
 
     public function test_real_search_actor_category_and_date_filters_work_together(): void

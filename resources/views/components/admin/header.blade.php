@@ -43,8 +43,14 @@
                 value="{{ $searchQuery }}"
                 placeholder="{{ $searchPlaceholder }}"
                 autocomplete="off"
+                maxlength="120"
                 data-admin-search
             >
+            @if(request()->routeIs('admin.reports', 'admin.audit-logs', 'admin.users'))
+                @foreach(['from','to','case_status','emergency_status','priority','helper_id','concern_id','referral_status','actor','category','date','per_page','role','status'] as $filter)
+                    @if(request()->filled($filter) && is_scalar(request($filter)))<input type="hidden" name="{{ $filter }}" value="{{ request($filter) }}">@endif
+                @endforeach
+            @endif
             <kbd aria-label="Keyboard shortcut: Command or Control K">⌘K</kbd>
         </form>
 

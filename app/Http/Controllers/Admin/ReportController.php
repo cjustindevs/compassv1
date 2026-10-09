@@ -51,7 +51,7 @@ class ReportController extends Controller
      */
     private function reportViewModel(array $report, array $capabilities): array
     {
-        $updatedAt = $report['updatedAt'] ?? null;
+        $updatedAt = isset($report['updatedAt']) ? $report['updatedAt']->copy()->timezone('Asia/Manila') : null;
         $category = in_array($report['category'] ?? null, [
             'sessions',
             'referrals',
