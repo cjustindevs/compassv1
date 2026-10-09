@@ -24,27 +24,22 @@
 .compass-ui .landing-page .landing-mobile-menu a { padding: 12px; min-height: 44px; border-radius: 8px; color: var(--landing-ink); }
 .compass-ui .landing-page .landing-mobile-menu a:hover { background: var(--landing-sage); }
 .compass-ui .landing-page .landing-desktop-nav a:hover, .compass-ui .landing-page .landing-sign-in:hover { color: var(--compass-green-dark); }
-.compass-ui .landing-page .landing-hero { padding-block: 58px 64px; background: radial-gradient(ellipse at 90% 20%, #eaf3e3 0, transparent 58%), var(--landing-paper); overflow: hidden; }
-.compass-ui .landing-page .landing-hero-grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); gap: 72px; align-items: center; }
+.compass-ui .landing-page .landing-hero { padding-block: 84px 64px; background: #edf4e9; }
 .compass-ui .landing-page .landing-eyebrow { margin: 0 0 20px; color: var(--compass-green-dark); font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
 .compass-ui .landing-page .landing-hero-copy .landing-eyebrow { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; letter-spacing: .06em; }
 .compass-ui .landing-page .landing-hero-copy .landing-eyebrow span { border-left: 1px solid #afc7b5; padding-left: 16px; color: var(--landing-muted); font-weight: 500; letter-spacing: 0; text-transform: none; }
-.compass-ui .landing-page .landing-title { font-size: clamp(48px, 5.2vw, 76px); line-height: 1.04; letter-spacing: -.065em; font-weight: 600; color: var(--landing-ink); margin: 0; }
+.compass-ui .landing-page .landing-title { font-size: clamp(64px, 7.5vw, 108px); line-height: 1.06; letter-spacing: -.06em; font-weight: 600; color: var(--landing-ink); margin: 0; }
 .compass-ui .landing-page .landing-title span { color: #178c50; }
-.compass-ui .landing-page .landing-lead { margin: 28px 0 0; max-width: 460px; font-size: 16px; line-height: 1.8; color: var(--landing-muted); }
-.compass-ui .landing-page .landing-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.compass-ui .landing-page .landing-hero-bottom { display: flex; align-items: center; justify-content: space-between; gap: 40px; border-top: 1px solid #cbdccb; margin-top: 48px; padding-top: 32px; }
+.compass-ui .landing-page .landing-hero-start { flex-shrink: 0; }
+.compass-ui .landing-page .landing-lead { margin: 0; max-width: 510px; font-size: 16px; line-height: 1.8; color: var(--landing-muted); }
+.compass-ui .landing-page .landing-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 0; }
 .compass-ui .landing-page .landing-actions .btn-primary { min-height: 50px; padding: 14px 22px; background: var(--landing-ink); border-color: var(--landing-ink); box-shadow: 0 5px 14px rgb(24 61 46 / 10%); }
 .compass-ui .landing-page .landing-actions .btn-primary:hover { background: #275942; border-color: #275942; }
 .compass-ui .landing-page .landing-actions .btn-outline { min-height: 50px; padding: 14px 22px; border-color: #c9d7c9; background: transparent; color: var(--landing-ink); }
 .compass-ui .landing-page .landing-actions .btn-outline:hover { background: white; border-color: #8fab96; }
 .compass-ui .landing-page .landing-trust { display: flex; flex-wrap: wrap; gap: 8px 18px; list-style: none; padding: 0; margin: 18px 0 0; color: var(--landing-muted); font-size: 12px; }
 .compass-ui .landing-page .landing-trust li + li { border-left: 1px solid #c9d7c9; padding-left: 18px; }
-.compass-ui .landing-page .landing-hero-art { position: relative; margin: 0; min-width: 0; }
-.compass-ui .landing-page .landing-art-frame { aspect-ratio: 1 / 1.07; overflow: hidden; border-radius: 48% 48% 18px 18px; background: #e3ecd9; border: 8px solid white; box-shadow: 0 16px 45px rgb(40 70 46 / 8%); }
-.compass-ui .landing-page .landing-art-frame img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 46%; display: block; }
-.compass-ui .landing-page .landing-hero-art figcaption { position: absolute; left: 24px; right: 24px; bottom: 22px; padding: 18px 20px; border: 1px solid rgb(255 255 255 / 80%); border-radius: 12px; background: rgb(255 255 255 / 96%); box-shadow: 0 8px 24px rgb(24 61 46 / 8%); }
-.compass-ui .landing-page .landing-hero-art figcaption span { display: block; font-size: 15px; font-weight: 600; color: var(--landing-ink); }
-.compass-ui .landing-page .landing-hero-art figcaption p { margin-top: 5px; font-size: 12px; color: var(--landing-muted); line-height: 1.6; }
 .compass-ui .landing-page .landing-reassurance { border-block: 1px solid var(--landing-border); background: white; }
 .compass-ui .landing-page .landing-reassurance-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding-block: 28px; }
 .compass-ui .landing-page .landing-reassurance-grid > div { padding-inline: 28px; border-left: 1px solid var(--landing-border); }
@@ -99,7 +94,6 @@
 .compass-ui .landing-page .landing-copyright { max-width: none !important; padding-top: 24px; margin-top: 36px !important; border-top: 1px solid var(--landing-border); }
 @media (max-width: 1100px) {
     .compass-ui .landing-page .landing-desktop-nav { gap: 20px; }
-    .compass-ui .landing-page .landing-hero-grid { gap: 40px; }
     .compass-ui .landing-page .landing-feature-grid article { padding: 24px; }
     .compass-ui .landing-page .landing-feature-grid .landing-feature-highlight { padding-bottom: 130px; }
     .compass-ui .landing-page .landing-callout { padding: 44px; }
@@ -115,10 +109,10 @@
 }
 @media (max-width: 768px) {
     .compass-ui .landing-page .landing-container { width: calc(100% - 40px); }
-    .compass-ui .landing-page .landing-hero { padding-block: 40px; }
-    .compass-ui .landing-page .landing-hero-grid { grid-template-columns: minmax(0, 1fr); gap: 36px; }
-    .compass-ui .landing-page .landing-title { font-size: clamp(48px, 8vw, 66px); }
-    .compass-ui .landing-page .landing-hero-art { width: min(460px, 100%); margin-inline: auto; }
+    .compass-ui .landing-page .landing-hero { padding-block: 48px 40px; }
+    .compass-ui .landing-page .landing-hero-bottom { flex-direction: column; align-items: flex-start; gap: 24px; margin-top: 32px; padding-top: 24px; }
+    .compass-ui .landing-page .landing-hero-start { width: 100%; }
+    .compass-ui .landing-page .landing-title { font-size: clamp(48px, 8.6vw, 66px); }
     .compass-ui .landing-page .landing-reassurance-grid { gap: 20px; }
     .compass-ui .landing-page .landing-reassurance-grid > div { padding-inline: 16px; }
     .compass-ui .landing-page .landing-section { padding-block: 56px; }
@@ -143,15 +137,11 @@
     .compass-ui .landing-page .landing-sign-in { display: none; }
     .compass-ui .landing-page .landing-nav-actions { gap: 8px; }
     .compass-ui .landing-page .landing-nav .btn-primary { padding: 10px 12px; font-size: 12px; white-space: nowrap; }
-    .compass-ui .landing-page .landing-title { font-size: clamp(44px, 10.8vw, 54px); }
-    .compass-ui .landing-page .landing-lead { margin-top: 22px; font-size: 15px; }
+    .compass-ui .landing-page .landing-title { font-size: clamp(36px, 9.8vw, 47px); overflow-wrap: break-word; }
+    .compass-ui .landing-page .landing-lead { font-size: 15px; }
     .compass-ui .landing-page .landing-hero-copy .landing-eyebrow { font-size: 10px; gap: 8px 10px; }
     .compass-ui .landing-page .landing-hero-copy .landing-eyebrow span { padding-left: 10px; }
     .compass-ui .landing-page .landing-actions { flex-direction: column; }
-    .compass-ui .landing-page .landing-art-frame { border-width: 6px; }
-    .compass-ui .landing-page .landing-hero-art figcaption { left: 16px; right: 16px; bottom: 16px; padding: 14px; }
-    .compass-ui .landing-page .landing-hero-art figcaption span { font-size: 13px; }
-    .compass-ui .landing-page .landing-hero-art figcaption p { font-size: 11px; }
     .compass-ui .landing-page .landing-reassurance-grid { grid-template-columns: minmax(0, 1fr); padding-block: 24px; gap: 18px; }
     .compass-ui .landing-page .landing-reassurance-grid > div { border: 0; padding: 0; }
     .compass-ui .landing-page .landing-feature-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }

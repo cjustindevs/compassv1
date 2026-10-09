@@ -40,25 +40,21 @@
     </header>
     <main id="landing-main">
         <section id="home" class="landing-hero">
-            <div class="landing-container landing-hero-grid">
-                <div class="landing-hero-copy">
-                    <p class="landing-eyebrow">Project Dial-A-Friend <span>Student peer support</span></p>
-                    <h1 class="landing-title">A calm place<br>to <span>talk.</span> A safe<br>place to <span>heal.</span></h1>
-                    <p class="landing-lead">Some days feel a little heavier. You do not have to carry them on your own. Connect with a trained student peer helper, one conversation at a time.</p>
-                    <div class="landing-actions">
-                        <a href="{{ route('register') }}" class="btn-primary">Find your support <x-ui-icon name="arrow-right" /></a>
-                        <a href="#how-it-works" class="btn-outline">How it works</a>
+            <div class="landing-container landing-hero-copy">
+                <p class="landing-eyebrow">Project Dial-A-Friend <span>Student peer support</span></p>
+                <h1 class="landing-title">You do not have to<br>figure it out <span>alone.</span></h1>
+                <div class="landing-hero-bottom">
+                    <p class="landing-lead">A conversation. A moment to breathe. A little direction. Find supervised student peer support and self-help resources, at your own pace.</p>
+                    <div class="landing-hero-start">
+                        <div class="landing-actions">
+                            <a href="{{ route('register') }}" class="btn-primary">Find your support <x-ui-icon name="arrow-right" /></a>
+                            <a href="#how-it-works" class="btn-outline">How it works</a>
+                        </div>
+                        <ul class="landing-trust" aria-label="About peer support">
+                            <li>Your nickname, your space</li><li>At your own pace</li>
+                        </ul>
                     </div>
-                    <ul class="landing-trust" aria-label="About peer support">
-                        <li>Free for students</li><li>At your own pace</li>
-                    </ul>
                 </div>
-                <figure class="landing-hero-art">
-                    <div class="landing-art-frame">
-                        <img src="{{ asset('images/compass/peer-support-hero.webp') }}" srcset="{{ asset('images/compass/peer-support-hero-mobile.webp') }} 480w, {{ asset('images/compass/peer-support-hero.webp') }} 960w" sizes="(max-width: 480px) calc(100vw - 32px), (max-width: 768px) 460px, 44vw" alt="Illustration of two students listening and talking together in a peaceful campus garden" width="960" height="960" fetchpriority="high" decoding="async">
-                    </div>
-                    <figcaption><span>A conversation can be a beginning.</span><p>A place to feel heard, understood, and supported.</p></figcaption>
-                </figure>
             </div>
         </section>
         <div class="landing-reassurance" aria-label="What to expect">

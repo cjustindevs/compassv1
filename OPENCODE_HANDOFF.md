@@ -457,3 +457,18 @@ The user requested this follow-up on `origin/deploy`; Render deployment is separ
 Final built-in generation prompt:
 
 > Use case: illustration-story. Asset type: original hero artwork for the COMPASS student peer-support website. Create a sophisticated editorial illustration, square composition, showing two Filipino university-age young adults sitting opposite one another in a quiet campus garden, one listening attentively and the other talking with calm open posture. Warm human connection, discreet simplified faces, no identifiable real people, no medical setting. Art direction: beautifully composed contemporary gouache and cut-paper illustration with subtle tactile paper grain, elegant organic foliage and a curved architectural courtyard behind them, deep forest-green trees framing the composition, soft sage and cream background, emerald accents, small muted apricot and lavender details in clothing. Expressive yet restrained, rounded organic forms, balanced negative space, beautiful soft daylight. A premium mental-wellness publication rather than cartoon clipart. Compose the people centrally with comfortable space around their heads and hands so a rounded tall website frame can crop slightly. No text, numbers, logos, charts, badges, watermarks or interface elements. Opaque background.
+
+## Landing concept revision - October 9, 2026
+
+The user rejected the illustrated campus concept from `de2c818`. Replaced the
+hero with an image-free, oversized typography composition, sage background and
+a compact introduction/action row. Login, registration, menu and other landing
+sections keep their existing behavior. Removed artwork from the PWA precache;
+the unused image files are retained for history and are no longer displayed or
+loaded by the landing page. The user requested publication to `origin/deploy`
+after validation; live Render deployment remains a separate check.
+
+Validation: public-entry contract test passed (32 assertions); production
+Vite/PWA build passed with 18 precache entries; static QA passed for 6 rendered
+public screens, 18 stylesheets and 5 inline scripts. Browser/device visual
+review remains pending; no browser surface is available in this session.

@@ -21,7 +21,7 @@ const sprite = fs.readFileSync('public/images/compass-icons.svg', 'utf8');
 const glyphs = new Set([...sprite.matchAll(/<symbol id="([^"]+)"/g)].map((match) => match[1]));
 if (fs.existsSync('public/sw.js')) {
     const worker = fs.readFileSync('public/sw.js', 'utf8');
-    for (const asset of ['/offline.html', '/css/compass-ui.css', '/css/landing-page.css', '/js/compass-ui.js', '/images/compass-icons.svg', '/images/compass/peer-support-hero.webp', '/images/compass/peer-support-hero-mobile.webp']) {
+    for (const asset of ['/offline.html', '/css/compass-ui.css', '/css/landing-page.css', '/js/compass-ui.js', '/images/compass-icons.svg']) {
         if (!fs.existsSync(path.join('public', asset.slice(1)))) errors.push(`Missing public asset ${asset}.`);
         if (!worker.includes(asset)) errors.push(`Built service worker is missing ${asset}; run npm run build.`);
     }
