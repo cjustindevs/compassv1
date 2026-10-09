@@ -89,7 +89,7 @@ export default defineConfig({
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,woff,ttf,json}'],
                 // Laravel disables Vite's publicDir; explicitly revision these
                 // public assets instead of relying on includeAssets discovery.
-                additionalManifestEntries: ['offline.html', 'css/compass-ui.css', 'js/compass-ui.js', 'images/compass-icons.svg'].map((file) => ({
+                additionalManifestEntries: ['offline.html', 'css/compass-ui.css', 'css/landing-page.css', 'js/compass-ui.js', 'images/compass-icons.svg', 'images/compass/peer-support-hero.webp', 'images/compass/peer-support-hero-mobile.webp'].map((file) => ({
                     url: '/' + file,
                     revision: createHash('sha256').update(readFileSync(new URL('./public/' + file, import.meta.url))).digest('hex'),
                 })),

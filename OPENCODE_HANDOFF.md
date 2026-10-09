@@ -429,3 +429,31 @@ rendered-script/CSS/icon checks pass across 65 fixture screens. Browser/device
 visual review remains pending because the session has no browser surface.
 This validation was recorded before the October 9 publication request. Verify
 the latest `origin/deploy` commit for publication; Render deployment is separate.
+
+## Landing visual refinement — October 9, 2026
+
+After the public UI batch was pushed as `66b7ff2`, the user requested a more
+expressive landing page. Validation below was recorded before publication.
+The user requested this follow-up on `origin/deploy`; Render deployment is separate.
+
+- Larger editorial headline, sage hero, original peer-support illustration,
+  varied feature grid, connected support steps and forest-green final invitation.
+- Moved landing-only rules out of shared screen CSS into
+  `public/css/landing-page.css`; dashboard and authentication styling stays scoped.
+- Preserved login/registration routes, mobile menu hooks, real terms/privacy,
+  existing matching caveat and role workflows. No statistics or testimonials added.
+- Hero is built-in `image_gen` artwork, inspected after generation, then resized
+  and encoded with existing PHP GD without adding a dependency. Original generated
+  PNG remains under Codex generated_images. Project assets are:
+  `public/images/compass/peer-support-hero.webp` (960px, about 203 KiB) and
+  `public/images/compass/peer-support-hero-mobile.webp` (480px, about 72 KiB).
+  Responsive srcset, intrinsic size and high fetch priority are configured.
+- Landing CSS and artwork have content-revisioned PWA precache entries.
+- Shared UI tests: 6 passed, 669 assertions, including 65 authorized/public screen
+  fixtures. Static QA: 230 stylesheets, 165 inline scripts, 116 glyphs, 65 screens.
+  Production Vite/PWA build passes. Browser visual QA remains pending: current
+  computer-use inventory has no apps or browsers.
+
+Final built-in generation prompt:
+
+> Use case: illustration-story. Asset type: original hero artwork for the COMPASS student peer-support website. Create a sophisticated editorial illustration, square composition, showing two Filipino university-age young adults sitting opposite one another in a quiet campus garden, one listening attentively and the other talking with calm open posture. Warm human connection, discreet simplified faces, no identifiable real people, no medical setting. Art direction: beautifully composed contemporary gouache and cut-paper illustration with subtle tactile paper grain, elegant organic foliage and a curved architectural courtyard behind them, deep forest-green trees framing the composition, soft sage and cream background, emerald accents, small muted apricot and lavender details in clothing. Expressive yet restrained, rounded organic forms, balanced negative space, beautiful soft daylight. A premium mental-wellness publication rather than cartoon clipart. Compose the people centrally with comfortable space around their heads and hands so a rounded tall website frame can crop slightly. No text, numbers, logos, charts, badges, watermarks or interface elements. Opaque background.
