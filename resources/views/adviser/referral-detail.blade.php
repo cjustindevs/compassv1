@@ -294,8 +294,8 @@
         </div>
 </div>
     <!-- Approve Modal -->
-    <div class="modal-overlay" id="approveModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 999; align-items: center; justify-content: center;">
-        <div class="modal-box" style="background: white; border-radius: 24px; max-width: 480px; width: 92%; padding: 32px; box-shadow: 0 40px 80px rgba(0,0,0,0.15); animation: modalSlide 0.3s ease-out;">
+    <div class="modal-overlay av-referral-modal" id="approveModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 999; align-items: center; justify-content: center;">
+        <div class="modal-box av-referral-dialog">
             <div class="flex items-center gap-3 mb-4">
 
                 <h3 class="text-xl font-bold text-gray-800">Approve Referral</h3>
@@ -308,7 +308,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Review Notes <span class="text-red-500">*</span></label>
                     <textarea name="review_notes" class="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" rows="4" placeholder="Summarize your assessment of this referral..." required maxlength="1000"></textarea>
                 </div>
-                <div class="flex gap-3">
+                <div class="flex gap-3 av-referral-actions">
                     <button type="button" class="btn-outline flex-1" onclick="closeApproveModal()">Cancel</button>
                     <button type="submit" class="btn-primary flex-1">Approve Referral</button>
                 </div>
@@ -317,8 +317,8 @@
     </div>
 
     <!-- Request Revision Modal -->
-    <div class="modal-overlay" id="reviseModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 999; align-items: center; justify-content: center;">
-        <div class="modal-box" style="background: white; border-radius: 24px; max-width: 480px; width: 92%; padding: 32px; box-shadow: 0 40px 80px rgba(0,0,0,0.15); animation: modalSlide 0.3s ease-out;">
+    <div class="modal-overlay av-referral-modal" id="reviseModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 999; align-items: center; justify-content: center;">
+        <div class="modal-box av-referral-dialog">
             <div class="flex items-center gap-3 mb-4">
 
                 <h3 class="text-xl font-bold text-gray-800">Request Revision</h3>
@@ -331,7 +331,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Comments for the Helper <span class="text-red-500">*</span></label>
                     <textarea name="info_request" class="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" rows="4" placeholder="Explain what to revise or clarify in the recommendation..." required minlength="10" maxlength="2000"></textarea>
                 </div>
-                <div class="flex gap-3">
+                <div class="flex gap-3 av-referral-actions">
                     <button type="button" class="btn-outline flex-1" onclick="closeReviseModal()">Cancel</button>
                     <button type="submit" class="btn-primary flex-1" style="background:#f59e0b;">Request Revision</button>
                 </div>
@@ -340,8 +340,8 @@
     </div>
 
     <!-- Reject Modal -->
-    <div class="modal-overlay" id="rejectModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 999; align-items: center; justify-content: center;">
-        <div class="modal-box" style="background: white; border-radius: 24px; max-width: 480px; width: 92%; padding: 32px; box-shadow: 0 40px 80px rgba(0,0,0,0.15); animation: modalSlide 0.3s ease-out;">
+    <div class="modal-overlay av-referral-modal" id="rejectModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 999; align-items: center; justify-content: center;">
+        <div class="modal-box av-referral-dialog">
             <div class="flex items-center gap-3 mb-4">
 
                 <h3 class="text-xl font-bold text-gray-800">Return for Revision</h3>
@@ -354,7 +354,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Revision comments <span class="text-red-500">*</span></label>
                     <textarea name="rejection_reason" class="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" rows="4" placeholder="Explain the required corrections..." required></textarea>
                 </div>
-                <div class="flex gap-3">
+                <div class="flex gap-3 av-referral-actions">
                     <button type="button" class="btn-outline flex-1" onclick="closeRejectModal()">Cancel</button>
                     <button type="submit" class="btn-danger flex-1">Return for Revision</button>
                 </div>

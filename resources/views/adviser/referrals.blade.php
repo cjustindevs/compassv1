@@ -307,8 +307,8 @@
         </div>
 </div>
     <!-- Approve Modal -->
-    <div class="modal-overlay" id="approveModal">
-        <div class="modal-box">
+    <div class="modal-overlay av-referral-modal" id="approveModal">
+        <div class="modal-box av-referral-dialog">
             <div class="flex items-center gap-3 mb-4">
 
                 <h3 class="text-xl font-bold text-gray-800">Approve Referral</h3>
@@ -321,7 +321,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Review reason</label>
                     <textarea name="review_notes" required maxlength="1000" class="form-input w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" rows="3" placeholder="Any additional notes..."></textarea>
                 </div>
-                <div class="flex gap-3">
+                <div class="flex gap-3 av-referral-actions">
                     <button type="button" class="btn-outline flex-1" onclick="closeApproveModal()">Cancel</button>
                     <button type="submit" class="btn-primary flex-1">Approve Referral</button>
                 </div>
@@ -330,8 +330,8 @@
     </div>
 
     <!-- Reject Modal -->
-    <div class="modal-overlay" id="rejectModal">
-        <div class="modal-box">
+    <div class="modal-overlay av-referral-modal" id="rejectModal">
+        <div class="modal-box av-referral-dialog">
             <div class="flex items-center gap-3 mb-4">
 
                 <h3 class="text-xl font-bold text-gray-800">Return for Revision</h3>
@@ -344,7 +344,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Revision comments <span class="text-red-500">*</span></label>
                     <textarea name="rejection_reason" class="form-input w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" rows="4" placeholder="Explain the required corrections..." required></textarea>
                 </div>
-                <div class="flex gap-3">
+                <div class="flex gap-3 av-referral-actions">
                     <button type="button" class="btn-outline flex-1" onclick="closeRejectModal()">Cancel</button>
                     <button type="submit" class="btn-danger flex-1">Return for Revision</button>
                 </div>

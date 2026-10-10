@@ -533,3 +533,29 @@ review remains pending; no browser surface is available in this session.
 - Existing Helper resource-page render test passed; scoped diff check passed.
   Blade-only change; no asset rebuild or database change needed. The user
   requested publication to `origin/deploy`; live Render deployment is separate.
+
+## Compact Adviser review / category screens - October 10, 2026
+
+- Screening cards use tighter padding and spacing. Original-answer and decision
+  disclosures sit side by side on desktop, expand to full width when opened,
+  and stack on mobile. Safety flags, reassessment notes, routing guidance,
+  original answers, decision fields and confirmation behavior remain present.
+- Fixed the shared modal CSS overriding Referral Queue's narrow dialog limit.
+  Scoped referral dialogs now cap at 520px, scroll within the viewport and have
+  compact action buttons. Queue and detail approval/revision forms keep their
+  existing routes, required fields and JavaScript open/close behavior.
+- Emergency list uses compact, separated rows instead of large nested cards,
+  with alias, urgency, Helper, Philippine Time onset/age, reason and details
+  link. All three real summary counts and open/resolved pagination remain.
+- Category rows show name and status together, with less row padding and a
+  compact editor grid. Add/edit forms, existing filter, pagination and permissions
+  remain unchanged. Styles are scoped to these affected screens; no controllers,
+  models, database, matching or status rules were changed.
+- Validation: 13 existing tests / 734 assertions passed, covering assigned
+  screening visibility/badges, referral approval/revision and detail validation,
+  scoped emergency resolution, authorized category management and shared UI
+  rendering. Static QA passed for 67 fixture screens, 240 stylesheets, 173 inline
+  scripts and 116 glyphs. Production Vite/PWA build passed; worker regenerated.
+- Browser visual review remains pending: available computer-use inventory has
+  no browser or app surface. The user requested publication to `origin/deploy`
+  after validation; live Render deployment remains a separate check.

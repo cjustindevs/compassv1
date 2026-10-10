@@ -29,7 +29,7 @@
     ];
 @endphp
 
-<div class="adviser-page-content space-y-5">
+<div class="adviser-page-content adviser-compact-page screening-reviews space-y-5">
     <header class="flex flex-wrap items-start justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-800">Screening reviews</h1>
@@ -84,8 +84,8 @@
         <section id="screening-{{ $session->id }}"
             data-review-type="{{ $reassessment ? 'reassessment' : 'pre-session' }}"
             data-filter-target
-            class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-            <div class="p-5 space-y-5">
+            class="screening-review-card bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+            <div class="screening-review-body p-5 space-y-5">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div class="flex items-start gap-3">
                         <span class="mt-0.5 h-10 w-10 rounded-xl bg-green-50 text-green-700 flex items-center justify-center font-semibold">
@@ -109,7 +109,7 @@
                     </div>
                 </div>
 
-                <dl class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm bg-gray-50 rounded-xl p-4">
+                <dl class="screening-review-meta grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm bg-gray-50 rounded-xl p-4">
                     <div>
                         <dt class="text-gray-400 text-xs uppercase tracking-wide">Concern</dt>
                         <dd class="text-gray-700 mt-0.5 font-medium">{{ $session->concern?->concern_name ?? 'Not specified' }}</dd>
@@ -130,7 +130,7 @@
                 </dl>
 
                 @if($reassessment)
-                    <div class="flex items-start gap-3 rounded-xl bg-amber-50 border border-amber-100 p-3 text-sm text-amber-800">
+                    <div class="screening-review-note flex items-start gap-3 rounded-xl bg-amber-50 border border-amber-100 p-3 text-sm text-amber-800">
 
                         <div>
                             <p class="font-semibold">The helper requested a reassessment</p>
@@ -151,13 +151,16 @@
                         </div>
                     </div>
                 @else
-                    <div class="flex items-center gap-2 rounded-xl bg-green-50/60 border border-green-100 p-3 text-sm text-green-700">
+                    <div class="screening-safety-note text-sm text-green-700">
 
                         <span>No immediate danger cues were recorded on the screening.</span>
                     </div>
                 @endif
 
-                <div class="rounded-xl border border-gray-200 p-3">
+                <p class="screening-guidance text-sm text-blue-800"><span class="font-semibold">Guidance:</span> {{ $riskMeta['guidance'] }}</p>
+
+                <div class="screening-controls">
+                <div class="screening-answer-control rounded-xl border border-gray-200 p-3">
                     <details class="text-sm">
                         <summary class="cursor-pointer font-medium text-gray-700">
                             <x-ui-icon name="clipboard" class="mr-1 text-gray-400" />
@@ -181,12 +184,7 @@
                     </details>
                 </div>
 
-                <div class="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-sm text-blue-800">
-
-                    <p><span class="font-semibold">Guidance:</span> {{ $riskMeta['guidance'] }}</p>
-                </div>
-
-                <div class="rounded-xl border border-gray-200">
+                <div class="screening-decision-control rounded-xl border border-gray-200">
                     <details class="group">
                         <summary class="cursor-pointer flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-800">
                             <span><x-ui-icon name="clipboard" class="mr-2 text-green-600" />Record your decision</span>
@@ -239,6 +237,7 @@
                             </div>
                         </form>
                     </details>
+                </div>
                 </div>
 
                 <p class="text-xs text-gray-400">Original screening responses are retained with the reassessment in the request record.</p>

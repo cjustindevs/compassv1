@@ -28,7 +28,7 @@
 @endpush
 
 @section('content')
-<div class="adviser-page-content">
+<div class="adviser-page-content adviser-compact-page adviser-emergency-list">
     <!-- Top Bar -->
     <div class="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <div>
@@ -49,7 +49,7 @@
     @endif
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="av-emergency-stats grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div class="stat-card border-l-4 border-l-red-500">
             <span class="stat-label">Active Emergencies</span>
             <div class="stat-number text-red-600">{{ $openAlerts->total() }}</div>
@@ -68,27 +68,28 @@
     </div>
 
     <!-- Open Emergency Cases -->
-    <section class="card mb-6">
+    <section class="card av-emergency-panel mb-6">
         <div class="card-header">
             <h3>Open Emergency Cases</h3>
             <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700">{{ $openAlerts->total() }}</span>
         </div>
         @forelse($openAlerts as $alert)
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 bg-gray-50 rounded-xl mb-3 last:mb-0">
-                <div>
-                    <div class="flex items-center gap-2 mb-2">
+            <article class="av-emergency-row">
+                <div class="av-emergency-context">
+                    <div class="av-emergency-title">
+                        <h4 class="font-semibold text-gray-800">{{ $alert->session?->seeker?->generated_alias ?? 'Unknown seeker' }}</h4>
                         <span class="px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">URGENT</span>
-                        <span class="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">{{ $alert->triggered_at?->diffForHumans() }}</span>
                     </div>
-                    <p class="font-semibold text-gray-800">{{ $alert->session?->seeker?->generated_alias ?? 'Unknown seeker' }}</p>
-                    <p class="text-sm text-gray-600"><strong>Helper:</strong> {{ $alert->session?->helper?->full_name ?: 'Unassigned' }}</p>
-                    <p class="text-sm text-gray-500"><strong>Reason:</strong> {{ $alert->trigger_reason ?? 'Emergency detected' }}</p>
-                    <p class="text-xs text-gray-400 mt-1">Triggered {{ $alert->triggered_at?->format('M d, Y h:i A') ?? 'recently' }}</p>
+                    <div class="av-emergency-meta">
+                        <span><strong>Helper:</strong> {{ $alert->session?->helper?->full_name ?: 'Unassigned' }}</span>
+                        <time datetime="{{ $alert->triggered_at?->toIso8601String() }}">{{ $alert->triggered_at?->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') ?? 'Recently triggered' }} PHT &middot; {{ $alert->triggered_at?->diffForHumans() }}</time>
+                    </div>
+                    <p class="text-sm text-gray-500 av-emergency-reason"><strong>Reason:</strong> {{ $alert->trigger_reason ?? 'Emergency detected' }}</p>
                 </div>
                 <a href="{{ route('adviser.emergencies.show', $alert->id) }}" class="btn btn-primary btn-sm whitespace-nowrap">
                     <x-ui-icon name="eye" class="mr-1" />View Details
                 </a>
-            </div>
+            </article>
         @empty
             <div class="text-center py-8">
                 <h3 class="text-lg font-semibold text-gray-800">No Open Emergency Cases</h3>
@@ -99,7 +100,7 @@
     </section>
 
     <!-- Resolved Cases -->
-    <section class="card">
+    <section class="card av-emergency-panel">
         <div class="card-header">
             <h3>Resolved Cases</h3>
             <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700">{{ $resolvedAlerts->total() }}</span>
