@@ -512,6 +512,7 @@ Route::middleware(['auth', 'role:moderator'])->prefix('moderator')->name('modera
 
     // Schedule Management
     Route::get('/schedules', [ModeratorScheduleController::class, 'index'])->name('schedules');
+    Route::get('/schedules/helpers', [ModeratorScheduleController::class, 'candidates'])->name('schedules.helpers');
     Route::post('/schedules', [ModeratorScheduleController::class, 'store'])->name('schedules.store');
     Route::post('/schedules/destroy', [ModeratorScheduleController::class, 'destroy'])->name('schedules.destroy');
 

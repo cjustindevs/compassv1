@@ -7,6 +7,9 @@ use App\Models\CalendarEvent;
 use App\Models\Helper;
 use App\Models\HelperSchedule;
 use App\Services\HelperShiftService;
+use App\Services\HelperDutyCandidates;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -20,14 +23,16 @@ class ModeratorScheduleController extends Controller
         $request->validate(['date'=>'nullable|date_format:Y-m-d','availability'=>'nullable|in:available,offline,busy']);
         $date = $request->input('date', now('Asia/Manila')->toDateString());
 
-        $helpers = Helper::with(['latestReadiness', 'user'])->orderBy('first_name')->get();
+        $helpers = $this->helpers();
+        // Duty candidates must be chosen before the operational availability
+        // filter: a ready Helper without a duty day is not assignable yet.
+        $dutyHelpers = $this->dutyHelpers($helpers);
 
         if ($request->filled('availability')) {
             $helpers=$helpers->filter(function($helper)use($request){$available=app(\App\Services\HelperEligibilityService::class)->allows($helper);$busy=$helper->activeSessions()->exists();return match($request->input('availability')){'available'=>$available,'busy'=>$busy,'offline'=>!$available&&!$busy};});
         }
 
         $helperIds=$helpers->pluck('id');
-        $dutyHelpers = $helpers->filter(fn (Helper $helper) => app(\App\Services\HelperDutyCandidates::class)->allows($helper));
         $scheduleEvents = CalendarEvent::with('helperSchedule')->where('event_type', CalendarEvent::TYPE_MEETING)
             ->whereDate('event_date', $date)
             ->when($request->filled('availability'),fn($q)=>$q->whereIn('helper_schedule_id',HelperSchedule::whereIn('helper_id',$helperIds)->select('id')))
@@ -43,6 +48,26 @@ class ModeratorScheduleController extends Controller
             ->orderBy('scheduled_start')->paginate(15)->withQueryString();
 
         return view('moderator.schedules', compact('date', 'helpers', 'dutyHelpers', 'scheduleEvents', 'scheduledSessions'));
+    }
+
+    public function candidates(): JsonResponse
+    {
+        return response()->json([
+            'helpers' => $this->dutyHelpers($this->helpers())->map(fn (Helper $helper) => [
+                'id' => $helper->id,
+                'name' => $helper->full_name,
+            ])->values(),
+        ])->header('Cache-Control', 'private, no-store');
+    }
+
+    private function helpers(): Collection
+    {
+        return Helper::with('user')->orderBy('first_name')->orderBy('id')->get();
+    }
+
+    private function dutyHelpers(Collection $helpers): Collection
+    {
+        return $helpers->filter(fn (Helper $helper) => app(HelperDutyCandidates::class)->allows($helper));
     }
 
     public function store(Request $request): RedirectResponse

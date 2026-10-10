@@ -472,3 +472,27 @@ Validation: public-entry contract test passed (32 assertions); production
 Vite/PWA build passed with 18 precache entries; static QA passed for 6 rendered
 public screens, 18 stylesheets and 5 inline scripts. Browser/device visual
 review remains pending; no browser surface is available in this session.
+
+## Moderator readiness / duty scheduling fix - October 10, 2026
+
+- Reproduced a real scheduling failure: filtering Schedules to Available excluded
+  a logged-in, ready Helper with no duty yet, preventing their first duty from
+  appearing in the dropdown. Duty candidates now come from the unfiltered roster;
+  the availability filter still applies to the existing schedule/session lists.
+- Added moderator-only `GET /moderator/schedules/helpers` for the same current
+  login/readiness eligibility used on initial render and Add Duty Day. Sends only
+  Helper IDs/names and uses private/no-store cache headers. No readiness notes,
+  session tokens or seeker identity are exposed.
+- Dropdown refreshes every 15 seconds and on return to the tab. Keeps a selected
+  Helper while eligible, clears stale selections, updates the empty state/button,
+  and leaves dates/notes intact. Server still rechecks before scheduling.
+- Existing HelperDutyCandidates login rule (database session driver), readiness
+  expiry, schedule workflow, verification and matching rules remain unchanged.
+  A passed readiness check alone does not make an unscheduled Helper assignable.
+- Regression tests cover actual readiness submission -> first duty -> Available,
+  availability-filter independence, live failed/expired readiness and logout,
+  stale submission rejection and moderator-only access. Existing login/duty and
+  expiry tests pass: 8 tests / 72 assertions. No production database changes.
+- Browser/device visual testing remains pending; no browser surface is available.
+  The user requested publication to `origin/deploy` after validation; live
+  Render deployment remains a separate check.

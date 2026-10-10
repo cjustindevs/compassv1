@@ -38,7 +38,8 @@
                 <h2 class="font-semibold text-gray-800 mb-4">Schedule Helper Duty</h2>
                 <form method="POST" action="{{ route('moderator.schedules.store') }}" class="space-y-3">
                     @csrf
-                    <select name="helper_id" required class="w-full rounded-lg border-gray-300 text-sm">
+                    <label for="duty-helper" class="sr-only">Online, ready Helper</label>
+                    <select id="duty-helper" name="helper_id" required class="w-full rounded-lg border-gray-300 text-sm">
                         <option value="">{{ $dutyHelpers->isEmpty() ? 'No online, ready Helpers' : 'Select an online, ready Helper' }}</option>
                         @foreach($dutyHelpers as $helper)
                             <option value="{{ $helper->id }}" @selected((string) old('helper_id') === (string) $helper->id)>{{ $helper->full_name }} · Online | Ready</option>
@@ -46,10 +47,9 @@
                     </select>
                     <input type="date" name="event_date" value="{{ old('event_date', $date) }}" required class="w-full rounded-lg border-gray-300 text-sm">
                     <textarea name="description" rows="3" maxlength="500" class="w-full rounded-lg border-gray-300 text-sm" placeholder="Duty notes or assignment details">{{ old('description') }}</textarea>
-                    <button @disabled($dutyHelpers->isEmpty()) class="disabled:opacity-50 disabled:cursor-not-allowed w-full px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">Add Duty Day</button>
+                    <button id="add-duty" @disabled($dutyHelpers->isEmpty()) class="disabled:opacity-50 disabled:cursor-not-allowed w-full px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">Add Duty Day</button>
+                    <p id="duty-helper-status" class="text-xs text-gray-500" role="status">Helpers refresh automatically every 15 seconds. A current login and passed readiness check are required; an existing duty is not.</p>
                 </form>
-
-
             </section>
 
             <section class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
@@ -83,5 +83,41 @@
             </tbody></table></div>{{ $scheduledSessions->links() }}
         </section>
     </main>
+    <script>
+        (() => {
+            const select = document.getElementById('duty-helper');
+            const submit = document.getElementById('add-duty');
+            const status = document.getElementById('duty-helper-status');
+            let loading = false;
+            const refresh = async () => {
+                if (loading || document.hidden) return;
+                loading = true;
+                try {
+                    const response = await fetch(@json(route('moderator.schedules.helpers')), {
+                        headers: { 'Accept': 'application/json' }, cache: 'no-store',
+                    });
+                    if (!response.ok) throw new Error('Unable to refresh helpers');
+                    const data = await response.json();
+                    const selected = select.value;
+                    const helpers = data.helpers;
+                    const remainsEligible = helpers.some(helper => String(helper.id) === selected);
+                    const options = [new Option(helpers.length ? 'Select an online, ready Helper' : 'No online, ready Helpers', '')];
+                    helpers.forEach(helper => options.push(new Option(`${helper.name} | Online | Ready`, String(helper.id))));
+                    select.replaceChildren(...options);
+                    select.value = remainsEligible ? selected : '';
+                    submit.disabled = helpers.length === 0;
+                    status.textContent = selected && !remainsEligible
+                        ? 'The selected Helper is no longer online and ready. Select another Helper.'
+                        : 'Helpers refresh automatically every 15 seconds. A current login and passed readiness check are required; an existing duty is not.';
+                } catch {
+                    status.textContent = 'Helper status could not refresh. Retrying automatically; readiness is checked again when you add duty.';
+                } finally { loading = false; }
+            };
+            window.setInterval(refresh, 15000);
+            document.addEventListener('visibilitychange', refresh);
+            window.addEventListener('focus', refresh);
+            refresh();
+        })();
+    </script>
 </body>
 </html>
