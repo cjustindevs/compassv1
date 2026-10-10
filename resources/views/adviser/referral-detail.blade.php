@@ -270,18 +270,10 @@
                 <a href="{{ route('adviser.referrals') }}" class="btn-outline">
                     <x-ui-icon name="arrow-left" class="mr-2" /> Back
                 </a>
-                @if(in_array($referral->status,[\App\Models\Referral::STATUS_PENDING_ADVISER,\App\Models\Referral::STATUS_CONSENT_REQUESTED]) && !($referral->clarification_requested_at && !$referral->clarification_received_at))
+                @if(in_array($referral->status,[\App\Models\Referral::STATUS_PENDING_ADVISER,\App\Models\Referral::STATUS_CONSENT_REQUESTED]) && ! $referral->reviewed_at && ! $referral->approved_at && ! $referral->professional_id && !($referral->clarification_requested_at && !$referral->clarification_received_at))
                 <button type="button" class="btn-outline" onclick="openReviseModal()">
                     <x-ui-icon name="undo" class="mr-2" /> Request Revision
                 </button>
-                <button type="button" class="btn-primary" onclick="openApproveModal()">
-                    <x-ui-icon name="check" class="mr-2" /> Approve Referral
-                </button>
-                <button class="btn-danger" onclick="openRejectModal({{ $referral->id }})">
-                    <x-ui-icon name="close" class="mr-2" /> Return for Revision
-                </button>
-                @endif
-                @if($referral->clarification_requested_at && $referral->clarification_received_at && in_array($referral->status,[\App\Models\Referral::STATUS_PENDING_ADVISER,\App\Models\Referral::STATUS_CONSENT_REQUESTED]))
                 <button type="button" class="btn-primary" onclick="openApproveModal()">
                     <x-ui-icon name="check" class="mr-2" /> Approve Referral
                 </button>

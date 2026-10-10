@@ -76,6 +76,87 @@ class AdviserCompletionTest extends TestCase {
         $this->assertDatabaseCount('emergency_review_actions',3);
         $this->post($url,['action'=>'instruction','notes'=>'Too late'])->assertStatus(409);
     }
+    public function test_legacy_referral_can_be_returned_revised_and_approved_without_resolving_emergency(): void {
+        [$user, $helper, $session] = $this->records();
+        $referral = Referral::create(['session_id' => $session->id, 'helper_id' => $helper->id,
+            'adviser_id' => $user->adviser->id, 'referral_reason' => 'Original emergency recommendation',
+            'priority_level' => 'emergency', 'status' => Referral::STATUS_CONSENT_REQUESTED,
+            'help_seeker_consent' => true, 'consent_obtained_at' => now()->subDay()]);
+        $alert = EmergencyAlert::create(['session_id' => $session->id, 'seeker_id' => $session->seeker_id,
+            'adviser_id' => $user->adviser->id, 'status' => 'open', 'risk_level' => 'emergency',
+            'trigger_reason' => 'Emergency remains under review', 'triggered_at' => now()]);
+
+        $this->post(route('adviser.referral.reject', $referral->case_reference),
+            ['rejection_reason' => 'Please clarify the supporting recommendation.'])
+            ->assertRedirect(route('adviser.referrals'))->assertSessionHasNoErrors()->assertSessionHas('info');
+        $referral->refresh();
+        $this->assertSame(Referral::STATUS_PENDING_ADVISER, $referral->status);
+        $this->assertSame('Original emergency recommendation', $referral->referral_reason);
+        $this->assertSame('Please clarify the supporting recommendation.', $referral->clarification_question);
+        $this->assertNull($referral->reviewed_at);
+        $this->assertNull($referral->approved_at);
+        $this->assertTrue($referral->help_seeker_consent);
+        $this->assertFalse($referral->canProvideIdentity());
+        $this->assertDatabaseHas('notifications', ['user_account_id' => $helper->user_account_id, 'title' => 'Referral clarification']);
+        $this->assertSame('open', $alert->fresh()->status);
+        $this->assertNull($alert->fresh()->resolved_at);
+
+        $this->post(route('adviser.referral.approve', $referral->id), ['review_notes' => 'Cannot approve before revision'])
+            ->assertSessionHasErrors('review_notes');
+        $this->actingAs($helper->user)->post(route('helper.referral.clarify', $referral->id),
+            ['response' => 'The supporting recommendation has been clarified.'])->assertSessionHasNoErrors();
+        $this->actingAs($user)->post(route('adviser.referral.approve', $referral->id),
+            ['review_notes' => 'Reviewed the clarified emergency recommendation.'])->assertSessionHasNoErrors();
+        $this->assertSame(Referral::STATUS_PENDING_CONSENT, $referral->fresh()->status);
+        $this->assertFalse($referral->fresh()->help_seeker_consent);
+        $this->assertNull($referral->fresh()->professional_id);
+        $this->assertSame('open', $alert->fresh()->status);
+    }
+
+    public function test_queue_explains_pending_revision_and_blocks_duplicate_return_without_replacing_comments(): void {
+        [$user, $helper, $session] = $this->records();
+        $referral = Referral::create(['session_id' => $session->id, 'helper_id' => $helper->id,
+            'adviser_id' => $user->adviser->id, 'referral_reason' => 'Recommendation to clarify', 'status' => 'pending_adviser']);
+        $url = route('adviser.referral.reject', $referral->id);
+        $this->post($url, ['rejection_reason' => 'Please clarify the supporting documentation.'])->assertSessionHasNoErrors();
+        $versions = DB::table('supervision_record_versions')->where('record_type', 'referrals')->where('record_id', $referral->id)->count();
+        $notifications = \App\Models\Notification::count();
+        $this->get(route('adviser.referrals'))->assertOk()->assertSee('Awaiting Helper revision')
+            ->assertDontSee('onclick="openRejectModal('.$referral->id.')"', false)
+            ->assertDontSee('onclick="openApproveModal('.$referral->id.')"', false);
+        $this->post($url, ['rejection_reason' => 'Do not replace the outstanding comments.'])
+            ->assertSessionHasErrors(['rejection_reason' => 'This referral is already awaiting the Helper\'s revision. Open the referral to view your comments.']);
+        $this->assertSame('Please clarify the supporting documentation.', $referral->fresh()->clarification_question);
+        $this->assertSame($versions, DB::table('supervision_record_versions')->where('record_type', 'referrals')->where('record_id', $referral->id)->count());
+        $this->assertSame($notifications, \App\Models\Notification::count());
+    }
+
+    public function test_revision_does_not_reopen_progressed_or_reviewed_referrals_and_legacy_ownership_is_enforced(): void {
+        [$user, $helper, $session] = $this->records();
+        $referral = Referral::create(['session_id' => $session->id, 'helper_id' => $helper->id,
+            'adviser_id' => $user->adviser->id, 'referral_reason' => 'Protected recommendation', 'status' => 'pending_adviser']);
+        foreach (['pending_consent', 'pending_professional', 'accepted', 'in_progress', 'completed', 'closed', 'declined'] as $status) {
+            $referral->update(['status' => $status]);
+            $this->post(route('adviser.referral.reject', $referral->id), ['rejection_reason' => 'Do not reopen progressed work.'])
+                ->assertSessionHasErrors('rejection_reason');
+            $this->assertSame($status, $referral->fresh()->status);
+            $this->assertNull($referral->fresh()->clarification_question);
+        }
+        $referral->update(['status' => Referral::STATUS_CONSENT_REQUESTED, 'reviewed_at' => now()]);
+        $this->post(route('adviser.referral.reject', $referral->id), ['rejection_reason' => 'Do not overwrite recorded review.'])->assertSessionHasErrors('rejection_reason');
+        $this->assertSame(Referral::STATUS_CONSENT_REQUESTED, $referral->fresh()->status);
+        $this->assertNull($referral->fresh()->clarification_question);
+        $referral->update(['reviewed_at' => null, 'approved_at' => now()]);
+        $this->post(route('adviser.referral.reject', $referral->id), ['rejection_reason' => 'Do not overwrite existing approval.'])->assertSessionHasErrors('rejection_reason');
+        $this->assertNotNull($referral->fresh()->approved_at);
+        $this->assertNull($referral->fresh()->clarification_question);
+        $referral->update(['approved_at' => null]);
+        $other = User::factory()->create(['role' => 'adviser']);
+        Adviser::create(['user_account_id' => $other->id, 'first_name' => 'Other', 'last_name' => 'Adviser', 'email' => $other->email]);
+        $this->actingAs($other)->post(route('adviser.referral.reject', $referral->id), ['rejection_reason' => 'Not authorized for this referral.'])->assertForbidden();
+        $this->assertDatabaseCount('supervision_record_versions', 0);
+    }
+
     public function test_referral_clarification_must_be_answered_before_approval(): void {
         [$user,$helper,$session]=$this->records();
         $r=Referral::create(['session_id'=>$session->id,'helper_id'=>$helper->id,'adviser_id'=>$user->adviser->id,'referral_reason'=>'Further support requested','referral_date'=>now(),'status'=>'pending_adviser']);

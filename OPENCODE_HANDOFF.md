@@ -559,3 +559,29 @@ review remains pending; no browser surface is available in this session.
 - Browser visual review remains pending: available computer-use inventory has
   no browser or app surface. The user requested publication to `origin/deploy`
   after validation; live Render deployment remains a separate check.
+
+## Adviser referral return-for-revision fix - October 10, 2026
+
+- Reproduced the screenshot's generic status-conflict error for an unreviewed
+  legacy `consent_requested` referral. The queue included these records, but
+  the clarification handler accepted only `pending_adviser`.
+- The existing clarification transaction now accepts unreviewed legacy records,
+  preserves their original version and transitions them to `pending_adviser`.
+  Ownership checks and row locking remain. Reviewed, approved, assigned,
+  accepted, completed, closed or declined referrals cannot be rolled back.
+- Queue rows now distinguish new recommendations, submitted revisions and
+  outstanding Helper revisions. Approval/return controls are unavailable while
+  awaiting a Helper response. Repeat return requests explain the outstanding
+  revision and do not replace comments or duplicate notifications/history.
+  Removed duplicate approval/return controls from the referral detail page.
+- Renamed the queue's Reject button to Return for Revision to describe its
+  existing behavior. This action still requests Helper clarification rather
+  than terminating the referral or resolving its emergency. Approval continues
+  to require the Helper response and fresh Seeker consent; professional
+  assignment and private identity access are not bypassed.
+- Validation: 39 relevant tests / 352 assertions passed, covering legacy
+  revision, duplicate requests, protected states, ownership, Adviser privacy,
+  consent, professional delivery and emergency monitoring. PHP syntax and scoped
+  diff checks passed. Tests used isolated SQLite records; no production data,
+  migration or asset build was required. The user requested publication to
+  `origin/deploy`; live Render deployment remains a separate check.

@@ -238,7 +238,7 @@
                                     <span class="priority-badge {{ $referral->priority_level }}">
                                         {{ ucfirst($referral->priority_level) }}
                                     </span>
-                                    <span class="status-badge pending">New</span>
+                                    <span class="status-badge pending">@if($referral->reviewed_at || $referral->approved_at || $referral->professional_id)Review recorded @elseif($referral->clarification_requested_at && ! $referral->clarification_received_at)Awaiting Helper revision @elseif($referral->clarification_received_at)Revision submitted @else New @endif</span>
                                 </div>
                                 <div class="details">
                                     Helper: {{ $referral->helper->first_name ?? 'Unknown' }}
@@ -252,12 +252,14 @@
                                 <a href="{{ route('adviser.referral.show', $referral->case_reference) }}" class="btn-outline">
                                     <x-ui-icon name="eye" class="mr-1" /> View
                                 </a>
+                                @if(! $referral->reviewed_at && ! $referral->approved_at && ! $referral->professional_id && ! ($referral->clarification_requested_at && ! $referral->clarification_received_at))
                                 <button class="btn-primary" onclick="openApproveModal({{ $referral->id }})">
                                     <x-ui-icon name="check" class="mr-1" /> Approve
                                 </button>
                                 <button class="btn-danger" onclick="openRejectModal({{ $referral->id }})">
-                                    <x-ui-icon name="close" class="mr-1" /> Reject
+                                    <x-ui-icon name="close" class="mr-1" /> Return for Revision
                                 </button>
+                                @endif
                             </div>
                         </div>
                     @endforeach

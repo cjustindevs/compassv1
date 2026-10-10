@@ -216,12 +216,18 @@ class ReferralManagementService
             } else {
                 app(AdviserScope::class)->referral($referral);
             }
-            abort_unless($referral->status === Referral::STATUS_PENDING_ADVISER, 409);
+            abort_unless(
+                in_array($referral->status, [Referral::STATUS_PENDING_ADVISER, Referral::STATUS_CONSENT_REQUESTED], true)
+                && ! $referral->reviewed_at && ! $referral->approved_at && ! $referral->professional_id
+                && ! $referral->accepted_at && ! $referral->completed_at && ! $referral->closed_date && ! $referral->declined_at,
+                409,
+                'Only an unreviewed referral awaiting Adviser review can be returned for revision.'
+            );
             abort_unless(strlen(trim($text)) >= 10 && mb_strlen($text) <= 2000, 422);
             if ($response) {
-                abort_unless($referral->clarification_requested_at && ! $referral->clarification_received_at, 409);
+                abort_unless($referral->clarification_requested_at && ! $referral->clarification_received_at, 409, 'There is no outstanding clarification request for this referral.');
                 app(SupervisionVersions::class)->record($referral, 'Recommendation before clarification response');
-                $referral->forceFill(['clarification_response' => $text, 'clarification_received_at' => now()])->save();
+                $referral->forceFill(['status' => Referral::STATUS_PENDING_ADVISER, 'clarification_response' => $text, 'clarification_received_at' => now()])->save();
                 if ($revisedReason !== null) {
                     abort_unless(trim($revisedReason) !== '' && mb_strlen($revisedReason) <= 1000, 422, 'A revised referral reason cannot be empty.');
                     $referral->forceFill(['referral_reason' => trim($revisedReason)])->save();
@@ -231,8 +237,14 @@ class ReferralManagementService
                 // A clarification needs a Helper who can receive it; without one
                 // the request would block the referral forever.
                 abort_unless($referral->helper_id, 409, 'This referral has no assigned Helper to clarify with. Approve or decline it instead.');
-                abort_if($referral->clarification_requested_at && ! $referral->clarification_received_at, 409);
-                $referral->forceFill(['clarification_question' => $text, 'clarification_requested_at' => now(), 'clarification_received_at' => null, 'clarification_response' => null])->save();
+                abort_if($referral->clarification_requested_at && ! $referral->clarification_received_at, 409,
+                    'This referral is already awaiting the Helper\'s revision. Open the referral to view your comments.');
+                if ($referral->status === Referral::STATUS_CONSENT_REQUESTED) {
+                    // The queue still supports these pre-approval legacy rows.
+                    // Preserve their history, then use the existing revision workflow.
+                    app(SupervisionVersions::class)->record($referral, 'Legacy recommendation before Adviser revision');
+                }
+                $referral->forceFill(['status' => Referral::STATUS_PENDING_ADVISER, 'clarification_question' => $text, 'clarification_requested_at' => now(), 'clarification_received_at' => null, 'clarification_response' => null])->save();
             }
             app(SupervisionVersions::class)->record($referral, $response ? 'Helper clarification submitted' : 'Adviser requested clarification');
             SupportAudit::record($response ? 'referral_clarification_received' : 'referral_clarification_requested', $referral);
