@@ -79,7 +79,7 @@
     @vite(['resources/css/app.css'])
     @include('partials.ui-assets')
 </head>
-<body>
+<body class="notification-page">
 
     <main class="main-content">
 
@@ -116,7 +116,7 @@
         </div>
 
         <!-- Type filters -->
-        <div class="flex items-center gap-2 mb-6 filter-row">
+        <div class="flex items-center gap-2 mb-6 filter-row ui-notification-toolbar">
             <a href="{{ route('notifications') }}" class="filter-btn {{ $activeType === null ? 'active' : '' }}">
                 <x-ui-icon name="list"  /> All
             </a>
@@ -128,10 +128,10 @@
         </div>
 
         <!-- Notification list -->
-        <div id="notifList" class="space-y-3">
+        <div id="notifList" class="ui-notification-list">
             @forelse($notifications as $notification)
-                <div class="notif-card {{ auth()->user()->role === 'moderator' && $notification->notification_type === 'emergency' ? 'moderator-emergency-notification' : '' }} {{ $notification->is_read ? '' : 'unread' }}" id="notif-{{ $notification->id }}" data-id="{{ $notification->id }}">
-                    <div class="flex-1 min-w-0">
+                <div class="notif-card ui-notification-row {{ auth()->user()->role === 'moderator' && $notification->notification_type === 'emergency' ? 'moderator-emergency-notification' : '' }} {{ $notification->is_read ? '' : 'unread' }}" id="notif-{{ $notification->id }}" data-id="{{ $notification->id }}">
+                    <div class="flex-1 min-w-0 ui-notification-content">
                         <h4 class="font-semibold text-gray-800 text-sm">{{ auth()->user()->role === 'moderator' ? \Illuminate\Support\Str::limit($notification->title, 80) : $notification->title }}</h4>
                         <p class="text-sm text-gray-500 mt-1">@if(auth()->user()->role === 'moderator'){{ \Illuminate\Support\Str::limit(preg_split('/(?<=[.!?])\s+/', strip_tags($notification->message), 2)[0], 180) }}@else{{ $notification->message }}@endif</p>
                         <div class="flex items-center gap-4 mt-2">
@@ -141,15 +141,13 @@
                                 {{ $types[$notification->notification_type]['label'] ?? ucfirst($notification->notification_type ?? 'System') }}
                             </span>
                         </div>
-                        @if(! $notification->is_read && $notification->link)
-                            <div class="mt-2">
-                                <button class="link-btn" data-link="{{ $notification->link }}" onclick="markRead({{ $notification->id }}, true)">
-                                    <x-ui-icon name="arrow-right" class="mr-1" />Open &amp; mark as read
-                                </button>
-                            </div>
-                        @endif
                     </div>
-                    <div class="flex flex-col items-end gap-2 self-stretch">
+                    <div class="ui-notification-actions">
+                        @if(! $notification->is_read && $notification->link)
+                            <button class="link-btn" data-link="{{ $notification->link }}" onclick="markRead({{ $notification->id }}, true)">
+                                <x-ui-icon name="arrow-right" class="mr-1" />Open &amp; mark as read
+                            </button>
+                        @endif
                         @if(! $notification->is_read)
                             <button class="link-btn" onclick="markRead({{ $notification->id }}, false)" title="Mark as read">
                                 <x-ui-icon name="check"  />
@@ -172,13 +170,10 @@
                     <p class="text-sm text-gray-500 mt-1">You'll see session updates, reminders, and system messages here.</p>
                 </div>
             @endforelse
-            {{ $notifications->links() }}
         </div>
+        <div class="ui-notification-footer">{{ $notifications->links() }}</div>
 
-        <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-
-            You're all caught up on your recent activity.
-        </div>
+        <p class="text-xs text-gray-500 mt-3">Showing {{ $notifications->firstItem() ?? 0 }}-{{ $notifications->lastItem() ?? 0 }} of {{ $notifications->total() }} notifications.</p>
 
     </main>
 

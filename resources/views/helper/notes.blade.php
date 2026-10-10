@@ -9,13 +9,6 @@
 
         <a href="{{ route('helper.cases.show', ['id' => $session->id]) }}" class="btn btn-secondary btn-sm mb-4"><x-ui-icon name="arrow-left"  /> Back to case</a>
 
-        @if(session('success'))
-            <div class="alert alert-success mb-4" role="status" aria-live="polite">
-
-                <div>{{ session('success') }}</div>
-            </div>
-        @endif
-
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         <div class="lg:col-span-2">

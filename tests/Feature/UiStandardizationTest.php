@@ -29,7 +29,7 @@ class UiStandardizationTest extends TestCase
             'moderator' => ['moderator.dashboard', 'moderator.queue', 'moderator.emergency', 'moderator.reports', 'moderator.settings', 'moderator.sessions', 'moderator.manage', 'moderator.schedules', 'moderator.notifications'],
             'adviser' => ['adviser.dashboard', 'adviser.helpers', 'adviser.reports', 'adviser.transcripts', 'adviser.settings', 'adviser.calendar', 'adviser.schedule', 'adviser.resources', 'adviser.notifications', 'adviser.screenings', 'adviser.evaluations', 'adviser.referrals', 'adviser.emergencies'],
             'helper' => ['helper.dashboard', 'helper.cases', 'helper.calendar', 'helper.reports', 'helper.competency', 'helper.feedback', 'helper.profile', 'helper.settings', 'helper.readiness', 'helper.resources', 'helper.notifications'],
-            'seeker' => ['seeker.dashboard', 'selfhelp', 'seeker.privacy', 'seeker.referrals', 'session.history', 'settings', 'settings.account', 'settings.preferences', 'settings.privacy', 'settings.appearance', 'seeker.requests', 'emergency'],
+            'seeker' => ['seeker.dashboard', 'selfhelp', 'seeker.privacy', 'seeker.referrals', 'session.history', 'settings', 'settings.account', 'settings.preferences', 'settings.privacy', 'settings.appearance', 'seeker.requests', 'emergency', 'notifications', 'notifications.archive'],
             'professional' => ['professional.dashboard', 'professional.cases', 'professional.referrals', 'professional.reports', 'professional.profile', 'professional.settings'],
         ];
         foreach ($pages as $role => $routes) {

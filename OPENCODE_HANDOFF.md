@@ -496,3 +496,31 @@ review remains pending; no browser surface is available in this session.
 - Browser/device visual testing remains pending; no browser surface is available.
   The user requested publication to `origin/deploy` after validation; live
   Render deployment remains a separate check.
+
+## Session Notes notices / compact notifications - October 10, 2026
+
+- Removed the duplicate success block in Helper Session Notes (and the same
+  duplicate in the private journal). The Helper layout owns inline notices;
+  the shared workflow dialog skips notices and validation errors already shown
+  inline. Other layouts retain their existing dialog behavior by default.
+- Added notification-only shared density rules for Moderator, Helper, Adviser,
+  the generic inbox used by Seekers, and notification history. Rows have concise
+  spacing, subtle separators, text wrapping and aligned actions; Moderator's
+  inbox uses the available content width instead of the old 900px limit.
+  On smaller screens actions wrap below content with 44px touch targets and
+  sufficient bottom space for existing mobile navigation. Unread/emergency
+  distinctions, original messages, filters, grouping and pagination remain.
+- Preserved read/archive/restore endpoints, ownership checks and existing
+  duplicate-completion-notification rules. Fixed the shared archive's Seeker
+  back link to use the actual `notifications` route. No controller, model,
+  matching, readiness or production database changes in this batch.
+- Regression coverage includes an actual Session Notes save showing exactly
+  one success notice, journal flash handling, inbox filtering/pagination and
+  private read/archive actions. Existing role-specific notification tests pass.
+- Validation: 19 tests / 780 assertions passed; static CSS/inline-script/asset
+  checks passed for 67 rendered fixture screens (240 stylesheets, 173 scripts,
+  116 glyphs); production Vite/PWA build passed with 18 precache entries and
+  updated `public/sw.js`. Fixtures use the isolated SQLite test database.
+- Browser/device visual review is pending: computer-use inventory exposes no
+  browser or app surface in this session. The user requested publication to
+  `origin/deploy` after validation; live Render deployment is a separate check.

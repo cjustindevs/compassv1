@@ -1,11 +1,14 @@
 @php
-    $notice = session('error') ?? session('success') ?? session('info') ?? session('status');
+    $notice = collect(['error', 'success', 'info', 'status'])
+        ->reject(fn ($key) => in_array($key, $inlineNotices ?? [], true))
+        ->map(fn ($key) => session($key))->first(fn ($value) => is_string($value));
+    $showErrors = $errors->any() && ! ($inlineErrors ?? false);
 @endphp
-@if(is_string($notice) || $errors->any())
+@if(is_string($notice) || $showErrors)
 <dialog id="workflowNotice" aria-labelledby="workflowNoticeTitle" style="position:fixed;inset:0;margin:auto;max-height:85dvh;overflow:auto;border:1px solid #e5e7eb;border-radius:16px;padding:24px;width:min(440px,calc(100vw - 32px));color:#163b2d;">
-    <h2 id="workflowNoticeTitle" class="text-lg font-semibold mb-3">{{ $errors->any() || session('error') ? 'Please review your request' : 'Status update' }}</h2>
+    <h2 id="workflowNoticeTitle" class="text-lg font-semibold mb-3">{{ $showErrors || session('error') ? 'Please review your request' : 'Status update' }}</h2>
     @if(is_string($notice))<p class="text-sm mb-4" role="status">{{ $notice }}</p>@endif
-    @if($errors->any())
+    @if($showErrors)
         <ul class="text-sm mb-4 list-disc pl-5" role="alert">@foreach($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul>
     @endif
     <form method="dialog"><button class="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold" autofocus>Continue</button></form>

@@ -5,9 +5,6 @@
 @section('subheading', 'A safe space for your thoughts. Only you can see these entries.')
 
 @section('content')
-    @if(session('success'))
-        <div class="alert alert-success" data-flash> {{ session('success') }}</div>
-    @endif
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- New entry -->

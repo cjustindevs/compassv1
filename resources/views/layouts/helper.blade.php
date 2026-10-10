@@ -44,7 +44,7 @@
     </style>
     @include('partials.ui-assets')
 </head>
-<body class="helper-layout compass-compact font-sans antialiased">
+<body class="helper-layout compass-compact font-sans antialiased @yield('body-class')">
 
     @include('layouts.partials.helper-sidebar')
 
@@ -69,13 +69,13 @@
         </div>
 
         @if (session('success'))
-            <div class="alert alert-success" data-flash> {{ session('success') }}</div>
+            <div class="alert alert-success" role="status" data-flash> {{ session('success') }}</div>
         @endif
         @if (session('error'))
-            <div class="alert alert-error" data-flash> {{ session('error') }}</div>
+            <div class="alert alert-error" role="alert" data-flash> {{ session('error') }}</div>
         @endif
         @if (session('info'))
-            <div class="alert alert-info" data-flash> {{ session('info') }}</div>
+            <div class="alert alert-info" role="status" data-flash> {{ session('info') }}</div>
         @endif
         @if (session('readiness_status'))
             <div class="alert {{ session('readiness_status') === 'ready' ? 'alert-success' : 'alert-warning' }}" data-flash>
@@ -84,7 +84,7 @@
             </div>
         @endif
         @if ($errors->any())
-            <div class="alert alert-error" data-flash>
+            <div class="alert alert-error" role="alert" data-flash>
 
                 <div>
                     @foreach ($errors->all() as $error)
@@ -113,7 +113,7 @@
     </script>
 
     @yield('scripts')
-    @include('partials.workflow-notice')
+    @include('partials.workflow-notice', ['inlineNotices' => ['success', 'error', 'info'], 'inlineErrors' => true])
     @include('layouts.partials.pwa-banner')
 </body>
 </html>

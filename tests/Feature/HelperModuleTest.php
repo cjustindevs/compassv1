@@ -877,6 +877,33 @@ class HelperModuleTest extends TestCase
         $this->assertDatabaseMissing('call_logs', ['session_id' => $session->id]);
     }
 
+    public function test_saved_session_notes_have_one_success_notice(): void
+    {
+        $session = Session::where('helper_id', $this->helperUser->helper->id)->firstOrFail();
+        $session->update(['session_status' => 'completed']);
+        $session->report()->delete();
+        $url = route('helper.session.notes', $session->id);
+        $response = $this->actingAs($this->helperUser)->from($url)
+            ->followingRedirects()->post(route('helper.session.notes.store', $session->id), [
+                'session_summary' => 'Discussed grounding techniques.',
+                'observations' => 'Seeker felt calmer.',
+                'actions_taken' => 'Listened and shared resources.',
+                'session_result' => 'stable',
+            ])->assertOk();
+
+        $this->assertDatabaseHas('session_reports', ['session_id' => $session->id, 'session_summary' => 'Discussed grounding techniques.']);
+        $this->assertSame(1, substr_count($response->getContent(), 'Session notes saved successfully.'));
+        $response->assertDontSee('id="workflowNotice"', false);
+    }
+
+    public function test_journal_success_notice_is_not_repeated_by_child_view_or_popup(): void
+    {
+        $response = $this->actingAs($this->helperUser)->withSession(['success' => 'Journal saved notice'])
+            ->get(route('helper.self-help.journal'))->assertOk();
+        $this->assertSame(1, substr_count($response->getContent(), 'Journal saved notice'));
+        $response->assertDontSee('id="workflowNotice"', false);
+    }
+
     public function test_session_notes_can_be_stored_in_database(): void
     {
         $session = Session::where('helper_id', $this->helperUser->helper->id)

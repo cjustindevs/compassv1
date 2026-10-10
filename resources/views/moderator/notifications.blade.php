@@ -133,7 +133,7 @@
     @vite(['resources/css/app.css'])
     @include('partials.ui-assets')
 </head>
-<body class="compass-compact">
+<body class="compass-compact notification-page">
 
     @include('layouts.partials.moderator-sidebar')
 
@@ -155,7 +155,7 @@
             <div class="flash-success"> {{ session('success') }}</div>
         @endif
 
-        <div class="flex flex-wrap items-center gap-2 mb-6">
+        <div class="flex flex-wrap items-center gap-2 mb-6 ui-notification-toolbar">
             <a href="{{ route('moderator.notifications') }}" class="filter-pill {{ ! $typeFilter ? 'active' : '' }}">All</a>
             @foreach($types as $type)
                 <a href="{{ route('moderator.notifications', ['type' => $type]) }}"
@@ -171,7 +171,7 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card ui-notification-list">
             @php
                 // Group only identical non-emergency events in one five-minute window.
                 // Distinct destinations and read states remain separate; every child retains its own action.
@@ -180,16 +180,13 @@
             @forelse($groups as $updates)
                 @if($updates->count()>1)<details class="notification-group"><summary>{{ $updates->count() }} updates: {{ \Illuminate\Support\Str::limit($updates->first()->title,80) }}</summary><p class="time">{{ $updates->first()->created_at->copy()->timezone('Asia/Manila')->format('M j, Y g:i A') }} PHT</p>@endif
                 @foreach($updates as $notification)
-                <div class="notif-item {{ $notification->notification_type === 'emergency' ? 'moderator-emergency-notification' : '' }} {{ $notification->status === 'unread' ? 'unread' : '' }}">
-                    @if($notification->status === 'unread')
-                        <span class="dot"></span>
-                    @endif
-                    <div class="content">
-                        <p class="title">{{ \Illuminate\Support\Str::limit($notification->title,80) }}</p>
+                <div class="notif-item ui-notification-row {{ $notification->notification_type === 'emergency' ? 'moderator-emergency-notification' : '' }} {{ $notification->status === 'unread' ? 'unread' : '' }}">
+                    <div class="content ui-notification-content">
+                        <p class="title">@if($notification->status === 'unread')<span class="dot" aria-label="Unread"></span>@endif{{ \Illuminate\Support\Str::limit($notification->title,80) }}</p>
                         <p class="msg">{{ \Illuminate\Support\Str::limit(preg_split('/(?<=[.!?])\s+/', strip_tags($notification->message),2)[0],180) }}</p>
                         <p class="time">{{ $notification->created_at->copy()->timezone('Asia/Manila')->format('M j, Y g:i A') }} PHT</p>
                     </div>
-                    <div class="actions">
+                    <div class="actions ui-notification-actions">
                         <form method="POST" action="{{ route('moderator.notifications.read', $notification->id) }}">
                             @csrf
                             <button type="submit" class="btn-ghost" title="Mark as read / open">

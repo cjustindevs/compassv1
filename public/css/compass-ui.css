@@ -162,6 +162,41 @@
 .compass-ui .sidebar .sidebar-nav { min-height: 0; overflow-y: auto; }
 .compass-ui .sidebar .sidebar-user { min-width: 0; }
 
+/* Compact notification centers; scope density to inbox/history screens. */
+.compass-ui body.notification-page > .main-content { width: auto; max-width: none; padding-bottom: 40px; }
+.compass-ui .notification-page .ui-notification-toolbar { gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.compass-ui .notification-page .ui-notification-list { background: var(--compass-card); border: 1px solid var(--compass-border); border-radius: var(--compass-radius); padding: 0; box-shadow: none; min-width: 0; }
+.compass-ui .notification-page .ui-notification-list-heading { padding: 14px 16px; margin: 0; border-bottom: 1px solid var(--compass-border); }
+.compass-ui .notification-page .ui-notification-row { display: flex; align-items: center; gap: 20px; min-width: 0; padding: 12px 16px; margin: 0; border: 0; border-bottom: 1px solid var(--compass-border); border-radius: 0; box-shadow: none; transform: none; }
+.compass-ui .notification-page .ui-notification-row:last-child { border-bottom: 0; }
+.compass-ui .notification-page .ui-notification-row:is(.unread, .hf-notification-unread, .av-notification-unread) { border-left: 3px solid var(--compass-green); padding-left: 13px; background: var(--compass-green-soft); }
+.compass-ui .notification-page .ui-notification-row:is(.moderator-emergency-notification, .av-notification-emergency) { border-left: 3px solid #c34242; background: #fff7f7; }
+.compass-ui .notification-page .ui-notification-content { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
+.compass-ui .notification-page .ui-notification-content :is(h2, h3, h4, .title) { font-size: 14px; line-height: 1.4; font-weight: 600; margin: 0; }
+.compass-ui .notification-page .ui-notification-content :is(.msg, .hf-muted, .av-muted, p.text-sm, .cm-message) { font-size: 13px; line-height: 1.45; max-width: none; margin: 3px 0 0; }
+.compass-ui .notification-page .ui-notification-content :is(header, .av-heading) { margin: 0; gap: 8px; }
+.compass-ui .notification-page .ui-notification-content :is(time, .time) { font-size: 11px; line-height: 1.5; color: var(--compass-muted); }
+.compass-ui .notification-page .ui-notification-content .dot { display: inline-block; margin: 0 8px 0 0; vertical-align: middle; }
+.compass-ui .notification-page .ui-notification-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; flex: 0 0 auto; gap: 6px; max-width: 44%; margin: 0; }
+.compass-ui .notification-page .ui-notification-actions form { display: inline-flex; margin: 0; }
+.compass-ui .notification-page .ui-notification-actions :is(button, a) { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 36px; min-width: 36px; padding: 6px 10px; font-size: 12px; line-height: 1.4; border: 1px solid var(--compass-border); border-radius: 8px; background: var(--compass-card); color: var(--compass-green-dark); box-shadow: none; white-space: normal; }
+.compass-ui .notification-page .ui-notification-actions :is(button, a):hover { background: var(--compass-green-soft); border-color: var(--compass-green); }
+.compass-ui .notification-page .notification-group { padding: 12px 0; }
+.compass-ui .notification-page .notification-group > :is(summary, .time) { margin-inline: 16px; }
+.compass-ui .notification-page .ui-notification-footer { margin-top: 16px; padding: 12px 16px; font-size: 12px; }
+.compass-ui .notification-page .av-filter label { flex: 0 1 240px; }
+.compass-ui .font-large .notification-page .ui-notification-content :is(h2, h3, h4, p),
+.compass-ui .notification-page.font-large .ui-notification-content :is(h2, h3, h4, p) { font-size: 16px; }
+@media (max-width: 768px) {
+    .compass-ui body.notification-page > .main-content { padding-bottom: 100px; }
+    .compass-ui .notification-page .ui-notification-row { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 14px; }
+    .compass-ui .notification-page .ui-notification-content { flex: auto; }
+    .compass-ui .notification-page .ui-notification-actions { justify-content: flex-start; max-width: 100%; width: auto; }
+    .compass-ui .notification-page .ui-notification-actions :is(button, a) { min-height: 44px; min-width: 44px; }
+    .compass-ui .notification-page .ui-notification-toolbar { overflow: visible; }
+    .compass-ui .notification-page .av-filter label { flex: 1 1 180px; }
+}
+
 /* User preferences override default density without changing business statuses. */
 .compass-ui body.font-large { font-size: 16px; }
 .compass-ui body.font-small { font-size: 13px; }

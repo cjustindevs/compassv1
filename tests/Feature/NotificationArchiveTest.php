@@ -114,6 +114,35 @@ class NotificationArchiveTest extends TestCase
             ->assertOk()
             ->assertSee('Archive preference')
             ->assertSee('Test notification')
+            ->assertSee('href="'.route('notifications').'"', false)
             ->assertSee('Restore to inbox');
+    }
+
+    public function test_inbox_keeps_filters_pagination_and_owned_read_archive_actions(): void
+    {
+        $user = $this->makeUser();
+        $other = $this->makeUser();
+        $foreign = $this->makeNotification($other, ['title' => 'Private other-user update']);
+        for ($index = 0; $index < 16; $index++) {
+            $this->makeNotification($user, ['title' => 'Owned system update '.$index]);
+        }
+        $session = $this->makeNotification($user, ['title' => 'Owned session update', 'notification_type' => 'session', 'link' => '/session/history']);
+
+        $this->actingAs($user)->get(route('notifications'))->assertOk()
+            ->assertViewHas('notifications', fn ($items) => $items->total() === 17 && $items->count() === 15)
+            ->assertDontSee($foreign->title);
+        $this->get(route('notifications', ['page' => 2]))->assertOk()
+            ->assertViewHas('notifications', fn ($items) => $items->count() === 2);
+        $this->get(route('notifications', ['type' => 'session']))->assertOk()
+            ->assertViewHas('notifications', fn ($items) => $items->total() === 1)
+            ->assertSee($session->title)->assertSee('Open &amp; mark as read', false);
+        $this->postJson(route('notifications.read', $session->id))->assertOk()->assertJson(['read' => true]);
+        $this->assertTrue($session->fresh()->is_read);
+        $this->postJson(route('notifications.read', $foreign->id))->assertNotFound();
+        $this->deleteJson(route('notifications.destroy', $foreign->id))->assertNotFound();
+        $this->deleteJson(route('notifications.destroy', $session->id))->assertOk()->assertJson(['archived' => true]);
+        $this->assertDatabaseHas('notifications', ['id' => $session->id]);
+        $this->assertNotNull(Notification::withoutGlobalScopes()->findOrFail($session->id)->archived_at);
+        $this->get(route('notifications', ['type' => 'session']))->assertOk()->assertDontSee($session->title);
     }
 }
