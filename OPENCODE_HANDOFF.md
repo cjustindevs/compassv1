@@ -524,3 +524,12 @@ review remains pending; no browser surface is available in this session.
 - Browser/device visual review is pending: computer-use inventory exposes no
   browser or app surface in this session. The user requested publication to
   `origin/deploy` after validation; live Render deployment is a separate check.
+
+## Helper resource card cleanup - October 10, 2026
+
+- Removed the empty green icon containers before resource titles and their
+  redundant header wrapper. Titles and category badges align with descriptions.
+  Search, categories, resource links, records and pagination remain unchanged.
+- Existing Helper resource-page render test passed; scoped diff check passed.
+  Blade-only change; no asset rebuild or database change needed. The user
+  requested publication to `origin/deploy`; live Render deployment is separate.
