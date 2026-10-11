@@ -52,6 +52,7 @@ class QueueRequest extends Model
     ];
 
     protected $casts = [
+        'queued_at' => 'datetime',
         'request_date' => 'datetime',
         'scheduled_date' => 'datetime',
         'matched_date' => 'datetime',

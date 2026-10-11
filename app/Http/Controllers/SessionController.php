@@ -239,14 +239,15 @@ class SessionController extends Controller
         }
 
         if ($session->evaluation) {
-            return redirect()->route('session.thank-you');
+            return redirect()->route('seeker.requests.show',$session)->with('info','Your feedback has already been submitted.');
         }
 
         session(['session_id' => $session->id]);
 
         $sessionId = $session->id;
+        $reference = $session->reference_number;
         $helperName = $session->helper->public_alias ?? 'Peer Helper';
-        $language = session('preferred_language', 'English');
+        $language = $session->preferred_language === 'English/Tagalog' ? 'Both (English and Tagalog)' : ($session->preferred_language ?? 'Not recorded');
         $duration = $session->duration
             ? $session->duration . 'm'
             : ($session->start_time && $session->end_time
@@ -255,6 +256,7 @@ class SessionController extends Controller
 
         return view('session.evaluation', compact(
             'sessionId',
+            'reference',
             'helperName',
             'duration',
             'language'
@@ -269,13 +271,17 @@ class SessionController extends Controller
         \Illuminate\Support\Facades\Gate::authorize('seeker-workflow');
         $fields = array_keys(\App\Services\EvaluationInstrument::OPTIONS);
         $rules = \App\Services\EvaluationInstrument::rules();
-        $validated = $request->validate($rules + ['session_id' => 'required|integer', 'comments' => 'nullable|string|max:500']);
+        $validated = $request->validate($rules + ['session_id' => 'required|integer', 'comments' => 'nullable|string|max:'.\App\Services\EvaluationInstrument::COMMENTS_MAX_LENGTH]);
         $session = Session::where('seeker_id', Auth::user()->helpSeeker?->id)->findOrFail($validated['session_id']);
         abort_unless(in_array($session->session_status, [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED]), 409, 'End the session before submitting feedback.');
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($session, $validated, $fields) {
+        $created = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $session, $validated, $fields) {
             $session = Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
-            abort_if($session->evaluation()->exists(), 409, 'Feedback has already been submitted.');
+            abort_unless(in_array($session->session_status, [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED]), 409, 'End the session before submitting feedback.');
+            if ($session->evaluation()->exists()) {
+                abort_if($request->expectsJson(), 409, 'Feedback has already been submitted.');
+                return false;
+            }
             $answers = array_intersect_key($validated, array_flip($fields));
             $scores = \App\Services\EvaluationInstrument::scores($answers);
             HelpSeekerEvaluation::create($scores + [
@@ -286,7 +292,9 @@ class SessionController extends Controller
             ]);
             \App\Services\SupportAudit::record('evaluation_submitted',$session);
             $session->update(['session_status' => Session::STATUS_EVALUATED, 'seeker_evaluation_submitted' => true]);
+            return true;
         });
+        if (!$created) return redirect()->route('seeker.requests.show',$session)->with('info','Your feedback has already been submitted.');
         session(['evaluation_completed' => true]);
         session()->forget(['screening_data', 'preferences_data', 'risk_level', 'helper_id', 'session_id', 'voice_consent']);
         return redirect()->route('session.thank-you');
@@ -335,7 +343,7 @@ class SessionController extends Controller
                     };
 
                     return [
-                        'id' => '#' . str_pad((string) $session->id, 4, '0', STR_PAD_LEFT),
+                        'id' => $session->reference_number,
                         'date' => $session->created_date?->format('M d, Y'),
                         'helper' => $session->helper->public_alias ?? '—',
                         'mode' => $mode,

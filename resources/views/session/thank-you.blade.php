@@ -154,6 +154,7 @@
             We hope your session gave you the space you needed. Take care of yourself.
         </p>
 
+        <p><a href="{{ route('seeker.requests') }}" class="btn-ghost">View request history and feedback</a></p>
         <div class="heart-line">
 
             <span>You matter</span>

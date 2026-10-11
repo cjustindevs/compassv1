@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 class EvaluationInstrument {
+    public const COMMENTS_MAX_LENGTH = 500;
     // Store categorical answers as authoritative. Legacy numeric columns use a documented
     // evenly spaced 1-10 reporting scale; these are experience ratings, never clinical scores.
     public const OPTIONS = [

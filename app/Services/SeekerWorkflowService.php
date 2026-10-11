@@ -15,9 +15,11 @@ class SeekerWorkflowService {
         return DB::transaction(function () use ($user,$answers,$compactDetails) {
             HelpSeeker::whereKey($user->helpSeeker->id)->lockForUpdate()->firstOrFail();
             $existing = $this->current($user);
-            abort_if($existing,409,'Finish or cancel your existing request first.');
+            abort_if($existing,409,'Open your active request before starting another request.');
             $review = false;
-            try { $result = $compactDetails !== null ? app(CompactScreening::class)->classify($answers) : $this->risk->classifyRisk($answers); }
+            $version = $compactDetails !== null ? ($compactDetails['screening_form_version'] ?? CompactScreening::VERSION) : ScreeningInstrument::VERSION;
+            try { $result = $version === CompactScreening::FORM_VERSION ? app(CompactScreening::class)->classifyForm($answers)
+                : ($compactDetails !== null ? app(CompactScreening::class)->classify($answers) : $this->risk->classifyRisk($answers)); }
             catch (\RuntimeException $e) { $review = true; $result = ['risk_level'=>null,'rule_code'=>'review_unresolved','priority'=>2,'action'=>'adviser_review_required','reason'=>'Unresolved screening responses']; }
             $emergency = $result['risk_level'] === 'emergency';
             $review = $emergency || ($review || ($compactDetails === null && !ScreeningInstrument::approved()) || $result['risk_level']==='high');
@@ -31,18 +33,19 @@ class SeekerWorkflowService {
             $screening = ScreeningResponse::create(['seeker_id'=>$session->seeker_id,'session_id'=>$session->id,
                 'responses'=>$answers + ($compactDetails !== null ? ['description'=>$compactDetails['description'] ?? null,'custom_concern'=>$compactDetails['custom_concern'] ?? null] : []),'risk_level'=>$result['risk_level'],'priority'=>$result['priority'],
                 'action'=>$result['action'],'reason'=>$result['reason'],'classified_at'=>now(),'classified_by'=>'system',
-                'is_active'=>true,'is_complete'=>!$review,'instrument_version'=>$compactDetails !== null ? CompactScreening::VERSION : ScreeningInstrument::VERSION,
+                'is_active'=>true,'is_complete'=>!$review,'instrument_version'=>$version,
                 'rule_code'=>$result['rule_code'],'review_status'=>$review?'adviser_review_required':'complete',
                 'actor_id'=>$user->id,'evidence_source'=>'seeker_responses']);
             if ($result['risk_level']==='high' && $adviser) {
                 $referral=\App\Models\Referral::create(['session_id'=>$session->id,'helper_id'=>null,'adviser_id'=>$adviser->id,'priority_level'=>'high','help_seeker_consent'=>false,'referral_reason'=>'Preliminary screening requires urgent professional review.','referral_date'=>now(),'status'=>'pending_adviser']);
                 SupportAudit::record('referral_proposed',$referral);
             }
-            SupportAudit::record('screening_submitted',$screening,['instrument_version'=>$compactDetails !== null ? CompactScreening::VERSION : ScreeningInstrument::VERSION]);
+            SupportAudit::record('screening_submitted',$screening,['instrument_version'=>$version]);
             SupportAudit::record($review?'screening_review_required':'risk_classified',$screening,['rule_code'=>$result['rule_code']]);
             if ($emergency) app(EmergencyEscalationService::class)->escalateEmergency($session,$user->helpSeeker,['reason'=>$result['reason'],'screening_id'=>$screening->id,'rule_code'=>$result['rule_code']]);
             if ($review && $adviser) Notification::create(['user_account_id'=>$adviser->user_account_id,'title'=>'Screening review required',
                 'message'=>$emergency ? 'An emergency screening needs your review. Temporary peer support does not replace emergency coordination.' : 'A preliminary screening needs your review before peer support.','notification_type'=>'system','link'=>'/adviser/screenings#screening-'.$session->id]);
+            \App\Models\SeekerRequestDraft::where('seeker_id', $session->seeker_id)->delete();
             return $session;
         });
     }
@@ -72,7 +75,8 @@ class SeekerWorkflowService {
             abort_unless($session->workflow_state==='session_preferences_required' && $session->concern_id && !$session->requires_adviser_review && $session->risk_level!=='emergency',409,'Complete the required steps before submitting.');
             $session->update(['workflow_state'=>'ready_for_submission','session_type'=>'chat']);
             $user->update(['preferred_language'=>$data['preferred_language'],'preferred_communication_mode'=>'chat']);
-            $session->update(['workflow_state'=>'submitted','submitted_at'=>now()]);
+            $session->update(['workflow_state'=>'submitted','submitted_at'=>now(),'preferred_language'=>$data['preferred_language']]);
+            \App\Models\SeekerRequestDraft::where('seeker_id', $session->seeker_id)->delete();
             $queue=QueueRequest::create(['seeker_id'=>$session->seeker_id,'request_date'=>now(),'queued_at'=>now(),
                 'request_status'=>'waiting','priority_level'=>$session->risk_level,'preferred_session_type'=>'chat','voice_consent'=>false]);
             app(QueueManagementService::class)->prepareQueue($queue);

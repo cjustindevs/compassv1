@@ -389,6 +389,7 @@
     </style>
     @vite(['resources/css/app.css'])
     @include('partials.ui-assets')
+    <link rel="stylesheet" href="{{ asset('css/seeker-request.css') }}?v={{ filemtime(public_path('css/seeker-request.css')) }}">
 </head>
 <body class="compass-compact">
 
@@ -417,18 +418,12 @@
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <span class="text-xs text-gray-400 hidden sm:inline">{{ now()->format('M d, Y') }}</span>
+                <span class="text-xs text-gray-400 hidden sm:inline">{{ now('Asia/Manila')->format('M d, Y') }}</span>
             </div>
         </div>
 
         <!-- Step Indicator -->
-        <div class="step-indicator">
-            <div class="step-dot done">1</div>
-            <div class="step-line done"></div>
-            <div class="step-dot done">2</div>
-            <div class="step-line done"></div>
-            <div class="step-dot active">3</div>
-        </div>
+        @include('request.partials.progress', ['currentStep'=>3])
 
         <!-- ─── MATCHING CARD ─── -->
         <div class="form-card">
@@ -441,7 +436,7 @@
             <!-- ============================================ -->
             @if($session->isActive())
                 <div class="text-center py-4">
-                    <h2 class="text-2xl font-bold text-gray-800">Your helper accepted</h2>
+                    <h2 class="text-2xl font-bold text-gray-800">Your chat is ready</h2>
                     <p class="text-gray-500 mt-2">A helper accepted your request. Your session is now active.</p>
 
                     <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
@@ -457,6 +452,15 @@
             <!-- ============================================ -->
             <!-- HELPER ASSIGNED (waiting for acceptance)      -->
             <!-- ============================================ -->
+            @elseif($session->helper_accepted_at && $session->workflow_state === 'session_ready')
+                <div id="preparingSection" class="text-center py-4">
+                    <h2 class="text-xl font-bold text-gray-800">Your helper is preparing</h2>
+                    <p class="text-gray-500 mt-2">Your request has been accepted. Chat opens when your helper starts the session.</p>
+                    <p class="text-sm text-gray-500 mt-3">Request {{ $session->reference_number }} &middot; {{ $availableHelper?->public_alias ?? 'Peer Helper' }}</p>
+                    <p class="text-xs text-gray-400 mt-2">This page checks again every 15 seconds. You can close it and return later.</p>
+                    <a class="btn-outline mt-4" href="{{ route('seeker.requests.show',$session) }}">View request details</a>
+                    @include('request.partials.resources')
+                </div>
             @elseif($session->isHelperAssigned())
                 <div class="text-center py-4">
                     <h2 class="text-2xl font-bold text-gray-800">Waiting for helper acceptance</h2>
@@ -477,7 +481,7 @@
                         <div class="mt-6 p-4 bg-green-50 rounded-xl border border-green-200 max-w-md mx-auto">
                             <div class="flex items-center gap-4">
                                 <div class="w-14 h-14 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-                                    {{ substr($availableHelper->first_name ?? 'H', 0, 1) }}
+                                    {{ substr($availableHelper->public_alias ?? 'H', 0, 1) }}
                                 </div>
                                 <div class="text-left">
                                     <p class="font-semibold text-gray-800">{{ $availableHelper->public_alias }}</p>
@@ -497,26 +501,14 @@
                     </div>
 
                     <p class="text-sm text-gray-400 mt-4">
-                         Request {{ $session->reference_number }} · Submitted {{ $session->created_at?->diffForHumans() }}
+                         Request {{ $session->reference_number }} · Submitted {{ ($session->submitted_at ?? $session->created_date ?? $session->created_at)?->diffForHumans() }}
                     </p>
                     <p class="text-sm text-gray-400 mt-1">
                         You can close this page and check back later — your request is saved.
                     </p>
 
                     <!-- Resources while waiting -->
-                    <div class="mt-8 pt-6 border-t border-gray-200">
-                        <h3 class="font-semibold text-gray-800 mb-4">While waiting, try these</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            @foreach($resources as $resource)
-                                <div class="resource-card" onclick="window.location.href='{{ $resource['link'] }}'">
-
-                                    <h4>{{ $resource['title'] }}</h4>
-                                    <p>{{ $resource['description'] }}</p>
-                                    <span class="duration"> {{ $resource['duration'] }}</span>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
+                    @include('request.partials.resources')
 
                     <div class="mt-6 pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-center gap-4">
                         <form method="POST" action="{{ route('request.matching.decline') }}"
@@ -539,21 +531,23 @@
                 <div id="noHelperSection" class="text-center py-4">
                     <h2 class="text-xl font-bold text-gray-800">Waiting for an available helper</h2>
                     <p class="text-gray-500 mt-2 max-w-md mx-auto">
-                        You're in the queue. You will be notified the moment a trained peer helper accepts your request.
+                        Your request is saved in the matching queue. We will update its status when a helper accepts.
                     </p>
 
                     <div class="mt-4 text-sm text-gray-500">
-                        <p> Request {{ $session->reference_number }} · Submitted {{ $session->created_at?->diffForHumans() }}</p>
-                        @if($currentQueueRequest?->queue_position)
+                        <p> Request {{ $session->reference_number }} · Submitted {{ ($session->submitted_at ?? $session->created_date ?? $session->created_at)?->diffForHumans() }}</p>
+                        <p class="mt-1 text-gray-600">{{ \App\Services\SeekerRequestPresentation::waitLabel($session) }}</p>
+                        @if($currentQueueRequest?->request_status === 'waiting' && $currentQueueRequest->queue_position)
                             <p class="mt-1 text-gray-600">
-                                Queue position: #{{ $currentQueueRequest->queue_position }}
+                                Queue position: #{{ $currentQueueRequest->queue_position }}<br><span class="text-xs text-gray-500">Position follows priority and request time; it may change. A wait-time estimate is not available.</span>
                             </p>
                         @endif
                         @if($availableHelperCount > 0)
                             <p class="mt-1 text-green-600">
-                                 {{ $availableHelperCount }} {{ $availableHelperCount === 1 ? 'helper is' : 'helpers are' }} online now
+                                 {{ $availableHelperCount }} {{ $availableHelperCount === 1 ? 'helper is' : 'helpers are' }} eligible for this priority; matching also checks language, schedule, and workload
                             </p>
-                        @elseif(!empty($matchingReason))
+                        @endif
+                        @if(!empty($matchingReason))
                             <p class="mt-2 text-left text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 inline-block" role="status">
                                  {{ $matchingReason }}
                             </p>
@@ -568,19 +562,7 @@
                     <!-- ============================================ -->
                     <!-- RESOURCES WHILE WAITING                     -->
                     <!-- ============================================ -->
-                    <div class="mt-8 pt-6 border-t border-gray-200">
-                        <h3 class="font-semibold text-gray-800 mb-4">In the meantime, try these</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            @foreach($resources as $resource)
-                                <div class="resource-card" onclick="window.location.href='{{ $resource['link'] }}'">
-
-                                    <h4>{{ $resource['title'] }}</h4>
-                                    <p>{{ $resource['description'] }}</p>
-                                    <span class="duration"> {{ $resource['duration'] }}</span>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
+                    @include('request.partials.resources')
 
                     <!-- ============================================ -->
                     <!-- ACTIONS                                     -->
@@ -626,7 +608,7 @@
             // runs the matching check on each load, so a single guarded reload
             // loop keeps the queue fresh, including local setups without a
             // scheduler. Hidden pages and open dialogs are left alone.
-            const noHelperSection = document.getElementById('noHelperSection');
+            const noHelperSection = document.querySelector('#noHelperSection, #preparingSection') || ({{ $session->isHelperAssigned() ? 'true' : 'false' }} ? document.getElementById('matchingLiveState') : null);
             if (noHelperSection) {
                 setInterval(function() {
                     if (!document.hidden && !document.querySelector('dialog[open]')) window.location.reload();

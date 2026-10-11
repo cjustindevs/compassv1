@@ -15,6 +15,9 @@ Artisan::command('inspire', function () {
 Schedule::call(fn () => app(\App\Services\StaleQueueRequests::class)->expire())
     ->everyMinute()->name('expire-stale-queue')->withoutOverlapping();
 
+Schedule::call(fn () => \App\Models\SeekerRequestDraft::where('expires_at', '<=', now())->delete())
+    ->hourly()->name('purge-expired-seeker-drafts')->withoutOverlapping();
+
 Schedule::call(fn () => app(QueueManagementService::class)->checkQueueAging())
     ->everyTwoMinutes();
 

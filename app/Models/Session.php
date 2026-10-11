@@ -70,6 +70,7 @@ class Session extends Model
         'workflow_state',
         'helper_accepted_at',
         'submitted_at',
+        'preferred_language',
         'cancelled_at',
         'expired_at',
         'warning_sent_at',

@@ -184,6 +184,9 @@ Route::middleware(['auth', 'role:seeker'])->group(function () {
     Route::post('/request/concern', [RequestSupportController::class, 'processConcern'])->name('request.concern.process');
     Route::post('/request/{session}/cancel', [RequestSupportController::class, 'cancel'])->name('request.cancel');
     Route::get('/seeker/requests', [RequestSupportController::class, 'history'])->name('seeker.requests');
+    Route::get('/seeker/requests/{session}', [RequestSupportController::class, 'show'])->name('seeker.requests.show');
+    Route::post('/request/draft', [\App\Http\Controllers\SeekerRequestDraftController::class, 'save'])->name('request.draft.save');
+    Route::delete('/request/draft', [\App\Http\Controllers\SeekerRequestDraftController::class, 'discard'])->name('request.draft.discard');
     // Step 2: Preferences (Support Mode, Language, Notes)
     Route::get('/request/preferences', [RequestSupportController::class, 'preferences'])->name('request.preferences');
     Route::post('/request/preferences', [RequestSupportController::class, 'processPreferences'])->name('request.preferences.process');

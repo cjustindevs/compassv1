@@ -173,7 +173,7 @@ class HelperMatchingService
         $eligible = $this->getEligibleHelpers($session->risk_level, $excludeHelperId)
             ->reject(fn ($candidate) => in_array($candidate->id, $excluded, true))
             ->reject(fn ($candidate) => DB::table('helper_conflicts')->where('helper_id', $candidate->id)->where('seeker_id', $session->seeker_id)->exists());
-        foreach ($this->rankHelpers($eligible, $session->risk_level, $session->concern?->concern_name, $queue->seeker?->user?->preferred_language) as $helper) {
+        foreach ($this->rankHelpers($eligible, $session->risk_level, $session->concern?->concern_name, $session->preferred_language ?? $queue->seeker?->user?->preferred_language) as $helper) {
             // Revalidate under lock. A candidate can become busy after ranking;
             // try the next eligible candidate instead of leaving the queue stuck.
             $result = $this->manualAssign($queue, $helper->id, false, false, 'automatic');

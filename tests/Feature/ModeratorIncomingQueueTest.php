@@ -44,7 +44,7 @@ class ModeratorIncomingQueueTest extends TestCase
     private function eligibleHelper(): Helper
     {
         // Inside the approved duty window so the readiness check is valid.
-        $this->travelTo(now('Asia/Manila')->setTime(19, 0)->utc());
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-10-08 19:00:00', 'Asia/Manila')->utc());
 
         $user = User::factory()->create(['role' => 'helper', 'is_active' => true]);
         $helper = Helper::create([

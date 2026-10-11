@@ -585,3 +585,91 @@ review remains pending; no browser surface is available in this session.
   diff checks passed. Tests used isolated SQLite records; no production data,
   migration or asset build was required. The user requested publication to
   `origin/deploy`; live Render deployment remains a separate check.
+
+
+## Seeker request UX refinement - October 11, 2026
+
+- Replaced the ambiguous one-question form/hidden-answer mapping with explicit
+  answers to the five existing compact questions. The form contract is versioned
+  `compass-compact-explicit-1`; original answers are stored as Yes/No/Prefer not
+  to say. Missing answers fail validation. An undisclosed answer requires
+  existing Adviser clarification instead of defaulting to Low. An explicit
+  current plan retains the existing emergency precedence. No new clinical
+  thresholds or feedback scales were introduced. Complete legacy five-boolean
+  and full-instrument clients remain supported; ambiguous `safety_check` posts
+  are rejected. Adviser clarification can append evidence for the new form
+  without replacing the original responses.
+- Screening instructions, current consent enforcement, labelled progress,
+  field errors and restored values remain connected to existing services.
+  Description is optional (500 characters); Other requires its existing custom
+  concern. Continue records screening immediately, preserving early review and
+  emergency escalation. Opening Review does not create a second case. Review
+  shows immutable original answers and editable language; Chat is fixed. Submit
+  Request uses the existing locked, idempotent queue submission. Both (English
+  and Tagalog) retains `English/Tagalog` in storage.
+- New encrypted server drafts are separate from cases, queues, screenings and
+  operational metrics. One draft per Seeker, explicit form version and stage,
+  current consent required on save/read, ownership on all actions. Partial
+  screening answers are validated without routing/classification. Preferences
+  drafts bind to the owner's current unsubmitted request and store language
+  only. Save refreshes a seven-day expiry; expired drafts are not restored and
+  are physically purged hourly by the existing scheduler. Successful screening
+  and final submission consume their corresponding draft. Discarding a draft
+  does not cancel or modify recorded requests. UI states that drafts are not
+  submitted or monitored; no localStorage or answer logging was added.
+- Dirty forms warn on in-page navigation and browser unload where supported.
+  Failed saves preserve inputs; edits made during a save remain dirty; pending
+  saves block final submission. Browser Back restores submission controls.
+  Browser unload warnings remain supplementary,
+  especially on mobile. Saved timestamps and expiry labels use Philippine time.
+- Matching distinguishes waiting, acceptance pending, Helper preparing, and
+  active chat. Acceptance alone does not offer Open Chat. Existing 15-second
+  polling now covers acceptance/preparation too. Emergency coordination remains
+  separate from temporary peer support. Waiting shows actual elapsed time and
+  priority-based queue position; no predictive estimate is displayed. A record
+  absent from the waiting queue has no position, rather than a fabricated final
+  position. Matching messages reflect consent and actual operating hours.
+- Three published, public, unarchived, current-review self-help records appear
+  initially with View More. Resource categories are content types, not a reliable
+  concern mapping, so the existing curated featured/popularity ordering remains.
+  Numeric minutes and existing minute labels are formatted once; invalid or
+  unknown durations show Duration not specified.
+- History is owner-scoped, searchable by canonical reference/concern, filterable
+  by status and Philippine date boundaries, and paginated (15 per page). Feedback
+  pending means completed without an evaluation. Closed records remain viewable.
+  Details show safe request context, public Helper alias, recorded dates,
+  genuine state events and the owner's submitted feedback. Staff notes, actors,
+  Identity Vault data and fabricated historical events are not exposed.
+- New requests snapshot submitted language; automatic ranking uses that snapshot
+  with the existing User preference fallback for legacy records. Matching weights,
+  eligibility, readiness, duty, workload and approvals remain unchanged.
+- Feedback retains the existing categorical instrument and scoring. Its maximum
+  comment length is shared with backend validation and the live counter. Repeat
+  HTML submissions open the existing submitted feedback; JSON duplicates still
+  return 409. Existing unique constraint and transaction locking remain. Session
+  completion is still required. Request IDs reuse `reference_number`; history
+  distinguishes completed sessions from feedback submission.
+- Submitted cancellation remains forbidden; no emergency dismissal or workflow
+  bypass was added. Original screening/clinical instrument redesign, voice calls,
+  and any expanded cancellation policy remain outside this change.
+- Required migration: `2026_10_11_000001_add_seeker_request_drafts_and_language`.
+  It creates encrypted draft storage and a nullable session language snapshot;
+  it does not backfill guessed historical preferences. Apply with the normal
+  Laravel migration workflow before serving the updated pages. Render's existing
+  startup script already runs migrations. No live/local application database
+  migration was executed for this task; tests used isolated SQLite databases.
+- Validation: 151 regression tests / 1,940 assertions passed across Seeker,
+  Helper retry/matching, Moderator queue, Adviser privacy, referrals/emergencies,
+  sessions and shared UI. The new 15-test Seeker suite also passed independently
+  (161 assertions). PHP syntax, JavaScript syntax, scoped whitespace checks and
+  production Vite/PWA build passed. Static QA parsed 10 rendered Seeker fixture
+  pages, 52 stylesheets and 36 scripts. Draft UI behavior was checked using Node
+  DOM fixtures for both button layouts, asynchronous save/edit races, failure
+  preservation, discard and navigation warnings.
+- Three older Moderator tests failed on Sunday with both current and pre-change
+  queue/matching code because their fixture only set the clock to 19:00. The
+  fixture now uses a fixed permitted weekday; production duty rules are unchanged.
+- Browser/device visual QA and browser console checks remain pending: computer-use
+  inventory has no browser/app surface. Layout rules cover 768px and 480px, but
+  static/render tests do not establish visual absence of overflow on devices.
+  No commit or push was requested for this implementation turn.

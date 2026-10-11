@@ -62,7 +62,7 @@
            class="nav-item {{ $anyActive(['request.screening*', 'request.preferences*', 'request.matching*', 'request.voice-consent*']) || $anyActive(['session.chat', 'session.voice', 'session.evaluation*']) ? 'active' : '' }}">
             <x-ui-icon name="message"  /><span class="nav-text">Request Help</span>
         </a>
-        <a href="{{ route('seeker.requests') }}" title="Request history" class="nav-item {{ $isActive('seeker.requests') ? 'active' : '' }}"><x-ui-icon name="clipboard"  /><span class="nav-text">Request history</span></a>
+        <a href="{{ route('seeker.requests') }}" title="Request history" class="nav-item {{ $isActive('seeker.requests*') ? 'active' : '' }}"><x-ui-icon name="clipboard"  /><span class="nav-text">Request history</span></a>
         <a href="{{ route('seeker.privacy') }}" title="Privacy and consent" class="nav-item {{ $isActive('seeker.privacy') ? 'active' : '' }}"><x-ui-icon name="role"  /><span class="nav-text">Privacy and consent</span></a>
         <a href="{{ route('seeker.referrals') }}" title="Referral decisions" class="nav-item {{ $isActive('seeker.referrals') ? 'active' : '' }}"><x-ui-icon name="share"  /><span class="nav-text">Referral decisions</span></a>
         <a href="{{ route('session.history') }}"

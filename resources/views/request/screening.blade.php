@@ -563,6 +563,7 @@
     </style>
     @vite(['resources/css/app.css'])
     @include('partials.ui-assets')
+    <link rel="stylesheet" href="{{ asset('css/seeker-request.css') }}?v={{ filemtime(public_path('css/seeker-request.css')) }}">
 </head>
 <body class="compass-compact">
 
@@ -591,24 +592,23 @@
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <span class="text-xs text-gray-400 hidden sm:inline">{{ now()->format('M d, Y') }}</span>
+                <span class="text-xs text-gray-400 hidden sm:inline">{{ now('Asia/Manila')->format('M d, Y') }}</span>
             </div>
         </div>
 
         <!-- Step Indicator -->
-        <div class="step-indicator steps-compact">
-            <div class="step-dot active">1</div>
-            <div class="step-line"></div>
-            <div class="step-dot">2</div>
-            <div class="step-line"></div>
-            <div class="step-dot">3</div>
-        </div>
+        @include('request.partials.progress', ['currentStep'=>1])
 
         <!-- ─── FORM CARD ─── -->
         <div class="form-card">
 
-            <form id="screeningForm" class="form-maximized" method="POST" action="{{ route('request.screening.process') }}">
+            <form id="screeningForm" class="form-maximized" method="POST" action="{{ route('request.screening.process') }}" data-request-form data-draft-url="{{ route('request.draft.save') }}" data-discard-url="{{ route('request.draft.discard') }}">
                 @csrf
+                <input type="hidden" name="screening_form_version" value="{{ \App\Services\CompactScreening::FORM_VERSION }}">
+                <input type="hidden" name="instrument_version" value="{{ \App\Services\CompactScreening::FORM_VERSION }}">
+                <input type="hidden" name="stage" value="screening">
+                <p class="text-sm text-gray-500 mb-4">Choose a concern and answer each support question. These answers guide your next step; they are not a diagnosis. Selecting Continue records your screening and may request Adviser review before you enter the matching queue.</p>
+                <p class="text-sm text-gray-500 mb-4">If you need urgent assistance, do not wait in the matching queue. <a class="text-red-700 underline" href="{{ route('emergency') }}">Open emergency resources</a>.</p>
                 <button type="button" data-open-seeker-consent class="text-sm text-green-700 underline mb-4">Terms and Privacy</button>
 
                 <!-- ============================================ -->
@@ -623,7 +623,7 @@
                         <select id="concern_id" name="concern_id" class="form-input" required>
                             <option value="">Select your concern...</option>
                             @foreach($concerns as $concern)
-                                <option value="{{ $concern->id }}" {{ old('concern_id') == $concern->id ? 'selected' : '' }}>
+                                <option value="{{ $concern->id }}" {{ old('concern_id', $draft?->payload['concern_id'] ?? null) == $concern->id ? 'selected' : '' }}>
                                     {{ $concern->concern_name }}
                                 </option>
                             @endforeach
@@ -636,7 +636,7 @@
                     <!-- Custom Concern (appears when "Others" selected) -->
                     <div id="customConcernContainer" class="mt-3 hidden">
                         <label class="form-label" for="custom_concern">Please specify your concern</label>
-                        <input type="text" id="custom_concern" name="custom_concern" class="form-input" placeholder="Type your concern..." maxlength="255">
+                        <input type="text" id="custom_concern" name="custom_concern" class="form-input" placeholder="Type your concern..." maxlength="255" value="{{ old('custom_concern', $draft?->payload['custom_concern'] ?? '') }}">
                         @error('custom_concern')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -651,49 +651,34 @@
                     <p class="text-sm text-gray-500 mb-4">Tell us more about your concern.</p>
 
                     <div>
-                        <label class="form-label" for="description">Description <span class="text-red-500">*</span></label>
-                        <textarea id="description" name="description" class="form-input" maxlength="200" required placeholder="I have several deadlines this week and I'm having trouble sleeping because I feel like I cannot keep up with my classes.">{{ old('description') }}</textarea>
-                        <div class="char-count" id="charCount">0 / 200</div>
+                        <label class="form-label" for="description">Description <span class="text-gray-400">(optional)</span></label>
+                        <textarea id="description" name="description" class="form-input" maxlength="500" data-character-count="charCount" aria-describedby="charCount" placeholder="I have several deadlines this week and I'm having trouble sleeping because I feel like I cannot keep up with my classes.">{{ old('description', $draft?->payload['description'] ?? '') }}</textarea>
+                        <div class="char-count" id="charCount" aria-live="polite">0 / 500</div>
                         @error('description')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                 </div>
 
-                <!-- ============================================ -->
-                <!-- SECTION 3: SAFETY CHECK                    -->
-                <!-- ============================================ -->
-                <div class="mb-8">
-                    <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Safety Check</h3>
-                    <p class="text-sm text-gray-500 mb-4">We want to support you better. Have you recently had thoughts of harming yourself or ending your life?</p>
-
-                    <div class="safety-buttons">
-                        <div class="safety-btn">
-                            <input type="radio" id="safety_yes" name="safety_check" value="yes" required @checked(old('safety_check') == 'yes')>
-                            <label for="safety_yes">Yes</label>
+                <section class="mb-6" aria-labelledby="support-questions">
+                    <h3 id="support-questions" class="font-semibold">Support and safety questions</h3>
+                    <p class="text-sm text-gray-500 mt-1">Answer all five questions. Prefer not to say is a valid answer and may require Adviser clarification.</p>
+                    @foreach(\App\Services\CompactScreening::questions() as $field=>$question)
+                    <fieldset class="request-safety-question" @error($field) aria-describedby="{{ $field }}-error" aria-invalid="true" @enderror>
+                        <legend>{{ $question }} <span class="text-red-500" aria-label="required">*</span></legend>
+                        <div class="safety-buttons">
+                            @foreach(['yes'=>'Yes','no'=>'No','prefer_not_to_say'=>'Prefer not to say'] as $value=>$label)
+                            <div class="safety-btn">
+                                <input type="radio" id="{{ $field }}_{{ $value }}" name="{{ $field }}" value="{{ $value }}" required @checked(old($field, $draft?->payload[$field] ?? null) === $value)>
+                                <label for="{{ $field }}_{{ $value }}">{{ $label }}</label>
+                            </div>
+                            @endforeach
                         </div>
-                        <div class="safety-btn">
-                            <input type="radio" id="safety_no" name="safety_check" value="no" @checked(old('safety_check') == 'no')>
-                            <label for="safety_no">No</label>
-                        </div>
-                        <div class="safety-btn">
-                            <input type="radio" id="safety_prefer_not" name="safety_check" value="prefer_not_to_say" @checked(old('safety_check') == 'prefer_not_to_say')>
-                            <label for="safety_prefer_not">Prefer not to say</label>
-                        </div>
-                    </div>
-                    @error('safety_check')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Compact screening answers. These hidden fields mirror the
-                     safety answer above so the backend routing and
-                     validation stay unchanged. -->
-                <input type="hidden" name="current_suicide_plan" id="hidden_current_suicide_plan" value="0">
-                <input type="hidden" name="suicidal_thoughts" id="hidden_suicidal_thoughts" value="0">
-                <input type="hidden" name="severe_distress" id="hidden_severe_distress" value="0">
-                <input type="hidden" name="recurring_distress" id="hidden_recurring_distress" value="0">
-                <input type="hidden" name="difficulty_coping" id="hidden_difficulty_coping" value="0">
+                        @error($field)<p id="{{ $field }}-error" class="text-red-500 text-sm mt-1" role="alert">{{ $message }}</p>@enderror
+                    </fieldset>
+                    @endforeach
+                </section>
+                @include('request.partials.draft-controls')
 
                 <!-- ============================================ -->
                 <!-- FORM ACTIONS                                -->
@@ -741,7 +726,7 @@
 
                         <div>
                             <a href="{{ route('selfhelp.show', $tool->id) }}">{{ $tool->title }}</a>
-                            <div class="text-xs text-gray-500">{{ $tool->description }} · {{ $tool->duration ? $tool->duration . ' min' : 'Self-paced' }}</div>
+                            <div class="text-xs text-gray-500">{{ $tool->description }} · {{ \App\Services\SeekerRequestPresentation::duration($tool->duration) }}</div>
                         </div>
                     </div>
                 @empty
@@ -781,19 +766,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
 
-            // ── Character Counter ──
-            const description = document.getElementById('description');
-            const charCount = document.getElementById('charCount');
-
-            description.addEventListener('input', function() {
-                const length = this.value.length;
-                charCount.textContent = length + ' / 200';
-                charCount.classList.remove('warning', 'danger');
-                if (length > 160) charCount.classList.add('warning');
-                if (length >= 200) charCount.classList.add('danger');
-            });
-
-            // ── Custom Concern Toggle ──
             const concernSelect = document.getElementById('concern_id');
             const customContainer = document.getElementById('customConcernContainer');
             const customConcernInput = document.getElementById('custom_concern');
@@ -823,57 +795,16 @@
             safetyModal.querySelectorAll('[data-close-safety]').forEach(btn => {
                 btn.addEventListener('click', () => safetyModal.close());
             });
-            document.querySelectorAll('input[name="safety_check"]').forEach(input => {
+            document.querySelectorAll('input[name="suicidal_thoughts"], input[name="current_suicide_plan"]').forEach(input => {
                 input.addEventListener('change', function () {
                     if (this.checked && this.value === 'yes') openSafetyModal();
                 });
             });
 
-            // ── Safety answer → compact screening fields ──
-            // The five compact answers are hidden inputs kept in sync with the
-            // safety answer so backend screening validation stays unchanged.
-            const safetyInputs = document.querySelectorAll('input[name="safety_check"]');
-
-            const compactFields = {
-                current_suicide_plan: document.getElementById('hidden_current_suicide_plan'),
-                suicidal_thoughts:    document.getElementById('hidden_suicidal_thoughts'),
-                severe_distress:      document.getElementById('hidden_severe_distress'),
-                recurring_distress:   document.getElementById('hidden_recurring_distress'),
-                difficulty_coping:    document.getElementById('hidden_difficulty_coping')
-            };
-
-            function setCompact(field, value) {
-                if (compactFields[field]) compactFields[field].value = value ? '1' : '0';
-            }
-
-            function syncCompactFields() {
-                const safety = document.querySelector('input[name="safety_check"]:checked');
-                const safetyValue = safety ? safety.value : 'no';
-
-                setCompact('current_suicide_plan', false);
-                setCompact('suicidal_thoughts', false);
-                setCompact('severe_distress', false);
-                setCompact('recurring_distress', false);
-                setCompact('difficulty_coping', false);
-
-                if (safetyValue === 'yes') {
-                    setCompact('current_suicide_plan', true);
-                }
-            }
-
-            safetyInputs.forEach(input => input.addEventListener('change', syncCompactFields));
-
-            // Restore hidden fields when the page reloads after a validation
-            // error (old() restores the radio selection).
-            syncCompactFields();
-
-            // ── Native HTML5 validation covers required fields ──
-            // (concern_id, description, safety_check all have `required`;
-            //  the browser blocks empty submits natively.)
-
         });
     </script>
 
+    <script src="{{ asset('js/seeker-request.js') }}?v={{ filemtime(public_path('js/seeker-request.js')) }}" defer></script>
     @include('layouts.partials.pwa-banner')
 
 </body>

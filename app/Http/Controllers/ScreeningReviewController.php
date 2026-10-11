@@ -43,7 +43,7 @@ class ScreeningReviewController extends Controller {
             $rule = 'classification_confirmed';
             $version = $original?->instrument_version ?? 'existing-classification-review';
             if ($request->boolean('use_clarified_answers')) {
-                abort_unless(!$original || $original->instrument_version === \App\Services\CompactScreening::VERSION,422,'Clarify the original instrument; do not replace it with a different questionnaire.');
+                abort_unless(!$original || in_array($original->instrument_version, [\App\Services\CompactScreening::VERSION, \App\Services\CompactScreening::FORM_VERSION], true),422,'Clarify the original instrument; do not replace it with a different questionnaire.');
                 $rules = [];
                 foreach (\App\Services\CompactScreening::rules() as $field=>$validation) $rules['answers.'.$field] = $validation;
                 $answers = $request->validate($rules)['answers'];

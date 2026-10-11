@@ -424,7 +424,7 @@
             <div class="mb-6 p-4 bg-gray-50 rounded-xl grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
                     <span class="text-gray-400 text-xs uppercase tracking-wider">Session</span>
-                    <p class="font-semibold text-gray-800">{{ $sessionId ?? '—' }}</p>
+                    <p class="font-semibold text-gray-800">{{ $reference }}</p>
                 </div>
                 <div>
                     <span class="text-gray-400 text-xs uppercase tracking-wider">Helper</span>
@@ -440,7 +440,7 @@
                 </div>
             </div>
 
-            <form id="evaluationForm" class="feedback-form" method="POST" action="{{ route('session.evaluation.process') }}">
+            <form id="evaluationForm" class="feedback-form" data-request-form method="POST" action="{{ route('session.evaluation.process') }}">
                 @csrf
                 <input type="hidden" name="session_id" value="{{ $sessionId }}">
                 <p class="mb-4">Choose the response that best describes your experience.</p>
@@ -460,11 +460,11 @@
                 </div>
                 <div class="feedback-comments">
                     <label for="feedback-comments">Comments <span class="text-gray-400 font-normal">(optional)</span></label>
-                    <textarea id="feedback-comments" name="comments" class="feedback-control" rows="4" maxlength="500" aria-describedby="comments-help" placeholder="What worked well, or what could we improve?">{{ old('comments') }}</textarea>
-                    <p id="comments-help" class="text-xs text-gray-500 mt-2">Up to 500 characters.</p>
+                    <textarea id="feedback-comments" name="comments" class="feedback-control" rows="4" maxlength="{{ \App\Services\EvaluationInstrument::COMMENTS_MAX_LENGTH }}" aria-describedby="comments-help comments-count" data-character-count="comments-count" placeholder="What worked well, or what could we improve?">{{ old('comments') }}</textarea>
+                    <p id="comments-help" class="text-xs text-gray-500 mt-2">Up to {{ \App\Services\EvaluationInstrument::COMMENTS_MAX_LENGTH }} characters. Comments are optional.</p><p id="comments-count" class="text-xs text-gray-500" aria-live="polite">0 / {{ \App\Services\EvaluationInstrument::COMMENTS_MAX_LENGTH }}</p>
                     @error('comments')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
                 </div>
-                <div class="feedback-actions"><button type="submit" class="btn-primary"><x-ui-icon name="send" class="mr-2" />Submit feedback</button></div>
+                <div class="feedback-actions"><a class="text-green-700 underline" href="{{ route('seeker.requests') }}">Back to history</a><button type="submit" class="btn-primary"><x-ui-icon name="send" class="mr-2" />Submit feedback</button></div>
             </form>
         </div>
 
@@ -482,6 +482,7 @@
 
 
 
+    <script src="{{ asset('js/seeker-request.js') }}?v={{ filemtime(public_path('js/seeker-request.js')) }}" defer></script>
     @include('layouts.partials.pwa-banner')
 
 </body>

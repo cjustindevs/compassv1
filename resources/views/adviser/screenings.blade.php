@@ -213,7 +213,7 @@
                                     <span class="mt-1 block text-xs text-gray-400">Select "No" when professional support must be coordinated instead.</span>
                                 </label>
                             </div>
-                            @if(!$screening || $screening->instrument_version === \App\Services\CompactScreening::VERSION)
+                            @if(!$screening || in_array($screening->instrument_version, [\App\Services\CompactScreening::VERSION, \App\Services\CompactScreening::FORM_VERSION], true))
                             <fieldset class="rounded-xl bg-gray-50 p-4 space-y-3"><legend class="font-semibold text-sm">Documented clarification</legend>
                             <label class="text-sm"><input type="checkbox" name="use_clarified_answers" value="1"> Reassess using clarified answers</label>
                             <p class="text-xs text-gray-500">Complete every answer only when clarification has been obtained. The classification must match the deterministic routing rules. Without clarification, only the current classification can be confirmed.</p>
