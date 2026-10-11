@@ -71,6 +71,7 @@ class SettingsController extends Controller
     {
         $user = $request->user();
 
+        abort_if($user->role === 'helper', 403, 'Use your Helper profile to update permitted profile information.');
         if ($user->role === 'seeker') {
             abort_unless($user->helpSeeker, 403);
             $data = $request->validate([

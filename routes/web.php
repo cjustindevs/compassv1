@@ -251,6 +251,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/settings/appearance', [SettingsController::class, 'appearance'])->name('settings.appearance');
     Route::get('/settings/export-data', [SettingsController::class, 'downloadData'])->name('settings.export-data');
     Route::patch('/settings/account', [SettingsController::class, 'updateAccount'])->name('settings.account.update');
+    Route::post('/settings/recovery-email/send', [OTPController::class, 'sendOTP'])->middleware('throttle:5,1')->name('settings.recovery.send');
+    Route::post('/settings/recovery-email/verify', [OTPController::class, 'verifyOTP'])->middleware('throttle:10,1')->name('settings.recovery.verify');
     Route::patch('/settings/preferences', [SettingsController::class, 'updatePreferences'])->name('settings.preferences.update');
     Route::patch('/settings/privacy', [SettingsController::class, 'updatePrivacy'])->name('settings.privacy.update');
     Route::patch('/settings/appearance', [SettingsController::class, 'updateAppearance'])->name('settings.appearance.update');

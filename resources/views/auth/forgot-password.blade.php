@@ -1,7 +1,7 @@
 <x-guest-layout>
     <h1 class="auth-title">Reset your password</h1>
     <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
+        Enter your verified private recovery email, or your staff account email, to request a password-reset link. Existing Seekers can set up recovery email in Account Settings while signed in.
     </div>
 
     <!-- Session Status -->

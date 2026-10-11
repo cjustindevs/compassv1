@@ -34,6 +34,9 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View|RedirectResponse
     {
+        if ($request->user()->role === 'helper') {
+            return redirect()->route($request->user()->helper ? 'helper.profile' : 'helper.onboarding');
+        }
         if ($request->user()->role === 'seeker') {
             return redirect()->route('settings.account');
         }
@@ -98,10 +101,12 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        $this->ensureSelfDeletionAllowed($user);
         abort_if($user->helpSeeker && (Session::where('seeker_id', $user->helpSeeker->id)->exists() || \App\Models\ConsentRecord::where('seeker_id', $user->helpSeeker->id)->exists()), 409, 'This account has retained support or consent records. Withdraw consent in Privacy and Consent, and contact the adviser for an account closure review.');
 
         $this->deleteAvatar($user);
 
+        app(\App\Services\LoginSessionService::class)->revoke($user, $request->session()->getId());
         Auth::logout();
 
         $user->delete();
@@ -123,10 +128,12 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        $this->ensureSelfDeletionAllowed($user);
         abort_if($user->helpSeeker && (Session::where('seeker_id', $user->helpSeeker->id)->exists() || \App\Models\ConsentRecord::where('seeker_id', $user->helpSeeker->id)->exists()), 409, 'This account has retained support or consent records. Withdraw consent in Privacy and Consent, and contact the adviser for an account closure review.');
 
         $this->deleteAvatar($user);
 
+        app(\App\Services\LoginSessionService::class)->revoke($user, $request->session()->getId());
         Auth::logout();
 
         $user->delete();
@@ -135,6 +142,15 @@ class ProfileController extends Controller
         $request->session()->regenerateToken();
 
         return Redirect::to('/');
+    }
+
+    private function ensureSelfDeletionAllowed(\App\Models\User $user): void
+    {
+        if ($user->role !== 'seeker') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'account' => 'Staff accounts must be closed through Administrator deactivation so assignments and records are retained.',
+            ]);
+        }
     }
 
     /**

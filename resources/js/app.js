@@ -5,6 +5,7 @@ import './pwa';
 import './toast';
 import './sidebar';
 import './loading';
+import './recovery-email';
 
 import '../css/animations.css';
 

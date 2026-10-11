@@ -19,6 +19,23 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    protected static function booted(): void
+    {
+        static::saving(function (User $user) {
+            if ($user->role !== 'seeker' && $user->isDirty('email')) {
+                $hash = app(\App\Services\AccountRecoveryService::class)->emailHash($user->email);
+                if (User::where('recovery_email_hash', $hash)->when($user->exists, fn ($query) => $query->whereKeyNot($user->id))->exists()) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['email' => 'This email is already linked to an account. Use another address.']);
+                }
+            }
+        });
+        static::updated(function (User $user) {
+            if ($user->wasChanged('password') || ($user->wasChanged('is_active') && ! $user->is_active)) {
+                app(\App\Services\LoginSessionService::class)->revoke($user);
+            }
+        });
+    }
+
     /**
      * The attributes that are mass assignable.
      *
@@ -58,6 +75,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'recovery_email',
+        'recovery_email_hash',
     ];
 
     /**
@@ -68,6 +87,7 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
+            'recovery_email' => 'encrypted',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
@@ -86,6 +106,23 @@ class User extends Authenticatable
     public function helpSeeker()
     {
         return $this->hasOne(HelpSeeker::class, 'user_account_id', 'id');
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        // Legacy Seekers have no deliverable address until they verify one in Settings.
+        if ($this->role === 'seeker' && ! $this->recovery_email) {
+            return;
+        }
+        $this->notify(new \App\Notifications\PasswordResetNotification($token));
+    }
+
+    public function routeNotificationForMail($notification = null)
+    {
+        if ($this->role === 'seeker' && $notification instanceof \Illuminate\Auth\Notifications\ResetPassword) {
+            return $this->recovery_email;
+        }
+        return $this->email;
     }
 
     public function isAdmin(): bool { return $this->role === 'admin'; }

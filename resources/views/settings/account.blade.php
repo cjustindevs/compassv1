@@ -128,6 +128,14 @@
             <h2>Basic information</h2>
             <p class="sub">Your name, alias, and profile details.</p>
 
+            @if($user->role === 'helper')
+                <div class="mt-5">
+                    <label for="managed-email" class="form-label">Email address — read-only</label>
+                    <input id="managed-email" type="email" class="form-input bg-gray-50" value="{{ $user->email }}" readonly>
+                    <p class="sub mt-2">Your email and phone number are managed by the system. Update permitted information in your Helper profile.</p>
+                    <a class="btn btn-outline mt-3" href="{{ route($user->helper ? 'helper.profile' : 'helper.onboarding') }}">Open Helper profile</a>
+                </div>
+            @else
             <form method="POST" action="{{ route('settings.account.update') }}" class="form-container mt-5">
                 @csrf
                 @method('patch')
@@ -172,7 +180,39 @@
                     </button>
                 </div>
             </form>
+            @endif
         </div>
+
+        @if($user->role === 'seeker')
+        <div class="card" data-recovery-email>
+            <h2>Private recovery email</h2>
+            <p class="sub">Used for password-reset links. Stored encrypted and hidden from Helpers. Your nickname stays the same.</p>
+            <p class="sub mt-3" data-recovery-linked>{{ $user->recovery_email ? 'Verified: '.$user->recovery_email : 'No recovery email linked yet.' }}</p>
+            <form method="POST" action="{{ route('settings.recovery.send', [], false) }}" class="form-container mt-4" data-recovery-send>
+                @csrf
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="recovery-email" class="form-label">Recovery email</label>
+                        <input id="recovery-email" name="email" type="email" class="form-input" required autocomplete="email" maxlength="254">
+                    </div>
+                    <div>
+                        <label for="recovery-password" class="form-label">Confirm current password</label>
+                        <input id="recovery-password" name="current_password" type="password" class="form-input" required autocomplete="current-password">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-outline mt-3">Send verification code</button>
+            </form>
+            <form method="POST" action="{{ route('settings.recovery.verify', [], false) }}" class="form-container mt-4" data-recovery-verify @if(!session('recovery_otp')) hidden @endif>
+                @csrf
+                <label for="recovery-otp" class="form-label">Six-digit verification code</label>
+                <div class="flex flex-wrap items-center gap-3">
+                    <input id="recovery-otp" name="otp" class="form-input" style="max-width:220px" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code">
+                    <button type="submit" class="btn btn-primary">Verify and save email</button>
+                </div>
+            </form>
+            <p class="sub mt-3" data-recovery-status role="status" aria-live="polite"></p>
+        </div>
+        @endif
 
         <!-- Password -->
         <div class="card">
@@ -209,13 +249,14 @@
         </div>
 
         <!-- Danger zone -->
+        @if($user->role === 'seeker')
         <div class="card border-red-200">
             <h2 class="text-red-600">Danger zone</h2>
             <p class="sub">Deleting your account is permanent and cannot be undone.</p>
             <div class="mt-5">
                 <form method="POST" action="{{ route('profile.delete-account') }}"
                       data-confirm="Delete account?"
-                      data-confirm-message="This is permanent. Your account, sessions, and all data will be erased."
+                      data-confirm-message="Accounts with retained support or consent records require a closure review and cannot be deleted here."
                       data-confirm-text="Delete account"
                       data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                     @csrf
@@ -228,7 +269,7 @@
                     </div>
                     <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer mt-3">
                         <input type="checkbox" name="confirm_delete" value="1" required class="w-4 h-4 accent-[#04A052]">
-                        I understand this permanently deletes my account and all my data.
+                        I understand deletion is permanent and accounts with retained support or consent records require a closure review.
                     </label>
                     @error('password') <p class="form-error mt-2">{{ $message }}</p> @enderror
                     @if($errors->has('confirm_delete'))
@@ -237,6 +278,12 @@
                 </form>
             </div>
         </div>
+        @else
+        <div class="card">
+            <h2>Account closure</h2>
+            <p class="sub">Contact the Administrator to request deactivation. Staff accounts and their assignments and records are retained.</p>
+        </div>
+        @endif
 
     </main>
 

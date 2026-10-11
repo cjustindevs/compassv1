@@ -119,7 +119,7 @@ class RegistrationTest extends TestCase
         Mail::shouldReceive('send')->once()->andReturnUsing(function ($view, $data, $callback) use (&$code) {
             $code = $data['otp'];
         });
-        $this->withSession(['registration_verified_until' => now()->addMinutes(10)->timestamp])
+        $this->withSession(['registration_verified_email' => 'verified@example.test', 'registration_verified_until' => now()->addMinutes(10)->timestamp])
             ->postJson(route('registration.otp.send'), ['email' => 'otp-test@example.com'])->assertOk();
         $this->assertNull(session('registration_verified_until'));
         $this->assertNotSame($code, session('registration_otp.hash'));
@@ -146,7 +146,7 @@ class RegistrationTest extends TestCase
     {
         config(['mail.default' => 'smtp']);
         Mail::shouldReceive('send')->once()->andThrow(new \RuntimeException('Unavailable'));
-        $this->withSession(['registration_verified_until' => now()->addMinutes(10)->timestamp])
+        $this->withSession(['registration_verified_email' => 'verified@example.test', 'registration_verified_until' => now()->addMinutes(10)->timestamp])
             ->postJson(route('registration.otp.send'), ['email' => 'failure-test@example.com'])->assertStatus(503);
         $this->assertNull(session('registration_otp'));
         $this->assertGreaterThan(now()->timestamp, session('registration_verified_until'));
@@ -157,6 +157,7 @@ class RegistrationTest extends TestCase
         foreach (['CalmFox101', 'BraveOwl202'] as $alias) {
             $this->withSession([
                 'registration_alias' => $alias,
+                'registration_verified_email' => strtolower($alias).'@example.test',
                 'registration_verified_until' => now()->addMinutes(10)->timestamp,
             ])->post(route('seeker.onboarding.store'), [
                 'alias' => $alias, 'age' => 20, 'gender' => 'female',
@@ -188,7 +189,7 @@ class RegistrationTest extends TestCase
         $this->freezeTime();
         $verifiedAt = now()->copy();
         $this->withSession(['registration_otp' => [
-            'hash' => Hash::make('123456'), 'expires' => now()->addMinutes(10)->timestamp, 'attempts' => 0,
+            'email' => 'verified@example.test', 'hash' => Hash::make('123456'), 'expires' => now()->addMinutes(10)->timestamp, 'attempts' => 0,
         ]])->postJson(route('registration.otp.verify'), ['otp' => '123456'])->assertOk();
         $this->travel(2)->minutes();
         $this->get(route('register'));
@@ -207,7 +208,7 @@ class RegistrationTest extends TestCase
     public function test_alias_cannot_be_replaced_with_arbitrary_text(): void
     {
         $this->get(route('register'));
-        $this->withSession(['registration_verified_until' => now()->addMinutes(10)->timestamp])
+        $this->withSession(['registration_verified_email' => 'verified@example.test', 'registration_verified_until' => now()->addMinutes(10)->timestamp])
             ->post(route('seeker.onboarding.store'), [
                 'alias' => 'UnapprovedAlias', 'age' => 20, 'gender' => 'female',
                 'preferred_language' => 'English', 'password' => 'StrongPass123!', 'password_confirmation' => 'StrongPass123!',
@@ -217,7 +218,7 @@ class RegistrationTest extends TestCase
 
     public function test_registration_requires_accepting_terms_and_privacy(): void
     {
-        $this->withSession(['registration_alias' => 'CalmFox900', 'registration_verified_until' => now()->addMinutes(10)->timestamp])
+        $this->withSession(['registration_verified_email' => 'verified@example.test', 'registration_alias' => 'CalmFox900', 'registration_verified_until' => now()->addMinutes(10)->timestamp])
             ->from(route('register'))
             ->post(route('seeker.onboarding.store'), [
                 'alias' => 'CalmFox900', 'age' => 20, 'gender' => 'female',

@@ -9,8 +9,9 @@
 
         <!-- Email Address -->
         <div>
-            <x-input-label for="email" :value="__('Email')" />
+            <x-input-label for="email" :value="__('Sign-in address')" />
             <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $request->email)" required autofocus autocomplete="username" />
+            <p class="text-xs text-gray-600 mt-2">Use the address filled in by your reset link. For Seekers, this is the nickname address.</p>
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 

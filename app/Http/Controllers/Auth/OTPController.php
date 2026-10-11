@@ -16,7 +16,11 @@ class OTPController extends Controller
 {
     public function sendOTP(Request $request)
     {
-        $data = $request->validate(['email' => 'required|email|max:254']);
+        $recovery = $this->isRecovery($request);
+        $data = $request->validate([
+            'email' => 'required|email|max:254',
+            ...($recovery ? ['current_password' => 'required|current_password:web'] : []),
+        ]);
         $email = strtolower(trim($data['email']));
         $key = 'registration-otp:'.hash('sha256', $email);
         if (RateLimiter::tooManyAttempts($key, 1)) {
@@ -55,9 +59,15 @@ class OTPController extends Controller
 
                 return response()->json(['message' => $message], 503);
             }
-            $request->session()->forget(['registration_verified_until', 'registration_verified_at']);
-            $request->session()->put('registration_otp', [
-                'hash' => Hash::make($otp), 'expires' => now()->addMinutes(10)->timestamp, 'attempts' => 0,
+            if (! $recovery) {
+                $request->session()->forget(['registration_verified_until', 'registration_verified_at', 'registration_verified_email']);
+            }
+            $request->session()->put($recovery ? 'recovery_otp' : 'registration_otp', [
+                'email' => $email, 'hash' => Hash::make($otp), 'expires' => now()->addMinutes(10)->timestamp, 'attempts' => 0,
+                ...($recovery ? [
+                    'user_id' => $request->user()->id,
+                    'password_fingerprint' => hash('sha256', $request->user()->password),
+                ] : []),
             ]);
 
             $payload = ['message' => 'Verification code sent. Check your inbox and spam folder. It expires in 10 minutes.', 'retry_after' => 60];
@@ -79,25 +89,45 @@ class OTPController extends Controller
 
     public function verifyOTP(Request $request)
     {
+        $recovery = $this->isRecovery($request);
+        $stateKey = $recovery ? 'recovery_otp' : 'registration_otp';
         $request->validate(['otp' => 'required|digits:6']);
-        $state = $request->session()->get('registration_otp');
+        $state = $request->session()->get($stateKey);
         if (! $state || now()->timestamp >= $state['expires'] || $state['attempts'] >= 3) {
-            $request->session()->forget('registration_otp');
+            $request->session()->forget($stateKey);
 
             return response()->json(['message' => 'Code expired or attempt limit reached. Request a new code.'], 422);
         }
         if (! Hash::check((string) $request->otp, $state['hash'])) {
             $state['attempts']++;
-            $request->session()->put('registration_otp', $state);
+            $request->session()->put($stateKey, $state);
 
             return response()->json(['message' => 'Incorrect code. '.(3 - $state['attempts']).' attempts remaining.'], 422);
         }
-        $request->session()->forget('registration_otp');
+        $request->session()->forget($stateKey);
+        if (empty($state['email']) || ($recovery && ($state['user_id'] ?? null) !== $request->user()->id)) {
+            return response()->json(['message' => 'Please request a new code to verify your email address.'], 422);
+        }
+        if ($recovery) {
+            app(\App\Services\AccountRecoveryService::class)->bind($request->user(), $state['email'], $state['password_fingerprint']);
+            return response()->json(['message' => 'Private recovery email verified and saved. Your nickname remains your sign-in identity.'])
+                ->header('Cache-Control', 'private, no-store');
+        }
         $verifiedAt = now();
+        $request->session()->put('registration_verified_email', $state['email']);
         $request->session()->put('registration_verified_at', $verifiedAt->timestamp);
         $request->session()->put('registration_verified_until', $verifiedAt->copy()->addMinutes(10)->timestamp);
 
         return response()->json(['message' => 'Email verified. You can now create your account.', 'verified_until' => $request->session()->get('registration_verified_until')]);
+    }
+
+    private function isRecovery(Request $request): bool
+    {
+        $recovery = $request->routeIs('settings.recovery.*');
+        if ($recovery) {
+            abort_unless($request->user()?->role === 'seeker' && $request->user()->is_active, 403);
+        }
+        return $recovery;
     }
 
     private function failureReason(\Throwable $exception): string

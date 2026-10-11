@@ -11,7 +11,7 @@ class ProfileUpdateRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->role !== 'seeker';
+        return ! in_array($this->user()?->role, ['seeker', 'helper'], true);
     }
 
     /**

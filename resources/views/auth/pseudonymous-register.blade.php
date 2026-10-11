@@ -40,7 +40,7 @@
 <section class="verification-panel space-y-4">
     <h2 id="registration-account-heading" tabindex="-1" class="text-base font-semibold text-gray-800">2. Email verification</h2>
     @if(app(\App\Services\OtpMailConfiguration::class)->demoEnabled())<p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3">Demo Mode: your generated code will be displayed here. No email delivery is required.</p>@endif
-    <p class="text-sm text-gray-600">Verify your Gmail or other email address before creating your account.</p>
+    <p class="text-sm text-gray-600">Verify your Gmail or other email address before creating your account. It will be stored encrypted for password recovery and will not be shown to Helpers. You still sign in with your nickname.</p>
     <button type="button" id="open-verification" class="registration-action registration-action-solid">Verify email address</button>
     <p id="email-summary" class="text-sm text-green-700" role="status"></p>
 </section>

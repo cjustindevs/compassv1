@@ -41,7 +41,8 @@ class SeekerOnboardingController extends Controller
 
     public function store(Request $request)
     {
-        if ($request->session()->get('registration_verified_until', 0) <= now()->timestamp) {
+        if ($request->session()->get('registration_verified_until', 0) <= now()->timestamp
+            || ! $request->session()->get('registration_verified_email')) {
             return back()->withInput($request->except(['password', 'password_confirmation']))
                 ->withErrors(['email' => 'Please verify your email before creating an account.']);
         }
@@ -55,29 +56,40 @@ class SeekerOnboardingController extends Controller
             'agree_terms' => 'accepted',
         ]);
 
-        $user = DB::transaction(function () use ($request, $data) {
-            $alias = $data['alias'];
+        $recovery = app(\App\Services\AccountRecoveryService::class);
+        $recoveryEmail = $request->session()->get('registration_verified_email');
+        $recovery->ensureAvailable($recoveryEmail);
+        try {
+            $user = DB::transaction(function () use ($request, $data, $recovery, $recoveryEmail) {
+                $alias = $data['alias'];
 
-            $user = User::create([
-                'name' => $alias, 'email' => strtolower($alias).'@compass.local',
-                'password' => $data['password'], 'role' => 'seeker',
-                // Older pending sessions stored only the fixed ten-minute expiry.
-                'email_verified_at' => \Illuminate\Support\Carbon::createFromTimestamp(
-                    $request->session()->get('registration_verified_at', $request->session()->get('registration_verified_until') - 600)
-                ),
-                'preferred_language' => $data['preferred_language'],
-            ]);
-            HelpSeeker::create([
-                'user_account_id' => $user->id, 'generated_alias' => $alias,
-                'pseudo_id' => 'PS-'.Str::upper(Str::random(12)),
-                'age' => $data['age'], 'gender' => $data['gender'],
-                'registration_ip' => $request->ip(), 'account_created' => now(),
-            ]);
+                $user = User::create([
+                    'name' => $alias, 'email' => strtolower($alias).'@compass.local',
+                    'password' => $data['password'], 'role' => 'seeker',
+                    // Older pending sessions stored only the fixed ten-minute expiry.
+                    'email_verified_at' => \Illuminate\Support\Carbon::createFromTimestamp(
+                        $request->session()->get('registration_verified_at', $request->session()->get('registration_verified_until') - 600)
+                    ),
+                    'preferred_language' => $data['preferred_language'],
+                ]);
+                $user->forceFill([
+                    'recovery_email' => $recovery->normalize($recoveryEmail),
+                    'recovery_email_hash' => $recovery->emailHash($recoveryEmail),
+                ])->save();
+                HelpSeeker::create([
+                    'user_account_id' => $user->id, 'generated_alias' => $alias,
+                    'pseudo_id' => 'PS-'.Str::upper(Str::random(12)),
+                    'age' => $data['age'], 'gender' => $data['gender'],
+                    'registration_ip' => $request->ip(), 'account_created' => now(),
+                ]);
 
-            return $user;
-        });
+                return $user;
+            });
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $exception) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['email' => 'The nickname or verified email is already linked to an account. Refresh your nickname or verify another email.']);
+        }
 
-        $request->session()->forget(['registration_otp', 'registration_verified_until', 'registration_verified_at', 'registration_alias']);
+        $request->session()->forget(['registration_otp', 'registration_verified_until', 'registration_verified_at', 'registration_verified_email', 'registration_alias']);
         Auth::login($user);
         $request->session()->regenerate();
 

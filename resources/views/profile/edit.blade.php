@@ -223,13 +223,14 @@
         </div>
 
         <!-- Delete account -->
+        @if($user->role === 'seeker')
         <div class="card border-red-200">
             <h2 class="text-red-600">Delete account</h2>
-            <p class="sub">This permanently deletes your account, sessions, and saved resources. This cannot be undone.</p>
+            <p class="sub">Deletion is permanent. Accounts with retained support or consent records require an account closure review.</p>
 
             <form method="POST" action="{{ route('profile.delete-account') }}" class="mt-5"
                   data-confirm="Delete account?"
-                  data-confirm-message="This is permanent. Your account, sessions, and all data will be erased."
+                  data-confirm-message="Accounts with retained support or consent records require a closure review and cannot be deleted here."
                   data-confirm-text="Delete account"
                   data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                 @csrf
@@ -245,7 +246,7 @@
                     <div class="flex items-end pb-1">
                         <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
                             <input type="checkbox" name="confirm_delete" value="1" required class="w-4 h-4 accent-[#04A052]">
-                            I understand this will permanently delete my account and all my data.
+                            I understand deletion is permanent and retained support or consent records require a closure review.
                         </label>
                     </div>
                 </div>
@@ -258,6 +259,12 @@
             </form>
         </div>
 
+        @else
+        <div class="card">
+            <h2>Account closure</h2>
+            <p class="sub">Contact the Administrator to request deactivation. Staff accounts and their assignments and records are retained.</p>
+        </div>
+        @endif
     </main>
 
     @include('partials.sidebar', [

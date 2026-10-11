@@ -44,14 +44,7 @@ class LoginRequest extends FormRequest
 
         $credentials = $this->only('email', 'password');
         $credentials['is_active'] = true;
-        $credentials['email'] = trim($credentials['email']);
-        // Public nickname spelling maps to existing pseudonymous accounts; no account migration.
-        if (str_ends_with(strtolower($credentials['email']), '@compasslocal')) {
-            $credentials['email'] = strtolower(substr($credentials['email'], 0, -strlen('@compasslocal'))).'@compass.local';
-        }
-        if (! str_contains($credentials['email'], '@')) {
-            $credentials['email'] = strtolower($credentials['email']).'@compass.local';
-        }
+        $credentials['email'] = $this->normalizedLoginEmail();
         if (! Auth::attempt($credentials, $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
             $admin = \App\Models\User::where('email',$credentials['email'])->where('role','admin')->first();
@@ -95,6 +88,25 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->normalizedLoginEmail()).'|'.$this->ip());
+    }
+
+    /**
+     * Use the existing nickname mapping for both authentication and throttling.
+     * Preserve the spelling of other emails for existing staff accounts.
+     */
+    private function normalizedLoginEmail(): string
+    {
+        $email = trim((string) $this->input('email', ''));
+
+        if (str_ends_with(strtolower($email), '@compasslocal')) {
+            return strtolower(substr($email, 0, -strlen('@compasslocal'))).'@compass.local';
+        }
+
+        if (! str_contains($email, '@')) {
+            return strtolower($email).'@compass.local';
+        }
+
+        return $email;
     }
 }

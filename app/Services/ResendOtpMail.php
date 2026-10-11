@@ -17,6 +17,11 @@ class ResendOtpMail
 
     public function send(string $email, string $otp): void
     {
+        $this->sendHtml($email, 'COMPASS - Email Verification Code', view('emails.otp', compact('otp'))->render(), 'registration-otp');
+    }
+
+    public function sendHtml(string $email, string $subject, string $html, string $purpose): void
+    {
         if (! $this->configured()) {
             Log::warning('Registration OTP Resend API configuration invalid', ['reason' => 'missing_key_or_sender']);
             throw new \RuntimeException('OTP delivery configuration missing');
@@ -25,11 +30,11 @@ class ResendOtpMail
         try {
             $response = Http::withToken(config('services.resend.key'))->acceptJson()
                 ->connectTimeout(5)->timeout(15)->withOptions(['allow_redirects' => false])
-                ->withHeaders(['Idempotency-Key' => 'registration-otp-'.Str::uuid()])
+                ->withHeaders(['Idempotency-Key' => $purpose.'-'.Str::uuid()])
                 ->post('https://api.resend.com/emails', [
                     'from' => config('mail.from.name').' <'.config('mail.from.address').'>',
-                    'to' => [$email], 'subject' => 'COMPASS - Email Verification Code',
-                    'html' => view('emails.otp', compact('otp'))->render(),
+                    'to' => [$email], 'subject' => $subject,
+                    'html' => $html,
                 ]);
         } catch (\Throwable $exception) {
             // Exception text and API bodies can contain credentials or message content.

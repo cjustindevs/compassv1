@@ -5,6 +5,7 @@ use App\Http\Middleware\AuthenticateJwt;
 use App\Models\Session;
 use App\Models\User;
 use App\Services\JwtService;
+use App\Services\LoginSessionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
@@ -16,10 +17,16 @@ Route::post('/login', function (Request $request, JwtService $jwt) {
     if (! $user || ! Hash::check($data['password'], $user->password)) {
         return response()->json(['message' => 'Invalid credentials.'], 401);
     }
-    return response()->json(['access_token' => $jwt->issue($user), 'token_type' => 'Bearer', 'expires_in' => 3600]);
+    return response()->json(['access_token' => $jwt->issue($user, $request), 'token_type' => 'Bearer', 'expires_in' => 3600])
+        ->header('Cache-Control', 'private, no-store');
 })->middleware('throttle:5,1');
 
 Route::middleware([AuthenticateJwt::class, 'throttle:120,1'])->group(function () {
+    Route::post('/logout', function (Request $request, LoginSessionService $sessions) {
+        $sessions->revoke($request->user());
+
+        return response()->noContent();
+    });
     Route::get('/user', fn (Request $request) => $request->user()->only(['id', 'name', 'role']));
     Route::get('/sessions', function (Request $request) {
         $data = $request->validate([

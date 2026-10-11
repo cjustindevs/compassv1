@@ -11,7 +11,9 @@ function room() {
         performance: { now: () => time },
         clearInterval() {}, setTimeout() {}, window: {},
     });
-    vm.runInContext(fs.readFileSync('resources/js/chat.js', 'utf8'), context);
+    // Evaluate both application modules in the VM; retain the real icon implementation.
+    vm.runInContext(fs.readFileSync('resources/js/ui-icon.js', 'utf8').replace('export function uiIcon', 'function uiIcon'), context);
+    vm.runInContext(fs.readFileSync('resources/js/chat.js', 'utf8').replace(/^import \{ uiIcon \} from '\.\/ui-icon';\r?\n/, ''), context);
     const app = Object.create(vm.runInContext('ChatApp.prototype', context));
     Object.assign(app, { ended: false, deadlineReached: false, messageInput: {}, sendButton: {}, remainingSeconds: 1, statusReceivedAt: 0 });
     return { app, timer, advance: milliseconds => time += milliseconds };
