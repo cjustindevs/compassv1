@@ -341,3 +341,19 @@ Modified:
   confirmed a single visible safety question with no hidden five-answer fields.
 - Device/browser visual testing remains pending; rendering and workflow checks
   do not establish visual absence of overflow on devices.
+
+### Single-question Adviser approval correction (October 11, 2026)
+
+- Pre-session reviews of `compass-single-safety-1` now offer clarification of the
+  same original safety question, using `CompactScreening::classifySingle`. The
+  original answer remains unchanged; only an actually obtained Yes/No follow-up
+  is stored separately. No answers to unasked questions are manufactured.
+- The explicit Approve peer support action maps to the existing approval outcome
+  and resumes Preferences/normal matching. It never starts a chat directly.
+- Classification/evidence failures use field validation errors (HTML redirect
+  with retained input; JSON 422) instead of a generic error page. Unresolved
+  answers cannot be approved by silently assuming No.
+- Five-answer clients, historical screening instruments, and Helper-requested
+  reassessments retain their complete clarification path and safety restrictions.
+- This change adds no Adviser–Seeker chat. Clarification still requires an actual
+  follow-up through an authorized existing channel, with its source recorded.

@@ -99,7 +99,7 @@ class SeekerExperienceTest extends TestCase
         $this->assertNull($case->risk_level);
         $this->assertSame($adviser->id,$case->review_adviser_id);
         $this->assertTrue($case->requires_adviser_review);
-        $this->actingAs($adviserUser)->get('/adviser/screenings')->assertOk()->assertSee('This intake asked one safety question.')->assertSee('use_clarified_answers');
+        $this->actingAs($adviserUser)->get('/adviser/screenings')->assertOk()->assertSee('This intake asked one safety question.')->assertSee('use_clarified_safety_answer')->assertDontSee('name="answers[current_suicide_plan]"',false);
         $this->post(route('adviser.screenings.review',$case),[
             'risk_level'=>'low','reason'=>'Clarified all support answers directly with the Seeker.','evidence_source'=>'Direct conversation',
             'allow_peer_support'=>1,'use_clarified_answers'=>1,'answers'=>array_fill_keys(CompactScreening::FIELDS,false),

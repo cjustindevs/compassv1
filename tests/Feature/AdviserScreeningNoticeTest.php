@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\{Adviser, HelpSeeker, Notification, ScreeningResponse, Session, User};
+use App\Models\{Adviser, ConcernCategory, Helper, HelpSeeker, Notification, ScreeningResponse, Session, SessionReport, User};
 use App\Services\CompactScreening;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -90,5 +90,97 @@ class AdviserScreeningNoticeTest extends TestCase
         $this->assertSame(1, substr_count($response->getContent(), 'class="screening-review-expand"  open '));
         $this->assertSame(1, substr_count($response->getContent(), '>Retry this decision</textarea>'));
         $this->assertSame('adviser_review_required', $case->fresh()->workflow_state);
+    }
+
+    private function singleScreening(Session $case): ScreeningResponse
+    {
+        $concern = ConcernCategory::firstOrCreate(['concern_name'=>'Stress'], ['is_active'=>true]);
+        $case->update(['concern_id'=>$concern->id]);
+        return ScreeningResponse::create(['session_id'=>$case->id,'seeker_id'=>$case->seeker_id,
+            'responses'=>['suicidal_thoughts'=>'prefer_not_to_say','description'=>'Original concern'],
+            'instrument_version'=>CompactScreening::SINGLE_VERSION,'review_status'=>'adviser_review_required',
+            'priority'=>2,'action'=>'adviser_review_required']);
+    }
+
+    public function test_changed_classification_redirects_to_the_form_with_errors_instead_of_a_bare_422(): void
+    {
+        $user=$this->adviser(); $case=$this->review($user); $original=$this->singleScreening($case);
+        $data=['_review_session'=>$case->id,'review_action'=>'approve','risk_level'=>'low',
+            'reason'=>'Reviewed the original response.','evidence_source'=>'Original screening'];
+        $this->actingAs($user)->from(route('adviser.screenings'))->post(route('adviser.screenings.review',$case),$data)
+            ->assertRedirect(route('adviser.screenings'))->assertSessionHasErrors('risk_level');
+        $this->assertSame('adviser_review_required',$case->fresh()->workflow_state);
+        $this->assertNull($case->fresh()->risk_level);
+        $this->assertSame('prefer_not_to_say',$original->fresh()->responses['suicidal_thoughts']);
+        $this->assertDatabaseCount('screening_responses',1);
+        $this->assertDatabaseCount('queue_requests',0);
+        $this->get(route('adviser.screenings'))->assertOk()->assertSee('Clarify the original safety answer before assigning')
+            ->assertSee('Approve peer support')->assertDontSee('name="answers[current_suicide_plan]"',false);
+        $this->postJson(route('adviser.screenings.review',$case),$data)->assertUnprocessable()->assertJsonValidationErrors('risk_level');
+    }
+
+    public function test_single_answer_approval_preserves_original_and_returns_seeker_to_preferences_without_starting_a_session(): void
+    {
+        $user=$this->adviser(); $case=$this->review($user); $original=$this->singleScreening($case);
+        $this->actingAs($user)->from(route('adviser.screenings'))->post(route('adviser.screenings.review',$case),[
+            '_review_session'=>$case->id,'review_action'=>'approve','use_clarified_safety_answer'=>1,'clarified_safety_answer'=>'no',
+            'risk_level'=>'low','reason'=>'Obtained a clarified answer directly from the Seeker.','evidence_source'=>'Adviser follow-up with the Seeker',
+        ])->assertRedirect(route('adviser.screenings'))->assertSessionHasNoErrors()->assertSessionHas('success');
+        $this->assertSame('prefer_not_to_say',$original->fresh()->responses['suicidal_thoughts']);
+        $clarified=ScreeningResponse::latest('id')->firstOrFail();
+        $this->assertSame(['suicidal_thoughts'=>'no'],$clarified->responses);
+        $this->assertSame(CompactScreening::SINGLE_VERSION,$clarified->instrument_version);
+        $this->assertSame('single_safety_no',$clarified->rule_code);
+        $this->assertSame('session_preferences_required',$case->fresh()->workflow_state);
+        $this->assertNotNull($case->fresh()->peer_support_approved_at);
+        $this->assertFalse($case->fresh()->requires_adviser_review);
+        $this->assertDatabaseCount('queue_requests',0);
+        $this->assertDatabaseMissing('counseling_sessions',['id'=>$case->id,'session_status'=>'active']);
+        $this->actingAs($case->seeker->user)->get(route('request.matching'))->assertRedirect(route('request.preferences'));
+    }
+
+    public function test_single_clarification_is_validated_and_emergency_approval_is_still_blocked(): void
+    {
+        $user=$this->adviser(); $case=$this->review($user); $this->singleScreening($case);
+        $data=['review_action'=>'approve','use_clarified_safety_answer'=>1,'clarified_safety_answer'=>'yes',
+            'risk_level'=>'low','reason'=>'Follow-up obtained directly from the Seeker.','evidence_source'=>'Direct follow-up'];
+        $this->actingAs($user)->postJson(route('adviser.screenings.review',$case),$data)
+            ->assertUnprocessable()->assertJsonValidationErrors('risk_level');
+        $this->postJson(route('adviser.screenings.review',$case),array_replace($data,['clarified_safety_answer'=>'prefer_not_to_say']))
+            ->assertUnprocessable()->assertJsonValidationErrors('clarified_safety_answer');
+        $this->postJson(route('adviser.screenings.review',$case),array_replace($data,['reason'=>'          ']))
+            ->assertUnprocessable()->assertJsonValidationErrors('reason');
+        $this->actingAs($this->adviser())->postJson(route('adviser.screenings.review',$case),$data)->assertForbidden();
+        $emergency=$this->review($user,'emergency');
+        $this->actingAs($user)->from(route('adviser.screenings'))->post(route('adviser.screenings.review',$emergency),[
+            'review_action'=>'approve','risk_level'=>'emergency','reason'=>'Confirmed the current emergency classification.','evidence_source'=>'Existing emergency review',
+        ])->assertRedirect(route('adviser.screenings'))->assertSessionHasErrors('allow_peer_support');
+        $this->assertNull($emergency->fresh()->peer_support_approved_at);
+        $this->assertDatabaseCount('screening_responses',1);
+    }
+
+    public function test_helper_reassessment_keeps_its_complete_follow_up_and_does_not_reopen_a_completed_single_intake_session(): void
+    {
+        $user=$this->adviser(); $case=$this->review($user,'low'); $original=$this->singleScreening($case);
+        $original->update(['responses'=>['suicidal_thoughts'=>'no','description'=>'Original concern']]);
+        $helperUser=User::factory()->create(['role'=>'helper','is_active'=>true]);
+        $helper=Helper::create(['user_account_id'=>$helperUser->id,'adviser_id'=>$user->adviser->id,
+            'first_name'=>'Assigned','last_name'=>'Helper','email'=>$helperUser->email]);
+        $case->update(['helper_id'=>$helper->id,'session_status'=>'completed','workflow_state'=>'evaluation_pending']);
+        $report=SessionReport::create(['session_id'=>$case->id,'session_summary'=>'Completed support session',
+            'risk_level_assessed'=>'moderate','reassessment_requested_at'=>now()]);
+        $this->actingAs($user)->get(route('adviser.screenings'))->assertOk()->assertSee('use_clarified_answers')
+            ->assertDontSee('type="checkbox" name="use_clarified_safety_answer"',false);
+        $this->post(route('adviser.screenings.review',$case),[
+            'review_action'=>'approve','use_clarified_answers'=>1,
+            'answers'=>array_replace(array_fill_keys(CompactScreening::FIELDS,0),['difficulty_coping'=>1]),
+            'risk_level'=>'moderate','reason'=>'Reviewed Helper observations and clarified all support answers.',
+            'evidence_source'=>'Helper session notes and Adviser follow-up',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame('completed',$case->fresh()->session_status);
+        $this->assertSame('moderate',$case->fresh()->risk_level);
+        $this->assertNotNull($report->fresh()->reassessment_reviewed_at);
+        $this->assertSame('no',$original->fresh()->responses['suicidal_thoughts']);
+        $this->assertDatabaseCount('queue_requests',0);
     }
 }

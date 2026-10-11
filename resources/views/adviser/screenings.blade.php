@@ -72,7 +72,6 @@
             $alias = $session->seeker?->generated_alias ?? 'Seeker';
             $helperAlias = $session->helper?->full_name ?? 'Unassigned';
             $submitted = ($session->created_date ?? $session->created_at)?->timezone('Asia/Manila')->format('M d, Y \a\t g:i A');
-            $approved = (bool) $session->peer_support_approved_at;
             $reassessment = (bool) ($session->report?->reassessment_requested_at);
             $risk = $session->risk_level ?? 'unclassified';
             $riskMeta = $riskMap[$risk] ?? $riskMap['unclassified'];
@@ -163,7 +162,7 @@
                     <summary><span>Review screening and record decision</span><span class="screening-expand-hint" aria-hidden="true">Open review</span></summary>
                     <div class="screening-review-content">
                 @if($single)
-                    <p class="screening-safety-note text-sm text-amber-800">This intake asked one safety question. Other support questions, including a current plan, were not assessed. Obtain documented clarification before changing the classification.</p>
+                    <p class="screening-safety-note text-sm text-amber-800">This intake asked one safety question. Clarify that answer if needed; other questions were not assessed. Record the source of any follow-up separately from the original response.</p>
                 @endif
                 <p class="screening-guidance text-sm text-blue-800"><span class="font-semibold">Guidance:</span> {{ $riskMeta['guidance'] }}</p>
 
@@ -199,13 +198,11 @@
                 <div class="screening-decision-control rounded-xl border border-gray-200">
                     <h3 class="screening-decision-heading">Record your decision</h3>
                         <form method="POST" action="{{ route('adviser.screenings.review', $session) }}"
-                              data-confirm="Record this review?"
-                              data-confirm-message="Your reassessment, evidence and reason will be stored on the request."
-                              data-confirm-text="Record review"
+                              data-screening-review-form
                               class="border-t border-gray-100 p-4 space-y-4">
                             @csrf
                             <input type="hidden" name="_review_session" value="{{ $session->id }}">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 gap-4">
                                 <label class="block text-sm font-medium text-gray-700">Reassessed risk
                                     <select name="risk_level" required class="mt-1 block w-full rounded-lg border-gray-300">
                                         <option value="" disabled @selected($retry ? !old('risk_level') : !$session->risk_level)>Select reassessed risk</option>
@@ -213,17 +210,24 @@
                                             <option value="{{ $riskOption }}" @selected(($retry ? old('risk_level') : $session->risk_level) === $riskOption)>{{ $riskMap[$riskOption]['label'] }}</option>
                                         @endforeach
                                     </select>
-                                    <span class="mt-1 block text-xs text-gray-400">Set this as high or emergency when the helper's note or the conversation requires referral review.</span>
-                                </label>
-                                <label class="block text-sm font-medium text-gray-700">Peer support outcome
-                                    <select name="allow_peer_support" required class="mt-1 block w-full rounded-lg border-gray-300">
-                                        <option value="0" @selected($retry ? old('allow_peer_support') == '0' : !$approved)>No — continue adviser review / referral coordination</option>
-                                        <option value="1" @selected($retry ? old('allow_peer_support') == '1' : $approved)>Yes — peer support is appropriate under protocol</option>
-                                    </select>
-                                    <span class="mt-1 block text-xs text-gray-400">Select "No" when professional support must be coordinated instead.</span>
+                                    <span class="mt-1 block text-xs text-gray-400">{{ $single && !$reassessment ? 'The clarified answer uses the same routing as the original single-question intake.' : 'Changing the classification requires complete clarification using the original instrument.' }}</span>
                                 </label>
                             </div>
-                            @if(!$screening || in_array($screening->instrument_version, [\App\Services\CompactScreening::VERSION, \App\Services\CompactScreening::FORM_VERSION, \App\Services\CompactScreening::SINGLE_VERSION], true))
+                            @if($single && !$reassessment)
+                            <fieldset class="screening-single-clarification rounded-xl bg-gray-50 p-4 space-y-3">
+                                <legend class="font-semibold text-sm">Clarify the original safety answer</legend>
+                                <label class="text-sm"><input type="checkbox" name="use_clarified_safety_answer" value="1" @checked($retry ? old('use_clarified_safety_answer') : !$session->risk_level)> I obtained a clarified answer to the original question</label>
+                                <p class="text-xs text-gray-500">Only record an answer actually obtained from the Seeker. This is Adviser follow-up, not an additional pre-session questionnaire.</p>
+                                <label class="block text-sm">{{ \App\Services\CompactScreening::SINGLE_QUESTION }}
+                                    <select name="clarified_safety_answer" class="block w-full rounded-lg border-gray-300">
+                                        <option value="">Not clarified</option>
+                                        @foreach(['no'=>'No','yes'=>'Yes'] as $answerValue=>$answerLabel)
+                                        <option value="{{ $answerValue }}" data-risk="{{ app(\App\Services\CompactScreening::class)->classifySingle(['suicidal_thoughts'=>$answerValue])['risk_level'] }}" @selected($retry && old('clarified_safety_answer') === $answerValue)>{{ $answerLabel }}</option>
+                                        @endforeach
+                                    </select>
+                                </label>
+                            </fieldset>
+                            @elseif(!$screening || in_array($screening->instrument_version, [\App\Services\CompactScreening::VERSION, \App\Services\CompactScreening::FORM_VERSION, \App\Services\CompactScreening::SINGLE_VERSION], true))
                             <fieldset class="rounded-xl bg-gray-50 p-4 space-y-3"><legend class="font-semibold text-sm">Documented clarification</legend>
                             <label class="text-sm"><input type="checkbox" name="use_clarified_answers" value="1" @checked($retry && old('use_clarified_answers'))> Reassess using clarified answers</label>
                             <p class="text-xs text-gray-500">Complete every answer only when clarification has been obtained. The classification must match the deterministic routing rules. Without clarification, only the current classification can be confirmed.</p>
@@ -233,16 +237,18 @@
                             @endforeach
                             </div></fieldset>
                             @else<p class="text-sm text-gray-500">This legacy screening may be confirmed. Changing its classification requires clarification using its original approved instrument.</p>@endif
-                            <label class="block text-sm font-medium text-gray-700">Evidence source / clarification reference
+                            <label class="block text-sm font-medium text-gray-700">Review / follow-up source
                                 <input name="evidence_source" required maxlength="255" class="mt-1 block w-full rounded-lg border-gray-300" value="{{ $retry ? old('evidence_source') : '' }}" placeholder="Which answers or session notes support this decision?">
                             </label>
-                            <label class="block text-sm font-medium text-gray-700">Reason and documented clarification
+                            <label class="block text-sm font-medium text-gray-700">Decision reason
                                 <textarea name="reason" required minlength="10" maxlength="1000" rows="3" class="mt-1 block w-full rounded-lg border-gray-300" placeholder="Explain the reassessment, referencing the recorded answers and any conversation content.">{{ $retry ? old('reason') : '' }}</textarea>
                             </label>
-                            <div class="flex justify-end gap-2">
+                            <p class="text-xs text-gray-500">Approve peer support only when appropriate under the existing protocol. Approval returns the Seeker to the request steps and matching; it does not start a chat automatically.</p>
+                            <div class="screening-decision-actions flex flex-wrap justify-end gap-2">
                                 <button type="reset" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Reset</button>
-                                <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-2 text-sm font-semibold text-white hover:bg-green-700">
-                                    <x-ui-icon name="clipboard"  /> Record review
+                                <button type="submit" name="review_action" value="record" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Record without approval</button>
+                                <button type="submit" name="review_action" value="approve" class="inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-2 text-sm font-semibold text-white hover:bg-green-700">
+                                    <x-ui-icon name="check" /> Approve peer support
                                 </button>
                             </div>
                         </form>
@@ -271,6 +277,37 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-screening-review-form]').forEach(form => {
+        const check = form.querySelector('[name="use_clarified_safety_answer"]');
+        const answer = form.querySelector('[name="clarified_safety_answer"]');
+        const risk = form.querySelector('[name="risk_level"]');
+        const syncAnswer = () => {
+            if (!check || !answer) return;
+            answer.disabled = !check.checked;
+            answer.required = check.checked;
+            if (check.checked && answer.value) risk.value = answer.selectedOptions[0].dataset.risk;
+        };
+        check?.addEventListener('change', syncAnswer);
+        answer?.addEventListener('change', syncAnswer);
+        syncAnswer();
+        form.addEventListener('reset', () => setTimeout(syncAnswer, 0));
+        form.addEventListener('submit', async event => {
+            if (form.dataset.reviewConfirmed === '1' || typeof window.confirmAction !== 'function') return;
+            event.preventDefault();
+            const submitter = event.submitter;
+            const approving = submitter?.value === 'approve';
+            const confirmed = await window.confirmAction({
+                title: approving ? 'Approve peer support?' : 'Record without approval?',
+                message: approving ? 'The Seeker will continue through the existing request steps and matching. Your review and original response will be retained.' : 'This records your review without allowing the Seeker to continue to peer support.',
+                confirmText: approving ? 'Approve peer support' : 'Record review',
+                confirmClass: 'bg-green-600 hover:bg-green-700 focus:ring-green-500',
+            });
+            if (!confirmed) return;
+            form.dataset.reviewConfirmed = '1';
+            // Preserve the clicked outcome button through confirmation.
+            form.requestSubmit(submitter || undefined);
+        });
+    });
     const activeClass = 'bg-gray-900 text-white border-gray-900';
     const inactiveClass = 'bg-white text-gray-600 border-gray-300';
     document.querySelectorAll('[data-filter]').forEach(button => button.setAttribute('aria-pressed', button.dataset.filter === 'all' ? 'true' : 'false'));

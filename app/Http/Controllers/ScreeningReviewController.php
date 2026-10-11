@@ -5,6 +5,7 @@ use App\Services\{SupportAudit, RiskClassificationService};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Illuminate\Validation\ValidationException;
 class ScreeningReviewController extends Controller {
     public function index(Request $request) {
         abort_unless($request->user()->role==='adviser' && $request->user()->adviser,403);
@@ -26,7 +27,11 @@ class ScreeningReviewController extends Controller {
     public function review(Request $request, Session $session) {
         abort_unless($request->user()->role==='adviser' && $request->user()->is_active && $request->user()->adviser
             && (int)$session->review_adviser_id===(int)$request->user()->adviser->id,403);
-        $data=$request->validate(['risk_level'=>'required|in:low,moderate,high,emergency','reason'=>'required|string|max:1000','evidence_source'=>'required|string|max:255','allow_peer_support'=>'required|boolean']);
+        $request->validate(['review_action'=>'sometimes|required|in:approve,record',
+            'use_clarified_safety_answer'=>'nullable|boolean','use_clarified_answers'=>'nullable|boolean']);
+        // Explicit buttons map to the existing outcome; older clients stay compatible.
+        if ($request->has('review_action')) $request->merge(['allow_peer_support'=>$request->input('review_action') === 'approve']);
+        $data=$request->validate(['risk_level'=>'required|in:low,moderate,high,emergency','reason'=>'required|string|min:10|max:1000','evidence_source'=>'required|string|max:255','allow_peer_support'=>'required|boolean']);
         $helperRequest=$session->report?->reassessment_requested_at && !$session->report?->reassessment_reviewed_at;
         if (!in_array($session->workflow_state,['adviser_review_required','emergency_escalated'],true) && !$session->permitsEmergencySupport() && !$helperRequest) {
             return back()->with('error','This request is no longer awaiting a screening review, so the reassessment was not recorded.');
@@ -43,19 +48,35 @@ class ScreeningReviewController extends Controller {
             $rule = 'classification_confirmed';
             $version = $original?->instrument_version ?? 'existing-classification-review';
             if ($request->boolean('use_clarified_answers')) {
-                abort_unless(!$original || in_array($original->instrument_version, [\App\Services\CompactScreening::VERSION, \App\Services\CompactScreening::FORM_VERSION, \App\Services\CompactScreening::SINGLE_VERSION], true),422,'Clarify the original instrument; do not replace it with a different questionnaire.');
+                if ($request->boolean('use_clarified_safety_answer')) throw ValidationException::withMessages(['clarified_safety_answer'=>'Choose one clarification method for this review.']);
+                if ($original && !in_array($original->instrument_version, [\App\Services\CompactScreening::VERSION, \App\Services\CompactScreening::FORM_VERSION, \App\Services\CompactScreening::SINGLE_VERSION], true)) {
+                    throw ValidationException::withMessages(['use_clarified_answers'=>'Clarify the original instrument; do not replace it with a different questionnaire.']);
+                }
                 $rules = [];
                 foreach (\App\Services\CompactScreening::rules() as $field=>$validation) $rules['answers.'.$field] = $validation;
                 $answers = $request->validate($rules)['answers'];
                 $result = app(\App\Services\CompactScreening::class)->classify($answers);
-                abort_unless($result['risk_level'] === $data['risk_level'],422,'Selected classification does not match the clarified answers.');
+                if ($result['risk_level'] !== $data['risk_level']) throw ValidationException::withMessages(['risk_level'=>'Selected classification does not match the clarified answers.']);
                 $rule = $result['rule_code'];
                 $version = \App\Services\CompactScreening::VERSION;
+            } elseif ($request->boolean('use_clarified_safety_answer')) {
+                if ($original?->instrument_version !== \App\Services\CompactScreening::SINGLE_VERSION) {
+                    throw ValidationException::withMessages(['clarified_safety_answer'=>'This clarification is only available for the single-question intake.']);
+                }
+                $clarification = $request->validate(['clarified_safety_answer'=>'required|in:yes,no']);
+                $answers = ['suicidal_thoughts'=>$clarification['clarified_safety_answer']];
+                $result = app(\App\Services\CompactScreening::class)->classifySingle($answers);
+                if ($result['risk_level'] !== $data['risk_level']) throw ValidationException::withMessages(['risk_level'=>'Select the classification shown for the clarified safety answer.']);
+                $rule = $result['rule_code'];
             } else {
-                abort_unless($data['risk_level'] === $session->risk_level,422,'A changed classification requires complete, documented clarification answers.');
+                if ($data['risk_level'] !== $session->risk_level) {
+                    throw ValidationException::withMessages(['risk_level'=>$original?->instrument_version === \App\Services\CompactScreening::SINGLE_VERSION
+                        ? 'Clarify the original safety answer before assigning or changing its classification. Unasked questions cannot be assumed.'
+                        : 'A changed classification requires complete, documented clarification answers.']);
+                }
             }
-            abort_if($data['risk_level'] === 'emergency' && $data['allow_peer_support'],422,'Emergency routing cannot be approved for ordinary peer support.');
-            abort_unless(mb_strlen(trim($data['reason'])) >= 10,422,'Provide a documented review justification.');
+            if ($data['risk_level'] === 'emergency' && $data['allow_peer_support']) throw ValidationException::withMessages(['allow_peer_support'=>'Emergency routing cannot be approved for ordinary peer support.']);
+            if (mb_strlen(trim($data['reason'])) < 10) throw ValidationException::withMessages(['reason'=>'Provide a documented review justification of at least 10 characters.']);
             $screening=ScreeningResponse::create(['seeker_id'=>$session->seeker_id,'session_id'=>$session->id,
                 'responses'=>$answers, 'risk_level'=>$data['risk_level'],'priority'=>app(RiskClassificationService::class)->getQueuePriority($data['risk_level']),
                 'action'=>'adviser_reassessment','reason'=>$data['reason'],'classified_at'=>now(),'classified_by'=>'adviser',
@@ -88,6 +109,8 @@ class ScreeningReviewController extends Controller {
                     'workflow_state'=>$concernAlreadySelected ? 'session_preferences_required' : 'concern_required']);
             }
         });
-        return back()->with('success','Review recorded; original responses were retained.');
+        return back()->with('success',$data['allow_peer_support']
+            ? 'Peer support approved. The Seeker can continue through the existing request steps and matching. Original responses were retained.'
+            : 'Review recorded without peer-support approval; original responses were retained.');
     }
 }

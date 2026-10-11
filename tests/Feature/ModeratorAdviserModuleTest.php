@@ -871,7 +871,11 @@ class ModeratorAdviserModuleTest extends TestCase
     }
 
     private function readyDutyHelper(Helper $helper): void {
-        $this->travelTo(now('Asia/Manila')->setTime(19,0)->utc());
+        // Preserve explicit scenario dates; otherwise use a stable open service day.
+        $dutyTime = \Illuminate\Support\Carbon::hasTestNow()
+            ? now('Asia/Manila')->setTime(19,0)
+            : \Illuminate\Support\Carbon::parse('2026-10-08 19:00', 'Asia/Manila');
+        $this->travelTo($dutyTime->utc());
         $this->verifiedHelperFixture($helper);
         $helper->update(['status'=>'available','availability'=>'available']);
         \App\Models\HelperSchedule::updateOrCreate(['helper_id'=>$helper->id,'date'=>now('Asia/Manila')->startOfDay()],['shift_start'=>'18:00:00','shift_end'=>'23:00:00','created_by'=>$helper->user_account_id,'is_active'=>true]);
