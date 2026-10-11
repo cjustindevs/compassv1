@@ -85,6 +85,10 @@ class RequestSupportController extends Controller {
 
         if ($session->permitsEmergencySupport() || in_array($session->workflow_state,['adviser_review_required','emergency_escalated'])
             || ($session->isActive() && (!$session->helper_accepted_at || !$session->helper))) {
+            // Display only the assigned reviewer's name, never contact/account details.
+            if ($session->workflow_state === 'adviser_review_required') {
+                $session->load('reviewAdviser:id,first_name,last_name');
+            }
             return view('request.status',['session'=>$session,'events'=>\Illuminate\Support\Facades\DB::table('request_status_events')->where('session_id',$session->id)->orderBy('id')->get()]);
         }
 

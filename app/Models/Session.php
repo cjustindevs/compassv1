@@ -164,6 +164,11 @@ class Session extends Model
         return $this->belongsTo(Helper::class, 'helper_id', 'id');
     }
 
+    public function reviewAdviser(): BelongsTo
+    {
+        return $this->belongsTo(Adviser::class, 'review_adviser_id', 'id');
+    }
+
     public function concern(): BelongsTo
     {
         return $this->belongsTo(ConcernCategory::class, 'concern_id', 'id');

@@ -86,8 +86,26 @@ class AdviserNotificationController extends Controller
     /**
      * Unread count for the adviser sidebar badge (AJAX polling).
      */
-    public function unreadCount(): JsonResponse
+    public function unreadCount(Request $request): JsonResponse
     {
+        $request->validate(['include_reviews'=>'nullable|boolean']);
+        if ($request->boolean('include_reviews')) {
+            abort_unless($request->user()->is_active && $request->user()->adviser, 403);
+            $pending = \App\Models\Session::pendingScreeningReviewForAdviser((int) $request->user()->adviser->id)->pluck('id');
+            $reviewNotifications = Notification::where('user_account_id', Auth::id())
+                ->where('link', 'like', '/adviser/screenings#screening-%');
+            $cursor = (int) (clone $reviewNotifications)->max('id');
+            // Emergency alerts retain their existing dedicated popup.
+            $reviewLinks = \App\Models\Session::whereIn('id', $pending)->where(function ($query) {
+                $query->whereNull('risk_level')->orWhere('risk_level', '!=', 'emergency');
+            })->pluck('id')->map(fn ($id) => '/adviser/screenings#screening-'.$id);
+            $notices = $reviewNotifications->unread()->whereIn('link', $reviewLinks)
+                ->latest('id')->limit(10)->get(['id','title','message','link']);
+            return response()->json([
+                'count'=>Notification::where('user_account_id', Auth::id())->unread()->count(),
+                'screening_count'=>$pending->count(), 'review_cursor'=>$cursor, 'reviews'=>$notices,
+            ])->header('Cache-Control', 'no-store');
+        }
         $count = Cache::remember('unread_count_' . auth()->id(), 30, function () {
             return Notification::where('user_account_id', Auth::id())
                 ->unread()

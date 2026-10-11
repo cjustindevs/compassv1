@@ -3,7 +3,7 @@
 
 @include('layouts.partials.sidebar-critical')
 
-<aside class="sidebar" id="sidebar">
+<aside class="sidebar" id="sidebar" data-adviser-user-id="{{ auth()->id() }}">
     <div class="sidebar-header">
 
 <a href="{{ route('adviser.dashboard') }}" class="sidebar-brand">
@@ -20,7 +20,7 @@
         <a href="{{ route('adviser.dashboard') }}" class="nav-item {{ request()->routeIs('adviser.dashboard') ? 'active' : '' }}">
             <x-ui-icon name="dashboard"  /><span class="nav-text">Dashboard</span>
         </a>
-        <a href="{{ route('adviser.screenings') }}" class="nav-item {{ request()->routeIs('adviser.screenings*') ? 'active' : '' }}" title="Screening reviews">
+        <a href="{{ route('adviser.screenings') }}" data-adviser-badge="pendingReviewsBadge" class="nav-item {{ request()->routeIs('adviser.screenings*') ? 'active' : '' }}" title="Screening reviews">
             <x-ui-icon name="clipboard"  /><span class="nav-text">Screening reviews</span>
             @if($screeningBadge > 0)
                 <span class="nav-badge" id="pendingReviewsBadge">{{ $screeningBadge }}</span>
@@ -64,7 +64,7 @@
 <a href="{{ route('concerns.manage') }}" class="nav-item {{ request()->routeIs('concerns.*') ? 'active' : '' }}"><x-ui-icon name="list"  /><span class="nav-text">Areas of concern</span></a>
 
         <div class="nav-section">Account</div>
-        <a href="{{ route('adviser.notifications') }}" class="nav-item {{ request()->routeIs('adviser.notifications*') ? 'active' : '' }}">
+        <a href="{{ route('adviser.notifications') }}" data-adviser-badge="notifBadge" class="nav-item {{ request()->routeIs('adviser.notifications*') ? 'active' : '' }}">
             <x-ui-icon name="bell"  /><span class="nav-text">Notifications</span>
             @if($notifBadge > 0)
                 <span class="nav-badge" id="notifBadge">{{ $notifBadge }}</span>
@@ -112,4 +112,5 @@
 
 @once
     @include('partials.emergency-notice')
+    @vite('resources/js/adviser-notifications.js')
 @endonce

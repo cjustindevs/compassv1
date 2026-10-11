@@ -34,8 +34,7 @@
         <div>
             <h1 class="text-2xl font-bold text-gray-800">Screening reviews</h1>
             <p class="text-sm text-gray-500 mt-1">
-                Decisions flagged for you. Review the recorded answers and the helper's note, then set the risk and
-                peer-support outcome. Original responses are always retained.
+                Review assigned screenings and Helper reassessments. Original responses are retained.
             </p>
         </div>
     </header>
@@ -69,7 +68,7 @@
 
     @forelse($sessions as $session)
         @php
-            $screening = $session->screeningResponses->sortByDesc('id')->first();
+            $screening = $session->screeningResponses->sortBy('id')->first();
             $alias = $session->seeker?->generated_alias ?? 'Seeker';
             $helperAlias = $session->helper?->full_name ?? 'Unassigned';
             $submitted = ($session->created_date ?? $session->created_at)?->timezone('Asia/Manila')->format('M d, Y \a\t g:i A');
@@ -78,7 +77,9 @@
             $risk = $session->risk_level ?? 'unclassified';
             $riskMeta = $riskMap[$risk] ?? $riskMap['unclassified'];
             $answers = collect($screening?->responses ?? []);
-            $flags = $answers->filter(fn ($v, $k) => in_array($k, $flagKeys, true) && $v === 'yes');
+            $flags = $answers->filter(fn ($v, $k) => in_array($k, $flagKeys, true) && in_array($v, ['yes',true,1,'1'],true));
+            $single = $screening?->instrument_version === \App\Services\CompactScreening::SINGLE_VERSION;
+            $retry = (string) old('_review_session') === (string) $session->id;
         @endphp
 
         <section id="screening-{{ $session->id }}"
@@ -88,9 +89,6 @@
             <div class="screening-review-body p-5 space-y-5">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div class="flex items-start gap-3">
-                        <span class="mt-0.5 h-10 w-10 rounded-xl bg-green-50 text-green-700 flex items-center justify-center font-semibold">
-                            {{ mb_substr($alias, 0, 1) }}
-                        </span>
                         <div>
                             <h2 class="font-semibold text-gray-800 leading-tight">{{ $session->reference_number }}</h2>
                             <p class="text-sm text-gray-500 mt-0.5">Seeker {{ $alias }} &middot; Screened {{ $submitted }}</p>
@@ -129,6 +127,10 @@
                     </div>
                 </dl>
 
+                @if($single)
+                    <p class="screening-intake-answer" data-safety-answer="{{ $answers->get('suicidal_thoughts') }}"><span>Recorded safety answer</span><strong>{{ match($answers->get('suicidal_thoughts')) { 'yes'=>'Yes', 'no'=>'No', 'prefer_not_to_say'=>'Prefer not to say', default=>'Not recorded' } }}</strong></p>
+                @endif
+
                 @if($reassessment)
                     <div class="screening-review-note flex items-start gap-3 rounded-xl bg-amber-50 border border-amber-100 p-3 text-sm text-amber-800">
 
@@ -139,7 +141,7 @@
                     </div>
                 @endif
 
-                @if($flags->isNotEmpty())
+                @if($flags->isNotEmpty() && !$single)
                     <div class="rounded-xl border border-orange-100 bg-orange-50/50 p-3">
                         <p class="text-xs font-semibold text-orange-700 uppercase tracking-wide mb-2">Safety cues flagged ({{ $flags->count() }})</p>
                         <div class="flex flex-wrap gap-2">
@@ -150,14 +152,17 @@
                             @endforeach
                         </div>
                     </div>
-                @else
+                @elseif(!$single)
                     <div class="screening-safety-note text-sm text-green-700">
 
                         <span>No immediate danger cues were recorded on the screening.</span>
                     </div>
                 @endif
 
-                @if($screening?->instrument_version === \App\Services\CompactScreening::SINGLE_VERSION)
+                <details class="screening-review-expand" @if($retry) open @endif>
+                    <summary><span>Review screening and record decision</span><span class="screening-expand-hint" aria-hidden="true">Open review</span></summary>
+                    <div class="screening-review-content">
+                @if($single)
                     <p class="screening-safety-note text-sm text-amber-800">This intake asked one safety question. Other support questions, including a current plan, were not assessed. Obtain documented clarification before changing the classification.</p>
                 @endif
                 <p class="screening-guidance text-sm text-blue-800"><span class="font-semibold">Guidance:</span> {{ $riskMeta['guidance'] }}</p>
@@ -175,9 +180,13 @@
                                 <div>
                                     <dt class="text-xs text-gray-400">{{ $question }}</dt>
                                     <dd class="mt-1">
+                                        @if(in_array($key, ['description','custom_concern'], true))
+                                            <p>{{ is_scalar($answer) && trim((string)$answer) !== '' ? $answer : 'Not provided' }}</p>
+                                        @else
                                         <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ring-1 {{ $answerBadge[is_scalar($answer) ? $answer : 'prefer_not_to_say'] ?? $answerBadge['prefer_not_to_say'] }}">
-                                            {{ is_scalar($answer) ? ucfirst(str_replace('_', ' ', (string) $answer)) : 'Prefer not to say' }}
+                                            {{ is_bool($answer) ? ($answer ? 'Yes' : 'No') : (is_scalar($answer) ? ucfirst(str_replace('_', ' ', (string) $answer)) : 'Not recorded') }}
                                         </span>
+                                        @endif
                                     </dd>
                                 </div>
                             @empty
@@ -188,49 +197,47 @@
                 </div>
 
                 <div class="screening-decision-control rounded-xl border border-gray-200">
-                    <details class="group">
-                        <summary class="cursor-pointer flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-800">
-                            <span><x-ui-icon name="clipboard" class="mr-2 text-green-600" />Record your decision</span>
-                            <x-ui-icon name="chevron-down" class="text-gray-400 group-open:rotate-180 transition-transform" />
-                        </summary>
+                    <h3 class="screening-decision-heading">Record your decision</h3>
                         <form method="POST" action="{{ route('adviser.screenings.review', $session) }}"
                               data-confirm="Record this review?"
                               data-confirm-message="Your reassessment, evidence and reason will be stored on the request."
                               data-confirm-text="Record review"
                               class="border-t border-gray-100 p-4 space-y-4">
                             @csrf
+                            <input type="hidden" name="_review_session" value="{{ $session->id }}">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <label class="block text-sm font-medium text-gray-700">Reassessed risk
                                     <select name="risk_level" required class="mt-1 block w-full rounded-lg border-gray-300">
+                                        <option value="" disabled @selected($retry ? !old('risk_level') : !$session->risk_level)>Select reassessed risk</option>
                                         @foreach(['low', 'moderate', 'high', 'emergency'] as $riskOption)
-                                            <option value="{{ $riskOption }}" @selected($session->risk_level === $riskOption)>{{ $riskMap[$riskOption]['label'] }}</option>
+                                            <option value="{{ $riskOption }}" @selected(($retry ? old('risk_level') : $session->risk_level) === $riskOption)>{{ $riskMap[$riskOption]['label'] }}</option>
                                         @endforeach
                                     </select>
                                     <span class="mt-1 block text-xs text-gray-400">Set this as high or emergency when the helper's note or the conversation requires referral review.</span>
                                 </label>
                                 <label class="block text-sm font-medium text-gray-700">Peer support outcome
                                     <select name="allow_peer_support" required class="mt-1 block w-full rounded-lg border-gray-300">
-                                        <option value="0" @selected(! $approved)>No — continue adviser review / referral coordination</option>
-                                        <option value="1" @selected($approved)>Yes — peer support is appropriate under protocol</option>
+                                        <option value="0" @selected($retry ? old('allow_peer_support') == '0' : !$approved)>No — continue adviser review / referral coordination</option>
+                                        <option value="1" @selected($retry ? old('allow_peer_support') == '1' : $approved)>Yes — peer support is appropriate under protocol</option>
                                     </select>
                                     <span class="mt-1 block text-xs text-gray-400">Select "No" when professional support must be coordinated instead.</span>
                                 </label>
                             </div>
                             @if(!$screening || in_array($screening->instrument_version, [\App\Services\CompactScreening::VERSION, \App\Services\CompactScreening::FORM_VERSION, \App\Services\CompactScreening::SINGLE_VERSION], true))
                             <fieldset class="rounded-xl bg-gray-50 p-4 space-y-3"><legend class="font-semibold text-sm">Documented clarification</legend>
-                            <label class="text-sm"><input type="checkbox" name="use_clarified_answers" value="1"> Reassess using clarified answers</label>
+                            <label class="text-sm"><input type="checkbox" name="use_clarified_answers" value="1" @checked($retry && old('use_clarified_answers'))> Reassess using clarified answers</label>
                             <p class="text-xs text-gray-500">Complete every answer only when clarification has been obtained. The classification must match the deterministic routing rules. Without clarification, only the current classification can be confirmed.</p>
                             <div class="grid sm:grid-cols-2 gap-3">
                             @foreach(\App\Services\CompactScreening::FIELDS as $field)
-                            <label class="text-sm">{{ ucfirst(str_replace('_',' ',$field)) }}<select name="answers[{{ $field }}]" class="block w-full rounded-lg border-gray-300"><option value="">Not clarified</option><option value="0">No</option><option value="1">Yes</option></select></label>
+                            <label class="text-sm">{{ ucfirst(str_replace('_',' ',$field)) }}<select name="answers[{{ $field }}]" class="block w-full rounded-lg border-gray-300"><option value="">Not clarified</option><option value="0" @selected($retry && old('answers.'.$field) === '0')>No</option><option value="1" @selected($retry && old('answers.'.$field) === '1')>Yes</option></select></label>
                             @endforeach
                             </div></fieldset>
                             @else<p class="text-sm text-gray-500">This legacy screening may be confirmed. Changing its classification requires clarification using its original approved instrument.</p>@endif
                             <label class="block text-sm font-medium text-gray-700">Evidence source / clarification reference
-                                <input name="evidence_source" required maxlength="255" class="mt-1 block w-full rounded-lg border-gray-300" value="{{ old('evidence_source') }}" placeholder="Which answers or session notes support this decision?">
+                                <input name="evidence_source" required maxlength="255" class="mt-1 block w-full rounded-lg border-gray-300" value="{{ $retry ? old('evidence_source') : '' }}" placeholder="Which answers or session notes support this decision?">
                             </label>
                             <label class="block text-sm font-medium text-gray-700">Reason and documented clarification
-                                <textarea name="reason" required maxlength="1000" rows="3" class="mt-1 block w-full rounded-lg border-gray-300" placeholder="Explain the reassessment, referencing the recorded answers and any conversation content.">{{ old('reason') }}</textarea>
+                                <textarea name="reason" required minlength="10" maxlength="1000" rows="3" class="mt-1 block w-full rounded-lg border-gray-300" placeholder="Explain the reassessment, referencing the recorded answers and any conversation content.">{{ $retry ? old('reason') : '' }}</textarea>
                             </label>
                             <div class="flex justify-end gap-2">
                                 <button type="reset" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Reset</button>
@@ -239,11 +246,12 @@
                                 </button>
                             </div>
                         </form>
-                    </details>
                 </div>
                 </div>
 
                 <p class="text-xs text-gray-400">Original screening responses are retained with the reassessment in the request record.</p>
+                    </div>
+                </details>
             </div>
         </section>
     @empty
@@ -252,9 +260,11 @@
         </div>
     @endforelse
 
+    @if($sessions->isNotEmpty())
     <div data-filter-empty hidden class="bg-white rounded-2xl border border-gray-200 p-10 text-center">
         <p class="text-sm text-gray-500"><span>Nothing matches this filter.</span></p>
     </div>
+    @endif
 </div>
 @endsection
 
@@ -263,6 +273,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     const activeClass = 'bg-gray-900 text-white border-gray-900';
     const inactiveClass = 'bg-white text-gray-600 border-gray-300';
+    document.querySelectorAll('[data-filter]').forEach(button => button.setAttribute('aria-pressed', button.dataset.filter === 'all' ? 'true' : 'false'));
 
     document.querySelectorAll('[data-filter]').forEach(function (button) {
         button.addEventListener('click', function () {
@@ -270,6 +281,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             document.querySelectorAll('[data-filter]').forEach(function (btn) {
                 const isActive = btn.dataset.filter === filter;
+                btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
                 btn.classList.remove.apply(btn.classList, (isActive ? inactiveClass : activeClass).split(' '));
                 btn.classList.add.apply(btn.classList, (isActive ? activeClass : inactiveClass).split(' '));
             });
@@ -277,15 +289,20 @@ document.addEventListener('DOMContentLoaded', function () {
             let shown = 0;
             document.querySelectorAll('[data-filter-target]').forEach(function (card) {
                 const show = filter === 'all' || card.dataset.reviewType === filter;
-                card.classList.toggle('hidden', !show);
+                card.hidden = !show;
                 if (show) shown++;
             });
 
             document.querySelectorAll('[data-filter-empty]').forEach(function (empty) {
-                empty.classList.toggle('hidden', shown > 0);
+                empty.hidden = shown > 0;
             });
         });
     });
+    const target = document.getElementById(location.hash.slice(1));
+    if (target?.matches('[data-filter-target]')) {
+        const review = target.querySelector('.screening-review-expand');
+        if (review) review.open = true;
+    }
 });
 </script>
 @endpush

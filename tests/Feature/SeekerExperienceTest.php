@@ -122,6 +122,29 @@ class SeekerExperienceTest extends TestCase
         $this->assertDatabaseCount('counseling_sessions',0);
     }
 
+    public function test_waiting_page_shows_only_the_owned_requests_assigned_reviewer_name(): void
+    {
+        $adviserUser=User::factory()->create(['role'=>'adviser','is_active'=>true]);
+        $adviser=Adviser::create(['user_account_id'=>$adviserUser->id,'first_name'=>'Assigned','last_name'=>'Reviewer','email'=>'private-reviewer@example.test']);
+        $owner=$this->seeker();
+        $this->actingAs($owner)->post(route('request.screening.process'),$this->singleAnswer('prefer_not_to_say'))->assertRedirect();
+        $case=Session::firstOrFail();
+        $this->get(route('request.matching'))->assertOk()->assertSee('Reviewing Adviser:')->assertSee('Assigned Reviewer')
+            ->assertDontSee($adviser->email)->assertDontSee($adviserUser->email);
+        $this->actingAs($this->seeker())->get(route('request.matching'))->assertRedirect(route('request.screening'));
+        $this->actingAs($owner);
+        $case->update(['review_adviser_id'=>null]);
+        $this->get(route('request.matching'))->assertOk()->assertSee('No reviewing Adviser has been assigned yet.')->assertDontSee('Assigned Reviewer');
+        $case->update(['review_adviser_id'=>$adviser->id]);
+        $adviser->update(['first_name'=>'','last_name'=>'']);
+        $this->get(route('request.matching'))->assertOk()->assertSee('Assigned Adviser')->assertDontSee($adviser->email);
+        $adviser->update(['first_name'=>'<script>unsafe</script>','last_name'=>'Reviewer']);
+        $this->get(route('request.matching'))->assertOk()->assertSee('&lt;script&gt;unsafe&lt;/script&gt; Reviewer',false)
+            ->assertDontSee('<script>unsafe</script>',false);
+        $this->assertSame('adviser_review_required',$case->fresh()->workflow_state);
+        $this->assertDatabaseCount('queue_requests',0);
+    }
+
     public function test_visible_screening_records_thoughts_without_inventing_a_current_plan(): void
     {
         $user=$this->seeker();
