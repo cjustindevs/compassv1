@@ -44,23 +44,30 @@
         .helper-readiness-page .main-content .rc-status,
         .helper-readiness-page .main-content .rc-foot-note { max-width:100%; width:100%; }
         .helper-readiness-page .top-bar { margin-bottom:16px; }
-        .rc-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 20px; }
-        .rc-field { min-width:0; padding:0; margin:0; border:0; }
-        .rc-field .rc-label { margin-bottom:8px; }
-        .rc-skills { grid-column:1/-1; padding-bottom:12px; border-bottom:1px solid var(--gray-100); }
+        .rc-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; align-items:stretch; }
+        .rc-field { min-width:0; padding:14px; margin:0; border:1px solid var(--gray-200); border-radius:10px; background:var(--gray-50); }
+        .rc-field > fieldset { min-width:0; width:100%; padding:0; margin:0; border:0; }
+        .rc-field .rc-label { min-height:20px; padding:0; margin:0 0 10px; line-height:20px; }
+        .rc-field .rc-label .compass-icon { flex-shrink:0; }
+        .rc-skills { grid-column:1; }
         .rc-skills-reminder { font-size:12px; color:var(--gray-500); line-height:1.5; margin:0 0 8px; }
-        .rc-breathing { grid-column:1/-1; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; padding-top:12px; border-top:1px solid var(--gray-100); }
-        .rc-breathing .rc-label { margin-bottom:6px; }
-        .rc-breathing .breath-steps { margin-bottom:0; }
+        .rc-skills > fieldset { height:100%; display:flex; flex-direction:column; }
+        .rc-skills .rc-skills-reminder { flex:1; margin-bottom:10px; }
+        .rc-breathing { grid-column:2; display:flex; flex-direction:column; align-items:stretch; gap:0; }
+        .rc-breathing > div:first-child { flex:1; }
+        .rc-breathing .breath-steps { margin-bottom:10px; line-height:1.5; }
+        .rc-breathing .breath-cta { min-height:52px; }
+        .helper-readiness-page .rc-breathing .breath-cta .btn { min-height:52px; }
         .rc-self-care { font-size:12px; color:var(--gray-500); line-height:1.5; margin-top:12px; }
 
         /* ─────────── Segmented radio control ─────────── */
-        .seg { display: inline-flex; gap: 6px; flex-wrap: wrap; }
-        .seg .seg-opt { display: inline-flex; position:relative; }
+        .rc-fields .seg { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; width:100%; }
+        .rc-fields .seg-three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+        .seg .seg-opt { display:flex; position:relative; min-width:0; }
         .seg input[type="radio"] { position:absolute; opacity:0; width:1px; height:1px; }
         .seg label {
             display: inline-flex; flex-direction: column; align-items: center;
-            gap: 1px; padding: 7px 12px; white-space:normal; min-height:44px; justify-content:center; text-align:center;
+            gap: 2px; padding: 8px 10px; width:100%; white-space:normal; min-height:52px; justify-content:center; text-align:center; line-height:1.4;
             border-radius: 9px;
             border: 1.5px solid var(--gray-200);
             background: var(--gray-50);
@@ -77,7 +84,8 @@
         }
         .seg input[type="radio"]:checked + label .hint { color: rgba(255,255,255,0.85); }
         .seg input[type="radio"]:focus-visible + label { outline:2px solid var(--green-500); outline-offset:2px; }
-        .seg label .hint { font-size: 11px; font-weight: 400; color: var(--gray-400); }
+        .seg label .hint { font-size: 11px; font-weight: 400; color: var(--gray-500); overflow-wrap:anywhere; }
+        .rc-skills .seg { max-width:400px; }
 
 
         /* ─────────── Breathing section ─────────── */
@@ -179,18 +187,16 @@
         }
 
         @container (min-width: 1180px) {
-            .rc-fields { grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px 20px; }
-            .rc-skills { grid-column:1 / span 2; border-bottom:0; padding-bottom:0; }
-            .rc-breathing { grid-column:3 / span 2; grid-row:1; border-top:0; padding-top:0; padding-left:20px; border-left:1px solid var(--gray-100); justify-content:flex-start; align-content:start; }
-            .rc-breathing > div:first-child { width:100%; }
-            .rc-self-care { border-top:1px solid var(--gray-100); padding-top:12px; }
+            .rc-fields { grid-template-columns:repeat(4,minmax(0,1fr)); }
+            .rc-skills { grid-column:1 / span 2; }
+            .rc-breathing { grid-column:3 / span 2; }
+            .rc-field:not(.rc-skills) .seg label { min-height:64px; }
         }
-        @container (max-width: 560px) {
+        @container (max-width: 620px) {
             .rc-fields { grid-template-columns:minmax(0,1fr); gap:12px; }
-            .rc-breathing { align-items:stretch; }
-            .seg { width: 100%; }
-            .seg .seg-opt { flex: 1 1 44%; }
-            .seg label { width:100%; }
+            .rc-skills, .rc-breathing { grid-column:1; }
+            .rc-field { padding:12px; }
+            .rc-skills .seg { max-width:none; }
         }
         @media (max-width: 768px) {
             .rc-card { padding: 16px; }
@@ -261,16 +267,18 @@
 
                 <input type="hidden" name="readiness_form_version" value="{{ \App\Services\HelperReadinessService::GROUPED_VERSION }}">
                 <div class="rc-fields">
-                    <fieldset class="rc-field rc-skills" aria-describedby="listener-skills-reminder">
-                        <legend class="rc-label"><x-ui-icon name="check-circle" class="text-green-600" /> Prepared to use these listening skills? <span class="req">*</span></legend>
-                        <p id="listener-skills-reminder" class="rc-skills-reminder">{{ implode(', ', array_map(fn($skill) => ucwords(str_replace('_',' ',$skill)), \App\Services\HelperReadinessService::SKILLS)) }}. This is a self-check for your next session, not a competency rating.</p>
-                        <div class="seg">
-                            @foreach(['1'=>"Yes, I'm prepared",'0'=>'Not right now'] as $value=>$label)
-                            <div class="seg-opt"><input type="radio" id="listener_skills_{{ $value }}" name="listener_skills_ready" value="{{ $value }}" required @checked((string) old('listener_skills_ready','') === (string) $value)><label for="listener_skills_{{ $value }}">{{ $label }}</label></div>
-                            @endforeach
-                        </div>
-                        @error('listener_skills_ready')<p class="error-text">{{ $message }}</p>@enderror
-                    </fieldset>
+                    <div class="rc-field rc-skills">
+                        <fieldset aria-describedby="listener-skills-reminder">
+                            <legend class="rc-label"><x-ui-icon name="check-circle" class="text-green-600" /> Prepared to use these listening skills? <span class="req">*</span></legend>
+                            <p id="listener-skills-reminder" class="rc-skills-reminder">{{ implode(', ', array_map(fn($skill) => ucwords(str_replace('_',' ',$skill)), \App\Services\HelperReadinessService::SKILLS)) }}. This is a self-check for your next session, not a competency rating.</p>
+                            <div class="seg">
+                                @foreach(['1'=>"Yes, I'm prepared",'0'=>'Not right now'] as $value=>$label)
+                                <div class="seg-opt"><input type="radio" id="listener_skills_{{ $value }}" name="listener_skills_ready" value="{{ $value }}" required @checked((string) old('listener_skills_ready','') === (string) $value)><label for="listener_skills_{{ $value }}">{{ $label }}</label></div>
+                                @endforeach
+                            </div>
+                            @error('listener_skills_ready')<p class="error-text">{{ $message }}</p>@enderror
+                        </fieldset>
+                    </div>
                     <div class="rc-field rc-breathing">
                         <div><p class="rc-label"><x-ui-icon name="wind" class="text-teal-600" /> Breathing exercise <span class="req">*</span></p>
                             <div class="breath-steps"><span>Inhale 4s / Hold 4s / Exhale 4s / 3 rounds</span></div>
@@ -279,42 +287,50 @@
                         <input type="hidden" name="exercise_completed" id="exercise_completed" value="{{ old('exercise_completed','') }}">
                         @error('exercise_completed')<p class="error-text">{{ $message }}</p>@enderror
                     </div>
-                    <fieldset class="rc-field">
-                        <legend class="rc-label"><x-ui-icon name="heart" class="text-red-500" /> Emotionally ready? <span class="req">*</span></legend>
-                        <div class="seg">
-                            @foreach(['1'=>"Yes, I'm ready",'0'=>'No, I need a moment'] as $value=>$label)
-                            <div class="seg-opt"><input type="radio" id="emotionally_ready_{{ $value }}" name="emotionally_ready" value="{{ $value }}" required @checked((string) old('emotionally_ready','') === (string) $value)><label for="emotionally_ready_{{ $value }}">{{ $label }}</label></div>
-                            @endforeach
-                        </div>
-                        @error('emotionally_ready')<p class="error-text">{{ $message }}</p>@enderror
-                    </fieldset>
-                    <fieldset class="rc-field">
-                        <legend class="rc-label"><x-ui-icon name="connection" class="text-green-600" /> Willing to listen? <span class="req">*</span></legend>
-                        <div class="seg">
-                            @foreach(['1'=>'Yes','0'=>'No'] as $value=>$label)
-                            <div class="seg-opt"><input type="radio" id="willing_{{ $value }}" name="willing_to_listen" value="{{ $value }}" required @checked((string) old('willing_to_listen','') === (string) $value)><label for="willing_{{ $value }}">{{ $label }}</label></div>
-                            @endforeach
-                        </div>
-                        @error('willing_to_listen')<p class="error-text">{{ $message }}</p>@enderror
-                    </fieldset>
-                    <fieldset class="rc-field">
-                        <legend class="rc-label"><x-ui-icon name="water" class="text-blue-500" /> Current stress level <span class="req">*</span></legend>
-                        <div class="seg">
-                            @foreach(['low'=>['Low','Calm and focused'],'moderate'=>['Moderate','Manageable'],'high'=>['High','Feeling overwhelmed']] as $value=>$option)
-                            <div class="seg-opt"><input type="radio" id="stress_{{ $value }}" name="stress_level" value="{{ $value }}" required @checked(old('stress_level') === $value)><label for="stress_{{ $value }}">{{ $option[0] }}<span class="hint">{{ $option[1] }}</span></label></div>
-                            @endforeach
-                        </div>
-                        @error('stress_level')<p class="error-text">{{ $message }}</p>@enderror
-                    </fieldset>
-                    <fieldset class="rc-field">
-                        <legend class="rc-label"><x-ui-icon name="toggle" class="text-green-600" /> Availability preference <span class="req">*</span></legend>
-                        <div class="seg">
-                            @foreach(['available'=>['Available','Accepting sessions'],'not_ready'=>['Not ready','Not accepting now']] as $value=>$option)
-                            <div class="seg-opt"><input type="radio" id="avail_{{ $value }}" name="availability_status" value="{{ $value }}" required @checked(old('availability_status') === $value)><label for="avail_{{ $value }}">{{ $option[0] }}<span class="hint">{{ $option[1] }}</span></label></div>
-                            @endforeach
-                        </div>
-                        @error('availability_status')<p class="error-text">{{ $message }}</p>@enderror
-                    </fieldset>
+                    <div class="rc-field">
+                        <fieldset>
+                            <legend class="rc-label"><x-ui-icon name="heart" class="text-red-500" /> Emotionally ready? <span class="req">*</span></legend>
+                            <div class="seg">
+                                @foreach(['1'=>"Yes, I'm ready",'0'=>'No, I need a moment'] as $value=>$label)
+                                <div class="seg-opt"><input type="radio" id="emotionally_ready_{{ $value }}" name="emotionally_ready" value="{{ $value }}" required @checked((string) old('emotionally_ready','') === (string) $value)><label for="emotionally_ready_{{ $value }}">{{ $label }}</label></div>
+                                @endforeach
+                            </div>
+                            @error('emotionally_ready')<p class="error-text">{{ $message }}</p>@enderror
+                        </fieldset>
+                    </div>
+                    <div class="rc-field">
+                        <fieldset>
+                            <legend class="rc-label"><x-ui-icon name="connection" class="text-green-600" /> Willing to listen? <span class="req">*</span></legend>
+                            <div class="seg">
+                                @foreach(['1'=>'Yes','0'=>'No'] as $value=>$label)
+                                <div class="seg-opt"><input type="radio" id="willing_{{ $value }}" name="willing_to_listen" value="{{ $value }}" required @checked((string) old('willing_to_listen','') === (string) $value)><label for="willing_{{ $value }}">{{ $label }}</label></div>
+                                @endforeach
+                            </div>
+                            @error('willing_to_listen')<p class="error-text">{{ $message }}</p>@enderror
+                        </fieldset>
+                    </div>
+                    <div class="rc-field">
+                        <fieldset>
+                            <legend class="rc-label"><x-ui-icon name="water" class="text-blue-500" /> Current stress level <span class="req">*</span></legend>
+                            <div class="seg seg-three">
+                                @foreach(['low'=>['Low','Calm and focused'],'moderate'=>['Moderate','Manageable'],'high'=>['High','Feeling overwhelmed']] as $value=>$option)
+                                <div class="seg-opt"><input type="radio" id="stress_{{ $value }}" name="stress_level" value="{{ $value }}" required @checked(old('stress_level') === $value)><label for="stress_{{ $value }}">{{ $option[0] }}<span class="hint">{{ $option[1] }}</span></label></div>
+                                @endforeach
+                            </div>
+                            @error('stress_level')<p class="error-text">{{ $message }}</p>@enderror
+                        </fieldset>
+                    </div>
+                    <div class="rc-field">
+                        <fieldset>
+                            <legend class="rc-label"><x-ui-icon name="toggle" class="text-green-600" /> Availability preference <span class="req">*</span></legend>
+                            <div class="seg">
+                                @foreach(['available'=>['Available','Accepting sessions'],'not_ready'=>['Not ready','Not accepting now']] as $value=>$option)
+                                <div class="seg-opt"><input type="radio" id="avail_{{ $value }}" name="availability_status" value="{{ $value }}" required @checked(old('availability_status') === $value)><label for="avail_{{ $value }}">{{ $option[0] }}<span class="hint">{{ $option[1] }}</span></label></div>
+                                @endforeach
+                            </div>
+                            @error('availability_status')<p class="error-text">{{ $message }}</p>@enderror
+                        </fieldset>
+                    </div>
                 </div>
                 <p class="rc-self-care">Not feeling ready is okay. You can still submit this check; a failed readiness condition keeps you unavailable for new sessions.</p>
 
