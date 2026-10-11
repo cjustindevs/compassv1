@@ -188,7 +188,7 @@
 .compass-ui .font-large .notification-page .ui-notification-content :is(h2, h3, h4, p),
 .compass-ui .notification-page.font-large .ui-notification-content :is(h2, h3, h4, p) { font-size: 16px; }
 @media (max-width: 768px) {
-    .compass-ui body.notification-page > .main-content { padding-bottom: 100px; }
+    .compass-ui body.notification-page > .main-content { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
     .compass-ui .notification-page .ui-notification-row { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 14px; }
     .compass-ui .notification-page .ui-notification-content { flex: auto; }
     .compass-ui .notification-page .ui-notification-actions { justify-content: flex-start; max-width: 100%; width: auto; }

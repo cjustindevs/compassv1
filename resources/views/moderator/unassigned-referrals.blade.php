@@ -68,29 +68,6 @@
         }
         .btn-primary:hover { background: #038845; }
 
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--bg-card, white);
-            border-top: 1px solid var(--border-color, #E5E7EB);
-            display: flex;
-            justify-content: space-around;
-            padding: 8px 0;
-            z-index: 50;
-        }
-        .bottom-nav .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: var(--text-muted, #9CA3AF);
-            text-decoration: none;
-            font-size: 11px;
-            padding: 4px 12px;
-        }
-        .bottom-nav .nav-item :is(i, .compass-icon) { font-size: 20px; }
-        .bottom-nav .nav-item.active { color: #04A052; }
 
         @media (max-width: 768px) {
             .main-content { margin-left: 0; }

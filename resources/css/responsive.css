@@ -99,11 +99,12 @@ img { max-width: 100%; height: auto; }
 
     .hamburger { display: block !important; }
     .sidebar-overlay.active { display: block; }
-    .bottom-nav { display: flex !important; }
 
     .main-content {
         margin-left: 0 !important;
-        padding-bottom: 80px !important;
+    }
+    .main-content:not(.chat-page):not(:has(.chat-wrapper)) {
+        padding-bottom: max(24px, env(safe-area-inset-bottom)) !important;
     }
 }
 

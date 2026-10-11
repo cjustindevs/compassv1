@@ -135,39 +135,7 @@
 
 @include('components.confirmation-modal')
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- BOTTOM NAVIGATION (mobile)                    -->
-<!-- ══════════════════════════════════════════════ -->
 
-<nav class="bottom-nav" id="bottomNav">
-    <a href="{{ route('seeker.dashboard') }}{{ $dashboardTabs ? '#home' : '' }}"
-       class="nav-item {{ $isActive('seeker.dashboard') ? 'active' : '' }}"
-       @if($dashboardTabs) data-tab="home" @endif>
-        <x-ui-icon name="home"  />
-        <span>Home</span>
-    </a>
-    <a href="{{ route('seeker.dashboard') }}#dashboard"
-       class="nav-item nav-item-dashboard {{ $isActive('seeker.dashboard') ? 'active' : '' }}"
-       @if($dashboardTabs) data-tab="dashboard" @endif>
-        <x-ui-icon name="pie-chart"  />
-        <span>Stats</span>
-    </a>
-    <a href="{{ route('request.screening') }}"
-       class="nav-item {{ $anyActive(['request.screening*', 'request.preferences*', 'request.matching*', 'request.voice-consent*']) ? 'active' : '' }}">
-        <x-ui-icon name="message"  />
-        <span>Support</span>
-    </a>
-    <a href="{{ route('session.history') }}"
-       class="nav-item {{ $isActive('session.history') ? 'active' : '' }}">
-        <x-ui-icon name="list"  />
-        <span>Sessions</span>
-    </a>
-    <a href="{{ route('selfhelp') }}"
-       class="nav-item {{ $isActive('selfhelp') ? 'active' : '' }}">
-        <x-ui-icon name="heart"  />
-        <span>Wellness</span>
-    </a>
-</nav>
 
 <script>
     @php
@@ -221,7 +189,7 @@
             });
             if (sectionTabs[tabId]) sectionTabs[tabId].classList.add('active');
 
-            document.querySelectorAll('.sidebar .nav-item[data-tab], .bottom-nav .nav-item[data-tab]').forEach(function (item) {
+            document.querySelectorAll('.sidebar .nav-item[data-tab]').forEach(function (item) {
                 item.classList.toggle('active', item.dataset.tab === tabId);
             });
             const titleEl = document.getElementById('pageTitle');
@@ -233,7 +201,7 @@
             switchDashboardTab(hash === 'dashboard' || hash === 'home' ? hash : 'home');
         }
 
-        document.querySelectorAll('.sidebar .nav-item[data-tab], .bottom-nav .nav-item[data-tab]').forEach(function (item) {
+        document.querySelectorAll('.sidebar .nav-item[data-tab]').forEach(function (item) {
             item.addEventListener('click', function (e) {
                 e.preventDefault();
                 switchDashboardTab(this.dataset.tab);

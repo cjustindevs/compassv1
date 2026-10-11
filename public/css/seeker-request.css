@@ -41,6 +41,10 @@
 .compass-ui .request-flow-compact .request-help-actions .request-emergency-action { color:#b91c1c; border-color:#fecaca; background:#fff; }
 .compass-ui .request-flow-compact .request-help-actions .request-emergency-action:hover { background:#fef2f2; border-color:#f87171; }
 .request-section .seeker-button { min-height:44px; padding:9px 12px; }
+.request-chat-mode { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; min-width:0; padding:12px 14px; border:1px solid #cce8d9; border-radius:8px; background:#eaf8f0; color:#173a2b; }
+.request-chat-mode strong { display:block; font-size:14px; font-weight:600; }
+.request-chat-mode p { margin:4px 0 0; font-size:13px; line-height:1.5; color:#64748b; overflow-wrap:anywhere; }
+.request-chat-mode > .compass-icon { flex:none; width:22px; height:22px; color:#009b58; }
 @media(max-width:768px) {
     .request-resource-list,.request-review dl,.request-details-grid { grid-template-columns:1fr; }
     .request-flow-compact .form-row { grid-template-columns:1fr; flex-direction:column; }

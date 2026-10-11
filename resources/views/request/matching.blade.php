@@ -316,35 +316,6 @@
         }
 
         /* ─── Bottom Nav ─── */
-        .bottom-nav {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(255,255,255,0.94);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-top: 1px solid var(--gray-200);
-            padding: 6px 0 env(safe-area-inset-bottom, 6px);
-            z-index: 200;
-            justify-content: space-around;
-        }
-        .bottom-nav .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0px;
-            color: var(--gray-400);
-            text-decoration: none;
-            font-size: 10px;
-            font-weight: 500;
-            padding: 4px 12px;
-            transition: all 0.2s ease;
-        }
-        .bottom-nav .nav-item :is(i, .compass-icon) { font-size: 20px; }
-        .bottom-nav .nav-item.active { color: var(--green-500); }
-        .bottom-nav .nav-item.active :is(i, .compass-icon) { color: var(--green-500); }
 
         .hamburger {
             display: none;
@@ -376,7 +347,6 @@
             .sidebar { width: 280px; padding: 16px; }
             .main-content { margin-left: 0; padding: 16px 16px 100px; }
             .hamburger { display: block; }
-            .bottom-nav { display: flex; }
             .form-card { padding: 20px 16px; border-radius: 16px; }
             .btn-primary, .btn-outline { padding: 12px 24px; font-size: 14px; width: 100%; justify-content: center; }
             .step-dot { width: 28px; height: 28px; font-size: 11px; }

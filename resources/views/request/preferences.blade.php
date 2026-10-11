@@ -205,55 +205,6 @@
             box-shadow: 0 0 0 3px rgba(4,160,82,0.08);
         }
 
-        .mode-card {
-            flex: 1;
-            min-width: 120px;
-            padding: 20px 16px;
-            border-radius: 16px;
-            border: 2px solid var(--gray-200);
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            background: white;
-        }
-        .mode-card:hover {
-            border-color: var(--green-300);
-            background: var(--green-50);
-        }
-        .mode-card input[type="radio"] { display: none; }
-        .mode-card .mode-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .mode-card .mode-content .icon {
-            font-size: 32px;
-            margin-bottom: 8px;
-        }
-        .mode-card .mode-content .label {
-            font-weight: 600;
-            font-size: 15px;
-            color: var(--gray-700);
-        }
-        .mode-card .mode-content .sub {
-            font-size: 12px;
-            color: var(--gray-400);
-            margin-top: 2px;
-        }
-        .mode-card .mode-content .checkmark {
-            opacity: 0;
-            transition: all 0.25s ease;
-            color: var(--green-500);
-            font-size: 20px;
-            margin-top: 6px;
-        }
-        .mode-card input[type="radio"]:checked + .mode-content {
-            border-color: var(--green-500);
-            background: var(--green-50);
-        }
-        .mode-card input[type="radio"]:checked + .mode-content .checkmark {
-            opacity: 1;
-        }
 
         .btn-primary {
             background: linear-gradient(135deg, var(--green-500), var(--green-600));
@@ -345,35 +296,6 @@
         .risk-badge.high { background: #FEE2E2; color: #DC2626; }
         .risk-badge.emergency { background: #FEE2E2; color: #DC2626; }
 
-        .bottom-nav {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(255,255,255,0.94);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-top: 1px solid var(--gray-200);
-            padding: 6px 0 env(safe-area-inset-bottom, 6px);
-            z-index: 200;
-            justify-content: space-around;
-        }
-        .bottom-nav .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0px;
-            color: var(--gray-400);
-            text-decoration: none;
-            font-size: 10px;
-            font-weight: 500;
-            padding: 4px 12px;
-            transition: all 0.2s ease;
-        }
-        .bottom-nav .nav-item :is(i, .compass-icon) { font-size: 20px; }
-        .bottom-nav .nav-item.active { color: var(--green-500); }
-        .bottom-nav .nav-item.active :is(i, .compass-icon) { color: var(--green-500); }
 
         .hamburger {
             display: none;
@@ -404,16 +326,12 @@
             .sidebar { width: 280px; padding: 16px; }
             .main-content { margin-left: 0; padding: 16px 16px 100px; }
             .hamburger { display: block; }
-            .bottom-nav { display: flex; }
             .form-card { padding: 20px 16px; border-radius: 16px; }
-            .mode-card { min-width: 100px; padding: 16px 12px; }
-            .mode-card .mode-content .icon { font-size: 28px; }
             .btn-primary, .btn-outline { padding: 12px 24px; font-size: 14px; width: 100%; justify-content: center; }
             .step-dot { width: 28px; height: 28px; font-size: 11px; }
         }
         @media (max-width: 480px) {
             .form-card { padding: 16px 12px; }
-            .mode-card { min-width: 100%; }
             .step-dot { width: 24px; height: 24px; font-size: 10px; }
         }
     </style>
@@ -472,16 +390,13 @@
                 <!-- ============================================ -->
                 <div class="form-section-compact">
                     <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Communication mode</h3>
-                    <p class="text-sm text-gray-500 mb-4">Choose your language for a private chat session.</p>
+                    <p class="text-sm text-gray-500 mb-4">Your request uses a private text chat.</p>
 
-                    <label class="mode-card">
-                        <input type="radio" name="support_mode" value="chat" checked>
-                        <div class="mode-content">
-                            <div class="label">Chat</div>
-                            <div class="sub">Private text-based conversation</div>
-                            <div class="checkmark"><x-ui-icon name="check-circle" /></div>
-                        </div>
-                    </label>
+                    <input type="hidden" name="support_mode" value="chat">
+                    <div class="request-chat-mode">
+                        <div><strong>Chat</strong><p>Private text-based conversation</p></div>
+                        <x-ui-icon name="check-circle" />
+                    </div>
                     @error('support_mode')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror

@@ -9,12 +9,18 @@
 </head>
 <body class="compass-compact bg-gray-50">
     @include('layouts.partials.moderator-sidebar')
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <main class="main-content p-6">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-800">Schedule Management</h1>
-                <p class="text-sm text-gray-500">Plan helper duty dates and monitor helper readiness on each duty day.</p>
+            <div class="flex items-start gap-4">
+                <button type="button" class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">
+                    <x-ui-icon name="menu" />
+                </button>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Schedule Management</h1>
+                    <p class="text-sm text-gray-500">Plan helper duty dates and monitor helper readiness on each duty day.</p>
+                </div>
             </div>
             <form method="GET" action="{{ route('moderator.schedules') }}" class="flex flex-wrap items-center gap-2">
                 <input type="date" name="date" value="{{ $date }}" class="rounded-lg border-gray-300 text-sm">

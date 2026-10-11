@@ -149,38 +149,10 @@
         .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 99; }
         .sidebar-overlay.active { display: block; }
 
-        .bottom-nav {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--navbar-bg, rgba(255,255,255,0.94));
-            backdrop-filter: blur(16px);
-            border-top: 1px solid var(--border-color, #E5E7EB);
-            padding: 6px 0 env(safe-area-inset-bottom, 6px);
-            z-index: 200;
-            justify-content: space-around;
-        }
-        .bottom-nav .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: var(--text-muted, #9CA3AF);
-            text-decoration: none;
-            font-size: 10px;
-            font-weight: 500;
-            padding: 4px 12px;
-            transition: all 0.2s ease;
-        }
-        .bottom-nav .nav-item :is(i, .compass-icon) { font-size: 20px; }
-        .bottom-nav .nav-item.active { color: #04A052; }
-        .bottom-nav .nav-item.active :is(i, .compass-icon) { color: #04A052; }
 
         @media (max-width: 768px) {
             .main-content { margin-left: 0; padding: 16px 16px 100px; }
             .hamburger { display: block; }
-            .bottom-nav { display: flex; }
             .stat-number { font-size: 22px; }
             .session-item { flex-wrap: wrap; gap: 8px; }
         }

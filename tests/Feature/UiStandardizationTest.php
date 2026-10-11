@@ -47,6 +47,9 @@ class UiStandardizationTest extends TestCase
                 $this->assertStringNotContainsString('cdn.tailwindcss.com', $html, $route);
                 $this->assertStringContainsString('class="compass-ui', $html, $route);
                 $this->assertStringNotContainsString('<x-ui-icon', $html, $route);
+                $this->assertStringNotContainsString('id="bottomNav"', $html, $route);
+                $this->assertStringContainsString('<aside', $html, $route);
+                $this->assertMatchesRegularExpression('/id="hamburgerBtn"|data-sidebar-open/', $html, $route);
             }
         }
     }

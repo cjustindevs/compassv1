@@ -239,6 +239,8 @@ class SeekerExperienceTest extends TestCase
         $this->postJson(route('request.draft.save'),$this->draft(['stage'=>'preferences','session_id'=>$case->id,'preferred_language'=>'English/Tagalog','description'=>'Cannot overwrite']))->assertOk();
         $this->assertArrayNotHasKey('description',SeekerRequestDraft::firstOrFail()->payload);
         $this->get(route('request.preferences'))->assertOk()->assertSee('Find a Helper')->assertSee('Both (English and Tagalog)')
+            ->assertSee('type="hidden" name="support_mode" value="chat"',false)->assertSee('class="request-chat-mode"',false)
+            ->assertDontSee('<label class="mode-card"',false)->assertDontSee('id="bottomNav"',false)
             ->assertDontSee('Review your request')->assertDontSee('Recorded original')->assertDontSee('data-save-draft',false)->assertDontSee('data-discard-draft',false);
         $this->post(route('request.preferences.process'),['support_mode'=>'voice','preferred_language'=>'English'])->assertSessionHasErrors('support_mode');
         $data=['support_mode'=>'chat','preferred_language'=>'English/Tagalog'];

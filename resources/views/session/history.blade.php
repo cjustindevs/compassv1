@@ -223,33 +223,6 @@
         }
         .sidebar-overlay.active { display: block; }
 
-        .bottom-nav {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(255,255,255,0.94);
-            backdrop-filter: blur(16px);
-            border-top: 1px solid var(--gray-200);
-            padding: 6px 0 env(safe-area-inset-bottom, 6px);
-            z-index: 200;
-            justify-content: space-around;
-        }
-        .bottom-nav .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0px;
-            color: var(--gray-400);
-            text-decoration: none;
-            font-size: 10px;
-            font-weight: 500;
-            padding: 4px 12px;
-            transition: all 0.2s ease;
-        }
-        .bottom-nav .nav-item :is(i, .compass-icon) { font-size: 20px; }
-        .bottom-nav .nav-item.active { color: var(--green-500); }
 
         @media (min-width: 769px) {
             .sidebar-overlay { display: none !important; }
@@ -262,7 +235,6 @@
             .sidebar { width: 280px; padding: 16px; }
             .main-content { margin-left: 0; padding: 16px 16px 100px; }
             .hamburger { display: block; }
-            .bottom-nav { display: flex; }
             .history-card { padding: 20px 16px; border-radius: 16px; }
             .table-container table { min-width: 500px; }
         }

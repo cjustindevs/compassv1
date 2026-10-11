@@ -3,7 +3,7 @@
    Loaded globally in layouts/app.blade.php AND in
    layouts/helper.blade.php so adviser/moderator/seeker
    pages share the same components as the helper module.
-   Sidebar, main-content, bottom-nav, hamburger, overlay
+   Sidebar, main-content, hamburger, overlay
    are defined in sidebar.css — do NOT duplicate here.
    ─────────────────────────────────────────────────── */
 
