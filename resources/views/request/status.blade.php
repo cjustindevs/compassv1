@@ -24,6 +24,13 @@
 .request-status .status-history ol {list-style:none;padding:0;margin:8px 0 0;display:grid;gap:12px}
 .request-status .status-history li {border-left:2px solid #cce8d9;padding-left:12px;font-size:13px;overflow-wrap:anywhere}
 .request-status .status-history time {display:block;font-size:12px;color:#64748b;margin-top:3px}
+.request-status .seeker-follow-up{margin-top:20px;padding-top:16px;border-top:1px solid #edf2ef;min-width:0}
+.request-status .seeker-follow-up p{margin:8px 0;overflow-wrap:anywhere;white-space:pre-wrap}
+.request-status .seeker-follow-up fieldset{min-width:0;border:0;padding:0;margin:12px 0}
+.request-status .follow-up-choices{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.request-status .follow-up-choice{display:flex;align-items:center;gap:8px;min-height:44px;padding:10px 14px;border:1px solid #d4e4da;border-radius:8px;cursor:pointer}
+.request-status .follow-up-choice:has(input:checked){background:#edf9f1;border-color:#009b58}
+.request-status .follow-up-choice input{accent-color:#009b58}
 @media(max-width:768px){.request-status .review-layout{grid-template-columns:minmax(0,1fr);gap:16px}.seeker-page:has(.request-status) .seeker-card{padding:16px}.request-status .review-copy h2{font-size:18px}}
 @media(max-width:480px){.request-status .seeker-toolbar{align-items:stretch;flex-direction:column}.request-status .review-actions{flex-direction:column}.request-status .review-actions .seeker-button{width:100%}.request-status .status-refresh{align-items:stretch;flex-direction:column}}
 </style>
@@ -54,6 +61,32 @@
 @endif
 </aside>
 </section>
+@if(($followUp ?? null)?->instrument_version === \App\Services\CompactScreening::SINGLE_VERSION && $followUp->follow_up_requested_at)
+<section class="seeker-follow-up" aria-labelledby="follow-up-heading">
+<h2 id="follow-up-heading" class="font-semibold">Your Adviser's follow-up</h2>
+@if($followUp->follow_up_note)<p>{{ $followUp->follow_up_note }}</p>@endif
+@if(!$followUp->follow_up_answered_at)
+<p>Your Adviser is asking the same safety question. You can still choose not to answer; your request will remain pending for review.</p>
+<form method="POST" action="{{ route('request.follow-up.respond',$session) }}" data-followup-form>
+@csrf
+<input type="hidden" name="screening_id" value="{{ $followUp->id }}">
+<fieldset>
+<legend>{{ \App\Services\CompactScreening::SINGLE_QUESTION }}</legend>
+<div class="follow-up-choices">
+@foreach(['yes'=>'Yes','no'=>'No','prefer_not_to_say'=>'Prefer not to say'] as $value=>$label)
+<label class="follow-up-choice"><input type="radio" name="follow_up_answer" value="{{ $value }}" required @checked(old('follow_up_answer') === $value)> {{ $label }}</label>
+@endforeach
+</div>
+</fieldset>
+@error('follow_up_answer')<p class="text-red-700" role="alert">{{ $message }}</p>@enderror
+<button type="submit" class="seeker-button">Send response</button>
+</form>
+@else
+<p><strong>Response saved:</strong> {{ match($followUp->follow_up_answer) { 'yes'=>'Yes','no'=>'No',default=>'Prefer not to say' } }}</p>
+<p>{{ $followUp->follow_up_answer === 'prefer_not_to_say' ? 'Your choice was respected. Your request remains pending; no safety classification has been assumed.' : 'Your Adviser has been notified. Matching starts only after their approval and completion of your preferences.' }}</p>
+@endif
+</section>
+@endif
 @break
 @case('closed')<h2 class="font-semibold">This request has ended</h2>@if($session->session_status === \App\Models\Session::STATUS_NO_SHOW)<p>The helper was not able to join, and this request has been closed. If you still need support, you can start a new request.</p>@elseif($session->session_status === \App\Models\Session::STATUS_CANCELLED)<p>This request was cancelled. If you still need support, you can start a new request.</p>@else<p>This conversation has been closed. If you still need support, you can start a new request.</p>@endif@break
 @case('session_ready')<h2 class="font-semibold">Your helper is preparing</h2><p>Your request has been accepted. Chat opens when the helper starts the session.</p>@break
@@ -74,5 +107,11 @@
 </footer>
 </div>
 </x-seeker-step>
-@push('scripts')<script>setTimeout(()=>{if(document.visibilityState==='visible')location.reload();},15000);</script>@endpush
+@push('scripts')<script>
+setInterval(() => {
+    const form = document.querySelector('[data-followup-form]');
+    const responding = form && (form.contains(document.activeElement) || form.querySelector('input[name="follow_up_answer"]:checked'));
+    if (document.visibilityState === 'visible' && !responding && !document.querySelector('dialog[open]')) location.reload();
+}, 15000);
+</script>@endpush
 @endsection

@@ -193,6 +193,7 @@ Route::middleware(['auth', 'role:seeker'])->group(function () {
 
     // Step 3: Matching / Queue
     Route::get('/request/matching', [RequestSupportController::class, 'matching'])->name('request.matching');
+    Route::post('/request/{session}/follow-up', [RequestSupportController::class, 'respondToFollowUp'])->name('request.follow-up.respond');
     Route::post('/request/matching', [RequestSupportController::class, 'declineHelper'])->name('request.matching.decline');
 
     // Voice Recording Consent
@@ -647,6 +648,7 @@ Route::middleware(['auth', 'role:seeker'])->group(function () {
 });
 Route::middleware(['auth', 'role:adviser'])->group(function () {
     Route::get('/adviser/screenings', [ScreeningReviewController::class, 'index'])->name('adviser.screenings');
+    Route::post('/adviser/screenings/{session}/follow-up', [ScreeningReviewController::class, 'followUp'])->name('adviser.screenings.follow-up');
     Route::get('/adviser/screenings/{session}/conversation', [ScreeningReviewController::class, 'conversation'])->name('adviser.screenings.conversation');
     Route::post('/adviser/screenings/{session}', [ScreeningReviewController::class, 'review'])->name('adviser.screenings.review');
 });

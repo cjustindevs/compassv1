@@ -78,6 +78,7 @@
             $answers = collect($screening?->responses ?? []);
             $flags = $answers->filter(fn ($v, $k) => in_array($k, $flagKeys, true) && in_array($v, ['yes',true,1,'1'],true));
             $single = $screening?->instrument_version === \App\Services\CompactScreening::SINGLE_VERSION;
+            $followUpFlow = $single && !$reassessment && $answers->get('suicidal_thoughts') === 'prefer_not_to_say';
             $retry = (string) old('_review_session') === (string) $session->id;
         @endphp
 
@@ -95,7 +96,7 @@
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="px-2.5 py-1 rounded-full text-xs font-medium {{ $reassessment ? 'bg-purple-50 text-purple-700 ring-1 ring-purple-200' : 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' }}">
-                            {{ $reassessment ? 'Helper reassessment' : 'Awaiting decision' }}
+                            {{ $reassessment ? 'Helper reassessment' : ($followUpFlow && $screening->follow_up_requested_at ? ($screening->follow_up_answered_at ? 'Follow-up received' : 'Awaiting Seeker response') : 'Awaiting decision') }}
                         </span>
                         @if(app(\App\Services\AdviserTranscriptAccess::class)->allowed($session))
                             <a href="{{ route('adviser.screenings.conversation', $session) }}"
@@ -162,7 +163,7 @@
                     <summary><span>Review screening and record decision</span><span class="screening-expand-hint" aria-hidden="true">Open review</span></summary>
                     <div class="screening-review-content">
                 @if($single)
-                    <p class="screening-safety-note text-sm text-amber-800">This intake asked one safety question. Clarify that answer if needed; other questions were not assessed. Record the source of any follow-up separately from the original response.</p>
+                    <p class="screening-safety-note text-sm text-amber-800">{{ $followUpFlow ? 'This intake asked one safety question. Use the follow-up below to obtain a response on the Seeker waiting page. Other questions were not assessed.' : 'This intake asked one safety question. Clarify that answer if needed; other questions were not assessed. Record the source of any follow-up separately from the original response.' }}</p>
                 @endif
                 <p class="screening-guidance text-sm text-blue-800"><span class="font-semibold">Guidance:</span> {{ $riskMeta['guidance'] }}</p>
 
@@ -195,6 +196,9 @@
                     </details>
                 </div>
 
+                @if($followUpFlow)
+                    @include('adviser.partials.screening-follow-up')
+                @else
                 <div class="screening-decision-control rounded-xl border border-gray-200">
                     <h3 class="screening-decision-heading">Record your decision</h3>
                         <form method="POST" action="{{ route('adviser.screenings.review', $session) }}"
@@ -253,6 +257,7 @@
                             </div>
                         </form>
                 </div>
+                @endif
                 </div>
 
                 <p class="text-xs text-gray-400">Original screening responses are retained with the reassessment in the request record.</p>

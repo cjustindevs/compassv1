@@ -8,6 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ScreeningResponse extends Model
 {
     protected $fillable = [
+        'follow_up_note',
+        'follow_up_requested_by',
+        'follow_up_requested_at',
+        'follow_up_answer',
+        'follow_up_answered_at',
         'instrument_version',
         'rule_code',
         'review_status',
@@ -28,6 +33,8 @@ class ScreeningResponse extends Model
     ];
 
     protected $casts = [
+        'follow_up_requested_at' => 'datetime',
+        'follow_up_answered_at' => 'datetime',
         'is_active' => 'boolean',
         'is_complete' => 'boolean',
         'responses' => 'array',

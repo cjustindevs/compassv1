@@ -23,6 +23,10 @@
             <div><dt>Concern</dt><dd>{{ $session->concern?->concern_name ?? 'Not recorded' }}</dd></div>
             @if($screening?->responses['custom_concern'] ?? null)<div><dt>Other concern</dt><dd>{{ $screening->responses['custom_concern'] }}</dd></div>@endif
             @if($description=$narrative?->responses['concern_description'] ?? $screening?->responses['description'] ?? null)<div><dt>Submitted description</dt><dd class="whitespace-pre-wrap">{{ $description }}</dd></div>@endif
+            @if($screening?->instrument_version === \App\Services\CompactScreening::SINGLE_VERSION && $screening->follow_up_requested_at)
+            <div><dt>Original safety answer</dt><dd>{{ match($screening->responses['suicidal_thoughts'] ?? null) { 'yes'=>'Yes','no'=>'No','prefer_not_to_say'=>'Prefer not to say',default=>'Not recorded' } }}</dd></div>
+            <div><dt>Follow-up response</dt><dd>{{ $screening->follow_up_answered_at ? match($screening->follow_up_answer) { 'yes'=>'Yes','no'=>'No',default=>'Prefer not to say' } : 'Awaiting your response' }}</dd></div>
+            @endif
             <div><dt>{{ $session->submitted_at ? 'Submitted' : 'Created' }} (PHT)</dt><dd>{{ ($session->submitted_at ?? $session->created_date ?? $session->created_at)?->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') }}</dd></div>
             <div><dt>Helper</dt><dd>{{ $session->helper?->public_alias ?? 'Not assigned' }}</dd></div>
             <div><dt>Communication</dt><dd>{{ ucfirst($session->session_type) }}</dd></div>

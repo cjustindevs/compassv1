@@ -89,7 +89,9 @@ class RequestSupportController extends Controller {
             if ($session->workflow_state === 'adviser_review_required') {
                 $session->load('reviewAdviser:id,first_name,last_name');
             }
-            return view('request.status',['session'=>$session,'events'=>\Illuminate\Support\Facades\DB::table('request_status_events')->where('session_id',$session->id)->orderBy('id')->get()]);
+            $followUp = $session->workflow_state === 'adviser_review_required'
+                ? $session->screeningResponses()->oldest('id')->first() : null;
+            return view('request.status',['session'=>$session,'followUp'=>$followUp,'events'=>\Illuminate\Support\Facades\DB::table('request_status_events')->where('session_id',$session->id)->orderBy('id')->get()]);
         }
 
         $resources=SelfHelpResource::published()->orderByDesc('is_featured')->orderByDesc('views_count')->limit(3)->get()->map(fn($r)=>[
@@ -118,6 +120,15 @@ class RequestSupportController extends Controller {
             'matchingReason'=>$matchingReason,
             'currentQueueRequest'=>$session->queue,
         ]);
+    }
+    public function respondToFollowUp(Request $request, Session $session) {
+        Gate::authorize('seeker-workflow');
+        abort_unless($request->user()->is_active && $request->user()->helpSeeker
+            && (int)$session->seeker_id === (int)$request->user()->helpSeeker->id,403);
+        app(ConsentService::class)->requireGeneral($request->user());
+        $data = $request->validate(['screening_id'=>'required|integer|min:1','follow_up_answer'=>'required|in:yes,no,prefer_not_to_say']);
+        $saved = app(\App\Services\ScreeningFollowUp::class)->respond($request->user(), $session, (int)$data['screening_id'], $data['follow_up_answer']);
+        return redirect()->route('request.matching')->with('success', $saved ? 'Response saved. Your Adviser will review it before matching can continue.' : 'Your response was already saved.');
     }
     public function cancel(Request $request, Session $session) {
         abort(403, 'Submitted support requests cannot be cancelled. Contact your support team for assistance.');

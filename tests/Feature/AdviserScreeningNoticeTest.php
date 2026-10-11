@@ -82,13 +82,14 @@ class AdviserScreeningNoticeTest extends TestCase
                 'priority'=>2,'action'=>'adviser_review_required']);
         }
         $this->actingAs($user)->get(route('adviser.screenings'))->assertOk()->assertSee('Prefer not to say')
-            ->assertSee('Review screening and record decision')->assertSee('Select reassessed risk')
+            ->assertSee('Review screening and record decision')->assertSee('Send follow-up')
             ->assertDontSee('No immediate danger cues were recorded')->assertSee('Original concern');
-        $this->post(route('adviser.screenings.review', $case), ['_review_session'=>$case->id,'risk_level'=>'low','reason'=>'Retry this decision'])
-            ->assertSessionHasErrors(['evidence_source','allow_peer_support']);
+        $note = 'Retry this follow-up '.str_repeat('x',300);
+        $this->post(route('adviser.screenings.follow-up', $case), ['_review_session'=>$case->id,'follow_up_note'=>$note])
+            ->assertSessionHasErrors('follow_up_note');
         $response = $this->get(route('adviser.screenings'))->assertOk();
         $this->assertSame(1, substr_count($response->getContent(), 'class="screening-review-expand"  open '));
-        $this->assertSame(1, substr_count($response->getContent(), '>Retry this decision</textarea>'));
+        $this->assertSame(1, substr_count($response->getContent(), '>'.$note.'</textarea>'));
         $this->assertSame('adviser_review_required', $case->fresh()->workflow_state);
     }
 
@@ -115,7 +116,7 @@ class AdviserScreeningNoticeTest extends TestCase
         $this->assertDatabaseCount('screening_responses',1);
         $this->assertDatabaseCount('queue_requests',0);
         $this->get(route('adviser.screenings'))->assertOk()->assertSee('Clarify the original safety answer before assigning')
-            ->assertSee('Approve peer support')->assertDontSee('name="answers[current_suicide_plan]"',false);
+            ->assertSee('Send follow-up')->assertDontSee('name="answers[current_suicide_plan]"',false);
         $this->postJson(route('adviser.screenings.review',$case),$data)->assertUnprocessable()->assertJsonValidationErrors('risk_level');
     }
 

@@ -357,3 +357,22 @@ Modified:
   reassessments retain their complete clarification path and safety restrictions.
 - This change adds no Adviser–Seeker chat. Clarification still requires an actual
   follow-up through an authorized existing channel, with its source recorded.
+
+# Single-question follow-up on the waiting page (October 11, 2026)
+
+The single-question intake's `prefer_not_to_say` review now presents one follow-up exchange instead of requiring staff to enter an answer they have not obtained. The assigned active Adviser sends the existing safety question with an optional 300-character note. The owning Seeker responds on `/request/matching` with Yes, No, or Prefer not to say. This is not a new chat or questionnaire. Older instruments, Helper reassessments, and their existing review forms stay unchanged.
+
+Nullable follow-up fields are added to the existing `screening_responses` row. Original `responses` remain immutable. The question is the existing `CompactScreening::SINGLE_QUESTION`; arbitrary new questions are not mapped to its classifier. Sending and responding do not assign a risk level, create a matching queue entry, or complete the review. Notifications contain generic instructions rather than the safety answer. Duplicate requests/responses are idempotent; conflicting responses and stale or unauthorized writes are rejected under the session lock.
+
+After a saved Yes/No response, the Adviser sees its derived routing classification and records a reason before approving under the existing protocol. The backend reads the saved response and uses `classifySingle`, ignoring a supplied replacement classification or evidence source. Yes retains the existing high-priority/referral behavior. Approval returns to Preferences before normal matching. An unanswered or declined follow-up remains pending with an undetermined classification; no Yes/No answer is inferred. A sent follow-up cannot be resent or overwritten in this single-exchange interface.
+
+## Manual acceptance check
+
+1. On the environment being tested, apply `2026_10_12_000001_add_follow_up_to_screening_responses.php` using Laravel migrations before opening the updated UI. Render's existing startup script runs main-database migrations on deployment. Do not run `migrate:fresh` against application data.
+2. Use separate browser sessions for a test Seeker and their assigned Adviser. Submit a real test request with a concern, description, and Prefer not to say. Confirm the assigned Adviser name and pending status on the waiting page.
+3. In Adviser > Screening reviews, open the same reference. Confirm the original description and answer are present. Click Send follow-up, optionally adding a short note. Confirm the request stays in the review list with Awaiting Seeker response.
+4. On the Seeker waiting page, refresh or wait for its 15-second refresh. Confirm the note and one safety question appear. Check the Notifications page for the follow-up notice. Select No, wait longer than 15 seconds, and confirm the selection is not discarded. Then click Send response.
+5. Confirm the Seeker still waits for review. Return to the assigned Adviser via the follow-up notification or refresh Screening reviews. Confirm response No, derived Low routing, and Approve peer support. Enter a decision reason of at least 10 non-whitespace characters and approve.
+6. Confirm the original answer still reads Prefer not to say in request details. The Seeker should continue to Preferences, then Find Helper and the existing matching workflow; approval alone must not create an active chat.
+7. With a separate test Seeker/request, repeat using Prefer not to say on the follow-up. Confirm the response is respected, the review stays pending, and there is no approval button or assumed Low classification. With another request, test Yes: it stays pending until Adviser approval, uses existing High routing, and retains professional referral review.
+8. Retry Send follow-up or Send response from a previously opened tab. Confirm no duplicate notice or overwritten response. Check that a different Adviser cannot view/action this request, and another Seeker cannot access its follow-up. Check mobile layout, validation messages, and browser console while repeating the normal flow.

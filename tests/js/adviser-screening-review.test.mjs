@@ -6,7 +6,7 @@ import test from 'node:test';
 const script = readFileSync(new URL('../../resources/views/adviser/screenings.blade.php', import.meta.url), 'utf8')
     .match(/<script>([\s\S]*?)<\/script>/)[1];
 
-function reviewForm(confirmed) {
+function reviewForm(confirmed, storedFollowUp = false) {
     const callbacks = new Map();
     const check = { checked: true, addEventListener() {} };
     const answer = { value: 'no', selectedOptions: [{ dataset: { risk: 'low' } }], addEventListener() {} };
@@ -14,6 +14,7 @@ function reviewForm(confirmed) {
     let submitted = null;
     const form = { dataset: {},
         querySelector(selector) {
+            if (storedFollowUp) return null;
             return selector.includes('use_clarified_safety_answer') ? check : selector.includes('clarified_safety_answer') ? answer : risk;
         },
         addEventListener(event, callback) { callbacks.set(event, callback); },
@@ -42,6 +43,13 @@ test('approval confirmation preserves the clicked approval button and uses backe
     assert.equal(review.risk.value, 'low');
     assert.equal(review.answer.required, true);
     assert.equal(review.answer.disabled, false);
+    const button = await review.submit('approve');
+    assert.equal(review.submitted, button);
+    assert.equal(review.submitted.value, 'approve');
+});
+
+test('saved follow-up approval needs no editable risk or replacement-answer fields', async () => {
+    const review = reviewForm(true, true);
     const button = await review.submit('approve');
     assert.equal(review.submitted, button);
     assert.equal(review.submitted.value, 'approve');

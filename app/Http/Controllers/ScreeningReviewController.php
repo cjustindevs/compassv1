@@ -28,10 +28,12 @@ class ScreeningReviewController extends Controller {
         abort_unless($request->user()->role==='adviser' && $request->user()->is_active && $request->user()->adviser
             && (int)$session->review_adviser_id===(int)$request->user()->adviser->id,403);
         $request->validate(['review_action'=>'sometimes|required|in:approve,record',
-            'use_clarified_safety_answer'=>'nullable|boolean','use_clarified_answers'=>'nullable|boolean']);
+            'use_clarified_safety_answer'=>'nullable|boolean','use_clarified_answers'=>'nullable|boolean','use_seeker_follow_up'=>'nullable|boolean']);
         // Explicit buttons map to the existing outcome; older clients stay compatible.
         if ($request->has('review_action')) $request->merge(['allow_peer_support'=>$request->input('review_action') === 'approve']);
-        $data=$request->validate(['risk_level'=>'required|in:low,moderate,high,emergency','reason'=>'required|string|min:10|max:1000','evidence_source'=>'required|string|max:255','allow_peer_support'=>'required|boolean']);
+        $storedFollowUp = $request->boolean('use_seeker_follow_up');
+        if ($storedFollowUp) $request->merge(['evidence_source'=>'seeker_follow_up']);
+        $data=$request->validate(['risk_level'=>($storedFollowUp ? 'nullable' : 'required').'|in:low,moderate,high,emergency','reason'=>'required|string|min:10|max:1000','evidence_source'=>'required|string|max:255','allow_peer_support'=>'required|boolean']);
         $helperRequest=$session->report?->reassessment_requested_at && !$session->report?->reassessment_reviewed_at;
         if (!in_array($session->workflow_state,['adviser_review_required','emergency_escalated'],true) && !$session->permitsEmergencySupport() && !$helperRequest) {
             return back()->with('error','This request is no longer awaiting a screening review, so the reassessment was not recorded.');
@@ -44,10 +46,29 @@ class ScreeningReviewController extends Controller {
             abort_if(!$helperRequest && $session->screeningResponses()->where('review_status','reviewed')->exists(),409,'This screening has already been reviewed.');
             if($helperRequest) abort_unless((int)$session->helper?->adviser_id === (int)$request->user()->adviser->id,403);
             $original=$session->screeningResponses()->oldest('id')->first();
+            if (!$helperRequest && $original?->follow_up_requested_at && !$request->boolean('use_seeker_follow_up')) {
+                throw ValidationException::withMessages(['follow_up_answer'=>'Review the saved follow-up response before making a decision. Do not replace the Seeker answer.']);
+            }
             $answers = $original?->responses ?? [];
             $rule = 'classification_confirmed';
             $version = $original?->instrument_version ?? 'existing-classification-review';
-            if ($request->boolean('use_clarified_answers')) {
+            if ($request->boolean('use_seeker_follow_up')) {
+                if ($helperRequest || $original?->instrument_version !== \App\Services\CompactScreening::SINGLE_VERSION
+                    || ($original->responses['suicidal_thoughts'] ?? null) !== 'prefer_not_to_say'
+                    || !$original->follow_up_requested_at || !$original->follow_up_answered_at
+                    || !in_array($original->follow_up_answer, ['yes','no'], true)) {
+                    throw ValidationException::withMessages(['follow_up_answer'=>'A Yes or No follow-up response from the Seeker is needed before approval. The request remains pending.']);
+                }
+                if ($request->boolean('use_clarified_answers') || $request->boolean('use_clarified_safety_answer')) {
+                    throw ValidationException::withMessages(['follow_up_answer'=>'Use the saved Seeker response without supplying replacement answers.']);
+                }
+                if (!$data['allow_peer_support']) throw ValidationException::withMessages(['review_action'=>'Keep this follow-up pending until a final support decision can be recorded.']);
+                $answers = ['suicidal_thoughts'=>$original->follow_up_answer];
+                $result = app(\App\Services\CompactScreening::class)->classifySingle($answers);
+                // Always derive classification from the saved response, never form input.
+                $data['risk_level'] = $result['risk_level'];
+                $rule = $result['rule_code'];
+            } elseif ($request->boolean('use_clarified_answers')) {
                 if ($request->boolean('use_clarified_safety_answer')) throw ValidationException::withMessages(['clarified_safety_answer'=>'Choose one clarification method for this review.']);
                 if ($original && !in_array($original->instrument_version, [\App\Services\CompactScreening::VERSION, \App\Services\CompactScreening::FORM_VERSION, \App\Services\CompactScreening::SINGLE_VERSION], true)) {
                     throw ValidationException::withMessages(['use_clarified_answers'=>'Clarify the original instrument; do not replace it with a different questionnaire.']);
@@ -112,5 +133,13 @@ class ScreeningReviewController extends Controller {
         return back()->with('success',$data['allow_peer_support']
             ? 'Peer support approved. The Seeker can continue through the existing request steps and matching. Original responses were retained.'
             : 'Review recorded without peer-support approval; original responses were retained.');
+    }
+    public function followUp(Request $request, Session $session) {
+        abort_unless($request->user()->role==='adviser' && $request->user()->is_active && $request->user()->adviser
+            && (int)$session->review_adviser_id === (int)$request->user()->adviser->id,403);
+        $data = $request->validate(['follow_up_note'=>'nullable|string|max:300']);
+        $created = app(\App\Services\ScreeningFollowUp::class)->request($request->user(), $session, $data['follow_up_note'] ?? null);
+        return redirect()->to(route('adviser.screenings').'#screening-'.$session->id)
+            ->with('success', $created ? 'Follow-up sent. The request stays pending until you review the response.' : 'This follow-up was already sent. No duplicate notification was created.');
     }
 }

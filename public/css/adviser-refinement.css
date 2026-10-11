@@ -41,3 +41,6 @@
 @media(max-width:1024px){.at-record summary{grid-template-columns:minmax(130px,1fr) 120px 90px 120px;gap:12px}.at-access-form{grid-template-columns:1fr 1.5fr}}
 @media(max-width:768px){.at-access-note{display:block}.at-access-note p{margin-top:4px}.at-record summary{grid-template-columns:minmax(0,1fr) auto}.at-record-date{grid-row:2;grid-column:1}.at-record summary>.av-badge{grid-column:2;grid-row:1;justify-self:end}.at-record-control{grid-column:2;grid-row:2}.at-record-date time>span{display:inline;margin-left:6px}.at-access-form{grid-template-columns:1fr}.at-form-footer,.at-reader-footer{flex-direction:column;align-items:stretch}.at-form-footer .av-button,.at-reader-footer .av-button{width:100%}.at-records{max-height:none}.at-conversation{max-height:65vh}.at-message{max-width:92%;min-width:0}.at-reader .av-heading>.av-muted{flex-basis:100%}}
 @media(max-width:480px){.at-record summary{gap:10px;padding:16px 0}.at-message{padding:12px;max-width:96%}.at-message p{font-size:13px}.at-record-body{padding-top:16px}.at-record-date time>span{display:block;margin-left:0}.at-record-control{font-size:12px}.at-access-note{padding:12px}.at-form-footer{gap:10px}}
+.screening-follow-up :is(p,textarea){overflow-wrap:anywhere;white-space:pre-wrap}
+.screening-follow-up form{min-width:0}
+.screening-follow-up button{min-height:44px;white-space:normal}
