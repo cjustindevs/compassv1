@@ -602,14 +602,18 @@
         <!-- ─── FORM CARD ─── -->
         <div class="form-card">
 
-            <form id="screeningForm" class="form-maximized" method="POST" action="{{ route('request.screening.process') }}" data-request-form data-draft-url="{{ route('request.draft.save') }}" data-discard-url="{{ route('request.draft.discard') }}">
+            <form id="screeningForm" class="form-maximized" method="POST" action="{{ route('request.screening.process') }}" data-request-form>
                 @csrf
                 <input type="hidden" name="screening_form_version" value="{{ \App\Services\CompactScreening::FORM_VERSION }}">
                 <input type="hidden" name="instrument_version" value="{{ \App\Services\CompactScreening::FORM_VERSION }}">
                 <input type="hidden" name="stage" value="screening">
+                @if($draft)<p class="text-sm text-gray-500 mb-4" role="status">Your previously saved screening entries were restored. They have not been submitted.</p>@endif
                 <p class="text-sm text-gray-500 mb-4">Choose a concern and answer each support question. These answers guide your next step; they are not a diagnosis. Selecting Continue records your screening and may request Adviser review before you enter the matching queue.</p>
-                <p class="text-sm text-gray-500 mb-4">If you need urgent assistance, do not wait in the matching queue. <a class="text-red-700 underline" href="{{ route('emergency') }}">Open emergency resources</a>.</p>
-                <button type="button" data-open-seeker-consent class="text-sm text-green-700 underline mb-4">Terms and Privacy</button>
+                <p class="text-sm text-gray-500 mb-3">If you need urgent assistance, do not wait in the matching queue.</p>
+                <div class="request-help-actions">
+                    <a class="btn-outline request-emergency-action" href="{{ route('emergency') }}">Open emergency resources</a>
+                    <button type="button" data-open-seeker-consent class="btn-outline">Terms and Privacy</button>
+                </div>
 
                 <!-- ============================================ -->
                 <!-- SECTION 1: AREA OF CONCERN                  -->
@@ -678,13 +682,12 @@
                     </fieldset>
                     @endforeach
                 </section>
-                @include('request.partials.draft-controls')
 
                 <!-- ============================================ -->
                 <!-- FORM ACTIONS                                -->
                 <!-- ============================================ -->
                 <div class="actions-compact">
-                    <a href="{{ route('seeker.dashboard') }}" class="text-gray-500 hover:text-gray-700 transition font-medium text-sm">
+                    <a href="{{ route('seeker.dashboard') }}" class="btn-outline">
                         <x-ui-icon name="arrow-left" class="mr-2" /> Back
                     </a>
                     <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">

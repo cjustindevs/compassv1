@@ -14,7 +14,8 @@
         --card-bg: #ffffff; --page-bg: #F8FBF9;
     }
 
-    .emg-page { max-width: 1080px; margin: 0 auto; padding: 28px 32px 80px; }
+    .emg-page { max-width: 1280px; margin: 0 auto; padding: 20px 24px 64px; min-width: 0; }
+    .emg-support-grid, .emg-next-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
 
     /* ── Page header ── */
     .emg-eyebrow {
@@ -25,58 +26,58 @@
         font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
     }
     .emg-title {
-        margin: 14px 0 0;
-        font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1.2;
+        margin: 8px 0 0;
+        font-size: 26px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2;
         color: var(--gray-800);
     }
-    .emg-lede { margin: 8px 0 0; max-width: 60ch; font-size: 14px; line-height: 1.65; color: var(--gray-500); }
+    .emg-lede { margin: 12px 0 0; font-size: 13px; line-height: 1.6; color: var(--gray-500); }
 
     /* ── Immediate danger callout ── */
     .emg-urgent {
-        position: relative; overflow: hidden;
-        margin-top: 24px; padding: 22px 24px;
-        background: linear-gradient(135deg, var(--red-600), var(--red-700));
-        border-radius: 20px; color: #fff;
-        box-shadow: 0 16px 40px rgba(220, 38, 38, .22);
+        min-width: 0; display: flex; flex-direction: column;
+        margin: 0; padding: 16px 18px;
+        background: #fff; border: 1px solid var(--gray-200);
+        border-radius: 12px; color: var(--gray-800);
     }
+    .emg-urgent.emg-danger { background: var(--red-50); border-color: var(--red-200); border-left: 4px solid var(--red-600); }
+    .emg-danger h2, .emg-status strong { color: var(--red-700); }
+    .emg-support-grid > .emg-urgent:only-child { grid-column: 1 / -1; }
     .emg-urgent-head { display: flex; align-items: center; gap: 12px; }
     .emg-urgent-icon {
         width: 44px; height: 44px; flex: none;
         display: flex; align-items: center; justify-content: center;
         border-radius: 14px; background: rgba(255, 255, 255, .18); font-size: 20px;
     }
-    .emg-urgent h2 { margin: 0; font-size: 17px; font-weight: 700; }
-    .emg-urgent p { margin: 10px 0 0; font-size: 13.5px; line-height: 1.6; color: rgba(255, 255, 255, .92); max-width: 62ch; }
-    .emg-urgent-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    .emg-urgent h2 { margin: 0; font-size: 16px; font-weight: 700; }
+    .emg-urgent p { margin: 8px 0 0; font-size: 13px; line-height: 1.6; color: var(--gray-600); overflow-wrap: anywhere; }
+    .emg-urgent-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 12px; }
     .emg-urgent-btn {
-        display: inline-flex; align-items: center; gap: 8px;
-        padding: 10px 18px; border-radius: 999px;
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px;
+        padding: 9px 14px; border-radius: 10px; border: 1px solid var(--red-200);
         background: #fff; color: var(--red-700);
-        font-size: 13px; font-weight: 700; text-decoration: none;
-        transition: transform .2s ease, box-shadow .2s ease;
+        font-size: 13px; font-weight: 600; text-decoration: none; white-space: normal; text-align: center;
     }
-    .emg-urgent-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0, 0, 0, .18); }
-    .emg-urgent-btn.ghost { background: rgba(255, 255, 255, .14); color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .4); }
-    .emg-urgent-btn.ghost:hover { background: rgba(255, 255, 255, .24); }
+    .emg-urgent-btn:hover { background: var(--red-100); border-color: var(--red-500); }
+    .emg-urgent-btn.ghost { background: #fff; color: var(--green-700); border-color: #cce8d9; }
+    .emg-urgent-btn.ghost:hover { background: var(--green-50); border-color: var(--green-500); }
 
     /* ── Section headings ── */
     .emg-section-title {
         display: flex; align-items: center; gap: 10px;
-        margin: 32px 0 4px;
-        font-size: 18px; font-weight: 800; color: var(--gray-800);
+        margin: 20px 0 4px;
+        font-size: 17px; font-weight: 700; color: var(--gray-800);
     }
     .emg-section-title :is(:is(i, .compass-icon), .compass-icon) { color: var(--red-500); font-size: 16px; }
-    .emg-section-sub { margin: 0 0 16px; font-size: 13px; line-height: 1.6; color: var(--gray-500); }
+    .emg-section-sub { margin: 0 0 12px; font-size: 13px; line-height: 1.6; color: var(--gray-500); }
 
     /* ── Hotline cards ── */
-    .emg-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+    .emg-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
     .emg-card {
         display: flex; flex-direction: column;
-        background: var(--card-bg); border: 1px solid var(--gray-200); border-radius: 20px;
-        padding: 18px;
-        transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+        background: var(--card-bg); border: 1px solid var(--gray-200); border-radius: 12px;
+        padding: 16px; min-width: 0; overflow-wrap: anywhere;
     }
-    .emg-card:hover { transform: translateY(-3px); border-color: var(--red-200); box-shadow: 0 14px 34px rgba(220, 38, 38, .08); }
+    .emg-card:hover { border-color: var(--red-200); }
     .emg-card-head { display: flex; align-items: center; gap: 12px; }
     .emg-card-icon {
         width: 40px; height: 40px; flex: none;
@@ -84,21 +85,20 @@
         border-radius: 12px; background: var(--red-50); color: var(--red-600); font-size: 17px;
     }
     .emg-card h3 { margin: 0; font-size: 15px; font-weight: 700; color: var(--gray-800); line-height: 1.35; }
-    .emg-card p { margin: 12px 0 16px; flex: 1; font-size: 13px; line-height: 1.6; color: var(--gray-500); }
+    .emg-card p { margin: 8px 0 12px; flex: 1; font-size: 13px; line-height: 1.6; color: var(--gray-500); }
     .emg-call {
         display: flex; align-items: center; justify-content: center; gap: 8px;
-        padding: 10px 14px; border-radius: 12px;
+        padding: 10px 14px; border-radius: 10px; min-height: 44px;
         background: var(--red-600); color: #fff;
         font-size: 14px; font-weight: 700; text-decoration: none; letter-spacing: .01em;
-        transition: background .2s ease, transform .2s ease;
     }
-    .emg-call:hover { background: var(--red-700); transform: translateY(-1px); }
+    .emg-call:hover { background: var(--red-700); }
 
     /* ── Empty state ── */
     .emg-empty {
         display: flex; flex-direction: column; align-items: center; text-align: center;
-        padding: 36px 24px;
-        background: var(--card-bg); border: 1px dashed var(--gray-300); border-radius: 20px;
+        padding: 20px 16px;
+        background: var(--card-bg); border: 1px dashed var(--gray-300); border-radius: 12px;
     }
     .emg-empty :is(:is(i, .compass-icon), .compass-icon) { font-size: 26px; color: var(--gray-400); }
     .emg-empty h3 { margin: 14px 0 6px; font-size: 15px; font-weight: 700; color: var(--gray-700); }
@@ -107,8 +107,8 @@
     /* ── Next steps / footer cards ── */
     .emg-panel {
         display: flex; align-items: flex-start; gap: 14px;
-        margin-top: 14px; padding: 18px 20px;
-        background: var(--card-bg); border: 1px solid var(--gray-200); border-radius: 20px;
+        margin: 0; padding: 16px 18px; min-width: 0;
+        background: var(--card-bg); border: 1px solid var(--gray-200); border-radius: 12px;
     }
     .emg-panel-icon {
         width: 40px; height: 40px; flex: none;
@@ -120,14 +120,16 @@
     .emg-panel p { margin: 0 0 10px; font-size: 13px; line-height: 1.6; color: var(--gray-500); }
     .emg-panel-link {
         display: inline-flex; align-items: center; gap: 6px;
-        font-size: 13px; font-weight: 700; color: var(--green-600); text-decoration: none;
+        font-size: 13px; font-weight: 600; color: var(--green-700); text-decoration: none;
+        border: 1px solid #cce8d9; border-radius: 10px; padding: 9px 14px; min-height: 44px;
     }
-    .emg-panel-link:hover { color: var(--green-700); text-decoration: underline; }
+    .emg-panel-link:hover { background: var(--green-50); border-color: var(--green-500); }
+    .emg-page a:focus-visible { outline: 2px solid var(--green-600); outline-offset: 3px; }
 
     .emg-disclaimer {
         display: flex; align-items: flex-start; gap: 10px;
-        margin-top: 22px; padding: 14px 18px;
-        background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 16px;
+        margin-top: 16px; padding: 12px 16px;
+        background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px;
         font-size: 12.5px; line-height: 1.6; color: #92400E;
     }
     .emg-disclaimer :is(:is(i, .compass-icon), .compass-icon) { margin-top: 2px; flex: none; }
@@ -135,8 +137,13 @@
     @media (max-width: 768px) {
         .emg-page { padding: 20px 16px 72px; }
         .emg-title { font-size: 24px; }
-        .emg-urgent { padding: 18px; }
-        .emg-urgent-actions .emg-urgent-btn { flex: 1; justify-content: center; }
+        .emg-support-grid, .emg-next-steps { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+        .emg-urgent { padding: 16px; }
+    }
+    @media (max-width: 480px) {
+        .emg-grid { grid-template-columns: minmax(0, 1fr); }
+        .emg-urgent-actions > a { width: 100%; }
+        .emg-panel { padding: 16px; }
     }
 </style>
 @endpush
@@ -146,25 +153,15 @@
 
     <span class="emg-eyebrow"> Emergency</span>
     <h1 class="emg-title">Emergency support</h1>
-    @if(isset($urgentAlert))
-        <section class="emg-urgent" aria-labelledby="urgentStatusTitle">
-            <h2 id="urgentStatusTitle">Your urgent support status</h2>
-            <p><strong>{{ $urgentAlert->acknowledged_at ? 'Staff review acknowledged' : 'Awaiting staff acknowledgment' }}</strong></p>
-            <p>{{ $urgentAlert->adviser_notified ? 'An Adviser notification has been recorded. A response is not guaranteed.' : 'An Adviser notification has not been confirmed. Use the emergency resources below if you need urgent help.' }}</p>
-            <p>Your emergency review remains open independently of Helper availability. This status does not confirm a live chat connection.</p>
-            <a href="{{ route('request.matching') }}" class="btn-secondary">View Helper connection</a>
-            <a href="{{ route('emergency') }}" class="btn-secondary">Refresh status</a>
-        </section>
-    @endif
-
     <p class="emg-lede">
         If there is an immediate threat to safety, contact an appropriate emergency service or seek help
         from someone nearby. COMPASS is a peer support network &mdash; it does not replace emergency or
         professional services and cannot promise an immediate response.
     </p>
 
-    {{-- Immediate danger: escalate above everything else on the page. --}}
-    <section class="emg-urgent" aria-labelledby="emgUrgentTitle">
+    <div class="emg-support-grid">
+    {{-- Immediate danger remains the first panel, including on small screens. --}}
+    <section class="emg-urgent emg-danger" aria-labelledby="emgUrgentTitle">
         <div class="emg-urgent-head">
 
             <h2 id="emgUrgentTitle">If you are in danger right now</h2>
@@ -182,6 +179,20 @@
             </a>
         </div>
     </section>
+
+    @if(isset($urgentAlert))
+        <section class="emg-urgent emg-status" aria-labelledby="urgentStatusTitle">
+            <h2 id="urgentStatusTitle">Your urgent support status</h2>
+            <p><strong>{{ $urgentAlert->acknowledged_at ? 'Staff review acknowledged' : 'Awaiting staff acknowledgment' }}</strong></p>
+            <p>{{ $urgentAlert->adviser_notified ? 'An Adviser notification has been recorded. A response is not guaranteed.' : 'An Adviser notification has not been confirmed. Use the emergency resources below if you need urgent help.' }}</p>
+            <p>Your emergency review remains open independently of Helper availability. This status does not confirm a live chat connection.</p>
+            <div class="emg-urgent-actions">
+                <a href="{{ route('request.matching') }}" class="btn-secondary">View Helper connection</a>
+                <a href="{{ route('emergency') }}" class="btn-secondary">Refresh status</a>
+            </div>
+        </section>
+    @endif
+    </div>
 
     {{-- Published crisis lines. --}}
     <h2 class="emg-section-title"> Crisis hotlines</h2>
@@ -221,6 +232,7 @@
     <h2 class="emg-section-title"> What COMPASS can do</h2>
     <p class="emg-section-sub">Peer support is not crisis intervention, but it can still help.</p>
 
+    <div class="emg-next-steps">
     <div class="emg-panel">
 
         <div class="emg-panel-body">
@@ -237,6 +249,8 @@
             <p>Guided grounding, breathing and coping exercises you can work through on your own time.</p>
             <a class="emg-panel-link" href="{{ route('selfhelp') }}">Browse self-help tools <x-ui-icon name="arrow-right"  /></a>
         </div>
+    </div>
+
     </div>
 
     <div class="emg-disclaimer">

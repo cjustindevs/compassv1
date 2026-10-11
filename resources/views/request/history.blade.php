@@ -36,11 +36,11 @@
                         <td>{{ ($item->submitted_at ?? $item->created_date ?? $item->created_at)?->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') }}<br><span class="text-xs text-gray-500">{{ $item->submitted_at ? 'Submitted' : 'Created' }}</span></td>
                         <td><span class="seeker-badge">{{ \App\Services\SeekerRequestPresentation::status($item) }}</span></td>
                         <td><div class="flex flex-wrap gap-2">
-                            <a class="text-green-700 underline" href="{{ route('seeker.requests.show',$item) }}">View details</a>
+                            <a class="seeker-button secondary" href="{{ route('seeker.requests.show',$item) }}">View details</a>
                             @if($item->session_status === 'completed' && !$item->evaluation)
-                            <a class="text-green-700 underline" href="{{ route('session.evaluation',['session_id'=>$item->id]) }}">Give feedback</a>
+                            <a class="seeker-button" href="{{ route('session.evaluation',['session_id'=>$item->id]) }}">Give feedback</a>
                             @elseif($item->evaluation)
-                            <a class="text-green-700 underline" href="{{ route('seeker.requests.show',$item) }}#feedback">View feedback</a>
+                            <a class="seeker-button secondary" href="{{ route('seeker.requests.show',$item) }}#feedback">View feedback</a>
                             @endif
                         </div></td>
                     </tr>

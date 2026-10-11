@@ -111,7 +111,8 @@ class SeekerExperienceTest extends TestCase
         $this->assertSame('Private unfinished concern',$draft->payload['description']);
         $this->assertStringNotContainsString('Private unfinished concern',DB::table('seeker_request_drafts')->value('payload'));
         $this->assertDatabaseCount('counseling_sessions',0); $this->assertDatabaseCount('screening_responses',0); $this->assertDatabaseCount('queue_requests',0);
-        $this->get(route('request.screening'))->assertOk()->assertSee('Private unfinished concern')->assertSee('Draft restored');
+        $this->get(route('request.screening'))->assertOk()->assertSee('Private unfinished concern')->assertSee('Your previously saved screening entries were restored.')
+            ->assertDontSee('data-save-draft',false)->assertDontSee('data-discard-draft',false);
         $this->actingAs($other)->get(route('request.screening'))->assertOk()->assertDontSee('Private unfinished concern');
         $this->deleteJson(route('request.draft.discard'))->assertOk();
         $this->assertDatabaseCount('seeker_request_drafts',1);
@@ -141,7 +142,8 @@ class SeekerExperienceTest extends TestCase
         $this->postJson(route('request.draft.save'),$this->draft())->assertConflict();
         $this->postJson(route('request.draft.save'),$this->draft(['stage'=>'preferences','session_id'=>$case->id,'preferred_language'=>'English/Tagalog','description'=>'Cannot overwrite']))->assertOk();
         $this->assertArrayNotHasKey('description',SeekerRequestDraft::firstOrFail()->payload);
-        $this->get(route('request.preferences'))->assertOk()->assertSee('Review your request')->assertSee('Recorded original')->assertSee('Submit Request')->assertSee('Both (English and Tagalog)');
+        $this->get(route('request.preferences'))->assertOk()->assertSee('Find a Helper')->assertSee('Both (English and Tagalog)')
+            ->assertDontSee('Review your request')->assertDontSee('Recorded original')->assertDontSee('data-save-draft',false)->assertDontSee('data-discard-draft',false);
         $this->post(route('request.preferences.process'),['support_mode'=>'voice','preferred_language'=>'English'])->assertSessionHasErrors('support_mode');
         $data=['support_mode'=>'chat','preferred_language'=>'English/Tagalog'];
         $this->post(route('request.preferences.process'),$data)->assertRedirect(route('request.matching'));

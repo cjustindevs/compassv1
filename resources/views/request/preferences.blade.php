@@ -458,29 +458,12 @@
         <!-- ─── FORM CARD ─── -->
         <div class="form-card">
 
-            <form id="preferencesForm" class="form-maximized" method="POST" action="{{ route('request.preferences.process') }}" data-request-form data-draft-url="{{ route('request.draft.save') }}" data-discard-url="{{ route('request.draft.discard') }}">
+            <form id="preferencesForm" class="form-maximized" method="POST" action="{{ route('request.preferences.process') }}" data-request-form>
                 @csrf
                 <input type="hidden" name="instrument_version" value="{{ \App\Services\CompactScreening::FORM_VERSION }}">
                 <input type="hidden" name="stage" value="preferences">
                 <input type="hidden" name="session_id" value="{{ $session->id }}">
-                <section class="request-review" aria-labelledby="review-heading">
-                    <h2 id="review-heading">Review your request &middot; {{ $session->reference_number }}</h2>
-                    <dl>
-                        <div><dt>Concern</dt><dd>{{ $session->concern?->concern_name ?? 'Not recorded' }}</dd></div>
-                        <div><dt>Communication mode</dt><dd>Chat</dd></div>
-                        <div><dt>Preferred language</dt><dd id="review-language">Choose a language below</dd></div>
-                        @if($screening?->responses['custom_concern'] ?? null)<div><dt>Other concern</dt><dd>{{ $screening->responses['custom_concern'] }}</dd></div>@endif
-                        @if($screening?->responses['description'] ?? null)<div><dt>Description</dt><dd>{{ $screening->responses['description'] }}</dd></div>@endif
-                    </dl>
-                    <details><summary>View recorded screening answers</summary>
-                    <dl class="mt-3">@foreach(\App\Services\CompactScreening::questions() as $field=>$question)
-                        @if(array_key_exists($field,$screening?->responses ?? []))
-                        @php($answer=$screening->responses[$field])
-                        <div><dt>{{ $question }}</dt><dd>{{ is_bool($answer) || is_numeric($answer) ? ($answer ? 'Yes' : 'No') : ucwords(str_replace('_',' ',$answer)) }}</dd></div>
-                        @endif
-                    @endforeach</dl></details>
-                    <p class="text-xs text-gray-500 mt-3">Your original screening is retained. Choose your language below, then submit to enter the matching queue.</p>
-                </section>
+                @if($draft)<p class="text-sm text-gray-500 mb-4" role="status">Your previously saved language preference was restored.</p>@endif
 
                 <div class="form-row">
 
@@ -491,9 +474,14 @@
                     <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Communication mode</h3>
                     <p class="text-sm text-gray-500 mb-4">Choose your language for a private chat session.</p>
 
-                    <input type="hidden" name="support_mode" value="chat">
-                    <p class="font-semibold">Chat</p>
-                    <p class="text-sm text-gray-500">Private text-based conversation. Chat is the currently supported mode.</p>
+                    <label class="mode-card">
+                        <input type="radio" name="support_mode" value="chat" checked>
+                        <div class="mode-content">
+                            <div class="label">Chat</div>
+                            <div class="sub">Private text-based conversation</div>
+                            <div class="checkmark"><x-ui-icon name="check-circle" /></div>
+                        </div>
+                    </label>
                     @error('support_mode')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
@@ -525,18 +513,17 @@
                 <!-- ============================================ -->
                 </div>
                 <div class="actions-compact">
-                    <a href="{{ route('seeker.dashboard') }}" class="text-gray-500 hover:text-gray-700 transition font-medium text-sm">
+                    <a href="{{ route('seeker.dashboard') }}" class="btn-outline">
                         <x-ui-icon name="arrow-left" class="mr-2" /> Back
                     </a>
 
                     <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                         <button type="submit" id="preferencesSubmit" class="btn-primary w-full sm:w-auto">
-                            Submit Request <x-ui-icon name="arrow-right"  />
+                            Find a Helper <x-ui-icon name="arrow-right"  />
                         </button>
                     </div>
                 </div>
 
-                @include('request.partials.draft-controls', ['draftStage'=>'preferences'])
             </form>
         </div>
 

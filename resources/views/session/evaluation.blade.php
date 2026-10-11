@@ -376,7 +376,7 @@
         #evaluationForm .feedback-control[aria-invalid="true"] { border-color: #dc2626; }
         .feedback-comments { margin-top: 24px; }
         #evaluationForm textarea.feedback-control { min-height: 112px; resize: vertical; }
-        .feedback-actions { display: flex; justify-content: flex-end; border-top: 1px solid #e5e7eb; margin-top: 24px; padding-top: 20px; }
+        .feedback-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; border-top: 1px solid #e5e7eb; margin-top: 24px; padding-top: 20px; }
         @media (max-width: 700px) {
             .feedback-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
             #evaluationForm .feedback-control { font-size: 16px; }
@@ -464,7 +464,7 @@
                     <p id="comments-help" class="text-xs text-gray-500 mt-2">Up to {{ \App\Services\EvaluationInstrument::COMMENTS_MAX_LENGTH }} characters. Comments are optional.</p><p id="comments-count" class="text-xs text-gray-500" aria-live="polite">0 / {{ \App\Services\EvaluationInstrument::COMMENTS_MAX_LENGTH }}</p>
                     @error('comments')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
                 </div>
-                <div class="feedback-actions"><a class="text-green-700 underline" href="{{ route('seeker.requests') }}">Back to history</a><button type="submit" class="btn-primary"><x-ui-icon name="send" class="mr-2" />Submit feedback</button></div>
+                <div class="feedback-actions"><a class="btn-outline" href="{{ route('seeker.requests') }}">Back to history</a><button type="submit" class="btn-primary"><x-ui-icon name="send" class="mr-2" />Submit feedback</button></div>
             </form>
         </div>
 

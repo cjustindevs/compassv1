@@ -51,8 +51,7 @@ class RequestSupportController extends Controller {
         app(ConsentService::class)->requireGeneral($request->user());
         $session=$this->workflow->current($request->user());
         if (!$session || $session->workflow_state!=='session_preferences_required') return $session?$this->next($session):redirect()->route('request.screening');
-        return view('request.preferences',['session'=>$session->load('concern'),
-            'screening'=>$session->screeningResponses()->where('evidence_source','seeker_responses')->oldest('id')->first(),
+        return view('request.preferences',['session'=>$session,
             'draft'=>SeekerRequestDraftController::load($request->user(),'preferences',$session->id)]);
     }
     public function processPreferences(Request $request) {

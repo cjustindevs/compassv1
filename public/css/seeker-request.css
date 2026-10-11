@@ -36,6 +36,11 @@
 .request-flow-compact .safety-btn { min-width:0; }
 .request-flow-compact .safety-btn label { min-height:44px; white-space:normal; }
 .request-flow-compact .form-input { min-width:0; width:100%; }
+.request-help-actions { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+.request-flow-compact .request-help-actions .btn-outline { width:auto; min-height:44px; padding:10px 16px; text-align:center; white-space:normal; }
+.compass-ui .request-flow-compact .request-help-actions .request-emergency-action { color:#b91c1c; border-color:#fecaca; background:#fff; }
+.compass-ui .request-flow-compact .request-help-actions .request-emergency-action:hover { background:#fef2f2; border-color:#f87171; }
+.request-section .seeker-button { min-height:44px; padding:9px 12px; }
 @media(max-width:768px) {
     .request-resource-list,.request-review dl,.request-details-grid { grid-template-columns:1fr; }
     .request-flow-compact .form-row { grid-template-columns:1fr; flex-direction:column; }

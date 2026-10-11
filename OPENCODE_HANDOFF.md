@@ -673,3 +673,19 @@ review remains pending; no browser surface is available in this session.
   inventory has no browser/app surface. Layout rules cover 768px and 480px, but
   static/render tests do not establish visual absence of overflow on devices.
   No commit or push was requested for this implementation turn.
+
+### Follow-up: compact Seeker UI and restored Preferences (October 11, 2026)
+
+- Emergency guidance and actual urgent status use compact desktop columns that
+  stack below 768px; smartphone actions stack below 480px. Safety guidance,
+  database hotlines and existing actions remain intact.
+- Request-history, screening, waiting-resource and feedback actions use buttons
+  instead of underlined text. Navigation destinations and permissions are unchanged.
+- Progress is Screening → Preferences → Matching. Preferences has Chat, language
+  and Find a Helper; the review summary and draft controls are removed. Previously
+  saved entries can still restore with a notice; storage and expiry remain intact.
+- Single-question screening is NOT implemented. The user requested agreement
+  on its routing first. Five explicit answers and current risk logic remain in
+  effect until that decision; do not treat a push request as routing approval.
+- Validation: 30 tests / 882 assertions and production build passed. Device/browser
+  visual testing remains pending.
