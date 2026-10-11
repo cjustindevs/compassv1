@@ -43,7 +43,7 @@ class ScreeningReviewController extends Controller {
             $rule = 'classification_confirmed';
             $version = $original?->instrument_version ?? 'existing-classification-review';
             if ($request->boolean('use_clarified_answers')) {
-                abort_unless(!$original || in_array($original->instrument_version, [\App\Services\CompactScreening::VERSION, \App\Services\CompactScreening::FORM_VERSION], true),422,'Clarify the original instrument; do not replace it with a different questionnaire.');
+                abort_unless(!$original || in_array($original->instrument_version, [\App\Services\CompactScreening::VERSION, \App\Services\CompactScreening::FORM_VERSION, \App\Services\CompactScreening::SINGLE_VERSION], true),422,'Clarify the original instrument; do not replace it with a different questionnaire.');
                 $rules = [];
                 foreach (\App\Services\CompactScreening::rules() as $field=>$validation) $rules['answers.'.$field] = $validation;
                 $answers = $request->validate($rules)['answers'];
@@ -82,7 +82,10 @@ class ScreeningReviewController extends Controller {
             if ($data['risk_level']==='emergency') {
                 app(\App\Services\EmergencyEscalationService::class)->escalateEmergency($session,$session->seeker,['screening_id'=>$screening->id,'rule_code'=>'adviser_reassessment','reason'=>$data['reason']]);
             } elseif ($data['allow_peer_support']) {
-                $session->update(['requires_adviser_review'=>false,'peer_support_approved_at'=>now(),'session_status'=>'screening_completed','workflow_state'=>'concern_required']);
+                $concernAlreadySelected = $original?->instrument_version === \App\Services\CompactScreening::SINGLE_VERSION
+                    && \App\Models\ConcernCategory::active()->whereKey($session->concern_id)->exists();
+                $session->update(['requires_adviser_review'=>false,'peer_support_approved_at'=>now(),'session_status'=>'screening_completed',
+                    'workflow_state'=>$concernAlreadySelected ? 'session_preferences_required' : 'concern_required']);
             }
         });
         return back()->with('success','Review recorded; original responses were retained.');

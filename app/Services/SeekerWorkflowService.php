@@ -18,8 +18,9 @@ class SeekerWorkflowService {
             abort_if($existing,409,'Open your active request before starting another request.');
             $review = false;
             $version = $compactDetails !== null ? ($compactDetails['screening_form_version'] ?? CompactScreening::VERSION) : ScreeningInstrument::VERSION;
-            try { $result = $version === CompactScreening::FORM_VERSION ? app(CompactScreening::class)->classifyForm($answers)
-                : ($compactDetails !== null ? app(CompactScreening::class)->classify($answers) : $this->risk->classifyRisk($answers)); }
+            try { $result = $version === CompactScreening::SINGLE_VERSION ? app(CompactScreening::class)->classifySingle($answers)
+                : ($version === CompactScreening::FORM_VERSION ? app(CompactScreening::class)->classifyForm($answers)
+                : ($compactDetails !== null ? app(CompactScreening::class)->classify($answers) : $this->risk->classifyRisk($answers))); }
             catch (\RuntimeException $e) { $review = true; $result = ['risk_level'=>null,'rule_code'=>'review_unresolved','priority'=>2,'action'=>'adviser_review_required','reason'=>'Unresolved screening responses']; }
             $emergency = $result['risk_level'] === 'emergency';
             $review = $emergency || ($review || ($compactDetails === null && !ScreeningInstrument::approved()) || $result['risk_level']==='high');

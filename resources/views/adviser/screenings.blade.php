@@ -157,6 +157,9 @@
                     </div>
                 @endif
 
+                @if($screening?->instrument_version === \App\Services\CompactScreening::SINGLE_VERSION)
+                    <p class="screening-safety-note text-sm text-amber-800">This intake asked one safety question. Other support questions, including a current plan, were not assessed. Obtain documented clarification before changing the classification.</p>
+                @endif
                 <p class="screening-guidance text-sm text-blue-800"><span class="font-semibold">Guidance:</span> {{ $riskMeta['guidance'] }}</p>
 
                 <div class="screening-controls">
@@ -168,7 +171,7 @@
                         </summary>
                         <dl class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                             @forelse($answers as $key => $answer)
-                                @php($question = \App\Services\ScreeningInstrument::QUESTIONS[$key] ?? ucfirst(str_replace('_', ' ', $key)))
+                                @php($question = $key === 'suicidal_thoughts' && $screening?->instrument_version === \App\Services\CompactScreening::SINGLE_VERSION ? \App\Services\CompactScreening::SINGLE_QUESTION : (\App\Services\ScreeningInstrument::QUESTIONS[$key] ?? ucfirst(str_replace('_', ' ', $key))))
                                 <div>
                                     <dt class="text-xs text-gray-400">{{ $question }}</dt>
                                     <dd class="mt-1">
@@ -213,7 +216,7 @@
                                     <span class="mt-1 block text-xs text-gray-400">Select "No" when professional support must be coordinated instead.</span>
                                 </label>
                             </div>
-                            @if(!$screening || in_array($screening->instrument_version, [\App\Services\CompactScreening::VERSION, \App\Services\CompactScreening::FORM_VERSION], true))
+                            @if(!$screening || in_array($screening->instrument_version, [\App\Services\CompactScreening::VERSION, \App\Services\CompactScreening::FORM_VERSION, \App\Services\CompactScreening::SINGLE_VERSION], true))
                             <fieldset class="rounded-xl bg-gray-50 p-4 space-y-3"><legend class="font-semibold text-sm">Documented clarification</legend>
                             <label class="text-sm"><input type="checkbox" name="use_clarified_answers" value="1"> Reassess using clarified answers</label>
                             <p class="text-xs text-gray-500">Complete every answer only when clarification has been obtained. The classification must match the deterministic routing rules. Without clarification, only the current classification can be confirmed.</p>

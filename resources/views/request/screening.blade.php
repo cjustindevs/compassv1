@@ -604,11 +604,11 @@
 
             <form id="screeningForm" class="form-maximized" method="POST" action="{{ route('request.screening.process') }}" data-request-form>
                 @csrf
-                <input type="hidden" name="screening_form_version" value="{{ \App\Services\CompactScreening::FORM_VERSION }}">
-                <input type="hidden" name="instrument_version" value="{{ \App\Services\CompactScreening::FORM_VERSION }}">
+                <input type="hidden" name="screening_form_version" value="{{ \App\Services\CompactScreening::SINGLE_VERSION }}">
+                <input type="hidden" name="instrument_version" value="{{ \App\Services\CompactScreening::SINGLE_VERSION }}">
                 <input type="hidden" name="stage" value="screening">
                 @if($draft)<p class="text-sm text-gray-500 mb-4" role="status">Your previously saved screening entries were restored. They have not been submitted.</p>@endif
-                <p class="text-sm text-gray-500 mb-4">Choose a concern and answer each support question. These answers guide your next step; they are not a diagnosis. Selecting Continue records your screening and may request Adviser review before you enter the matching queue.</p>
+                <p class="text-sm text-gray-500 mb-4">Select your concern, add a brief description, and answer the safety check to continue.</p>
                 <p class="text-sm text-gray-500 mb-3">If you need urgent assistance, do not wait in the matching queue.</p>
                 <div class="request-help-actions">
                     <a class="btn-outline request-emergency-action" href="{{ route('emergency') }}">Open emergency resources</a>
@@ -655,32 +655,29 @@
                     <p class="text-sm text-gray-500 mb-4">Tell us more about your concern.</p>
 
                     <div>
-                        <label class="form-label" for="description">Description <span class="text-gray-400">(optional)</span></label>
-                        <textarea id="description" name="description" class="form-input" maxlength="500" data-character-count="charCount" aria-describedby="charCount" placeholder="I have several deadlines this week and I'm having trouble sleeping because I feel like I cannot keep up with my classes.">{{ old('description', $draft?->payload['description'] ?? '') }}</textarea>
-                        <div class="char-count" id="charCount" aria-live="polite">0 / 500</div>
+                        <label class="form-label" for="description">Description <span class="text-red-500">*</span></label>
+                        <textarea id="description" name="description" class="form-input" maxlength="200" required data-character-count="charCount" aria-describedby="charCount" placeholder="I have several deadlines this week and I'm having trouble sleeping because I feel like I cannot keep up with my classes.">{{ old('description', $draft?->payload['description'] ?? '') }}</textarea>
+                        <div class="char-count" id="charCount" aria-live="polite">0 / 200</div>
                         @error('description')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                 </div>
 
-                <section class="mb-6" aria-labelledby="support-questions">
-                    <h3 id="support-questions" class="font-semibold">Support and safety questions</h3>
-                    <p class="text-sm text-gray-500 mt-1">Answer all five questions. Prefer not to say is a valid answer and may require Adviser clarification.</p>
-                    @foreach(\App\Services\CompactScreening::questions() as $field=>$question)
-                    <fieldset class="request-safety-question" @error($field) aria-describedby="{{ $field }}-error" aria-invalid="true" @enderror>
-                        <legend>{{ $question }} <span class="text-red-500" aria-label="required">*</span></legend>
+                <section class="mb-6" aria-labelledby="safety-check-heading">
+                    <h3 id="safety-check-heading" class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Safety Check</h3>
+                    <fieldset class="request-safety-question" @error('safety_check') aria-describedby="safety-check-error" aria-invalid="true" @enderror>
+                        <legend>{{ \App\Services\CompactScreening::SINGLE_QUESTION }} <span class="text-red-500" aria-label="required">*</span></legend>
                         <div class="safety-buttons">
                             @foreach(['yes'=>'Yes','no'=>'No','prefer_not_to_say'=>'Prefer not to say'] as $value=>$label)
                             <div class="safety-btn">
-                                <input type="radio" id="{{ $field }}_{{ $value }}" name="{{ $field }}" value="{{ $value }}" required @checked(old($field, $draft?->payload[$field] ?? null) === $value)>
-                                <label for="{{ $field }}_{{ $value }}">{{ $label }}</label>
+                                <input type="radio" id="safety_{{ $value }}" name="safety_check" value="{{ $value }}" required @checked(old('safety_check', $draft?->payload['suicidal_thoughts'] ?? null) === $value)>
+                                <label for="safety_{{ $value }}">{{ $label }}</label>
                             </div>
                             @endforeach
                         </div>
-                        @error($field)<p id="{{ $field }}-error" class="text-red-500 text-sm mt-1" role="alert">{{ $message }}</p>@enderror
+                        @error('safety_check')<p id="safety-check-error" class="text-red-500 text-sm mt-1" role="alert">{{ $message }}</p>@enderror
                     </fieldset>
-                    @endforeach
                 </section>
 
                 <!-- ============================================ -->
@@ -798,7 +795,7 @@
             safetyModal.querySelectorAll('[data-close-safety]').forEach(btn => {
                 btn.addEventListener('click', () => safetyModal.close());
             });
-            document.querySelectorAll('input[name="suicidal_thoughts"], input[name="current_suicide_plan"]').forEach(input => {
+            document.querySelectorAll('input[name="safety_check"]').forEach(input => {
                 input.addEventListener('change', function () {
                     if (this.checked && this.value === 'yes') openSafetyModal();
                 });

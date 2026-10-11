@@ -316,3 +316,28 @@ Modified:
   effect until that decision; do not treat a push request as routing approval.
 - Validation: 30 tests / 882 assertions and production build passed. Device/browser
   visual testing remains pending.
+
+### Restored single-question intake (October 11, 2026)
+
+- The user's subsequent request explicitly restores the single-question screen.
+  This supersedes the preceding pending-screening note. Screening now shows
+  concern, required description (200 characters), one Yes/No/Prefer not to say
+  safety question and Continue; Preferences retains Chat, language and Find a Helper.
+- New records use `compass-single-safety-1`. Only the actual thoughts answer is
+  stored. No hidden plan/distress/coping answers are manufactured. Yes opens the
+  existing resource popup and routes to existing high-priority Adviser review,
+  rather than inferring an emergency/current plan. No proceeds with standard
+  queue priority, explicitly recorded as limited screening rather than a full
+  assessment. Prefer not to say remains unclassified pending Adviser clarification.
+- Adviser review shows the intake limitation. Authorized documented clarification
+  can obtain the five existing support answers without overwriting the original.
+  If approved and its selected concern remains active, this intake continues to
+  Preferences without repeating concern selection. Other instruments retain their
+  existing transitions and emergency escalation.
+- Versioned five-answer clients and historical records remain compatible. The
+  old unversioned form that manufactured hidden answers remains rejected.
+- Validation: 155 regression tests / 2,005 assertions, the production build,
+  PHP syntax and whitespace checks passed. Rendered fixture syntax checks
+  confirmed a single visible safety question with no hidden five-answer fields.
+- Device/browser visual testing remains pending; rendering and workflow checks
+  do not establish visual absence of overflow on devices.

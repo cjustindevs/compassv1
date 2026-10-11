@@ -25,15 +25,18 @@ class RequestSupportController extends Controller {
             $answers=$request->validate(ScreeningInstrument::rules());
             return $this->next($this->workflow->screen($request->user(),$answers));
         }
-        // The explicit form has categorical answers. Legacy complete boolean
-        // clients remain supported, but the old ambiguous one-question form is rejected.
-        $request->validate(['safety_check'=>'prohibited', 'screening_form_version'=>['sometimes', Rule::in([\App\Services\CompactScreening::FORM_VERSION])]]);
-        $rules = $request->has('screening_form_version') ? \App\Services\CompactScreening::formRules() : \App\Services\CompactScreening::rules();
-        $data=$request->validate($rules + ['screening_form_version'=>'sometimes|string','concern_id'=>['required',Rule::exists('concern_categories','id')->where('is_active',true)],'description'=>'nullable|string|max:500','custom_concern'=>['nullable','string','max:255',Rule::requiredIf(function () use ($request) {
+        // Versioned single-question intake never accepts manufactured hidden answers.
+        // Keep complete older clients compatible without reinterpreting their records.
+        $single = $request->input('screening_form_version') === \App\Services\CompactScreening::SINGLE_VERSION;
+        $request->validate(['safety_check'=>$single ? 'required|in:yes,no,prefer_not_to_say' : 'prohibited',
+            'screening_form_version'=>['sometimes', Rule::in([\App\Services\CompactScreening::FORM_VERSION, \App\Services\CompactScreening::SINGLE_VERSION])]]);
+        $rules = $single ? array_fill_keys(\App\Services\CompactScreening::FIELDS, 'prohibited') + ['safety_check'=>'required|in:yes,no,prefer_not_to_say']
+            : ($request->has('screening_form_version') ? \App\Services\CompactScreening::formRules() : \App\Services\CompactScreening::rules());
+        $data=$request->validate($rules + ['screening_form_version'=>'sometimes|string','concern_id'=>['required',Rule::exists('concern_categories','id')->where('is_active',true)],'description'=>$single ? 'required|string|max:200' : 'nullable|string|max:500','custom_concern'=>['nullable','string','max:255',Rule::requiredIf(function () use ($request) {
             $concern=ConcernCategory::find($request->input('concern_id'));
             return $concern && in_array(strtolower(trim($concern->concern_name)), ['other','others'], true);
         })]]);
-        $answers=array_intersect_key($data,array_flip(\App\Services\CompactScreening::FIELDS));
+        $answers=$single ? ['suicidal_thoughts'=>$data['safety_check']] : array_intersect_key($data,array_flip(\App\Services\CompactScreening::FIELDS));
         return $this->next($this->workflow->screen($request->user(),$answers,$data));
     }
     public function concern(Request $request) {

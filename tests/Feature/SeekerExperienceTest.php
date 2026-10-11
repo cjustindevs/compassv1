@@ -49,11 +49,84 @@ class SeekerExperienceTest extends TestCase
         return array_replace(['stage'=>'screening','instrument_version'=>CompactScreening::FORM_VERSION,'description'=>'Private unfinished concern'], $overrides);
     }
 
+    private function singleAnswer(string $answer): array
+    {
+        $concern = ConcernCategory::firstOrCreate(['concern_name'=>'Stress'], ['is_active'=>true]);
+        return ['screening_form_version'=>CompactScreening::SINGLE_VERSION,'concern_id'=>$concern->id,
+            'description'=>'I would like peer support for academic stress.','safety_check'=>$answer];
+    }
+
+    public function test_single_no_answer_returns_to_preferences_and_enters_the_existing_queue(): void
+    {
+        $owner=$this->seeker(); $this->actingAs($owner);
+        $this->post(route('request.screening.process'),$this->singleAnswer('no'))->assertRedirect(route('request.preferences'));
+        $case=Session::firstOrFail(); $screen=ScreeningResponse::firstOrFail();
+        $this->assertSame('low',$case->risk_level);
+        $this->assertSame('single_safety_no',$screen->rule_code);
+        $this->assertSame(CompactScreening::SINGLE_VERSION,$screen->instrument_version);
+        $this->assertSame('no',$screen->responses['suicidal_thoughts']);
+        foreach(array_diff(CompactScreening::FIELDS,['suicidal_thoughts']) as $field) $this->assertArrayNotHasKey($field,$screen->responses);
+        $this->assertDatabaseCount('queue_requests',0);
+        $this->get(route('request.preferences'))->assertOk()->assertSee('Find a Helper')->assertDontSee('Review your request');
+        $this->post(route('request.preferences.process'),['support_mode'=>'chat','preferred_language'=>'Tagalog'])->assertRedirect(route('request.matching'));
+        $this->assertDatabaseCount('queue_requests',1);
+        $this->assertSame('queued',$case->fresh()->workflow_state);
+        $this->assertSame('Tagalog',$case->fresh()->preferred_language);
+        $this->post(route('request.preferences.process'),['support_mode'=>'chat','preferred_language'=>'Tagalog'])->assertRedirect();
+        $this->assertDatabaseCount('queue_requests',1);
+    }
+
+    public function test_single_yes_does_not_invent_a_plan_or_automatically_escalate_an_emergency(): void
+    {
+        $this->actingAs($this->seeker())->post(route('request.screening.process'),$this->singleAnswer('yes'))->assertRedirect(route('request.matching'));
+        $case=Session::firstOrFail(); $screen=ScreeningResponse::firstOrFail();
+        $this->assertSame('high',$case->risk_level);
+        $this->assertSame('adviser_review_required',$case->workflow_state);
+        $this->assertTrue($case->requires_adviser_review);
+        $this->assertFalse($case->permitsEmergencySupport());
+        $this->assertSame('yes',$screen->responses['suicidal_thoughts']);
+        $this->assertArrayNotHasKey('current_suicide_plan',$screen->responses);
+        $this->assertDatabaseCount('queue_requests',0);
+        $this->assertDatabaseCount('emergency_alerts',0);
+    }
+
+    public function test_single_unknown_answer_can_be_clarified_by_its_assigned_adviser(): void
+    {
+        $adviserUser=User::factory()->create(['role'=>'adviser','is_active'=>true]);
+        $adviser=Adviser::create(['user_account_id'=>$adviserUser->id,'first_name'=>'Test','last_name'=>'Reviewer','email'=>$adviserUser->email]);
+        $this->actingAs($this->seeker())->post(route('request.screening.process'),$this->singleAnswer('prefer_not_to_say'))->assertRedirect();
+        $case=Session::firstOrFail(); $original=ScreeningResponse::firstOrFail();
+        $this->assertNull($case->risk_level);
+        $this->assertSame($adviser->id,$case->review_adviser_id);
+        $this->assertTrue($case->requires_adviser_review);
+        $this->actingAs($adviserUser)->get('/adviser/screenings')->assertOk()->assertSee('This intake asked one safety question.')->assertSee('use_clarified_answers');
+        $this->post(route('adviser.screenings.review',$case),[
+            'risk_level'=>'low','reason'=>'Clarified all support answers directly with the Seeker.','evidence_source'=>'Direct conversation',
+            'allow_peer_support'=>1,'use_clarified_answers'=>1,'answers'=>array_fill_keys(CompactScreening::FIELDS,false),
+        ])->assertRedirect();
+        $this->assertSame('prefer_not_to_say',$original->fresh()->responses['suicidal_thoughts']);
+        $this->assertSame(CompactScreening::SINGLE_VERSION,$original->fresh()->instrument_version);
+        $this->assertSame('session_preferences_required',$case->fresh()->workflow_state);
+        $this->assertDatabaseCount('screening_responses',2);
+        $this->assertDatabaseCount('queue_requests',0);
+    }
+
+    public function test_single_screening_validates_description_answer_and_rejects_hidden_answers(): void
+    {
+        $this->actingAs($this->seeker()); $data=$this->singleAnswer('no');
+        foreach([''=>'required',str_repeat('x',201)=>'too long'] as $description=>$unused) {
+            $this->postJson(route('request.screening.process'),array_replace($data,['description'=>$description]))->assertUnprocessable()->assertJsonValidationErrors('description');
+        }
+        $this->postJson(route('request.screening.process'),array_replace($data,['safety_check'=>'invalid']))->assertUnprocessable()->assertJsonValidationErrors('safety_check');
+        $this->postJson(route('request.screening.process'),$data+['current_suicide_plan'=>false])->assertUnprocessable()->assertJsonValidationErrors('current_suicide_plan');
+        $this->assertDatabaseCount('counseling_sessions',0);
+    }
+
     public function test_visible_screening_records_thoughts_without_inventing_a_current_plan(): void
     {
         $user=$this->seeker();
-        $this->actingAs($user)->get(route('request.screening'))->assertOk()->assertSee('name="suicidal_thoughts"',false)
-            ->assertSee('name="current_suicide_plan"',false)->assertDontSee('name="safety_check"',false)->assertDontSee('hidden_current_suicide_plan');
+        $this->actingAs($user)->get(route('request.screening'))->assertOk()->assertSee('name="safety_check"',false)
+            ->assertDontSee('name="current_suicide_plan"',false)->assertDontSee('name="suicidal_thoughts"',false)->assertDontSee('Answer all five questions')->assertDontSee('hidden_current_suicide_plan');
         $this->post(route('request.screening.process'),$this->answers(['suicidal_thoughts'=>'yes']))->assertRedirect(route('request.matching'));
         $case=Session::firstOrFail();
         $this->assertSame('high',$case->risk_level);

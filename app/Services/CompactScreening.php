@@ -6,6 +6,8 @@ class CompactScreening
 {
     public const VERSION = 'compass-compact-restored-1';
     public const FORM_VERSION = 'compass-compact-explicit-1';
+    public const SINGLE_VERSION = 'compass-single-safety-1';
+    public const SINGLE_QUESTION = 'We want to support you better. Have you recently had thoughts of harming yourself or ending your life?';
     public const FIELDS = ['current_suicide_plan', 'suicidal_thoughts', 'severe_distress', 'recurring_distress', 'difficulty_coping'];
 
     public static function rules(): array
@@ -32,6 +34,22 @@ class CompactScreening
             throw new \RuntimeException('Screening requires clarification.');
         }
         return $this->classify(array_map(fn ($answer) => $answer === 'yes', $answers));
+    }
+
+    public function classifySingle(array $answers): array
+    {
+        $answer = $answers['suicidal_thoughts'] ?? null;
+        if (!in_array($answer, ['yes', 'no'], true)) {
+            throw new \RuntimeException('The single safety answer requires Adviser clarification.');
+        }
+        // This restores the short intake, not a complete five-answer assessment.
+        // Thoughts do not establish a current plan; unasked answers stay absent.
+        $risk = $answer === 'yes' ? 'high' : 'low';
+        return ['risk_level'=>$risk, 'priority'=>RiskClassificationService::PRIORITY_ORDER[$risk],
+            'rule_code'=>'single_safety_'.$answer, 'action'=>$answer === 'yes' ? 'adviser_review_required' : 'normal_queuing',
+            'reason'=>$answer === 'yes'
+                ? 'Disclosed thoughts require Adviser review; a current plan was not assessed.'
+                : 'Standard queue priority from limited single-question screening; other support questions were not assessed.'];
     }
 
     public function classify(array $answers): array
