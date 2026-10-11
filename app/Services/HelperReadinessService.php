@@ -11,14 +11,21 @@ use Illuminate\Support\Facades\Gate;
 class HelperReadinessService
 {
     public const VERSION = 'compass-v4-listener-1';
+    public const GROUPED_VERSION = 'compass-v4-listener-grouped-1';
 
     public const SKILLS = ['active_listening', 'empathy', 'reflection', 'clarification', 'summarizing'];
 
     public function submit(User $user, array $data): ReadinessCheck
     {
         Gate::forUser($user)->authorize('helper-workflow');
+        $grouped = array_key_exists('listener_skills_ready', $data);
+        if ($grouped) {
+            // An explicit Yes confirms the entire displayed checklist, not a competency score.
+            $data['skills_confirmed'] = $data['listener_skills_ready'] ? self::SKILLS : [];
+        }
+        $version = $grouped ? self::GROUPED_VERSION : self::VERSION;
 
-        return DB::transaction(function () use ($user, $data) {
+        return DB::transaction(function () use ($user, $data, $version) {
             $helper = Helper::whereKey($user->helper->id)->lockForUpdate()->firstOrFail();
             $schedule = \App\Models\HelperSchedule::coveringShiftFor($helper->id);
             $until = now()->addHours(4);
@@ -32,7 +39,7 @@ class HelperReadinessService
             $passed = $data['availability_status'] === 'available' && $data['emotionally_ready'] && $data['willing_to_listen'] && $data['stress_level'] !== 'high' && count(array_diff(self::SKILLS, $data['skills_confirmed'])) === 0;
             $helper->readinessChecks()->where('is_active', true)->update(['is_active' => false]);
             $record = ReadinessCheck::create(array_intersect_key($data, array_flip(['emotionally_ready', 'willing_to_listen', 'stress_level', 'availability_status', 'physical_condition', 'notes'])) + [
-                'helper_id' => $helper->id, 'assessment_result' => $passed ? 'ready' : 'not_ready', 'assessment_date' => now(), 'valid_until' => $until->copy()->utc(), 'breathing_exercise' => $data['exercise_completed'], 'skills_confirmed' => $data['skills_confirmed'], 'form_version' => self::VERSION, 'helper_schedule_id' => $schedule?->id, 'is_active' => true]);
+                'helper_id' => $helper->id, 'assessment_result' => $passed ? 'ready' : 'not_ready', 'assessment_date' => now(), 'valid_until' => $until->copy()->utc(), 'breathing_exercise' => $data['exercise_completed'], 'skills_confirmed' => $data['skills_confirmed'], 'form_version' => $version, 'helper_schedule_id' => $schedule?->id, 'is_active' => true]);
             $helper->unsetRelations();
             // The helper's chosen availability status records their willingness
             // to serve this shift; the operational status is only flipped to
@@ -44,7 +51,7 @@ class HelperReadinessService
             if (! $helper->activeSessions()->exists()) {
                 $helper->update(['status' => $available ? 'available' : 'offline', 'availability' => $willing ? 'available' : 'unavailable', 'available_since' => $available ? now() : null]);
             }
-            SupportAudit::record('readiness_submitted', $record, ['version' => self::VERSION]);
+            SupportAudit::record('readiness_submitted', $record, ['version' => $version]);
             SupportAudit::record($passed ? 'readiness_passed' : 'readiness_failed', $record);
             if (! $available) {
                 foreach ($helper->activeSessions()->whereNull('helper_accepted_at')->get() as $pending) {

@@ -63,9 +63,12 @@ class HelperReadinessController extends Controller
     public function store(Request $request)
     {
         abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
-        $request->merge(['skills_confirmed' => $request->input('skills_confirmed', [])]);
+        $grouped = $request->has('readiness_form_version') || $request->has('listener_skills_ready');
+        if (!$grouped) $request->merge(['skills_confirmed' => $request->input('skills_confirmed', [])]);
         $validated = $request->validate([
-            'skills_confirmed' => 'present|array',
+            'readiness_form_version' => $grouped ? ['required', Rule::in([HelperReadinessService::GROUPED_VERSION])] : 'prohibited',
+            'listener_skills_ready' => $grouped ? 'required|boolean' : 'prohibited',
+            'skills_confirmed' => $grouped ? 'prohibited' : 'present|array',
             'skills_confirmed.*' => ['distinct', Rule::in(HelperReadinessService::SKILLS)],
             'emotionally_ready' => 'required|boolean',
             'willing_to_listen' => 'required|boolean',

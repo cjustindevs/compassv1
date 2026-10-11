@@ -147,7 +147,7 @@ class HelperModuleTest extends TestCase
             ->get(route('helper.readiness'));
 
         $response->assertOk();
-        $response->assertSee('Start Breathing Exercise');
+        $response->assertSee('id="openExerciseBtn"',false)->assertSee('Start exercise');
         $response->assertSee('exercise-modal');
         $response->assertSee('begin-lesson-btn');
         $response->assertSee('continue-btn');
@@ -173,7 +173,7 @@ class HelperModuleTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('You\'re all set to help', false);
-        $response->assertDontSee('Start Breathing Exercise');
+        $response->assertDontSee('id="openExerciseBtn"',false);
     }
 
     public function test_readiness_page_refresh_param_reshows_form_when_ready(): void
@@ -194,7 +194,7 @@ class HelperModuleTest extends TestCase
             ->get(route('helper.readiness', ['refresh' => 1]));
 
         $response->assertOk();
-        $response->assertSee('Start Breathing Exercise');
+        $response->assertSee('id="openExerciseBtn"',false)->assertSee('Start exercise');
         $response->assertDontSee('You\'re all set to help', false);
     }
 
@@ -803,7 +803,7 @@ class HelperModuleTest extends TestCase
             ->get(route('request.matching'));
 
         $response->assertOk();
-        $response->assertSee('Your helper accepted');
+        $response->assertSee('Your chat is ready');
         $response->assertSee('Open chat');
     }
 
@@ -1382,7 +1382,7 @@ class HelperModuleTest extends TestCase
             ->assertSee('Go to Dashboard');
     }
 
-    public function test_already_evaluated_session_redirects_to_thank_you_page(): void
+    public function test_already_evaluated_session_redirects_to_request_details(): void
     {
         $seekerUser = User::where('role', 'seeker')->firstOrFail();
         $session = $this->makeActiveSession();
@@ -1402,7 +1402,7 @@ class HelperModuleTest extends TestCase
             ->withSession(['session_id' => $session->id])
             ->from(route('session.evaluation'))
             ->get(route('session.evaluation'))
-            ->assertRedirect(route('session.thank-you'));
+            ->assertRedirect(route('seeker.requests.show', $session));
     }
 
     // ─────────────────────────────────────────────────────────────

@@ -50,6 +50,75 @@ class HelperWorkflowSecurityTest extends TestCase
         return array_replace(['emotionally_ready' => true, 'willing_to_listen' => true, 'stress_level' => 'low', 'availability_status' => 'available', 'exercise_completed' => 'skipped', 'skills_confirmed' => HelperReadinessService::SKILLS], $overrides);
     }
 
+    private function groupedReadiness(array $overrides = []): array
+    {
+        $data = $this->readiness();
+        unset($data['skills_confirmed']);
+        return array_replace($data, ['readiness_form_version'=>HelperReadinessService::GROUPED_VERSION,
+            'listener_skills_ready'=>'1'], $overrides);
+    }
+
+    public function test_single_skill_confirmation_is_explicit_and_preserves_readiness_and_competency_rules(): void
+    {
+        $helper = $this->helper();
+        $page = $this->get(route('helper.readiness',['refresh'=>1]))->assertOk()->assertSee('Prepared to use these listening skills?')
+            ->assertSee('Not right now')->assertDontSee('name="skills_confirmed[]"',false);
+        $document = new \DOMDocument();
+        @$document->loadHTML($page->getContent());
+        $xpath = new \DOMXPath($document);
+        $this->assertSame(2,$xpath->query('//input[@name="listener_skills_ready"]')->length);
+        $this->assertSame(0,$xpath->query('//input[@name="listener_skills_ready" and @checked]')->length);
+        $competency = $helper->competency_level;
+        $this->post(route('helper.readiness.store'),$this->groupedReadiness())->assertRedirect(route('helper.dashboard'))->assertSessionHasNoErrors();
+        $check = $helper->fresh()->getCurrentReadiness();
+        $this->assertTrue($check->isReady());
+        $this->assertSame(HelperReadinessService::SKILLS,$check->skills_confirmed);
+        $this->assertSame(HelperReadinessService::GROUPED_VERSION,$check->form_version);
+        $this->assertSame($competency,$helper->fresh()->competency_level);
+        $this->assertSame('00:00',$check->valid_until->timezone('Asia/Manila')->format('H:i'));
+        $this->get(route('helper.readiness'))->assertOk()->assertSee("You're all set to help",false);
+        $this->get(route('helper.readiness',['refresh'=>1]))->assertOk()->assertDontSee('value="1" required checked',false);
+    }
+
+    public function test_not_right_now_and_other_negative_answers_can_be_submitted_and_supersede_passed_readiness(): void
+    {
+        $helper = $this->helper();
+        $oldCheck = $helper->getCurrentReadiness();
+        $this->post(route('helper.readiness.store'),$this->groupedReadiness(['listener_skills_ready'=>'0']))
+            ->assertRedirect(route('helper.dashboard'))->assertSessionHasNoErrors();
+        $check = $helper->fresh()->latestReadiness;
+        $this->assertSame('not_ready',$check->assessment_result);
+        $this->assertSame([],$check->skills_confirmed);
+        $this->assertSame(HelperReadinessService::GROUPED_VERSION,$check->form_version);
+        $this->assertFalse($oldCheck->fresh()->is_active);
+        $this->assertFalse($helper->fresh()->isReady());
+        $this->assertSame('unavailable',$helper->fresh()->availability);
+        $this->assertFalse(app(HelperEligibilityService::class)->allows($helper,null,true));
+        $this->get(route('helper.readiness'))->assertOk()->assertDontSee('value="0" required checked',false);
+        foreach ([['emotionally_ready'=>'0'],['willing_to_listen'=>'0'],['stress_level'=>'high'],['availability_status'=>'not_ready']] as $answer) {
+            $this->post(route('helper.readiness.store'),$this->groupedReadiness($answer))->assertSessionHasNoErrors();
+            $this->assertFalse($helper->fresh()->isReady());
+            $this->assertSame('not_ready',$helper->fresh()->latestReadiness->assessment_result);
+            $this->assertSame(HelperReadinessService::SKILLS,$helper->fresh()->latestReadiness->skills_confirmed);
+        }
+    }
+
+    public function test_grouped_confirmation_rejects_missing_invalid_and_contradictory_answers(): void
+    {
+        $helper = $this->helper();
+        $count = $helper->readinessChecks()->count();
+        $missing = $this->groupedReadiness(); unset($missing['listener_skills_ready']);
+        $this->postJson(route('helper.readiness.store'),$missing)->assertUnprocessable()->assertJsonValidationErrors('listener_skills_ready');
+        $this->postJson(route('helper.readiness.store'),$this->groupedReadiness(['listener_skills_ready'=>'sometimes']))
+            ->assertUnprocessable()->assertJsonValidationErrors('listener_skills_ready');
+        $this->postJson(route('helper.readiness.store'),$this->groupedReadiness(['listener_skills_ready'=>'0','skills_confirmed'=>HelperReadinessService::SKILLS]))
+            ->assertUnprocessable()->assertJsonValidationErrors('skills_confirmed');
+        $this->postJson(route('helper.readiness.store'),$this->groupedReadiness(['readiness_form_version'=>'unsupported']))
+            ->assertUnprocessable()->assertJsonValidationErrors('readiness_form_version');
+        $this->assertSame($count,$helper->readinessChecks()->count());
+        $this->assertTrue($helper->fresh()->isReady());
+    }
+
     private function supportSession(Helper $helper, string $status = 'active'): Session
     {
         $user = User::factory()->create(['role' => 'seeker']);
