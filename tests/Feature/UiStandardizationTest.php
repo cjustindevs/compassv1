@@ -35,7 +35,8 @@ class UiStandardizationTest extends TestCase
         foreach ($pages as $role => $routes) {
             $user = User::where('role', $role)->firstOrFail();
             foreach ($routes as $route) {
-                $html = $this->actingAs($user)->get(route($route))->assertOk()->getContent();
+                $parameters = $route === 'helper.readiness' ? ['refresh' => 1] : [];
+                $html = $this->actingAs($user)->get(route($route, $parameters))->assertOk()->getContent();
                 if (getenv('COMPASS_UI_CAPTURE') === '1') {
                     $directory = base_path('.ui-preview');
                     if (!is_dir($directory)) mkdir($directory);

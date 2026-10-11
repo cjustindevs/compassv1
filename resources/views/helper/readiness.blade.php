@@ -13,7 +13,6 @@
             padding: 10px 14px; border-radius: 10px; margin-bottom: 12px;
             border: 1px solid var(--gray-200); background: white;
             box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-            max-width: 720px;
         }
         .rc-status .dot {
             width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
@@ -33,7 +32,7 @@
             background: white; border-radius: 12px; padding: 18px;
             border: 1px solid var(--gray-200);
             box-shadow: 0 2px 12px rgba(0,0,0,0.03);
-            max-width: 720px;
+            container-type: inline-size;
         }
         .rc-label {
             display: flex; align-items: center; gap: 8px;
@@ -43,7 +42,7 @@
         .rc-label .req { color: var(--red-500); }
         .helper-readiness-page .main-content .rc-card,
         .helper-readiness-page .main-content .rc-status,
-        .helper-readiness-page .main-content .rc-foot-note { max-width:1040px; width:100%; }
+        .helper-readiness-page .main-content .rc-foot-note { max-width:100%; width:100%; }
         .helper-readiness-page .top-bar { margin-bottom:16px; }
         .rc-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 20px; }
         .rc-field { min-width:0; padding:0; margin:0; border:0; }
@@ -98,8 +97,8 @@
 
         /* ─────────── Self-care resources ─────────── */
         .rc-care {
-            display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px;
-            padding-top: 18px; border-top: 1px solid var(--gray-100);
+            display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;
+            padding-top: 12px; border-top: 1px solid var(--gray-100);
         }
         .rc-care .care-btn {
             display: inline-flex; align-items: center; gap: 6px;
@@ -141,9 +140,9 @@
             padding: 16px;
         }
         .modal-overlay.active { display: flex; }
-        .modal-box {
+        .helper-readiness-page #exercise-modal .rc-exercise-dialog {
             background: white; border-radius: 20px; width: 100%; max-width: 400px;
-            max-height: 92vh; overflow-y: auto;
+            max-height: calc(100dvh - 32px); overflow-y: auto; min-width:0; margin:0;
             position: relative; padding: 26px 24px 24px;
             box-shadow: 0 40px 80px rgba(0, 0, 0, 0.25);
             animation: modalSlide 0.25s ease-out;
@@ -177,15 +176,24 @@
 
         .rc-foot-note {
             margin-top: 16px; text-align: center; font-size: 12px; color: var(--gray-400);
-            max-width: 720px;
         }
 
-        @media (max-width: 768px) {
-            .rc-card { padding: 16px; }
+        @container (min-width: 1180px) {
+            .rc-fields { grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px 20px; }
+            .rc-skills { grid-column:1 / span 2; border-bottom:0; padding-bottom:0; }
+            .rc-breathing { grid-column:3 / span 2; grid-row:1; border-top:0; padding-top:0; padding-left:20px; border-left:1px solid var(--gray-100); justify-content:flex-start; align-content:start; }
+            .rc-breathing > div:first-child { width:100%; }
+            .rc-self-care { border-top:1px solid var(--gray-100); padding-top:12px; }
+        }
+        @container (max-width: 560px) {
             .rc-fields { grid-template-columns:minmax(0,1fr); gap:12px; }
             .rc-breathing { align-items:stretch; }
             .seg { width: 100%; }
             .seg .seg-opt { flex: 1 1 44%; }
+            .seg label { width:100%; }
+        }
+        @media (max-width: 768px) {
+            .rc-card { padding: 16px; }
             .rc-status { flex-wrap: wrap; }
             .rc-status .action { width: 100%; }
             .rc-actions { flex-direction: column-reverse; align-items: stretch; }
@@ -263,6 +271,14 @@
                         </div>
                         @error('listener_skills_ready')<p class="error-text">{{ $message }}</p>@enderror
                     </fieldset>
+                    <div class="rc-field rc-breathing">
+                        <div><p class="rc-label"><x-ui-icon name="wind" class="text-teal-600" /> Breathing exercise <span class="req">*</span></p>
+                            <div class="breath-steps"><span>Inhale 4s / Hold 4s / Exhale 4s / 3 rounds</span></div>
+                        </div>
+                        <div class="breath-cta"><button type="button" class="btn btn-secondary btn-sm" id="openExerciseBtn"><x-ui-icon name="play" class="mr-1" /> Start exercise</button><span class="status-tag" id="breathStatusTag">Completed</span></div>
+                        <input type="hidden" name="exercise_completed" id="exercise_completed" value="{{ old('exercise_completed','') }}">
+                        @error('exercise_completed')<p class="error-text">{{ $message }}</p>@enderror
+                    </div>
                     <fieldset class="rc-field">
                         <legend class="rc-label"><x-ui-icon name="heart" class="text-red-500" /> Emotionally ready? <span class="req">*</span></legend>
                         <div class="seg">
@@ -299,14 +315,6 @@
                         </div>
                         @error('availability_status')<p class="error-text">{{ $message }}</p>@enderror
                     </fieldset>
-                    <div class="rc-field rc-breathing">
-                        <div><p class="rc-label"><x-ui-icon name="wind" class="text-teal-600" /> Breathing exercise <span class="req">*</span></p>
-                            <div class="breath-steps"><span>Inhale 4s / Hold 4s / Exhale 4s / 3 rounds</span></div>
-                        </div>
-                        <div class="breath-cta"><button type="button" class="btn btn-secondary btn-sm" id="openExerciseBtn"><x-ui-icon name="play" class="mr-1" /> Start exercise</button><span class="status-tag" id="breathStatusTag">Completed</span></div>
-                        <input type="hidden" name="exercise_completed" id="exercise_completed" value="{{ old('exercise_completed','') }}">
-                        @error('exercise_completed')<p class="error-text">{{ $message }}</p>@enderror
-                    </div>
                 </div>
                 <p class="rc-self-care">Not feeling ready is okay. You can still submit this check; a failed readiness condition keeps you unavailable for new sessions.</p>
 
@@ -338,10 +346,10 @@
 
     {{-- Breathing exercise modal --}}
     <div class="modal-overlay" id="exercise-modal">
-        <div class="modal-box">
+        <div class="rc-exercise-dialog" role="dialog" aria-modal="true" aria-labelledby="breathing-title">
             <button type="button" class="modal-close" id="closeExerciseBtn" aria-label="Close"><x-ui-icon name="close"  /></button>
             <div style="text-align:center;">
-                <h3 style="font-size:17px;font-weight:800;color:var(--gray-800);margin-bottom:4px;">Breathing Exercise</h3>
+                <h3 id="breathing-title" style="font-size:17px;font-weight:800;color:var(--gray-800);margin-bottom:4px;">Breathing Exercise</h3>
                 <p style="font-size:12px;color:var(--gray-500);margin-bottom:8px;">3 rounds of inhale – hold – exhale</p>
 
                 <div class="breath-circle" id="breath-circle"></div>
