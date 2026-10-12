@@ -115,7 +115,7 @@ class DashboardOverviewTest extends TestCase
         $this->caseFor($helper, 'completed');
         $this->actingAs($helper->adviser->user)->get(route('adviser.dashboard'))
             ->assertOk()->assertSee('Cases by status')->assertSee('No data')
-            ->assertSee('<polyline', false)->assertSee('co-donut-total')->assertSee('View chart data and definition')
+            ->assertSee('<path d="M ', false)->assertSee('co-donut-total')->assertSee('View chart data and definition')
             ->assertSee('css/dashboard-overview.css')->assertDontSee('At a glance');
         $moderator = User::factory()->create(['role' => 'moderator', 'is_active' => true]);
         \App\Models\Moderator::create(['user_account_id' => $moderator->id, 'first_name' => 'Test', 'last_name' => 'Moderator', 'email' => $moderator->email]);

@@ -3,7 +3,7 @@
 @section('content')
 <div class="adviser-page-content av-page">
     <header><div><h1>Adviser dashboard</h1><p class="av-muted">Your supervised Helpers and authorized case updates.</p></div><a class="av-button" href="{{ route('adviser.reports') }}">View reports</a></header>
-    <x-dashboard-overview :overview="$overview" :show-recent="false" :show-definitions="false" />
+    <x-dashboard-overview :overview="$overview" :show-recent="false" :show-definitions="false" :smooth-lines="true" />
     <section class="av-panel">
         <header class="av-heading"><div><h2>Supervised Helpers</h2><p class="av-muted">{{ $totalHelpers }} assigned to you. Availability uses the current matching eligibility rules.</p></div><a class="av-link" href="{{ route('adviser.helpers') }}">View all Helpers</a></header>
         <div class="av-table-wrap" role="region" aria-label="Supervised Helpers" tabindex="0"><table class="av-table"><thead><tr><th>Helper</th><th>Availability</th><th>Readiness</th><th>Workload</th><th>Competency</th></tr></thead><tbody>

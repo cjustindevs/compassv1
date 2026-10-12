@@ -51,7 +51,7 @@
 @php
 $points=[];
 foreach($trend as $i=>$point) $points[]=[60+$i*(720/max($trend->count()-1,1)),220-min(5,max(0,$point['score']))/5*180];
-$line=implode(' ',array_map(fn($p)=>implode(',',$p),$points));
+$curve=App\Support\SvgTrendPath::make($points);
 @endphp
 <div class="table-container">
 <svg class="hf-chart" style="min-width:540px" viewBox="0 0 850 270" role="img" aria-label="Recorded competency scores out of five, by evaluation date">
@@ -59,8 +59,8 @@ $line=implode(' ',array_map(fn($p)=>implode(',',$p),$points));
 <line x1="60" x2="780" y1="{{ $y }}" y2="{{ $y }}" stroke="#edf1ee"/>
 <text x="40" y="{{ $y+4 }}">{{ $tick }}</text>
 @endforeach
-<polygon points="{{ $points[0][0] }},220 {{ $line }} {{ $points[count($points)-1][0] }},220" fill="#009b50" fill-opacity=".09"/>
-<polyline points="{{ $line }}" fill="none" stroke="#009b50" stroke-width="3"/>
+<path d="{{ $curve }} L {{ $points[count($points)-1][0] }} 220 L {{ $points[0][0] }} 220 Z" fill="#009b50" fill-opacity=".09"/>
+<path d="{{ $curve }}" fill="none" stroke="#009b50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 @foreach($points as $i=>$point)
 <circle cx="{{ $point[0] }}" cy="{{ $point[1] }}" r="5" fill="#009b50">
 <title>{{ $trend[$i]['label'] }}: {{ $trend[$i]['score'] }} / 5</title>

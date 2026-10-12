@@ -1,4 +1,4 @@
-@props(['chart'])
+@props(['chart', 'smooth' => false])
 @php
     $values = $chart['values'];
     $total = array_sum($values);
@@ -16,6 +16,7 @@
                 $points = [];
                 foreach (array_values($values) as $i => $value) $points[] = [52 + $i * (500 / max(count($values)-1,1)), 222 - $value / $maximum * 190];
                 $line = implode(' ', array_map(fn($p) => implode(',', $p), $points));
+                $curve = $smooth ? App\Support\SvgTrendPath::make($points) : null;
             @endphp
             <svg class="co-line" viewBox="0 0 580 270" role="img" aria-label="{{ $chart['title'] }}: monthly record counts, zero-based axis">
                 @foreach(range(0,4) as $tick)
@@ -23,8 +24,13 @@
                     <line x1="52" x2="552" y1="{{ $y }}" y2="{{ $y }}" stroke="#e8eeeb" />
                     <text x="40" y="{{ $y+4 }}" text-anchor="end">{{ $maximum / 4 * $tick }}</text>
                 @endforeach
-                <polygon points="52,222 {{ $line }} 552,222" fill="#04a052" fill-opacity=".07" />
-                <polyline points="{{ $line }}" fill="none" stroke="#04a052" stroke-width="3" stroke-linejoin="round" />
+                @if($smooth)
+                    <path d="{{ $curve }} L {{ $points[count($points)-1][0] }} 222 L {{ $points[0][0] }} 222 Z" fill="#04a052" fill-opacity=".07" />
+                    <path d="{{ $curve }}" fill="none" stroke="#04a052" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+                @else
+                    <polygon points="52,222 {{ $line }} 552,222" fill="#04a052" fill-opacity=".07" />
+                    <polyline points="{{ $line }}" fill="none" stroke="#04a052" stroke-width="3" stroke-linejoin="round" />
+                @endif
                 @foreach($points as $i => $point)
                     <circle cx="{{ $point[0] }}" cy="{{ $point[1] }}" r="4" fill="#fff" stroke="#04a052" stroke-width="2"><title>{{ $labels[$i] }}: {{ array_values($values)[$i] }} records</title></circle>
                     <text x="{{ $point[0] }}" y="250" text-anchor="middle">{{ $labels[$i] }}</text>
