@@ -28,12 +28,18 @@ class RoleActivityReport
         $user = $request->user();
         abort_unless($user && $user->is_active && in_array($user->role, ['helper', 'adviser', 'moderator', 'admin'], true), 403);
         if ($user->role === 'moderator') return app(ModeratorOperations::class)->report($request, $export);
+        $adminPeriod = $user->role === 'admin' ? AnalyticsPeriod::fromRequest($request) : null;
+        if ($adminPeriod) $request->validate(['activity_date' => 'nullable|in:activity,submitted,completed']);
         $data = $request->validate(['from' => 'nullable|date', 'to' => 'nullable|date|after_or_equal:from',
             'case_status' => 'nullable|in:active,completed,evaluated,waiting,helper_assigned,pending_review,emergency,cancelled,no_show'.($user->role==='helper' ? ',scheduled,screening_completed,preferences_set' : ''),
             'emergency_status' => 'nullable|in:open,triggered,pending,under_review,responding,acknowledged,escalated,resolved,closed',
             'priority' => 'nullable|in:low,moderate,high,emergency', 'helper_id' => 'nullable|integer', 'concern_id' => 'nullable|integer|exists:concern_categories,id', 'referral_status' => 'nullable|in:'.implode(',', Referral::STATUSES)]);
         $start = ! empty($data['from']) ? Carbon::parse($data['from'], 'Asia/Manila') : now('Asia/Manila')->subDays(30)->startOfDay();
         $end = ! empty($data['to']) ? Carbon::parse($data['to'], 'Asia/Manila') : now('Asia/Manila');
+        if ($adminPeriod) {
+            $start = Carbon::instance($adminPeriod->start);
+            $end = Carbon::instance($adminPeriod->end->subMicrosecond());
+        }
         if (strlen($data['to'] ?? '') === 10) {
             $end->endOfDay();
         }
@@ -66,7 +72,14 @@ class RoleActivityReport
         } elseif ($user->role === 'helper') {
             $alerts->whereIn('session_id', $authorizedIds);
         }
-        $sessions->whereBetween(DB::raw('COALESCE(end_time,start_time,submitted_at,created_date,created_at)'), [$start, $end])
+        $activityDate = 'COALESCE(end_time,start_time,submitted_at,created_date,created_at)';
+        if ($adminPeriod && $request->input('activity_date') === 'submitted') $activityDate = AdminDashboardAnalytics::SUBMISSION_DATE;
+        if ($adminPeriod && $request->input('activity_date') === 'completed') {
+            $activityDate = 'end_time';
+            $sessions->whereIn('session_status', [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED]);
+        }
+        if ($adminPeriod) $sessions->where(DB::raw($activityDate), '<=', now('UTC'));
+        $sessions->whereBetween(DB::raw($activityDate), [$start, $end])
             ->when($data['case_status'] ?? null, fn ($q, $status) => $q->where('session_status', $status));
         $alerts->whereBetween(DB::raw('COALESCE(triggered_at,created_at)'), [$start, $end])
             ->when($data['emergency_status'] ?? null, fn ($q, $status) => $q->where('status', $status))
@@ -97,9 +110,14 @@ class RoleActivityReport
             'Case categories' => $rows->groupBy(fn ($s) => $s->concern?->concern_name ?? $s->concern_category ?? 'Unrecorded')->map->count()->all(),
             'Case outcome trend' => $rows->groupBy(fn ($s) => ($s->end_time ?? $s->start_time ?? $s->submitted_at ?? $s->created_date ?? $s->created_at)->timezone('Asia/Manila')->format('Y-m'))->sortKeys()->map->count()->all()];
         $tables = [];
+        $caseDate = fn ($case) => match ($activityDate) {
+            'end_time' => $case->end_time,
+            AdminDashboardAnalytics::SUBMISSION_DATE => $case->submitted_at ?? $case->created_date ?? $case->created_at,
+            default => $case->end_time ?? $case->start_time ?? $case->submitted_at ?? $case->created_date ?? $case->created_at,
+        };
         $tables[] = ['title' => 'Case activity', 'columns' => ['Reference', 'Status', 'Category', 'Activity date (Philippine Time)'],
             'records' => $this->records((clone $sessions)->with($user->role === 'adviser' ? ['concern','helper','report','referrals','emergencyAlerts'] : ['concern'])->orderByDesc('id'), $export, 'cases_page'),
-            'format' => fn ($s) => [$s->reference_number, ucwords(str_replace('_', ' ', $s->session_status)), $s->concern?->concern_name ?? $s->concern_category ?? 'Unrecorded', ($s->end_time ?? $s->start_time ?? $s->submitted_at ?? $s->created_date ?? $s->created_at)?->timezone('Asia/Manila')->format('M d, Y g:i A')]];
+            'format' => fn ($s) => [$s->reference_number, ucwords(str_replace('_', ' ', $s->session_status)), $s->concern?->concern_name ?? $s->concern_category ?? 'Unrecorded', $caseDate($s)?->timezone('Asia/Manila')->format('M d, Y g:i A')]];
         if ($user->role !== 'helper') {
             $terminal = $emergencies->whereIn('status', ['resolved', 'closed']);
             $summary += ['Emergencies' => $emergencies->count(), 'Resolved emergencies' => $terminal->count(), 'Unresolved emergencies' => $emergencies->count() - $terminal->count(),
@@ -158,10 +176,18 @@ class RoleActivityReport
         }
         if ($user->role === 'admin') {
             $users = User::query();
-            $registrations = User::whereBetween('created_at', [$start, $end])->get();
+            $registrationQuery = $adminPeriod->constrain(User::query(), 'created_at');
+            $registrations = $adminPeriod->series(User::query(), 'created_at');
+            $summary['Registrations in period'] = $registrations['total'];
+            $summary['Requests submitted in period'] = $adminPeriod->constrain(Session::query(), AdminDashboardAnalytics::SUBMISSION_DATE)->count();
+            $summary['Sessions completed in period'] = $adminPeriod->constrain(Session::whereIn('session_status', [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED]), 'end_time')->count();
+            $tables[] = ['title' => 'Account registrations', 'columns' => ['Account reference', 'Role', 'Account status now', 'Registered (Philippine Time)'],
+                'records' => $this->records($registrationQuery->latest('created_at')->latest('id'), $export, 'registrations_page'),
+                'format' => fn ($u) => ['Account #'.$u->id, User::ROLE_LABELS[$u->role] ?? ucfirst($u->role), $u->is_active ? 'Enabled' : 'Disabled', $u->created_at?->timezone('Asia/Manila')->format('M d, Y g:i A')]];
             $summary += ['Total users' => $users->count(), 'Active accounts' => (clone $users)->where('is_active', true)->count(), 'Available Helpers' => app(HelperEligibilityService::class)->countAvailable(Helper::with('user', 'adviser.user')->get())];
-            $groups['System activity trend'] = AuditLog::whereBetween('created_at', [$start, $end])->get(['created_at'])->groupBy(fn ($a) => $a->created_at->copy()->timezone('Asia/Manila')->format('Y-m'))->sortKeys()->map->count()->all();
-            $groups += ['Users by role' => $users->get()->groupBy('role')->map->count()->all(), 'Registration trend' => $registrations->groupBy(fn ($u) => $u->created_at->timezone('Asia/Manila')->format('Y-m'))->sortKeys()->map->count()->all()];
+            $auditTrend = $adminPeriod->series(AuditLog::query(), 'created_at');
+            $groups['System activity trend'] = array_combine($auditTrend['labels'], $auditTrend['values']);
+            $groups += ['Users by role' => (clone $users)->selectRaw('role, COUNT(*) AS total')->groupBy('role')->pluck('total', 'role')->all(), 'Registration trend' => array_combine($registrations['labels'], $registrations['values'])];
         }
 
         return compact('summary','groups','tables','from','to') + ['role' => $user->role];

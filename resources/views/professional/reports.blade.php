@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>COMPASS – Reports</title>
+    <title>COMPASS â€“ Reports</title>
 
     @vite(['resources/js/app.js'])
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    @vite('resources/js/dashboard-analytics.js')
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -196,135 +196,64 @@
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-800">Performance Reports</h1>
                     <p class="text-sm text-gray-500 hidden sm:block">
-                        Track referrals, outcomes, and response times
+                        Review authorized referral records and recorded outcomes
                     </p>
                 </div>
             </div>
             <div class="flex gap-2 no-print">
-                <a href="{{ route('professional.reports.export', ['period' => $period]) }}" class="btn-outline">
+                <a href="{{ route('professional.reports.export', $dates + $filters) }}" class="btn-outline">
                     <x-ui-icon name="file-spreadsheet" class="mr-1" /> Export CSV
                 </a>
                 <button class="btn-primary" onclick="window.print()">
-                    <x-ui-icon name="file-text" class="mr-1" /> Save as PDF
+                    <x-ui-icon name="file-text" class="mr-1" /> Print / Save PDF
                 </button>
             </div>
         </div>
 
-        <!-- Period Filter -->
-        <div class="flex items-center gap-2 mb-6 flex-wrap no-print">
-            <span class="text-sm font-medium text-gray-500 mr-1">Period:</span>
-            @foreach(['weekly' => 'Last 7 Days', 'monthly' => 'Last 30 Days', 'quarterly' => 'Last 90 Days', 'yearly' => 'Last 12 Months'] as $value => $label)
-                <a href="{{ route('professional.reports', ['period' => $value]) }}"
-                   class="period-btn {{ $period === $value ? 'active' : '' }}">
-                    {{ $label }}
-                </a>
-            @endforeach
-        </div>
-
-        <!-- Metrics -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-            <div class="stat-card">
-                <span class="stat-label">Total Referrals</span>
-                <div class="stat-number">{{ $totalReferrals }}</div>
-                <span class="text-xs text-gray-400">In selected period</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Acceptance Rate</span>
-                <div class="stat-number">{{ $acceptanceRate }}%</div>
-                <span class="text-xs text-gray-400">{{ $accepted }} accepted of {{ $totalReferrals }}</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Avg Cases Completed</span>
-                <div class="stat-number">{{ $completed }}</div>
-                <span class="text-xs text-gray-400">Completed in period</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Avg Response Time</span>
-                <div class="stat-number">
-                    @if($avgResponseHours > 48)
-                        {{ number_format($avgResponseHours / 24, 1) }}<span class="text-base">d</span>
-                    @else
-                        {{ $avgResponseHours }}<span class="text-base">h</span>
-                    @endif
+        <section class="analytics-section" aria-label="Professional referral report">
+            <form method="GET" action="{{ route('professional.reports') }}" class="analytics-period-form no-print">
+                <label>From (Philippine Time)<input type="date" name="from" value="{{ $dates['from'] }}" required></label>
+                <label>To (Philippine Time)<input type="date" name="to" value="{{ $dates['to'] }}" max="{{ now('Asia/Manila')->toDateString() }}" required></label>
+                <label>Date basis<select name="activity">@foreach(['received'=>'Received','completed'=>'Completed','closed'=>'Closed'] as $key=>$label)<option value="{{ $key }}" @selected($filters['activity'] === $key)>{{ $label }}</option>@endforeach</select></label>
+                <label class="analytics-report-status">Referral status<select name="status"><option value="">All authorized statuses</option>@foreach(App\Services\ProfessionalAnalytics::STATUSES as $state)<option value="{{ $state }}" @selected(($filters['status'] ?? '') === $state)>{{ Str::headline($state) }}</option>@endforeach</select></label>
+                <button class="analytics-button analytics-button-primary" type="submit">Apply filters</button>
+                <a class="analytics-button" href="{{ route('professional.reports') }}">Reset</a>
+                <a class="analytics-button" href="{{ route('professional.dashboard', $dates) }}">View dashboard charts</a>
+            </form>
+            @if($errors->any())<div class="analytics-feedback" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+            <p class="analytics-period-caption">{{ $dates['from'] }} – {{ $dates['to'] }} · Philippine Time. The status filter applies to all measures and records. Each measure uses its named event date; the table uses your selected date basis.</p>
+            <dl class="analytics-measures">
+                <div><dt>Total Referrals Received</dt><dd>{{ number_format($analytics['received']['total']) }}</dd><small>Notification date; legacy creation fallback</small></div>
+                <div><dt>Completed Referrals</dt><dd>{{ number_format($analytics['completed']['total']) }}</dd><small>Completion date; may have been received earlier</small></div>
+                <div><dt>Closed Referrals</dt><dd>{{ number_format($analytics['closed']) }}</dd><small>Closed status and recorded closure date</small></div>
+                <div><dt>Average Acceptance Time</dt><dd>{{ $analytics['response_hours'] === null ? 'No data' : $analytics['response_hours'].' h' }}</dd><small>{{ $analytics['response_samples'] }} valid acceptances in period</small></div>
+            </dl>
+            <details class="analytics-definitions"><summary>Calculations and data coverage</summary>
+                <p>Received uses professional notification dates. {{ $analytics['legacy_received'] }} records in this period use legacy creation dates because no notification timestamp exists. Completion uses completed_at, or closed_date only for legacy completed records. Closed-only records remain separate.</p>
+                <p>Acceptance Rate: {{ $analytics['acceptance_rate'] === null ? 'No data' : $analytics['acceptance_rate'].'%' }}. {{ $analytics['accepted'] }} of {{ $analytics['received']['total'] }} referrals received in this period have a recorded acceptance. This is a received-referral cohort, not a rate of decisions made in this period.</p>
+                <p>Acceptance time measures professional notification to recorded acceptance; missing, negative, and future intervals are excluded. {{ $analytics['missing_completion_dates'] }} historical finished records lack usable completion dates and are excluded from completion totals. Archived cases remain in authorized history.</p>
+                <p>Charts and Reports use the same sources. CSV includes all matching table records and the same filters. Printing includes only the current page; use CSV for the full filtered dataset.</p>
+            </details>
+            <div class="card analytics-report-table">
+                <div class="card-header"><h3>Referral records</h3><span class="text-sm text-gray-500">{{ number_format($records->total()) }} matching records</span></div>
+                <p class="analytics-period-caption">Date basis: {{ ucfirst($filters['activity']) }} · Status: {{ isset($filters['status']) && $filters['status'] ? Str::headline($filters['status']) : 'All authorized statuses' }}</p>
+                <div class="analytics-table-scroll" role="region" aria-label="Filtered referral records" tabindex="0">
+                    <table><thead><tr><th scope="col">Reference</th><th scope="col">Seeker alias</th><th scope="col">Priority</th><th scope="col">Status</th><th scope="col">Received</th><th scope="col">Completed</th><th scope="col">Closed</th><th scope="col" class="no-print">Action</th></tr></thead><tbody>
+                        @forelse($records as $referral)
+                            @php
+                                $receivedAt = $referral->professional_notified_at ?? $referral->created_at;
+                                $completedAt = $referral->completed_at ?? ($referral->status === 'completed' ? $referral->closed_date : null);
+                                $closedAt = $referral->status === 'closed' ? $referral->closed_date : null;
+                            @endphp
+                            <tr><td>#{{ $referral->id }}</td><td>{{ $referral->session?->seeker?->generated_alias ?? 'Anonymous' }}</td><td>{{ ucfirst($referral->priority_level) }}</td><td>{{ Str::headline($referral->status) }}</td><td>{{ $receivedAt?->timezone('Asia/Manila')->format('M d, Y g:i A') ?? 'Unrecorded' }}@if(!$referral->professional_notified_at)<br><small>Legacy creation date</small>@endif</td><td>{{ $completedAt?->timezone('Asia/Manila')->format('M d, Y g:i A') ?? 'Unrecorded' }}</td><td>{{ $closedAt?->timezone('Asia/Manila')->format('M d, Y g:i A') ?? 'Unrecorded' }}</td><td class="no-print"><a class="analytics-button" href="{{ route('professional.referral.show', $referral->id) }}">View</a></td></tr>
+                        @empty
+                            <tr><td colspan="8">No referrals match these filters. Try a different date range or status.</td></tr>
+                        @endforelse
+                    </tbody></table>
                 </div>
-                <span class="text-xs text-gray-400">Assignment to decision</span>
+                <div class="analytics-report-footer"><span>{{ $records->firstItem() ?? 0 }}–{{ $records->lastItem() ?? 0 }} of {{ number_format($records->total()) }} records</span><div class="no-print">{{ $records->links() }}</div></div>
             </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <!-- Referral Trends -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Referral Trends <span class="text-xs font-normal text-gray-400">(last 6 months)</span></h3>
-                </div>
-                <div class="chart-box">
-                    <canvas id="trendChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Case Outcomes -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Case Outcomes</h3>
-                </div>
-                <div class="chart-box">
-                    <canvas id="outcomesChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <!-- Intervention Breakdown -->
-            <div class="card lg:col-span-1">
-                <div class="card-header">
-                    <h3>Interventions</h3>
-                </div>
-                <div class="chart-box" style="height: 220px;">
-                    <canvas id="interventionChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Recent Referrals in Period -->
-            <div class="card lg:col-span-2">
-                <div class="card-header">
-                    <h3>Recent Referrals</h3>
-                    <span class="text-sm text-gray-400">{{ $recentReferrals->count() }} in period</span>
-                </div>
-
-                @if($recentReferrals->isNotEmpty())
-                    <div class="overflow-x-auto">
-                        <table class="report-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Seeker</th>
-                                    <th>Priority</th>
-                                    <th>Status</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($recentReferrals as $referral)
-                                    <tr>
-                                        <td>#{{ $referral->id }}</td>
-                                        <td class="font-semibold text-gray-700">{{ $referral->session->seeker->generated_alias ?? 'Anonymous' }}</td>
-                                        <td class="capitalize">{{ $referral->priority_level }}</td>
-                                        <td class="capitalize">{{ str_replace('_', ' ', $referral->status) }}</td>
-                                        <td>{{ $referral->created_at->format('M d, Y') }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @else
-                    <div class="text-center py-10 text-gray-400">
-                        <p class="text-lg font-medium text-gray-600">No referrals in this period</p>
-                        <p class="text-sm">Try a different date range</p>
-                    </div>
-                @endif
-            </div>
-        </div>
-
+        </section>
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
 
@@ -335,106 +264,7 @@
 
     <!-- Bottom Navigation -->
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
 
-            // Referral trends chart
-            const trendLabels = @json(array_column($monthlyTrends, 'month'));
-            const trendReferrals = @json(array_column($monthlyTrends, 'referrals'));
-            const trendCompleted = @json(array_column($monthlyTrends, 'completed'));
-
-            new Chart(document.getElementById('trendChart'), {
-                type: 'line',
-                data: {
-                    labels: trendLabels,
-                    datasets: [
-                        {
-                            label: 'Referrals',
-                            data: trendReferrals,
-                            borderColor: '#04A052',
-                            backgroundColor: 'rgba(4,160,82,0.08)',
-                            fill: true,
-                            tension: 0.4,
-                            pointBackgroundColor: '#04A052'
-                        },
-                        {
-                            label: 'Completed',
-                            data: trendCompleted,
-                            borderColor: '#3B82F6',
-                            backgroundColor: 'rgba(59,130,246,0.08)',
-                            fill: true,
-                            tension: 0.4,
-                            pointBackgroundColor: '#3B82F6'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } },
-                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-                }
-            });
-
-            // Case outcomes donut
-            const outcomes = @json($outcomes);
-            new Chart(document.getElementById('outcomesChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Completed', 'Closed', 'Declined', 'Active'],
-                    datasets: [{
-                        data: [outcomes.completed, outcomes.closed, outcomes.declined, outcomes.active],
-                        backgroundColor: ['#04A052', '#9CA3AF', '#EF4444', '#3B82F6'],
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom' },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const pct = total > 0 ? Math.round((context.parsed / total) * 100) : 0;
-                                    return context.label + ': ' + context.parsed + ' (' + pct + '%)';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Intervention type breakdown
-            const interventions = @json($interventions);
-            const keys = Object.keys(interventions).map(k => k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
-            const values = Object.values(interventions);
-
-            if (keys.length > 0) {
-                new Chart(document.getElementById('interventionChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: keys,
-                        datasets: [{
-                            label: 'Sessions',
-                            data: values,
-                            backgroundColor: 'rgba(4,160,82,0.7)',
-                            borderRadius: 6
-                        }]
-                    },
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
-                    }
-                });
-            }
-        });
-    </script>
 
     @include('layouts.partials.pwa-banner')
 

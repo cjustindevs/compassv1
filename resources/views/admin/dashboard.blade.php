@@ -1,4 +1,5 @@
 <x-admin.layout title="System Overview" :admin="$admin" :search-query="$searchQuery" :search-action="route('admin.users')" search-placeholder="Search user accounts...">
+    @vite('resources/js/dashboard-analytics.js')
     <header class="page-heading admin-section-heading">
         <div><h1>System Overview</h1><p>Account administration and recent platform activity.</p></div>
         <a class="admin-button admin-button-secondary" href="{{ route('admin.users') }}">Manage users</a>
@@ -7,6 +8,20 @@
         @foreach ($primaryStats as $stat)
             <x-admin.stat-card :label="$stat['label']" :value="$stat['value']" :detail="$stat['detail']" :icon="$stat['icon']" />
         @endforeach
+    </section>
+    <section class="analytics-section" aria-labelledby="admin-analytics-heading">
+        <div class="analytics-section-heading"><div><h2 id="admin-analytics-heading">Platform activity</h2><p>Registration and support activity, with current account distribution.</p></div></div>
+        <x-analytics-period :action="route('admin.dashboard')" :dates="$analyticsDates" :report-url="route('admin.reports', $analyticsDates)" />
+        @if($analytics)
+            <div class="analytics-chart-grid">
+                <x-analytics-chart id="admin-registration-trend" title="Account registrations" :description="$analytics['registrations']['interval'].' registrations in the selected period.'" :chart="['type'=>'line','labels'=>$analytics['registrations']['labels'],'datasets'=>[['label'=>'Registrations','data'=>$analytics['registrations']['values']]]]" :link="route('admin.reports', $analyticsDates + ['section'=>'registrations'])" />
+                <x-analytics-chart id="admin-support-trend" title="Support activity" :description="$analytics['requests']['interval'].' request submissions and session completions, counted on their event dates.'" :chart="['type'=>'line','labels'=>$analytics['requests']['labels'],'datasets'=>[['label'=>'Requests submitted','data'=>$analytics['requests']['values']],['label'=>'Sessions completed','data'=>$analytics['completed']['values']]]]" :link="route('admin.reports', $analyticsDates + ['activity_date'=>'submitted'])" />
+                <x-analytics-chart id="admin-role-distribution" title="Accounts by role" description="Current account population, including enabled and disabled accounts. Independent of the date filter." :chart="['type'=>'bar','labels'=>$analytics['roles']['labels'],'datasets'=>[['label'=>'Accounts','data'=>$analytics['roles']['values']]]]" :link="route('admin.users')" />
+            </div>
+            <details class="analytics-definitions"><summary>How these totals are counted</summary><p>Registrations use account creation dates. Each support case counts once as a request, using its submission date or legacy creation date. Completions include completed and evaluated sessions with recorded end dates. Archived records remain in historical totals; current account distribution is not period-filtered.</p>@if($analytics['missing_completion_dates'])<p>{{ number_format($analytics['missing_completion_dates']) }} historical completed/evaluated records have no end date and cannot be placed on the completion timeline.</p>@endif<p><a class="analytics-button" href="{{ route('admin.reports', $analyticsDates + ['activity_date'=>'completed']) }}">View completed session records</a></p></details>
+        @else
+            <div class="analytics-feedback" role="alert">Unable to load analytics. <a class="analytics-button" href="{{ route('admin.dashboard', $analyticsDates) }}">Retry</a></div>
+        @endif
     </section>
     <section class="dashboard-card admin-recent-activity" aria-labelledby="admin-activity-heading">
         <header class="admin-section-heading">

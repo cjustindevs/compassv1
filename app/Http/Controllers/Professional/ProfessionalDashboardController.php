@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Notification;
 use App\Models\ProfessionalNote;
 use App\Models\Referral;
+use App\Services\AnalyticsPeriod;
+use App\Services\ProfessionalAnalytics;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ProfessionalDashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request, ProfessionalAnalytics $reporting)
     {
         $professional = Auth::user()->psychologyProfessional;
 
@@ -20,21 +22,26 @@ class ProfessionalDashboardController extends Controller
         }
 
         $professionalId = $professional->id;
+        $period = AnalyticsPeriod::fromRequest($request);
+        $analyticsDates = $period->dates();
+        try {
+            $analytics = $reporting->data($professionalId, $period);
+        } catch (\Throwable $exception) {
+            report($exception);
+            $analytics = null;
+        }
 
         // Stats
-        $pendingReferrals = Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
+        $pendingReferrals = $reporting->base($professionalId)->whereHas('session', fn ($q) => $q->whereNull('archived_at'))
             ->where('status', Referral::STATUS_PENDING_PROFESSIONAL)
             ->count();
 
-        $activeCases = Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
+        $activeCases = $reporting->base($professionalId)->whereHas('session', fn ($q) => $q->whereNull('archived_at'))
             ->whereIn('status', Referral::ACTIVE_STATUSES)
             ->count();
 
-        $completedCases = Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
-            ->whereIn('status', Referral::COMPLETED_STATUSES)
-            ->count();
-
-        $avgResponseHours = $this->averageResponseHours($professionalId);
+        $completedCases = $analytics['completed']['total'] ?? null;
+        $avgResponseHours = $analytics['response_hours'] ?? null;
 
         // Recent referrals
         $recentReferrals = Referral::with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'adviser:id,id,first_name,last_name'])
@@ -46,6 +53,7 @@ class ProfessionalDashboardController extends Controller
         // Active cases (with latest professional note for "last update")
         $activeCasesList = Referral::with(['session.seeker:id,id,generated_alias', 'professionalNotes'])
             ->professionalAuthorized()->where('professional_id', $professionalId)
+            ->whereHas('session', fn ($q) => $q->whereNull('archived_at'))
             ->whereIn('status', Referral::ACTIVE_STATUSES)
             ->orderByDesc('updated_at')
             ->limit(20)
@@ -70,7 +78,9 @@ class ProfessionalDashboardController extends Controller
             'recentReferrals',
             'activeCasesList',
             'notifications',
-            'unreadNotifications'
+            'unreadNotifications',
+            'analytics',
+            'analyticsDates'
         ));
     }
 
@@ -86,27 +96,14 @@ class ProfessionalDashboardController extends Controller
 
         return response()->json([
             'pending' => Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
+                ->whereHas('session', fn ($q) => $q->whereNull('archived_at'))
                 ->where('status', Referral::STATUS_PENDING_PROFESSIONAL)->count(),
             'active' => Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
+                ->whereHas('session', fn ($q) => $q->whereNull('archived_at'))
                 ->whereIn('status', Referral::ACTIVE_STATUSES)->count(),
             'completed' => Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
                 ->whereIn('status', Referral::COMPLETED_STATUSES)->count(),
         ]);
     }
 
-    /**
-     * Average time (hours) between referral assignment and the first status
-     * change, computed in SQL rather than in PHP for performance.
-     */
-    private function averageResponseHours(int $professionalId): int
-    {
-        $avg = Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
-            ->whereIn('status', [...Referral::ACTIVE_STATUSES, ...Referral::COMPLETED_STATUSES])
-            ->whereNotNull('created_at')
-            ->whereNotNull('updated_at')
-            ->selectRaw('AVG(' . \App\Support\DatabaseHelper::secondsBetween('updated_at', 'created_at') . ') / 3600 as avg_hours')
-            ->first();
-
-        return (int) round((float) ($avg->avg_hours ?? 0));
-    }
 }

@@ -3,201 +3,52 @@
 namespace App\Http\Controllers\Professional;
 
 use App\Http\Controllers\Controller;
-use App\Models\ProfessionalNote;
-use App\Models\Referral;
+use App\Services\AnalyticsPeriod;
+use App\Services\ProfessionalAnalytics;
+use App\Services\SupportAudit;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class ProfessionalReportController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, ProfessionalAnalytics $reporting)
     {
-        $professional = Auth::user()->psychologyProfessional;
+        $professional = $request->user()->psychologyProfessional;
+        abort_unless($professional, 403, 'No psychology professional profile found for this account.');
+        $range = AnalyticsPeriod::fromRequest($request);
+        $filters = $reporting->filters($request);
+        $analytics = $reporting->data($professional->id, $range, $filters['status'] ?? null);
+        $records = $reporting->records($professional->id, $range, $filters)
+            ->with('session.seeker:id,generated_alias')->paginate(15)->withQueryString();
 
-        if (! $professional) {
-            abort(403, 'No psychology professional profile found for this account.');
-        }
-
-        $period = $request->get('period', 'monthly');
-
-        if (! in_array($period, ['weekly', 'monthly', 'quarterly', 'yearly'], true)) {
-            $period = 'monthly';
-        }
-
-        [$startDate, $endDate] = $this->getDateRange($period);
-
-        // Metrics for the selected period
-        $totalReferrals = Referral::professionalAuthorized()->where('professional_id', $professional->id)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->count();
-
-        $accepted = Referral::professionalAuthorized()->where('professional_id', $professional->id)
-            ->whereIn('status', [...Referral::ACTIVE_STATUSES, ...Referral::COMPLETED_STATUSES])
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->count();
-
-        $completed = Referral::professionalAuthorized()->where('professional_id', $professional->id)
-            ->whereIn('status', Referral::COMPLETED_STATUSES)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->count();
-
-        $acceptanceRate = $totalReferrals > 0 ? (int) round(($accepted / $totalReferrals) * 100) : 0;
-
-        // Average response time (hours) for the period
-        $avgResponseHours = $this->averageResponseHours($professional->id, $startDate, $endDate);
-
-        // Monthly referral trends (real data, last 6 months)
-        $monthlyTrends = $this->getMonthlyTrends($professional->id);
-
-        // Case outcomes distribution (all-time)
-        $outcomes = [
-            'completed' => Referral::professionalAuthorized()->where('professional_id', $professional->id)
-                ->where('status', Referral::STATUS_COMPLETED)->count(),
-            'closed' => Referral::professionalAuthorized()->where('professional_id', $professional->id)
-                ->where('status', Referral::STATUS_CLOSED)->count(),
-            'declined' => Referral::professionalAuthorized()->where('professional_id', $professional->id)
-                ->where('status', Referral::STATUS_DECLINED)->count(),
-            'active' => Referral::professionalAuthorized()->where('professional_id', $professional->id)
-                ->whereIn('status', Referral::ACTIVE_STATUSES)->count(),
-        ];
-
-        // Intervention type breakdown (all-time)
-        $interventions = ProfessionalNote::where('professional_id', $professional->id)
-            ->selectRaw('intervention_type, COUNT(*) as total')
-            ->whereNotNull('intervention_type')
-            ->groupBy('intervention_type')
-            ->pluck('total', 'intervention_type');
-
-        // Recent activity for the period report
-        $recentReferrals = Referral::with(['session', 'session.seeker'])
-            ->professionalAuthorized()->where('professional_id', $professional->id)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->orderByDesc('created_at')
-            ->limit(10)
-            ->get();
-
-        return view('professional.reports', compact(
-            'professional',
-            'period',
-            'totalReferrals',
-            'accepted',
-            'completed',
-            'acceptanceRate',
-            'avgResponseHours',
-            'monthlyTrends',
-            'outcomes',
-            'interventions',
-            'recentReferrals'
-        ));
+        return view('professional.reports', [
+            'professional' => $professional, 'analytics' => $analytics, 'records' => $records,
+            'filters' => $filters, 'dates' => $range->dates(),
+            'period' => $request->input('period', 'monthly'),
+        ]);
     }
 
-    public function export(Request $request)
+    public function export(Request $request, ProfessionalAnalytics $reporting)
     {
-        $period = $request->get('period', 'monthly');
+        $professional = $request->user()->psychologyProfessional;
+        abort_unless($professional, 403, 'No psychology professional profile found for this account.');
+        $range = AnalyticsPeriod::fromRequest($request);
+        $filters = $reporting->filters($request);
+        $query = $reporting->records($professional->id, $range, $filters)->with('session.seeker:id,generated_alias');
+        SupportAudit::record('report_exported', $request->user(), $range->dates() + ['purpose' => 'professional_reporting', 'activity' => $filters['activity'], 'status' => $filters['status'] ?? 'all']);
 
-        if (! in_array($period, ['weekly', 'monthly', 'quarterly', 'yearly'], true)) {
-            $period = 'monthly';
-        }
-
-        [$startDate, $endDate] = $this->getDateRange($period);
-
-        $referrals = Referral::with(['session', 'session.seeker'])
-            ->where('professional_id', Auth::user()->psychologyProfessional->id)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->orderByDesc('created_at')
-            ->get();
-
-        $filename = 'professional-report-' . now()->format('Y-m-d') . '.csv';
-
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ];
-
-        $callback = function () use ($referrals) {
+        return response()->streamDownload(function () use ($query, $range, $filters) {
             $file = fopen('php://output', 'w');
-
-            fputcsv($file, ['Referral ID', 'Seeker Alias', 'Priority', 'Status', 'Referral Date', 'Closed Date']);
-
-            foreach ($referrals as $referral) {
-                fputcsv($file, [
-                    $referral->id,
-                    $referral->session?->seeker?->generated_alias ?? 'Anonymous',
-                    ucfirst($referral->priority_level),
-                    ucfirst(str_replace('_', ' ', $referral->status)),
-                    $referral->created_at?->format('Y-m-d') ?? '',
-                    $referral->closed_date?->format('Y-m-d') ?? '',
-                ]);
+            $write = fn ($cells) => fputcsv($file, array_map(fn ($cell) => is_string($cell) && preg_match('/^[=+\-@\t\r]/', $cell) ? "'".$cell : $cell, $cells));
+            $write(['COMPASS Professional Referral Report', $range->dates()['from'].' to '.$range->dates()['to'], 'Asia/Manila', $filters['activity'], $filters['status'] ?? 'All statuses']);
+            $write(['Referral ID', 'Seeker Alias', 'Priority', 'Status', 'Received / legacy creation', 'Received date source', 'Accepted', 'Completed', 'Closed']);
+            foreach ($query->lazy(250) as $referral) {
+                $format = fn ($date) => $date?->timezone(AnalyticsPeriod::TIMEZONE)->format('Y-m-d H:i:s') ?? '';
+                $completed = $referral->completed_at ?? ($referral->status === 'completed' ? $referral->closed_date : null);
+                $write([$referral->id, $referral->session?->seeker?->generated_alias ?? 'Anonymous', ucfirst($referral->priority_level), ucwords(str_replace('_', ' ', $referral->status)),
+                    $format($referral->professional_notified_at ?? $referral->created_at), $referral->professional_notified_at ? 'Professional notification' : 'Legacy creation date',
+                    $format($referral->accepted_at), $format($completed), $format($referral->status === 'closed' ? $referral->closed_date : null)]);
             }
-
             fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
-    }
-
-    private function getDateRange(string $period): array
-    {
-        $endDate = now();
-
-        $startDate = match ($period) {
-            'weekly' => now()->subDays(7),
-            'quarterly' => now()->subDays(90),
-            'yearly' => now()->subDays(365),
-            default => now()->subDays(30),
-        };
-
-        return [$startDate, $endDate];
-    }
-
-    /**
-     * Real monthly referral data for the last 6 months (grouped in PHP so it
-     * works on any database driver).
-     */
-    private function getMonthlyTrends(int $professionalId): array
-    {
-        $months = collect(range(5, 0))
-            ->map(fn (int $offset) => now()->startOfMonth()->subMonths($offset))
-            ->map(function ($month) {
-                return [
-                    'key' => $month->format('Y-m'),
-                    'label' => $month->format('M'),
-                ];
-            });
-
-        $monthKey = \App\Support\DatabaseHelper::monthKey('created_at');
-
-        $rows = Referral::selectRaw($monthKey . ' as month')
-            ->selectRaw('COUNT(*) as total')
-            ->selectRaw(\App\Support\DatabaseHelper::countFilter('status IN (\'' . implode("','", Referral::COMPLETED_STATUSES) . '\')') . ' as completed')
-            ->professionalAuthorized()->where('professional_id', $professionalId)
-            ->where('created_at', '>=', $months->first()['key'] . '-01')
-            ->groupBy(DB::raw($monthKey))
-            ->get()
-            ->keyBy('month');
-
-        return $months->map(function (array $month) use ($rows) {
-            $row = $rows->get($month['key']);
-
-            return [
-                'month' => $month['label'],
-                'referrals' => $row?->total ?? 0,
-                'completed' => $row?->completed ?? 0,
-            ];
-        })->all();
-    }
-
-    private function averageResponseHours(int $professionalId, $startDate, $endDate): int
-    {
-        $avg = Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
-            ->whereIn('status', [...Referral::ACTIVE_STATUSES, ...Referral::COMPLETED_STATUSES])
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->whereNotNull('created_at')
-            ->whereNotNull('updated_at')
-            ->selectRaw('AVG(' . \App\Support\DatabaseHelper::secondsBetween('updated_at', 'created_at') . ') / 3600 as avg_hours')
-            ->first();
-
-        return (int) round((float) ($avg->avg_hours ?? 0));
+        }, 'professional-report-'.$range->dates()['from'].'_'.$range->dates()['to'].'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 }

@@ -9,6 +9,7 @@
     <title>COMPASS – Professional Dashboard</title>
 
     @vite(['resources/js/app.js'])
+    @vite('resources/js/dashboard-analytics.js')
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -264,20 +265,22 @@
                 <p class="text-xs text-gray-400 mt-2">In your care right now</p>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="statCompleted">{{ $completedCases }}</div>
-                <div class="stat-label">Completed Interventions</div>
-                <p class="text-xs text-gray-400 mt-2">Completed or closed</p>
+                <div class="stat-number">{{ $completedCases === null ? 'Unavailable' : number_format($completedCases) }}</div>
+                <div class="stat-label">Completed Referrals</div>
+                <p class="text-xs text-gray-400 mt-2">{{ $analyticsDates['from'] }} – {{ $analyticsDates['to'] }} · excludes closed-only cases</p>
             </div>
             <div class="stat-card">
                 <div class="stat-number" id="statResponse">
-                    @if($avgResponseHours > 48)
+                    @if($avgResponseHours === null)
+                        {{ $analytics ? 'No data' : 'Unavailable' }}
+                    @elseif($avgResponseHours > 48)
                         {{ number_format($avgResponseHours / 24, 1) }}<span class="text-base">d</span>
                     @else
                         {{ $avgResponseHours }}<span class="text-base">h</span>
                     @endif
                 </div>
-                <div class="stat-label">Avg Response Time</div>
-                <p class="text-xs text-gray-400 mt-2">Assignment to decision</p>
+                <div class="stat-label">Average Acceptance Time</div>
+                <p class="text-xs text-gray-400 mt-2">Notification to acceptance · {{ $analytics['response_samples'] ?? 0 }} valid samples in selected period</p>
             </div>
         </div>
 
@@ -296,7 +299,7 @@
             <div class="card">
                 <div class="card-header">
                     <h3>Recent Referrals</h3>
-                    <a href="{{ route('professional.referrals') }}" class="text-xs font-semibold text-[#04A052] hover:underline">View all</a>
+                    <a href="{{ route('professional.referrals') }}" class="btn-outline">View all</a>
                 </div>
 
                 @if($recentReferrals->isNotEmpty())
@@ -334,7 +337,7 @@
             <div class="card">
                 <div class="card-header">
                     <h3>Active Cases</h3>
-                    <a href="{{ route('professional.cases') }}" class="text-xs font-semibold text-[#04A052] hover:underline">View all</a>
+                    <a href="{{ route('professional.cases') }}" class="btn-outline">View all</a>
                 </div>
 
                 @if($activeCasesList->isNotEmpty())
@@ -368,6 +371,20 @@
                 @endif
             </div>
         </div>
+
+        <section class="analytics-section" aria-labelledby="professional-analytics-heading">
+            <div class="analytics-section-heading"><div><h2 id="professional-analytics-heading">Referral activity</h2><p>Your authorized referrals and recorded outcomes.</p></div></div>
+            <x-analytics-period :action="route('professional.dashboard')" :dates="$analyticsDates" :report-url="route('professional.reports', $analyticsDates)" />
+            @if($analytics)
+                <div class="analytics-chart-grid">
+                    <x-analytics-chart id="professional-referral-trend" title="Referrals received and completed" :description="$analytics['received']['interval'].' events in the selected period. Completed referrals may have been received earlier.'" :chart="['type'=>'line','labels'=>$analytics['received']['labels'],'datasets'=>[['label'=>'Received','data'=>$analytics['received']['values']],['label'=>'Completed','data'=>$analytics['completed']['values']]]]" :link="route('professional.reports', $analyticsDates)" />
+                    <x-analytics-chart id="professional-referral-status" title="Status of referrals received" description="Current status of referrals received during this period. Historical, authorized records are included." :chart="['type'=>'bar','labels'=>$analytics['statuses']['labels'],'datasets'=>[['label'=>'Referrals','data'=>$analytics['statuses']['values']]]]" :link="route('professional.reports', $analyticsDates)" />
+                </div>
+                <details class="analytics-definitions"><summary>Dates and calculation notes</summary><p>Received uses the recorded professional notification date, with creation date as a labeled fallback for legacy records. Completed uses completed_at, or a recorded closure date only for legacy completed referrals. Closed-only cases are counted separately in Reports. Acceptance time uses notification to acceptance for valid acceptances in this period; edits never affect it. Pending and active workload exclude archived sessions.</p>@if($analytics['legacy_received'])<p>{{ $analytics['legacy_received'] }} received records use the legacy creation-date fallback.</p>@endif @if($analytics['missing_completion_dates'])<p>{{ $analytics['missing_completion_dates'] }} historical finished records have no usable completion date and are excluded from the completion timeline.</p>@endif<p><a href="{{ route('professional.reports', $analyticsDates + ['activity'=>'completed']) }}" class="analytics-button">View completed referral records</a></p></details>
+            @else
+                <div class="analytics-feedback" role="alert">Unable to load analytics. <a class="analytics-button" href="{{ route('professional.dashboard', $analyticsDates) }}">Retry</a></div>
+            @endif
+        </section>
 
         <!-- Recent Activity / Notifications -->
         <div class="card mb-6">
@@ -419,7 +436,6 @@
                     .then(data => {
                         document.getElementById('statPending').textContent = data.pending;
                         document.getElementById('statActive').textContent = data.active;
-                        document.getElementById('statCompleted').textContent = data.completed;
                         document.getElementById('sidePending').textContent = data.pending;
                         document.getElementById('sideActive').textContent = data.active;
                         document.getElementById('sideCompleted').textContent = data.completed;
