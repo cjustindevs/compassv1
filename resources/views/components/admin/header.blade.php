@@ -7,11 +7,6 @@
     'searchPlaceholder' => 'Search referrals, cases, users, reports...',
 ])
 
-@php
-    $adminName = $admin->name ?: 'System Administrator';
-    $adminInitials = $admin->initials();
-@endphp
-
 <header class="admin-header">
     <div class="admin-header-inner">
         <div class="header-context">
@@ -47,7 +42,7 @@
                 data-admin-search
             >
             @if(request()->routeIs('admin.reports', 'admin.audit-logs', 'admin.users'))
-                @foreach(['from','to','case_status','emergency_status','priority','helper_id','concern_id','referral_status','actor','category','date','per_page','role','status'] as $filter)
+                @foreach(['from','to','activity_date','section','case_status','emergency_status','priority','helper_id','concern_id','referral_status','actor','category','date','per_page','role','status'] as $filter)
                     @if(request()->filled($filter) && is_scalar(request($filter)))<input type="hidden" name="{{ $filter }}" value="{{ request($filter) }}">@endif
                 @endforeach
             @endif
@@ -62,36 +57,6 @@
                 @if($notificationCount)<span class="notification-badge">{{ $notificationCount }}</span>@endif
             </a>
 
-            <div class="profile-menu" data-profile-menu>
-                <button
-                    class="profile-trigger"
-                    type="button"
-                    data-profile-trigger
-                    aria-haspopup="menu"
-                    aria-expanded="false"
-                >
-                    <span class="avatar avatar-blue" aria-hidden="true">{{ $adminInitials }}</span>
-                    <span class="profile-copy">
-                        <strong>{{ $adminName }}</strong>
-                        <small>System Administrator</small>
-                    </span>
-                    <x-admin.icon name="chevron-down" :size="16" />
-                </button>
-
-                <div class="profile-dropdown" data-profile-dropdown role="menu" hidden>
-                    <div class="profile-dropdown-heading">
-                        <strong>{{ $adminName }}</strong>
-                        <span>{{ $admin->email }}</span>
-                    </div>
-                    <form method="POST" action="{{ route('logout') }}" role="none">
-                        @csrf
-                        <button type="submit" role="menuitem">
-                            <x-admin.icon name="logout" :size="17" />
-                            Log out
-                        </button>
-                    </form>
-                </div>
-            </div>
         </div>
     </div>
 </header>

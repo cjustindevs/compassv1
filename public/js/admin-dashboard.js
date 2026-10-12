@@ -4,9 +4,6 @@
     const openButton = document.querySelector('[data-sidebar-open]');
     const closeButtons = document.querySelectorAll('[data-sidebar-close]');
     const searchInput = document.querySelector('[data-admin-search]');
-    const profileMenu = document.querySelector('[data-profile-menu]');
-    const profileTrigger = document.querySelector('[data-profile-trigger]');
-    const profileDropdown = document.querySelector('[data-profile-dropdown]');
 
     const setSidebarOpen = (open) => {
         body.classList.toggle('sidebar-open', open);
@@ -17,27 +14,9 @@
     openButton?.addEventListener('click', () => setSidebarOpen(true));
     closeButtons.forEach((button) => button.addEventListener('click', () => setSidebarOpen(false)));
 
-    const closeProfileMenu = () => {
-        if (!profileDropdown || !profileTrigger) return;
-        profileDropdown.hidden = true;
-        profileTrigger.setAttribute('aria-expanded', 'false');
-    };
-
-    profileTrigger?.addEventListener('click', () => {
-        if (!profileDropdown) return;
-        const shouldOpen = profileDropdown.hidden;
-        profileDropdown.hidden = !shouldOpen;
-        profileTrigger.setAttribute('aria-expanded', String(shouldOpen));
-    });
-
-    document.addEventListener('click', (event) => {
-        if (profileMenu && !profileMenu.contains(event.target)) closeProfileMenu();
-    });
-
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
             setSidebarOpen(false);
-            closeProfileMenu();
         }
         if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
             event.preventDefault();
@@ -577,6 +556,20 @@
         const resultsStatus = reportsPage.querySelector('[data-report-results-status]');
         const emptyState = reportsPage.querySelector('[data-report-filter-empty]');
 
+        const showCatalog = () => {
+            reportsPage.querySelectorAll('[data-report-panel]').forEach((panel) => {
+                panel.hidden = panel.dataset.reportPanel !== 'catalog';
+            });
+            const periodControls = reportsPage.querySelector('[data-report-period-controls]');
+            if (periodControls) periodControls.hidden = true;
+            reportsPage.querySelectorAll('[data-report-section-link]').forEach((link) => {
+                const active = link.dataset.reportSectionLink === 'catalog';
+                link.classList.toggle('is-active', active);
+                if (active) link.setAttribute('aria-current', 'page');
+                else link.removeAttribute('aria-current');
+            });
+        };
+
         const filterReports = () => {
             const query = search?.value.trim().toLowerCase() ?? '';
             const category = categoryFilter?.value ?? 'all';
@@ -618,12 +611,12 @@
         };
 
         search?.addEventListener('input', () => {
-            reportsPage.querySelector('[data-report-catalog]')?.setAttribute('open', '');
+            showCatalog();
             filterReports();
         });
         filterForm?.addEventListener('submit', (event) => {
             event.preventDefault();
-            reportsPage.querySelector('[data-report-catalog]')?.setAttribute('open', '');
+            showCatalog();
             filterReports();
             filterDialog?.close();
         });

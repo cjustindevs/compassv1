@@ -1220,3 +1220,53 @@ a.sidebar-link:hover, a.sidebar-link:focus-visible { background: var(--compass-g
 }
 
 .admin-app #directory-status-filter { appearance: auto; }
+
+/* Admin Reports: one visible record category, with its own controls. */
+.reports-page [hidden] { display: none !important; }
+.admin-report-date-controls label { flex: 0 1 210px; }
+.admin-report-filter-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.admin-report-period-totals { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.admin-report-navigation { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+.admin-report-navigation .admin-button { min-height: 38px; padding: 8px 12px; font-size: 13px; }
+.admin-report-navigation .is-active { border-color: var(--admin-accent); background: var(--admin-accent-soft); color: var(--admin-accent-dark); }
+.admin-report-panel { padding: 18px; margin-bottom: 16px; border: 1px solid var(--admin-border); border-radius: 12px; background: var(--admin-card); min-width: 0; }
+.admin-report-panel-heading { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.admin-report-panel-heading h2 { margin: 0; font-size: 18px; font-weight: 600; }
+.admin-report-panel-heading p,.admin-report-scope-note { margin: 5px 0 0; font-size: 13px; line-height: 1.5; color: var(--admin-muted); }
+.admin-report-count { font-size: 13px; white-space: nowrap; padding: 5px 9px; border-radius: 8px; background: var(--admin-bg); color: var(--admin-muted); }
+.admin-report-record-filters { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 12px; padding: 0 0 16px; border-bottom: 1px solid var(--admin-border); }
+.admin-report-select { display: grid; gap: 6px; font-size: 13px; flex: 0 1 200px; min-width: 0; }
+.admin-report-select select { width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid var(--admin-border); border-radius: 8px; background: var(--admin-card); color: var(--admin-text); font: inherit; }
+.admin-report-date-basis { border: 0; margin: 0; padding: 0; min-width: 0; }
+.admin-report-date-basis legend { padding: 0; margin-bottom: 6px; font-size: 13px; }
+.admin-report-date-basis > div { display: flex; gap: 6px; flex-wrap: wrap; }
+.admin-report-date-basis label { position: relative; cursor: pointer; }
+.admin-report-date-basis input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.admin-report-date-basis span { display: flex; align-items: center; min-height: 42px; padding: 8px 12px; border: 1px solid var(--admin-border); border-radius: 8px; font-size: 13px; }
+.admin-report-date-basis input:checked + span { border-color: var(--admin-accent); color: var(--admin-accent-dark); background: var(--admin-accent-soft); font-weight: 600; }
+.admin-report-date-basis input:focus-visible + span { outline: 2px solid var(--admin-accent); outline-offset: 3px; }
+.admin-report-context-measures { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 12px 20px; margin: 16px 0 0; }
+.admin-report-context-measures dt { font-size: 12px; color: var(--admin-muted); }
+.admin-report-context-measures dd { margin: 5px 0 0; font-size: 16px; font-weight: 600; }
+.admin-report-panel .admin-table-scroll { margin-top: 16px; }
+.admin-report-panel .admin-report-scope-note:last-child { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding-top: 14px; border-top: 1px solid var(--admin-border); }
+.admin-report-panel .admin-report-scope-note .admin-button { font-size: 12px; min-height: 36px; }
+@media(max-width: 768px) {
+    .admin-report-date-controls label { flex: 1 1 160px; }
+    .admin-report-period-totals { gap: 12px; }
+    .admin-report-period-totals dd { font-size: 24px; }
+    .admin-report-panel { padding: 16px; }
+}
+@media(max-width: 480px) {
+    .admin-report-date-controls { gap: 10px; }
+    .admin-report-date-controls label { flex: 1 1 120px; }
+    .admin-report-filter-actions { flex: 1 1 100%; }
+    .admin-report-period-totals { grid-template-columns: minmax(0,1fr); gap: 10px; }
+    .admin-report-period-totals > div { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .admin-report-period-totals dd { margin: 0; }
+    .admin-report-navigation .admin-button { flex: 1 1 135px; }
+    .admin-report-record-filters .admin-report-select { flex: 1 1 150px; }
+    .admin-report-date-basis { flex: 1 1 100%; }
+    .admin-report-date-basis > div { display: grid; grid-template-columns: minmax(0,1fr); }
+    .admin-report-context-measures { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+}

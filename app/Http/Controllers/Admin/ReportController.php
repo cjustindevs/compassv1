@@ -17,6 +17,24 @@ class ReportController extends Controller
     public function __invoke(Request $request, ReportCatalog $reportCatalog): View
     {
         $loadFailed = false;
+        $searchQuery = Str::limit($request->string('q')->trim()->toString(), 120, '');
+        $reportSections = [
+            'cases' => ['label' => 'Cases', 'page' => 'cases_page'],
+            'emergencies' => ['label' => 'Emergencies', 'page' => 'emergency_page'],
+            'queue' => ['label' => 'Matching queue', 'page' => 'queue_page'],
+            'availability' => ['label' => 'Helper availability', 'page' => 'availability_page'],
+            'actions' => ['label' => 'System activity', 'page' => 'actions_page'],
+            'registrations' => ['label' => 'Registrations', 'page' => 'registrations_page'],
+            'catalog' => ['label' => 'Report catalog', 'page' => null],
+        ];
+        $requestedSection = $request->input('section');
+        $selectedSection = is_string($requestedSection) && isset($reportSections[$requestedSection]) ? $requestedSection : 'cases';
+        if (! $request->filled('section')) {
+            foreach ($reportSections as $key => $section) {
+                if ($section['page'] && $request->has($section['page'])) $selectedSection = $key;
+            }
+        }
+        if ($searchQuery !== '') $selectedSection = 'catalog';
 
         try {
             $capabilities = $reportCatalog->capabilities();
@@ -36,7 +54,9 @@ class ReportController extends Controller
             'reports' => $reports,
             'capabilities' => $capabilities,
             'loadFailed' => $loadFailed,
-            'searchQuery' => Str::limit($request->string('q')->trim()->toString(), 120, ''),
+            'searchQuery' => $searchQuery,
+            'reportSections' => $reportSections,
+            'selectedSection' => $selectedSection,
             'categories' => $reports
                 ->pluck('categoryLabel', 'category')
                 ->unique()

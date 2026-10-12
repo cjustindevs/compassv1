@@ -152,8 +152,16 @@ class AdminRefinementTest extends TestCase
         $this->assertSame(16, $report['summary']['Cases in period']);
         $this->assertSame(16, $report['tables'][0]['records']->total());
         $this->assertSame(15, $report['tables'][0]['records']->count());
+        $response->assertViewHas('selectedSection', 'cases')
+            ->assertSee('section=cases', false);
         $this->get(route('admin.reports', ['from' => $from, 'to' => $from, 'case_status' => 'completed', 'cases_page' => 2]))->assertOk()
-            ->assertViewHas('roleReport', fn ($r) => $r['tables'][0]['records']->count() === 1);
+            ->assertViewHas('roleReport', fn ($r) => $r['tables'][0]['records']->count() === 1)
+            ->assertViewHas('selectedSection', 'cases');
+        $this->get(route('admin.reports', ['from' => $from, 'to' => $from, 'section' => 'emergencies']))->assertOk()
+            ->assertViewHas('selectedSection', 'emergencies')->assertSee('Emergency case activity')
+            ->assertDontSee('name="case_status"', false)->assertSee('name="emergency_status"', false);
+        $this->get(route('admin.reports', ['registrations_page' => 1]))->assertOk()
+            ->assertViewHas('selectedSection', 'registrations')->assertSee('Account registrations');
         $this->get(route('admin.reports', ['from' => '2026-10-09', 'to' => '2026-10-01']))->assertSessionHasErrors('to');
         $this->get(route('admin.reports', ['case_status' => 'invented']))->assertSessionHasErrors('case_status');
     }

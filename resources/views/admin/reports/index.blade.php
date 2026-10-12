@@ -21,9 +21,9 @@
 
         </header>
 
-        <x-admin.activity-report :report="$roleReport" />
-        <details class="admin-report-catalog" data-report-catalog @if($searchQuery !== '') open @endif>
-            <summary>Report catalog <span>Source summaries and available report actions</span></summary>
+        <x-admin.activity-report :report="$roleReport" :sections="$reportSections" :selected-section="$selectedSection" />
+        <section class="admin-report-panel admin-report-catalog" data-report-catalog data-report-panel="catalog" aria-labelledby="admin-report-catalog-title" @if($selectedSection !== 'catalog') hidden @endif>
+            <header class="admin-report-panel-heading"><div><h2 id="admin-report-catalog-title">Report catalog</h2><p>Source summaries and available report actions</p></div></header>
             <div class="admin-catalog-heading"><p>Catalog totals cover all source records. Use the activity report above for period-filtered records.</p><button class="admin-button admin-button-secondary" type="button" data-dialog-open="report-filters-dialog">Catalog filters <span class="report-filter-count" data-report-filter-count hidden>0</span></button></div>
 
     @if ($loadFailed)
@@ -62,7 +62,7 @@
                 <span data-report-toast-message></span>
             </div>
         @endif
-        </details>
+        </section>
     </section>
 
     @unless ($loadFailed)
