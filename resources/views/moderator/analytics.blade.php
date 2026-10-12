@@ -253,7 +253,7 @@
                         borderColor: '#04A052',
                         backgroundColor: 'rgba(4,160,82,0.1)',
                         fill: true,
-                        tension: 0.35,
+                        cubicInterpolationMode: 'monotone',
                         pointBackgroundColor: '#04A052',
                         pointRadius: 4,
                     }],

@@ -61,7 +61,7 @@ class ModeratorRefinementTest extends TestCase
         $overview = app(DashboardOverview::class)->forUser($user);
         $this->assertSame(2, collect($overview['cards'])->firstWhere('label', 'Active emergencies')['value']);
         $this->assertSame(2, array_sum($overview['charts'][0]['values']));
-        $this->actingAs($user)->get(route('moderator.dashboard'))->assertOk()->assertDontSee('Average response')->assertDontSee('Average resolution')->assertDontSee('Live Sessions')->assertSee('View All');
+        $this->actingAs($user)->get(route('moderator.dashboard'))->assertOk()->assertDontSee('Average response')->assertDontSee('Average resolution')->assertDontSee('Live Sessions')->assertSee('View All')->assertSee('<path d="M ', false)->assertDontSee('<polyline', false);
         $this->get(route('moderator.emergency'))->assertOk()->assertViewHas('openIncidents', fn ($rows) => $rows->total() === 2)->assertDontSee('Private incident')->assertDontSee('Private narrative');
         $this->get(route('moderator.reports', ['tab' => 'safety', 'emergency_status' => 'active']))->assertOk()->assertViewHas('roleReport', fn ($r) => $r['summary']['Unresolved emergencies'] === 2);
     }

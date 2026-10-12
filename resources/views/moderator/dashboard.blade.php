@@ -200,7 +200,7 @@
         <!-- High Risk Banner -->
 
 
-        <section id="dashboard-analytics" aria-label="Emergency dashboard summaries"><x-dashboard-overview :overview="$overview" :show-recent="false" /></section>
+        <section id="dashboard-analytics" aria-label="Emergency dashboard summaries"><x-dashboard-overview :overview="$overview" :show-recent="false" :smooth-lines="true" /></section>
 
         <div class="flex flex-wrap gap-6 px-1 py-4 mb-5 border-b border-gray-200">
             <a href="{{ route('moderator.queue') }}">Waiting requests <strong id="statQueue">{{ $stats['queue_waiting'] }}</strong></a>
