@@ -4,7 +4,7 @@ import { VoiceCallClient } from '../../resources/js/voice-call-client.mjs';
 
 function room() {
     const elements = {};
-    for (const name of ['audio','status','start','accept','decline','mute','leave','play']) {
+    for (const name of ['audio','status','badge','title','duration','start','accept','decline','mute','leave','play']) {
         elements[name]={hidden:false,disabled:false,textContent:'',attributes:{},handlers:{},
             addEventListener(event,handler){this.handlers[event]=handler;},setAttribute(key,value){this.attributes[key]=value;},async play(){}};
     }
@@ -36,7 +36,7 @@ function room() {
             if(url==='/action') data={call:{id:body.call_id,is_caller:true,status:body.action==='accept'?'connecting':'ended'}};
             return {ok:true,status:200,json:async()=>data};
         }};
-    const root={querySelector:selector=>elements[selector.match(/data-voice-(\w+)/)[1]]};
+    const root={attributes:{},setAttribute(key,value){this.attributes[key]=value;},querySelector:selector=>elements[selector.match(/data-voice-(\w+)/)[1]]};
     const client=new VoiceCallClient(root,config,env);
     client.available=true;client.signalReady=true;
     return {client,env,track,elements,requests,callbacks,setState:value=>{state=value;}};
@@ -108,4 +108,46 @@ test('the last server deadline stops capture even if later state requests fail',
     deadline();
     assert.equal(track.stopped,true);
     assert.equal(client.ended,true);
+});
+
+test('call UI distinguishes ringing, connecting and actual on-call audio with elapsed time',async()=>{
+    const {client,env,elements,setState}=room();
+    let timestamp=100000;
+    env.now=()=>timestamp;
+    await client.begin(false);
+    assert.equal(elements.badge.textContent,'Ringing');
+    assert.equal(elements.leave.textContent,'Cancel call');
+    assert.equal(elements.duration.hidden,true);
+    setState({available:true,session:{ended:false},call:{...client.call,status:'connected'}});
+    await client.poll();
+    assert.equal(elements.badge.textContent,'Connecting');
+    assert.equal(elements.duration.hidden,true);
+    client.pc.connectionState='connected';client.pc.onconnectionstatechange();
+    assert.equal(elements.badge.textContent,'On call');
+    assert.equal(elements.duration.textContent,'00:00');
+    timestamp+=65000;client.updateDuration();
+    assert.equal(elements.duration.textContent,'01:05');
+    client.pc.connectionState='disconnected';client.pc.onconnectionstatechange();
+    assert.equal(elements.badge.textContent,'Reconnecting');
+    client.pc.connectionState='connected';client.pc.onconnectionstatechange();
+    assert.equal(elements.badge.textContent,'On call');
+    assert.equal(elements.duration.textContent,'01:05');
+    await client.leave();
+    assert.equal(elements.badge.textContent,'Call ended');
+    assert.equal(elements.duration.hidden,true);
+});
+
+test('incoming call UI requires explicit acceptance and keeps the microphone off while ringing',async()=>{
+    const {client,elements,setState,requests}=room();
+    setState({available:true,session:{ended:false},call:{id:'incoming-call',status:'ringing',is_caller:false}});
+    await client.poll();
+    assert.equal(elements.badge.textContent,'Incoming call');
+    assert.equal(elements.accept.hidden,false);
+    assert.equal(elements.decline.hidden,false);
+    assert.equal(client.stream,null);
+    assert.equal(requests.some(request=>request.url==='/credentials'),false);
+    await client.begin(true);
+    assert.equal(elements.badge.textContent,'Connecting');
+    assert.equal(elements.accept.hidden,true);
+    assert.equal(elements.duration.hidden,true);
 });

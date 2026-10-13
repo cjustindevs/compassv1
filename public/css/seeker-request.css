@@ -45,6 +45,18 @@
 .request-chat-mode strong { display:block; font-size:14px; font-weight:600; }
 .request-chat-mode p { margin:4px 0 0; font-size:13px; line-height:1.5; color:#64748b; overflow-wrap:anywhere; }
 .request-chat-mode > .compass-icon { flex:none; width:22px; height:22px; color:#009b58; }
+.request-mode-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.request-mode-option { display:flex; align-items:center; gap:10px; min-width:0; min-height:74px; padding:12px; border:1px solid #dbe5df; border-radius:10px; background:white; cursor:pointer; }
+.request-mode-option:has(input:checked) { border-color:#009b58; background:#eaf8f0; }
+.request-mode-option:has(input:focus-visible) { outline:2px solid #009b58; outline-offset:3px; }
+.request-mode-option input { flex:none; width:16px; height:16px; accent-color:#009b58; }
+.request-mode-option span { flex:1; min-width:0; }
+.request-mode-option strong { display:block; font-size:14px; color:#173a2b; }
+.request-mode-option small { display:block; margin-top:4px; font-size:12px; line-height:1.4; color:#64748b; }
+.request-mode-option > .compass-icon { flex:none; width:20px; height:20px; color:#009b58; }
+.request-mode-option.is-unavailable { background:#f6f8f7; cursor:not-allowed; }
+.request-mode-option.is-unavailable :is(strong,.compass-icon) { color:#64748b; }
+.request-mode-status { margin-top:10px; font-size:12px; line-height:1.5; color:#64748b; }
 @media(max-width:768px) {
     .request-resource-list,.request-review dl,.request-details-grid { grid-template-columns:1fr; }
     .request-flow-compact .form-row { grid-template-columns:1fr; flex-direction:column; }
@@ -52,6 +64,7 @@
     .request-section { padding:16px; }
 }
 @media(max-width:480px) {
+    .request-mode-options { grid-template-columns:1fr; }
     .main-content.request-flow-compact { padding-left:16px; padding-right:16px; }
     .request-flow-compact .form-card { padding:16px; }
     .request-history-filters label { flex-basis:100%; }

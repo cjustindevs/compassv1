@@ -4,8 +4,12 @@ export class VoiceCallClient {
         this.call = null; this.pc = null; this.stream = null; this.pendingCandidates = [];
         this.busy = false; this.polling = false; this.generation = 0; this.signalReady = false;
         this.available = false; this.ended = false; this.offerSent = false; this.restarts = 0;
+        this.uiState = 'checking'; this.connectedSince = null;
         this.audio = root.querySelector('[data-voice-audio]');
         this.status = root.querySelector('[data-voice-status]');
+        this.badge = root.querySelector('[data-voice-badge]');
+        this.title = root.querySelector('[data-voice-title]');
+        this.duration = root.querySelector('[data-voice-duration]');
         this.buttons = Object.fromEntries(['start','accept','decline','mute','leave','play'].map(name => [name,root.querySelector(`[data-voice-${name}]`)]));
         this.buttons.start.addEventListener('click', () => this.begin(false));
         this.buttons.accept.addEventListener('click', () => this.begin(true));
@@ -14,7 +18,7 @@ export class VoiceCallClient {
         this.buttons.mute.addEventListener('click', () => this.mute());
         this.buttons.play.addEventListener('click', () => this.play());
         this.env.window.addEventListener('pagehide', () => this.destroy());
-        this.env.window.addEventListener('offline', () => this.message('Connection interrupted. Reconnecting…'));
+        this.env.window.addEventListener('offline', () => this.message('Connection interrupted. Reconnecting…', 'reconnecting'));
         this.env.window.addEventListener('online', () => this.poll());
         this.render();
     }
@@ -37,24 +41,56 @@ export class VoiceCallClient {
         this.echo = echo;
         this.channel = echo.private(`voice.${this.config.sessionId}.${this.config.userId}`)
             .subscribed(() => { this.signalReady = true; this.render(); this.poll(); })
-            .error(() => { this.signalReady = false; this.message('Call connection is unavailable. You can use text chat.'); this.render(); })
+            .error(() => { this.signalReady = false; this.message('Call connection is unavailable. You can use text chat.', 'unavailable'); this.render(); })
             .listen('.VoiceSignal', signal => { this.receive(signal).catch(() => {
                 if (this.call?.id === signal.call_id) this.fail('The audio connection failed. Please retry or use text chat.');
             }); });
         echo.private(`session.${this.config.sessionId}`).listen('SessionEnded', () => {
             this.endLocally();
         });
-        echo.connector.pusher.connection.bind('disconnected', () => { this.signalReady = false; this.render(); });
+        echo.connector.pusher.connection.bind('disconnected', () => {
+            this.signalReady = false;
+            this.message(this.pc ? 'Call signaling interrupted. Reconnecting…' : 'Connecting to the call service…', this.pc ? 'reconnecting' : 'checking');
+            this.render();
+        });
         this.interval = this.env.setInterval(() => this.poll(), 4000);
+        this.durationInterval = this.env.setInterval(() => this.updateDuration(), 1000);
         this.poll();
     }
 
-    message(text) { this.status.textContent = text; }
+    message(text, state = 'ready') {
+        this.status.textContent = text; this.uiState = state; this.renderPresentation();
+    }
+
+    renderPresentation() {
+        const labels = {
+            checking:['Connecting', 'Getting your call ready'], ready:['Ready', 'Start a voice call'],
+            permission:['Microphone', 'Allow microphone access'], ringing:['Ringing', 'Calling your session partner'],
+            incoming:['Incoming call', 'Your session partner is calling'], connecting:['Connecting', 'Connecting your audio'],
+            connected:['On call', 'You are connected'], reconnecting:['Reconnecting', 'Restoring your connection'],
+            ended:['Call ended', 'Continue with text chat'], failed:['Call failed', 'Try again or use text chat'],
+            unavailable:['Unavailable', 'Text chat is available'], other_tab:['In another tab', 'Call already in progress'],
+        };
+        const [badge,title] = labels[this.uiState] || labels.ready;
+        this.root.setAttribute('data-voice-state', this.uiState);
+        if (this.badge) this.badge.textContent = badge;
+        if (this.title) this.title.textContent = title;
+        this.updateDuration();
+    }
+
+    updateDuration() {
+        if (!this.duration) return;
+        this.duration.hidden = this.connectedSince === null || !this.pc || this.ended;
+        if (this.duration.hidden) return;
+        const seconds = Math.max(0, Math.floor(((this.env.now?.() ?? Date.now()) - this.connectedSince) / 1000));
+        this.duration.textContent = `${String(Math.floor(seconds / 60)).padStart(2,'0')}:${String(seconds % 60).padStart(2,'0')}`;
+    }
 
     endLocally() {
         this.ended = true; this.stopMedia(); this.render();
         this.env.clearTimeout(this.deadlineTimer); this.env.clearInterval(this.interval);
-        this.message('This support session has ended.');
+        this.env.clearInterval(this.durationInterval);
+        this.message('This support session has ended.', 'ended');
     }
     render() {
         const active = this.call && ['ringing','connecting','connected'].includes(this.call.status);
@@ -66,6 +102,8 @@ export class VoiceCallClient {
         this.buttons.decline.hidden = !incoming || this.ended;
         this.buttons.mute.hidden = !this.stream || this.ended;
         this.buttons.leave.hidden = !this.pc || !active || this.ended;
+        this.buttons.leave.textContent = this.call?.status === 'ringing' && this.call?.is_caller ? 'Cancel call' : 'Leave call';
+        this.renderPresentation();
     }
 
     async poll() {
@@ -86,17 +124,23 @@ export class VoiceCallClient {
             this.call = next;
             if (!next || !['ringing','connecting','connected'].includes(next.status)) {
                 this.stopMedia();
-                this.message(!this.available ? 'Voice is unavailable. Continue using text chat.' : next?.status === 'declined' ? 'Call declined. Text chat remains open.' : next?.status === 'failed' ? 'Call could not connect. Retry or use text chat.' : 'Ready for a live audio call.');
+                if (!this.available) this.message('Voice is unavailable. Continue using text chat.', 'unavailable');
+                else if (next?.status === 'declined') this.message('Call declined. Text chat remains open.', 'ended');
+                else if (next?.status === 'failed') this.message('Call could not connect. Retry or use text chat.', 'failed');
+                else if (next?.status === 'ended') this.message('Call ended. You can call again or continue using text chat.', 'ended');
+                else this.message(this.signalReady ? 'Ready for a live audio call.' : 'Connecting to the call service…', this.signalReady ? 'ready' : 'checking');
             } else if (next.status === 'ringing') {
-                this.message(next.is_caller ? 'Calling your session partner…' : 'Your session partner is calling. Accept to enable your microphone.');
+                this.message(next.is_caller ? 'Waiting for your session partner to answer…' : 'Accept to enable your microphone, or decline to keep using text chat.', next.is_caller ? 'ringing' : 'incoming');
             } else if (!this.pc) {
-                this.message('A call is in progress in another tab. Use that tab or wait for it to end.');
-            } else if (next.is_caller && !this.offerSent && this.signalReady) {
-                await this.offer();
+                this.message('A call is in progress in another tab. Use that tab or wait for it to end.', 'other_tab');
+            } else {
+                if (this.pc.connectionState === 'connected') this.message('Connected · live audio', 'connected');
+                else this.message('Connecting audio. Keep this page open…', this.pc.connectionState === 'disconnected' || this.pc.connectionState === 'failed' ? 'reconnecting' : 'connecting');
+                if (next.is_caller && !this.offerSent && this.signalReady) await this.offer();
             }
         } catch (error) {
             if ([401,403,409,419].includes(error.status)) { this.ended = true; this.stopMedia(); }
-            this.message(error.message);
+            this.message(error.message, 'unavailable');
         } finally { this.polling = false; this.render(); }
     }
 
@@ -127,11 +171,12 @@ export class VoiceCallClient {
         peer.onconnectionstatechange = () => {
             if (this.pc !== peer) return;
             if (peer.connectionState === 'connected') {
-                this.message('Connected · live audio');
+                this.connectedSince ??= this.env.now?.() ?? Date.now();
+                this.message('Connected · live audio', 'connected');
                 this.request('action',{call_id:this.call.id,action:'connected'}).catch(error => this.fail(error.message));
                 this.env.clearTimeout(this.reconnectTimer);
             } else if (peer.connectionState === 'disconnected') {
-                this.message('Audio interrupted. Reconnecting…');
+                this.message('Audio interrupted. Reconnecting…', 'reconnecting');
                 this.env.clearTimeout(this.reconnectTimer);
                 this.reconnectTimer = this.env.setTimeout(() => this.restart(), 5000);
             } else if (peer.connectionState === 'failed') this.restart();
@@ -142,15 +187,15 @@ export class VoiceCallClient {
         if (this.busy || this.ended || !this.signalReady || !this.available) return;
         this.busy = true; this.render();
         try {
-            this.message('Allow microphone access to continue…');
+            this.message('Allow microphone access to continue…', 'permission');
             await this.prepare();
             const data = accept ? await this.request('action',{call_id:this.call.id,action:'accept'}) : await this.request('start',{});
             this.call = data.call;
-            this.message(accept ? 'Connecting audio…' : 'Calling your session partner…');
+            this.message(accept ? 'Connecting audio…' : 'Waiting for your session partner to answer…', accept ? 'connecting' : 'ringing');
         } catch (error) {
             if (accept && this.call) await this.request('action',{call_id:this.call.id,action:'decline'}).catch(() => {});
             this.stopMedia();
-            this.message(error.name === 'NotAllowedError' ? 'Microphone access was denied. Allow it in browser settings, or continue using text chat.' : error.message);
+            this.message(error.name === 'NotAllowedError' ? 'Microphone access was denied. Allow it in browser settings, or continue using text chat.' : error.message, 'failed');
         } finally { this.busy = false; this.render(); }
     }
 
@@ -168,7 +213,7 @@ export class VoiceCallClient {
         await peer.setLocalDescription(offer);
         if (this.pc !== peer || this.ended) return;
         await this.sendSignal('offer',{sdp:offer.sdp});
-        if (peer.connectionState !== 'connected') this.message('Connecting audio…');
+        if (peer.connectionState !== 'connected') this.message(restart ? 'Restoring audio. Keep this page open…' : 'Connecting audio…', restart ? 'reconnecting' : 'connecting');
     }
 
     async receive(signal) {
@@ -206,8 +251,8 @@ export class VoiceCallClient {
 
     async respond(action) {
         if (!this.call) return;
-        try { this.call = (await this.request('action',{call_id:this.call.id,action})).call; this.stopMedia(); this.message(action === 'decline' ? 'Call declined. Text chat remains open.' : 'Call ended. Text chat remains open.'); }
-        catch (error) { this.message(error.message); }
+        try { this.call = (await this.request('action',{call_id:this.call.id,action})).call; this.stopMedia(); this.message(action === 'decline' ? 'Call declined. Text chat remains open.' : 'Call ended. Text chat remains open.', 'ended'); }
+        catch (error) { this.message(error.message, 'failed'); }
         this.render();
     }
 
@@ -215,12 +260,12 @@ export class VoiceCallClient {
         const id = this.call?.id;
         this.stopMedia(); this.render();
         if (id) { try { this.call=(await this.request('action',{call_id:id,action:'leave'})).call; } catch {} }
-        this.message('You left the call. Your support session and text chat remain open.'); this.render();
+        this.message('You left the call. Your support session and text chat remain open.', 'ended'); this.render();
     }
 
     async fail(message) {
         const id = this.call?.id;
-        this.stopMedia(); this.message(message); this.render();
+        this.stopMedia(); this.message(message, 'failed'); this.render();
         if (id) await this.request('action',{call_id:id,action:'fail'}).catch(() => {});
     }
 
@@ -246,12 +291,14 @@ export class VoiceCallClient {
         this.audio.srcObject = null; this.buttons.play.hidden = true;
         this.buttons.mute.textContent = 'Mute'; this.buttons.mute.setAttribute('aria-pressed','false');
         this.pendingCandidates = []; this.offerSent = false; this.restarts = 0;
+        this.connectedSince = null;
     }
 
     destroy() {
         this.ended = true;
         const id = this.call?.id;
         this.stopMedia(); this.env.clearTimeout(this.deadlineTimer); this.env.clearInterval(this.interval); this.echo?.disconnect();
+        this.env.clearInterval(this.durationInterval);
         if (id) this.env.fetch(this.config.action,{method:'POST',credentials:'same-origin',keepalive:true,
             headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':this.env.csrf},body:JSON.stringify({call_id:id,action:'leave'})}).catch(() => {});
     }

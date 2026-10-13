@@ -9,7 +9,7 @@ function initialize() {
         const csrf = document.querySelector('meta[name="csrf-token"]').content;
         const client = new VoiceCallClient(root,config,{window,navigator,RTCPeerConnection:window.RTCPeerConnection,
             MediaStream:window.MediaStream,csrf,fetch:window.fetch.bind(window),setInterval,clearInterval,setTimeout,clearTimeout});
-        if (!config.socket.key) { client.message('Voice is unavailable. You can continue using text chat.'); return; }
+        if (!config.socket.key) { client.message('Voice is unavailable. You can continue using text chat.', 'unavailable'); return; }
         const pusher = new Pusher(config.socket.key,{cluster:'mt1',wsHost:config.socket.host || window.location.hostname,
             wsPort:config.socket.port,wssPort:config.socket.port,forceTLS:config.socket.secure,enabledTransports:['ws','wss'],
             disableStats:true,channelAuthorization:{endpoint:'/broadcasting/auth',transport:'ajax',headers:{'X-CSRF-TOKEN':csrf}}});

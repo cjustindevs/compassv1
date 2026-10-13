@@ -9,12 +9,21 @@ class VoiceConfiguration
 {
     public function configured(): bool
     {
-        return (bool) config('voice.enabled') && config('broadcasting.default') === 'reverb'
-            && filled(config('broadcasting.connections.reverb.key'))
-            && filled(config('broadcasting.connections.reverb.secret'))
-            && filled(config('broadcasting.connections.reverb.app_id'))
-            && filled(config('voice.metered_secret'))
-            && preg_match('/^[a-z0-9-]+\.metered\.live$/i', (string) config('voice.metered_domain')) === 1;
+        return $this->configurationIssues() === [];
+    }
+
+    public function configurationIssues(): array
+    {
+        $issues = [];
+        if (!config('voice.enabled')) $issues[] = 'VOICE_CALLS_ENABLED';
+        if (config('broadcasting.default') !== 'reverb') $issues[] = 'BROADCAST_CONNECTION';
+        foreach (['REVERB_APP_KEY'=>'broadcasting.connections.reverb.key',
+            'REVERB_APP_SECRET'=>'broadcasting.connections.reverb.secret',
+            'REVERB_APP_ID'=>'broadcasting.connections.reverb.app_id', 'METERED_SECRET_KEY'=>'voice.metered_secret'] as $name => $key) {
+            if (blank(config($key))) $issues[] = $name;
+        }
+        if (preg_match('/^[a-z0-9-]+\.metered\.live$/i', (string) config('voice.metered_domain')) !== 1) $issues[] = 'METERED_DOMAIN';
+        return $issues;
     }
 
     public function credential(): ?VoiceTurnCredential
@@ -27,6 +36,17 @@ class VoiceConfiguration
     }
 
     public function ready(): bool { return $this->credential() !== null; }
+
+    public function availability(): string
+    {
+        if (!config('voice.enabled')) return 'disabled';
+        if (!$this->configured()) return 'configuration_missing';
+        if (!Schema::hasTable('voice_turn_credentials')) return 'migration_missing';
+        if ($this->ready()) return 'ready';
+        if (VoiceTurnCredential::where('ready_at', '>', now())
+            ->where('expires_at', '>', now()->addMinutes(SessionDurationService::MAX_MINUTES + 5))->exists()) return 'preparing';
+        return 'relay_unavailable';
+    }
 
     public function publicSocket(): array
     {

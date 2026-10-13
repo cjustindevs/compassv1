@@ -139,6 +139,50 @@ class VoiceCallTest extends TestCase
         $this->assertDatabaseHas('consent_records',['session_id'=>$session->id,'purpose'=>'voice_participation','decision'=>'accepted']);
     }
 
+    public function test_preferences_show_voice_even_when_unavailable_and_enable_it_only_after_preparation(): void
+    {
+        [$seeker,$helper,$session]=$this->room();
+        $session->update(['helper_id'=>null,'session_status'=>'screening_completed','start_time'=>null,'helper_accepted_at'=>null,
+            'workflow_state'=>'session_preferences_required','risk_level'=>'low']);
+        config(['voice.enabled'=>false]);
+        $this->get(route('request.preferences'))->assertOk()->assertSee('Voice call')->assertSee('value="voice"',false)
+            ->assertSee('Voice calls are temporarily unavailable.')->assertSee('disabled',false);
+        $this->post(route('request.preferences.process'),['support_mode'=>'voice','preferred_language'=>'English','voice_participation'=>'1'])
+            ->assertSessionHasErrors('support_mode');
+        config(['voice.enabled'=>true]);
+        VoiceTurnCredential::query()->update(['ready_at'=>now()->addMinutes(2)]);
+        $this->get(route('request.preferences'))->assertOk()->assertSee('Voice calls are getting ready.');
+        $this->travel(2)->minutes();
+        $this->get(route('request.preferences'))->assertOk()->assertSee('Voice calls are available.')->assertSee('voice_participation');
+        $this->artisan('voice:status')->expectsOutput('Voice relay readiness: ready')->assertSuccessful();
+    }
+
+    public function test_failed_relay_preparation_logs_only_safe_diagnostics(): void
+    {
+        $this->room();
+        VoiceTurnCredential::query()->delete();
+        Http::preventStrayRequests();
+        Http::fake(['*/credential?*'=>Http::response(['message'=>'private-master-secret'],401)]);
+        \Illuminate\Support\Facades\Log::spy();
+        $this->assertFalse(app(MeteredTurnService::class)->prepare());
+        \Illuminate\Support\Facades\Log::shouldHaveReceived('warning')->once()->with('Voice relay preparation failed.',
+            ['step'=>'create_credential','http_status'=>401]);
+        $this->assertSame('relay_unavailable',app(VoiceConfiguration::class)->availability());
+    }
+
+    public function test_configuration_diagnostics_list_missing_names_without_exposing_values(): void
+    {
+        $this->room();
+        config(['broadcasting.default'=>'log','voice.metered_secret'=>null]);
+        $configuration=app(VoiceConfiguration::class);
+        $this->assertSame('configuration_missing',$configuration->availability());
+        $this->assertSame(['BROADCAST_CONNECTION','METERED_SECRET_KEY'],$configuration->configurationIssues());
+        $this->artisan('voice:status')->expectsOutput('Voice relay readiness: configuration_missing')
+            ->expectsOutput('Check Render environment entries: BROADCAST_CONNECTION, METERED_SECRET_KEY')->assertSuccessful();
+        config(['voice.enabled'=>false]);
+        $this->assertSame('disabled',$configuration->availability());
+    }
+
     public function test_only_the_tab_with_a_local_call_can_heartbeat_and_missing_peer_times_out(): void
     {
         [$seeker,$helper,$session]=$this->room();

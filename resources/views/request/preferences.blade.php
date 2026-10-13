@@ -390,22 +390,21 @@
                 <!-- ============================================ -->
                 <div class="form-section-compact">
                     <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Communication mode</h3>
-                    @if(app(\App\Services\VoiceConfiguration::class)->ready())
+                    @php
+                        $voiceAvailability = app(\App\Services\VoiceConfiguration::class)->availability();
+                        $voiceReady = $voiceAvailability === 'ready';
+                    @endphp
                         <p class="text-sm text-gray-500 mb-4">Choose how you want to talk with your Helper.</p>
-                        <div class="flex flex-wrap gap-3">
-                            @foreach(['chat'=>'Text chat','voice'=>'Voice call'] as $mode => $label)
-                            <label class="flex items-center gap-2 border rounded-lg p-3 cursor-pointer"><input type="radio" name="support_mode" value="{{ $mode }}" @checked(old('support_mode','chat') === $mode) required> {{ $label }}</label>
-                            @endforeach
+                        <div class="request-mode-options">
+                            <label class="request-mode-option"><input type="radio" name="support_mode" value="chat" @checked(!$voiceReady || old('support_mode','chat') === 'chat') required><span><strong>Text chat</strong><small>Private text-based conversation</small></span><x-ui-icon name="message" /></label>
+                            <label class="request-mode-option {{ !$voiceReady ? 'is-unavailable' : '' }}"><input type="radio" name="support_mode" value="voice" @checked($voiceReady && old('support_mode') === 'voice') @disabled(!$voiceReady) aria-describedby="voiceAvailability"><span><strong>Voice call</strong><small>Live audio with text chat available</small></span><x-ui-icon name="phone" /></label>
                         </div>
+                    @if($voiceReady)
+                        <p id="voiceAvailability" class="request-mode-status">Voice calls are available. Choose Voice call to continue with live audio.</p>
                         <label class="flex items-start gap-2 text-sm mt-3"><input type="checkbox" name="voice_participation" value="1" @checked(old('voice_participation'))> <span>For Voice, I agree to a live audio call with my assigned Helper. COMPASS will not record or automatically transcribe the audio. Text chat stays available if the call fails.</span></label>
                         @error('voice_participation')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                     @else
-                        <p class="text-sm text-gray-500 mb-4">Your request uses a private text chat.</p>
-                        <input type="hidden" name="support_mode" value="chat">
-                        <div class="request-chat-mode">
-                            <div><strong>Chat</strong><p>Private text-based conversation</p></div>
-                            <x-ui-icon name="check-circle" />
-                        </div>
+                        <p id="voiceAvailability" class="request-mode-status" role="status">{{ $voiceAvailability === 'preparing' ? 'Voice calls are getting ready. Refresh this page in two minutes, or continue with text chat.' : 'Voice calls are temporarily unavailable. You can continue with text chat.' }}</p>
                     @endif
                     @error('support_mode')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>

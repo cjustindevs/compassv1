@@ -75,6 +75,10 @@ Look for these messages in Render logs:
 
 If preparation fails, the web app still starts and keeps text chat available. Check the domain, developer secret, free-account API access, and remaining quota. The command never prints secrets or provider response bodies.
 
+Preferences always shows Text chat and Voice call. Voice remains disabled until the relay is usable; during propagation it asks you to refresh in two minutes. Seeing the Voice option does not establish that audio is working.
+
+When voice remains unavailable, search startup logs for `Voice relay readiness` and `Voice relay preparation failed`. Readiness codes distinguish `disabled`, `configuration_missing`, `migration_missing`, `preparing`, `relay_unavailable`, and `ready`. Configuration diagnostics list only environment variable names. Provider failures show only the preparation step and HTTP status, never keys or response bodies. If dashboard shell access is available, `php artisan voice:status` gives the same safe readiness check.
+
 If a shell is available, you can run `php artisan voice:prepare` to retry. Render free services may not offer dashboard shell access; the automatic startup and scheduler steps handle preparation without it.
 
 Reference: [Metered credential propagation](https://www.metered.ca/docs/turn-rest-api/post-create-credential/), [Render WebSockets](https://render.com/docs/websocket).
@@ -109,6 +113,7 @@ Use separate Seeker and Helper accounts on two devices. Use test conversations, 
 2. Helper follows the existing readiness, duty, assignment acceptance, and Start Session process. Open the session room on both devices.
 3. Verify the room has voice controls and working text chat. Only click Call after the connection is ready.
 4. Caller selects **Call** and allows microphone access. Recipient selects **Accept call** and allows microphone access. The status must say Connected only after the browser's actual connection succeeds.
+   The panel shows Ringing for the caller, Incoming call for the recipient, Connecting while establishing audio, and On call with elapsed time once the local audio connection succeeds. Reconnecting is separate from On call. Decline/Leave hides the timer and releases the microphone.
 5. Confirm audio works in both directions. Use **Play audio** if the browser blocks automatic playback. Headphones help prevent feedback.
 6. Test Mute/Unmute, Decline, unanswered-call timeout, Leave Call, and another call attempt. Leaving/declining must keep the same active support session, timer, and text chat.
 7. Test with one device on Wi-Fi and the other on mobile data. Test your target Android/iPhone browsers; calls require the session page to remain open and browser background suspension can interrupt them.

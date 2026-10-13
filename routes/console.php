@@ -13,8 +13,11 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Artisan::command('voice:prepare', function () {
-    if (!app(\App\Services\VoiceConfiguration::class)->configured()) {
-        $this->warn('Voice is disabled or missing configuration. See docs/VOICE_CALL_SETUP.md.');
+    $availability = app(\App\Services\VoiceConfiguration::class)->availability();
+    if (in_array($availability, ['disabled', 'configuration_missing', 'migration_missing'], true)) {
+        $this->warn('Voice relay readiness: '.$availability.'. See docs/VOICE_CALL_SETUP.md.');
+        $issues = app(\App\Services\VoiceConfiguration::class)->configurationIssues();
+        if ($issues) $this->warn('Check Render environment entries: '.implode(', ', $issues));
         return 0;
     }
     if (!app(\App\Services\MeteredTurnService::class)->prepare()) {
@@ -24,6 +27,12 @@ Artisan::command('voice:prepare', function () {
     $this->info('Voice relay credentials prepared. Newly created credentials need two minutes to propagate.');
     return 0;
 })->purpose('Prepare and rotate expiring TURN credentials without revealing secrets');
+
+Artisan::command('voice:status', function () {
+    $this->info('Voice relay readiness: '.app(\App\Services\VoiceConfiguration::class)->availability());
+    $issues = app(\App\Services\VoiceConfiguration::class)->configurationIssues();
+    if ($issues) $this->warn('Check Render environment entries: '.implode(', ', $issues));
+})->purpose('Show voice availability without displaying credentials');
 
 Schedule::command('voice:prepare')->everyFiveMinutes()->withoutOverlapping()
     ->when(fn () => app(\App\Services\VoiceConfiguration::class)->configured());

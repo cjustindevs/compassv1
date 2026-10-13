@@ -6,8 +6,14 @@
         'state'=>route('voice.state',$session), 'credentials'=>route('voice.credentials',$session),
         'start'=>route('voice.start',$session), 'action'=>route('voice.action',$session), 'signal'=>route('voice.signal',$session)];
 @endphp
-<section class="voice-call-panel" data-voice-call aria-label="Live voice call">
-    <div class="voice-call-copy"><h2><x-ui-icon name="phone" /> Voice support</h2><p data-voice-status role="status" aria-live="polite">Checking call availability…</p><small>Live audio is not recorded. Leaving a call keeps your support session and text chat open.</small></div>
+<section class="voice-call-panel" data-voice-call data-voice-state="checking" aria-label="Live voice call">
+    <div class="voice-call-visual" aria-hidden="true"><x-ui-icon name="phone" /><span></span><span></span><span></span></div>
+    <div class="voice-call-copy">
+        <div class="voice-call-heading"><h2>Voice support</h2><span class="voice-call-badge" data-voice-badge>Checking</span><time data-voice-duration hidden aria-label="Call duration">00:00</time></div>
+        <h3 data-voice-title>Getting your call ready</h3>
+        <p data-voice-status role="status" aria-live="polite">Checking call availability…</p>
+        <small>Audio is not recorded. Leaving the call keeps this support session and text chat open.</small>
+    </div>
     <div class="voice-call-actions">
         <button type="button" data-voice-start disabled>Call</button>
         <button type="button" data-voice-accept hidden>Accept call</button>
