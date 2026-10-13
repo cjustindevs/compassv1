@@ -1,5 +1,8 @@
 {{-- Common screen primitives. Keep after page CSS; print/email use their own assets. --}}
 @once
+    @if(config('voice.enabled') && config('broadcasting.default') === 'reverb' && config('broadcasting.connections.reverb.key'))
+        <meta name="compass-broadcast" content="{{ json_encode(app(\App\Services\VoiceConfiguration::class)->publicSocket()) }}">
+    @endif
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">

@@ -353,7 +353,7 @@
                 <div class="avatar">{{ substr($helperName, 0, 1) }}</div>
                 <div class="meta">
                     <div class="name">{{ $helperName }}</div>
-                    <div class="status"><span class="dot"></span> Online</div>
+                    <div class="status"><span class="dot"></span> {{ $session->session_type === 'voice' ? 'Session active' : 'Online' }}</div>
                 </div>
             </div>
             <span class="session-timer" id="sessionTimer" data-started-at="{{ optional($session->start_time)->timestamp }}">00:00</span>
@@ -367,6 +367,7 @@
             </form>
         </div>
 
+        <x-voice-call :session="$session" />
         <!-- Messages -->
         <div class="chat-messages" id="chatMessages">
             <div class="empty-chat" id="emptyChat">

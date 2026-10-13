@@ -562,6 +562,13 @@ Route::middleware(['auth', 'role:moderator'])->prefix('moderator')->name('modera
 // CHAT ROUTES (AJAX / Reverb)
 // =============================================
 Route::middleware(['auth'])->prefix('api')->group(function () {
+    Route::prefix('voice/{session}')->whereNumber('session')->group(function () {
+        Route::get('/state', [\App\Http\Controllers\VoiceCallController::class, 'state'])->middleware('throttle:voice-state')->name('voice.state');
+        Route::get('/credentials', [\App\Http\Controllers\VoiceCallController::class, 'credentials'])->middleware('throttle:voice-credentials')->name('voice.credentials');
+        Route::post('/start', [\App\Http\Controllers\VoiceCallController::class, 'start'])->middleware('throttle:voice-start')->name('voice.start');
+        Route::post('/action', [\App\Http\Controllers\VoiceCallController::class, 'action'])->middleware('throttle:voice-action')->name('voice.action');
+        Route::post('/signal', [\App\Http\Controllers\VoiceCallController::class, 'signal'])->middleware('throttle:voice-signal')->name('voice.signal');
+    });
     Route::post('/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
     Route::post('/chat/typing', [ChatController::class, 'typing'])->name('chat.typing');
     Route::get('/chat/messages/{sessionId}', [ChatController::class, 'getMessages'])->name('chat.messages');

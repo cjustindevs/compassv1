@@ -74,12 +74,15 @@ class SeekerWorkflowService {
             Gate::authorize('update',$session);
             if ($session->submitted_at) return $session;
             abort_unless($session->workflow_state==='session_preferences_required' && $session->concern_id && !$session->requires_adviser_review && $session->risk_level!=='emergency',409,'Complete the required steps before submitting.');
-            $session->update(['workflow_state'=>'ready_for_submission','session_type'=>'chat']);
-            $user->update(['preferred_language'=>$data['preferred_language'],'preferred_communication_mode'=>'chat']);
+            $mode = $data['support_mode'] ?? 'chat';
+            abort_unless($mode === 'chat' || ($mode === 'voice' && app(VoiceConfiguration::class)->ready() && in_array($data['voice_participation'] ?? null,[true,1,'1','yes','on','true'],true)),422,'Voice participation must be available and accepted.');
+            if ($mode === 'voice') app(ConsentService::class)->decide($user,'voice_participation','accepted',$session->id,null,'Live audio only; no recording or automatic transcription.');
+            $session->update(['workflow_state'=>'ready_for_submission','session_type'=>$mode,'voice_consent_obtained'=>$mode==='voice','voice_recording_consent'=>false]);
+            $user->update(['preferred_language'=>$data['preferred_language'],'preferred_communication_mode'=>$mode]);
             $session->update(['workflow_state'=>'submitted','submitted_at'=>now(),'preferred_language'=>$data['preferred_language']]);
             \App\Models\SeekerRequestDraft::where('seeker_id', $session->seeker_id)->delete();
             $queue=QueueRequest::create(['seeker_id'=>$session->seeker_id,'request_date'=>now(),'queued_at'=>now(),
-                'request_status'=>'waiting','priority_level'=>$session->risk_level,'preferred_session_type'=>'chat','voice_consent'=>false]);
+                'request_status'=>'waiting','priority_level'=>$session->risk_level,'preferred_session_type'=>$mode,'voice_consent'=>$mode==='voice']);
             app(QueueManagementService::class)->prepareQueue($queue);
             $session->update(['queue_request_id'=>$queue->id,'session_status'=>'waiting','workflow_state'=>'queued']);
             SupportAudit::record('request_submitted',$session); SupportAudit::record('queue_entry_created',$queue);

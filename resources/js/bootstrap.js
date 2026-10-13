@@ -14,13 +14,17 @@ import Pusher from 'pusher-js';
 
 window.Pusher = Pusher;
 
-window.Echo = new Echo({
+// Runtime public settings work with Render Docker builds without baking secrets into Vite.
+const socket = JSON.parse(document.querySelector('meta[name="compass-broadcast"]')?.content || 'null');
+const socketKey = socket?.key || import.meta.env.VITE_REVERB_APP_KEY;
+window.Echo = socketKey ? new Echo({
     broadcaster: 'reverb',
-    key: import.meta.env.VITE_REVERB_APP_KEY,
-    wsHost: import.meta.env.VITE_REVERB_HOST ?? window.location.hostname,
-    wsPort: import.meta.env.VITE_REVERB_PORT ?? 8080,
-    forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'http') === 'https',
+    key: socketKey,
+    wsHost: socket?.host || import.meta.env.VITE_REVERB_HOST || window.location.hostname,
+    wsPort: socket?.port ?? import.meta.env.VITE_REVERB_PORT ?? 8080,
+    wssPort: socket?.port ?? 443,
+    forceTLS: socket ? socket.secure : (import.meta.env.VITE_REVERB_SCHEME ?? 'http') === 'https',
     enabledTransports: ['ws', 'wss'],
     withCredentials: true,
     authEndpoint: '/broadcasting/auth',
-});
+}) : null;

@@ -7,7 +7,6 @@ use App\Events\ModeratorAlert;
 use App\Events\ReferralRecommended;
 use App\Events\SessionEnded;
 use App\Http\Controllers\Controller;
-use App\Models\CallLog;
 use App\Models\Helper;
 use App\Models\IncidentReport;
 use App\Models\Notification;
@@ -191,77 +190,24 @@ class HelperSessionController extends Controller
         return $this->chat->send($request, $id);
     }
 
-    /**
-     * Show the voice call room for a session.
-     */
+    /** Open the existing support room with live voice controls. */
     public function voice(int $id)
     {
-        abort(503, 'Voice service is unavailable.');
-        $helper = Auth::user()->helper;
-
-        $session = Session::with(['seeker'])
-            ->where('helper_id', $helper->id)
-            ->findOrFail($id);
-
-        $callLog = $session->callLog;
-
-        $elapsed = $session->start_time
-            ? sprintf('%d:%02d', floor($session->start_time->diffInSeconds(now()) / 60), $session->start_time->diffInSeconds(now()) % 60)
-            : '0:00';
-
-        return view('helper.voice', compact('session', 'callLog', 'elapsed'));
+        abort_unless(config('voice.enabled'), 503, 'Voice is unavailable. Please use text chat.');
+        return $this->chat((string) $id);
     }
 
-    /**
-     * Mark the voice call as started (records the timestamp in the session).
-     */
+    /** Retired placeholder endpoints never start or complete a support session. */
     public function startVoice(Request $request, int $id)
     {
-        abort(503, 'Voice service is unavailable.');
-        $helper = Auth::user()->helper;
-
-        $session = Session::where('helper_id', $helper->id)->findOrFail($id);
-
-        session(['voice_call_started_at_'.$session->id => now()->timestamp]);
-
-        return response()->json(['ok' => true, 'started_at' => now()->timestamp]);
+        abort_unless(config('voice.enabled'), 503, 'Voice is unavailable.');
+        abort(410, 'Use the voice controls in your session room.');
     }
 
-    /**
-     * End the voice call and persist a call log in the database.
-     */
     public function endVoice(Request $request, int $id)
     {
-        abort(503, 'Voice service is unavailable.');
-        $helper = Auth::user()->helper;
-
-        $session = Session::with(['seeker'])
-            ->where('helper_id', $helper->id)
-            ->findOrFail($id);
-
-        $startedTs = session('voice_call_started_at_'.$session->id);
-        $callStart = $startedTs
-            ? now()->createFromTimestamp((int) $startedTs)
-            : ($session->start_time ?? now());
-        $callEnd = now();
-        $durationSeconds = max(1, (int) $callStart->diffInSeconds($callEnd));
-
-        CallLog::updateOrCreate(
-            ['session_id' => $session->id],
-            [
-                'recording_consent' => $session->voice_recording_consent,
-                'call_start' => $callStart,
-                'call_end' => $callEnd,
-                'duration' => $durationSeconds,
-                'review_status' => 'pending',
-            ]
-        );
-
-        session()->forget('voice_call_started_at_'.$session->id);
-
-        return redirect()
-            ->route('helper.session.notes', ['id' => $session->id])
-            ->with('success', 'Call ended. Add your session notes below.');
+        abort_unless(config('voice.enabled'), 503, 'Voice is unavailable.');
+        abort(410, 'Use Leave call in your session room. End session remains a separate action.');
     }
 
     /**

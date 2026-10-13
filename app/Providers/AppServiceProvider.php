@@ -23,6 +23,10 @@ class AppServiceProvider extends ServiceProvider
     {
         \Illuminate\Validation\Rules\Password::defaults(fn () => \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->numbers()->symbols());
         $this->registerViewComposers();
+        foreach (['state'=>60,'credentials'=>10,'start'=>6,'action'=>60,'signal'=>120] as $action => $limit) {
+            \Illuminate\Support\Facades\RateLimiter::for('voice-'.$action, fn (\Illuminate\Http\Request $request) =>
+                \Illuminate\Cache\RateLimiting\Limit::perMinute($limit)->by('voice:'.$action.':'.($request->user()?->id ?? $request->ip())));
+        }
         \Illuminate\Support\Facades\Gate::define('seeker-workflow', fn ($user) => $user->role === 'seeker' && $user->is_active && $user->helpSeeker);
         foreach ([\App\Models\Session::class, \App\Models\QueueRequest::class, \App\Models\ScreeningResponse::class, \App\Models\Message::class, \App\Models\HelpSeekerEvaluation::class, \App\Models\Referral::class, \App\Models\IncidentReport::class, \App\Models\EmergencyAlert::class, \App\Models\CallLog::class, \App\Models\ConsentRecord::class] as $model) {
             \Illuminate\Support\Facades\Gate::policy($model, \App\Policies\SeekerRecordPolicy::class);

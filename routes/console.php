@@ -12,6 +12,22 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+Artisan::command('voice:prepare', function () {
+    if (!app(\App\Services\VoiceConfiguration::class)->configured()) {
+        $this->warn('Voice is disabled or missing configuration. See docs/VOICE_CALL_SETUP.md.');
+        return 0;
+    }
+    if (!app(\App\Services\MeteredTurnService::class)->prepare()) {
+        $this->error('Unable to prepare the voice relay. Check the free TURN account, quota and server settings.');
+        return 1;
+    }
+    $this->info('Voice relay credentials prepared. Newly created credentials need two minutes to propagate.');
+    return 0;
+})->purpose('Prepare and rotate expiring TURN credentials without revealing secrets');
+
+Schedule::command('voice:prepare')->everyFiveMinutes()->withoutOverlapping()
+    ->when(fn () => app(\App\Services\VoiceConfiguration::class)->configured());
+
 Schedule::call(fn () => app(\App\Services\StaleQueueRequests::class)->expire())
     ->everyMinute()->name('expire-stale-queue')->withoutOverlapping();
 

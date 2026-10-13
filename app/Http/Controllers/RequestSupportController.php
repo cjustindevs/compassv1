@@ -59,7 +59,10 @@ class RequestSupportController extends Controller {
     }
     public function processPreferences(Request $request) {
         if ($redirect = $this->requireConsentOrRedirect($request->user())) return $redirect;
-        $data=$request->validate(['support_mode'=>'required|in:chat','preferred_language'=>'required|in:English,Tagalog,English/Tagalog']);
+        $voiceReady=app(\App\Services\VoiceConfiguration::class)->ready();
+        $data=$request->validate(['support_mode'=>$voiceReady ? 'required|in:chat,voice' : 'required|in:chat',
+            'preferred_language'=>'required|in:English,Tagalog,English/Tagalog',
+            'voice_participation'=>[Rule::excludeIf($request->input('support_mode')!=='voice'), 'required','accepted']]);
         return $this->next($this->workflow->submit($request->user(),$data));
     }
     public function matching(Request $request) {
@@ -179,8 +182,14 @@ class RequestSupportController extends Controller {
         app(HelperWorkflowMaintenance::class)->releaseRecommendation($session,'declined_by_seeker');
         return redirect()->route('request.matching')->with('success','Helper declined. You stay in the queue and another available helper will be matched.');
     }
-    public function voiceConsent() { abort(503,'Voice calls, recording and automatic transcription are unavailable. Please use chat.'); }
-    public function processVoiceConsent() { return $this->voiceConsent(); }
+    public function voiceConsent() {
+        abort_unless(app(\App\Services\VoiceConfiguration::class)->configured(),503,'Voice calls are unavailable. Please use chat.');
+        return redirect()->route('session.voice');
+    }
+    public function processVoiceConsent() {
+        abort_unless(config('voice.enabled'),503,'Voice is unavailable.');
+        abort(410,'Recording is unavailable. Live audio consent is collected in Session Preferences.');
+    }
     public function declineVoiceConsent() { return redirect()->route('request.matching'); }
     private function requireConsentOrRedirect(\App\Models\User $user): ?RedirectResponse {
         if ($user->helpSeeker && app(ConsentService::class)->isFull($user->helpSeeker)) return null;

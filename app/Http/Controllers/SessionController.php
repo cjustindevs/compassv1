@@ -146,7 +146,10 @@ class SessionController extends Controller
     /**
      * Show the live voice session
      */
-    public function voice() { abort(503, 'Voice calls, recording and automatic transcription are unavailable. Please use chat.'); }
+    public function voice() {
+        abort_unless(config('voice.enabled'),503,'Voice is unavailable. Please use text chat.');
+        return $this->chat();
+    }
 
     /**
      * End an active session: persist duration/status and free the helper

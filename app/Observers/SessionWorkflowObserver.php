@@ -4,6 +4,13 @@ use App\Models\Session;
 use App\Services\SupportAudit;
 use Illuminate\Support\Facades\DB;
 class SessionWorkflowObserver {
+    public function updated(Session $session): void {
+        if ($session->getOriginal('session_type') === 'voice'
+            && (($session->wasChanged('session_status') && !$session->isActive()) || $session->wasChanged('helper_id') || $session->wasChanged('session_type'))
+            && \Illuminate\Support\Facades\Schema::hasTable('voice_calls')) {
+            app(\App\Services\VoiceCallService::class)->closeForSession($session);
+        }
+    }
     public function saving(Session $session): void {
         if ($session->exists && $session->isDirty('session_status') && in_array($session->getOriginal('session_status'),['completed','evaluated','cancelled','no_show'])
             && !in_array($session->session_status,['completed','evaluated','cancelled','no_show'])) abort(409,'Closed requests cannot be reopened.');

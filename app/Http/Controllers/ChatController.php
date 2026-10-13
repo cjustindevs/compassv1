@@ -49,7 +49,8 @@ class ChatController extends Controller
             return response()->json(['error' => 'This session is not ready for chat.'], 409);
         }
 
-        abort_if($request->boolean('is_voice') || $request->filled('audio_url') || $session->session_type !== 'chat',422,'Voice media is unavailable.');
+        // Typed messages remain available as a fallback in voice sessions. Audio is never uploaded here.
+        abort_if($request->boolean('is_voice') || $request->filled('audio_url') || !in_array($session->session_type,['chat','voice'],true),422,'Audio upload is unavailable.');
         $message = Message::create([
             'session_id' => $session->id,
             'sender_id' => $user->id,
@@ -57,9 +58,9 @@ class ChatController extends Controller
             'message_text' => trim($request->message),
             'sent_datetime' => now(),
             'is_reviewed' => false,
-            'is_transcript' => $session->session_type === 'chat' && ! $request->boolean('is_voice'),
-            'transcript' => $session->session_type === 'chat' && ! $request->boolean('is_voice') ? trim($request->message) : null,
-            'transcript_generated_at' => $session->session_type === 'chat' && ! $request->boolean('is_voice') ? now() : null,
+            'is_transcript' => true,
+            'transcript' => trim($request->message),
+            'transcript_generated_at' => now(),
         ]);
 
         // A helper message marks responsiveness and clears any prior 5-minute

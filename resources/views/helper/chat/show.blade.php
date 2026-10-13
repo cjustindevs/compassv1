@@ -1,8 +1,8 @@
 @extends('layouts.helper')
 
-@section('title', 'Live Chat')
+@section('title', $session->session_type === 'voice' ? 'Voice Support' : 'Live Chat')
 
-@section('heading', 'Live Chat')
+@section('heading', $session->session_type === 'voice' ? 'Voice Support' : 'Live Chat')
 @section('subheading', 'Conversation with ' . ($seekerName ?? 'Seeker'))
 
 @section('styles')
@@ -332,7 +332,7 @@
                 <div class="avatar">{{ \Illuminate\Support\Str::substr($seekerName ?? 'S', 0, 1) }}</div>
                 <div class="meta">
                     <div class="name">{{ $seekerName ?? 'Seeker' }}</div>
-                    <div class="status"><span class="dot"></span> Online</div>
+                    <div class="status"><span class="dot"></span> {{ $session->session_type === 'voice' ? 'Session active' : 'Online' }}</div>
                 </div>
             </div>
             <div class="session-badges">
@@ -357,6 +357,7 @@
             </div>
         </div>
 
+        <x-voice-call :session="$session" />
         <!-- Messages -->
         <div class="chat-window">
             <div class="chat-messages" id="chatMessages">

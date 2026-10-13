@@ -4,6 +4,14 @@ use App\Models\Referral;
 use App\Models\Session;
 use Illuminate\Support\Facades\Broadcast;
 
+Broadcast::channel('voice.{sessionId}.{userId}', function ($user, $sessionId, $userId) {
+    if ((int)$user->id !== (int)$userId || !app(\App\Services\VoiceConfiguration::class)->configured()) return false;
+    $session = Session::find($sessionId);
+    if (!$session) return false;
+    try { app(\App\Services\VoiceCallService::class)->authorize($user, $session); return true; }
+    catch (\Throwable $e) { return false; }
+});
+
 /*
 |--------------------------------------------------------------------------
 | Broadcast Channels

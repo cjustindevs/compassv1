@@ -390,13 +390,23 @@
                 <!-- ============================================ -->
                 <div class="form-section-compact">
                     <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Communication mode</h3>
-                    <p class="text-sm text-gray-500 mb-4">Your request uses a private text chat.</p>
-
-                    <input type="hidden" name="support_mode" value="chat">
-                    <div class="request-chat-mode">
-                        <div><strong>Chat</strong><p>Private text-based conversation</p></div>
-                        <x-ui-icon name="check-circle" />
-                    </div>
+                    @if(app(\App\Services\VoiceConfiguration::class)->ready())
+                        <p class="text-sm text-gray-500 mb-4">Choose how you want to talk with your Helper.</p>
+                        <div class="flex flex-wrap gap-3">
+                            @foreach(['chat'=>'Text chat','voice'=>'Voice call'] as $mode => $label)
+                            <label class="flex items-center gap-2 border rounded-lg p-3 cursor-pointer"><input type="radio" name="support_mode" value="{{ $mode }}" @checked(old('support_mode','chat') === $mode) required> {{ $label }}</label>
+                            @endforeach
+                        </div>
+                        <label class="flex items-start gap-2 text-sm mt-3"><input type="checkbox" name="voice_participation" value="1" @checked(old('voice_participation'))> <span>For Voice, I agree to a live audio call with my assigned Helper. COMPASS will not record or automatically transcribe the audio. Text chat stays available if the call fails.</span></label>
+                        @error('voice_participation')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                    @else
+                        <p class="text-sm text-gray-500 mb-4">Your request uses a private text chat.</p>
+                        <input type="hidden" name="support_mode" value="chat">
+                        <div class="request-chat-mode">
+                            <div><strong>Chat</strong><p>Private text-based conversation</p></div>
+                            <x-ui-icon name="check-circle" />
+                        </div>
+                    @endif
                     @error('support_mode')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror

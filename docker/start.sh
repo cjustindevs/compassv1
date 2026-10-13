@@ -11,8 +11,8 @@ set -e
 #   * Run PHP-FPM (background) and Nginx (foreground, the PID 1 process).
 #   * Optionally run the Laravel scheduler when RUN_SCHEDULER=true.
 #
-# COMPASS has no queued jobs, so no queue worker or Reverb process is started
-# here. See RENDER_DEPLOYMENT.md for how to enable Reverb separately.
+# Reverb is optional and runs in this same container when RUN_REVERB=true.
+# Voice uses immediate signaling events, so it does not require a queue worker.
 # ---------------------------------------------------------------------------
 
 cd /var/www/html
@@ -120,6 +120,18 @@ if [ "${RUN_SCHEDULER:-true}" = "true" ]; then
     ) &
 else
     echo "[start] RUN_SCHEDULER=false -- Laravel scheduler is disabled."
+fi
+
+# --- Optional Reverb process (same free Render service) ------------------
+if [ "${RUN_REVERB:-false}" = "true" ]; then
+    echo "[start] Starting Reverb on internal port 8080."
+    (
+        while true; do
+            php artisan reverb:start --host=0.0.0.0 --port=8080 || echo "[start] Reverb stopped."
+            sleep 5
+        done
+    ) &
+    php artisan voice:prepare || echo "[start] Voice relay is not ready; text chat remains available."
 fi
 
 # --- PHP-FPM (background) + Nginx (foreground) ----------------------------
