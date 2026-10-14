@@ -199,7 +199,7 @@
                         <p class="text-sm mb-3 whitespace-pre-line">{{ $referral->referral_reason }}</p>
                         @include('partials.referral-recommendation')
                         @include('partials.referral-consent-terms')
-                        <form method="POST" action="{{ route('referrals.consent', $referral) }}" class="flex flex-wrap gap-3">
+                        <form method="POST" action="{{ route('referrals.consent', $referral) }}" data-confirm="Confirm your referral consent decision?" class="flex flex-wrap gap-3">
                             @csrf
                             <button class="page-button" type="submit" name="consent_given" value="1">Agree to referral</button>
                             <button class="page-button light" type="submit" name="consent_given" value="0">Decline</button>

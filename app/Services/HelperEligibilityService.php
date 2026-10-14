@@ -16,7 +16,7 @@ class HelperEligibilityService
         if (! $helper->user?->is_active || $helper->user?->role !== 'helper') {
             $reasons[] = 'Account is inactive.';
         }
-        if (! $relaxed && ($helper->verification_status !== 'verified' || ! $helper->verified_at || ! $helper->verified_by || ! $helper->training_verified || ($helper->verification_expires_at && $helper->verification_expires_at->isPast()))) {
+        if ($helper->verification_status !== 'verified' || ! $helper->verified_at || ! $helper->verified_by || ! $helper->training_verified) {
             $reasons[] = 'Institutional verification and training approval are required.';
         }
         if (! $helper->adviser_id || ! $helper->adviser?->user?->is_active) {
@@ -28,7 +28,7 @@ class HelperEligibilityService
         if (! $relaxed && ! app(OperatingHoursService::class)->acceptsAssignments()) {
             $reasons[] = 'Service is closed for new assignments.';
         }
-        if (! $relaxed) {
+        {
             // Shift-based duty: a helper counts as on duty only while the clock
             // is inside one of their shifts, so an overnight shift also covers
             // the small hours of the following day.
@@ -45,11 +45,11 @@ class HelperEligibilityService
         if ($helper->activeSessions()->when($session, fn ($q) => $q->where('id', '!=', $session->id))->exists()) {
             $reasons[] = 'Another assignment or active session already occupies your capacity.';
         }
-        if (! $relaxed && $helper->getRemainingCapacity() === 0) {
+        if ($helper->getRemainingCapacity() === 0) {
             $reasons[] = 'The two-session duty-shift limit has been reached.';
         }
         if ($session) {
-            if (! $helper->canHandleRiskLevel($session->risk_level) || (($session->risk_level === 'emergency' || $session->requires_adviser_review) && ! $session->permitsEmergencySupport()) || ($session->risk_level === 'high' && ! $session->peer_support_approved_at)) {
+            if (! $helper->canHandleRiskLevel($session->risk_level) || (($session->risk_level === 'emergency' || $session->requires_adviser_review) && ! $session->permitsEmergencySupport()) || ($session->risk_level === 'high' && ! $session->peer_support_approved_at && !$session->permitsPrioritySafetySupport())) {
                 $reasons[] = 'This request requires a different competency or adviser review.';
             }
             if (DB::table('helper_conflicts')->where('helper_id', $helper->id)->where('seeker_id', $session->seeker_id)->exists()) {

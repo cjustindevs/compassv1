@@ -19,7 +19,7 @@ class IntegrationTest extends TestCase {
     }
     public function test_provisioning_creates_required_profiles_without_clinical_approval(): void {
         $this->actingAs(User::factory()->create(['role'=>'admin']));
-        foreach(['adviser'=>Adviser::class,'helper'=>Helper::class,'moderator'=>Moderator::class,'professional'=>PsychologyProfessional::class,'admin'=>SystemAdministrator::class,'seeker'=>HelpSeeker::class] as $role=>$model) {
+        foreach(['adviser'=>Adviser::class,'helper'=>Helper::class,'moderator'=>Moderator::class,'professional'=>PsychologyProfessional::class,'admin'=>SystemAdministrator::class] as $role=>$model) {
             $this->post(route('admin.users.store'),['first_name'=>'New','last_name'=>'Account','email'=>$role.'@example.test','role'=>$role,'account_status'=>'active','password'=>'SecurePass!2026','password_confirmation'=>'SecurePass!2026'])->assertSessionHasNoErrors()->assertRedirect();
             $account=User::where('email',$role.'@example.test')->firstOrFail();
             $this->assertTrue($model::where('user_account_id',$account->id)->exists());

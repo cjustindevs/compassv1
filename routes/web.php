@@ -238,6 +238,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+    Route::get('/notifications/feed', [NotificationController::class, 'feed'])->name('notifications.feed');
 });
 
 // =============================================
@@ -674,6 +675,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/users', [UserController::class, 'index'])->name('users');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::post('/users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
+    Route::post('/users/{user}/reactivate', [UserController::class, 'reactivate'])->name('users.reactivate');
+    Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+    Route::patch('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::post('/users/{user}/password-reset', [UserController::class, 'resetPassword'])->middleware('throttle:6,1')->name('users.password-reset');
     Route::get('/roles-permissions', RolePermissionController::class)->name('roles-permissions');
     Route::get('/audit-logs', AuditLogController::class)->name('audit-logs');
     Route::get('/backup-restore', BackupRestoreController::class)->name('backup-restore');

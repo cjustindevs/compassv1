@@ -10,10 +10,11 @@ function room() {
         document: { addEventListener() {}, getElementById: () => timer },
         performance: { now: () => time },
         clearInterval() {}, setTimeout() {}, window: {},
+        Date,
     });
     // Evaluate both application modules in the VM; retain the real icon implementation.
     vm.runInContext(fs.readFileSync('resources/js/ui-icon.js', 'utf8').replace('export function uiIcon', 'function uiIcon'), context);
-    vm.runInContext(fs.readFileSync('resources/js/chat.js', 'utf8').replace(/^import \{ uiIcon \} from '\.\/ui-icon';\r?\n/, ''), context);
+    vm.runInContext(fs.readFileSync('resources/js/chat.js', 'utf8').replace(/^import .*;\r?\n/gm, ''), context);
     const app = Object.create(vm.runInContext('ChatApp.prototype', context));
     Object.assign(app, { ended: false, deadlineReached: false, messageInput: {}, sendButton: {}, remainingSeconds: 1, statusReceivedAt: 0 });
     return { app, timer, advance: milliseconds => time += milliseconds };
@@ -32,6 +33,17 @@ test('deadline locks composer and checks server; send completion cannot unlock i
     app.setInputDisabled(false);
     assert.equal(app.messageInput.disabled, true);
     assert.equal(app.sendButton.disabled, true);
+});
+
+test('message safety polling runs for failed private subscriptions even if the socket is connected',()=>{
+    const intervals=[];const context=vm.createContext({document:{hidden:false,addEventListener(){}},window:{Echo:{connector:{pusher:{connection:{state:'connected'}}}},addEventListener(){}},Date,setInterval:callback=>{intervals.push(callback);return 1;}});
+    vm.runInContext(fs.readFileSync('resources/js/chat.js','utf8').replace(/^import .*;\r?\n/gm,''),context);
+    const app=Object.create(vm.runInContext('ChatApp.prototype',context));let fetched=0;
+    Object.assign(app,{ended:false,channelReady:false,lastMessageSync:Date.now(),loadMessages(){fetched++;}});
+    app.enablePollingFallback();intervals[0]();assert.equal(fetched,1);
+    app.channelReady=true;intervals[0]();assert.equal(fetched,1);
+    app.lastMessageSync=Date.now()-15000;intervals[0]();assert.equal(fetched,2);
+    app.ended=true;intervals[0]();assert.equal(fetched,2);
 });
 
 test('polling and websocket end notices trigger only one overlay and preserve lock', () => {

@@ -51,9 +51,8 @@ class ModeratorReadinessSchedulingTest extends TestCase
     public function test_ready_helper_can_be_given_first_duty_even_with_available_filter(): void
     {
         $helper = $this->helper();
-        $this->passReadiness($helper);
-        $this->assertSame('offline', $helper->fresh()->status);
-        $this->assertDatabaseCount('helper_schedules', 0);
+        $this->assertSame('offline',$helper->fresh()->status);
+        $this->assertDatabaseCount('helper_schedules',0);
 
         $page = $this->actingAs($this->moderator())->get(route('moderator.schedules', ['availability' => 'available']))
             ->assertOk()->assertViewHas('dutyHelpers', fn ($helpers) => $helpers->contains('id', $helper->id));
@@ -66,32 +65,22 @@ class ModeratorReadinessSchedulingTest extends TestCase
         $this->post(route('moderator.schedules.store'), ['helper_id' => $helper->id, 'event_date' => now('Asia/Manila')->toDateString()])
             ->assertRedirect()->assertSessionHasNoErrors();
         $this->assertDatabaseHas('helper_schedules', ['helper_id' => $helper->id, 'is_active' => true]);
-        $this->assertSame('available', $helper->fresh()->status);
+        $this->assertSame('offline', $helper->fresh()->status);
+        $this->passReadiness($helper);
+        $this->assertSame('available',$helper->fresh()->status);
     }
 
-    public function test_live_candidates_follow_readiness_submission_failure_expiry_and_logout(): void
+    public function test_scheduling_candidates_do_not_depend_on_readiness_or_login(): void
     {
-        $helper = $this->helper();
-        $moderator = $this->moderator();
-        $url = '/moderator/schedules/helpers';
-        $this->actingAs($moderator)->getJson($url)->assertOk()->assertJsonCount(0, 'helpers');
-        $this->passReadiness($helper);
-        $this->actingAs($moderator)->getJson($url)->assertOk()
-            ->assertHeader('Cache-Control', 'no-store, private')
-            ->assertJsonPath('helpers.0.id', $helper->id)->assertJsonPath('helpers.0.name', $helper->full_name);
-
-        $check = $helper->readinessChecks()->latest('id')->first();
-        $check->update(['valid_until' => now()->subMinute()]);
-        $this->getJson($url)->assertOk()->assertJsonCount(0, 'helpers');
-        $check->update(['valid_until' => now()->addHour()]);
-        DB::table('sessions')->where('user_id', $helper->user_account_id)->delete();
-        $this->getJson($url)->assertOk()->assertJsonCount(0, 'helpers');
-        DB::table('sessions')->insert(['id' => 'new-helper-login', 'user_id' => $helper->user_account_id, 'last_activity' => now()->timestamp, 'payload' => '']);
-        ReadinessCheck::create(['helper_id' => $helper->id, 'assessment_date' => now(), 'valid_until' => now()->addHour(), 'assessment_result' => 'not_ready', 'is_active' => true]);
-        $this->getJson($url)->assertOk()->assertJsonCount(0, 'helpers');
-        $this->from(route('moderator.schedules'))->post(route('moderator.schedules.store'), ['helper_id' => $helper->id, 'event_date' => now('Asia/Manila')->toDateString()])
-            ->assertSessionHasErrors('helper_id');
-        $this->assertDatabaseCount('helper_schedules', 0);
+        $helper=$this->helper();$moderator=$this->moderator();$url='/moderator/schedules/helpers';
+        $this->actingAs($moderator)->getJson($url)->assertOk()->assertJsonPath('helpers.0.id',$helper->id);
+        DB::table('sessions')->where('user_id',$helper->user_account_id)->delete();
+        ReadinessCheck::create(['helper_id'=>$helper->id,'assessment_date'=>now(),'valid_until'=>now()->subMinute(),'assessment_result'=>'not_ready','is_active'=>true]);
+        $this->getJson($url)->assertOk()->assertJsonCount(1,'helpers');
+        $helper->user->update(['is_active'=>false]);
+        $this->getJson($url)->assertOk()->assertJsonCount(0,'helpers');
+        $this->post(route('moderator.schedules.store'),['helper_id'=>$helper->id,'event_date'=>now('Asia/Manila')->toDateString()])->assertSessionHasErrors('helper_id');
+        $this->assertDatabaseCount('helper_schedules',0);
     }
 
     public function test_candidate_endpoint_is_only_accessible_to_moderators(): void

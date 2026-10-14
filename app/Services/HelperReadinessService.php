@@ -27,7 +27,9 @@ class HelperReadinessService
 
         return DB::transaction(function () use ($user, $data, $version) {
             $helper = Helper::whereKey($user->helper->id)->lockForUpdate()->firstOrFail();
-            $schedule = \App\Models\HelperSchedule::coveringShiftFor($helper->id);
+            $wasAvailable=$helper->status==='available';
+            $schedule = \App\Models\HelperSchedule::readinessDutyFor($helper->id);
+            if(!$schedule)throw \Illuminate\Validation\ValidationException::withMessages(['schedule'=>'You do not have an applicable scheduled duty. Please contact your Moderator.']);
             $until = now()->addHours(4);
             if ($schedule) {
                 // Readiness must not outlive the duty day it was submitted for.
@@ -53,6 +55,8 @@ class HelperReadinessService
             }
             SupportAudit::record('readiness_submitted', $record, ['version' => $version]);
             SupportAudit::record($passed ? 'readiness_passed' : 'readiness_failed', $record);
+            if($available && !$wasAvailable)foreach(\App\Models\User::where('role','moderator')->where('is_active',true)->get() as $moderator)
+                \App\Models\Notification::create(['user_account_id'=>$moderator->id,'title'=>'Helper ready for duty','message'=>$helper->full_name.' has passed readiness for scheduled duty.','notification_type'=>'assignment','link'=>'/moderator/manage']);
             if (! $available) {
                 foreach ($helper->activeSessions()->whereNull('helper_accepted_at')->get() as $pending) {
                     DB::afterCommit(fn () => app(HelperWorkflowMaintenance::class)->releaseRecommendation($pending, 'readiness_changed'));

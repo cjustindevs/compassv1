@@ -196,7 +196,7 @@ class HelperMatchingService
             if ($queue->request_status !== ($reassign ? 'assigned' : 'waiting')) return 'This request is no longer waiting in the queue.';
             $helper = Helper::whereKey($helperId)->lockForUpdate()->first();
             $session = $this->pendingSessionForQueue($queue);
-            if (!$session || !$session->submitted_at || !$session->risk_level || (($session->risk_level === 'emergency' || $session->requires_adviser_review) && !$session->permitsEmergencySupport()) || ($session->risk_level === 'high' && !$session->peer_support_approved_at)) {
+            if (!$session || !$session->submitted_at || !$session->risk_level || (($session->risk_level === 'emergency' || $session->requires_adviser_review) && !$session->permitsEmergencySupport()) || ($session->risk_level === 'high' && !$session->peer_support_approved_at && !$session->permitsPrioritySafetySupport())) {
                 return 'This request requires a different competency or adviser review and cannot be assigned to a peer helper.';
             }
             if (in_array($helperId, $this->previousEmergencyOffers($session), true)) return 'This Helper has already declined or missed this emergency support offer.';
@@ -217,7 +217,7 @@ class HelperMatchingService
             // duty-shift limit is bypassed while RELAX_DUTY_HOURS is enabled
             // for testing; concurrency is always enforced, even under an
             // override.
-            if (! config('app.relax_duty_hours', false) && $helper->getRemainingCapacity() === 0) {
+            if ($helper->getRemainingCapacity() === 0) {
                 return 'The two-session duty-shift limit has been reached.';
             }
             if ($helper->activeSessions()->where('id','!=',$session->id)->exists()) {
@@ -335,7 +335,7 @@ class HelperMatchingService
         Notification::create([
             'user_account_id' => $helper->user_account_id,
             'title' => 'New case assigned',
-            'message' => 'You have been assigned to support ' . ($session->seeker?->generated_alias ?? 'a seeker') . '. Follow the support plan and escalate safety concerns.',
+            'message' => 'You have been assigned to support ' . ($session->seeker?->generated_alias ?? 'a seeker') . ($session->requires_immediate_action ? '. Urgent staff safety review is open. Prioritize this assignment and follow the support plan.' : '. Follow the support plan and escalate safety concerns.'),
             'notification_type' => 'assignment',
             'type_icon' => 'fa-clipboard-list',
             'link' => '/helper/session/' . $session->id . '/pre-assessment',

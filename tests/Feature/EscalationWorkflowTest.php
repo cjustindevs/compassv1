@@ -24,6 +24,7 @@ use Tests\TestCase;
 class EscalationWorkflowTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\SeekerWorkflowFixtures;
 
     public function test_unassigned_emergency_stays_pending_and_duplicate_submission_is_idempotent(): void
     {
@@ -64,11 +65,13 @@ class EscalationWorkflowTest extends TestCase
     public function test_emergency_can_receive_temporary_helper_without_clearing_review(): void
     {
         Event::fake();
-        config(['app.relax_duty_hours'=>true]);
+        config(['app.relax_duty_hours'=>false, 'app.enforce_duty_hours'=>false]);
         [$seeker, $session, $helper] = $this->sessionWithAssignedHelper();
+        $this->verifiedHelperFixture($helper);
+        $duty = \App\Models\HelperSchedule::create(['helper_id'=>$helper->id, 'date'=>now('Asia/Manila')->toDateString(), 'is_active'=>true, 'created_by'=>$helper->user_account_id]);
         $session->update(['helper_id'=>null]);
         $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $seeker);
-        \App\Models\ReadinessCheck::create(['helper_id'=>$helper->id, 'assessment_date'=>now(),
+        \App\Models\ReadinessCheck::create(['helper_id'=>$helper->id, 'helper_schedule_id'=>$duty->id, 'assessment_date'=>now(),
             'valid_until'=>now()->addHour(), 'assessment_result'=>'ready', 'is_active'=>true]);
         $this->mock(\App\Services\ConsentService::class, function ($mock) {
             $mock->shouldReceive('valid')->andReturn(true);

@@ -46,6 +46,7 @@ class ScreeningReviewController extends Controller {
             abort_if(!$helperRequest && $session->screeningResponses()->where('review_status','reviewed')->exists(),409,'This screening has already been reviewed.');
             if($helperRequest) abort_unless((int)$session->helper?->adviser_id === (int)$request->user()->adviser->id,403);
             $original=$session->screeningResponses()->oldest('id')->first();
+            $parallelSupport=$session->permitsPrioritySafetySupport();
             if (!$helperRequest && $original?->follow_up_requested_at && !$request->boolean('use_seeker_follow_up')) {
                 throw ValidationException::withMessages(['follow_up_answer'=>'Review the saved follow-up response before making a decision. Do not replace the Seeker answer.']);
             }
@@ -104,7 +105,7 @@ class ScreeningReviewController extends Controller {
                 'is_complete'=>true,'instrument_version'=>$version,'rule_code'=>$rule,
                 'review_status'=>'reviewed','actor_id'=>$request->user()->id,'evidence_source'=>$data['evidence_source']]);
             $session->update(['risk_level'=>$data['risk_level'],'risk_updated_at'=>now(),'risk_update_reason'=>$data['reason'],'risk_updated_by'=>$request->user()->id]);
-            if ($data['risk_level']==='high' && !\App\Models\Referral::where('session_id',$session->id)->exists()) {
+            if ($data['risk_level']==='high' && !$parallelSupport && !\App\Models\Referral::where('session_id',$session->id)->exists()) {
                 $referral=\App\Models\Referral::create(['session_id'=>$session->id,'helper_id'=>$session->helper_id,'adviser_id'=>$request->user()->adviser->id,'priority_level'=>'high','help_seeker_consent'=>false,'referral_reason'=>'Adviser reassessment requires professional referral review.','referral_date'=>now(),'status'=>'pending_adviser']);
                 SupportAudit::record('referral_proposed',$referral);
             }
@@ -119,6 +120,10 @@ class ScreeningReviewController extends Controller {
                 $session->report->update(['reassessment_reviewed_at'=>now()]);
                 $session->update(['requires_adviser_review'=>!$data['allow_peer_support'],'peer_support_approved_at'=>$data['allow_peer_support']?now():null]);
                 if ($data['risk_level']==='emergency' && !$session->isCompleted()) app(\App\Services\EmergencyEscalationService::class)->escalateEmergency($session,$session->seeker,['reason'=>$data['reason']]);
+                return;
+            }
+            if($parallelSupport && $data['allow_peer_support'] && $data['risk_level']!=='emergency'){
+                $session->update(['requires_adviser_review'=>false,'peer_support_approved_at'=>now()]);
                 return;
             }
             if ($data['risk_level']==='emergency') {

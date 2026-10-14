@@ -24,7 +24,7 @@ class StoreUserRequest extends FormRequest
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
-            'role' => ['required', Rule::in(array_keys(User::ROLE_LABELS))],
+            'role' => ['required', Rule::in(array_diff(array_keys(User::ROLE_LABELS),['seeker']))],
             'account_status' => ['required', Rule::in(['active', 'pending'])],
             'password' => ['required', 'confirmed', Password::defaults()],
             'password_confirmation' => ['required'],

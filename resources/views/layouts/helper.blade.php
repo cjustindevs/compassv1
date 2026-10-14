@@ -77,6 +77,9 @@
         @if (session('info'))
             <div class="alert alert-info" role="status" data-flash> {{ session('info') }}</div>
         @endif
+        @if (session('warning'))
+            <div class="alert alert-warning" role="alert" data-flash> {{ session('warning') }}</div>
+        @endif
         @if (session('readiness_status'))
             <div class="alert {{ session('readiness_status') === 'ready' ? 'alert-success' : 'alert-warning' }}" data-flash>
 

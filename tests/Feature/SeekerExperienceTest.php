@@ -78,16 +78,16 @@ class SeekerExperienceTest extends TestCase
 
     public function test_single_yes_does_not_invent_a_plan_or_automatically_escalate_an_emergency(): void
     {
-        $this->actingAs($this->seeker())->post(route('request.screening.process'),$this->singleAnswer('yes'))->assertRedirect(route('request.matching'));
+        $this->actingAs($this->seeker())->post(route('request.screening.process'),$this->singleAnswer('yes'))->assertRedirect(route('request.preferences'));
         $case=Session::firstOrFail(); $screen=ScreeningResponse::firstOrFail();
         $this->assertSame('high',$case->risk_level);
-        $this->assertSame('adviser_review_required',$case->workflow_state);
+        $this->assertSame('session_preferences_required',$case->workflow_state);
         $this->assertTrue($case->requires_adviser_review);
-        $this->assertFalse($case->permitsEmergencySupport());
+        $this->assertTrue($case->permitsPrioritySafetySupport());
         $this->assertSame('yes',$screen->responses['suicidal_thoughts']);
         $this->assertArrayNotHasKey('current_suicide_plan',$screen->responses);
         $this->assertDatabaseCount('queue_requests',0);
-        $this->assertDatabaseCount('emergency_alerts',0);
+        $this->assertDatabaseCount('emergency_alerts',1);
     }
 
     public function test_single_unknown_answer_can_be_clarified_by_its_assigned_adviser(): void
@@ -129,17 +129,17 @@ class SeekerExperienceTest extends TestCase
         $owner=$this->seeker();
         $this->actingAs($owner)->post(route('request.screening.process'),$this->singleAnswer('prefer_not_to_say'))->assertRedirect();
         $case=Session::firstOrFail();
-        $this->get(route('request.matching'))->assertOk()->assertSee('Reviewing Adviser:')->assertSee('Assigned Reviewer')
+        $this->get(route('request.matching'))->assertOk()->assertSee('Your request is under staff review.')->assertDontSee('Assigned Reviewer')
             ->assertDontSee($adviser->email)->assertDontSee($adviserUser->email);
         $this->actingAs($this->seeker())->get(route('request.matching'))->assertRedirect(route('request.screening'));
         $this->actingAs($owner);
         $case->update(['review_adviser_id'=>null]);
-        $this->get(route('request.matching'))->assertOk()->assertSee('No reviewing Adviser has been assigned yet.')->assertDontSee('Assigned Reviewer');
+        $this->get(route('request.matching'))->assertOk()->assertSee('Your request is under staff review.')->assertDontSee('Assigned Reviewer');
         $case->update(['review_adviser_id'=>$adviser->id]);
         $adviser->update(['first_name'=>'','last_name'=>'']);
-        $this->get(route('request.matching'))->assertOk()->assertSee('Assigned Adviser')->assertDontSee($adviser->email);
+        $this->get(route('request.matching'))->assertOk()->assertSee('Your request is under staff review.')->assertDontSee($adviser->email);
         $adviser->update(['first_name'=>'<script>unsafe</script>','last_name'=>'Reviewer']);
-        $this->get(route('request.matching'))->assertOk()->assertSee('&lt;script&gt;unsafe&lt;/script&gt; Reviewer',false)
+        $this->get(route('request.matching'))->assertOk()->assertDontSee('&lt;script&gt;unsafe&lt;/script&gt; Reviewer',false)
             ->assertDontSee('<script>unsafe</script>',false);
         $this->assertSame('adviser_review_required',$case->fresh()->workflow_state);
         $this->assertDatabaseCount('queue_requests',0);
@@ -239,7 +239,7 @@ class SeekerExperienceTest extends TestCase
         $this->postJson(route('request.draft.save'),$this->draft(['stage'=>'preferences','session_id'=>$case->id,'preferred_language'=>'English/Tagalog','description'=>'Cannot overwrite']))->assertOk();
         $this->assertArrayNotHasKey('description',SeekerRequestDraft::firstOrFail()->payload);
         $this->get(route('request.preferences'))->assertOk()->assertSee('Find a Helper')->assertSee('Both (English and Tagalog)')
-            ->assertSee('type="hidden" name="support_mode" value="chat"',false)->assertSee('class="request-chat-mode"',false)
+            ->assertSee('type="radio" name="support_mode" value="chat"',false)->assertSee('class="request-mode-options"',false)
             ->assertDontSee('<label class="mode-card"',false)->assertDontSee('id="bottomNav"',false)
             ->assertDontSee('Review your request')->assertDontSee('Recorded original')->assertDontSee('data-save-draft',false)->assertDontSee('data-discard-draft',false);
         $this->post(route('request.preferences.process'),['support_mode'=>'voice','preferred_language'=>'English'])->assertSessionHasErrors('support_mode');

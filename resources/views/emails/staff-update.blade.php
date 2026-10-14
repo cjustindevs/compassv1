@@ -1,0 +1,1 @@
+<!doctype html><html lang="en"><body style="font-family:Arial,sans-serif;color:#173a2b;line-height:1.6"><h1 style="font-size:22px">COMPASS</h1><p>{{ $message }}</p><p><a href="{{ route('login') }}">Open COMPASS</a></p><p>If you need to set or reset your password, use Forgot Password on the sign-in page. Never share your password.</p></body></html>

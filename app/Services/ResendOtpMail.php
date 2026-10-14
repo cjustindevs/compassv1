@@ -20,7 +20,7 @@ class ResendOtpMail
         $this->sendHtml($email, 'COMPASS - Email Verification Code', view('emails.otp', compact('otp'))->render(), 'registration-otp');
     }
 
-    public function sendHtml(string $email, string $subject, string $html, string $purpose): void
+    public function sendHtml(string $email, string $subject, string $html, string $purpose, ?string $idempotencyKey = null): void
     {
         if (! $this->configured()) {
             Log::warning('Registration OTP Resend API configuration invalid', ['reason' => 'missing_key_or_sender']);
@@ -30,7 +30,7 @@ class ResendOtpMail
         try {
             $response = Http::withToken(config('services.resend.key'))->acceptJson()
                 ->connectTimeout(5)->timeout(15)->withOptions(['allow_redirects' => false])
-                ->withHeaders(['Idempotency-Key' => $purpose.'-'.Str::uuid()])
+                ->withHeaders(['Idempotency-Key' => $idempotencyKey ?? $purpose.'-'.Str::uuid()])
                 ->post('https://api.resend.com/emails', [
                     'from' => config('mail.from.name').' <'.config('mail.from.address').'>',
                     'to' => [$email], 'subject' => $subject,

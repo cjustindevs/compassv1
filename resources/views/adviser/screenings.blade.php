@@ -218,19 +218,7 @@
                                 </label>
                             </div>
                             @if($single && !$reassessment)
-                            <fieldset class="screening-single-clarification rounded-xl bg-gray-50 p-4 space-y-3">
-                                <legend class="font-semibold text-sm">Clarify the original safety answer</legend>
-                                <label class="text-sm"><input type="checkbox" name="use_clarified_safety_answer" value="1" @checked($retry ? old('use_clarified_safety_answer') : !$session->risk_level)> I obtained a clarified answer to the original question</label>
-                                <p class="text-xs text-gray-500">Only record an answer actually obtained from the Seeker. This is Adviser follow-up, not an additional pre-session questionnaire.</p>
-                                <label class="block text-sm">{{ \App\Services\CompactScreening::SINGLE_QUESTION }}
-                                    <select name="clarified_safety_answer" class="block w-full rounded-lg border-gray-300">
-                                        <option value="">Not clarified</option>
-                                        @foreach(['no'=>'No','yes'=>'Yes'] as $answerValue=>$answerLabel)
-                                        <option value="{{ $answerValue }}" data-risk="{{ app(\App\Services\CompactScreening::class)->classifySingle(['suicidal_thoughts'=>$answerValue])['risk_level'] }}" @selected($retry && old('clarified_safety_answer') === $answerValue)>{{ $answerLabel }}</option>
-                                        @endforeach
-                                    </select>
-                                </label>
-                            </fieldset>
+                            <p class="text-sm text-gray-500">Review the original saved safety answer above. No replacement answer is required to confirm its classification.</p>
                             @elseif(!$screening || in_array($screening->instrument_version, [\App\Services\CompactScreening::VERSION, \App\Services\CompactScreening::FORM_VERSION, \App\Services\CompactScreening::SINGLE_VERSION], true))
                             <fieldset class="rounded-xl bg-gray-50 p-4 space-y-3"><legend class="font-semibold text-sm">Documented clarification</legend>
                             <label class="text-sm"><input type="checkbox" name="use_clarified_answers" value="1" @checked($retry && old('use_clarified_answers'))> Reassess using clarified answers</label>

@@ -30,6 +30,13 @@ class Notification extends Model
     protected static function booted(): void
     {
         static::addGlobalScope('unarchived', fn (Builder $query) => $query->whereNull('notifications.archived_at'));
+        static::created(function (self $notice) {
+            $userId=(int)$notice->user_account_id;
+            \Illuminate\Support\Facades\DB::afterCommit(function () use ($userId) {
+                try { event(new \App\Events\NotificationsChanged($userId)); }
+                catch (\Throwable $e) { \Illuminate\Support\Facades\Log::warning('Notification live signal unavailable; inbox polling remains active.'); }
+            });
+        });
     }
 
     public function archive(): void

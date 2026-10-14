@@ -80,10 +80,6 @@
                         <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Last verified</p>
                         <p class="text-sm font-semibold text-gray-800 mt-1">{{ $helper->verified_at?->timezone('Asia/Manila')->format('M d, Y h:i A') ?? '—' }}</p>
                     </div>
-                    <div class="rounded-xl border border-gray-200 bg-gray-50 p-3">
-                        <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold">Expires</p>
-                        <p class="text-sm font-semibold text-gray-800 mt-1">{{ $helper->verification_expires_at?->timezone('Asia/Manila')->format('M d, Y') ?? 'No expiry set' }}</p>
-                    </div>
                 </div>
                 @if($helper->qualification_evidence)
                     <p class="text-sm text-gray-600 mb-4"><span class="font-semibold text-gray-700">Evidence on file:</span> {{ $helper->qualification_evidence }}</p>
@@ -134,10 +130,6 @@
                     <div class="form-group">
                         <label class="form-label" for="qualification_evidence">Verification evidence or institutional reference</label>
                         <textarea id="qualification_evidence" name="qualification_evidence" class="form-control" maxlength="2000" required>{{ old('qualification_evidence', $helper->qualification_evidence) }}</textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="verification_expires_at">Verification expiry (if applicable)</label>
-                        <input id="verification_expires_at" type="date" name="verification_expires_at" class="form-control" value="{{ old('verification_expires_at', $helper->verification_expires_at?->format('Y-m-d')) }}">
                     </div>
                     <div class="flex justify-end">
                         <button class="btn btn-primary" type="submit">

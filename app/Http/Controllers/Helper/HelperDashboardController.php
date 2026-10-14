@@ -37,6 +37,8 @@ class HelperDashboardController extends Controller
         }
 
         $helperId = $helper->id;
+        $upcomingDuties=\App\Models\HelperSchedule::where('helper_id',$helperId)->where('is_active',true)
+            ->whereDate('date','>=',now('Asia/Manila')->toDateString())->orderBy('date')->limit(5)->get();
 
         // ── CACHED STATS ────────────────────────────────────────────────
         $stats = (function () use ($helperId) {
@@ -171,7 +173,7 @@ class HelperDashboardController extends Controller
 
         $documentationTasks = $helper->sessions()->whereNotNull('start_time')->where('documentation_status', '!=', 'submitted')->whereIn('session_status', ['completed', 'evaluated', 'cancelled', 'no_show'])->orderBy('end_time')->limit(8)->get();
 
-        return view('dashboard.helper', compact(
+        return view('dashboard.helper', ['upcomingDuties'=>$upcomingDuties]+compact(
             'documentationTasks', 'sidebarStats', 'currentReadiness', 'upcomingSession', 'recentSessions',
             'user',
             'helper',

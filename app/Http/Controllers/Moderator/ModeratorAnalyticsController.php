@@ -16,13 +16,14 @@ class ModeratorAnalyticsController extends Controller
 {
     public function index(Request $request)
     {
+        $request->validate(['from'=>'nullable|date_format:Y-m-d','to'=>'nullable|date_format:Y-m-d|after_or_equal:from']);
         $from = $request->get('from') ?: now()->subMonths(6)->startOfMonth()->toDateString();
         $to = $request->get('to') ?: now()->toDateString();
 
         $metrics = $this->getMetrics($from, $to);
         $riskDistribution = $this->getRiskDistribution($from, $to);
         $competencyTrajectory = $this->getCompetencyTrajectory($from, $to);
-        $radar = $this->getSkillRadar();
+        $radar = $this->getSkillRadar($from,$to);
         $workload = $this->getWorkloadDistribution();
 
         return view('moderator.analytics', compact(
@@ -38,6 +39,7 @@ class ModeratorAnalyticsController extends Controller
 
     public function data(Request $request): JsonResponse
     {
+        $request->validate(['from'=>'nullable|date_format:Y-m-d','to'=>'nullable|date_format:Y-m-d|after_or_equal:from']);
         $from = $request->get('from') ?: now()->subMonths(6)->startOfMonth()->toDateString();
         $to = $request->get('to') ?: now()->toDateString();
 
@@ -45,13 +47,14 @@ class ModeratorAnalyticsController extends Controller
             'metrics' => $this->getMetrics($from, $to),
             'risk_distribution' => $this->getRiskDistribution($from, $to),
             'competency_trajectory' => $this->getCompetencyTrajectory($from, $to),
-            'radar' => $this->getSkillRadar(),
+            'radar' => $this->getSkillRadar($from,$to),
             'workload' => $this->getWorkloadDistribution(),
         ]);
     }
 
     public function export(Request $request)
     {
+        $request->validate(['from'=>'nullable|date_format:Y-m-d','to'=>'nullable|date_format:Y-m-d|after_or_equal:from']);
         $from = $request->get('from') ?: now()->subMonths(6)->startOfMonth()->toDateString();
         $to = $request->get('to') ?: now()->toDateString();
 
@@ -82,17 +85,17 @@ class ModeratorAnalyticsController extends Controller
     private function getMetrics(string $from, string $to): array
     {
         $completed = Session::whereIn('session_status', ['completed', 'evaluated'])
-            ->whereBetween(DB::raw('COALESCE(end_time, created_date)'), [$from . ' 00:00:00', $to . ' 23:59:59']);
+            ->whereBetween(DB::raw('COALESCE(end_time, created_date)'), $this->periodBounds($from,$to));
 
         $avgLength = Session::whereIn('session_status', ['completed', 'evaluated'])
             ->whereNotNull('duration')
-            ->whereBetween(DB::raw('COALESCE(end_time, created_date)'), [$from . ' 00:00:00', $to . ' 23:59:59'])
+            ->whereBetween(DB::raw('COALESCE(end_time, created_date)'), $this->periodBounds($from,$to))
             ->avg('duration');
 
-        $avgRating = HelpSeekerEvaluation::whereHas('session', fn ($q) => $q->whereBetween(DB::raw('COALESCE(counseling_sessions.end_time, counseling_sessions.created_date)'), [$from . ' 00:00:00', $to . ' 23:59:59']))
+        $avgRating = HelpSeekerEvaluation::whereHas('session', fn ($q) => $q->whereBetween(DB::raw('COALESCE(counseling_sessions.end_time, counseling_sessions.created_date)'), $this->periodBounds($from,$to)))
             ->avg('overall_score');
 
-        $firstPeriod = HelperCompetencyHistory::whereBetween('evaluation_date', [$from . ' 00:00:00', $to . ' 23:59:59'])
+        $firstPeriod = HelperCompetencyHistory::whereBetween('evaluation_date', $this->periodBounds($from,$to))
             ->selectRaw('helper_id, MIN(evaluation_date) as d')
             ->groupBy('helper_id')
             ->get();
@@ -110,12 +113,13 @@ class ModeratorAnalyticsController extends Controller
                 ->orderBy('helper_id')
                 ->orderBy('evaluation_date')
                 ->orderBy('id')
+                ->whereBetween('evaluation_date', $this->periodBounds($from,$to))
                 ->get(['helper_id', 'evaluation_date', 'id', 'overall_score'])
                 ->groupBy('helper_id');
 
             foreach ($histories as $helperId => $items) {
-                $firstScores[$helperId] = $items->first()->overall_score;
-                $latestScores[$helperId] = $items->last()->overall_score;
+                $firstScores[$helperId] = $items->first()->normalized_score;
+                $latestScores[$helperId] = $items->last()->normalized_score;
             }
         }
 
@@ -123,7 +127,7 @@ class ModeratorAnalyticsController extends Controller
             $first = $firstScores[$entry->helper_id] ?? null;
             $latest = $latestScores[$entry->helper_id] ?? null;
 
-            if ($first !== null && $latest !== null && $first !== $latest) {
+            if ($first !== null && $latest !== null) {
                 $avgGrowth += (float) $latest - (float) $first;
                 $growthCount++;
             }
@@ -137,7 +141,7 @@ class ModeratorAnalyticsController extends Controller
             'active_helpers' => app(\App\Services\HelperEligibilityService::class)
                 ->countAvailable(Helper::where('status', 'available')->get()),
             'queue_served' => \App\Models\QueueRequest::where('request_status', 'assigned')
-                ->whereBetween('matched_date', [$from . ' 00:00:00', $to . ' 23:59:59'])
+                ->whereBetween('matched_date', $this->periodBounds($from,$to))
                 ->count(),
         ];
     }
@@ -145,7 +149,7 @@ class ModeratorAnalyticsController extends Controller
     private function getRiskDistribution(string $from, string $to): array
     {
         $rows = Session::selectRaw('risk_level, COUNT(*) as total')
-            ->whereBetween(DB::raw('COALESCE(end_time, created_date)'), [$from . ' 00:00:00', $to . ' 23:59:59'])
+            ->whereBetween(DB::raw('COALESCE(end_time, created_date)'), $this->periodBounds($from,$to))
             ->groupBy('risk_level')
             ->pluck('total', 'risk_level')
             ->toArray();
@@ -160,14 +164,12 @@ class ModeratorAnalyticsController extends Controller
 
     private function getCompetencyTrajectory(string $from, string $to): array
     {
-        $monthKey = \App\Support\DatabaseHelper::monthKey('evaluation_date');
-
-        $rows = HelperCompetencyHistory::selectRaw($monthKey . ' as month, AVG(overall_score) as avg_score')
+        $records = HelperCompetencyHistory::query()
             ->whereNotNull('overall_score')
-            ->whereBetween('evaluation_date', [$from . ' 00:00:00', $to . ' 23:59:59'])
-            ->groupBy(DB::raw($monthKey))
-            ->orderBy(DB::raw($monthKey))
+            ->whereBetween('evaluation_date', $this->periodBounds($from,$to))
             ->get();
+        $rows=$records->groupBy(fn($r)=>$r->evaluation_date->copy()->timezone('Asia/Manila')->format('Y-m'))->sortKeys()
+            ->map(fn($group,$month)=>(object)['month'=>$month,'avg_score'=>$group->avg('normalized_score')]);
 
         $labels = [];
         $values = [];
@@ -180,10 +182,11 @@ class ModeratorAnalyticsController extends Controller
         return compact('labels', 'values');
     }
 
-    private function getSkillRadar(): array
+    private function getSkillRadar(string $from,string $to): array
     {
         $row = HelperCompetencyHistory::selectRaw('AVG(active_listening_score) as a, AVG(empathy_score) as b, AVG(respect_score) as c, AVG(ethical_practices_score) as d, AVG(referral_accuracy_score) as e')
             ->whereNotNull('overall_score')
+            ->whereBetween('evaluation_date',$this->periodBounds($from,$to))
             ->first();
 
         return [
@@ -234,5 +237,9 @@ class ModeratorAnalyticsController extends Controller
         return response($csv)
             ->header('Content-Type', 'text/csv')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+    private function periodBounds(string $from,string $to): array
+    {
+        return [\Illuminate\Support\Carbon::parse($from,'Asia/Manila')->startOfDay()->utc(),\Illuminate\Support\Carbon::parse($to,'Asia/Manila')->endOfDay()->utc()];
     }
 }

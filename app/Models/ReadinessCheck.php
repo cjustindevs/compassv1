@@ -34,6 +34,7 @@ class ReadinessCheck extends Model
     ];
 
     protected $casts = [
+        'helper_schedule_id' => 'integer',
         'skills_confirmed'=>'array',
         'expiry_notified_at'=>'datetime',
 
@@ -94,7 +95,7 @@ class ReadinessCheck extends Model
 
     public function isCurrentlyValid(): bool
     {
-        if ($this->helper_schedule_id && !\App\Models\HelperSchedule::find($this->helper_schedule_id)?->isOnDuty()) return false;
+        if ($this->helper_schedule_id && \App\Models\HelperSchedule::readinessDutyFor($this->helper_id)?->id !== $this->helper_schedule_id) return false;
         if ($this->valid_until) {
             return $this->valid_until->isFuture();
         }

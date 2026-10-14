@@ -48,10 +48,17 @@ class Session extends Model
 
     public function permitsEmergencySupport(): bool
     {
-        return $this->risk_level === 'emergency'
+        return ($this->risk_level === 'emergency' || $this->permitsPrioritySafetySupport())
             && $this->requires_immediate_action
             && ($this->emergencyAlerts()->whereNotIn('status', ['resolved', 'closed'])->exists()
                 || $this->supportEmergencyAlert()->whereNotIn('status', ['resolved', 'closed'])->exists());
+    }
+
+    public function permitsPrioritySafetySupport(): bool
+    {
+        return $this->risk_level==='high' && $this->requires_immediate_action
+            && $this->screeningResponses()->where('instrument_version',\App\Services\CompactScreening::SINGLE_VERSION)->where('rule_code','single_safety_yes')->exists()
+            && $this->emergencyAlerts()->whereNotIn('status',['resolved','closed'])->exists();
     }
 
     public function supportEmergencyAlert()

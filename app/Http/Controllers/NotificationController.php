@@ -112,4 +112,22 @@ class NotificationController extends Controller
                 ->count(),
         ]);
     }
+
+    public function feed(Request $request): JsonResponse
+    {
+        $data = $request->validate(['after' => 'nullable|integer|min:0']);
+        $owned = Notification::where('user_account_id', $request->user()->id);
+        $present = fn ($notice) => ['id' => $notice->id, 'title' => $notice->title, 'message' => $notice->message,
+            'type' => $notice->notification_type, 'link' => $notice->link, 'read' => $notice->is_read];
+        $cursor = (int) (clone $owned)->max('id');
+        $fresh = (clone $owned)->unread()->when(isset($data['after']), fn ($q) => $q->where('id', '>', $data['after']),
+            fn ($q) => $q->where('created_at', '>=', now()->subMinutes(5)))->orderBy('id')->limit(30)->get();
+        if ($fresh->count() === 30) {
+            $cursor = (int) $fresh->last()->id;
+        }
+
+        return response()->json(['count' => (clone $owned)->unread()->count(), 'cursor' => $cursor,
+            'recent' => (clone $owned)->latest('id')->limit(8)->get()->map($present), 'fresh' => $fresh->map($present)])
+            ->header('Cache-Control', 'private, no-store');
+    }
 }

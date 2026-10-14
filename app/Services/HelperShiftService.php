@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\CalendarEvent;
 use App\Models\Helper;
 use App\Models\HelperSchedule;
+use App\Models\ReadinessCheck;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -11,8 +13,8 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Duty is scheduled per day. A date can carry as many helpers as are rostered on
- * it, but each helper holds one duty record for that date and it covers the
- * whole day. Both the Adviser and the Moderator roster duty through this service
+ * it, but each helper holds one duty record for that date. Timed duties enforce
+ * shift times when configured. Both roles roster duty through this service
  * so the two roles cannot drift apart again.
  */
 class HelperShiftService
@@ -52,6 +54,13 @@ class HelperShiftService
             // Serialise writes for this helper so two concurrent scheduling
             // requests cannot both find the day free and both insert.
             Helper::whereKey($helper->id)->lockForUpdate()->firstOrFail();
+            if (! $existing) {
+                $cancelled = HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $day)->where('is_active', false)->first();
+                if ($cancelled) {
+                    SupportAudit::record('helper_duty_rescheduled', $cancelled, ['previous' => $cancelled->only(['date', 'shift_start', 'shift_end', 'duty_notes', 'is_active'])]);
+                    $existing = $cancelled;
+                }
+            }
 
             $clash = HelperSchedule::where('helper_id', $helper->id)
                 ->whereDate('date', $day)
@@ -77,7 +86,7 @@ class HelperShiftService
     /**
      * @throws ValidationException
      */
-    public function removeDuty(Helper $helper, int $shiftId): void
+    public function removeDuty(Helper $helper, int $shiftId, bool $notify = true): void
     {
         $shift = HelperSchedule::where('helper_id', $helper->id)->whereKey($shiftId)->first();
 
@@ -87,6 +96,25 @@ class HelperShiftService
             ]);
         }
 
-        $shift->delete();
+        DB::transaction(function () use ($helper, $shift, $notify) {
+            Helper::whereKey($helper->id)->lockForUpdate()->firstOrFail();
+            $shift = HelperSchedule::lockForUpdate()->findOrFail($shift->id);
+            if (! $shift->is_active) {
+                return;
+            }
+            if ($helper->activeSessions()->exists() && $shift->isOnDuty()) {
+                throw ValidationException::withMessages(['shift_id' => 'This Helper has an active assignment. Complete or hand off that assignment before removing today’s duty.']);
+            }
+            $shift->update(['is_active' => false]);
+            ReadinessCheck::where('helper_schedule_id', $shift->id)->update(['is_active' => false]);
+            if (! $helper->activeSessions()->exists() && ! $helper->getCurrentReadiness()?->isReady()) {
+                $helper->update(['status' => 'offline', 'availability' => 'unavailable', 'is_ready' => false, 'available_since' => null]);
+            }
+            CalendarEvent::where('helper_schedule_id', $shift->id)->delete();
+            if ($notify) {
+                app(DutySchedulingService::class)->notify($helper, 'cancelled', $shift->date->format('M d, Y'));
+            }
+            SupportAudit::record('helper_duty_cancelled', $shift);
+        });
     }
 }

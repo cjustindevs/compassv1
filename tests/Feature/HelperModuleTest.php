@@ -140,6 +140,7 @@ class HelperModuleTest extends TestCase
 
     public function test_readiness_page_renders_breathing_exercise_ui(): void
     {
+        \App\Models\HelperSchedule::updateOrCreate(['helper_id'=>$this->helperUser->helper->id,'date'=>now('Asia/Manila')->toDateString()],['is_active'=>true,'created_by'=>$this->helperUser->id,'shift_start'=>null,'shift_end'=>null]);
         // A helper who isn't currently ready (no valid check) sees the form + breathing UI.
         ReadinessCheck::where('helper_id', $this->helperUser->helper->id)->delete();
 
@@ -156,6 +157,7 @@ class HelperModuleTest extends TestCase
 
     public function test_readiness_page_shows_ready_confirmation_when_ready(): void
     {
+        \App\Models\HelperSchedule::updateOrCreate(['helper_id'=>$this->helperUser->helper->id,'date'=>now('Asia/Manila')->toDateString()],['is_active'=>true,'created_by'=>$this->helperUser->id,'shift_start'=>null,'shift_end'=>null]);
         $helper = $this->helperUser->helper;
         ReadinessCheck::create([
             'helper_id' => $helper->id,
@@ -178,6 +180,7 @@ class HelperModuleTest extends TestCase
 
     public function test_readiness_page_refresh_param_reshows_form_when_ready(): void
     {
+        \App\Models\HelperSchedule::updateOrCreate(['helper_id'=>$this->helperUser->helper->id,'date'=>now('Asia/Manila')->toDateString()],['is_active'=>true,'created_by'=>$this->helperUser->id,'shift_start'=>null,'shift_end'=>null]);
         $helper = $this->helperUser->helper;
         ReadinessCheck::create([
             'helper_id' => $helper->id,
@@ -218,6 +221,7 @@ class HelperModuleTest extends TestCase
 
     public function test_readiness_submission_after_exercise_is_stored_with_helper_id_and_exercise_status(): void
     {
+        \App\Models\HelperSchedule::updateOrCreate(['helper_id'=>$this->helperUser->helper->id,'date'=>now('Asia/Manila')->toDateString()],['is_active'=>true,'created_by'=>$this->helperUser->id,'shift_start'=>null,'shift_end'=>null]);
         $this->actingAs($this->helperUser)
             ->from(route('helper.readiness'))
             ->post(route('helper.readiness.store'), [
@@ -240,6 +244,7 @@ class HelperModuleTest extends TestCase
 
     public function test_readiness_submission_allows_skipping_the_exercise(): void
     {
+        \App\Models\HelperSchedule::updateOrCreate(['helper_id'=>$this->helperUser->helper->id,'date'=>now('Asia/Manila')->toDateString()],['is_active'=>true,'created_by'=>$this->helperUser->id,'shift_start'=>null,'shift_end'=>null]);
         $this->actingAs($this->helperUser)
             ->from(route('helper.readiness'))
             ->post(route('helper.readiness.store'), [

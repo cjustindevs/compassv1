@@ -1,4 +1,5 @@
 import { uiIcon } from './ui-icon';
+import './bootstrap';
 /**
  * Consolidated chat logic for both the Seeker and Helper chat rooms.
  *
@@ -94,8 +95,9 @@ class ChatApp {
     // ─────────────────────────── Websocket ───────────────────────────
 
     initEcho() {
+        this.channelReady = false;
         if (!window.Echo) {
-            this.enablePollingFallback(6000);
+            this.enablePollingFallback();
             return;
         }
 
@@ -103,6 +105,8 @@ class ChatApp {
         this.channel = window.Echo.private(`session.${this.sessionId}`);
 
         this.channel
+            .subscribed(() => { this.channelReady = true; this.loadMessages(false); })
+            .error(() => { this.channelReady = false; this.loadMessages(false); })
             .listen('MessageSent', (event) => {
                 this.appendMessage(event);
             })
@@ -119,35 +123,43 @@ class ChatApp {
             });
 
         // Safety net: if the websocket ever drops, keep the conversation flowing.
-        this.enablePollingFallback(15000);
+        window.Echo.connector?.pusher?.connection?.bind('disconnected', () => { this.channelReady = false; });
+        this.enablePollingFallback();
     }
 
-    enablePollingFallback(interval) {
+    enablePollingFallback() {
         const state = () => window.Echo?.connector?.pusher?.connection?.state;
-        setInterval(() => {
-            if (state() !== 'connected') {
+        this.messageInterval = setInterval(() => {
+            if (!this.ended && !document.hidden && (state() !== 'connected' || !this.channelReady || Date.now() - (this.lastMessageSync || 0) > 14000)) {
                 this.loadMessages(false);
             }
-        }, interval);
+        }, 3000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden && !this.ended) this.loadMessages(false); });
+        window.addEventListener('online', () => { if (!this.ended) this.loadMessages(false); });
     }
 
     // ─────────────────────────── Messages ───────────────────────────
 
     loadMessages(initial = true) {
+        if (this.messagesPending) return;
+        this.messagesPending = true;
+        const follow = initial || this.isNearBottom();
         fetch(`/api/chat/messages/${this.sessionId}`, {
-            headers: { 'Accept': 'application/json' },
+            headers: { 'Accept': 'application/json' }, cache:'no-store',
         })
-            .then((response) => response.json())
+            .then((response) => { if (!response.ok) throw new Error('Chat temporarily unavailable'); return response.json(); })
             .then((data) => {
                 if (!data.success) return;
+                this.lastMessageSync = Date.now();
                 this.applySessionState(data.session);
                 this.removeEmptyState();
                 data.messages.forEach((msg) => this.renderMessage(msg));
-                if (initial || this.renderedIds.size > 0) {
+                if (follow) {
                     this.scrollToBottom();
                 }
             })
-            .catch(() => { /* transient network errors are fine */ });
+            .catch(() => { /* Retry automatically without losing the typed draft. */ })
+            .finally(() => { this.messagesPending = false; });
     }
 
     appendMessage(event) {
@@ -247,6 +259,7 @@ class ChatApp {
         this.ended = true;
         clearInterval(this.statusInterval);
         clearInterval(this.timerInterval);
+        clearInterval(this.messageInterval);
         this.setInputDisabled(true);
         this.showTyping(false);
 

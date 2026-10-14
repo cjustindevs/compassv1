@@ -550,15 +550,14 @@ class HelperWorkflowSecurityTest extends TestCase
         $helper = Helper::create(['user_account_id' => $user->id, 'first_name' => 'Ahead', 'last_name' => 'Helper', 'email' => $user->email, 'status' => 'offline', 'availability' => 'unavailable', 'competency_level' => 3, 'competency_risk_level' => 3]);
         $this->verifiedHelperFixture($helper);
 
-        // Without a duty date the helper must stay offline after readiness.
-        app(HelperReadinessService::class)->submit($user, $this->readiness());
-        $helper = $helper->fresh();
-        $this->assertSame('available', $helper->availability, 'Willing helpers declare availability before the duty date.');
-        $this->assertSame('offline', $helper->status, 'An unscheduled helper must not be assignable.');
+        try { app(HelperReadinessService::class)->submit($user,$this->readiness());$this->fail('Readiness needs scheduled duty.'); }
+        catch(\Illuminate\Validation\ValidationException $e){$this->assertArrayHasKey('schedule',$e->errors());}
+        $this->assertSame('offline',$helper->fresh()->status);
 
         // A duty schedule covers the whole date, so scheduling today and
         // reconciling makes the helper available before the 6:00 PM open.
         HelperSchedule::create(['helper_id' => $helper->id, 'date' => now('Asia/Manila')->toDateString(), 'created_by' => $user->id, 'is_active' => true]);
+        app(HelperReadinessService::class)->submit($user,$this->readiness());
         $this->assertTrue(app(HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh()));
         $this->assertSame('available', $helper->fresh()->status, 'Scheduling the duty date flips a ready helper available.');
     }

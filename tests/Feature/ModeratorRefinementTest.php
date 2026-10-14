@@ -192,7 +192,7 @@ class ModeratorRefinementTest extends TestCase
     {
         $case = $this->supportCase('helper_assigned');
         $case->update(['scheduled_start' => now()->addMinutes(15)]);
-        $this->actingAs($this->moderator())->get(route('moderator.schedules', ['date' => now('Asia/Manila')->toDateString()]))->assertOk()->assertSee('Scheduled support sessions')->assertSee($case->seeker->generated_alias)->assertViewHas('scheduledSessions', fn ($rows) => $rows->total() === 1);
+        $this->actingAs($this->moderator())->get(route('moderator.schedules', ['date' => now('Asia/Manila')->toDateString(),'tab'=>'sessions']))->assertOk()->assertSee('Support Sessions')->assertSee($case->seeker->generated_alias)->assertViewHas('scheduledSessions', fn ($rows) => $rows->total() === 1);
     }
 
     public function test_notifications_are_concise_and_emergencies_remain_individually_actionable(): void

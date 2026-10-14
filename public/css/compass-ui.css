@@ -44,6 +44,10 @@
 .compass-ui .ui-skip-link:focus { transform: none; }
 .compass-ui :is(.form-error, .error-text, .ui-field-error) { color: var(--compass-danger); font-size: .8125rem; line-height: 1.5; }
 .compass-ui input[type="checkbox"], .compass-ui input[type="radio"] { accent-color: var(--compass-green); flex: none; }
+.compass-privacy-text p + p { margin-top:14px; }
+.compass-password-field { position:relative; }
+.compass-password-field input { padding-right:58px!important; }
+.compass-password-toggle { position:absolute; right:8px; top:50%; transform:translateY(-50%); border:0; background:white; color:#08763f; padding:6px; cursor:pointer; font-size:12px; }
 
 /* Existing Administrator rules retain their theme/accent and composition. */
 .compass-ui:not(.compass-ui-admin) body {

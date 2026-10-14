@@ -1,3 +1,4 @@
+<div class="compass-privacy-text">
 <h3 class="text-base font-bold text-gray-800 mb-2">Privacy Notice</h3>
 <p>Welcome to COMPASS, a web based platform for Project Dial-A-Friend.</p>
 <p>COMPASS is committed to protecting your privacy in accordance with the Data Privacy Act of 2012 (Republic Act No. 10173).</p>
@@ -7,3 +8,4 @@
 <p>If you choose not to consent to voice recording, you may continue receiving peer-support services through the secure text-chat feature. Declining voice-recording consent will not prevent you from accessing peer-support services.</p>
 <p>Session summaries and anonymized records may be used for competency monitoring, program evaluation, and institutional reporting while maintaining user confidentiality.</p>
 <p>By selecting &quot;I Agree&quot;, you acknowledge that you have read and understood this Privacy Notice and consent to the collection, processing, storage, and protection of your information for the purposes described above.</p>
+</div>

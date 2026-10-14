@@ -52,13 +52,9 @@
 <a class="seeker-button danger" href="{{ route('emergency') }}">Emergency resources</a>
 </div>
 </div>
-<aside class="review-assignment" aria-label="Assigned reviewing Adviser">
-@if($session->reviewAdviser)
-<p>Reviewing Adviser: <strong>{{ trim(($session->reviewAdviser->first_name ?? '').' '.($session->reviewAdviser->last_name ?? '')) ?: 'Assigned Adviser' }}</strong></p>
-@else
-<span class="review-label">Adviser assignment</span>
-<p>No reviewing Adviser has been assigned yet.</p>
-@endif
+<aside class="review-assignment" aria-label="Staff review status">
+<span class="review-label">Staff review</span>
+<p>Your request is under staff review. You will be notified when a decision is recorded.</p>
 </aside>
 </section>
 @if(($followUp ?? null)?->instrument_version === \App\Services\CompactScreening::SINGLE_VERSION && $followUp->follow_up_requested_at)

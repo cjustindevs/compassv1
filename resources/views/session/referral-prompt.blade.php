@@ -223,6 +223,7 @@
 
     async function decide(accepted) {
         if (deciding) return;
+        if(!window.confirm(accepted?'Confirm that you agree to this referral and its consent terms?':'Confirm that you decline this referral?'))return;
         deciding = true;
         enabledButtons();
         try {

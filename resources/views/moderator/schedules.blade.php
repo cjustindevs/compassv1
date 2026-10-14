@@ -1,129 +1,16 @@
-<!DOCTYPE html>
-<html class="compass-ui" lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moderator Schedules - COMPASS</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @include('partials.ui-assets')
-</head>
-<body class="compass-compact bg-gray-50">
-    @include('layouts.partials.moderator-sidebar')
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <main class="main-content p-6">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <div class="flex items-start gap-4">
-                <button type="button" class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">
-                    <x-ui-icon name="menu" />
-                </button>
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-800">Schedule Management</h1>
-                    <p class="text-sm text-gray-500">Plan helper duty dates and monitor helper readiness on each duty day.</p>
-                </div>
-            </div>
-            <form method="GET" action="{{ route('moderator.schedules') }}" class="flex flex-wrap items-center gap-2">
-                <input type="date" name="date" value="{{ $date }}" class="rounded-lg border-gray-300 text-sm">
-                <label for="availability" class="sr-only">Current availability</label>
-                <select id="availability" name="availability" class="rounded-lg border-gray-300 text-sm">
-                    <option value="">All availability</option>
-                    @foreach(['available'=>'Available','busy'=>'Handling a session','offline'=>'Offline'] as $value=>$label)
-                        <option value="{{ $value }}" @selected(request('availability') === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
-                <button class="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">View</button>
-            </form>
-        </div>
-
-        @if(session('success')) <div class="mb-4 p-3 rounded-lg bg-green-50 text-green-700">{{ session('success') }}</div> @endif
-        @if(session('error')) <div class="mb-4 p-3 rounded-lg bg-red-50 text-red-700">{{ session('error') }}</div> @endif
-        @if($errors->any()) <div role="alert" class="mb-4 p-3 rounded-lg bg-red-50 text-red-700">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div> @endif
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                <h2 class="font-semibold text-gray-800 mb-4">Schedule Helper Duty</h2>
-                <form method="POST" action="{{ route('moderator.schedules.store') }}" class="space-y-3">
-                    @csrf
-                    <label for="duty-helper" class="sr-only">Online, ready Helper</label>
-                    <select id="duty-helper" name="helper_id" required class="w-full rounded-lg border-gray-300 text-sm">
-                        <option value="">{{ $dutyHelpers->isEmpty() ? 'No online, ready Helpers' : 'Select an online, ready Helper' }}</option>
-                        @foreach($dutyHelpers as $helper)
-                            <option value="{{ $helper->id }}" @selected((string) old('helper_id') === (string) $helper->id)>{{ $helper->full_name }} · Online | Ready</option>
-                        @endforeach
-                    </select>
-                    <input type="date" name="event_date" value="{{ old('event_date', $date) }}" required class="w-full rounded-lg border-gray-300 text-sm">
-                    <textarea name="description" rows="3" maxlength="500" class="w-full rounded-lg border-gray-300 text-sm" placeholder="Duty notes or assignment details">{{ old('description') }}</textarea>
-                    <button id="add-duty" @disabled($dutyHelpers->isEmpty()) class="disabled:opacity-50 disabled:cursor-not-allowed w-full px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold">Add Duty Day</button>
-                    <p id="duty-helper-status" class="text-xs text-gray-500" role="status">Helpers refresh automatically every 15 seconds. A current login and passed readiness check are required; an existing duty is not.</p>
-                </form>
-            </section>
-
-            <section class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                <h2 class="font-semibold text-gray-800 mb-4">Duty Schedules for {{ \Illuminate\Support\Carbon::parse($date)->format('M d, Y') }}</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm" style="min-width:580px">
-                        <thead class="text-left text-gray-500 border-b">
-                            <tr><th class="py-2">Duty</th><th class="py-2">Notes</th><th class="py-2">Created</th><th class="py-2">Action</th></tr>
-                        </thead>
-                        <tbody>
-                            @forelse($scheduleEvents as $event)
-                                <tr class="border-b last:border-0">
-                                    <td class="py-3 font-medium text-gray-800">{{ $event->title }}<br><span class="text-xs text-gray-500">{{ $event->start_time && $event->end_time ? substr($event->start_time, 0, 5) . ' - ' . substr($event->end_time, 0, 5) : 'All day' }}</span></td>
-                                    <td class="py-3 text-gray-600">{{ $event->description ?: '—' }}</td>
-                                    <td class="py-3 text-gray-500">{{ $event->created_at?->diffForHumans() }}</td><td class="py-3">@if($event->helperSchedule)<form method="POST" action="{{ route('moderator.schedules.destroy') }}">@csrf<input type="hidden" name="helper_id" value="{{ $event->helperSchedule->helper_id }}"><input type="hidden" name="date" value="{{ $date }}"><input type="hidden" name="shift_id" value="{{ $event->helper_schedule_id }}"><button class="text-red-600 hover:underline">Remove duty</button></form>@endif</td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="4" class="py-6 text-center text-gray-400">No duty schedules for this date.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-        </div>
-        <section class="mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-            <h2 class="font-semibold text-gray-800 mb-4">Scheduled support sessions</h2>
-            <p class="text-sm text-gray-500 mb-3">Appointment times are Philippine Time (Asia/Manila). Duty roster entries are shown separately above.</p>
-            <div class="overflow-x-auto"><table class="w-full text-sm" style="min-width:580px"><thead class="text-left text-gray-500 border-b"><tr><th class="py-2">Helper</th><th>Seeker alias</th><th>Date</th><th>Time</th><th>Status</th><th>Details</th></tr></thead><tbody>
-            @forelse($scheduledSessions as $supportSession)<tr class="border-b"><td class="py-3">{{ $supportSession->helper?->full_name ?? 'Unassigned' }}</td><td>{{ $supportSession->seeker?->generated_alias ?? 'Unavailable' }}</td><td>{{ $supportSession->scheduled_start->copy()->timezone('Asia/Manila')->format('M j, Y') }}</td><td>{{ $supportSession->scheduled_start->copy()->timezone('Asia/Manila')->format('g:i A') }}</td><td>{{ ucwords(str_replace('_',' ',$supportSession->session_status)) }}</td><td><a class="text-green-700" href="{{ route('moderator.sessions.show',$supportSession->id) }}">View session status</a></td></tr>
-            @empty<tr><td colspan="6" class="py-6 text-center text-gray-500">No support sessions scheduled for this date.</td></tr>@endforelse
-            </tbody></table></div>{{ $scheduledSessions->links() }}
-        </section>
-    </main>
-    <script>
-        (() => {
-            const select = document.getElementById('duty-helper');
-            const submit = document.getElementById('add-duty');
-            const status = document.getElementById('duty-helper-status');
-            let loading = false;
-            const refresh = async () => {
-                if (loading || document.hidden) return;
-                loading = true;
-                try {
-                    const response = await fetch(@json(route('moderator.schedules.helpers')), {
-                        headers: { 'Accept': 'application/json' }, cache: 'no-store',
-                    });
-                    if (!response.ok) throw new Error('Unable to refresh helpers');
-                    const data = await response.json();
-                    const selected = select.value;
-                    const helpers = data.helpers;
-                    const remainsEligible = helpers.some(helper => String(helper.id) === selected);
-                    const options = [new Option(helpers.length ? 'Select an online, ready Helper' : 'No online, ready Helpers', '')];
-                    helpers.forEach(helper => options.push(new Option(`${helper.name} | Online | Ready`, String(helper.id))));
-                    select.replaceChildren(...options);
-                    select.value = remainsEligible ? selected : '';
-                    submit.disabled = helpers.length === 0;
-                    status.textContent = selected && !remainsEligible
-                        ? 'The selected Helper is no longer online and ready. Select another Helper.'
-                        : 'Helpers refresh automatically every 15 seconds. A current login and passed readiness check are required; an existing duty is not.';
-                } catch {
-                    status.textContent = 'Helper status could not refresh. Retrying automatically; readiness is checked again when you add duty.';
-                } finally { loading = false; }
-            };
-            window.setInterval(refresh, 15000);
-            document.addEventListener('visibilitychange', refresh);
-            window.addEventListener('focus', refresh);
-            refresh();
-        })();
-    </script>
-</body>
-</html>
+<!doctype html><html class="compass-ui" lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="csrf-token" content="{{ csrf_token() }}"><title>Schedule Management - COMPASS</title>@vite(['resources/css/app.css','resources/js/app.js'])@include('partials.ui-assets')<link rel="stylesheet" href="{{ asset('css/duty-scheduling.css') }}?v={{ filemtime(public_path('css/duty-scheduling.css')) }}"></head>
+<body class="compass-compact">@include('layouts.partials.moderator-sidebar')<div class="sidebar-overlay" id="sidebarOverlay"></div><main class="main-content duty-page">
+<header class="duty-header"><div><button type="button" class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar"><x-ui-icon name="menu" /></button><h1>Schedule Management</h1><p>Plan Helper duty and monitor support sessions. All times are Philippine Time.</p></div><form method="GET"><input type="hidden" name="tab" value="{{ request('tab','duties') }}"><label class="sr-only" for="viewDate">View date</label><input id="viewDate" type="date" name="date" value="{{ $date }}"><button class="duty-button">View</button></form></header>
+@if(session('success'))<p class="duty-feedback" role="status">{{ session('success') }}</p>@endif @if($errors->any())<div class="duty-errors" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+<nav class="duty-tabs" aria-label="Scheduling views">@foreach(['duties'=>'Duty Scheduling','sessions'=>'Support Sessions'] as $tab=>$label)<a class="{{ request('tab','duties')===$tab?'is-active':'' }}" href="{{ route('moderator.schedules',['date'=>$date,'tab'=>$tab]) }}">{{ $label }}</a>@endforeach</nav>
+@if(request('tab')!=='sessions')<div class="duty-grid"><section class="duty-card"><h2>{{ $edit?'Edit duty occurrence':'Schedule Helper Duty' }}</h2><p>Readiness is completed after duty is scheduled.</p><form method="POST" action="{{ route('moderator.schedules.store') }}" id="dutyForm">@csrf @if($edit)<input type="hidden" name="shift_id" value="{{ $edit->id }}">@endif
+<label>Helper<select name="helper_id" required>@foreach($dutyHelpers as $helper)<option value="{{ $helper->id }}" @selected((string)old('helper_id',$edit?->helper_id)===(string)$helper->id)>{{ $helper->full_name }}</option>@endforeach</select></label>@if($dutyHelpers->isEmpty())<p>No verified Helpers with active Adviser assignments are available for scheduling.</p>@endif
+<fieldset><legend>Schedule type</legend><div class="duty-choice"><label><input type="radio" name="schedule_type" value="single" @checked($edit || old('schedule_type','single')==='single')>Single day</label>@unless($edit)<label><input type="radio" name="schedule_type" value="recurring" @checked(old('schedule_type')==='recurring')>Recurring days</label>@endunless</div></fieldset>
+<div data-recurring hidden><fieldset><legend>Days</legend><div class="duty-weekdays">@foreach([1=>'Mon',2=>'Tue',3=>'Wed',4=>'Thu',5=>'Fri',6=>'Sat',0=>'Sun'] as $value=>$label)<label><input type="checkbox" name="weekdays[]" value="{{ $value }}" @checked(in_array($value,old('weekdays',[])))>{{ $label }}</label>@endforeach</div><div class="duty-presets"><button type="button" data-days="1,3,5">MWF</button><button type="button" data-days="2,4">T/Th</button><button type="button" data-days="3,6">W/S</button><button type="button" data-days="1,4">M/Th</button></div></fieldset></div>
+<div class="duty-field-row"><label>Duty date<input type="date" name="event_date" value="{{ old('event_date',$edit?->date->format('Y-m-d')??$date) }}" required></label><label data-recurring hidden>Until<input type="date" name="end_date" value="{{ old('end_date',$date) }}"></label></div><div class="duty-field-row"><label>Shift start<input type="time" name="shift_start" value="{{ old('shift_start',$edit?->shift_start ? substr($edit->shift_start,0,5):'18:00') }}" required></label><label>Shift end<input type="time" name="shift_end" value="{{ old('shift_end',$edit?->shift_end ? substr($edit->shift_end,0,5):'23:00') }}" required></label></div>
+@unless(config('app.enforce_duty_hours'))<p class="duty-testing">Testing mode: duty date and passed readiness are required; clock-hour restrictions are disabled.</p>@endunless
+<label>Duty notes <small>(optional)</small><textarea name="description" maxlength="300" rows="3">{{ old('description',$edit?->duty_notes) }}</textarea></label><button class="duty-button" @disabled($dutyHelpers->isEmpty())>{{ $edit?'Save duty changes':'Schedule Duty' }}</button>@if($edit)<a class="duty-link-button" href="{{ route('moderator.schedules',['date'=>$date]) }}">Cancel edit</a>@endif</form></section>
+<section class="duty-card"><div class="duty-list-heading"><div><h2>Duty Schedules</h2><p>Individual occurrences in the next 30 days from the selected date.</p></div><form method="GET"><input type="hidden" name="date" value="{{ $date }}"><select name="helper_id" aria-label="Helper filter"><option value="">All Helpers</option>@foreach($helpers as $helper)<option value="{{ $helper->id }}" @selected((string)request('helper_id')===(string)$helper->id)>{{ $helper->full_name }}</option>@endforeach</select><button class="duty-link-button">Filter</button></form></div>
+<div class="duty-table"><table><thead><tr><th>Helper</th><th>Duty date</th><th>Time</th><th>Status</th><th>Action</th></tr></thead><tbody>@forelse($duties as $shift)<tr><td><strong>{{ $shift->helper?->full_name }}</strong><small>{{ $shift->series_id?'Recurring occurrence':'Single day' }}</small>@if($shift->duty_notes)<small>{{ $shift->duty_notes }}</small>@endif</td><td>{{ $shift->date->format('M d, Y') }}</td><td>{{ $shift->shift_label }}</td><td><span class="duty-status">{{ $shift->isOnDuty()?'On duty':'Scheduled' }}</span></td><td><div class="duty-row-actions"><a class="duty-link-button" href="{{ route('moderator.schedules',['date'=>$date,'edit'=>$shift->id]) }}">Edit</a><form method="POST" action="{{ route('moderator.schedules.destroy') }}" data-duty-remove>@csrf<input type="hidden" name="helper_id" value="{{ $shift->helper_id }}"><input type="hidden" name="shift_id" value="{{ $shift->id }}"><input type="hidden" name="date" value="{{ $date }}">@if($shift->series_id)<select name="scope" aria-label="Remove scope"><option value="one">This duty only</option><option value="future">This and future duties</option></select>@endif<button class="duty-remove">Remove</button></form></div></td></tr>@empty<tr><td colspan="5">No duties scheduled for this period.</td></tr>@endforelse</tbody></table></div>{{ $duties->links() }}</section></div>
+@else<section class="duty-card"><h2>Support Sessions</h2><p>Actual scheduled sessions for the selected date.</p><div class="duty-table"><table><thead><tr><th>Time</th><th>Helper</th><th>Seeker alias</th><th>Status</th><th>Mode</th><th>Action</th></tr></thead><tbody>@forelse($scheduledSessions as $session)<tr><td>{{ $session->scheduled_start?->timezone('Asia/Manila')->format('g:i A') }}</td><td>{{ $session->helper?->full_name??'Unassigned' }}</td><td>{{ $session->seeker?->generated_alias }}</td><td>{{ $session->status_label }}</td><td>{{ $session->mode_label }}</td><td><a class="duty-link-button" href="{{ route('moderator.sessions.show',$session->id) }}">View</a></td></tr>@empty<tr><td colspan="6">No scheduled support sessions for this date.</td></tr>@endforelse</tbody></table></div>{{ $scheduledSessions->links() }}</section>@endif
+</main><script>(()=>{const form=document.getElementById('dutyForm');if(form){const update=()=>{const recurring=form.querySelector('[name="schedule_type"]:checked').value==='recurring';form.querySelectorAll('[data-recurring]').forEach(node=>{node.hidden=!recurring;node.querySelectorAll('input').forEach(input=>input.disabled=!recurring);});};form.querySelectorAll('[name="schedule_type"]').forEach(input=>input.addEventListener('change',update));form.querySelectorAll('[data-days]').forEach(button=>button.addEventListener('click',()=>{const days=button.dataset.days.split(',');form.querySelectorAll('[name="weekdays[]"]').forEach(input=>input.checked=days.includes(input.value));}));update();}document.querySelectorAll('[data-duty-remove]').forEach(form=>form.addEventListener('submit',event=>{if(!confirm('Remove the selected duty occurrence(s)? Readiness linked to cancelled duty will stop being valid.'))event.preventDefault();}));})();</script></body></html>

@@ -30,7 +30,7 @@ class SessionReconnectionTest extends TestCase
     {
         parent::setUp();
         $this->travelTo(now()->startOfDay()->addHours(11));
-        config(['app.relax_duty_hours' => true]);
+        config(['app.relax_duty_hours' => false, 'app.enforce_duty_hours' => false]);
         $this->helperUser = User::factory()->create(['role' => 'helper', 'is_active' => true]);
         $helper = Helper::create(['user_account_id' => $this->helperUser->id, 'email' => $this->helperUser->email, 'first_name' => 'Original', 'last_name' => 'Helper', 'status' => 'available', 'availability' => 'available', 'competency_level' => 2]);
         $this->verifiedHelperFixture($helper);
@@ -54,7 +54,8 @@ class SessionReconnectionTest extends TestCase
         $u = User::factory()->create(['role' => 'helper', 'is_active' => true]);
         $h = Helper::create(['user_account_id' => $u->id, 'email' => $u->email, 'first_name' => 'Replacement', 'last_name' => 'Helper', 'status' => 'available', 'availability' => 'available', 'competency_level' => 2]);
         $this->verifiedHelperFixture($h);
-        \App\Models\ReadinessCheck::create(['helper_id'=>$h->id,'assessment_date'=>now(),'valid_until'=>now()->addHours(2),'assessment_result'=>'ready','availability_status'=>'available','is_active'=>true]);
+        $duty = \App\Models\HelperSchedule::create(['helper_id'=>$h->id,'date'=>now('Asia/Manila')->toDateString(),'is_active'=>true,'created_by'=>$u->id]);
+        \App\Models\ReadinessCheck::create(['helper_id'=>$h->id,'helper_schedule_id'=>$duty->id,'assessment_date'=>now(),'valid_until'=>now()->addHours(2),'assessment_result'=>'ready','availability_status'=>'available','is_active'=>true]);
 
         return $u;
     }

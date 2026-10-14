@@ -24,6 +24,7 @@ class HelperReadinessController extends Controller
         abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $user = Auth::user();
         $helper = $user->helper;
+        if(!\App\Models\HelperSchedule::readinessDutyFor($helper->id))return redirect()->route('helper.dashboard')->with('warning','You don’t have a scheduled duty today, or readiness is not open yet. Please contact your Moderator. Your upcoming duties are on your dashboard.');
 
         $latestCheck = ReadinessCheck::where('helper_id', $helper->id)
             ->orderBy('created_at', 'desc')

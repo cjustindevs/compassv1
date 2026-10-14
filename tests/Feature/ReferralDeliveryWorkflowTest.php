@@ -33,6 +33,7 @@ class ReferralDeliveryWorkflowTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config(['app.enforce_duty_hours'=>false]);
         config(['database.connections.identity_vault' => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '', 'foreign_key_constraints' => true],
             'identity_vault.key' => 'base64:'.base64_encode(str_repeat('v', 32))]);
         \Illuminate\Support\Facades\DB::purge('identity_vault');

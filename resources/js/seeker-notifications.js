@@ -107,6 +107,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function showToast(title, message, link, linkLabel) {
+        if (window.CompassNoticesEnabled) return;
         const existing = document.getElementById('seekerToast');
         if (existing) existing.remove();
 

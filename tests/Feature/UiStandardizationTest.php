@@ -32,6 +32,8 @@ class UiStandardizationTest extends TestCase
             'seeker' => ['seeker.dashboard', 'selfhelp', 'seeker.privacy', 'seeker.referrals', 'session.history', 'settings', 'settings.account', 'settings.preferences', 'settings.privacy', 'settings.appearance', 'seeker.requests', 'emergency', 'notifications', 'notifications.archive'],
             'professional' => ['professional.dashboard', 'professional.cases', 'professional.referrals', 'professional.reports', 'professional.profile', 'professional.settings'],
         ];
+        $helperAccount=User::where('role','helper')->firstOrFail();
+        \App\Models\HelperSchedule::updateOrCreate(['helper_id'=>$helperAccount->helper->id,'date'=>now('Asia/Manila')->toDateString()],['is_active'=>true,'created_by'=>$helperAccount->id,'shift_start'=>null,'shift_end'=>null]);
         foreach ($pages as $role => $routes) {
             $user = User::where('role', $role)->firstOrFail();
             foreach ($routes as $route) {

@@ -262,6 +262,13 @@
         <div class="flash-error mb-4"> This referral was returned to the Helper for revision. Approval is blocked until the Helper responds with the requested clarification.</div>
         @endif
 
+            @if($referral->approved_at && $referral->session?->screeningResponses()->exists())
+            <section class="card p-4 my-4"><h3 class="font-semibold">Pre-session screening summary</h3>@php($intake=$referral->session->screeningResponses()->oldest('id')->first())
+            <p class="text-sm">Concern: {{ $referral->session->concern?->concern_name??'Not recorded' }}</p>
+            @php($safetyAnswer=$intake->responses['suicidal_thoughts']??'Not recorded')
+            <p class="text-sm">Safety answer: {{ is_bool($safetyAnswer) ? ($safetyAnswer ? 'Yes' : 'No') : ucwords(str_replace('_',' ',(string)$safetyAnswer)) }}</p>
+            <p class="text-sm">Description: {{ $intake->responses['description']??'Not provided' }}</p><p class="text-xs text-gray-500">Recorded {{ $intake->created_at?->timezone('Asia/Manila')->format('M d, Y g:i A') }}. Original responses are retained.</p></section>
+            @endif
             <!-- Actions -->
             <div class="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
                 <a href="{{ route('adviser.session.show', $referral->session_id) }}" class="btn-outline">

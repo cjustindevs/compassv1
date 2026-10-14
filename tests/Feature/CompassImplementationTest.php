@@ -124,7 +124,7 @@ class CompassImplementationTest extends TestCase
         $other = ConcernCategory::where('concern_name','Others')->value('id');
         $this->post(route('request.concern.process'), ['concern_id'=>$other])->assertSessionHasErrors('description');
         $this->post(route('request.concern.process'), ['concern_id'=>$other, 'description'=>'A concern outside the listed categories.'])->assertSessionHasNoErrors()->assertRedirect(route('request.preferences'));
-        $this->get(route('request.preferences'))->assertOk()->assertDontSee('Risk Classification:')->assertDontSee('name="additional_notes"', false)->assertDontSee('value="voice"', false)->assertSee('id="preferencesForm"', false)->assertSee('name="preferred_language"', false)->assertDontSee(route('request.cancel', 1), false);
+        $this->get(route('request.preferences'))->assertOk()->assertDontSee('Risk Classification:')->assertDontSee('name="additional_notes"', false)->assertSee('value="voice"', false)->assertSee('Voice calls are temporarily unavailable.')->assertSee('id="preferencesForm"', false)->assertSee('name="preferred_language"', false)->assertDontSee(route('request.cancel', 1), false);
         $this->assertDatabaseHas('screening_responses', ['is_active' => true, 'is_complete' => true, 'risk_level' => 'low']);
     }
 

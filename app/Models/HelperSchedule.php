@@ -10,6 +10,7 @@ class HelperSchedule extends Model
 {
     protected $fillable = [
         'helper_id',
+        'series_id', 'duty_notes',
         'date',
         'shift_start',
         'shift_end',
@@ -63,8 +64,8 @@ class HelperSchedule extends Model
     }
 
     /**
-     * Duty is scheduled per day, so a row covers the whole of its date. The
-     * legacy start and end columns are no longer written.
+     * Testing and legacy all-day rows cover the date. When time enforcement
+     * is enabled, timed duties cover their configured shift.
      *
      * @return array{0: Carbon, 1: Carbon}
      */
@@ -82,7 +83,10 @@ class HelperSchedule extends Model
             $tz
         );
 
-        return [$day, $day->copy()->addDay()];
+        if(!config('app.enforce_duty_hours',false) || (!$this->shift_start && !$this->shift_end))return [$day,$day->copy()->addDay()];
+        $start=$day->copy()->setTimeFromTimeString($this->shift_start ?: self::OPERATING_START);
+        $end=$day->copy()->setTimeFromTimeString($this->shift_end ?: self::OPERATING_END);
+        return [$start,$end];
     }
 
     /**
@@ -127,8 +131,8 @@ class HelperSchedule extends Model
     public function getShiftDuration(): float
     {
         $minutes = (int) round(
-            Carbon::parse(self::OPERATING_START, 'UTC')->diffInMinutes(
-                Carbon::parse(self::OPERATING_END, 'UTC'),
+            Carbon::parse($this->shift_start ?: self::OPERATING_START, 'UTC')->diffInMinutes(
+                Carbon::parse($this->shift_end ?: self::OPERATING_END, 'UTC'),
                 false
             )
         );
@@ -143,6 +147,14 @@ class HelperSchedule extends Model
 
     public function getShiftLabelAttribute(): string
     {
-        return 'All day';
+        if(!$this->shift_start && !$this->shift_end)return 'All day';
+        return Carbon::parse($this->shift_start ?: self::OPERATING_START)->format('g:i A').' – '.Carbon::parse($this->shift_end ?: self::OPERATING_END)->format('g:i A');
+    }
+
+    public static function readinessDutyFor(int $helperId): ?self
+    {
+        $now=now(config('app.schedule_timezone','Asia/Manila'));
+        return self::where('helper_id',$helperId)->where('is_active',true)->whereDate('date',$now->toDateString())->get()
+            ->first(function($shift)use($now){[$start,$end]=$shift->window();return $now->gte($start->copy()->subMinutes(30)) && $now->lt($end);});
     }
 }

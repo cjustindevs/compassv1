@@ -137,33 +137,13 @@
                                 @else
                                     <span class="admin-account-note">Deactivated</span>
                                 @endif
-                                <div class="user-actions" data-user-actions>
-                                    <button
-                                        class="user-actions-trigger"
-                                        type="button"
-                                        aria-label="Actions for {{ $user['name'] }}"
-                                        aria-haspopup="menu"
-                                        aria-expanded="false"
-                                        data-user-actions-trigger
-                                    >
-                                        <x-admin.icon name="more-horizontal" :size="20" />
-                                    </button>
-                                    <div class="user-actions-menu" role="menu" data-user-actions-menu hidden>
-                                        <button type="button" role="menuitem" data-prepared-action="View profile">
-                                            <x-admin.icon name="eye" :size="16" /> View profile
-                                        </button>
-                                        <button type="button" role="menuitem" data-prepared-action="Edit user">
-                                            <x-admin.icon name="edit" :size="16" /> Edit user
-                                        </button>
-                                        <button type="button" role="menuitem" data-prepared-action="Manage role">
-                                            <x-admin.icon name="role" :size="16" /> Manage role
-                                        </button>
-                                        <button type="button" role="menuitem" data-prepared-action="Reset password">
-                                            <x-admin.icon name="key" :size="16" /> Reset password
-                                        </button>
-
-                                    </div>
-                                </div>
+                                <a class="admin-deactivate-button" href="{{ route('admin.users.edit', $user['id']) }}">Edit Profile</a>
+                                @if($user['status'] === 'inactive')
+                                <form method="POST" action="{{ route('admin.users.reactivate', $user['id']) }}">@csrf
+                                    <label><input type="checkbox" name="confirm_reactivation" value="1" required> Confirm reactivation</label>
+                                    <button class="admin-deactivate-button" type="submit">Reactivate</button>
+                                </form>
+                                @endif
                             </td>
                         </tr>
                     @endforeach
@@ -224,6 +204,7 @@
                             <select name="role" required>
                                 <option value="" disabled @selected(old('role') === null)>Select role</option>
                                 @foreach ($roleOptions as $role => $label)
+                                    @continue($role === 'seeker')
                                     <option value="{{ $role }}" @selected(old('role') === $role)>{{ $label }}</option>
                                 @endforeach
                             </select>

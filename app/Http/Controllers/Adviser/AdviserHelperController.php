@@ -35,7 +35,7 @@ class AdviserHelperController extends Controller
         $helperIds = $helpers->pluck('id');
 
         $avgScores = HelperCompetencyHistory::whereIn('helper_id', $helperIds)
-            ->selectRaw('helper_id, AVG(overall_score) as avg_score')
+            ->selectRaw('helper_id, AVG(CASE WHEN overall_score > 5 THEN overall_score / 20.0 ELSE overall_score END) as avg_score')
             ->groupBy('helper_id')
             ->pluck('avg_score', 'helper_id');
 
@@ -47,7 +47,7 @@ class AdviserHelperController extends Controller
                 'helper' => $helper,
                 'initials' => $this->getInitials($helper->first_name, $helper->last_name),
                 'level' => $this->getCompetencyLevel($helper->competency_level),
-                'competency_score' => $helper->latest_competency_overall_score ? round((float) $helper->latest_competency_overall_score, 1) : 0,
+                'competency_score' => $helper->latest_competency_overall_score ? round($helper->latest_competency_overall_score > 5 ? $helper->latest_competency_overall_score / 20 : $helper->latest_competency_overall_score, 1) : 0,
                 'average_rating' => round((float) ($avgScores->get($helper->id, 0)), 1),
                 'active_cases' => $helper->active_cases,
                 'status' => $status,
@@ -111,12 +111,11 @@ class AdviserHelperController extends Controller
         $data=$request->validate([
             'currently_enrolled'=>'accepted', 'recognized_member'=>'accepted', 'training_completed'=>'accepted',
             'qualification_evidence'=>'required|string|max:2000',
-            'verification_expires_at'=>'nullable|date|after:today',
         ]);
         \Illuminate\Support\Facades\DB::transaction(function()use($helper,$data,$request){
             $helper=Helper::lockForUpdate()->findOrFail($helper->id);
             $this->authorizeHelper($helper);
-            $helper->update(['verification_status'=>'verified','verified_at'=>now(),'verified_by'=>$request->user()->id,'training_verified'=>true,'qualification_evidence'=>$data['qualification_evidence'],'verification_expires_at'=>$data['verification_expires_at']??null]);
+            $helper->update(['verification_status'=>'verified','verified_at'=>now(),'verified_by'=>$request->user()->id,'training_verified'=>true,'qualification_evidence'=>$data['qualification_evidence']]);
             \App\Services\SupportAudit::record('helper_institutionally_verified',$helper,['verifier_id'=>$request->user()->id]);
             \App\Models\Notification::create(['user_account_id'=>$helper->user_account_id,'title'=>'Helper verification approved','message'=>'Your adviser verified your institutional eligibility and training. Check your duty schedule and complete readiness before accepting sessions.','notification_type'=>'system','type_icon'=>'fa-user-check','link'=>'/helper/dashboard']);
         },3);
@@ -341,7 +340,7 @@ class AdviserHelperController extends Controller
             return [
                 'helper' => $helper,
                 'status' => $this->getHelperStatus($helper),
-                'competency_score' => $latestCompetency->has($helper->id) ? round($latestCompetency[$helper->id], 1) : 0,
+                'competency_score' => $latestCompetency->has($helper->id) ? round($latestCompetency[$helper->id] > 5 ? $latestCompetency[$helper->id] / 20 : $latestCompetency[$helper->id], 1) : 0,
                 'active_cases' => $activeCounts->get($helper->id, 0),
                 'total_sessions' => $totalCounts->get($helper->id, 0),
             ];

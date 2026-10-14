@@ -24,6 +24,7 @@ class ModeratorAdviserModuleTest extends TestCase
 
     private function loggedInReadyDutyHelper(Helper $helper): void
     {
+        $this->verifiedHelperFixture($helper);
         if (!\Illuminate\Support\Facades\Schema::hasTable('test_duty_logins')) {
             \Illuminate\Support\Facades\Schema::create('test_duty_logins', function ($table) {
                 $table->string('id')->primary(); $table->unsignedBigInteger('user_id')->nullable(); $table->integer('last_activity');
@@ -196,7 +197,7 @@ class ModeratorAdviserModuleTest extends TestCase
             ])->assertSessionHasNoErrors();
         }
 
-        $this->assertSame(3, \App\Models\HelperSchedule::whereDate('date', $date)->count());
+        $this->assertSame(3, \App\Models\HelperSchedule::where('is_active',true)->whereDate('date', $date)->count());
 
         foreach ([$first, $second, $third] as $helper) {
             $this->assertSame(1, \App\Models\HelperSchedule::where('helper_id', $helper->id)
@@ -210,8 +211,8 @@ class ModeratorAdviserModuleTest extends TestCase
             'helper_id' => $second->id, 'date' => $date, 'shift_id' => $shift->id,
         ])->assertSessionHasNoErrors();
 
-        $this->assertDatabaseMissing('helper_schedules', ['id' => $shift->id]);
-        $this->assertSame(2, \App\Models\HelperSchedule::whereDate('date', $date)->count());
+        $this->assertDatabaseHas('helper_schedules', ['id' => $shift->id, 'is_active'=>false]);
+        $this->assertSame(2, \App\Models\HelperSchedule::where('is_active',true)->whereDate('date', $date)->count());
         $this->assertTrue($first->fresh()->schedules()->whereDate('date', $date)->first()->isOnDuty() === false);
     }
 
@@ -262,7 +263,7 @@ class ModeratorAdviserModuleTest extends TestCase
         $other = $this->helper($adviser);
         $service->scheduleDuty($helper, now()->addDays(5)->toDateString(), attributes: ['created_by' => $user->id]);
         $service->scheduleDuty($other, $date, attributes: ['created_by' => $user->id]);
-        $this->assertSame(2, \App\Models\HelperSchedule::whereDate('date', $date)->count());
+        $this->assertSame(2, \App\Models\HelperSchedule::where('is_active',true)->whereDate('date', $date)->count());
     }
 
     public function test_a_moderator_can_remove_a_helper_from_a_day(): void
@@ -291,11 +292,11 @@ class ModeratorAdviserModuleTest extends TestCase
             'helper_id' => $helper->id, 'date' => $date, 'shift_id' => $shift->id,
         ])->assertRedirect(route('moderator.schedules', ['date' => $date]))->assertSessionHasNoErrors();
 
-        $this->assertDatabaseMissing('helper_schedules', ['id' => $shift->id]);
+        $this->assertDatabaseHas('helper_schedules', ['id' => $shift->id, 'is_active'=>false]);
         $this->assertDatabaseMissing('calendar_events', ['id' => $eventId]);
 
         // Only the removed helper loses the day.
-        $this->assertSame(1, \App\Models\HelperSchedule::whereDate('date', $date)->count());
+        $this->assertSame(1, \App\Models\HelperSchedule::where('is_active',true)->whereDate('date', $date)->count());
         $this->assertSame(1, \App\Models\HelperSchedule::where('helper_id', $other->id)->whereDate('date', $date)->count());
     }
 
@@ -401,7 +402,7 @@ class ModeratorAdviserModuleTest extends TestCase
         $this->loggedInReadyDutyHelper($helper);
         $other = $this->helper();
         $this->loggedInReadyDutyHelper($other);
-        $date = now()->toDateString();
+        $date = now('Asia/Manila')->toDateString();
 
         $payload = [
             'helper_id' => $helper->id,
@@ -413,7 +414,7 @@ class ModeratorAdviserModuleTest extends TestCase
             ->assertRedirect(route('moderator.schedules', ['date' => $date]));
 
         $this->assertDatabaseHas('helper_schedules', [
-            'helper_id' => $helper->id, 'shift_start' => null, 'shift_end' => null,
+            'helper_id' => $helper->id, 'shift_start' => '18:00', 'shift_end' => '23:00',
         ]);
         $this->assertDatabaseHas('calendar_events', [
             'title' => 'Duty: '.$helper->full_name,
@@ -426,7 +427,7 @@ class ModeratorAdviserModuleTest extends TestCase
             'event_date' => $date,
         ])->assertRedirect(route('moderator.schedules', ['date' => $date]))->assertSessionHasNoErrors();
 
-        $this->assertSame(2, \App\Models\HelperSchedule::whereDate('date', $date)->count());
+        $this->assertSame(2, \App\Models\HelperSchedule::where('is_active',true)->whereDate('date', $date)->count());
 
         // Only the same helper twice on one date is refused.
         $this->actingAs($moderatorUser)->from(route('moderator.schedules'))->post(route('moderator.schedules.store'), $payload)
@@ -437,6 +438,7 @@ class ModeratorAdviserModuleTest extends TestCase
 
     public function test_moderator_duty_day_counts_as_duty_for_eligibility(): void
     {
+        config(['app.enforce_duty_hours' => false]);
         [$moderatorUser] = $this->moderatorUser();
         $helper = $this->helper();
         $this->loggedInReadyDutyHelper($helper);
@@ -448,21 +450,21 @@ class ModeratorAdviserModuleTest extends TestCase
             'description' => 'All-day duty date',
         ])->assertRedirect(route('moderator.schedules', ['date' => $date]));
 
-        $this->assertDatabaseHas('helper_schedules', ['helper_id' => $helper->id, 'shift_start' => null, 'shift_end' => null]);
+        $this->assertDatabaseHas('helper_schedules', ['helper_id' => $helper->id, 'shift_start' => '18:00', 'shift_end' => '23:00']);
         $this->assertSame(1, \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
         $this->assertDatabaseHas('calendar_events', [
             'title' => 'Duty: '.$helper->full_name,
             'event_type' => CalendarEvent::TYPE_MEETING,
-            'start_time' => null,
-            'end_time' => null,
+            'start_time' => '18:00',
+            'end_time' => '23:00',
         ]);
 
         // A duty day counts for the whole date, so the helper is on duty.
         $this->assertTrue($helper->fresh()->schedules()->whereDate('date', $date)->first()->isOnDuty());
 
-        // The form is per day, so it offers no shift times at all.
+        // Timed duties can be planned while testing allows any clock time.
         $this->get(route('moderator.schedules'))->assertOk()
-            ->assertDontSee('type="time"', false)
+            ->assertSee('type="time"', false)
             ->assertDontSee('Select shift', false);
     }
 

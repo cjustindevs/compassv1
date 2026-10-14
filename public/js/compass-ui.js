@@ -1,6 +1,14 @@
 /* Presentation only. No matching/status/network logic belongs in this file. */
 (() => {
     const prepare = () => {
+        document.querySelectorAll('input[type="password"]').forEach(input=>{
+            if(input.closest('.compass-password-field'))return;
+            const wrapper=document.createElement('div');wrapper.className='compass-password-field';input.parentNode.insertBefore(wrapper,input);wrapper.append(input);
+            const toggle=document.createElement('button');toggle.type='button';toggle.className='compass-password-toggle';toggle.setAttribute('aria-label','Show password');toggle.setAttribute('aria-pressed','false');
+            const sprite=document.querySelector('meta[name="compass-icon-sprite"]')?.content||'/images/compass-icons.svg';
+            toggle.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><use /></svg>';toggle.querySelector('use').setAttribute('href',sprite+'#eye');
+            toggle.addEventListener('click',()=>{const show=input.type==='password';input.type=show?'text':'password';toggle.querySelector('use').setAttribute('href',sprite+(show?'#eye-off':'#eye'));toggle.setAttribute('aria-label',show?'Hide password':'Show password');toggle.setAttribute('aria-pressed',String(show));});wrapper.append(toggle);
+        });
         try {
             const preferences = JSON.parse(document.querySelector('meta[name="compass-display-preferences"]')?.content || '{}');
             document.body.classList.toggle('high-contrast', preferences.high_contrast === true);

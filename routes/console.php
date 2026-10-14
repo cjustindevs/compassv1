@@ -37,6 +37,9 @@ Artisan::command('voice:status', function () {
 Schedule::command('voice:prepare')->everyFiveMinutes()->withoutOverlapping()
     ->when(fn () => app(\App\Services\VoiceConfiguration::class)->configured());
 
+Schedule::call(fn()=>app(\App\Services\StaffMailService::class)->deliver())->everyMinute()->name('deliver-staff-mail')->withoutOverlapping();
+Schedule::call(fn()=>app(\App\Services\DutySchedulingService::class)->remind())->hourly()->name('remind-helper-duty')->withoutOverlapping();
+
 Schedule::call(fn () => app(\App\Services\StaleQueueRequests::class)->expire())
     ->everyMinute()->name('expire-stale-queue')->withoutOverlapping();
 
