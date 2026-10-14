@@ -123,27 +123,27 @@
                                     <span class="directory-user-copy">
                                         <strong>{{ $user['name'] }}</strong>
                                         <small>{{ $user['email'] }}</small>
+                                        @if($user['welcomeEmail'])<small class="account-mail-status">{{ $user['welcomeEmail']['status'] }}</small>@endif
                                     </span>
                                 </div>
+                                @if($user['welcomeEmail']['retryable']??false)
+                                <form method="POST" action="{{ route('admin.users.welcome-email.retry',$user['id']) }}" class="account-mail-retry" data-single-submit>@csrf<input type="hidden" name="confirm_email_retry" value="1"><button class="admin-button admin-button-secondary" type="submit">Retry account email</button></form>
+                                @endif
                             </td>
                             <td><x-admin.user-role-badge :label="$user['roleLabel']" /></td>
                             <td><x-admin.user-status-badge :status="$user['status']" :label="$user['statusLabel']" /></td>
                             <td class="joined-cell">{{ $user['joined'] }}</td>
                             <td class="actions-column">
+                                <div class="directory-row-actions">
+                                <a class="admin-button admin-button-secondary" href="{{ route('admin.users.edit', $user['id']) }}">Edit Profile</a>
                                 @if ($user['status'] === 'active' && (string) $admin->id !== $user['id'])
-                                    <button class="admin-deactivate-button" type="button" data-deactivate-user data-deactivate-url="{{ route('admin.users.deactivate', $user['id']) }}" data-user-name="{{ $user['name'] }}" aria-label="Deactivate {{ $user['name'] }}">Deactivate user</button>
+                                    <button class="admin-button admin-button-danger-outline" type="button" data-deactivate-user data-deactivate-url="{{ route('admin.users.deactivate', $user['id']) }}" data-user-name="{{ $user['name'] }}" aria-label="Deactivate {{ $user['name'] }}">Deactivate</button>
                                 @elseif ((string) $admin->id === $user['id'])
                                     <span class="admin-account-note">Your account</span>
                                 @else
-                                    <span class="admin-account-note">Deactivated</span>
+                                    <button class="admin-button admin-button-secondary" type="button" data-reactivate-user data-reactivate-url="{{ route('admin.users.reactivate',$user['id']) }}" data-user-name="{{ $user['name'] }}">Reactivate</button>
                                 @endif
-                                <a class="admin-deactivate-button" href="{{ route('admin.users.edit', $user['id']) }}">Edit Profile</a>
-                                @if($user['status'] === 'inactive')
-                                <form method="POST" action="{{ route('admin.users.reactivate', $user['id']) }}">@csrf
-                                    <label><input type="checkbox" name="confirm_reactivation" value="1" required> Confirm reactivation</label>
-                                    <button class="admin-deactivate-button" type="submit">Reactivate</button>
-                                </form>
-                                @endif
+                                </div>
                             </td>
                         </tr>
                     @endforeach
@@ -170,8 +170,9 @@
         description="Add a universal COMPASS account. Role-specific profile details can be completed later."
         :open-on-load="old('_dialog') === 'create-user-dialog' && $errors->any()"
     >
-        <form method="POST" action="{{ route('admin.users.store') }}" data-dialog-form>
+        <form method="POST" action="{{ route('admin.users.store') }}" data-dialog-form data-single-submit>
             @csrf
+            <input type="hidden" name="creation_token" value="{{ old('creation_token', (string)\Illuminate\Support\Str::uuid()) }}">
             <input type="hidden" name="_dialog" value="create-user-dialog">
 
             <div class="admin-dialog-body">
@@ -279,5 +280,11 @@
             <button class="admin-button admin-button-secondary" type="button" data-dialog-close>Cancel</button>
             <form method="POST" data-deactivate-form>@csrf<input type="hidden" name="confirm_deactivation" value="1"><button class="admin-button admin-button-danger" type="submit">Confirm deactivation</button></form>
         </footer>
+    </x-admin.dialog>
+    <x-admin.dialog id="reactivate-user-dialog" title="Reactivate user?" description="Restore account access. Duty, verification, and readiness are still required for Helpers." size="small">
+        <div class="admin-dialog-body"><p>Restore access for <strong data-reactivate-name>this user</strong>?</p></div>
+        <form method="POST" data-reactivate-form data-single-submit>@csrf<input type="hidden" name="confirm_reactivation" value="1">
+            <footer class="admin-dialog-footer"><button class="admin-button admin-button-secondary" type="button" data-dialog-close>Cancel</button><button class="admin-button admin-button-primary" type="submit">Confirm reactivation</button></footer>
+        </form>
     </x-admin.dialog>
 </x-admin.layout>

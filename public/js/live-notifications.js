@@ -30,6 +30,8 @@
         try{
             const response=await fetch(config.feed+(seen===null?'':'?after='+seen),{headers:{Accept:'application/json'},cache:'no-store'});if(!response.ok)return;
             const data=await response.json();count.textContent=data.count>99?'99+':String(data.count);count.hidden=!data.count;bell.setAttribute('aria-label',`${data.count} unread notifications`);
+            const emergencyBadge=document.getElementById('emergencyBadge');
+            if(emergencyBadge&&data.workflow?.emergency_count!==undefined){emergencyBadge.textContent=data.workflow.emergency_count;emergencyBadge.hidden=!data.workflow.emergency_count;emergencyBadge.style.display=data.workflow.emergency_count?'inline-flex':'none';}
             document.querySelectorAll('#notifBadge,#notificationBadge').forEach(badge=>{badge.textContent=data.count;badge.style.display=data.count?'inline-flex':'none';});
             inbox.replaceChildren(el('h2','Notifications'));
             for(const notice of data.recent){const link=el('a');link.className='compass-notice-item'+(!notice.read?' is-unread':'');link.href=safe(notice.link);link.append(el('strong',notice.title),el('small',notice.message));inbox.append(link);}

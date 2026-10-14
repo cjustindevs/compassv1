@@ -213,6 +213,8 @@
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <main class="main-content">
+        @php($linkedEmergency=\App\Models\EmergencyAlert::where('referral_id',$referral->id)->latest('id')->first())
+        @if($linkedEmergency)<section class="card" id="emergency-context" style="border-left:4px solid #d6293c;margin-bottom:16px"><h2 style="font-weight:700">Linked emergency case #{{ $linkedEmergency->id }}</h2><p>{{ ucfirst($linkedEmergency->status) }} · Reported {{ $linkedEmergency->triggered_at?->timezone('Asia/Manila')->format('M d, Y g:i A') }} PHT.</p><p>Acceptance records your referral handoff. Emergency resolution remains with the responsible Adviser.</p></section>@endif
         @if ($referral->identity_disclosed && $referral->help_seeker_consent && in_array($referral->status, \App\Models\Referral::ACTIVE_STATUSES, true))
             <a href="{{ route('identity.show', $referral) }}" class="inline-block bg-green-700 text-white p-3 rounded mb-4">View released identity</a>
         @endif

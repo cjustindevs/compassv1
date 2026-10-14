@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Helper;
 
 use App\Http\Controllers\Controller;
+use App\Models\HelperSchedule;
 use App\Models\ReadinessCheck;
+use App\Services\HelperDutySummary;
 use App\Services\HelperEligibilityService;
 use App\Services\HelperMatchingService;
 use App\Services\HelperReadinessService;
+use App\Services\HelperSidebarStats;
 use App\Services\HelperWorkflowMaintenance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,7 +27,9 @@ class HelperReadinessController extends Controller
         abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $user = Auth::user();
         $helper = $user->helper;
-        if(!\App\Models\HelperSchedule::readinessDutyFor($helper->id))return redirect()->route('helper.dashboard')->with('warning','You don’t have a scheduled duty today, or readiness is not open yet. Please contact your Moderator. Your upcoming duties are on your dashboard.');
+        if (! HelperSchedule::readinessDutyFor($helper->id)) {
+            return redirect()->route('helper.dashboard')->with('warning', 'You don’t have a scheduled duty today, or readiness is not open yet. Please contact your Moderator. Your upcoming duties are on your dashboard.');
+        }
 
         $latestCheck = ReadinessCheck::where('helper_id', $helper->id)
             ->orderBy('created_at', 'desc')
@@ -51,7 +56,8 @@ class HelperReadinessController extends Controller
         $helper = Auth::user()->helper;
 
         return response()->json([
-            'sidebar' => app(\App\Services\HelperSidebarStats::class)->forHelper($helper),
+            'duties' => app(HelperDutySummary::class)->forHelper($helper),
+            'sidebar' => app(HelperSidebarStats::class)->forHelper($helper),
             'status' => $helper->getReadinessStatus(),
             'ready' => $helper->isReady(),
             'valid_until' => $helper->getCurrentReadiness()?->valid_until?->toISOString(),
@@ -65,7 +71,9 @@ class HelperReadinessController extends Controller
     {
         abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $grouped = $request->has('readiness_form_version') || $request->has('listener_skills_ready');
-        if (!$grouped) $request->merge(['skills_confirmed' => $request->input('skills_confirmed', [])]);
+        if (! $grouped) {
+            $request->merge(['skills_confirmed' => $request->input('skills_confirmed', [])]);
+        }
         $validated = $request->validate([
             'readiness_form_version' => $grouped ? ['required', Rule::in([HelperReadinessService::GROUPED_VERSION])] : 'prohibited',
             'listener_skills_ready' => $grouped ? 'required|boolean' : 'prohibited',

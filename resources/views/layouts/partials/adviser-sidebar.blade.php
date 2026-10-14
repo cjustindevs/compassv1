@@ -43,6 +43,7 @@
         </a>
         <a href="{{ route('adviser.emergencies') }}" class="nav-item {{ request()->routeIs('adviser.emergencies*') ? 'active' : '' }}">
             <x-ui-icon name="warning"  /><span class="nav-text">Emergencies</span>
+            <span class="nav-badge" id="emergencyBadge" hidden>0</span>
         </a>
 
         <div class="nav-section">Records</div>

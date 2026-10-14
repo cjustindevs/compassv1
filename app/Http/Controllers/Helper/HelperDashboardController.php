@@ -4,8 +4,13 @@ namespace App\Http\Controllers\Helper;
 
 use App\Http\Controllers\Controller;
 use App\Models\HelperCompetencyHistory;
+use App\Models\HelperSchedule;
 use App\Models\Notification;
 use App\Models\Session;
+use App\Services\HelperDutySummary;
+use App\Services\HelperEligibilityService;
+use App\Services\HelperMatchingService;
+use App\Services\HelperSidebarStats;
 use Illuminate\Support\Facades\Auth;
 
 class HelperDashboardController extends Controller
@@ -27,9 +32,9 @@ class HelperDashboardController extends Controller
 
         // A returning eligible Helper should wake the queue immediately, even
         // when the scheduler or the Seeker's browser is not currently polling.
-        if (app(\App\Services\HelperEligibilityService::class)->allows($helper)) {
+        if (app(HelperEligibilityService::class)->allows($helper)) {
             try {
-                app(\App\Services\HelperMatchingService::class)->matchWaitingRequests();
+                app(HelperMatchingService::class)->matchWaitingRequests();
                 $helper = $helper->fresh();
             } catch (\Throwable $e) {
                 report($e);
@@ -37,8 +42,9 @@ class HelperDashboardController extends Controller
         }
 
         $helperId = $helper->id;
-        $upcomingDuties=\App\Models\HelperSchedule::where('helper_id',$helperId)->where('is_active',true)
-            ->whereDate('date','>=',now('Asia/Manila')->toDateString())->orderBy('date')->limit(5)->get();
+        $dutySummary = app(HelperDutySummary::class)->forHelper($helper);
+        $upcomingDuties = HelperSchedule::where('helper_id', $helperId)->where('is_active', true)
+            ->whereDate('date', '>=', now('Asia/Manila')->toDateString())->orderBy('date')->limit(5)->get();
 
         // ── CACHED STATS ────────────────────────────────────────────────
         $stats = (function () use ($helperId) {
@@ -62,11 +68,11 @@ class HelperDashboardController extends Controller
         $stats['competency_score'] = $competencyScore;
 
         // ── READINESS FROM DATABASE ──────────────────────────────────────
-        $sidebarStats = app(\App\Services\HelperSidebarStats::class)->forHelper($helper);
+        $sidebarStats = app(HelperSidebarStats::class)->forHelper($helper);
         $currentReadiness = $helper->getCurrentReadiness();
         $upcomingSession = $helper->sessions()->whereNotNull('scheduled_start')->where('scheduled_start', '>=', now())
             ->whereIn('session_status', ['scheduled', 'helper_assigned'])->orderBy('scheduled_start')->first();
-        $recentSessions = $helper->sessions()->with('concern')->whereIn('session_status', ['completed','evaluated','cancelled','no_show'])
+        $recentSessions = $helper->sessions()->with('concern')->whereIn('session_status', ['completed', 'evaluated', 'cancelled', 'no_show'])
             ->orderByRaw('COALESCE(end_time,start_time,created_date,created_at) DESC')->orderByDesc('id')->limit(5)->get();
 
         // ── ACTIVE CASES FROM DATABASE ───────────────────────────────────
@@ -135,8 +141,8 @@ class HelperDashboardController extends Controller
 
         // ── RECENT ACTIVITY FROM DATABASE ────────────────────────────────
         $recentActivity = Notification::withoutDuplicateCompletionReminders()->where('user_account_id', $user->id)
-            ->where(fn ($q) => $q->whereIn('notification_type', ['emergency','assignment','evaluation','referral','session'])
-                ->orWhere('title','Session completed')->orWhere('title','like','%Readiness%')->orWhere('title','like','%documentation%')->orWhere('title','like','%Referral%'))
+            ->where(fn ($q) => $q->whereIn('notification_type', ['emergency', 'assignment', 'evaluation', 'referral', 'session'])
+                ->orWhere('title', 'Session completed')->orWhere('title', 'like', '%Readiness%')->orWhere('title', 'like', '%documentation%')->orWhere('title', 'like', '%Referral%'))
             ->orderByDesc('created_at')
             ->limit(4)
             ->get()
@@ -173,7 +179,7 @@ class HelperDashboardController extends Controller
 
         $documentationTasks = $helper->sessions()->whereNotNull('start_time')->where('documentation_status', '!=', 'submitted')->whereIn('session_status', ['completed', 'evaluated', 'cancelled', 'no_show'])->orderBy('end_time')->limit(8)->get();
 
-        return view('dashboard.helper', ['upcomingDuties'=>$upcomingDuties]+compact(
+        return view('dashboard.helper', ['upcomingDuties' => $upcomingDuties, 'dutySummary' => $dutySummary] + compact(
             'documentationTasks', 'sidebarStats', 'currentReadiness', 'upcomingSession', 'recentSessions',
             'user',
             'helper',

@@ -8,6 +8,7 @@ use App\Events\ReferralConsentUpdated;
 use App\Events\ReferralCreated;
 use App\Models\Adviser;
 use App\Models\AuditLog;
+use App\Models\EmergencyAlert;
 use App\Models\HelpSeeker;
 use App\Models\Notification;
 use App\Models\PsychologyProfessional;
@@ -18,6 +19,10 @@ use App\Traits\BroadcastsSafely;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class ReferralManagementService
 {
@@ -120,35 +125,36 @@ class ReferralManagementService
     {
         $this->validateReferralCriteria($session, $data);
 
-        if (!\Illuminate\Support\Facades\Schema::hasColumn('referrals', 'recommendation_form')
-            || !\Illuminate\Support\Facades\Schema::hasTable('supervision_record_versions')) {
-            \Illuminate\Support\Facades\Log::error('Referral submission unavailable: required database migrations are missing.', [
+        if (! Schema::hasColumn('referrals', 'recommendation_form')
+            || ! Schema::hasTable('supervision_record_versions')) {
+            Log::error('Referral submission unavailable: required database migrations are missing.', [
                 'component' => 'referral_schema',
             ]);
-            throw \Illuminate\Validation\ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 'summary' => 'Referral submission is temporarily unavailable while the system update is completed. Your referral has not been submitted. Please contact support.',
             ]);
         }
 
         $reason = $data['reason'] ?? $data['referral_reason'];
-        $priority = $this->normalisePriority($data['urgency'] ?? $data['priority_level'] ?? $session->risk_level);
+        $emergency = $session->emergencyAlerts()->whereNotIn('status', ['resolved', 'closed'])->latest('id')->first();
+        $priority = $this->normalisePriority($emergency ? 'emergency' : ($data['urgency'] ?? $data['priority_level'] ?? $session->risk_level));
 
         // A seeker may only carry one open referral at a time, but a repeat
         // submission for the SAME session must update the existing row rather
         // than be silently discarded.
         if ($conflicting = $this->findOpenReferralForSeeker($seeker)) {
             if ($conflicting->session_id !== $session->id) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['summary' => 'This seeker already has an open referral from another session. Ask the assigned Adviser to review that referral before submitting another recommendation.']);
+                throw ValidationException::withMessages(['summary' => 'This seeker already has an open referral from another session. Ask the assigned Adviser to review that referral before submitting another recommendation.']);
             }
         }
 
-        return DB::transaction(function () use ($session, $seeker, $reason, $priority, $data) {
+        return DB::transaction(function () use ($session, $seeker, $reason, $priority, $data, $emergency) {
             HelpSeeker::whereKey($seeker->id)->lockForUpdate()->firstOrFail();
             // Re-check inside the transaction: two concurrent submissions for
             // different sessions must not both pass the pre-flight check.
             if ($conflicting = $this->findOpenReferralForSeeker($seeker)) {
                 if ($conflicting->session_id !== $session->id) {
-                    throw \Illuminate\Validation\ValidationException::withMessages(['summary' => 'This seeker already has an open referral from another session. Ask the assigned Adviser to review that referral before submitting another recommendation.']);
+                    throw ValidationException::withMessages(['summary' => 'This seeker already has an open referral from another session. Ask the assigned Adviser to review that referral before submitting another recommendation.']);
                 }
             }
 
@@ -191,6 +197,9 @@ class ReferralManagementService
                 'referral_reason' => $reason,
                 'status' => $status,
             ])->save();
+            if ($emergency) {
+                $emergency->update(['referral_id' => $referral->id]);
+            }
 
             SupportAudit::record('referral_proposed', $referral);
             app(SupervisionVersions::class)->record($referral, 'Helper recommendation submitted');
@@ -424,7 +433,8 @@ class ReferralManagementService
                 'professional_notified_at' => now(),
             ])->save();
 
-            $this->notifyUser($professional->user_account_id, 'New referral assigned', 'A referral is pending your review.', '/professional/referral/'.$referral->id, 'referral');
+            $urgent = $this->linkEmergencyHandoff($referral);
+            $this->notifyUser($professional->user_account_id, $urgent ? 'Urgent emergency referral assigned' : 'New referral assigned', 'A referral is pending your review.', '/professional/referral/'.$referral->id, $urgent ? 'emergency' : 'referral');
 
             SupportAudit::record('referral_forwarded', $referral, ['professional_id' => $professional->id]);
 
@@ -447,7 +457,8 @@ class ReferralManagementService
             abort_if($previous === $professionalId, 409, 'This professional is already assigned.');
             $referral->update(['professional_id' => $professionalId, 'status' => Referral::STATUS_PENDING_PROFESSIONAL, 'professional_notified_at' => now()]);
             SupportAudit::record('referral_professional_assigned', $referral, ['previous_professional_id' => $previous, 'professional_id' => $professionalId, 'reason' => $reason]);
-            $this->notifyUser($professional->user_account_id, 'Referral assigned', 'A referral is pending your review.', '/professional/referral/'.$referral->id, 'referral');
+            $urgent = $this->linkEmergencyHandoff($referral);
+            $this->notifyUser($professional->user_account_id, $urgent ? 'Urgent emergency referral assigned' : 'Referral assigned', 'A referral is pending your review.', '/professional/referral/'.$referral->id, $urgent ? 'emergency' : 'referral');
             $this->notifySeeker($referral, 'A professional was assigned to your referral', 'Open Referral decisions to see your assigned professional. An appointment will appear there once the professional accepts and schedules it.');
             $this->notifyHelper(
                 $referral,
@@ -487,14 +498,16 @@ class ReferralManagementService
 
     public function acceptReferral(Referral $referral, PsychologyProfessional $professional, array $appointment = []): Referral
     {
-        $appointment = \Illuminate\Support\Facades\Validator::make($appointment, [
-            'starts_at'=>'required|date_format:Y-m-d\\TH:i', 'ends_at'=>'required|date_format:Y-m-d\\TH:i',
-            'meeting_format'=>'required|in:in_person,video,phone', 'meeting_details'=>'required|string|max:2000',
+        $appointment = Validator::make($appointment, [
+            'starts_at' => 'required|date_format:Y-m-d\\TH:i', 'ends_at' => 'required|date_format:Y-m-d\\TH:i',
+            'meeting_format' => 'required|in:in_person,video,phone', 'meeting_details' => 'required|string|max:2000',
         ])->validate();
+
         return DB::transaction(function () use ($referral, $professional, $appointment) {
             PsychologyProfessional::whereKey($professional->id)->lockForUpdate()->firstOrFail();
             $accepted = $this->recordAcceptance(Referral::lockForUpdate()->findOrFail($referral->id), $professional);
             app(ReferralAppointmentService::class)->schedule($accepted, $appointment);
+
             return $accepted;
         }, 3);
     }
@@ -721,6 +734,16 @@ class ReferralManagementService
             'module' => 'referrals',
             'description' => 'Referral #'.$referral->id.' accepted by professional #'.$professional->id.'.',
         ]);
+    }
+
+    private function linkEmergencyHandoff(Referral $referral): bool
+    {
+        $alerts = EmergencyAlert::where('session_id', $referral->session_id)->whereNotIn('status', ['resolved', 'closed'])->get();
+        foreach ($alerts as $alert) {
+            $alert->update(['referral_id' => $referral->id, 'professional_referred' => true, 'professional_referred_at' => now()]);
+        }
+
+        return $alerts->isNotEmpty();
     }
 
     private function notifyAdviser(Referral $referral): void

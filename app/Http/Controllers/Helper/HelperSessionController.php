@@ -18,12 +18,15 @@ use App\Services\EmergencyEscalationService;
 use App\Services\HelperDocumentationService;
 use App\Services\HelperMatchingService;
 use App\Services\HelperReadinessService;
+use App\Services\ReferralForm;
 use App\Services\ReferralManagementService;
 use App\Services\SeekerWorkflowService;
 use App\Services\SessionDurationService;
 use App\Traits\BroadcastsSafely;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -172,14 +175,18 @@ class HelperSessionController extends Controller
         abort_unless(Auth::user()?->role === 'helper' && Auth::user()?->is_active, 403);
         if (ctype_digit($id) && strlen($id) < 20) {
             $session = Session::where('helper_id', Auth::user()->helper?->id)->findOrFail($id);
-            return redirect()->route('helper.session.chat', bin2hex(\Illuminate\Support\Facades\Crypt::encryptString((string)$session->id)));
+
+            return redirect()->route('helper.session.chat', bin2hex(Crypt::encryptString((string) $session->id)));
         }
         try {
-            $decoded = \Illuminate\Support\Facades\Crypt::decryptString(hex2bin($id));
-            abort_unless(ctype_digit($decoded),404);
-        } catch (\Throwable $e) { abort(404); }
-        Session::where('helper_id', Auth::user()->helper?->id)->findOrFail((int)$decoded);
-        return $this->chat->show((int)$decoded);
+            $decoded = Crypt::decryptString(hex2bin($id));
+            abort_unless(ctype_digit($decoded), 404);
+        } catch (\Throwable $e) {
+            abort(404);
+        }
+        Session::where('helper_id', Auth::user()->helper?->id)->findOrFail((int) $decoded);
+
+        return $this->chat->show((int) $decoded);
     }
 
     /**
@@ -194,6 +201,7 @@ class HelperSessionController extends Controller
     public function voice(int $id)
     {
         abort_unless(config('voice.enabled'), 503, 'Voice is unavailable. Please use text chat.');
+
         return $this->chat((string) $id);
     }
 
@@ -295,13 +303,25 @@ class HelperSessionController extends Controller
             'immediate_action' => 'nullable|string|max:500',
         ]);
 
-        [$incident, $alert, $created] = \Illuminate\Support\Facades\DB::transaction(function () use ($session, $validated) {
+        app(SessionDurationService::class)->expire($session);
+        abort_unless($session->isActive() && $session->helper_accepted_at, 409, 'An emergency report can only be submitted from your live session.');
+
+        [$incident, $alert, $created] = DB::transaction(function () use ($session, $validated) {
             $session = Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
+            abort_unless($session->isActive() && $session->helper_accepted_at, 409, 'This session is no longer live.');
             $incident = IncidentReport::where('session_id', $session->id)
                 ->where('incident_category', 'emergency_flag')
                 ->whereIn('status', ['open', 'under_review', 'escalated'])
                 ->lockForUpdate()->first();
             if ($incident) {
+                if (! $incident->emergency_alert_id && ! $session->emergencyAlerts()->whereNotIn('status', ['resolved', 'closed'])->exists()) {
+                    $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $session->seeker, [
+                        'reason' => $incident->description, 'preserve_classification' => true, 'chat_incident_id' => $incident->id, 'type' => 'helper_chat_report']);
+                    $incident->forceFill(['emergency_alert_id' => $alert->id])->save();
+
+                    return [$incident, $alert, true];
+                }
+
                 return [$incident, null, false];
             }
             $incident = IncidentReport::create([
@@ -315,11 +335,18 @@ class HelperSessionController extends Controller
             ]);
             $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $session->seeker, [
                 'reason' => $validated['description'], 'preserve_classification' => true,
+                'chat_incident_id' => $incident->id, 'type' => 'helper_chat_report',
             ]);
+            $incident->forceFill(['emergency_alert_id' => $alert->id])->save();
+
             return [$incident, $alert, true];
         });
 
         if (! $created) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => true, 'message' => 'This emergency is already reported. The original report is retained.']);
+            }
+
             return back()->with('success', 'This emergency has already been reported. Your original report is preserved.');
         }
 
@@ -352,20 +379,23 @@ class HelperSessionController extends Controller
             Notification::create([
                 'user_account_id' => $session->seeker->user_account_id,
                 'title' => 'Your session has been escalated',
-                'message' => 'A support coordinator has been notified about your session and will reach out.',
+                'message' => 'Your Helper reported an emergency for staff review. A response is not yet confirmed. Emergency resources remain available.',
                 'notification_type' => 'emergency',
                 'type_icon' => 'fa-life-ring',
                 'link' => '/session/chat',
             ]);
         }
 
-        return back()->with('success', 'Emergency recorded. The assigned support team has been notified.');
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Emergency recorded. Staff notifications have been saved.']);
+        }
+
+        return back()->with('success', 'Emergency recorded. Staff notifications have been saved.');
     }
 
     /**
-     * Request seeker consent for a professional referral (consent-first flow).
-     * Creates the referral in the 'consent_requested' state so the seeker can
-     * review and either accept or decline before the full referral is submitted.
+     * Submit a Helper recommendation for Adviser review. The legacy route
+     * name is retained; Seeker consent is requested only after approval.
      */
     public function requestReferralConsent(Request $request, int $id)
     {
@@ -381,7 +411,7 @@ class HelperSessionController extends Controller
             'summary' => 'required|string|max:500',
             'form_version' => 'nullable|in:appendix-o-v4',
             'indicators' => 'required_with:form_version|array|min:1|max:9',
-            'indicators.*' => ['string', \Illuminate\Validation\Rule::in(\App\Services\ReferralForm::INDICATORS)],
+            'indicators.*' => ['string', Rule::in(ReferralForm::INDICATORS)],
             'session_summary' => 'required_with:form_version|string|max:2000',
             'observations' => 'required_with:form_version|string|max:2000',
             'actions_taken' => 'required_with:form_version|string|max:2000',
@@ -391,7 +421,7 @@ class HelperSessionController extends Controller
             'helper_remarks' => 'nullable|string|max:1000',
         ]);
 
-        $form = isset($validated['form_version']) ? \Illuminate\Support\Arr::except($validated, ['summary']) : null;
+        $form = isset($validated['form_version']) ? Arr::except($validated, ['summary']) : null;
         $referral = app(ReferralManagementService::class)->requestConsent($session, ['summary' => $validated['summary'], 'recommendation_form' => $form]);
 
         if (! $request->expectsJson()) {
@@ -455,6 +485,10 @@ class HelperSessionController extends Controller
             'referral_reason' => 'nullable|string|max:1000',
         ]);
         app(ReferralManagementService::class)->clarify(Referral::findOrFail($id), $data['response'], true, $data['referral_reason'] ?? null);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Your clarification was sent to the Adviser.']);
+        }
 
         return back()->with('success', 'Your clarification was sent to the Adviser.');
     }

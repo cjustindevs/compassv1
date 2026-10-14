@@ -16,7 +16,10 @@ class StaffMailService
         if (! in_array($user->role, ['helper', 'moderator', 'adviser', 'professional'], true)) {
             return;
         }
-        StaffMail::firstOrCreate(['event_key' => $eventKey], ['user_id' => $user->id, 'payload' => ['email' => $user->email, 'subject' => $subject, 'message' => $message], 'available_at' => now()]);
+        $email = mb_strtolower(trim($user->email));
+        $reserved = preg_match('/\.(local|test|invalid|example)$/i', $email) === 1;
+        StaffMail::firstOrCreate(['event_key' => $eventKey], ['user_id' => $user->id, 'payload' => ['email' => $email, 'subject' => $subject, 'message' => $message], 'available_at' => now(),
+            'attempts' => $reserved ? 5 : 0, 'failure_code' => $reserved ? 'non_deliverable_address' : null]);
     }
 
     public function deliver(): void
@@ -30,14 +33,20 @@ class StaffMailService
                     $payload = $mail->payload;
                     $html = view('emails.staff-update', ['message' => $payload['message']])->render();
                     if (app(OtpMailConfiguration::class)->usesResendApi()) {
-                        app(ResendOtpMail::class)->sendHtml($payload['email'], $payload['subject'], $html, 'staff-update', 'staff-mail-'.$mail->id);
+                        $providerId = app(ResendOtpMail::class)->sendHtml($payload['email'], $payload['subject'], $html, 'staff-update', 'staff-mail-'.$mail->id);
                     } else {
+                        if (! app(OtpMailConfiguration::class)->canDeliver(config('mail.default'))) {
+                            throw new MailDeliveryFailure('non_delivering_mailer');
+                        }
                         Mail::html($html, fn ($m) => $m->to($payload['email'])->subject($payload['subject']));
+                        $providerId = null;
                     }
-                    $mail->update(['sent_at' => now(), 'failure_code' => null, 'attempts' => $mail->attempts + 1]);
+                    $mail->update(['sent_at' => now(), 'failure_code' => null, 'attempts' => $mail->attempts + 1, 'provider_message_id' => $providerId]);
+                    Log::info('Staff email accepted by provider.', ['outbox_id' => $mail->id, 'provider_message_id' => $providerId]);
                 } catch (\Throwable $e) {
-                    $mail->update(['attempts' => $mail->attempts + 1, 'available_at' => now()->addMinutes(5), 'failure_code' => 'delivery_failed']);
-                    Log::warning('Staff email delivery will retry.', ['outbox_id' => $mail->id]);
+                    $reason = $e instanceof MailDeliveryFailure ? $e->reason : 'delivery_failed';
+                    $mail->update(['attempts' => $mail->attempts + 1, 'available_at' => now()->addMinutes(5), 'failure_code' => $reason]);
+                    Log::warning('Staff email delivery failed.', ['outbox_id' => $mail->id, 'reason' => $reason, 'attempt' => $mail->attempts, 'will_retry' => $mail->attempts < 5]);
                 }
             }
         });

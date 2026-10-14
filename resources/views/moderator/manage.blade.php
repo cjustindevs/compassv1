@@ -127,6 +127,7 @@
     </style>
     @vite(['resources/css/app.css'])
     @include('partials.ui-assets')
+<style>.helper-row{gap:12px;align-items:center}.helper-row>form{margin:0;flex-shrink:0}.helper-row .competency-pill{flex-shrink:0}.helper-row p{overflow-wrap:anywhere}@media(max-width:600px){.helper-row{flex-wrap:wrap}.helper-row>form{margin-left:auto}}</style>
 </head>
 <body class="compass-compact">
 
@@ -248,7 +249,7 @@
                                 <span class="competency-pill {{ $helper->latestCompetency?->competency_level ?? 'trainee' }}">
                                     {{ ucfirst($helper->latestCompetency?->competency_level ?? 'trainee') }}
                                 </span>
-                                <form method="POST" action="{{ route('moderator.manage.unassign') }}">
+                                <form method="POST" data-helper-assignment action="{{ route('moderator.manage.unassign') }}">
                                     @csrf
                                     <input type="hidden" name="helper_id" value="{{ $helper->id }}">
                                     <button type="submit" class="btn-ghost" title="Move to unassigned pool">
@@ -278,7 +279,7 @@
                                 <span class="competency-pill {{ $helper->latestCompetency?->competency_level ?? 'trainee' }}">
                                     {{ ucfirst($helper->latestCompetency?->competency_level ?? 'trainee') }}
                                 </span>
-                                <form method="POST" action="{{ route('moderator.manage.assign') }}">
+                                <form method="POST" data-helper-assignment action="{{ route('moderator.manage.assign') }}">
                                     @csrf
                                     <input type="hidden" name="helper_id" value="{{ $helper->id }}">
                                     <input type="hidden" name="adviser_id" value="{{ $workspaceAdviser->id }}">
@@ -344,7 +345,7 @@
                             {{ $helper->eligibility['assignable'] ? 'Available' : $helper->eligibility['label'] }}
                         </span>
                         @if(! $helper->adviser)
-                            <form method="POST" action="{{ route('moderator.manage.assign') }}" class="flex items-center gap-2">
+                            <form method="POST" data-helper-assignment action="{{ route('moderator.manage.assign') }}" class="flex items-center gap-2">
                                 @csrf
                                 <input type="hidden" name="helper_id" value="{{ $helper->id }}">
                                 <select name="adviser_id" class="text-xs border border-gray-200 rounded-xl px-2 py-1.5 outline-none focus:border-[#04A052]" required>
@@ -374,6 +375,10 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('[data-helper-assignment]').forEach(form=>form.addEventListener('submit',event=>{
+                if(form.dataset.submitting==='true'){event.preventDefault();return;}
+                if(!form.checkValidity())return;form.dataset.submitting='true';form.querySelectorAll('button[type="submit"]').forEach(button=>{button.disabled=true;button.textContent='Saving...';});
+            }));
 
             setInterval(function () {
                 fetch('/moderator/manage/stats', {

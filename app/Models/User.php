@@ -157,6 +157,11 @@ class User extends Authenticatable
         return $this->hasMany(Notification::class, 'user_account_id', 'id');
     }
 
+    public function staffMails(): HasMany
+    {
+        return $this->hasMany(StaffMail::class, 'user_id');
+    }
+
     public function unreadNotifications(): HasMany
     {
         return $this->notifications()->where('status', 'unread');

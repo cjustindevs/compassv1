@@ -7,6 +7,7 @@
 
 @section('styles')
     @vite(['resources/js/chat.js'])
+    <link rel="stylesheet" href="{{ asset('css/chat-workflow.css') }}?v={{ filemtime(public_path('css/chat-workflow.css')) }}">
     <style>
         .room-card { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
 
@@ -384,15 +385,16 @@
     </div>
 
     <!-- ═══════════════ REFERRAL MODAL ═══════════════ -->
-    <div class="modal-overlay" id="referralModal">
+    <dialog class="chat-action-dialog" id="referralModal" aria-labelledby="referralModalTitle" data-chat-open-modal="{{ $errors->any() ? old('_chat_action','') : '' }}">
         <div class="modal-box">
-            <h3> Recommend a Referral</h3>
+            <h3 id="referralModalTitle"> Recommend a Referral</h3>
             <p class="modal-sub">Recommend professional support for this seeker. Your adviser reviews the recommendation before the seeker is asked for consent.</p>
 
-            <div id="referralStateChip" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;"></div>
+            <div id="referralStateChip" hidden style="margin-bottom:14px;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;"></div>
 
             <form method="POST" action="{{ route('helper.session.referral.consent', ['id' => $session->id]) }}" id="referralConsentForm">
                 @csrf
+                <input type="hidden" name="_chat_action" value="referral">
                 <input type="hidden" name="form_version" value="appendix-o-v4">
                 <div class="referral-fields">
                 <p class="text-sm mb-3">Session #{{ $session->id }} · {{ $session->seeker?->generated_alias }} · {{ ucfirst($session->risk_level ?? 'Pending review') }} risk. Identity is requested separately after Adviser approval.</p>
@@ -429,139 +431,39 @@
                     <button type="submit" class="btn btn-info" id="requestConsentBtn"><x-ui-icon name="send" style="margin-right:6px;" /> Submit for Adviser Review</button>
                 </div>
             </form>
+            <form method="POST" id="referralClarificationForm" hidden>@csrf
+                <p id="referralClarificationQuestion"></p>
+                <label class="form-label" for="referralClarification">Response to Adviser</label><textarea id="referralClarification" name="response" required minlength="10" maxlength="2000" rows="4">{{ old('response') }}</textarea>
+                <div class="modal-actions"><button type="button" class="modal-close" data-modal="referralModal">Cancel</button><button type="submit" class="btn-info">Submit revision</button></div>
+            </form>
 
 
         </div>
-    </div>
+    </dialog>
 
     <!-- ═══════════════ EMERGENCY MODAL ═══════════════ -->
-    <div class="modal-overlay" id="emergencyModal">
+    <dialog class="chat-action-dialog" id="emergencyModal" aria-labelledby="emergencyModalTitle">
         <div class="modal-box">
-            <h3> Flag as Emergency</h3>
+            <h3 id="emergencyModalTitle"> Flag as Emergency</h3>
             <p class="modal-sub">This immediately notifies a support coordinator. Use only when the seeker is at immediate risk.</p>
-            <div id="emergencyReferralState" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;background:#fffbeb;color:#92400e;"></div>
+            <div id="emergencyReferralState" hidden style="margin-bottom:14px;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;background:#fffbeb;color:#92400e;"></div>
             <form method="POST" action="{{ route('helper.session.emergency', ['id' => $session->id]) }}">
                 @csrf
+                <input type="hidden" name="_chat_action" value="emergency">
+                <div class="emergency-fields">
                 <label class="form-label" for="emergencyDesc">What is happening?</label>
-                <textarea id="emergencyDesc" name="description" rows="4" required placeholder="Describe the situation and any immediate risk..."></textarea>
+                <textarea id="emergencyDesc" name="description" rows="4" required maxlength="1000" placeholder="Describe the situation and any immediate risk...">{{ old('description') }}</textarea>
                 <label class="form-label" style="margin-top:14px;" for="emergencyAction">Immediate action taken (optional)</label>
-                <textarea id="emergencyAction" name="immediate_action" rows="2" placeholder="Record the immediate support or escalation steps you took..."></textarea>
+                <textarea id="emergencyAction" name="immediate_action" rows="2" maxlength="500" placeholder="Record the immediate support or escalation steps you took...">{{ old('immediate_action') }}</textarea>
+                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-cancel modal-close" data-modal="emergencyModal">Cancel</button>
                     <button type="submit" class="btn btn-danger"><x-ui-icon name="warning" style="margin-right:6px;" /> Flag Emergency</button>
                 </div>
             </form>
         </div>
-    </div>
+    </dialog>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // ── Session timer ──
-            const openers = {
-                emergencyBtn: 'emergencyModal',
-                referralBtn: 'referralModal',
-            };
-
-            Object.entries(openers).forEach(([btnId, modalId]) => {
-                const btn = document.getElementById(btnId);
-                const modal = document.getElementById(modalId);
-                if (!btn || !modal) return;
-                btn.addEventListener('click', () => modal.classList.add('open'));
-            });
-
-            document.querySelectorAll('.modal-close').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.getElementById(btn.dataset.modal).classList.remove('open');
-                });
-            });
-
-            document.querySelectorAll('.modal-overlay').forEach(overlay => {
-                overlay.addEventListener('click', e => {
-                    if (e.target === overlay) overlay.classList.remove('open');
-                });
-            });
-
-            // ── Referral consent-first state sync ──
-            const sessionId = document.getElementById('sessionId').value;
-            const stateUrl = '/session/' + sessionId + '/referral-prompt';
-            const chip = document.getElementById('referralStateChip');
-            const consentForm = document.getElementById('referralConsentForm');
-            const submitForm = document.getElementById('referralSubmitForm');
-            const emergencyState = document.getElementById('emergencyReferralState');
-            const CHIP_STYLES = {
-                pending: 'background:#eff6ff;color:#1d4ed8;',
-                granted: 'background:#ecfdf5;color:#047857;',
-                declined: 'background:#fef2f2;color:#b91c1c;',
-                info: 'background:#f8fafc;color:#475569;',
-            };
-
-            function applyReferralState(data) {
-                const referral = data?.referral || null;
-                const emergency = data?.emergency || null;
-
-                // Emergency modal referral section
-                if (emergencyState) {
-                    if (emergency) {
-                        emergencyState.style.display = 'block';
-                        emergencyState.textContent = 'Emergency escalation active. Flagging creates an emergency referral along the consent-first path. Open incident #' + emergency.alert_id + '.';
-                    } else {
-                        emergencyState.style.display = 'none';
-                    }
-                }
-
-                if (!referral) {
-                    if (chip) { chip.style.display = 'none'; }
-                    if (consentForm) consentForm.style.display = 'block';
-                    if (submitForm) submitForm.style.display = 'none';
-                    return;
-                }
-
-                const status = referral.status;
-                const consented = referral.help_seeker_consent;
-
-                const done = ['completed', 'closed', 'declined'].includes(status);
-                const declined = status === 'declined' || (data.consent?.decision === 'declined');
-                if (chip) {
-                    chip.style.display = 'block';
-                    chip.style.cssText = declined ? CHIP_STYLES.declined : CHIP_STYLES.info;
-                    chip.textContent = declined
-                        ? 'Referral was declined. You can request consent again for a new referral.'
-                        : 'Referral ' + status.replaceAll('_', ' ') + (done ? '.' : ' — no action needed right now.');
-                }
-                if (consentForm) consentForm.style.display = 'none';
-                if (submitForm) submitForm.style.display = 'none';
-            }
-
-            async function syncReferralState() {
-                try {
-                    const response = await fetch(stateUrl, {headers: {'Accept': 'application/json'}});
-                    if (!response.ok) return;
-                    applyReferralState(await response.json());
-                } catch (_) { /* Retry when the connection returns. */ }
-            }
-
-            // Keep the helper view live via Echo (session channel) with a poll fallback.
-            if (window.Echo) {
-                const channel = window.Echo.private('session.' + sessionId);
-                channel.listen('.ReferralConsentRequested', () => syncReferralState());
-                channel.listen('.ReferralConsentUpdated', () => syncReferralState());
-            }
-
-            document.getElementById('referralBtn')?.addEventListener('click', syncReferralState);
-            document.getElementById('emergencyBtn')?.addEventListener('click', syncReferralState);
-            syncReferralState();
-            setInterval(syncReferralState, 5000);
-
-            // Merge selected Appendix O referral indicators into the reason before submit.
-            document.getElementById('referralSubmitForm')?.addEventListener('submit', function () {
-                const reason = document.getElementById('referralReason');
-                const selected = Array.from(document.querySelectorAll('.referral-indicator:checked')).map(c => c.value).filter(Boolean);
-                if (!selected.length) return;
-                const prefix = 'Indicators: ' + selected.join('; ') + ' — ';
-                const existing = reason.value.trim();
-                reason.value = existing ? prefix + existing : prefix.replace(/ — $/, '.');
-            });
-        });
-    </script>
+    <script src="{{ asset('js/chat-workflow.js') }}?v={{ filemtime(public_path('js/chat-workflow.js')) }}" defer></script>
 
 @endsection

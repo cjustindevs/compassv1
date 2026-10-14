@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\LoginSessionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
-use App\Services\LoginSessionService;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -50,6 +50,12 @@ class AuthenticatedSessionController extends Controller
             'professional' => route('professional.dashboard'),
             default => route('seeker.dashboard'),
         };
+
+        if ($user->role === 'moderator') {
+            $request->session()->forget('url.intended');
+
+            return redirect($redirectTo);
+        }
 
         return redirect()->intended($redirectTo);
     }

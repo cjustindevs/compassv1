@@ -10,7 +10,7 @@
 <p>Contact your Adviser or administrator to finish onboarding.</p>
 </section>
 @else
-<section class="card mb-4 p-4"><h2 class="font-semibold">Upcoming duty</h2><p class="text-sm text-gray-500">Complete readiness on your duty date before accepting sessions.</p><div class="flex flex-wrap gap-3 mt-3">@forelse($upcomingDuties??[] as $duty)<article class="rounded-lg border p-3"><strong>{{ $duty->date->format('D, M d') }}</strong><p class="text-sm">{{ $duty->shift_label }} PHT</p>@if($duty->duty_notes)<p class="text-xs text-gray-500">{{ $duty->duty_notes }}</p>@endif</article>@empty<p>No upcoming duty. Contact your Moderator to request a schedule.</p>@endforelse</div></section>
+@include('helper.partials.duty-summary')
 <div class="hf-kpis">
     <article class="hf-kpi">
 <span>Upcoming Session</span>

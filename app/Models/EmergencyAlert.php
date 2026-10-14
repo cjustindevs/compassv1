@@ -81,6 +81,11 @@ class EmergencyAlert extends Model
         return $this->belongsTo(Referral::class, 'referral_id', 'id');
     }
 
+    public function chatIncidents()
+    {
+        return $this->hasMany(IncidentReport::class,'emergency_alert_id');
+    }
+
     public function scopePending(Builder $query): Builder
     {
         return $query->where('status', 'pending');

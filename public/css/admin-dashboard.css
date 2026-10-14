@@ -1270,3 +1270,23 @@ a.sidebar-link:hover, a.sidebar-link:focus-visible { background: var(--compass-g
     .admin-report-date-basis > div { display: grid; grid-template-columns: minmax(0,1fr); }
     .admin-report-context-measures { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
 }
+
+/* User directory actions stay aligned regardless of account status. */
+.admin-app .directory-row-actions { display:flex; justify-content:flex-end; align-items:center; gap:8px; min-width:225px; }
+.admin-app .directory-row-actions .admin-button { display:inline-flex; align-items:center; justify-content:center; min-width:104px; height:40px; margin:0; padding:8px 12px; text-decoration:none; font-size:13px; white-space:nowrap; }
+.admin-app .admin-button-danger-outline { color:#bf2938; border:1px solid #efc6cd; background:#fff; }
+.admin-app .directory-row-actions .admin-account-note { min-width:104px; text-align:center; }
+.admin-app .account-mail-status { font-size:11px; color:#617268; margin-top:4px; }
+.admin-app .account-mail-retry { margin:6px 0 0 48px; }
+.admin-app .account-mail-retry .admin-button { min-height:30px; padding:4px 8px; font-size:11px; }
+.admin-dialog form { min-height:0; }
+.admin-dialog form:has(.admin-dialog-body) { display:flex; flex-direction:column; max-height:calc(90dvh - 100px); }
+.admin-dialog form .admin-dialog-body { overflow-y:auto; min-height:0; }
+.admin-dialog-footer { flex-shrink:0; }
+@media(max-width:600px){ .admin-app .directory-row-actions { min-width:210px; } .admin-app .directory-row-actions .admin-button { min-width:98px; } }
+
+.admin-app .user-directory-table th:nth-child(6),.admin-app .user-directory-table td:nth-child(6){width:252px;min-width:252px;}
+.admin-app .user-directory-table th:nth-child(3),.admin-app .user-directory-table td:nth-child(3){width:15%;}
+.admin-app .user-directory-table th:nth-child(4),.admin-app .user-directory-table td:nth-child(4){width:14%;}
+.admin-app .user-directory-table th:nth-child(5),.admin-app .user-directory-table td:nth-child(5){width:100px;}
+.admin-app .directory-user-copy{min-width:0}.admin-app .directory-user-copy small{overflow-wrap:anywhere;white-space:normal;}

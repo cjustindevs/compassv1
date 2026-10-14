@@ -16,8 +16,10 @@ use App\Models\SystemAdministrator;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\StaffMailService;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -35,6 +37,7 @@ class UserController extends Controller
             'status' => 'nullable|in:active,inactive',
         ]);
         $users = User::query()
+            ->with(['staffMails' => fn ($q) => $q->where('event_key', 'like', 'account-created-%')->orderByDesc('id')])
             ->when($filters['q'] ?? null, fn ($query, $search) => $query->where(fn ($q) => $q
                 ->whereRaw('LOWER(name) LIKE ?', ['%'.Str::lower(trim($search)).'%'])
                 ->orWhereRaw('LOWER(email) LIKE ?', ['%'.Str::lower(trim($search)).'%'])))
@@ -60,52 +63,83 @@ class UserController extends Controller
     public function store(StoreUserRequest $request, AuditLogger $auditLogger): RedirectResponse
     {
         $validated = $request->validated();
+        $fingerprint = hash('sha256', json_encode(Arr::only($validated, ['first_name', 'last_name', 'email', 'role', 'account_status'])));
 
-        DB::transaction(function () use ($auditLogger, $request, $validated): void {
-            $user = User::create([
-                'name' => trim($validated['first_name'].' '.$validated['last_name']),
-                'email' => $validated['email'],
-                'password' => $validated['password'],
-                'role' => $validated['role'],
-                'is_active' => $validated['account_status'] === 'active',
-                'email_verified_at' => $validated['account_status'] === 'active' ? now() : null,
-            ]);
+        try {
+            DB::transaction(function () use ($auditLogger, $request, $validated, $fingerprint): void {
+                $actor = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+                abort_unless($actor->is_active && $actor->role === 'admin', 403);
+                $token = $validated['creation_token'] ?? null;
+                if ($token) {
+                    $receipt = DB::table('account_creation_receipts')->where('id', $token)->first();
+                    if ($receipt) {
+                        abort_unless((int) $receipt->admin_id === (int) $actor->id, 409);
+                        if (! hash_equals($receipt->fingerprint, $fingerprint)) {
+                            throw ValidationException::withMessages(['email' => 'This form was already used. Close it and start a new account form.']);
+                        }
 
-            $profile = ['user_account_id' => $user->id, 'first_name' => $validated['first_name'], 'last_name' => $validated['last_name'], 'email' => $user->email];
-            $model = match ($user->role) {
-                'adviser' => Adviser::class, 'helper' => Helper::class,
-                'moderator' => Moderator::class, 'professional' => PsychologyProfessional::class,
-                'admin' => SystemAdministrator::class, default => null,
-            };
-            if ($model) {
-                $model::create($profile);
-            } else {
-                $alias = 'Seeker'.Str::upper(Str::random(12));
-                $user->update(['name' => $alias]);
-                HelpSeeker::create(['user_account_id' => $user->id, 'generated_alias' => $alias, 'pseudo_id' => (string) Str::uuid(), 'account_created' => now()]);
-            }
-
-            $role = User::ROLE_LABELS[$user->role] ?? Str::headline($user->role);
-            app(StaffMailService::class)->enqueue($user, 'account-created-'.$user->id, 'COMPASS - Account created',
-                'Your '.$role.' account has been created. '.($user->is_active ? 'You can sign in to COMPASS.' : 'Your account is pending activation by an administrator.'));
-            if ($user->role === 'helper') {
-                foreach (User::where('role', 'moderator')->where('is_active', true)->get() as $moderator) {
-                    Notification::create(['user_account_id' => $moderator->id, 'title' => 'New Helper needs assignment', 'message' => 'A new Helper account needs an Adviser assignment.', 'notification_type' => 'assignment', 'link' => '/moderator/manage']);
+                        return;
+                    }
                 }
-            }
+                if (User::whereRaw('LOWER(email) = ?', [$validated['email']])->exists()) {
+                    throw ValidationException::withMessages(['email' => 'This email already belongs to an account. Open that account in the directory.']);
+                }
+                $profileTable = match ($validated['role']) {
+                    'helper' => 'helpers','adviser' => 'advisers','moderator' => 'moderators','professional' => 'psychology_professionals','admin' => 'system_administrators'
+                };
+                if (DB::table($profileTable)->whereRaw('LOWER(email) = ?', [$validated['email']])->exists()) {
+                    throw ValidationException::withMessages(['email' => 'This email is linked to an existing staff profile. Review its account link before creating another account.']);
+                }
+                $user = User::create([
+                    'name' => trim($validated['first_name'].' '.$validated['last_name']),
+                    'email' => $validated['email'],
+                    'password' => $validated['password'],
+                    'role' => $validated['role'],
+                    'is_active' => $validated['account_status'] === 'active',
+                    'email_verified_at' => $validated['account_status'] === 'active' ? now() : null,
+                ]);
 
-            $auditLogger->record(
-                $request->user(),
-                AuditLogger::USER_CREATED,
-                'users',
-                $role.': '.$user->name,
-                $request
-            );
-        });
+                $profile = ['user_account_id' => $user->id, 'first_name' => $validated['first_name'], 'last_name' => $validated['last_name'], 'email' => $user->email];
+                $model = match ($user->role) {
+                    'adviser' => Adviser::class, 'helper' => Helper::class,
+                    'moderator' => Moderator::class, 'professional' => PsychologyProfessional::class,
+                    'admin' => SystemAdministrator::class, default => null,
+                };
+                if ($model) {
+                    $model::create($profile);
+                } else {
+                    $alias = 'Seeker'.Str::upper(Str::random(12));
+                    $user->update(['name' => $alias]);
+                    HelpSeeker::create(['user_account_id' => $user->id, 'generated_alias' => $alias, 'pseudo_id' => (string) Str::uuid(), 'account_created' => now()]);
+                }
+
+                $role = User::ROLE_LABELS[$user->role] ?? Str::headline($user->role);
+                if ($token) {
+                    DB::table('account_creation_receipts')->insert(['id' => $token, 'admin_id' => $actor->id, 'user_id' => $user->id, 'fingerprint' => $fingerprint, 'created_at' => now()]);
+                }
+                app(StaffMailService::class)->enqueue($user, 'account-created-'.$user->id, 'COMPASS - Account created',
+                    'Your '.$role.' account has been created. '.($user->is_active ? 'You can sign in to COMPASS.' : 'Your account is pending activation by an administrator.'));
+                if ($user->role === 'helper') {
+                    foreach (User::where('role', 'moderator')->where('is_active', true)->get() as $moderator) {
+                        Notification::create(['user_account_id' => $moderator->id, 'title' => 'New Helper needs assignment', 'message' => 'A new Helper account needs an Adviser assignment.', 'notification_type' => 'assignment', 'link' => '/moderator/manage']);
+                    }
+                }
+
+                $auditLogger->record(
+                    $request->user(),
+                    AuditLogger::USER_CREATED,
+                    'users',
+                    $role.': '.$user->name,
+                    $request
+                );
+            });
+        } catch (UniqueConstraintViolationException $e) {
+            throw ValidationException::withMessages(['email' => 'An account or profile was already created for these details. Check the directory before submitting again.']);
+        }
 
         return redirect()->route('admin.users')->with(
             'success',
-            'User account created. The user can set a password through the Forgot Password flow.'
+            'User account created. Staff email is queued separately; its status appears in the directory. Passwords can be reset through Forgot Password.'
         );
     }
 
@@ -148,11 +182,15 @@ class UserController extends Controller
     private function toDirectoryUser(User $user): array
     {
         $status = $user->is_active ? 'active' : 'inactive';
+        $mail = $user->staffMails->first();
+        $recipientChanged = $mail && ($mail->payload['email'] ?? '') !== $user->email;
 
         return [
             'id' => (string) $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            'welcomeEmail' => ! $mail ? null : ['status' => $recipientChanged ? 'Account email address changed; delivery can be queued again' : ($mail->sent_at ? 'Accepted by email provider' : ($mail->failure_code ? 'Delivery issue: '.str_replace('_', ' ', $mail->failure_code) : 'Email queued')),
+                'retryable' => ($recipientChanged || (! $mail->sent_at && $mail->failure_code)) && ! preg_match('/\.(local|test|invalid|example)$/i', $user->email)],
             'role' => $user->role,
             'roleLabel' => User::ROLE_LABELS[$user->role] ?? Str::headline($user->role),
             'status' => $status,
@@ -226,6 +264,30 @@ class UserController extends Controller
         }
 
         return back()->with($result === Password::RESET_LINK_SENT ? 'success' : 'error', __($result));
+    }
+
+    public function retryWelcomeEmail(Request $request, User $user, AuditLogger $auditLogger): RedirectResponse
+    {
+        $request->validate(['confirm_email_retry' => 'required|accepted']);
+        abort_unless(in_array($user->role, ['helper', 'moderator', 'adviser', 'professional'], true), 422);
+        DB::transaction(function () use ($request, $user, $auditLogger) {
+            $user = User::lockForUpdate()->findOrFail($user->id);
+            $mail = $user->staffMails()->where('event_key', 'like', 'account-created-%')->latest('id')->lockForUpdate()->firstOrFail();
+            if (preg_match('/\.(local|test|invalid|example)$/i', $user->email)) {
+                throw ValidationException::withMessages(['email' => 'Use a deliverable staff email before requesting another delivery.']);
+            }
+            if ($mail->sent_at && ($mail->payload['email'] ?? '') === $user->email) {
+                throw ValidationException::withMessages(['email' => 'The provider already accepted this account email. Check its delivery status and the recipient spam folder.']);
+            }
+            if (($mail->payload['email'] ?? '') !== $user->email) {
+                app(StaffMailService::class)->enqueue($user, 'account-created-'.$user->id.'-'.substr(hash('sha256', $user->email), 0, 16), 'COMPASS - Account created', 'Your COMPASS staff account has been created. Sign in or use Forgot Password if you need a reset link.');
+            } else {
+                $mail->update(['attempts' => 0, 'failure_code' => null, 'available_at' => now()]);
+            }
+            $auditLogger->record($request->user(), 'account_email_retry_requested', 'users', 'Staff account email retry queued.', $request, $user);
+        });
+
+        return back()->with('success', 'Account email queued for delivery. The account itself was not recreated.');
     }
 
     private function profileTable(User $user): string

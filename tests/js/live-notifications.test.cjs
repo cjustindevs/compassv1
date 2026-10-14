@@ -16,7 +16,7 @@ function notices(storage=new Map()){
     }
     const body=new Node('body'),requests=[],intervals=[],handlers={};let dialog=false;
     let data={count:1,cursor:12,recent:[{id:12,title:'Assigned case',message:'Open the case',link:'/helper/cases',type:'assignment'}],fresh:[{id:12,title:'<img onerror=bad()>',message:'Safe message',link:'//evil.test',type:'assignment'}]};
-    const context={document:{body,hidden:false,createElement:tag=>new Node(tag),createElementNS:(ns,tag)=>new Node(tag),
+    const context={document:{body,hidden:false,getElementById:()=>null,createElement:tag=>new Node(tag),createElementNS:(ns,tag)=>new Node(tag),
         querySelector:selector=>selector==='meta[name="compass-notices"]'?{content:JSON.stringify({user:5,feed:'/notifications/feed',center:'/notifications'})}:selector==='dialog[open]'&&dialog?{}:null,
         querySelectorAll:()=>[],addEventListener:(name,handler)=>{handlers[name]=handler;}},window:{addEventListener(){}},navigator:{onLine:true},
         sessionStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value)},setTimeout(){},setInterval:callback=>intervals.push(callback),

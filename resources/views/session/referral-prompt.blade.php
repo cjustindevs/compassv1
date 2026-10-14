@@ -1,4 +1,7 @@
 @isset($session)
+<div id="chatEmergencyBanner" hidden role="status" style="padding:12px 16px;margin:12px 0;border:1px solid #efccd0;border-left:4px solid #ca293c;border-radius:10px;background:#fff5f5;color:#872333;font-size:13px">
+    <strong id="chatEmergencyTitle">Emergency reported</strong><p id="chatEmergencyStatus" style="margin:5px 0"></p><a href="{{ route('emergency') }}" style="display:inline-block;padding:6px 10px;border:1px solid #e3b7c0;border-radius:8px;color:inherit;text-decoration:none">Emergency resources</a>
+</div>
 <style>
     #referralConsentDialog {
         position: fixed;
@@ -135,7 +138,7 @@
     window.addEventListener('message', event => {
         if (event.origin === location.origin && event.source === identityDialog.querySelector('iframe').contentWindow && event.data?.type === 'identity-modal-closed') identityDialog.close();
     });
-    let referral = null, seen = null, deciding = false;
+    let referral = null, seen = null, deciding = false, manualOpen = false;
 
     function enabledButtons() {
         acceptBtn.disabled = deciding || (isSeeker && !check?.checked);
@@ -143,6 +146,12 @@
     }
 
     function handleState(data) {
+        const emergency=data.emergency,banner=document.getElementById('chatEmergencyBanner');
+        banner.hidden=!emergency;
+        if(emergency){document.getElementById('chatEmergencyTitle').textContent=emergency.chat_reported?'Emergency reported':'Urgent support review';
+            document.getElementById('chatEmergencyStatus').textContent=emergency.active?(emergency.acknowledged?'Staff acknowledged the report. Coordination is ongoing.':'Awaiting staff acknowledgment. A response is not yet confirmed.'):'Emergency review '+emergency.status+'.';
+            if(emergency.active&&emergency.professional_referred)document.getElementById('chatEmergencyStatus').textContent+=' A linked referral has been sent to an assigned Professional.';}
+        if(document.querySelector('dialog[open]') && !dialog.open)return;
         referral = data?.referral || null;
         if (!referral) return;
         document.getElementById('chatReferralOpen').hidden = !isSeeker;
@@ -165,7 +174,7 @@
             acceptBtn.hidden = true;
             declineBtn.hidden = true;
             dismissBtn.hidden = false;
-            if (!dialog.open) dialog.showModal();
+            if (manualOpen && !dialog.open) { dialog.showModal(); manualOpen=false; }
             return;
         }
 
@@ -215,7 +224,7 @@
 
     async function poll() {
         try {
-            const response = await fetch(stateUrl, {headers: {'Accept': 'application/json'}});
+            const response = await fetch(stateUrl, {headers: {'Accept': 'application/json'},cache:'no-store'});
             if (!response.ok) return;
             handleState(await response.json());
         } catch (_) { /* Retry when the connection returns. */ }
@@ -264,7 +273,8 @@
     });
 
     document.getElementById('chatSupportOpen').addEventListener('click', () => { identityDialog.querySelector('iframe').src = referral.support_url; identityDialog.showModal(); });
-    document.getElementById('chatReferralOpen').addEventListener('click', () => { seen = null; poll(); });
+    document.getElementById('chatReferralOpen').addEventListener('click', () => { manualOpen=true; seen = null; poll(); });
+    window.addEventListener('compass-chat-workflow-changed',()=>{seen=null;poll();});
     poll();
     setInterval(poll, 5000);
 

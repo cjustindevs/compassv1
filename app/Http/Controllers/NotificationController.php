@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EmergencyAlert;
 use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -126,7 +127,13 @@ class NotificationController extends Controller
             $cursor = (int) $fresh->last()->id;
         }
 
-        return response()->json(['count' => (clone $owned)->unread()->count(), 'cursor' => $cursor,
+        $workflow = [];
+        if ($request->user()->role === 'adviser' && $adviser = $request->user()->adviser) {
+            $workflow['emergency_count'] = EmergencyAlert::whereNotIn('status', ['resolved', 'closed'])->where(fn ($q) => $q->where('adviser_id', $adviser->id)
+                ->orWhereHas('session.helper', fn ($h) => $h->where('adviser_id', $adviser->id)))->count();
+        }
+
+        return response()->json(['count' => (clone $owned)->unread()->count(), 'cursor' => $cursor, 'workflow' => $workflow,
             'recent' => (clone $owned)->latest('id')->limit(8)->get()->map($present), 'fresh' => $fresh->map($present)])
             ->header('Cache-Control', 'private, no-store');
     }

@@ -63,7 +63,7 @@ class OctoberQaRevisionTest extends TestCase
         $this->assertDatabaseCount('helper_schedules', 1);
         $this->assertDatabaseHas('notifications', ['user_account_id' => $hu->id, 'title' => 'Duty scheduled']);
         $this->assertDatabaseCount('staff_mail_outbox', 1);
-        $this->actingAs($hu)->get(route('helper.dashboard'))->assertOk()->assertSee('Upcoming duty')->assertSee('Wed, Oct 14');
+        $this->actingAs($hu)->get(route('helper.dashboard'))->assertOk()->assertSee('Today’s duty')->assertSee('Wed, Oct 14');
         $this->get(route('helper.readiness'))->assertOk();
     }
 

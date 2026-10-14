@@ -382,6 +382,7 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
 
     // Referral Queue
     Route::get('/referrals', [AdviserReferralController::class, 'index'])->name('referrals');
+    Route::post('/emergencies/{id}/referral-request', [AdviserEmergencyController::class,'requestReferral'])->name('emergencies.referral-request');
     Route::get('/referral/{id}', [AdviserReferralController::class, 'show'])->name('referral.show');
     Route::post('/referral/{id}/approve', [AdviserReferralController::class, 'approve'])->name('referral.approve');
     Route::post('/referral/{id}/reject', [AdviserReferralController::class, 'reject'])->name('referral.reject');
@@ -624,7 +625,7 @@ Route::get('/session/{session}/referral-prompt', function (Session $session) {
     $referral = $session->referrals()->latest('id')->first();
     $consent = $referral ? $referral->consentRecords()->where('purpose', 'referral')->latest('id')->first() : null;
     $emergency = EmergencyAlert::where('session_id', $session->id)->latest('id')->first();
-    $incident = IncidentReport::where('session_id', $session->id)->where('incident_category', 'emergency_flag')->where('status', 'open')->latest('id')->first();
+    $incident = IncidentReport::where('session_id', $session->id)->where('incident_category', 'emergency_flag')->whereIn('status', ['open','under_review','escalated'])->latest('id')->first();
 
     return response()->json([
         'referral' => $referral ? [
@@ -632,6 +633,9 @@ Route::get('/session/{session}/referral-prompt', function (Session $session) {
             'priority_level' => $referral->priority_level,
             'help_seeker_consent' => (bool) $referral->help_seeker_consent,
             'summary' => $referral->referral_reason,
+            'clarification_requested' => (bool)($referral->clarification_requested_at && !$referral->clarification_received_at),
+            'clarification_question' => $user->role==='helper' ? $referral->clarification_question : null,
+            'clarification_url' => $user->role==='helper' ? route('helper.referral.clarify',$referral->id) : null,
             'consent_url' => route('referrals.consent-request', $referral),
             'support_url' => route('seeker.referral.support', $referral),
             'appointment_time' => $user->role === 'seeker' && $referral->help_seeker_consent ? $referral->appointments()->where('status','scheduled')->latest('id')->first()?->starts_at?->timezone('Asia/Manila')->format('M d, Y g:i A') : null,
@@ -641,8 +645,10 @@ Route::get('/session/{session}/referral-prompt', function (Session $session) {
             'recommendation_html' => $user->role === 'seeker' && $referral->approved_at ? view('partials.referral-recommendation', compact('referral'))->render() : null,
         ] : null,
         'consent' => $consent ? ['decision' => $consent->decision, 'consent_given' => (bool) $consent->consent_given, 'withdrawn' => (bool) $consent->withdrawn, 'scope' => $consent->scope] : null,
-        'emergency' => $incident ? ['alert_id' => $incident->id, 'status' => $incident->status, 'risk_level' => 'emergency'] : null,
-    ]);
+        'emergency' => $emergency ? ['alert_id'=>$emergency->id,'status'=>$emergency->status,'active'=>!in_array($emergency->status,['resolved','closed']),
+            'acknowledged'=>(bool)($incident ? $incident->reviewed_at : $emergency->acknowledged_at),'referral_id'=>$emergency->referral_id,'professional_referred'=>(bool)$emergency->professional_referred,
+            'chat_reported'=>(bool)$incident] : null,
+    ])->header('Cache-Control','private, no-store');
 })->middleware('auth')->name('session.referral-prompt');
 
 Route::get('/emergency', function () {
@@ -679,6 +685,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
     Route::patch('/users/{user}', [UserController::class, 'update'])->name('users.update');
     Route::post('/users/{user}/password-reset', [UserController::class, 'resetPassword'])->middleware('throttle:6,1')->name('users.password-reset');
+    Route::post('/users/{user}/welcome-email/retry', [UserController::class, 'retryWelcomeEmail'])->middleware('throttle:6,1')->name('users.welcome-email.retry');
     Route::get('/roles-permissions', RolePermissionController::class)->name('roles-permissions');
     Route::get('/audit-logs', AuditLogController::class)->name('audit-logs');
     Route::get('/backup-restore', BackupRestoreController::class)->name('backup-restore');

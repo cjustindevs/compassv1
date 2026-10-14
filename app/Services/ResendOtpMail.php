@@ -20,11 +20,11 @@ class ResendOtpMail
         $this->sendHtml($email, 'COMPASS - Email Verification Code', view('emails.otp', compact('otp'))->render(), 'registration-otp');
     }
 
-    public function sendHtml(string $email, string $subject, string $html, string $purpose, ?string $idempotencyKey = null): void
+    public function sendHtml(string $email, string $subject, string $html, string $purpose, ?string $idempotencyKey = null): string
     {
         if (! $this->configured()) {
-            Log::warning('Registration OTP Resend API configuration invalid', ['reason' => 'missing_key_or_sender']);
-            throw new \RuntimeException('OTP delivery configuration missing');
+            Log::warning('Registration OTP Resend API configuration invalid', ['reason' => 'missing_key_or_sender', 'purpose' => $purpose]);
+            throw new MailDeliveryFailure('configuration_missing');
         }
 
         try {
@@ -39,25 +39,28 @@ class ResendOtpMail
         } catch (\Throwable $exception) {
             // Exception text and API bodies can contain credentials or message content.
             Log::warning('Registration OTP Resend API request failed', [
-                'reason' => 'connection_or_request', 'exception_type' => get_class($exception),
+                'reason' => 'connection_or_request', 'exception_type' => get_class($exception), 'purpose' => $purpose,
             ]);
-            throw new \RuntimeException('OTP delivery request failed');
+            throw new MailDeliveryFailure('connection_failed');
         }
 
         $id = $response->json('id');
         if (! $response->successful() || ! is_string($id) || trim($id) === '') {
+            $reason = match (true) {
+                $response->status() === 401 => 'authentication',
+                $response->status() === 403 => 'permission_or_sender',
+                $response->status() === 429 => 'provider_limit',
+                $response->status() >= 500 => 'provider_unavailable',
+                $response->successful() => 'malformed_response',
+                default => 'request_rejected',
+            };
             Log::warning('Registration OTP Resend API rejected delivery', [
                 'http_status' => $response->status(),
-                'reason' => match (true) {
-                    $response->status() === 401 => 'authentication',
-                    $response->status() === 403 => 'permission_or_sender',
-                    $response->status() === 429 => 'provider_limit',
-                    $response->status() >= 500 => 'provider_unavailable',
-                    $response->successful() => 'malformed_response',
-                    default => 'request_rejected',
-                },
-            ]);
-            throw new \RuntimeException('OTP delivery not accepted');
+                'reason' => $reason,
+            ] + ($purpose === 'registration-otp' ? [] : ['purpose'=>$purpose]));
+            throw new MailDeliveryFailure($reason);
         }
+
+        return $id;
     }
 }

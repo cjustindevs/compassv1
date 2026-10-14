@@ -82,6 +82,25 @@
     });
 
     const directory = document.querySelector('[data-user-directory]');
+    document.querySelectorAll('form[data-single-submit]').forEach(form => {
+        const button = form.querySelector('button[type="submit"]');
+        form.addEventListener('submit', event => {
+            if (form.dataset.submitting === 'true') { event.preventDefault(); return; }
+            if (!form.checkValidity()) return;
+            form.dataset.submitting = 'true';
+            if (button) { button.dataset.originalLabel = button.textContent; button.disabled = true; button.textContent = 'Saving...'; }
+        });
+        window.addEventListener('pageshow', () => {
+            delete form.dataset.submitting;
+            if (button?.dataset.originalLabel) { button.disabled = false; button.textContent = button.dataset.originalLabel; }
+        });
+    });
+    const reactivateDialog = document.getElementById('reactivate-user-dialog');
+    document.querySelectorAll('[data-reactivate-user]').forEach(button => button.addEventListener('click', () => {
+        reactivateDialog.querySelector('[data-reactivate-name]').textContent = button.dataset.userName;
+        reactivateDialog.querySelector('[data-reactivate-form]').action = button.dataset.reactivateUrl;
+        openDialog(reactivateDialog, button);
+    }));
     if (directory) {
         const rows = [...directory.querySelectorAll('[data-directory-row]')];
         const search = directory.querySelector('[data-directory-search]');
