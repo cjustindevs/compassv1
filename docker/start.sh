@@ -97,6 +97,15 @@ seed_demo_if_empty() {
 
 seed_demo_if_empty
 
+# Explicitly enabled, additive historical batch for the October 16 defense.
+# The command records its manifest transactionally and skips repeat deployments.
+# It never creates live queues or sends email/notifications.
+if [ "${RUN_DEFENSE_DEMO:-false}" = "true" ]; then
+    echo "[start] Adding one-time defense history (existing records preserved)."
+    php artisan compass:seed-defense --apply --no-interaction \
+        || echo "[start] Defense import failed; existing records preserved and normal startup continues."
+fi
+
 # --- Nginx configuration (inject Render's $PORT) --------------------------
 rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
 envsubst '${PORT}' < /docker/nginx.conf > /etc/nginx/conf.d/default.conf
