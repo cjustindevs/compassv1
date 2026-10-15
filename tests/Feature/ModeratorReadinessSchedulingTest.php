@@ -43,7 +43,7 @@ class ModeratorReadinessSchedulingTest extends TestCase
     {
         $this->actingAs($helper->user)->post(route('helper.readiness.store'), [
             'emotionally_ready' => true, 'willing_to_listen' => true, 'stress_level' => 'low',
-            'availability_status' => 'available', 'exercise_completed' => 'skipped',
+            'availability_status' => 'available', 'exercise_completed' => 'completed',
             'skills_confirmed' => HelperReadinessService::SKILLS,
         ])->assertRedirect(route('helper.dashboard'))->assertSessionHasNoErrors();
     }

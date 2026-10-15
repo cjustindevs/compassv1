@@ -65,7 +65,7 @@ class ConsentReferralEmergencyTest extends TestCase
 
     private function readiness(array $overrides = []): array
     {
-        return array_replace(['emotionally_ready' => true, 'willing_to_listen' => true, 'stress_level' => 'low', 'availability_status' => 'available', 'exercise_completed' => 'skipped', 'skills_confirmed' => HelperReadinessService::SKILLS], $overrides);
+        return array_replace(['emotionally_ready' => true, 'willing_to_listen' => true, 'stress_level' => 'low', 'availability_status' => 'available', 'exercise_completed' => 'completed', 'skills_confirmed' => HelperReadinessService::SKILLS], $overrides);
     }
 
     private function seekerUser(): User

@@ -42,26 +42,30 @@ class HelperEligibilityService
         if (! $activating && $helper->availability !== 'available') {
             $reasons[] = 'Availability is not set to Available.';
         }
-        if ($helper->activeSessions()->when($session, fn ($q) => $q->where('id', '!=', $session->id))->exists()) {
+        if ($helper->assignmentBlockers()->when($session, fn ($q) => $q->where('id', '!=', $session->id))->exists()) {
             $reasons[] = 'Another assignment or active session already occupies your capacity.';
         }
         if ($helper->getRemainingCapacity() === 0) {
             $reasons[] = 'The two-session duty-shift limit has been reached.';
         }
-        if ($session) {
-            if ($session->risk_level === 'emergency' && \App\Models\AuditLog::where('target_type', $session->getTable())->where('target_id', $session->id)
-                ->whereIn('action', ['helper_declined', 'helper_recommendation_declined', 'helper_recommendation_expired', 'helper_recommendation_eligibility_changed'])
-                ->get()->contains(fn ($entry) => (int) ($entry->metadata['helper_id'] ?? 0) === $helper->id)) {
-                $reasons[] = 'This Helper already declined or missed this emergency support offer.';
-            }
-            if (! $helper->canHandleRiskLevel($session->risk_level) || (($session->risk_level === 'emergency' || $session->requires_adviser_review) && ! $session->permitsEmergencySupport()) || ($session->risk_level === 'high' && ! $session->peer_support_approved_at && !$session->permitsPrioritySafetySupport())) {
-                $reasons[] = 'This request requires a different competency or adviser review.';
-            }
-            if (DB::table('helper_conflicts')->where('helper_id', $helper->id)->where('seeker_id', $session->seeker_id)->exists()) {
-                $reasons[] = 'A declared conflict prevents this assignment.';
-            }
-        }
+        return $session ? array_merge($reasons, $this->requestReasons($helper, $session)) : $reasons;
+    }
 
+    /** Request-specific checks shared by matching and the live queue options. */
+    public function requestReasons(Helper $helper, Session $session): array
+    {
+        $reasons = [];
+        if ($session->risk_level === 'emergency' && \App\Models\AuditLog::where('target_type', $session->getTable())->where('target_id', $session->id)
+            ->whereIn('action', ['helper_declined', 'helper_recommendation_declined', 'helper_recommendation_expired', 'helper_recommendation_eligibility_changed'])
+            ->get()->contains(fn ($entry) => (int) ($entry->metadata['helper_id'] ?? 0) === $helper->id)) {
+            $reasons[] = 'This Helper already declined or missed this emergency support offer.';
+        }
+        if (! $helper->canHandleRiskLevel($session->risk_level) || (($session->risk_level === 'emergency' || $session->requires_adviser_review) && ! $session->permitsEmergencySupport()) || ($session->risk_level === 'high' && ! $session->peer_support_approved_at && !$session->permitsPrioritySafetySupport())) {
+            $reasons[] = 'This request requires a different competency or adviser review.';
+        }
+        if (DB::table('helper_conflicts')->where('helper_id', $helper->id)->where('seeker_id', $session->seeker_id)->exists()) {
+            $reasons[] = 'A declared conflict prevents this assignment.';
+        }
         return $reasons;
     }
 

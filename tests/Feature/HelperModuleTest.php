@@ -259,7 +259,7 @@ class HelperModuleTest extends TestCase
                 'stress_level' => 'high',
                 'availability_status' => 'not_ready',
                 'skills_confirmed' => \App\Services\HelperReadinessService::SKILLS,
-                'exercise_completed' => 'skipped',
+                'exercise_completed' => 'completed',
             ])
             ->assertSessionHasNoErrors()
             ->assertRedirect(route('helper.dashboard'));
@@ -267,7 +267,7 @@ class HelperModuleTest extends TestCase
         $this->assertDatabaseHas('readiness_checks', [
             'helper_id' => $this->helperUser->helper->id,
             'assessment_result' => 'not_ready',
-            'breathing_exercise' => 'skipped',
+            'breathing_exercise' => 'completed',
         ]);
     }
 

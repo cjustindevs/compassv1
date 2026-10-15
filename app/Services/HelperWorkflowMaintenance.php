@@ -51,6 +51,7 @@ class HelperWorkflowMaintenance
     public function releaseUnavailableRecommendations(): void
     {
         Session::where('session_status', Session::STATUS_HELPER_ASSIGNED)->whereNull('helper_accepted_at')
+            ->where(fn ($q) => $q->whereNull('scheduled_start')->orWhere('scheduled_start', '<=', now()->addMinutes(Helper::PRE_SESSION_BRIEF_MINUTES)))
             ->eachById(function ($session) {
                 if ($session->pre_session_brief_expires_at?->isPast()) {
                     $this->releaseRecommendation($session, 'expired');
@@ -69,7 +70,7 @@ class HelperWorkflowMaintenance
     public function reconcileHelperAvailability(Helper $helper, bool $matchWaiting = true): bool
     {
         $helper = Helper::whereKey($helper->id)->lockForUpdate()->first();
-        if (! $helper || $helper->activeSessions()->exists()) {
+        if (! $helper || $helper->assignmentBlockers()->exists()) {
             return false;
         }
         if ($helper->availability !== 'available') {
@@ -133,7 +134,7 @@ class HelperWorkflowMaintenance
      */
     public function restoreOperationalStatus(Helper $helper): void
     {
-        if ($helper->activeSessions()->exists()) {
+        if ($helper->assignmentBlockers()->exists()) {
             return;
         }
 
@@ -187,7 +188,7 @@ class HelperWorkflowMaintenance
     public function reconcileStaleAvailability(): void
     {
         Helper::whereIn('status', ['available', 'busy'])
-            ->whereDoesntHave('activeSessions')
+            ->whereDoesntHave('assignmentBlockers')
             ->eachById(function (Helper $helper) {
                 if ($helper->availability === 'available'
                     && $this->operationalEligibility($helper)->isEmpty()) {
@@ -195,7 +196,7 @@ class HelperWorkflowMaintenance
                 }
                 DB::transaction(function () use ($helper) {
                     $locked = Helper::whereKey($helper->id)->lockForUpdate()->first();
-                    if (! $locked || ! in_array($locked->status, ['available', 'busy'], true) || $locked->activeSessions()->exists()) {
+                    if (! $locked || ! in_array($locked->status, ['available', 'busy'], true) || $locked->assignmentBlockers()->exists()) {
                         return;
                     }
                     $this->restoreOperationalStatus($locked);

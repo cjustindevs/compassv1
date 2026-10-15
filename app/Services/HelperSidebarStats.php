@@ -13,7 +13,7 @@ class HelperSidebarStats
             $state['label'] = 'In session';
             $state['reason'] = 'Your current session occupies your assignment capacity.';
             $state['assignable'] = false;
-        } elseif ($helper->activeSessions()->exists()) {
+        } elseif ($helper->assignmentBlockers()->exists()) {
             $state['label'] = 'Assignment pending';
             $state['reason'] = 'Respond to your current assignment before receiving another case.';
             $state['assignable'] = false;

@@ -88,7 +88,7 @@ class HelperMatchingService
         // Do not prefilter through a separate latest-of-many relation: legacy
         // timestamps can disagree with the canonical latest submission by ID.
         $query->with(['currentReadiness', 'schedule', 'helperSpecialties'])
-            ->withCount('activeSessions as live_active_sessions_count');
+            ->withCount('assignmentBlockers as live_active_sessions_count');
 
         if (Schema::hasColumn('helpers', 'is_under_review')) {
             $query->where(fn ($q) => $q->where('is_under_review', false)->orWhereNull('is_under_review'));
@@ -250,7 +250,7 @@ class HelperMatchingService
             if ($helper->getRemainingCapacity() === 0) {
                 return 'The two-session duty-shift limit has been reached.';
             }
-            if ($helper->activeSessions()->where('id', '!=', $session->id)->exists()) {
+            if ($helper->assignmentBlockers()->where('id', '!=', $session->id)->exists()) {
                 return 'The helper is already assigned to an active session.';
             }
 
@@ -305,7 +305,7 @@ class HelperMatchingService
             $helper->syncSessionCounters();
             if ($oldHelperId && $oldHelperId !== $helper->id && ($old = Helper::find($oldHelperId))) {
                 $old->syncSessionCounters();
-                if ($old->status === 'busy' && ! $old->activeSessions()->exists()) {
+                if ($old->status === 'busy' && ! $old->assignmentBlockers()->exists()) {
                     app(HelperWorkflowMaintenance::class)->restoreOperationalStatus($old);
                 }
             }

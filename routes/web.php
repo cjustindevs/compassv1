@@ -527,6 +527,7 @@ Route::middleware(['auth', 'role:moderator'])->prefix('moderator')->name('modera
 
     // Incoming Queue
     Route::get('/queue', [ModeratorQueueController::class, 'index'])->name('queue');
+    Route::get('/queue/helper-options', [ModeratorQueueController::class, 'helperOptions'])->name('queue.helper-options');
     Route::post('/queue/assign', [ModeratorQueueController::class, 'assign'])->name('queue.assign');
     Route::patch('/queue/{queue}/priority', [ModeratorQueueController::class, 'priority'])->name('queue.priority');
     Route::post('/queue/reassign', [ModeratorQueueController::class, 'reassign'])->name('queue.reassign');

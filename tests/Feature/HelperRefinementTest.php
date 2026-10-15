@@ -57,12 +57,12 @@ class HelperRefinementTest extends TestCase
         $helper = $this->helper();
         $other = $this->helper();
         $upcoming = $this->supportCase($helper, ['session_status' => 'scheduled', 'scheduled_start' => now()->addDay(), 'start_time' => null, 'end_time' => null]);
-        $this->supportCase($helper, ['session_status' => 'scheduled', 'scheduled_start' => now()->addDays(2)]);
+        $this->supportCase($helper, ['session_status' => 'scheduled', 'scheduled_start' => now()->addDays(2), 'start_time'=>null, 'end_time'=>null]);
         $foreign = $this->supportCase($other, ['session_status' => 'scheduled', 'scheduled_start' => now()->addHour()]);
         Notification::create(['user_account_id' => $helper->user_account_id, 'title' => 'Weekly seminar reminder', 'message' => 'Routine event', 'notification_type' => 'reminder']);
         Notification::create(['user_account_id' => $helper->user_account_id, 'title' => 'Session documentation is overdue', 'message' => 'Complete your documentation.', 'notification_type' => 'reminder']);
         foreach (range(1, 6) as $day) {
-            $this->supportCase($helper, ['end_time' => now()->subDays($day)]);
+            $this->supportCase($helper, ['start_time'=>now()->subDays($day)->subMinutes(30), 'end_time' => now()->subDays($day)]);
         }
         $this->actingAs($helper->user)->get(route('helper.dashboard'))->assertOk()
             ->assertSee('Upcoming Session')->assertSee('Availability')->assertSee('Readiness')->assertSee('Recent Sessions')
@@ -70,7 +70,7 @@ class HelperRefinementTest extends TestCase
             ->assertSee('Session documentation is overdue')->assertDontSee('Weekly seminar reminder')
             ->assertViewHas('upcomingSession', fn ($s) => $s->id === $upcoming->id)
             ->assertViewHas('recentSessions', fn ($s) => $s->count() === 5 && $s->every(fn ($row) => $row->helper_id === $helper->id));
-        $this->getJson(route('helper.readiness.status'))->assertJsonPath('sidebar.availabilityLabel', 'Assignment pending');
+        $this->getJson(route('helper.readiness.status'))->assertJsonPath('sidebar.availabilityLabel', 'Available');
         $helper->sessions()->where('session_status', 'scheduled')->update(['session_status' => 'cancelled']);
         $helper->update(['availability' => 'break']);
         $this->getJson(route('helper.readiness.status'))->assertJsonPath('ready', true)->assertJsonPath('sidebar.availabilityLabel', 'On break');

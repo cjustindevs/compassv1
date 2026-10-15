@@ -84,7 +84,7 @@ class EscalationOperationsTest extends TestCase
     {
         [$mod, $helper, $queue] = $this->setupCase();
         $queue->update(['request_status' => 'cancelled']);
-        $data = ['readiness_form_version' => HelperReadinessService::GROUPED_VERSION, 'listener_skills_ready' => true, 'emotionally_ready' => true, 'willing_to_listen' => true, 'stress_level' => 'high', 'availability_status' => 'available', 'exercise_completed' => 'skipped'];
+        $data = ['readiness_form_version' => HelperReadinessService::GROUPED_VERSION, 'listener_skills_ready' => true, 'emotionally_ready' => true, 'willing_to_listen' => true, 'stress_level' => 'high', 'availability_status' => 'available', 'exercise_completed' => 'completed'];
         $this->actingAs($helper->user)->post(route('helper.readiness.store'), $data)->assertSessionHasNoErrors();
         $this->assertSame('unavailable', $helper->fresh()->availability);
         $data['stress_level'] = 'low';

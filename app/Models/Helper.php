@@ -144,6 +144,20 @@ class Helper extends Model
             ->where('session_status', Session::STATUS_HELPER_ASSIGNED);
     }
 
+    /** Reservations that can overlap a new 90-minute support session. */
+    public function assignmentBlockers(): HasMany
+    {
+        return $this->activeSessions()->where(fn ($q) => $q->where('session_status', 'active')
+            ->orWhereNull('scheduled_start')->orWhere('scheduled_start', '<=', now()->addMinutes(\App\Services\SessionDurationService::MAX_MINUTES)));
+    }
+
+    /** Future appointments do not prevent preparing for duty. Pending offers still do. */
+    public function readinessBlockers(): HasMany
+    {
+        return $this->activeSessions()->where(fn ($q) => $q->where('session_status', 'active')
+            ->orWhereNull('scheduled_start')->orWhere('scheduled_start', '<=', now()->addMinutes(self::PRE_SESSION_BRIEF_MINUTES)));
+    }
+
     public function completedSessions(): HasMany
     {
         return $this->hasMany(Session::class, 'helper_id', 'id')
@@ -249,7 +263,7 @@ class Helper extends Model
     public function hasCapacity(): bool
     {
         $limit = 1;
-        $activeSessionCount = $this->activeSessions()->count();
+        $activeSessionCount = $this->assignmentBlockers()->count();
         $currentShiftSessions = $this->currentAssignedSessionsCount();
 
         return $activeSessionCount < $limit

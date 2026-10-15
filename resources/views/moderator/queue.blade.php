@@ -66,6 +66,10 @@
             justify-content: flex-end;
         }
         .queue-actions form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .queue-actions :is(.assign-form,.reassign-form){display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;width:min(100%,480px)}
+        .queue-actions :is(.assign-form,.reassign-form) .assign-select{min-width:0;width:100%}
+        .queue-actions [data-helper-reason]{grid-column:1/-1;grid-row:2;color:#64748b}
+        .queue-actions button:disabled{opacity:.55;cursor:not-allowed}
         .btn-danger { color: #DC2626; }
         .btn-danger:hover { border-color: #DC2626; color: #DC2626; }
         .alias { font-weight: 600; color: var(--text-primary, #1F2937); overflow-wrap: anywhere; }
@@ -234,15 +238,12 @@
                                 <label class="sr-only" for="helper-{{ $item->id }}">Eligible helper for queue request {{ $item->id }}</label>
                                 <select id="helper-{{ $item->id }}" name="helper_id" class="assign-select" required>
                                     <option value="">Select helper…</option>
-                                    @foreach($availableHelpers->filter(fn($candidate) => app(\App\Services\HelperEligibilityService::class)->allows($candidate, $item->supportSession) && (int) $candidate->id !== (int) $item->assigned_helper_id)->sortByDesc(fn($candidate) => $candidate->calculateMatchingScore($item->supportSession?->risk_level ?? 'low', $item->supportSession?->concern?->concern_name, $item->seeker?->user?->preferred_language)) as $helper)
-                                        @php($eligibility = app(\App\Services\HelperEligibilityService::class)->status($helper, $item->supportSession))
-                                        <option @disabled(!$eligibility['assignable']) data-ineligible="{{ $eligibility['assignable'] ? '0' : '1' }}" value="{{ $helper->id }}"
-                                            title="{{ $eligibility['reason'] }}">
-                                            {{ $helper->full_name }} · {{ $eligibility['assignable'] ? 'Ready · ' . $helper->remaining_capacity . '/' . \App\Models\Helper::MAX_SESSIONS_PER_SHIFT : $eligibility['label'] }} · {{ $helper->competency_level }}/5
-                                        </option>
+                                    @foreach($item->helper_choices['helpers'] as $choice)
+                                        <option value="{{ $choice['id'] }}">{{ $choice['label'] }}</option>
                                     @endforeach
                                 </select>
-                                <button type="submit" class="btn-primary whitespace-nowrap">
+                                <small data-helper-reason style="display:block;max-width:340px;white-space:normal;font-size:11px">{{ $item->helper_choices['reason'] }}</small>
+                                <button type="submit" class="btn-primary whitespace-nowrap" @disabled(empty($item->helper_choices['helpers']))>
                                     <x-ui-icon name="user-check"  /> Assign
                                 </button>
                             </form>
@@ -294,21 +295,18 @@
                                     <x-ui-icon name="calendar"  /> Schedule
                                 </button>
                             </form>
-                            <form method="POST" action="{{ route('moderator.queue.reassign') }}">
+                            <form method="POST" action="{{ route('moderator.queue.reassign') }}" class="reassign-form" data-queue-id="{{ $item->id }}">
                                 @csrf
                                 <input type="hidden" name="queue_id" value="{{ $item->id }}">
                                 <label class="sr-only" for="reassign-{{ $item->id }}">Replacement helper for queue request {{ $item->id }}</label>
                                 <select id="reassign-{{ $item->id }}" name="helper_id" class="assign-select">
                                     <option value="">Select helper…</option>
-                                    @foreach($availableHelpers->filter(fn($candidate) => app(\App\Services\HelperEligibilityService::class)->allows($candidate, $item->supportSession) && (int) $candidate->id !== (int) $item->assigned_helper_id)->sortByDesc(fn($candidate) => $candidate->calculateMatchingScore($item->supportSession?->risk_level ?? 'low', $item->supportSession?->concern?->concern_name, $item->seeker?->user?->preferred_language)) as $helper)
-                                        @php($eligibility = app(\App\Services\HelperEligibilityService::class)->status($helper, $item->supportSession))
-                                        <option @disabled(!$eligibility['assignable']) data-ineligible="{{ $eligibility['assignable'] ? '0' : '1' }}" value="{{ $helper->id }}" {{ $item->assigned_helper_id === $helper->id ? 'selected' : '' }}
-                                            title="{{ $eligibility['reason'] }}">
-                                            {{ $helper->full_name }} · {{ $eligibility['assignable'] ? 'Ready · ' . $helper->remaining_capacity . '/' . \App\Models\Helper::MAX_SESSIONS_PER_SHIFT : $eligibility['label'] }}
-                                        </option>
+                                    @foreach($item->helper_choices['helpers'] as $choice)
+                                        <option value="{{ $choice['id'] }}">{{ $choice['label'] }}</option>
                                     @endforeach
                                 </select>
-                                <button type="submit" class="btn-outline whitespace-nowrap">
+                                <small data-helper-reason style="display:block;max-width:340px;white-space:normal;font-size:11px">{{ $item->helper_choices['reason'] }}</small>
+                                <button type="submit" class="btn-outline whitespace-nowrap" @disabled(empty($item->helper_choices['helpers']))>
                                     <x-ui-icon name="refresh"  /> Reassign
                                 </button>
                             </form>
@@ -447,5 +445,7 @@
 
     @include('layouts.partials.pwa-banner')
 
+<span hidden data-queue-helper-options="{{ route('moderator.queue.helper-options') }}"></span>
+<script src="{{ asset('js/queue-helper-options.js') }}?v={{ filemtime(public_path('js/queue-helper-options.js')) }}" defer></script>
 </body>
 </html>

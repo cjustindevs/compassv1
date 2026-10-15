@@ -43,7 +43,7 @@ class HelperSessionController extends Controller
     {
         $helper = Auth::user()->helper;
 
-        $session = Session::with(['seeker', 'seeker.screeningResponses'])
+        $session = Session::with(['seeker', 'concern', 'screeningResponses'])
             ->where('helper_id', $helper->id)
             ->findOrFail($id);
 
@@ -52,7 +52,7 @@ class HelperSessionController extends Controller
                 ->with('error', 'This session is no longer pending.');
         }
 
-        $screeningSummary = $this->getScreeningSummary($session->seeker);
+        $screeningSummary = $this->getScreeningSummary($session);
         $matchingDetails = app(HelperMatchingService::class)->getMatchingDetails($helper);
         $timeRemaining = $session->pre_session_brief_expires_at
             ? max(0, now()->diffInSeconds($session->pre_session_brief_expires_at, false))
@@ -82,29 +82,20 @@ class HelperSessionController extends Controller
             ->with('success', 'Session started. You can now communicate with the help seeker.');
     }
 
-    private function getScreeningSummary($seeker): array
+    private function getScreeningSummary(Session $session): array
     {
-        $screening = ScreeningResponse::where('seeker_id', $seeker->id)
-            ->latest('classified_at')
-            ->first();
-
-        if (! $screening) {
-            return [
-                'concern_category' => 'Not specified',
-                'summary' => 'No screening data available.',
-                'indicators' => [],
-                'is_emergency' => false,
-            ];
-        }
-
-        $responses = is_array($screening->responses) ? $screening->responses : json_decode($screening->responses, true);
-        $summary = $this->createScreeningSummary($responses ?: []);
-
+        // Never borrow a newer screening from another request by this Seeker.
+        $records = $session->screeningResponses->sortBy('id');
+        $responses = [];
+        foreach ($records as $record) $responses = array_replace($responses, $record->responses ?? []);
+        $summary = $this->createScreeningSummary($responses);
         return [
-            'concern_category' => $responses['concern_category'] ?? 'Not specified',
-            'summary' => $summary['text'],
+            'concern_category' => $session->concern?->concern_name ?? $session->concern_category ?? $responses['concern_category'] ?? 'Not specified',
+            'description' => $responses['concern_description'] ?? $responses['description'] ?? null,
+            'custom_concern' => $responses['custom_concern'] ?? null,
+            'summary' => $records->isEmpty() ? 'No request-linked screening summary available.' : $summary['text'],
             'indicators' => $summary['indicators'],
-            'is_emergency' => $screening->risk_level === 'emergency',
+            'is_emergency' => $session->risk_level === 'emergency',
         ];
     }
 
@@ -118,7 +109,7 @@ class HelperSessionController extends Controller
             'recurring_distress' => 'experiencing recurring emotional distress',
             'difficulty_coping' => 'reports difficulty coping',
         ] as $key => $text) {
-            if (($responses[$key] ?? false) === true) {
+            if (in_array($responses[$key] ?? null, [true, 1, '1', 'yes'], true)) {
                 $indicators[] = $key;
                 $summaryParts[] = $text;
             }
@@ -130,7 +121,7 @@ class HelperSessionController extends Controller
             'suicidal_thoughts' => 'reports suicidal thoughts',
             'recent_self_harm' => 'has recent self-harm history',
         ] as $key => $text) {
-            if (($responses[$key] ?? false) === true) {
+            if (in_array($responses[$key] ?? null, [true, 1, '1', 'yes'], true)) {
                 $indicators[] = $key;
                 $safetyIndicators[] = $text;
             }
@@ -143,7 +134,7 @@ class HelperSessionController extends Controller
             'attendance_affected' => 'attendance affected',
             'relationships_affected' => 'relationships affected',
         ] as $key => $text) {
-            if (($responses[$key] ?? false) === true) {
+            if (in_array($responses[$key] ?? null, [true, 1, '1', 'yes'], true)) {
                 $functionalImpacts[] = $text;
             }
         }
@@ -160,7 +151,7 @@ class HelperSessionController extends Controller
         }
 
         return [
-            'text' => $text !== '' ? $text : 'Seeker completed screening. No major concerns identified.',
+            'text' => $text !== '' ? $text : 'Seeker completed screening. Review the recorded concern and screening responses before starting support.',
             'indicators' => $indicators,
             'safety_indicators' => $safetyIndicators,
             'functional_impacts' => $functionalImpacts,

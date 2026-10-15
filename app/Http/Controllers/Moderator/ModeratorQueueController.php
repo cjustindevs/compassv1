@@ -63,6 +63,10 @@ class ModeratorQueueController extends Controller
         });
         // Eligible, ready helpers appear first so moderators can assign in one glance.
         $availableHelpers = $availableHelpers->sortBy(fn (Helper $helper) => $helper->assignment_reason !== null)->values();
+        $options = app(\App\Services\QueueHelperOptions::class);
+        foreach ($queueItems->getCollection()->concat($recentlyMatched) as $queue) {
+            $queue->helper_choices = $options->forRequest($queue, $availableHelpers);
+        }
 
         return view('moderator.queue', compact('queueItems', 'stats', 'availableHelpers','recentlyMatched'));
     }
@@ -70,6 +74,17 @@ class ModeratorQueueController extends Controller
     public function assign(Request $request): RedirectResponse
     {
         return $this->assignHelper($request, false);
+    }
+
+    public function helperOptions(Request $request): JsonResponse
+    {
+        abort_unless($request->user()?->is_active && $request->user()->role === 'moderator', 403);
+        $data = $request->validate(['queue_ids'=>'required|array|max:20', 'queue_ids.*'=>'required|integer|distinct']);
+        $helpers = Helper::with('user', 'adviser.user', 'helperSpecialties')->get();
+        $items = QueueRequest::whereIn('id', $data['queue_ids'])->whereIn('request_status', ['waiting','assigned'])->get();
+        $options = app(\App\Services\QueueHelperOptions::class);
+        return response()->json(['requests'=>$items->map(fn ($queue) => ['id'=>$queue->id] + $options->forRequest($queue, $helpers))])
+            ->header('Cache-Control', 'private, no-store');
     }
 
     public function reassign(Request $request): RedirectResponse

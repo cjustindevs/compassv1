@@ -242,7 +242,7 @@
     </div>
 
     @if($cooldownUntil ?? null)<p role="status" class="rc-card">Wait 30 minutes between saved readiness checks. Your next check is available at {{ $cooldownUntil->copy()->timezone('Asia/Manila')->format('g:i A') }} PHT (<span data-readiness-minutes>{{ (int) ceil(now()->diffInSeconds($cooldownUntil) / 60) }}</span> minutes remaining). You can set yourself unavailable at any time. <span data-readiness-unlocked hidden>The interval has ended. Refresh to check your current duty and capacity before continuing.</span></p><span hidden data-readiness-retry-at="{{ $cooldownUntil->getTimestampMs() }}"></span><script src="{{ asset('js/readiness-cooldown.js') }}?v={{ filemtime(public_path('js/readiness-cooldown.js')) }}" defer></script>@endif
-    @if($capacityBlocked ?? false)<p role="status" class="rc-card">Your current assignment or duty capacity prevents another readiness check. Finish or hand off your assignment, or wait for your next eligible duty. You can set yourself unavailable from the dashboard.</p>@endif
+    @if($capacityBlocked ?? false)<p role="status" class="rc-card">{{ $capacityReason }} You can set yourself unavailable from the dashboard.</p>@endif
     @if($readinessStatus === 'ready')
         <div class="rc-card">
             <div class="rc-ready">
@@ -383,9 +383,7 @@
                     <button type="button" class="btn btn-primary btn-sm" id="continue-btn" style="display:none;">
                         <x-ui-icon name="check" class="mr-1" /> Continue
                     </button>
-                    <button type="button" class="btn btn-secondary btn-sm" id="skipExerciseBtn">
-                        Skip
-                    </button>
+
                 </div>
             </div>
         </div>
@@ -399,7 +397,6 @@
             const modal = document.getElementById('exercise-modal');
             const openBtn = document.getElementById('openExerciseBtn');
             const closeBtn = document.getElementById('closeExerciseBtn');
-            const skipBtn = document.getElementById('skipExerciseBtn');
             const beginBtn = document.getElementById('begin-lesson-btn');
             const continueBtn = document.getElementById('continue-btn');
             const circle = document.getElementById('breath-circle');
@@ -409,6 +406,7 @@
             const form = document.getElementById('readinessForm');
             const statusTag = document.getElementById('breathStatusTag');
             if (!form || !openBtn || !hiddenInput) return;
+            let exerciseFinished = false;
 
             function openModal() { modal.classList.add('active'); resetExercise(); }
 
@@ -422,6 +420,7 @@
             }
 
             function resetExercise() {
+                exerciseFinished = false;
                 clearTimeout(window.__breathTimer);
                 circle.className = 'breath-circle';
                 breathText.textContent = 'Ready?';
@@ -443,6 +442,7 @@
 
                 const cycle = () => {
                     if (round > rounds) {
+                        exerciseFinished = true;
                         breathText.textContent = 'Great job! ';
                         circle.className = 'breath-circle';
                         continueBtn.style.display = '';
@@ -465,12 +465,9 @@
 
             openBtn.addEventListener('click', openModal);
             closeBtn.addEventListener('click', closeModal);
-            skipBtn.addEventListener('click', function () {
-                hiddenInput.value = 'skipped';
-                closeModal();
-            });
             beginBtn.addEventListener('click', runBreathing);
             continueBtn.addEventListener('click', function () {
+                if (!exerciseFinished) return;
                 hiddenInput.value = 'completed';
                 closeModal();
 
@@ -490,7 +487,7 @@
                     e.preventDefault();
                     return;
                 }
-                if (!hiddenInput.value) {
+                if (hiddenInput.value !== 'completed') {
                     e.preventDefault();
                     openModal();
                 }

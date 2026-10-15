@@ -5,10 +5,24 @@
     $canReviewLinkedReferral = $alert->referral && \App\Models\Referral::whereKey($alert->referral->id)->forAdviser((int) auth()->user()->adviser->id)->exists();
     $linkedReferral = $alert->referral;
     $handoffCandidates = $professionals->where('id', '!=', $linkedReferral?->professional_id);
+    $handoffBlockReason = match (true) {
+        $terminal => 'This emergency has concluded.',
+        !$linkedReferral => 'Request the Helper recommendation below before selecting a Professional.',
+        !$canReviewLinkedReferral => 'Only the assigned referral reviewer can choose or change its Professional.',
+        !$linkedReferral->isOpen() => 'This referral has concluded.',
+        !$linkedReferral->approved_at => 'Open the linked referral and record Adviser approval first.',
+        !$linkedReferral->help_seeker_consent => 'Waiting for Seeker referral consent in live chat.',
+        !app(\App\Services\IdentityVaultService::class)->hasCurrentSubmission($linkedReferral) => 'Waiting for Seeker contact submission in live chat.',
+        !in_array($linkedReferral->status, ['pending_professional','no_professional_available'], true) => 'Open the linked referral to request a Professional transfer.',
+        default => null,
+    };
 @endphp
 <section class="cm-card er-professional-handoff" id="emergencyProfessionalHandoff" aria-labelledby="emergencyHandoffTitle">
     <h2 id="emergencyHandoffTitle">Professional handoff</h2>
     <p class="cm-help">Raise professional support through an urgent referral. Referral approval, Seeker consent, contact submission, and authorized identity release remain separate steps.</p>
+    @if($handoffBlockReason)
+        <div class="cm-field"><label for="emergencyProfessionalUnavailable">Professional</label><select id="emergencyProfessionalUnavailable" disabled aria-describedby="professionalUnavailableReason"><option>{{ $linkedReferral?->professional?->full_name ?? 'Choose a Professional when the required steps are complete' }}</option></select><small id="professionalUnavailableReason" role="status">{{ $handoffBlockReason }}</small></div>
+    @endif
     @if($alert->referral)
         <p><strong>Referral #{{ $alert->referral->id }}</strong> &middot; {{ ucwords(str_replace('_',' ',$alert->referral->status)) }}</p>
         @if($linkedReferral->professional_id)

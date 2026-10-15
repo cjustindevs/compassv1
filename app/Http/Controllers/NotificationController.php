@@ -149,7 +149,11 @@ class NotificationController extends Controller
                 ->filter(fn ($notice) => $state->key($notice, $request->user()) !== null)->pluck('id')->values();
         }
 
-        return response()->json(['count' => (clone $owned)->unread()->count(), 'cursor' => $cursor, 'workflow' => $workflow,
+        // Actionable unread work must survive an old browser cursor or an interrupted page load.
+        $attention = (clone $owned)->unread()->whereIn('notification_type', ['referral','assignment'])
+            ->whereNotIn('title', ['Helper ready for duty','Duty scheduled','Duty updated','Duty cancelled'])
+            ->orderByDesc('id')->limit(30)->get()->map($present);
+        return response()->json(['count' => (clone $owned)->unread()->count(), 'cursor' => $cursor, 'workflow' => $workflow, 'attention'=>$attention,
             'recent' => (clone $owned)->latest('id')->limit(8)->get()->map($present), 'fresh' => $fresh->map($present)])
             ->header('Cache-Control', 'private, no-store');
     }

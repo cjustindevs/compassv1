@@ -1,6 +1,8 @@
 (() => {
     const meta=document.querySelector('meta[name="compass-notices"]');
     if(!meta)return;
+    if(window.CompassLiveNoticesInitialized)return;
+    window.CompassLiveNoticesInitialized=true;
     const config=JSON.parse(meta.content),storageKey=`compass-notices:${config.user}`;
     let seen=null,pending=false,subscribed=false;
     try{const saved=sessionStorage.getItem(storageKey);if(saved!==null)seen=Number(saved)||0;}catch{}
@@ -47,6 +49,7 @@
             if(!data.recent.length)inbox.append(el('p','No notifications yet.'));
             const all=el('a','View all notifications');all.href=config.center;all.className='compass-notice-all';inbox.append(all);
             // Do not lose alerts while a confirmation or sensitive form dialog is open.
+            for (const notice of data.attention || []) window.CompassImportantNotices?.enqueue(notice);
             if(document.querySelector('dialog[open]'))return;
             const fresh=data.fresh.filter(notice=>notice.urgent!==false&&(seen===null||notice.id>seen));
             const routine=fresh.filter(n=>n.type!=='emergency');

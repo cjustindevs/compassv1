@@ -51,11 +51,6 @@
 
         <div class="header-actions">
             <a class="icon-button header-action" href="{{ route('admin.settings') }}" aria-label="Account settings" title="Account settings"><x-admin.icon name="sliders" :size="19" /></a>
-            @php($notificationCount = $admin->unreadNotifications()->count())
-            <a class="icon-button header-action notification-button" href="{{ route('notifications') }}" aria-label="{{ $notificationCount }} unread notifications" title="Notifications">
-                <x-admin.icon name="bell" :size="19" />
-                @if($notificationCount)<span class="notification-badge">{{ $notificationCount }}</span>@endif
-            </a>
 
         </div>
     </div>

@@ -1,5 +1,5 @@
-<section class="cm-card" aria-labelledby="emergencyScreeningTitle">
-    <h2 id="emergencyScreeningTitle">Original pre-session screening</h2>
+<details class="cm-card" aria-labelledby="emergencyScreeningTitle">
+    <summary id="emergencyScreeningTitle">Original pre-session screening</summary>
     <p class="cm-help">Read-only Seeker responses. Operational emergency priority does not replace the original classification.</p>
     @php($originalScreening = $alert->session?->screeningResponses->sortBy('id')->first())
     <dl class="er-facts">
@@ -16,4 +16,4 @@
     @if($originalScreening?->follow_up_answered_at)
         <p><strong>Seeker follow-up response</strong><br>{{ ucfirst(str_replace('_', ' ', $originalScreening->follow_up_answer)) }}</p>
     @endif
-</section>
+</details>

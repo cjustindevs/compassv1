@@ -1,6 +1,7 @@
 (() => {
     const meta = document.querySelector('meta[name="compass-notices"]');
     if (!meta) return;
+    if (window.CompassImportantNotices) return;
     const config = JSON.parse(meta.content), key = `compass-important:${config.user}`;
     let queue = [], current = null, saving = false;
     try { queue = JSON.parse(sessionStorage.getItem(key) || '[]'); } catch {}

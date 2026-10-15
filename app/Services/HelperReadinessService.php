@@ -25,6 +25,9 @@ class HelperReadinessService
     public function submit(User $user, array $data): ReadinessCheck
     {
         Gate::forUser($user)->authorize('helper-workflow');
+        if (($data['exercise_completed'] ?? null) !== 'completed') {
+            throw \Illuminate\Validation\ValidationException::withMessages(['exercise_completed' => 'Complete all three breathing rounds before submitting readiness.']);
+        }
         $grouped = array_key_exists('listener_skills_ready', $data);
         if ($grouped) {
             // An explicit Yes confirms the entire displayed checklist, not a competency score.
@@ -38,7 +41,7 @@ class HelperReadinessService
             if ($retryAt && now()->lt($retryAt)) {
                 throw \Illuminate\Validation\ValidationException::withMessages(['readiness' => 'You can take another readiness check in '.(int) ceil(now()->diffInSeconds($retryAt) / 60).' minutes ('.$retryAt->copy()->timezone('Asia/Manila')->format('g:i A').' PHT).']);
             }
-            if ($helper->activeSessions()->exists() || $helper->getRemainingCapacity() === 0) {
+            if ($helper->readinessBlockers()->exists() || $helper->getRemainingCapacity() === 0) {
                 throw \Illuminate\Validation\ValidationException::withMessages(['readiness' => 'Your current assignment or duty capacity prevents another readiness check. You can set yourself unavailable at any time.']);
             }
             $wasAvailable=$helper->status==='available';
@@ -64,7 +67,7 @@ class HelperReadinessService
             $available = $willing && app(HelperEligibilityService::class)->allows($helper, null, true);
             $helper->update(['is_ready' => $passed, 'last_readiness_at' => now()]);
             // Submitting readiness alone does not manufacture schedule or verification approval.
-            if (! $helper->activeSessions()->exists()) {
+            if (! $helper->assignmentBlockers()->exists()) {
                 $helper->update(['status' => $available ? 'available' : 'offline', 'availability' => $willing ? 'available' : 'unavailable', 'available_since' => $available ? now() : null]);
             }
             SupportAudit::record('readiness_submitted', $record, ['version' => $version]);
@@ -72,7 +75,7 @@ class HelperReadinessService
             if($available && !$wasAvailable)foreach(\App\Models\User::where('role','moderator')->where('is_active',true)->get() as $moderator)
                 \App\Models\Notification::create(['user_account_id'=>$moderator->id,'title'=>'Helper ready for duty','message'=>$helper->full_name.' has passed readiness for scheduled duty.','notification_type'=>'assignment','link'=>'/moderator/manage']);
             if (! $available) {
-                foreach ($helper->activeSessions()->whereNull('helper_accepted_at')->get() as $pending) {
+                foreach ($helper->readinessBlockers()->whereNull('helper_accepted_at')->get() as $pending) {
                     DB::afterCommit(fn () => app(HelperWorkflowMaintenance::class)->releaseRecommendation($pending, 'readiness_changed'));
                 }
             }

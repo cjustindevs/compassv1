@@ -46,3 +46,12 @@ test('resolved emergency notices close and failed acknowledgement preserves pend
     assert.equal(r.dialog.open,true);assert.match(r.dialog.children[2].textContent,/try again/);
     r.api.reconcileUnread([]);assert.equal(r.dialog.open,false);
 });
+
+test('recovered unread referrals are deduplicated until acknowledged',async()=>{
+    const r=room(), notice={id:5,title:'Referral review',type:'referral'};
+    r.api.enqueue(notice);r.api.enqueue(notice);r.api.enqueue(notice);
+    assert.equal(JSON.parse(r.storage.get('compass-important:7')).length,1);
+    await r.dialog.children[3].children[1].onclick();r.tick();
+    assert.equal(r.dialog.open,false);
+    assert.equal(JSON.parse(r.storage.get('compass-important:7')).length,0);
+});

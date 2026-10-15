@@ -83,10 +83,10 @@
         .flash-error { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
 
         .adviser-page-content { max-width:1280px; margin:0 auto; }
-        .adviser-page-content .card { border-radius:16px; box-shadow:none; padding:22px; }
+        .adviser-page-content .card { border-radius:12px; box-shadow:none; padding:16px; }
         .adviser-page-content .btn-primary { background:#049b50; border-radius:10px; padding:10px 18px; box-shadow:none; font-size:14px; }
         .adviser-page-content .btn-primary:hover { transform:none; background:#037d41; }
-        .coordination-grid > div { background:#f5f9f7; border:1px solid #e5eee8; padding:14px 16px; border-radius:12px; }
+        .coordination-grid > div { background:#f5f9f7; border:1px solid #e5eee8; padding:10px 12px; border-radius:10px; }
         .coordination-grid strong { display:block; margin-top:5px; color:#173e2c; font-size:15px; }
         .referral-release summary { cursor:pointer; font-weight:600; color:#173e2c; padding:2px 0; }
         .referral-release .release-intro { font-size:13px; color:#64748b; margin:12px 0 18px; }
@@ -158,6 +158,9 @@
             @endif
             @if($referral->professional)
                 <p class="text-sm mt-3">This referral is assigned to the professional shown above. Active cases retain their assignment; identity release authorizes access to selected contact details.</p>
+            @endif
+            @if($referral->isOpen() && (!$referral->approved_at || !$referral->help_seeker_consent))
+                <div class="coordination-form mt-3"><label for="professionalPreview">Professional</label><select id="professionalPreview" disabled aria-describedby="professionalPreviewReason"><option>Choose a Professional after approval and Seeker consent</option></select><p id="professionalPreviewReason" role="status" class="text-sm text-gray-500">{{ !$referral->approved_at ? 'Review and approve the recommendation first.' : 'Waiting for Seeker referral consent in live chat.' }}</p></div>
             @endif
         </section>
 @if($referral->approved_at && $referral->help_seeker_consent && in_array($referral->status,['pending_professional','no_professional_available']))

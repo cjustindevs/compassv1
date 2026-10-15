@@ -11,7 +11,7 @@
         <x-ui-icon name="arrow-left"  /> Back to case
     </a>
 
-    <div class="card" style="padding:32px 28px;">
+    <div class="card" style="padding:20px;">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px;">
             <div>
                 <h2 style="font-size:20px;font-weight:700;color:var(--gray-800);margin-bottom:4px;">Pre-Session Brief</h2>
@@ -27,6 +27,10 @@
                 <h3 style="font-size:14px;font-weight:700;color:var(--gray-800);margin-bottom:10px;"> Support brief</h3>
                 <p class="text-sm text-gray-700" style="margin-bottom:8px;">Concern: <strong>{{ $screeningSummary['concern_category'] }}</strong></p>
                 <p class="text-sm text-gray-500">{{ $screeningSummary['summary'] }}</p>
+                <h4 style="margin:14px 0 6px;font-size:13px;font-weight:600">Seeker's concern</h4>
+                <p style="white-space:pre-wrap;overflow-wrap:anywhere">{{ $screeningSummary['description'] ?: 'No description provided for this request.' }}</p>
+                @if($screeningSummary['custom_concern'])<p style="white-space:pre-wrap;overflow-wrap:anywhere"><strong>Other concern:</strong> {{ $screeningSummary['custom_concern'] }}</p>@endif
+                <small class="text-gray-500">Read-only information submitted for this assigned request.</small>
             </div>
 
             <div style="border:1px solid var(--gray-200);border-radius:12px;padding:18px;">

@@ -661,9 +661,6 @@
             </div>
             <div class="flex items-center gap-3">
                 <span class="text-xs text-gray-400 hidden sm:inline">{{ now()->format('M d, Y') }}</span>
-                <a href="{{ route('notifications') }}" class="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition" title="Notifications" aria-label="Notifications">
-                    <x-ui-icon name="bell"  />
-                </a>
             </div>
         </div>
 

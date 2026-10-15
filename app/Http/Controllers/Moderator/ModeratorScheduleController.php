@@ -69,7 +69,8 @@ class ModeratorScheduleController extends Controller
             ->when($request->filled('helper_id'), fn ($q) => $q->where('helper_id', (int) $request->input('helper_id')))->orderBy('date')->orderBy('id')->paginate(15, ['*'], 'duties_page')->withQueryString();
         $edit = $request->filled('edit') ? HelperSchedule::whereIn('helper_id', $allowedHelperIds)->where('is_active', true)->findOrFail((int) $request->input('edit')) : null;
 
-        return view('moderator.schedules', compact('date', 'helpers', 'dutyHelpers', 'scheduleEvents', 'scheduledSessions', 'duties', 'edit'));
+        $workload = app(\App\Services\HelperWorkload::class)->page($request);
+        return view('moderator.schedules', compact('date', 'helpers', 'dutyHelpers', 'scheduleEvents', 'scheduledSessions', 'duties', 'edit', 'workload'));
     }
 
     public function candidates(): JsonResponse
@@ -82,12 +83,12 @@ class ModeratorScheduleController extends Controller
         ])->header('Cache-Control', 'private, no-store');
     }
 
-    public function workload(): JsonResponse
+    public function workload(Request $request): JsonResponse
     {
-        return response()->json(['helpers' => $this->helpers()->map(function (Helper $helper) {
-            $state = app(HelperEligibilityService::class)->status($helper);
-            return ['id' => $helper->id, 'status' => $state['label'], 'assignments' => $helper->activeSessions()->count(), 'remaining' => $helper->getRemainingCapacity()];
-        })->values()])->header('Cache-Control', 'private, no-store');
+        $page = app(\App\Services\HelperWorkload::class)->page($request);
+        return response()->json(['helpers'=>$page->items(), 'pagination'=>(string) $page->links(), 'total'=>$page->total(),
+            'summary'=>'Showing '.($page->firstItem() ?? 0).'–'.($page->lastItem() ?? 0).' of '.$page->total().' Helpers'])
+            ->header('Cache-Control', 'private, no-store');
     }
 
     private function helpers(): Collection

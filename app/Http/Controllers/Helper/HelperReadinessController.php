@@ -29,7 +29,10 @@ class HelperReadinessController extends Controller
         $helper = $user->helper;
         $retryAt = app(HelperReadinessService::class)->retryAt($helper);
         $cooldownUntil = $retryAt && now()->lt($retryAt) ? $retryAt : null;
-        $capacityBlocked = $helper->activeSessions()->exists() || $helper->getRemainingCapacity() === 0;
+        $capacityBlocked = $helper->readinessBlockers()->exists() || $helper->getRemainingCapacity() === 0;
+        $capacityReason = $helper->readinessBlockers()->exists()
+            ? 'You have an active session or an assignment awaiting action. Open Assigned Cases to respond before taking another readiness check.'
+            : 'You have used '.$helper->currentAssignedSessionsCount().' / '.\App\Models\Helper::MAX_SESSIONS_PER_SHIFT.' sessions for this duty. You can complete another check during your next eligible duty.';
         if (! HelperSchedule::readinessDutyFor($helper->id)) {
             return redirect()->route('helper.dashboard')->with('warning', 'You don’t have a scheduled duty today, or readiness is not open yet. Please contact your Moderator. Your upcoming duties are on your dashboard.');
         }
@@ -47,7 +50,7 @@ class HelperReadinessController extends Controller
             $readinessStatus = $helper->isReady() ? 'not_assessed' : $readinessStatus;
         }
 
-        return view('helper.readiness', compact('helper', 'latestCheck', 'readinessStatus', 'lastReadiness', 'cooldownUntil', 'capacityBlocked'));
+        return view('helper.readiness', compact('helper', 'latestCheck', 'readinessStatus', 'lastReadiness', 'cooldownUntil', 'capacityBlocked', 'capacityReason'));
     }
 
     /**
@@ -91,7 +94,7 @@ class HelperReadinessController extends Controller
             'notes' => 'nullable|string|max:1000',
             'shift_start' => 'nullable|date_format:H:i',
             'shift_end' => 'nullable|date_format:H:i|after:shift_start',
-            'exercise_completed' => 'required|in:completed,skipped',
+            'exercise_completed' => 'required|in:completed',
         ]);
 
         $readiness = app(HelperReadinessService::class)->submit($request->user(), $validated);

@@ -79,7 +79,7 @@ class ReferralDeliveryWorkflowTest extends TestCase
             'willing_to_listen' => true,
             'stress_level' => 'low',
             'availability_status' => 'available',
-            'exercise_completed' => 'skipped',
+            'exercise_completed' => 'completed',
             'skills_confirmed' => HelperReadinessService::SKILLS,
         ]);
 
