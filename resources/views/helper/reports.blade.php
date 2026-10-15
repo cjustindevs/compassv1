@@ -5,7 +5,9 @@
 @section('content')
 <div class="hf-page">
 <section class="card">
+@if(request('period') === 'all')<p class="hf-muted">All-time history selected.</p>@endif
 <form class="hf-filter" method="GET" action="{{ route('helper.reports') }}" style="margin-bottom:0">
+@if(request('period') === 'all')<input type="hidden" name="period" value="all">@endif
 <x-helper-date-range :from="$roleReport['from']" :to="$roleReport['to']" />
 <label>Case Status<select class="form-control" name="case_status">
 <option value="">All</option>
@@ -31,9 +33,13 @@
 <small>Selected date range</small>
 </article>
 @endforeach</div>
+<details class="card hf-secondary"><summary>Performance metrics and calculation notes</summary>
+<dl>@foreach(['Average Helper Response Time','Average waiting time','Satisfaction rating','Competency score','Session completion rate','Scheduled duty hours','Documentation completion rate','Pending documentation'] as $label)<div style="margin:10px 0"><dt>{{ $label }}</dt><dd>{{ $roleReport['summary'][$label] ?? 'No data' }}</dd></div>@endforeach</dl>
+<p class="hf-muted">Same definitions as your dashboard. Response is submission to your first actual message. Scheduled hours are planned coverage, not attendance. Documentation requires both summary and reflection; this is not an on-time rate. Scores are out of five. The selected cohort includes archived history.</p>
+</details>
 <div class="hf-actions" style="justify-content:flex-end;margin-bottom:16px">
-<a class="btn btn-secondary btn-sm" href="{{ route('helper.reports.export',array_merge(request()->only(['date_range','from','to','case_status','concern_id']),['format'=>'pdf'])) }}">Download PDF</a>
-<a class="btn btn-secondary btn-sm" href="{{ route('helper.reports.export',array_merge(request()->only(['date_range','from','to','case_status','concern_id']),['format'=>'csv'])) }}">Download CSV</a>
+<a class="btn btn-secondary btn-sm" href="{{ route('helper.reports.export',array_merge(request()->only(['date_range','from','to','case_status','concern_id','period']),['format'=>'pdf'])) }}">Download PDF</a>
+<a class="btn btn-secondary btn-sm" href="{{ route('helper.reports.export',array_merge(request()->only(['date_range','from','to','case_status','concern_id','period']),['format'=>'csv'])) }}">Download CSV</a>
 </div>
 @foreach($roleReport['tables'] as $table)
 @if($table['title']!=='Case activity')

@@ -297,37 +297,6 @@
                 </div>
             </div>
 
-            <!-- Workload Overview -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Helper Workload</h3>
-                    <a href="{{ route('moderator.manage') }}" class="text-sm text-[#04A052] hover:underline">Manage</a>
-                </div>
-                <div class="space-y-3">
-                    @foreach(\App\Models\Helper::with('sessions')->get()->sortByDesc(fn ($h) => $h->sessions()->whereIn('session_status', ['active', 'helper_assigned'])->count())->take(8) as $helper)
-                        @php
-                            $load = $helper->sessions()->whereIn('session_status', ['active', 'helper_assigned'])->count();
-                            $max = $helper->max_concurrent_sessions ?: 2;
-                            $pct = min(100, round(($load / $max) * 100));
-                            $color = $pct >= 100 ? 'bg-red-500' : ($pct >= 66 ? 'bg-amber-500' : 'bg-emerald-500');
-                        @endphp
-                        <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-semibold text-xs flex-shrink-0">
-                                {{ substr($helper->first_name, 0, 1) }}{{ substr($helper->last_name, 0, 1) }}
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex justify-between items-center mb-1">
-                                    <span class="text-sm font-medium text-gray-700 truncate">{{ $helper->full_name }}</span>
-                                    <span class="text-xs text-gray-400">{{ $load }}/{{ $max }}</span>
-                                </div>
-                                <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                    <div class="h-full {{ $color }} rounded-full transition-all" style="width: {{ $pct }}%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
         </div>
 
     </main>

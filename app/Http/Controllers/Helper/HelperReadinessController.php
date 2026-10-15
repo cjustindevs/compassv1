@@ -27,6 +27,9 @@ class HelperReadinessController extends Controller
         abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $user = Auth::user();
         $helper = $user->helper;
+        $retryAt = app(HelperReadinessService::class)->retryAt($helper);
+        $cooldownUntil = $retryAt && now()->lt($retryAt) ? $retryAt : null;
+        $capacityBlocked = $helper->activeSessions()->exists() || $helper->getRemainingCapacity() === 0;
         if (! HelperSchedule::readinessDutyFor($helper->id)) {
             return redirect()->route('helper.dashboard')->with('warning', 'You don’t have a scheduled duty today, or readiness is not open yet. Please contact your Moderator. Your upcoming duties are on your dashboard.');
         }
@@ -44,7 +47,7 @@ class HelperReadinessController extends Controller
             $readinessStatus = $helper->isReady() ? 'not_assessed' : $readinessStatus;
         }
 
-        return view('helper.readiness', compact('helper', 'latestCheck', 'readinessStatus', 'lastReadiness'));
+        return view('helper.readiness', compact('helper', 'latestCheck', 'readinessStatus', 'lastReadiness', 'cooldownUntil', 'capacityBlocked'));
     }
 
     /**
@@ -61,6 +64,7 @@ class HelperReadinessController extends Controller
             'status' => $helper->getReadinessStatus(),
             'ready' => $helper->isReady(),
             'valid_until' => $helper->getCurrentReadiness()?->valid_until?->toISOString(),
+            'retry_at' => app(HelperReadinessService::class)->retryAt($helper)?->toISOString(),
         ])->header('Cache-Control', 'private, no-store');
     }
 

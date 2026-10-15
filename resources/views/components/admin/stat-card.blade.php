@@ -5,6 +5,7 @@
     'icon',
     'tone' => 'green',
     'trend' => null,
+    'link' => null,
 ])
 
 <article class="stat-card">
@@ -20,5 +21,6 @@
             @endif
             {{ $detail }}
         </span>
+        @if($link)<a href="{{ $link }}" class="admin-text-link">View details</a>@endif
     </div>
 </article>

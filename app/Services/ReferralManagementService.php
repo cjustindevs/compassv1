@@ -454,7 +454,12 @@ class ReferralManagementService
             abort_unless($professional, 422, 'Select an active, available professional.');
             $previous = $referral->professional_id;
             abort_if($previous === $professionalId, 409, 'This professional is already assigned.');
-            $referral->update(['professional_id' => $professionalId, 'status' => Referral::STATUS_PENDING_PROFESSIONAL, 'professional_notified_at' => now()]);
+            $previousUser = $referral->professional?->user_account_id;
+            $referral->update(['professional_id' => $professionalId, 'identity_disclosed' => false, 'status' => Referral::STATUS_PENDING_PROFESSIONAL, 'professional_notified_at' => now()]);
+            $referral->unsetRelation('professional');
+            if ($previousUser) {
+                $this->notifyUser($previousUser, 'Referral assignment transferred', 'Your pending assignment was transferred to another Professional. No further action is required from you.', '/professional/referrals', 'update');
+            }
             SupportAudit::record('referral_professional_assigned', $referral, ['previous_professional_id' => $previous, 'professional_id' => $professionalId, 'reason' => $reason]);
             $urgent = $this->linkEmergencyHandoff($referral);
             $this->notifyUser($professional->user_account_id, $urgent ? 'Urgent emergency referral assigned' : 'Referral assigned', 'A referral is pending your review.', '/professional/referral/'.$referral->id, $urgent ? 'emergency' : 'referral', $urgent ? EmergencyAlert::where('referral_id', $referral->id)->whereNotIn('status', ['resolved', 'closed'])->latest('id')->value('id') : null);
@@ -478,7 +483,7 @@ class ReferralManagementService
             abort_unless(trim($reason) !== '' && mb_strlen($reason) <= 500, 422);
             $previous = $referral->professional_id;
             app(SupervisionVersions::class)->record($referral, 'Before professional declined assignment');
-            $referral->update(['professional_id' => null, 'status' => Referral::STATUS_NO_PROFESSIONAL_AVAILABLE, 'decline_reason' => $reason]);
+            $referral->update(['professional_id' => null, 'identity_disclosed' => false, 'status' => Referral::STATUS_NO_PROFESSIONAL_AVAILABLE, 'decline_reason' => $reason]);
             app(SupervisionVersions::class)->record($referral, 'Professional declined assignment; Adviser coordination required');
             SupportAudit::record('professional_assignment_declined', $referral, ['previous_professional_id' => $previous]);
             $this->notifyUser($referral->adviser?->user_account_id, 'Professional assignment declined', 'A referral requires a new professional assignment.', '/adviser/referral/'.$referral->id, 'referral');

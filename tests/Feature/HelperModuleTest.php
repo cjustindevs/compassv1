@@ -221,6 +221,9 @@ class HelperModuleTest extends TestCase
 
     public function test_readiness_submission_after_exercise_is_stored_with_helper_id_and_exercise_status(): void
     {
+        // This check is a new duty self-assessment, after the saved-check interval and without live work.
+        $this->travel(30)->minutes();
+        $this->helperUser->helper->sessions()->update(['session_status' => 'completed', 'start_time' => now()->subDay()]);
         \App\Models\HelperSchedule::updateOrCreate(['helper_id'=>$this->helperUser->helper->id,'date'=>now('Asia/Manila')->toDateString()],['is_active'=>true,'created_by'=>$this->helperUser->id,'shift_start'=>null,'shift_end'=>null]);
         $this->actingAs($this->helperUser)
             ->from(route('helper.readiness'))
@@ -244,6 +247,9 @@ class HelperModuleTest extends TestCase
 
     public function test_readiness_submission_allows_skipping_the_exercise(): void
     {
+        // This check is a new duty self-assessment, after the saved-check interval and without live work.
+        $this->travel(30)->minutes();
+        $this->helperUser->helper->sessions()->update(['session_status' => 'completed', 'start_time' => now()->subDay()]);
         \App\Models\HelperSchedule::updateOrCreate(['helper_id'=>$this->helperUser->helper->id,'date'=>now('Asia/Manila')->toDateString()],['is_active'=>true,'created_by'=>$this->helperUser->id,'shift_start'=>null,'shift_end'=>null]);
         $this->actingAs($this->helperUser)
             ->from(route('helper.readiness'))
@@ -267,6 +273,9 @@ class HelperModuleTest extends TestCase
 
     public function test_readiness_submission_marks_helper_available_when_ready(): void
     {
+        // This check is a new duty self-assessment, after the saved-check interval and without live work.
+        $this->travel(30)->minutes();
+        $this->helperUser->helper->sessions()->update(['session_status' => 'completed', 'start_time' => now()->subDay()]);
         $this->prepareMatchingHelper($this->helperUser->helper);
         $this->helperUser->helper->sessions()->update(['session_status'=>'completed','start_time'=>now()->subDay()]);
         $this->actingAs($this->helperUser)
@@ -288,6 +297,9 @@ class HelperModuleTest extends TestCase
 
     public function test_readiness_submission_marks_helper_offline_when_not_ready(): void
     {
+        // This check is a new duty self-assessment, after the saved-check interval and without live work.
+        $this->travel(30)->minutes();
+        $this->helperUser->helper->sessions()->update(['session_status' => 'completed', 'start_time' => now()->subDay()]);
         $this->prepareMatchingHelper($this->helperUser->helper);
         $this->helperUser->helper->sessions()->update(['session_status'=>'completed','start_time'=>now()->subDay()]);
         $this->actingAs($this->helperUser)

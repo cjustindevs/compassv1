@@ -42,6 +42,10 @@ class HelperDashboardController extends Controller
         }
 
         $helperId = $helper->id;
+        $period = \App\Services\AnalyticsPeriod::fromRequest(request());
+        $performanceService = app(\App\Services\SessionPerformance::class);
+        $performanceRows = $performanceService->cohort($helper->sessions()->getQuery(), $period)->get();
+        $performance = $performanceService->summarize($performanceRows, collect([$helperId]), $period);
         $dutySummary = app(HelperDutySummary::class)->forHelper($helper);
         $upcomingDuties = HelperSchedule::where('helper_id', $helperId)->where('is_active', true)
             ->whereDate('date', '>=', now('Asia/Manila')->toDateString())->orderBy('date')->limit(5)->get();
@@ -73,6 +77,7 @@ class HelperDashboardController extends Controller
         $upcomingSession = $helper->sessions()->whereNotNull('scheduled_start')->where('scheduled_start', '>=', now())
             ->whereIn('session_status', ['scheduled', 'helper_assigned'])->orderBy('scheduled_start')->first();
         $recentSessions = $helper->sessions()->with('concern')->whereIn('session_status', ['completed', 'evaluated', 'cancelled', 'no_show'])
+            ->whereBetween(\DB::raw('COALESCE(end_time,start_time,created_date,created_at)'), [$period->start->utc(), $period->end->utc()])
             ->orderByRaw('COALESCE(end_time,start_time,created_date,created_at) DESC')->orderByDesc('id')->limit(5)->get();
 
         // ── ACTIVE CASES FROM DATABASE ───────────────────────────────────
@@ -141,6 +146,7 @@ class HelperDashboardController extends Controller
 
         // ── RECENT ACTIVITY FROM DATABASE ────────────────────────────────
         $recentActivity = Notification::withoutDuplicateCompletionReminders()->where('user_account_id', $user->id)
+            ->where('created_at', '>=', $period->start->utc())->where('created_at', '<', $period->end->utc())
             ->where(fn ($q) => $q->whereIn('notification_type', ['emergency', 'assignment', 'evaluation', 'referral', 'session'])
                 ->orWhere('title', 'Session completed')->orWhere('title', 'like', '%Readiness%')->orWhere('title', 'like', '%documentation%')->orWhere('title', 'like', '%Referral%'))
             ->orderByDesc('created_at')
@@ -159,6 +165,7 @@ class HelperDashboardController extends Controller
         if ($recentActivity->isEmpty()) {
             $recentActivity = Session::with('seeker:id,id,generated_alias')
                 ->where('helper_id', $helperId)
+                ->where('created_date', '>=', $period->start->utc())->where('created_date', '<', $period->end->utc())
                 ->orderByDesc('created_date')
                 ->limit(4)
                 ->get()
@@ -179,7 +186,8 @@ class HelperDashboardController extends Controller
 
         $documentationTasks = $helper->sessions()->whereNotNull('start_time')->where('documentation_status', '!=', 'submitted')->whereIn('session_status', ['completed', 'evaluated', 'cancelled', 'no_show'])->orderByDesc('end_time')->orderByDesc('id')->limit(8)->get();
 
-        return view('dashboard.helper', ['upcomingDuties' => $upcomingDuties, 'dutySummary' => $dutySummary] + compact(
+        return view('dashboard.helper', ['analyticsDates' => $period->dates(), 'upcomingDuties' => $upcomingDuties, 'dutySummary' => $dutySummary] + compact(
+            'performance',
             'documentationTasks', 'sidebarStats', 'currentReadiness', 'upcomingSession', 'recentSessions',
             'user',
             'helper',

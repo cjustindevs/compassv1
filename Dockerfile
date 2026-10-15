@@ -98,8 +98,8 @@ RUN php -m | grep -i pdo_pgsql \
 
 RUN printf '%s\n' \
     'memory_limit = 192M' \
-    'upload_max_filesize = 8M' \
-    'post_max_size = 10M' \
+    'upload_max_filesize = 5M' \
+    'post_max_size = 6M' \
     'max_execution_time = 120' \
     'display_errors = Off' \
     'log_errors = On' \

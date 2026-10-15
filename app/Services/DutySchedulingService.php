@@ -40,6 +40,10 @@ class DutySchedulingService
                 throw ValidationException::withMessages(['helper_id' => 'This Helper is no longer approved for scheduling.']);
             }
             $edit = isset($data['shift_id']) ? HelperSchedule::where('helper_id', $helper->id)->where('is_active', true)->findOrFail($data['shift_id']) : null;
+            if (auth()->user()?->role === 'adviser' && $helper->adviser_id !== auth()->user()->adviser?->id) abort(403, 'Helper supervision changed. Refresh the schedule.');
+            if ($edit && isset($data['expected_updated_at']) && ! $edit->updated_at->equalTo(Carbon::parse($data['expected_updated_at']))) {
+                throw ValidationException::withMessages(['shift_id' => 'This duty was changed by another staff member. Refresh it before editing.']);
+            }
             if ($edit && $edit->date->lt(now('Asia/Manila')->startOfDay())) {
                 throw ValidationException::withMessages(['shift_id' => 'Past duty records cannot be edited.']);
             }

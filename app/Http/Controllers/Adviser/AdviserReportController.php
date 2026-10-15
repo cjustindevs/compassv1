@@ -11,7 +11,7 @@ class AdviserReportController extends Controller {
         // One date interval and one set of controls drive every report group.
         $reportRequest = $request->duplicate();
         $reportRequest->merge(['from'=>$filters['start']->copy()->timezone('Asia/Manila')->format('Y-m-d H:i:s'),
-            'to'=>$filters['end']->copy()->timezone('Asia/Manila')->format('Y-m-d H:i:s')]);
+            'to'=>$filters['end']->copy()->subMicrosecond()->timezone('Asia/Manila')->format('Y-m-d H:i:s.u')]);
         $data['categories']=ConcernCategory::orderBy('concern_name')->get();
         $data['filterHelpers']=\App\Models\Helper::where('adviser_id',app(AdviserScope::class)->actor()->id)->orderBy('first_name')->get();
         $data['avgResponseTime']=$data['metrics']['response_minutes']===null ? 'No data' : $data['metrics']['response_minutes'].'m';
@@ -29,7 +29,7 @@ class AdviserReportController extends Controller {
         $filters=$analytics->filters($request); $data=$analytics->report($filters);
         $sessions=$analytics->sessions($filters)->with(['helper','concern','evaluation'])->orderBy('id')->get();
         SupportAudit::record('report_exported',app(AdviserScope::class)->actor(),['purpose'=>'supervision_reporting','filters'=>collect($filters)->except(['start','end'])->all(),'start'=>$filters['start']->toIso8601String(),'end'=>$filters['end']->toIso8601String(),'rows'=>$sessions->count()]);
-        if($request->input('format','pdf')==='pdf') return \Barryvdh\DomPDF\Facade\Pdf::loadView('adviser.report-export',$data+['sessions'=>$sessions,'startDate'=>$filters['start']->copy()->timezone('Asia/Manila'),'endDate'=>$filters['end']->copy()->timezone('Asia/Manila')])->download('compass-adviser-report.pdf');
+        if($request->input('format','pdf')==='pdf') return \Barryvdh\DomPDF\Facade\Pdf::loadView('adviser.report-export',$data+['sessions'=>$sessions,'startDate'=>$filters['start']->copy()->timezone('Asia/Manila'),'endDate'=>$filters['end']->copy()->subMicrosecond()->timezone('Asia/Manila')])->download('compass-adviser-report.pdf');
         return response()->streamDownload(function() use($sessions,$data) {
             $file=fopen('php://output','w');
             foreach($data['metrics'] as $key=>$value) fputcsv($file,[$key,$value ?? 'No data']);

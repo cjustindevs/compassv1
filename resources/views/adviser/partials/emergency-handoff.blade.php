@@ -4,6 +4,7 @@
     $handoffRequested = \Illuminate\Support\Facades\DB::table('emergency_review_actions')->where('emergency_alert_id', $alert->id)->where('action', 'referral_requested')->exists();
     $canReviewLinkedReferral = $alert->referral && \App\Models\Referral::whereKey($alert->referral->id)->forAdviser((int) auth()->user()->adviser->id)->exists();
     $linkedReferral = $alert->referral;
+    $handoffCandidates = $professionals->where('id', '!=', $linkedReferral?->professional_id);
 @endphp
 <section class="cm-card er-professional-handoff" id="emergencyProfessionalHandoff" aria-labelledby="emergencyHandoffTitle">
     <h2 id="emergencyHandoffTitle">Professional handoff</h2>
@@ -17,7 +18,7 @@
         @if($linkedReferral->completionReviews()->exists())<p role="status"><strong>Professional completion report:</strong> {{ ucwords(str_replace('_',' ',$linkedReferral->completionReviews()->latest('id')->value('review_status'))) }}. Referral completion and emergency resolution are separate.</p>@endif
         @if($canReviewLinkedReferral)
             <a class="cm-button cm-primary" href="{{ route('adviser.referral.show',$alert->referral->id) }}">Continue Professional referral</a>
-            @if(!$terminal && !$linkedReferral->professional_id)
+            @if(!$terminal)
                 @if(!$linkedReferral->isOpen())
                     <p role="status">This referral has concluded. No Professional assignment is available.</p>
                 @elseif(!$linkedReferral->approved_at)
@@ -27,14 +28,14 @@
                 @elseif(!app(\App\Services\IdentityVaultService::class)->hasCurrentSubmission($linkedReferral))
                     <p role="status"><strong>Waiting for Seeker contact details.</strong> The Seeker can complete Identity Disclosure Consent in the live chat.</p>
                 @elseif(in_array($linkedReferral->status, ['pending_professional','no_professional_available'], true))
-                    <h3>Raise to Professional</h3>
+                    <h3>{{ $linkedReferral->professional_id ? 'Change Professional' : 'Raise to Professional' }}</h3>
                     <p class="cm-help">Select the Professional who will review this session's emergency referral. This does not add them to the live chat or automatically release personal details.</p>
                     <form method="POST" action="{{ route('adviser.emergencies.professional', $alert) }}" data-confirm="Raise emergency to this Professional?" data-confirm-message="The selected Professional will receive an urgent referral notification and a link to review this case. Identity release is separate." data-confirm-text="Raise and notify">
                         @csrf
-                        <div class="cm-field"><label for="emergencyProfessional">Professional</label><select id="emergencyProfessional" name="professional_id" required><option value="">Choose a Professional</option>@foreach($professionals as $professional)<option value="{{ $professional->id }}" @selected((string)old('professional_id') === (string)$professional->id)>{{ $professional->full_name }}</option>@endforeach</select></div>
+                        <div class="cm-field"><label for="emergencyProfessional">Professional</label><select id="emergencyProfessional" name="professional_id" required><option value="">Choose a Professional</option>@foreach($handoffCandidates as $professional)<option value="{{ $professional->id }}" @selected((string)old('professional_id') === (string)$professional->id)>{{ $professional->full_name }}</option>@endforeach</select></div>
                         <div class="cm-field"><label for="professionalRaiseReason">Reason for handoff</label><textarea id="professionalRaiseReason" name="reason" required minlength="10" maxlength="1000" rows="3">{{ old('reason') }}</textarea></div>
-                        <button type="submit" class="cm-button cm-primary" @disabled($professionals->isEmpty())>Raise and notify Professional</button>
-                        @if($professionals->isEmpty())<p role="status">No active, available Professional. Keep coordinating the emergency; no handoff has been sent.</p>@endif
+                        <button type="submit" class="cm-button cm-primary" @disabled($handoffCandidates->isEmpty())>Raise and notify Professional</button>
+                        @if($handoffCandidates->isEmpty())<p role="status">No active, available Professional. Keep coordinating the emergency; no handoff has been sent.</p>@endif
                     </form>
                 @endif
             @endif

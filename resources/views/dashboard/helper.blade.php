@@ -10,32 +10,22 @@
 <p>Contact your Adviser or administrator to finish onboarding.</p>
 </section>
 @else
+<x-analytics-period :action="route('helper.dashboard')" :dates="$analyticsDates" />
 @include('helper.partials.duty-summary')
-<div class="hf-kpis">
-    <article class="hf-kpi">
-<span>Upcoming Session</span>
-@if($upcomingSession)
-<strong class="hf-upcoming">{{ $upcomingSession->scheduled_start->copy()->timezone('Asia/Manila')->format('M d, g:i A') }}</strong>
-<small>{{ $upcomingSession->reference_number }} / Philippine Time</small>
-@else<strong class="hf-upcoming">No upcoming sessions</strong>
-<small>Your next scheduled session will appear here.</small>
-@endif</article>
-    <article class="hf-kpi">
-<span>Active Sessions</span>
-<strong>{{ $stats['active_sessions'] }}</strong>
-<small>Currently ongoing</small>
-</article>
-    <article class="hf-kpi">
-<span>Pending Requests</span>
-<strong>{{ $stats['pending_requests'] }}</strong>
-<small>Awaiting your action</small>
-</article>
-    <article class="hf-kpi">
-<span>Competency Score</span>
-<strong>{{ $stats['competency_score']!==null ? $stats['competency_score'].'%' : 'Not evaluated' }}</strong>
-<small>{{ $competency?->level_label ?? 'No evaluation recorded' }}</small>
-</article>
-</div>
+@php
+    $m = $performance['metrics']; $n = $performance['samples'];
+    $metricValue = fn ($key, $unit = '') => \App\Services\SessionPerformance::display($m[$key], $unit);
+    $reportLink = route('helper.reports', $analyticsDates + ['period'=>request('period','monthly')]);
+    $performanceCards = [
+        ['label'=>'Completed sessions','value'=>$m['completed'],'detail'=>'Selected activity cohort','link'=>$reportLink],
+        ['label'=>'Competency score','value'=>$metricValue('competency','/5'),'detail'=>'Average recorded evaluations in selected period','samples'=>$n['competency'],'link'=>route('helper.competency')],
+        ['label'=>'Satisfaction rating','value'=>$metricValue('satisfaction','/5'),'detail'=>'Submitted Seeker feedback','samples'=>$n['satisfaction'],'link'=>$reportLink],
+        ['label'=>'Pending documentation','value'=>$m['documentation_pending'],'detail'=>'Required records in selected activity cohort','link'=>route('helper.cases')],
+    ];
+@endphp
+<x-performance-cards :cards="$performanceCards" />
+<p class="hf-muted">Live: {{ $stats['active_sessions'] }} active sessions | {{ $stats['pending_requests'] }} assignments awaiting action. Current duty and readiness remain independent of historical filters.</p>
+<p class="hf-muted"><strong>Upcoming Session:</strong> @if($upcomingSession){{ $upcomingSession->scheduled_start->copy()->timezone('Asia/Manila')->format('M d, g:i A') }} PHT | {{ $upcomingSession->reference_number }}@else No upcoming sessions. @endif</p>
 @if(count($emergencyCases))
 <section class="card">
 <header class="card-header">
@@ -46,6 +36,24 @@
 <a href="{{ route('helper.cases.show',$emergencyCases[0]['id']) }}" class="btn btn-secondary btn-sm">Open assigned case</a>
 </section>
 @endif
+<details class="card hf-secondary" style="margin:14px 0"><summary>Service metrics and calculation notes</summary>
+<dl class="helper-performance-details">
+@foreach(['response_minutes'=>['Average Helper Response Time',' min'],'waiting_minutes'=>['Average waiting time',' min'],'duration_minutes'=>['Average session duration',' min'],'completion_rate'=>['Session completion rate','%'],'documentation_rate'=>['Documentation completion rate','%'],'duty_hours'=>['Scheduled duty hours',' hr']] as $key=>[$label,$unit])
+<div><dt>{{ $label }}</dt><dd>{{ $metricValue($key,$unit) }}@if(isset($n[$key])) | {{ $n[$key] }} records measured @endif</dd></div>
+@endforeach
+<div><dt>Competency growth</dt><dd>{{ $performance['growth'] === null ? 'Insufficient history' : ($performance['growth'] >= 0 ? '+' : '').$performance['growth'].' points / 5' }}</dd></div>
+</dl>
+<p class="hf-muted">Response time measures request submission to your first actual message. Waiting time measures queue entry to session start. Satisfaction is converted from the stored 1-10 score to 1-5. Scheduled hours are planned coverage, not verified attendance. Documentation completion requires both summary and reflection; it is not an on-time rate. Historical metrics include archived sessions.</p>
+<a href="{{ $reportLink }}" class="link">View service report</a>
+</details>
+@php
+    $growthRows = $performance['evaluations']->filter(fn ($e) => $e->rubric_version === \App\Services\CompetencyRubric::VERSION);
+    $growthChart = ['title'=>'Competency growth trend','unit'=>'Rating / 5','values'=>$growthRows->groupBy(fn ($e) => $e->evaluation_date->timezone('Asia/Manila')->format('M Y'))->map(fn ($group) => round($group->avg('normalized_score'),2))->all(),'definition'=>'Average finalized evaluations per month on the current rubric, rated 1-5. Missing months have no evaluation; no performance is inferred. At least two evaluations are needed for growth.'];
+@endphp
+@if($growthRows->count() >= 2)<x-dashboard-chart :chart="$growthChart" :smooth="true" />@else<section class="card" style="margin:14px 0"><h3>Competency growth</h3><p class="hf-muted">Insufficient history. At least two evaluations on the current rubric are required.</p></section>@endif
+<style>.helper-performance-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}.helper-performance-details dt{font-size:12px;color:#64748b}.helper-performance-details dd{font-size:14px;margin:4px 0}@media(max-width:560px){.helper-performance-details{grid-template-columns:1fr}}</style>
+<link rel="stylesheet" href="{{ asset('css/dashboard-overview.css') }}">
+
 <div class="hf-grid" style="margin-bottom:20px">
     <section class="card hf-availability">
 <header class="card-header">

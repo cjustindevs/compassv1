@@ -148,6 +148,7 @@ Schedule::call(fn () => app(ReferralAppointmentService::class)->sendReminders())
 Schedule::call(fn () => app(SessionReconnectionService::class)->detect())->everyMinute()->name('detect-helper-disconnections')->withoutOverlapping();
 
 Schedule::call(fn () => app(EmergencyReviewReminders::class)->run())->everyMinute()->name('emergency-review-reminders')->withoutOverlapping();
+Schedule::call(fn () => app(\App\Services\UnassignedRequestReminders::class)->run())->everyMinute()->name('unassigned-request-reminders')->withoutOverlapping();
 
 Schedule::call(fn () => app(NotificationRetentionService::class)->run())->daily()->name('auto-archive-read-notifications')->withoutOverlapping();
 

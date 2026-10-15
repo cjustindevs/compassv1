@@ -124,15 +124,18 @@ class NotificationController extends Controller
         $staff = in_array($request->user()->role, ['moderator', 'adviser', 'professional'], true);
         $present = fn ($notice) => ['id' => $notice->id, 'title' => $notice->title, 'message' => $notice->message,
             'type' => $notice->notification_type, 'link' => $notice->link, 'read' => $notice->is_read,
+            'important' => in_array($notice->notification_type, ['referral', 'emergency'], true)
+                || ($notice->notification_type === 'assignment' && ! in_array($notice->title, ['Helper ready for duty', 'Duty scheduled', 'Duty updated', 'Duty cancelled'], true)),
             'urgent' => $staff && $notice->notification_type === 'emergency' ? $state->key($notice, $request->user()) !== null : null];
         $cursor = (int) (clone $owned)->max('id');
         $fresh = (clone $owned)->unread()->when(isset($data['after']), fn ($q) => $q->where('id', '>', $data['after']),
-            fn ($q) => $q->where('created_at', '>=', now()->subMinutes(5)))->orderBy('id')->limit(30)->get();
+            fn ($q) => $q->where(fn ($initial) => $initial->whereIn('notification_type', ['emergency', 'referral', 'assignment'])->orWhere('created_at', '>=', now()->subMinutes(5))))->orderBy('id')->limit(30)->get();
         if ($fresh->count() === 30) {
             $cursor = (int) $fresh->last()->id;
         }
 
         $workflow = [];
+        $workflow['unread_important_notice_ids'] = (clone $owned)->unread()->whereIn('notification_type', ['emergency', 'referral', 'assignment'])->pluck('id')->values();
         if ($request->user()->is_active && $request->user()->role === 'adviser' && $adviser = $request->user()->adviser) {
             $workflow['emergency_count'] = EmergencyAlert::visibleForAdviser($adviser->id)->whereNotIn('status', ['resolved', 'closed'])->count();
         }

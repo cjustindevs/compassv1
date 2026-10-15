@@ -16,7 +16,7 @@
     <p class="mo-filter-note">Each open case appears in one recorded stage. Closed includes resolved and closed cases; cancelled and archived-only states are excluded.</p>
 </section>
 <div class="mo-grid mo-emergency-grid">
-<section class="mo-card"><header class="mo-heading"><h2>Active Emergency Cases</h2><div class="mo-actions"><span class="mo-muted">{{ $openIncidents->total() }} active</span><a class="mo-text-link" href="{{ route('moderator.reports',['tab'=>'safety','overview'=>'emergencies','emergency_status'=>'active']) }}">View history</a></div></header>
+<section class="mo-card"><header class="mo-heading"><h2>{{ $tab === 'completed' ? 'Completed Emergency Cases' : 'Active Emergency Cases' }}</h2><div class="mo-actions"><a class="mo-button {{ $tab === 'active' ? '' : 'secondary' }}" href="{{ route('moderator.emergency', ['tab'=>'active']) }}">Active ({{ $stats['open'] }})</a><a class="mo-button {{ $tab === 'completed' ? '' : 'secondary' }}" href="{{ route('moderator.emergency', ['tab'=>'completed']) }}">Completed</a></div></header>
 <div class="mo-table-wrap"><table class="mo-table"><thead><tr><th>Case / Alias</th><th>Detected by</th><th>Risk</th><th>Status</th><th>Onset (Philippine Time)</th><th>Actions</th></tr></thead><tbody>
 @forelse($openIncidents as $case)
 <tr>
@@ -26,10 +26,10 @@
     <td><span class="mo-badge {{ $case->acknowledged_at?'information':'warning' }}">{{ app(\App\Services\ModeratorEmergencyCases::class)->statusLabel($case) }}</span></td>
     <td>{{ \Illuminate\Support\Carbon::parse($case->triggered_at)->timezone('Asia/Manila')->format('M d, Y') }}<br>{{ \Illuminate\Support\Carbon::parse($case->triggered_at)->timezone('Asia/Manila')->format('g:i A') }}<small class="mo-event-outcome">{{ \Illuminate\Support\Carbon::parse($case->triggered_at)->diffForHumans() }}</small></td>
     <td>
-<span class="mo-muted">Coordinate with responsible Adviser</span></td>
+<a class="mo-button secondary" href="{{ route('moderator.emergency.coordinate', [$case->source, $case->id]) }}">{{ $tab === 'completed' ? 'View record' : ($case->helper_id ? 'Open' : 'Open / Assign Helper') }}</a>@if($tab === 'completed' && $case->resolved_at)<small class="mo-event-outcome">Resolved {{ \Illuminate\Support\Carbon::parse($case->resolved_at)->timezone('Asia/Manila')->format('M d, Y g:i A') }}</small>@endif</td>
 </tr>
 @empty
-    <tr><td colspan="6" class="mo-empty">No active emergency cases. Resolved records remain in emergency history.</td></tr>
+    <tr><td colspan="6" class="mo-empty">{{ $tab === 'completed' ? 'No completed emergency cases.' : 'No active emergency cases. Resolved records remain in emergency history.' }}</td></tr>
 @endforelse
 </tbody></table></div>
 <div class="mo-pagination">{{ $openIncidents->links() }}</div>

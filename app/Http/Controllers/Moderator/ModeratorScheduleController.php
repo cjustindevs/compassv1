@@ -27,10 +27,13 @@ class ModeratorScheduleController extends Controller
     public function index(Request $request): View
     {
         $request->validate(['date' => 'nullable|date_format:Y-m-d', 'availability' => 'nullable|in:available,offline,busy',
-            'helper_id' => 'nullable|integer|exists:helpers,id', 'edit' => 'nullable|integer', 'tab' => 'nullable|in:duties,sessions']);
+            'helper_id' => 'nullable|integer|exists:helpers,id', 'edit' => 'nullable|integer', 'tab' => 'nullable|in:duties,sessions', 'history' => 'nullable|in:current,archived,all']);
+        abort_unless($request->user()?->is_active && in_array($request->user()->role, ['adviser', 'moderator'], true), 403);
         $date = $request->input('date', now('Asia/Manila')->toDateString());
 
         $helpers = $this->helpers();
+        $allowedHelperIds = $helpers->pluck('id');
+        if ($request->filled('helper_id')) abort_unless($allowedHelperIds->contains((int) $request->input('helper_id')), 404);
         // Duty candidates must be chosen before the operational availability
         // filter: a ready Helper without a duty day is not assignable yet.
         $dutyHelpers = $this->dutyHelpers($helpers);
@@ -47,22 +50,24 @@ class ModeratorScheduleController extends Controller
         }
 
         $helperIds = $helpers->pluck('id');
-        $scheduleEvents = CalendarEvent::with('helperSchedule')->where('event_type', CalendarEvent::TYPE_MEETING)
+        $scheduleEvents = CalendarEvent::with('helperSchedule')->whereIn('helper_schedule_id', HelperSchedule::whereIn('helper_id', $allowedHelperIds)->select('id'))->where('event_type', CalendarEvent::TYPE_MEETING)
             ->whereDate('event_date', $date)
             ->when($request->filled('availability'), fn ($q) => $q->whereIn('helper_schedule_id', HelperSchedule::whereIn('helper_id', $helperIds)->select('id')))
             ->orderBy('start_time')
             ->get();
 
         // Keep scheduled support sessions separate from Helper duty dates.
-        $scheduledSessions = Session::with('helper', 'seeker')
+        $scheduledSessions = Session::with('helper', 'seeker')->when($request->user()->role === 'adviser', fn ($q) => $q->whereIn('helper_id', $allowedHelperIds))
+            ->when($request->filled('helper_id'), fn ($q) => $q->where('helper_id', (int) $request->input('helper_id')))
             ->whereNotNull('scheduled_start')->whereNull('archived_at')
             ->whereBetween('scheduled_start', [Carbon::parse($date, 'Asia/Manila')->startOfDay()->utc(), Carbon::parse($date, 'Asia/Manila')->endOfDay()->utc()])
             ->when($request->filled('availability'), fn ($q) => $q->whereIn('helper_id', $helperIds))
             ->orderBy('scheduled_start')->paginate(15)->withQueryString();
 
-        $duties = HelperSchedule::with('helper.user')->where('is_active', true)->whereDate('date', '>=', $date)->whereDate('date', '<=', Carbon::parse($date)->addDays(30))
+        $duties = HelperSchedule::with('helper.user')->whereIn('helper_id', $allowedHelperIds)->where('is_active', true)->whereDate('date', '>=', $date)->whereDate('date', '<=', Carbon::parse($date)->addDays(30))
+            ->when($request->input('history', 'current') !== 'all', fn ($q) => $request->input('history') === 'archived' ? $q->whereNotNull('archived_at') : $q->whereNull('archived_at'))
             ->when($request->filled('helper_id'), fn ($q) => $q->where('helper_id', (int) $request->input('helper_id')))->orderBy('date')->orderBy('id')->paginate(15, ['*'], 'duties_page')->withQueryString();
-        $edit = $request->filled('edit') ? HelperSchedule::where('is_active', true)->findOrFail((int) $request->input('edit')) : null;
+        $edit = $request->filled('edit') ? HelperSchedule::whereIn('helper_id', $allowedHelperIds)->where('is_active', true)->findOrFail((int) $request->input('edit')) : null;
 
         return view('moderator.schedules', compact('date', 'helpers', 'dutyHelpers', 'scheduleEvents', 'scheduledSessions', 'duties', 'edit'));
     }
@@ -77,9 +82,17 @@ class ModeratorScheduleController extends Controller
         ])->header('Cache-Control', 'private, no-store');
     }
 
+    public function workload(): JsonResponse
+    {
+        return response()->json(['helpers' => $this->helpers()->map(function (Helper $helper) {
+            $state = app(HelperEligibilityService::class)->status($helper);
+            return ['id' => $helper->id, 'status' => $state['label'], 'assignments' => $helper->activeSessions()->count(), 'remaining' => $helper->getRemainingCapacity()];
+        })->values()])->header('Cache-Control', 'private, no-store');
+    }
+
     private function helpers(): Collection
     {
-        return Helper::with('user', 'adviser.user')->orderBy('first_name')->orderBy('id')->get();
+        return Helper::with('user', 'adviser.user')->when(auth()->user()->role === 'adviser', fn ($q) => $q->where('adviser_id', auth()->user()->adviser?->id ?? -1))->orderBy('first_name')->orderBy('id')->get();
     }
 
     private function dutyHelpers(Collection $helpers): Collection
@@ -89,6 +102,7 @@ class ModeratorScheduleController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $request->merge(['event_date' => $request->input('event_date', $request->input('date'))]);
         $request->merge(['schedule_type' => $request->input('schedule_type', 'single'), 'shift_start' => $request->input('shift_start', '18:00'),
             'shift_end' => $request->input('shift_end', '23:00'), 'end_date' => $request->input('end_date', $request->input('event_date'))]);
         $validated = $request->validate([
@@ -99,9 +113,14 @@ class ModeratorScheduleController extends Controller
             'shift_start' => 'required|date_format:H:i', 'shift_end' => 'required|date_format:H:i|after:shift_start',
             'weekdays' => 'required_if:schedule_type,recurring|array', 'weekdays.*' => 'integer|between:0,6|distinct',
             'shift_id' => 'nullable|integer',
+            'expected_updated_at' => 'nullable|date',
         ]);
 
-        $helper = Helper::findOrFail($validated['helper_id']);
+        $helper = $this->helpers()->firstWhere('id', (int) $validated['helper_id']);
+        abort_unless($helper, 404);
+        if (! empty($validated['shift_id']) && HelperSchedule::whereKey($validated['shift_id'])->where('helper_id', $helper->id)->whereNotNull('archived_at')->exists()) {
+            throw ValidationException::withMessages(['shift_id' => 'Restore this archived duty before editing it.']);
+        }
         if (! app(HelperDutyCandidates::class)->allows($helper)) {
             throw ValidationException::withMessages(['helper_id' => 'Select an active, verified Helper with an active Adviser assignment. Readiness and login are not required for scheduling.']);
         }
@@ -114,7 +133,7 @@ class ModeratorScheduleController extends Controller
         app(HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh());
         app(HelperMatchingService::class)->matchWaitingRequests();
 
-        return redirect()->route('moderator.schedules', ['date' => $date])
+        return redirect()->route(auth()->user()->role === 'adviser' ? 'adviser.schedule' : 'moderator.schedules', ['date' => $date])
             ->with('success', $helper->full_name.' is on duty on '.Carbon::parse($date)->format('M j, Y').'.');
     }
 
@@ -126,13 +145,15 @@ class ModeratorScheduleController extends Controller
             'shift_id' => 'required|integer',
         ]);
 
-        $helper = Helper::findOrFail($validated['helper_id']);
+        $helper = $this->helpers()->firstWhere('id', (int) $validated['helper_id']);
+        abort_unless($helper, 404);
         $date = Carbon::parse($validated['date'])->toDateString();
         $shiftId = (int) $validated['shift_id'];
 
         // Cancel duty while retaining readiness and audit history.
         $request->validate(['scope' => 'nullable|in:one,future']);
         $selected = HelperSchedule::where('helper_id', $helper->id)->findOrFail($shiftId);
+        if ($selected->archived_at) throw ValidationException::withMessages(['shift_id' => 'Restore this archived duty before removing it.']);
         if ($selected->date->lt(now('Asia/Manila')->startOfDay())) {
             throw ValidationException::withMessages(['shift_id' => 'Past duty records are retained. Choose a current or future duty.']);
         }
@@ -150,7 +171,7 @@ class ModeratorScheduleController extends Controller
 
         app(HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh());
 
-        return redirect()->route('moderator.schedules', ['date' => $date])
+        return redirect()->route(auth()->user()->role === 'adviser' ? 'adviser.schedule' : 'moderator.schedules', ['date' => $date])
             ->with('success', 'Duty removed for '.$helper->full_name.' on '.Carbon::parse($date)->format('M j, Y').'.');
     }
 }

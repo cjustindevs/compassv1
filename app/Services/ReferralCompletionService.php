@@ -97,6 +97,12 @@ class ReferralCompletionService
                 }
                 $referral->update(['status' => Referral::STATUS_COMPLETED, 'completed_at' => now(), 'closed_date' => now(), 'outcome' => 'Professional completion report #'.$report->id.' confirmed by Adviser.',
                     'follow_up_required' => $report->follow_up_required, 'follow_up_notes' => $report->follow_up_required ? 'See authorized completion report #'.$report->id : null]);
+                foreach (DB::table('referral_professional_transfers')->where('referral_id', $referral->id)->where('status', 'pending')->lockForUpdate()->get() as $transfer) {
+                    DB::table('referral_professional_transfers')->where('id', $transfer->id)->update(['status' => 'cancelled', 'responded_at' => now(), 'updated_at' => now()]);
+                    $recipient = \App\Models\PsychologyProfessional::find($transfer->to_professional_id)?->user_account_id;
+                    if ($recipient) $this->notify($recipient, 'Professional transfer cancelled', 'The Adviser confirmed case completion before the transfer was accepted. No transfer action remains.', '/professional/transfers/'.$transfer->id);
+                    SupportAudit::record('professional_transfer_cancelled_on_completion', $referral, ['transfer_id' => $transfer->id]);
+                }
             }
             $report->update(['review_status' => $data['decision'], 'reviewed_by' => auth()->id(), 'review_notes' => $data['review_notes'], 'reviewed_at' => now(), 'appointment_disposition_notes' => $data['appointments_reason'] ?? null]);
             $this->notify($referral->professional->user_account_id, $data['decision'] === 'confirmed' ? 'Referral completion confirmed' : 'Referral follow-up requested', 'Your Adviser reviewed your completion report. Open the case to see the decision.', '/professional/referral/'.$referral->id);

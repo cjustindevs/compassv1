@@ -824,43 +824,15 @@
 
         <div id="tab-dashboard" class="tab-content">
 
-            <!-- Stats -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 dashboard-grid-max">
-                <div class="stat-card">
-                    <span class="stat-label">Total Sessions</span>
-                    <div class="stat-number">{{ $totalSessions }}</div>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span class="text-xs text-gray-400">All time</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Completed</span>
-                    <div class="stat-number">{{ $completedSessions }}</div>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span class="text-xs text-gray-400">Sessions finished</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Evaluations</span>
-                    <div class="stat-number">{{ $totalEvaluations }}</div>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span class="text-xs text-gray-400">Feedback given</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Active Sessions</span>
-                    <div class="stat-number">{{ $activeSession ? 1 : 0 }}</div>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span class="text-xs text-gray-400">Currently ongoing</span>
-                    </div>
-                </div>
-            </div>
+            <x-performance-cards :cards="$seekerIndicators" />
+            <p class="text-sm text-gray-500 mb-4">Your current request and referral status are live and do not depend on the history date filter.</p>
 
             <!-- Recent Sessions -->
+            <x-analytics-period :action="route('seeker.dashboard')" :dates="$analyticsDates" />
             <div class="bg-white rounded-2xl border border-gray-200 p-4 md:p-6 mb-6">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="font-bold text-gray-800">Recent Sessions</h2>
-                    <a href="{{ route('session.history') }}" class="text-sm text-[#04A052] hover:underline">View All</a>
+                    <a href="{{ route('session.history', $analyticsDates) }}" class="text-sm text-[#04A052] hover:underline">View All</a>
                 </div>
                 <div class="table-container">
                     <table>

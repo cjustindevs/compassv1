@@ -24,7 +24,7 @@ class DashboardOverviewTest extends TestCase
     {
         $user = User::factory()->create(['role' => 'seeker']);
         $seeker = HelpSeeker::create(['user_account_id' => $user->id, 'generated_alias' => 'PrivateAlias'.$user->id]);
-        return Session::create(['seeker_id' => $seeker->id, 'helper_id' => $helper?->id, 'session_status' => $status, 'session_type' => 'chat', 'risk_level' => 'low', 'created_date' => now()]);
+        return Session::create(['seeker_id' => $seeker->id, 'helper_id' => $helper?->id, 'session_status' => $status, 'end_time' => $status === 'completed' ? now() : null, 'session_type' => 'chat', 'risk_level' => 'low', 'created_date' => now()]);
     }
     private function cards(array $overview): array
     {

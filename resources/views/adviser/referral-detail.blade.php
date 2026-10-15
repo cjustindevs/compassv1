@@ -160,15 +160,31 @@
                 <p class="text-sm mt-3">This referral is assigned to the professional shown above. Active cases retain their assignment; identity release authorizes access to selected contact details.</p>
             @endif
         </section>
-@if($referral->approved_at && $referral->help_seeker_consent && !$referral->professional_id && in_array($referral->status,['pending_professional','no_professional_available']))
-<section class="card p-5 my-4" id="professionalAssignment"><h3 class="font-semibold">Assign a professional</h3>
+@if($referral->approved_at && $referral->help_seeker_consent && in_array($referral->status,['pending_professional','no_professional_available']))
+@php($assignmentCandidates = $professionals->where('id', '!=', $referral->professional_id))
+<section class="card p-5 my-4" id="professionalAssignment"><h3 class="font-semibold">{{ $referral->professional_id ? 'Change Professional' : 'Assign a professional' }}</h3>
+@if($referral->professional_id)<p>Currently assigned: {{ $referral->professional?->full_name }}. Record a reason to transfer the pending assignment. Identity release must be authorized for the new recipient.</p>@endif
 <p class="text-sm text-gray-500 mb-3">After the Seeker saves their identity details, assign an available professional here. The referral appears in their review queue only after assignment. Identity release is a separate authorized action.</p>
 <form method="POST" action="{{ route('adviser.referral.assign', $referral->case_reference) }}" class="coordination-form" data-confirm="Assign and notify Professional?" data-confirm-message="The selected Professional will receive this referral for review. Personal details remain subject to separate identity release." data-confirm-text="Assign and notify">@csrf
-<label for="professional">Professional</label><select name="professional_id" id="professional" required class="w-full rounded-lg border-gray-300"><option value="">Choose a professional</option>@foreach($professionals as $professional)<option value="{{ $professional->id }}" @selected((string)old('professional_id', $professionals->count() === 1 ? $professional->id : '') === (string)$professional->id)>{{ $professional->full_name }}</option>@endforeach</select>
+<label for="professional">Professional</label><select name="professional_id" id="professional" required class="w-full rounded-lg border-gray-300"><option value="">Choose a professional</option>@foreach($assignmentCandidates as $professional)<option value="{{ $professional->id }}" @selected((string)old('professional_id', $assignmentCandidates->count() === 1 ? $professional->id : '') === (string)$professional->id)>{{ $professional->full_name }}</option>@endforeach</select>
 <label for="assignmentReason">Assignment reason</label><textarea name="reason" id="assignmentReason" required maxlength="1000" class="w-full rounded-lg border-gray-300">{{ old('reason') }}</textarea>
-<button class="btn btn-primary" @disabled($professionals->isEmpty() || ! $identityReady)>Assign and notify Professional</button>
-@if($professionals->isEmpty())<p>No active professional is currently available.</p>@endif
+<button class="btn btn-primary" @disabled($assignmentCandidates->isEmpty() || ! $identityReady)>{{ $referral->professional_id ? 'Change and notify Professional' : 'Assign and notify Professional' }}</button>
+@if($assignmentCandidates->isEmpty())<p>No other active, available Professional can receive this assignment. The current assignment remains unchanged.</p>@endif
 </form></section>@endif
+    @if(in_array($referral->status, \App\Models\Referral::ACTIVE_STATUSES, true))
+    <section class="card p-5 my-4" id="professionalTransfer"><h3>Transfer Professional responsibility</h3>
+        @php($pendingTransfer = \Illuminate\Support\Facades\DB::table('referral_professional_transfers')->where('referral_id', $referral->id)->where('status', 'pending')->first())
+        @if($pendingTransfer)<p>Transfer #{{ $pendingTransfer->id }} is awaiting receiving Professional acceptance. The current Professional remains responsible.</p><form method="POST" action="{{ route('adviser.referral.transfer.cancel', $referral) }}">@csrf<button class="btn" type="submit">Cancel pending transfer</button></form>
+        @elseif($referral->hasPendingCompletion())<p>Review the Professional completion report before requesting a transfer.</p>
+        @else
+        @php($transferCandidates = $professionals->where('id', '!=', $referral->professional_id))
+        @if($transferCandidates->isEmpty())<p>No other active, available Professional can receive a transfer.</p>@endif
+        <form class="coordination-form" method="POST" action="{{ route('adviser.referral.transfer', $referral) }}">@csrf
+            <label for="transferProfessional">Receiving Professional</label><select id="transferProfessional" name="professional_id" required><option value="">Choose a different Professional</option>@foreach($transferCandidates as $professional)<option value="{{ $professional->id }}">{{ $professional->full_name }}</option>@endforeach</select>
+            <label for="transferReason">Transfer reason</label><textarea id="transferReason" name="reason" required minlength="10" maxlength="1000"></textarea>
+            <button class="btn-primary" type="submit" @disabled($transferCandidates->isEmpty())>Request Professional transfer</button>
+        </form>@endif
+    </section>@endif
     @if ($referral->approved_at && $referral->help_seeker_consent && $referral->professional_id && !in_array($referral->status, ['completed', 'closed', 'declined']) && (int) $referral->adviser_id === (int) auth()->user()->adviser->id)
         <form id="professionalIdentityRelease" class="card mb-4 referral-release" method="POST" action="{{ route('identity.release', $referral) }}">
             @csrf

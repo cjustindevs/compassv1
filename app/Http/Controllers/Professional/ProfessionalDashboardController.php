@@ -103,6 +103,9 @@ class ProfessionalDashboardController extends Controller
                 ->whereIn('status', Referral::ACTIVE_STATUSES)->count(),
             'completed' => Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
                 ->whereIn('status', Referral::COMPLETED_STATUSES)->count(),
+            'awaiting_review' => Referral::professionalAuthorized()->where('professional_id', $professionalId)
+                ->whereHas('session', fn ($q) => $q->whereNull('archived_at'))->whereIn('status', Referral::ACTIVE_STATUSES)->get()
+                ->filter(fn ($referral) => $referral->hasPendingCompletion())->count(),
         ]);
     }
 

@@ -56,6 +56,8 @@ class ProfessionalAnalytics
         $completed = $period->series((clone $base)->whereIn('status', Referral::COMPLETED_STATUSES), self::COMPLETED_DATE);
         $accepted = (clone $received)->whereNotNull('accepted_at')->whereColumn('accepted_at', '>=', DB::raw(self::RECEIVED_DATE))->where('accepted_at', '<=', now('UTC'))->count();
         $total = (clone $received)->count();
+        $awaitingReview = (clone $current)->whereIn('status', Referral::ACTIVE_STATUSES)->get()
+            ->filter(fn ($referral) => $referral->hasPendingCompletion())->count();
 
         return $period->dates() + [
             'received' => $period->series(clone $base, self::RECEIVED_DATE), 'completed' => $completed,
@@ -63,6 +65,9 @@ class ProfessionalAnalytics
             'pending_now' => (clone $current)->where('status', Referral::STATUS_PENDING_PROFESSIONAL)->count(),
             'active_now' => (clone $current)->whereIn('status', Referral::ACTIVE_STATUSES)->count(),
             'response_hours' => $hours, 'response_samples' => $samples,
+            'awaiting_review_now' => $awaitingReview,
+            'outcomes' => $period->constrain((clone $base)->where('status', Referral::STATUS_COMPLETED), self::COMPLETED_DATE)
+                ->selectRaw('outcome, COUNT(*) AS total')->groupBy('outcome')->pluck('total', 'outcome')->all(),
             'accepted' => $accepted, 'acceptance_rate' => $total ? round(100 * $accepted / $total, 1) : null,
             'statuses' => ['labels' => array_map(fn ($state) => ucwords(str_replace('_', ' ', $state)), self::STATUSES), 'values' => array_map(fn ($state) => (int) ($statuses[$state] ?? 0), self::STATUSES)],
             'legacy_received' => (clone $received)->whereNull('professional_notified_at')->count(),

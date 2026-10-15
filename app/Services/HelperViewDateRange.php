@@ -19,11 +19,12 @@ class HelperViewDateRange
             $request->merge(['from' => $dates[1], 'to' => $dates[2]]);
         }
         $data = $request->validate(['from' => 'nullable|date_format:Y-m-d', 'to' => 'nullable|date_format:Y-m-d|after_or_equal:from']);
-        $from = $data['from'] ?? now('Asia/Manila')->subDays(30)->toDateString();
-        $to = $data['to'] ?? now('Asia/Manila')->toDateString();
+        $period = AnalyticsPeriod::fromRequest($request);
+        $from = $data['from'] ?? $period->dates()['from'];
+        $to = $data['to'] ?? $period->dates()['to'];
         $start = Carbon::parse($from, 'Asia/Manila')->startOfDay();
         $end = Carbon::parse($to, 'Asia/Manila')->endOfDay();
-        if ($end->lt($start) || $start->diffInDays($end) > 366) {
+        if ($end->lt($start) || ($start->diffInDays($end) > 366 && $request->input('period') !== 'all')) {
             throw ValidationException::withMessages(['date_range' => 'Choose an ordered range of no more than 366 days.']);
         }
         $request->merge(['from' => $from, 'to' => $to]);

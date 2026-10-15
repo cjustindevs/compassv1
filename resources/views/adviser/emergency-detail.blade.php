@@ -4,6 +4,7 @@
 @include('partials.management-ui-styles')
 @php($terminal = in_array($alert->status, ['resolved', 'closed']))
 <div class="cm-page er-page">
+    @if(!$terminal)<a class="cm-button" href="{{ route('adviser.emergency.coordinate', ['emergency_alerts', $alert->id]) }}">Open Helper assignment</a>@endif
     <header class="cm-header">
         <div><h1>Emergency review</h1><p class="cm-muted">Review the report, document your response, and coordinate follow-up.</p></div>
         <div class="er-header-actions"><a class="cm-button cm-primary" href="#emergencyProfessionalHandoff">Professional referral</a><a class="cm-button" href="{{ route('adviser.emergencies') }}">Back to emergencies</a></div>

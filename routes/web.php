@@ -415,9 +415,15 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
     Route::post('/helper/{id}/assign', [AdviserHelperController::class, 'assign'])->name('helper.assign');
 
     // Schedule Management
-    Route::get('/schedule', [AdviserHelperController::class, 'manageSchedule'])->name('schedule');
-    Route::post('/schedule/update', [AdviserHelperController::class, 'updateSchedule'])->name('schedule.update');
-    Route::post('/schedule/destroy', [AdviserHelperController::class, 'destroySchedule'])->name('schedule.destroy');
+    Route::post('/referrals/{referral}/transfer', [\App\Http\Controllers\ProfessionalTransferController::class, 'store'])->name('referral.transfer');
+    Route::post('/referrals/{referral}/transfer/cancel', [\App\Http\Controllers\ProfessionalTransferController::class, 'cancel'])->name('referral.transfer.cancel');
+    Route::get('/emergency/cases/{source}/{id}', [\App\Http\Controllers\EmergencyCoordinationController::class, 'show'])->name('emergency.coordinate');
+    Route::post('/emergency/cases/{source}/{id}/assign', [\App\Http\Controllers\EmergencyCoordinationController::class, 'assign'])->name('emergency.assign');
+    Route::post('/emergency/cases/{source}/{id}/escalation', [\App\Http\Controllers\EmergencyCoordinationController::class, 'escalate'])->name('emergency.escalation');
+    Route::get('/schedule', [ModeratorScheduleController::class, 'index'])->name('schedule');
+    Route::get('/schedule/workload', [ModeratorScheduleController::class, 'workload'])->name('schedule.workload');
+    Route::post('/schedule/update', [ModeratorScheduleController::class, 'store'])->name('schedule.update');
+    Route::post('/schedule/destroy', [ModeratorScheduleController::class, 'destroy'])->name('schedule.destroy');
 
     // Transcript Review
     Route::get('/transcripts', [AdviserTranscriptController::class, 'index'])->name('transcripts');
@@ -476,6 +482,8 @@ Route::middleware(['auth', 'role:professional'])->prefix('professional')->name('
     Route::get('/referrals', [ProfessionalReferralController::class, 'index'])->name('referrals');
     Route::get('/referral/{id}', [ProfessionalReferralController::class, 'show'])->name('referral.show');
     Route::post('/referral/{id}/accept', [ProfessionalReferralController::class, 'accept'])->name('referral.accept');
+    Route::get('/transfers/{id}', [\App\Http\Controllers\ProfessionalTransferController::class, 'show'])->name('transfer.show');
+    Route::post('/transfers/{id}', [\App\Http\Controllers\ProfessionalTransferController::class, 'respond'])->name('transfer.respond');
     Route::post('/referral/{referral}/appointment', [ProfessionalReferralController::class, 'schedule'])->name('referral.appointment');
     Route::post('/referral/{id}/decline', [ProfessionalReferralController::class, 'decline'])->name('referral.decline');
     Route::post('/referral/{id}/start', [ProfessionalReferralController::class, 'startCase'])->name('referral.start');
@@ -534,6 +542,7 @@ Route::middleware(['auth', 'role:moderator'])->prefix('moderator')->name('modera
     // Schedule Management
     Route::get('/schedules', [ModeratorScheduleController::class, 'index'])->name('schedules');
     Route::get('/schedules/helpers', [ModeratorScheduleController::class, 'candidates'])->name('schedules.helpers');
+    Route::get('/schedules/workload', [ModeratorScheduleController::class, 'workload'])->name('schedules.workload');
     Route::post('/schedules', [ModeratorScheduleController::class, 'store'])->name('schedules.store');
     Route::post('/schedules/destroy', [ModeratorScheduleController::class, 'destroy'])->name('schedules.destroy');
 
@@ -545,6 +554,9 @@ Route::middleware(['auth', 'role:moderator'])->prefix('moderator')->name('modera
 
     // Emergency Alerts
     Route::get('/emergency', [ModeratorEmergencyController::class, 'index'])->name('emergency');
+    Route::get('/emergency/cases/{source}/{id}', [\App\Http\Controllers\EmergencyCoordinationController::class, 'show'])->name('emergency.coordinate');
+    Route::post('/emergency/cases/{source}/{id}/assign', [\App\Http\Controllers\EmergencyCoordinationController::class, 'assign'])->name('emergency.assign');
+    Route::post('/emergency/cases/{source}/{id}/escalation', [\App\Http\Controllers\EmergencyCoordinationController::class, 'escalate'])->name('emergency.escalation');
     Route::post('/emergency/{id}/escalate', [ModeratorEmergencyController::class, 'escalate'])->name('emergency.escalate');
     Route::post('/emergency/{id}/resolve', [ModeratorEmergencyController::class, 'resolve'])->name('emergency.resolve');
     Route::get('/emergency/stats', [ModeratorEmergencyController::class, 'stats'])->name('emergency.stats');

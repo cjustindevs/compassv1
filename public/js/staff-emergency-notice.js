@@ -3,7 +3,7 @@
     if (!dialog) return;
     const config = JSON.parse(document.getElementById('staffEmergencyConfig').content);
     let notice = null, busy = false;
-    const otherDialog = () => [...document.querySelectorAll('dialog[open]')].some(node => node !== dialog);
+    const otherDialog = () => [...document.querySelectorAll('dialog[open]')].some(node => node !== dialog && node.id !== 'compassImportantNotice');
     async function current() {
         const url = config.next + (notice ? '?current=' + encodeURIComponent(notice.reference) : '');
         const response = await fetch(url, {headers: {Accept: 'application/json'}, cache: 'no-store'});
@@ -17,7 +17,7 @@
         dialog.querySelector('p').textContent = notice.message;
         dialog.querySelector('[data-open]').textContent = config.openLabel;
         dialog.querySelector('[data-error]').textContent = '';
-        if (!dialog.open && !otherDialog()) dialog.showModal();
+        if (!dialog.open && !otherDialog()) { window.CompassImportantNotices?.suspend(); dialog.showModal(); }
     }
     async function poll() {
         if (busy || document.hidden || !navigator.onLine || otherDialog()) return;

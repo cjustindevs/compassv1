@@ -65,6 +65,7 @@ class HelperWorkflowSecurityTest extends TestCase
     public function test_single_skill_confirmation_is_explicit_and_preserves_readiness_and_competency_rules(): void
     {
         $helper = $this->helper();
+        $this->travel(30)->minutes();
         $page = $this->get(route('helper.readiness', ['refresh' => 1]))->assertOk()->assertSee('Prepared to use these listening skills?')
             ->assertSee('Not right now')->assertDontSee('name="skills_confirmed[]"', false);
         $document = new \DOMDocument;
@@ -87,6 +88,7 @@ class HelperWorkflowSecurityTest extends TestCase
     public function test_not_right_now_and_other_negative_answers_can_be_submitted_and_supersede_passed_readiness(): void
     {
         $helper = $this->helper();
+        $this->travel(30)->minutes();
         $oldCheck = $helper->getCurrentReadiness();
         $this->post(route('helper.readiness.store'), $this->groupedReadiness(['listener_skills_ready' => '0']))
             ->assertRedirect(route('helper.dashboard'))->assertSessionHasNoErrors();
@@ -100,6 +102,7 @@ class HelperWorkflowSecurityTest extends TestCase
         $this->assertFalse(app(HelperEligibilityService::class)->allows($helper, null, true));
         $this->get(route('helper.readiness'))->assertOk()->assertDontSee('value="0" required checked', false);
         foreach ([['emotionally_ready' => '0'], ['willing_to_listen' => '0'], ['stress_level' => 'high'], ['availability_status' => 'not_ready']] as $answer) {
+            $this->travel(30)->minutes();
             $this->post(route('helper.readiness.store'), $this->groupedReadiness($answer))->assertSessionHasNoErrors();
             $this->assertFalse($helper->fresh()->isReady());
             $this->assertSame('not_ready', $helper->fresh()->latestReadiness->assessment_result);
@@ -151,6 +154,7 @@ class HelperWorkflowSecurityTest extends TestCase
     public function test_readiness_expires_at_the_end_of_the_duty_day_and_latest_failure_wins(): void
     {
         $helper = $this->helper();
+        $this->travel(30)->minutes();
         $check = $helper->getCurrentReadiness();
 
         // The helper is rostered for the whole of 2026-09-16, so readiness is

@@ -318,12 +318,14 @@ class SessionController extends Controller
     {
         \Illuminate\Support\Facades\Gate::authorize('seeker-workflow');
         $helpSeeker = Auth::user()->helpSeeker;
+        $period = request()->hasAny(['from', 'to', 'period']) ? \App\Services\AnalyticsPeriod::fromRequest(request()) : null;
 
         if (!$helpSeeker) {
             $sessions = [];
         } else {
             $sessions = Session::with(['helper', 'evaluation', 'concern'])
                 ->where('seeker_id', $helpSeeker->id)
+                ->when($period, fn ($query) => $query->where('created_date', '>=', $period->start->utc())->where('created_date', '<', $period->end->utc()))
                 ->orderByDesc('created_date')
                 ->get()
                 ->map(function (Session $session) {

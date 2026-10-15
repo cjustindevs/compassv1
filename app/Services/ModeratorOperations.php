@@ -20,20 +20,31 @@ class ModeratorOperations
         foreach ($active as $case) {
             $status[$service->statusLabel($case)]++;
         }
+        $period = AnalyticsPeriod::fromRequest(request());
+        $performance = app(SessionPerformance::class)->operations($period);
         $months = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $month = now('Asia/Manila')->startOfMonth()->subMonths($i);
-            $months[$month->format('M Y')] = $all->filter(fn ($e) => Carbon::parse($e->triggered_at)->timezone('Asia/Manila')->format('Y-m') === $month->format('Y-m'))->count();
+        $daily = $period->start->diffInDays($period->end) <= 62;
+        $format = $daily ? 'Y-m-d' : 'Y-m';
+        $detections = $all->filter(fn ($e) => Carbon::parse($e->triggered_at)->gte($period->start) && Carbon::parse($e->triggered_at)->lt($period->end) && Carbon::parse($e->triggered_at)->lte(now()))
+            ->groupBy(fn ($e) => Carbon::parse($e->triggered_at)->timezone('Asia/Manila')->format($format))->map->count();
+        for ($date = $daily ? $period->start : $period->start->startOfMonth(); $date->lt($period->end); $date = $daily ? $date->addDay() : $date->addMonth()) {
+            $months[$date->format($daily ? 'M j, Y' : 'M Y')] = $detections->get($date->format($format), 0);
         }
 
         return ['cards' => [
-            ['label' => 'Active emergencies', 'value' => $active->count(), 'definition' => 'Unarchived, nonterminal operational emergency cases. Alert/incident mirrors count once.'],
-            ['label' => 'Resolved emergencies', 'value' => $all->whereIn('status', ['resolved', 'closed'])->count(), 'definition' => 'Resolved or closed cases, including retained archives.'],
-            ['label' => 'Pending / unassigned', 'value' => $active->filter(fn ($e) => ! $e->acknowledged_at || ! $e->adviser_id)->count(), 'definition' => 'Active cases without staff acknowledgment or an assigned Adviser.'],
+            ['label' => 'Waiting requests', 'value' => QueueRequest::where('request_status', 'waiting')->count(), 'definition' => 'Live: requests still waiting for assignment.', 'link' => route('moderator.queue')],
+            ['label' => 'Available Helpers', 'value' => app(HelperEligibilityService::class)->countAvailable(\App\Models\Helper::all()), 'definition' => 'Live: matching eligibility, including duty, readiness and capacity.', 'link' => route('moderator.schedules')],
+            ['label' => 'Active sessions', 'value' => Session::where('session_status', 'active')->count(), 'definition' => 'Live: ongoing peer-support sessions.', 'link' => route('moderator.sessions')],
+            ['label' => 'Average waiting time', 'value' => SessionPerformance::display($performance['waiting_minutes'], ' min'), 'samples' => $performance['samples'], 'definition' => 'Queue entry to actual start in the selected activity cohort. Ongoing waits excluded.', 'link' => route('moderator.reports', $period->dates() + ['period'=>request('period','monthly')])],
+            ['label' => 'Active emergencies', 'value' => $active->count(), 'definition' => 'Live: unarchived, nonterminal operational emergency cases. Alert/incident mirrors count once.'],
+            ['label' => 'Resolved emergencies', 'value' => $all->whereIn('status', ['resolved', 'closed'])->filter(fn ($case) => $case->resolved_at && Carbon::parse($case->resolved_at)->gte($period->start) && Carbon::parse($case->resolved_at)->lt($period->end))->count(), 'definition' => 'Resolved or closed in the selected period, including retained archives.'],
+            ['label' => 'Pending / unassigned', 'value' => $active->filter(fn ($e) => ! $e->acknowledged_at || ! $e->adviser_id)->count(), 'definition' => 'Live: active cases without staff acknowledgment or an assigned Adviser.'],
+            ['label' => 'Average Helper workload', 'value' => SessionPerformance::display($performance['workload']), 'samples' => $performance['helpers'], 'definition' => 'Completed sessions per Helper who served in the selected activity cohort.'],
+            ['label' => 'Queue timeouts', 'value' => $period->constrain(QueueRequest::where('request_status', 'expired'), 'COALESCE(expired_at,updated_at)')->count(), 'definition' => 'Expired queue records in the selected period, using expiry time or legacy updated time.'],
         ], 'charts' => [
             ['title' => 'Active emergency status', 'values' => $status, 'definition' => 'Current active cases only. The chart total equals Active emergencies.'],
             ['title' => 'Severity / priority', 'values' => $active->groupBy('risk_level')->map->count()->all(), 'definition' => 'Recorded severity of the same active cases.'],
-            ['title' => 'Emergency trend', 'values' => $months, 'definition' => 'Emergency cases detected per month in Philippine Time, including historical cases.'],
+            ['title' => 'Emergency trend', 'values' => $months, 'definition' => 'Emergency detections in the selected Philippine date range. Longer ranges use monthly buckets.'],
         ], 'recent' => []];
     }
 
@@ -61,7 +72,7 @@ class ModeratorOperations
         if ($end->lt($start)) {
             throw ValidationException::withMessages(['date_range' => 'The end date must follow the start date.']);
         }
-        if ($start->diffInDays($end) > 366) {
+        if ($start->diffInDays($end) > 366 && $request->input('period') !== 'all') {
             throw ValidationException::withMessages(['date_range' => 'Choose a date range of no more than 366 days.']);
         }
         $caseStatusFilter = function ($query, $status) {
@@ -109,6 +120,17 @@ class ModeratorOperations
             $caseStatus[$label] = ($caseStatus[$label] ?? 0) + 1;
         }
         $summary['Pending requests'] = $caseStatus['Pending'];
+        $performancePeriod = new AnalyticsPeriod(\Carbon\CarbonImmutable::instance($start), \Carbon\CarbonImmutable::instance($end)->addMicrosecond());
+        $performanceQuery = Session::query()->when($data['case_status'] ?? null, $caseStatusFilter)
+            ->when($data['priority'] ?? null, fn ($q, $v) => $q->where('risk_level', $v));
+        if (($data['archive'] ?? 'all') !== 'all') {
+            $performanceQuery->when($data['archive'] === 'archived', fn ($q) => $q->whereNotNull('archived_at'), fn ($q) => $q->whereNull('archived_at'));
+        }
+        $performance = app(SessionPerformance::class)->operations($performancePeriod, $performanceQuery);
+        $summary['Average waiting time'] = SessionPerformance::display($performance['waiting_minutes'], ' min');
+        $summary['Waiting time samples'] = $performance['samples'];
+        $summary['Average Helper workload'] = SessionPerformance::display($performance['workload']);
+        $summary['Serving Helpers'] = $performance['helpers'];
         // Aggregate lifecycle data only: no referral narratives or identity information.
         $referrals = Referral::query()->whereBetween(\DB::raw('COALESCE(referral_date,created_at)'), [$start, $end])
             ->when($data['priority'] ?? null, fn ($q, $v) => $q->where('priority_level', $v))

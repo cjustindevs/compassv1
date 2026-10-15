@@ -65,7 +65,7 @@ class AdviserDashboardController extends Controller
             $activity[] = [
                 'type' => 'evaluation',
                 'message' => 'New evaluation submitted',
-                'detail' => ($evaluation->helper?->full_name ?? 'Helper').' - '.($evaluation->overall_score ? 'Score '.$evaluation->overall_score.'/5' : 'Reviewed'),
+                'detail' => ($evaluation->helper?->full_name ?? 'Helper').' - '.($evaluation->overall_score ? 'Score '.$evaluation->normalized_score.'/5' : 'Reviewed'),
                 'time' => $evaluation->created_at?->diffForHumans(), 'timestamp' => $evaluation->created_at?->timestamp ?? 0,
             ];
         }

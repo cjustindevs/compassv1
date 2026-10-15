@@ -252,6 +252,7 @@
             </div>
         </div>
 
+            <x-analytics-period :action="route('professional.dashboard')" :dates="$analyticsDates" :report-url="route('professional.reports', $analyticsDates)" />
         <!-- Stats -->
         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
             <div class="stat-card">
@@ -261,7 +262,7 @@
             </div>
             <div class="stat-card">
                 <div class="stat-number" id="statActive">{{ $activeCases }}</div>
-                <div class="stat-label">Active Cases</div>
+                <div class="stat-label">Accepted / Ongoing Referrals</div>
                 <p class="text-xs text-gray-400 mt-2">In your care right now</p>
             </div>
             <div class="stat-card">
@@ -270,18 +271,11 @@
                 <p class="text-xs text-gray-400 mt-2">{{ $analyticsDates['from'] }} – {{ $analyticsDates['to'] }} · excludes closed-only cases</p>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="statResponse">
-                    @if($avgResponseHours === null)
-                        {{ $analytics ? 'No data' : 'Unavailable' }}
-                    @elseif($avgResponseHours > 48)
-                        {{ number_format($avgResponseHours / 24, 1) }}<span class="text-base">d</span>
-                    @else
-                        {{ $avgResponseHours }}<span class="text-base">h</span>
-                    @endif
-                </div>
-                <div class="stat-label">Average Acceptance Time</div>
-                <p class="text-xs text-gray-400 mt-2">Notification to acceptance · {{ $analytics['response_samples'] ?? 0 }} valid samples in selected period</p>
+                <div class="stat-number" id="statAwaitingReview">{{ $analytics['awaiting_review_now'] ?? 'Unavailable' }}</div>
+                <div class="stat-label">Awaiting Adviser Review</div>
+                <p class="text-xs text-gray-400 mt-2">Live: submitted completion reports; cases remain active until confirmed</p>
             </div>
+
         </div>
 
         <!-- Quick Actions (mobile) -->
@@ -374,12 +368,13 @@
 
         <section class="analytics-section" aria-labelledby="professional-analytics-heading">
             <div class="analytics-section-heading"><div><h2 id="professional-analytics-heading">Referral activity</h2><p>Your authorized referrals and recorded outcomes.</p></div></div>
-            <x-analytics-period :action="route('professional.dashboard')" :dates="$analyticsDates" :report-url="route('professional.reports', $analyticsDates)" />
+
             @if($analytics)
                 <div class="analytics-chart-grid">
                     <x-analytics-chart id="professional-referral-trend" title="Referrals received and completed" :description="$analytics['received']['interval'].' events in the selected period. Completed referrals may have been received earlier.'" :chart="['type'=>'line','labels'=>$analytics['received']['labels'],'datasets'=>[['label'=>'Received','data'=>$analytics['received']['values']],['label'=>'Completed','data'=>$analytics['completed']['values']]]]" :link="route('professional.reports', $analyticsDates)" />
                     <x-analytics-chart id="professional-referral-status" title="Status of referrals received" description="Current status of referrals received during this period. Historical, authorized records are included." :chart="['type'=>'bar','labels'=>$analytics['statuses']['labels'],'datasets'=>[['label'=>'Referrals','data'=>$analytics['statuses']['values']]]]" :link="route('professional.reports', $analyticsDates)" />
                 </div>
+                <details class="analytics-definitions"><summary>Referral outcomes and acceptance time</summary><p>Average acceptance time: {{ $avgResponseHours === null ? 'No data' : $avgResponseHours.' hr' }} | {{ $analytics['response_samples'] ?? 0 }} records measured. Notification to recorded acceptance.</p><ul>@forelse(($analytics['outcomes'] ?? []) as $outcome=>$count)<li>{{ $outcome ?: 'Outcome not recorded' }}: {{ $count }}</li>@empty<li>No completed referral outcomes in the selected period.</li>@endforelse</ul><p>Completed means Adviser-confirmed completion; sending a report alone does not count as completed.</p></details>
                 <details class="analytics-definitions"><summary>Dates and calculation notes</summary><p>Received uses the recorded professional notification date, with creation date as a labeled fallback for legacy records. Completed uses completed_at, or a recorded closure date only for legacy completed referrals. Closed-only cases are counted separately in Reports. Acceptance time uses notification to acceptance for valid acceptances in this period; edits never affect it. Pending and active workload exclude archived sessions.</p>@if($analytics['legacy_received'])<p>{{ $analytics['legacy_received'] }} received records use the legacy creation-date fallback.</p>@endif @if($analytics['missing_completion_dates'])<p>{{ $analytics['missing_completion_dates'] }} historical finished records have no usable completion date and are excluded from the completion timeline.</p>@endif<p><a href="{{ route('professional.reports', $analyticsDates + ['activity'=>'completed']) }}" class="analytics-button">View completed referral records</a></p></details>
             @else
                 <div class="analytics-feedback" role="alert">Unable to load analytics. <a class="analytics-button" href="{{ route('professional.dashboard', $analyticsDates) }}">Retry</a></div>
@@ -436,6 +431,7 @@
                     .then(data => {
                         document.getElementById('statPending').textContent = data.pending;
                         document.getElementById('statActive').textContent = data.active;
+                        document.getElementById('statAwaitingReview').textContent = data.awaiting_review;
                         document.getElementById('sidePending').textContent = data.pending;
                         document.getElementById('sideActive').textContent = data.active;
                         document.getElementById('sideCompleted').textContent = data.completed;

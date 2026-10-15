@@ -198,7 +198,7 @@ class IdentityVaultService
             sort($selectedFields);
             $previousFields = $previousRelease ? (json_decode($previousRelease->information_released, true) ?: []) : [];
             sort($previousFields);
-            if (! $previousRelease || $selectedFields !== $previousFields) {
+            if (! $previousRelease || $selectedFields !== $previousFields || ! $referral->identity_disclosed) {
                 $db->table('idv_release_records')->insert([
                     'pseudo_id' => $pseudo, 'identity_id' => $identity->identity_id, 'referral_id' => $referral->id,
                     'identity_version' => $identity->identity_version,
@@ -221,7 +221,7 @@ class IdentityVaultService
     {
         $referral->refresh();
         $pseudo = $referral->session->seeker->pseudo_id;
-        $allowed = Auth::user()?->role === 'professional' && $referral->professional_id !== null
+        $allowed = Auth::user()?->role === 'professional' && $referral->identity_disclosed && $referral->professional_id !== null
             && Auth::user()?->psychologyProfessional?->id === $referral->professional_id && $this->approved($referral);
 
         return $this->perform($pseudo, 'read', $allowed, function () use ($pseudo, $referral) {

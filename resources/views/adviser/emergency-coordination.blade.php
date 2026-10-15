@@ -5,6 +5,7 @@
 <div class="cm-page">
     <header class="cm-header"><div><h1>Emergency #{{ $alert->id }}</h1><p class="cm-muted">Shared emergency coordination notice for all Advisers.</p></div><a class="cm-button" href="{{ route('adviser.emergencies') }}">Back to emergencies</a></header>
     <section class="cm-card">
+        <a class="cm-button cm-primary" href="{{ route('adviser.emergency.coordinate', ['emergency_alerts', $alert->id]) }}">Open / Assign Helper</a>
         <h2>{{ $alert->acknowledged_at ? 'Reviewer has acknowledged this case' : 'Awaiting reviewer acknowledgment' }}</h2>
         <p>Responsible reviewer: <strong>{{ $alert->adviser?->full_name ?? 'Awaiting assignment' }}</strong></p>
         <p>Assigned Helper: <strong>{{ $alert->session?->helper?->full_name ?? 'Awaiting match' }}</strong></p>

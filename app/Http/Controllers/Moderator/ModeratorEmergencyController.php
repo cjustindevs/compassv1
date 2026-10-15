@@ -18,7 +18,10 @@ class ModeratorEmergencyController extends Controller
     public function index(Request $request)
     {
         $service = app(ModeratorEmergencyCases::class);
-        $openIncidents = $service->active()->orderByDesc('triggered_at')->orderByDesc('id')->orderBy('source')->paginate(5)->withQueryString();
+        $request->validate(['tab' => 'nullable|in:active,completed']);
+        $tab = $request->input('tab', 'active');
+        $cases = $tab === 'completed' ? $service->query(true)->whereIn('status', ['resolved', 'closed']) : $service->active();
+        $openIncidents = $cases->orderByDesc($tab === 'completed' ? 'resolved_at' : 'triggered_at')->orderByDesc('id')->orderBy('source')->paginate(10)->withQueryString();
         $all = $service->query()->get();
         $active = $service->active()->get();
         $stats = $this->metrics($all, $active);
@@ -37,7 +40,7 @@ class ModeratorEmergencyController extends Controller
         $emergencySignature = $this->signature($all);
         $contacts = EmergencyResource::published()->get();
 
-        $data = compact('openIncidents', 'stats', 'priorityDistribution', 'contacts', 'emergencySignature', 'workflow');
+        $data = compact('openIncidents', 'stats', 'priorityDistribution', 'contacts', 'emergencySignature', 'workflow', 'tab');
         if ($request->expectsJson()) {
             return response()->json(['signature' => $emergencySignature, 'html' => view('moderator.partials.emergency-content', $data)->render()])->header('Cache-Control', 'private, no-store');
         }

@@ -40,7 +40,14 @@ class EmergencyNoticeController extends Controller
         $professional = auth()->user()->role === 'professional';
         $url = $professional ? $notice?->link : (auth()->user()->role === 'adviser' ? route('adviser.emergencies') : route('moderator.emergency'));
         if (! $professional && auth()->user()->role === 'adviser' && $notice) {
-            $url = route('adviser.emergencies.show', (int) substr($state->key($notice, auth()->user()), 6), false);
+            $caseKey = $state->key($notice, auth()->user());
+            $url = str_starts_with($caseKey, 'incident:') ? route('adviser.emergency.coordinate', ['incident_reports', (int) substr($caseKey, 9)], false)
+                : route('adviser.emergencies.show', (int) substr($caseKey, 6), false);
+        }
+        if (! $professional && auth()->user()->role === 'moderator' && $notice) {
+            $caseKey = $state->key($notice, auth()->user());
+            $url = str_starts_with($caseKey, 'incident:') ? route('moderator.emergency.coordinate', ['incident_reports', (int) substr($caseKey, 9)], false)
+                : route('moderator.emergency.coordinate', ['emergency_alerts', (int) substr($caseKey, 6)], false);
         }
 
         return response()->json(['notice' => $notice ? [

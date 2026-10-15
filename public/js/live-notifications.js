@@ -19,6 +19,8 @@
     document.addEventListener('click',event=>{if(!root.contains(event.target))close();});
     document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!inbox.hidden){close();bell.focus();}});
     function toast(notice){
+        if (notice.type === 'emergency' && document.getElementById('staffEmergencyNotice')) return;
+        if (notice.important && window.CompassImportantNotices) { window.CompassImportantNotices.enqueue(notice); return; }
         const card=el('article');card.noticeId=notice.id;card.isEmergency=notice.type==='emergency';card.className='compass-notice-toast'+(notice.type==='emergency'?' is-emergency':'');
         const dismiss=el('button','×');dismiss.type='button';dismiss.setAttribute('aria-label','Dismiss notification');dismiss.addEventListener('click',()=>card.remove());
         const link=el('a','Open');link.href=safe(notice.link);card.append(el('strong',notice.title),el('p',notice.message),link,dismiss);toasts.append(card);
@@ -30,8 +32,10 @@
         try{
             const response=await fetch(config.feed+(seen===null?'':'?after='+seen),{headers:{Accept:'application/json'},cache:'no-store'});if(!response.ok)return;
             const data=await response.json();count.textContent=data.count>99?'99+':String(data.count);count.hidden=!data.count;bell.setAttribute('aria-label',`${data.count} unread notifications`);
+            if (Array.isArray(data.workflow?.unread_important_notice_ids)) window.CompassImportantNotices?.reconcileUnread(data.workflow.unread_important_notice_ids);
             if (Array.isArray(data.workflow?.active_emergency_notice_ids)) {
                 const active = new Set(data.workflow.active_emergency_notice_ids);
+                window.CompassImportantNotices?.reconcile(data.workflow.active_emergency_notice_ids);
                 [...toasts.children].filter(card => card.isEmergency && !active.has(card.noticeId)).forEach(card => card.remove());
             }
             const emergencyBadge=document.getElementById('emergencyBadge');
@@ -47,8 +51,10 @@
             const fresh=data.fresh.filter(notice=>notice.urgent!==false&&(seen===null||notice.id>seen));
             const routine=fresh.filter(n=>n.type!=='emergency');
             fresh.filter(n=>n.type==='emergency').forEach(toast);
-            if(routine.length>3)toast({title:`${routine.length} new notifications`,message:'Open Notifications to review all your updates.',link:config.center,type:'system'});
-            else routine.forEach(toast);
+            routine.filter(n=>n.important).forEach(toast);
+            const minor=routine.filter(n=>!n.important);
+            if(minor.length>3)toast({title:`${minor.length} new notifications`,message:'Open Notifications to review all your updates.',link:config.center,type:'system'});
+            else minor.forEach(toast);
             seen=Math.max(seen||0,data.cursor||0);try{sessionStorage.setItem(storageKey,String(seen));}catch{}
         }catch{}finally{pending=false;}
     }

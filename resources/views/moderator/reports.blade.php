@@ -17,7 +17,7 @@
 @endforeach</div>
 @endif
 <form method="GET" class="mo-card mo-filters" aria-label="Report filters">
-@foreach(['archive','activity','search'] as $key)
+@foreach(['archive','activity','search','period'] as $key)
     @if(request()->filled($key))<input type="hidden" name="{{ $key }}" value="{{ request($key) }}">
 @endif
 @endforeach
@@ -34,10 +34,15 @@
 @endforeach</select></div>
 <button class="mo-button">Apply</button><a class="mo-button secondary" href="{{ route('moderator.reports',['tab'=>$tab]) }}">Reset</a>
 </form>
-<p class="mo-filter-note">Status filters apply to their corresponding records. Priority and dates apply to all overview charts and the Activity Log. Maximum date range: 366 days.</p>
+<p class="mo-filter-note">Status filters apply to their corresponding records. Priority and dates apply to all overview charts and the Activity Log. Maximum custom range: 366 days; All time dashboard links include retained history.</p>
 <section class="mo-card"><h2>Report Summary</h2><div class="mo-kpis">
 @foreach(['Cases in period'=>'Total cases','Completed cases'=>'Completed','Pending requests'=>'Pending','Emergencies'=>'Emergencies'] as $key=>$label)<div class="mo-kpi {{ $key==='Emergencies'?'danger':($key==='Pending requests'?'warning':'') }}"><strong>{{ $report['summary'][$key] }}</strong><span>{{ $label }}</span></div>
 @endforeach</div></section>
+<details class="mo-card"><summary>Waiting time and Helper workload</summary>
+<p>Average waiting time: <strong>{{ $report['summary']['Average waiting time'] }}</strong> | {{ $report['summary']['Waiting time samples'] }} records measured.</p>
+<p>Average Helper workload: <strong>{{ $report['summary']['Average Helper workload'] }}</strong> completed sessions per serving Helper | {{ $report['summary']['Serving Helpers'] }} Helpers measured.</p>
+<p class="mo-filter-note">Same calculation as the dashboard: queue entry to actual start, excluding ongoing waits. These two measures use the session activity cohort (end, start, submission or legacy creation date), with the selected case status, priority and history filters. The case table retains its submission-date basis.</p>
+</details>
 <section class="mo-card">
     <h2>Case Overview</h2>
     <nav class="mo-tabs" aria-label="Case overview">

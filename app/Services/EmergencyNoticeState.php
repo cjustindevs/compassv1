@@ -43,6 +43,11 @@ class EmergencyNoticeState
         if (! in_array($user->role, ['adviser', 'moderator'], true)) {
             return null;
         }
+        if (! $id && preg_match('#^/(?:adviser|moderator)/emergency/cases/incident_reports/(\d+)$#', $notice->link ?? '', $legacy)) {
+            $legacyId = (int) $legacy[1];
+            $active = app(ModeratorEmergencyCases::class)->active()->where('source', 'incident_reports')->where('id', $legacyId)->exists();
+            return $active ? 'incident:'.$legacyId : null;
+        }
         if (! $id) {
             $matched = preg_match('#^/adviser/emergencies?/(\d+)$#', $notice->link ?? '', $match)
                 || preg_match('/^Emergency #(\d+) requires staff attention/', $notice->message ?? '', $match);

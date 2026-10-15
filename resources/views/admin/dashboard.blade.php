@@ -4,18 +4,20 @@
         <div><h1>System Overview</h1><p>Account administration and recent platform activity.</p></div>
         <a class="admin-button admin-button-secondary" href="{{ route('admin.users') }}">Manage users</a>
     </header>
+        <x-analytics-period :action="route('admin.dashboard')" :dates="$analyticsDates" :report-url="route('admin.reports', $analyticsDates)" />
     <section class="admin-account-stats" aria-label="Account overview">
         @foreach ($primaryStats as $stat)
-            <x-admin.stat-card :label="$stat['label']" :value="$stat['value']" :detail="$stat['detail']" :icon="$stat['icon']" />
+            <x-admin.stat-card :label="$stat['label']" :value="$stat['value']" :detail="$stat['detail']" :icon="$stat['icon']" :link="$stat['link'] ?? null" />
         @endforeach
     </section>
+    <p class="analytics-period-caption">Total Users: {{ $technical['total'] }} | Inactive accounts: {{ $technical['inactive'] }} | Recorded failed Admin logins: {{ $technical['failed_admin_logins'] }} in the selected period. Other failed logins are not fully audited and are not represented as zero. Historical uptime is not monitored.</p>
     <section class="analytics-section" aria-labelledby="admin-analytics-heading">
-        <div class="analytics-section-heading"><div><h2 id="admin-analytics-heading">Platform activity</h2><p>Registration and support activity, with current account distribution.</p></div></div>
-        <x-analytics-period :action="route('admin.dashboard')" :dates="$analyticsDates" :report-url="route('admin.reports', $analyticsDates)" />
+        <div class="analytics-section-heading"><div><h2 id="admin-analytics-heading">Platform activity</h2><p>Account registrations, audit events and current account distribution.</p></div></div>
+
         @if($analytics)
             <div class="analytics-chart-grid">
                 <x-analytics-chart id="admin-registration-trend" title="Account registrations" :description="$analytics['registrations']['interval'].' registrations in the selected period.'" :chart="['type'=>'line','labels'=>$analytics['registrations']['labels'],'datasets'=>[['label'=>'Registrations','data'=>$analytics['registrations']['values']]]]" :link="route('admin.reports', $analyticsDates + ['section'=>'registrations'])" />
-                <x-analytics-chart id="admin-support-trend" title="Support activity" :description="$analytics['requests']['interval'].' request submissions and session completions, counted on their event dates.'" :chart="['type'=>'line','labels'=>$analytics['requests']['labels'],'datasets'=>[['label'=>'Requests submitted','data'=>$analytics['requests']['values']],['label'=>'Sessions completed','data'=>$analytics['completed']['values']]]]" :link="route('admin.reports', $analyticsDates + ['activity_date'=>'submitted'])" />
+                <x-analytics-chart id="admin-audit-trend" title="Administrative audit activity" :description="$technical['audit']['interval'].' recorded technical, security and account events in the selected period.'" :chart="['type'=>'line','labels'=>$technical['audit']['labels'],'datasets'=>[['label'=>'Audit events','data'=>$technical['audit']['values']]]]" :link="route('admin.audit-logs')" />
                 <x-analytics-chart id="admin-role-distribution" title="Accounts by role" description="Current account population, including enabled and disabled accounts. Independent of the date filter." :chart="['type'=>'bar','labels'=>$analytics['roles']['labels'],'datasets'=>[['label'=>'Accounts','data'=>$analytics['roles']['values']]]]" :link="route('admin.users')" />
             </div>
             <details class="analytics-definitions"><summary>How these totals are counted</summary><p>Registrations use account creation dates. Each support case counts once as a request, using its submission date or legacy creation date. Completions include completed and evaluated sessions with recorded end dates. Archived records remain in historical totals; current account distribution is not period-filtered.</p>@if($analytics['missing_completion_dates'])<p>{{ number_format($analytics['missing_completion_dates']) }} historical completed/evaluated records have no end date and cannot be placed on the completion timeline.</p>@endif<p><a class="analytics-button" href="{{ route('admin.reports', $analyticsDates + ['activity_date'=>'completed']) }}">View completed session records</a></p></details>

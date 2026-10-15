@@ -173,17 +173,18 @@ class ModeratorAdviserModuleTest extends TestCase
     {
         [$user, $adviser] = $this->adviserUser('schedule@example.com');
         $helper = $this->helper($adviser);
+        $this->verifiedHelperFixture($helper);
         $date = now()->addDays(2)->toDateString();
         $payload = ['helper_id' => $helper->id, 'date' => $date];
 
         $this->actingAs($user)->from(route('adviser.schedule'))->post(route('adviser.schedule.update'), $payload)
             ->assertRedirect(route('adviser.schedule', ['date' => $date]));
-        $this->get(route('adviser.schedule', ['date' => $date]))->assertOk()->assertSee('All day');
+        $this->get(route('adviser.schedule', ['date' => $date]))->assertOk()->assertSee('6:00 PM');
 
         $shiftId = HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->value('id');
 
         // Rostering the same helper for the same day twice is refused.
-        $this->post(route('adviser.schedule.update'), $payload)->assertSessionHasErrors('date');
+        $this->post(route('adviser.schedule.update'), $payload)->assertSessionHasErrors('event_date');
         $this->assertSame(1, HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
 
         // Passing the shift id edits that row in place instead of adding one.
@@ -191,9 +192,9 @@ class ModeratorAdviserModuleTest extends TestCase
             ->assertSessionHasNoErrors();
         $this->assertSame(1, HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
 
-        // The form is per day, so it offers no shift times at all.
+        // Both staff roles now use the same explicit duty shift controls.
         $this->get(route('adviser.schedule'))->assertOk()
-            ->assertDontSee('type="time"', false)
+            ->assertSee('type="time"', false)
             ->assertDontSee('Select shift', false);
     }
 
@@ -201,8 +202,11 @@ class ModeratorAdviserModuleTest extends TestCase
     {
         [$user, $adviser] = $this->adviserUser('multihelper@example.com');
         $first = $this->helper($adviser);
+        $this->verifiedHelperFixture($first);
         $second = $this->helper($adviser);
+        $this->verifiedHelperFixture($second);
         $third = $this->helper($adviser);
+        $this->verifiedHelperFixture($third);
         $date = now()->addDays(3)->toDateString();
 
         // A date carries as many helpers as are rostered on it.
@@ -487,6 +491,7 @@ class ModeratorAdviserModuleTest extends TestCase
     {
         [$user, $adviser] = $this->adviserUser('dateonly@example.com');
         $helper = $this->helper($adviser);
+        $this->verifiedHelperFixture($helper);
         $date = now('Asia/Manila')->addDays(2)->toDateString();
 
         $this->actingAs($user)->from(route('adviser.schedule'))->post(route('adviser.schedule.update'), [
@@ -494,9 +499,9 @@ class ModeratorAdviserModuleTest extends TestCase
             'date' => $date,
         ])->assertRedirect(route('adviser.schedule', ['date' => $date]))->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('helper_schedules', ['helper_id' => $helper->id, 'shift_start' => null, 'shift_end' => null]);
+        $this->assertDatabaseHas('helper_schedules', ['helper_id' => $helper->id, 'shift_start' => '18:00', 'shift_end' => '23:00']);
         $this->assertSame(1, HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
-        $this->get(route('adviser.schedule', ['date' => $date]))->assertOk()->assertSee('All day');
+        $this->get(route('adviser.schedule', ['date' => $date]))->assertOk()->assertSee('6:00 PM');
     }
 
     public function test_adviser_session_supervision_loads_report_and_blocks_other_advisers(): void

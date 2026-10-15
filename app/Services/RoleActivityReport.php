@@ -78,7 +78,7 @@ class RoleActivityReport
             $activityDate = 'end_time';
             $sessions->whereIn('session_status', [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED]);
         }
-        if ($adminPeriod) $sessions->where(DB::raw($activityDate), '<=', now('UTC'));
+        $sessions->where(DB::raw($activityDate), '<=', now('UTC'));
         $sessions->whereBetween(DB::raw($activityDate), [$start, $end])
             ->when($data['case_status'] ?? null, fn ($q, $status) => $q->where('session_status', $status));
         $alerts->whereBetween(DB::raw('COALESCE(triggered_at,created_at)'), [$start, $end])
@@ -106,6 +106,16 @@ class RoleActivityReport
             'Active sessions' => $rows->where('session_status', 'active')->count(), 'Pending requests' => $rows->whereIn('session_status', Session::PENDING_STATUSES)->where('session_status', '!=', 'active')->count(),
             'Cancelled / no-show' => $rows->whereIn('session_status', ['cancelled', 'no_show'])->count(),
             'Helper acceptance time' => $mean($rows, 'submitted_at', 'helper_accepted_at'), 'Completed session duration' => $mean($rows->whereIn('session_status', ['completed', 'evaluated']), 'start_time', 'end_time')];
+        if ($user->role === 'helper') {
+            $performancePeriod = new AnalyticsPeriod(\Carbon\CarbonImmutable::instance($start), \Carbon\CarbonImmutable::instance($end)->addMicrosecond());
+            $performance = app(SessionPerformance::class)->summarize($rows, $helperIds, $performancePeriod);
+            foreach (['response_minutes'=>['Average Helper Response Time',' min'], 'waiting_minutes'=>['Average waiting time',' min'],
+                'satisfaction'=>['Satisfaction rating','/5'], 'competency'=>['Competency score','/5'], 'completion_rate'=>['Session completion rate','%'],
+                'duty_hours'=>['Scheduled duty hours',' hr'], 'documentation_rate'=>['Documentation completion rate','%']] as $key=>[$label,$unit]) {
+                $summary[$label] = SessionPerformance::display($performance['metrics'][$key], $unit);
+            }
+            $summary['Pending documentation'] = $performance['metrics']['documentation_pending'];
+        }
         $groups = ['Cases by status' => $rows->groupBy('session_status')->map->count()->all(),
             'Case categories' => $rows->groupBy(fn ($s) => $s->concern?->concern_name ?? $s->concern_category ?? 'Unrecorded')->map->count()->all(),
             'Case outcome trend' => $rows->groupBy(fn ($s) => ($s->end_time ?? $s->start_time ?? $s->submitted_at ?? $s->created_date ?? $s->created_at)->timezone('Asia/Manila')->format('Y-m'))->sortKeys()->map->count()->all()];

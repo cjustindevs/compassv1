@@ -200,13 +200,7 @@
         <!-- High Risk Banner -->
 
 
-        <section id="dashboard-analytics" aria-label="Emergency dashboard summaries">@include('moderator.partials.dashboard-analytics')</section>
-
-        <div class="flex flex-wrap gap-6 px-1 py-4 mb-5 border-b border-gray-200">
-            <a href="{{ route('moderator.queue') }}">Waiting requests <strong id="statQueue">{{ $stats['queue_waiting'] }}</strong></a>
-            <a href="{{ route('moderator.sessions') }}">Active Sessions <strong id="statSessions">{{ $stats['active_sessions'] }}</strong></a>
-            <a href="{{ route('moderator.manage') }}">Available Helpers <strong id="statHelpers">{{ $stats['available_helpers'] }}</strong></a>
-        </div>
+        <section id="dashboard-analytics" aria-label="Operations dashboard summaries">@include('moderator.partials.dashboard-analytics')</section>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- Recent Activity -->
@@ -285,7 +279,7 @@
 
     <!-- Bottom Navigation -->
 
-    <meta id="moderatorEmergencyConfig" content="{{ json_encode(['kind' => 'dashboard', 'stats' => route('moderator.dashboard.stats'), 'signature' => $overviewSignature]) }}">
+    <meta id="moderatorEmergencyConfig" content="{{ json_encode(['kind' => 'dashboard', 'stats' => route('moderator.dashboard.stats', request()->only('period','from','to')), 'signature' => $overviewSignature]) }}">
     <script src="{{ asset('js/moderator-emergency.js') }}?v={{ filemtime(public_path('js/moderator-emergency.js')) }}" defer></script>
 
     @include('layouts.partials.pwa-banner')

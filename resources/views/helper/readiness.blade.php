@@ -241,6 +241,8 @@
         @endif
     </div>
 
+    @if($cooldownUntil ?? null)<p role="status" class="rc-card">Wait 30 minutes between saved readiness checks. Your next check is available at {{ $cooldownUntil->copy()->timezone('Asia/Manila')->format('g:i A') }} PHT (<span data-readiness-minutes>{{ (int) ceil(now()->diffInSeconds($cooldownUntil) / 60) }}</span> minutes remaining). You can set yourself unavailable at any time. <span data-readiness-unlocked hidden>The interval has ended. Refresh to check your current duty and capacity before continuing.</span></p><span hidden data-readiness-retry-at="{{ $cooldownUntil->getTimestampMs() }}"></span><script src="{{ asset('js/readiness-cooldown.js') }}?v={{ filemtime(public_path('js/readiness-cooldown.js')) }}" defer></script>@endif
+    @if($capacityBlocked ?? false)<p role="status" class="rc-card">Your current assignment or duty capacity prevents another readiness check. Finish or hand off your assignment, or wait for your next eligible duty. You can set yourself unavailable from the dashboard.</p>@endif
     @if($readinessStatus === 'ready')
         <div class="rc-card">
             <div class="rc-ready">
@@ -248,7 +250,7 @@
                 <h3>You're all set to help</h3>
                 <p>
                     Your readiness assessment is valid for the current duty period (4 hours).<br>
-                    You can check in again anytime to refresh your status.
+                    You can submit another check 30 minutes after your last saved assessment.
                 </p>
                 <div class="flex justify-center gap-2 flex-wrap">
                     <a href="{{ route('helper.dashboard') }}" class="btn btn-primary">
@@ -264,6 +266,7 @@
         <div class="rc-card">
             <form id="readinessForm" class="form-container" method="POST" action="{{ route('helper.readiness.store') }}">
                 @csrf
+                <fieldset @disabled(($cooldownUntil ?? false) || ($capacityBlocked ?? false)) style="border:0;padding:0;margin:0;min-width:0">
 
                 <input type="hidden" name="readiness_form_version" value="{{ \App\Services\HelperReadinessService::GROUPED_VERSION }}">
                 <div class="rc-fields">
@@ -343,6 +346,7 @@
                         <x-ui-icon name="check" class="mr-1" /> Submit Readiness
                     </button>
                 </div>
+                </fieldset>
             </form>
 
             {{-- Self-care resources --}}

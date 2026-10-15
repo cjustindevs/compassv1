@@ -12,6 +12,13 @@ class HelperReadinessService
 {
     public const VERSION = 'compass-v4-listener-1';
     public const GROUPED_VERSION = 'compass-v4-listener-grouped-1';
+    public const RETRY_MINUTES = 30;
+
+    public function retryAt(Helper $helper): ?\Illuminate\Support\Carbon
+    {
+        $last = $helper->readinessChecks()->latest('created_at')->latest('id')->first();
+        return $last?->created_at?->copy()->addMinutes(self::RETRY_MINUTES);
+    }
 
     public const SKILLS = ['active_listening', 'empathy', 'reflection', 'clarification', 'summarizing'];
 
@@ -27,6 +34,13 @@ class HelperReadinessService
 
         return DB::transaction(function () use ($user, $data, $version) {
             $helper = Helper::whereKey($user->helper->id)->lockForUpdate()->firstOrFail();
+            $retryAt = $this->retryAt($helper);
+            if ($retryAt && now()->lt($retryAt)) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['readiness' => 'You can take another readiness check in '.(int) ceil(now()->diffInSeconds($retryAt) / 60).' minutes ('.$retryAt->copy()->timezone('Asia/Manila')->format('g:i A').' PHT).']);
+            }
+            if ($helper->activeSessions()->exists() || $helper->getRemainingCapacity() === 0) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['readiness' => 'Your current assignment or duty capacity prevents another readiness check. You can set yourself unavailable at any time.']);
+            }
             $wasAvailable=$helper->status==='available';
             $schedule = \App\Models\HelperSchedule::readinessDutyFor($helper->id);
             if(!$schedule)throw \Illuminate\Validation\ValidationException::withMessages(['schedule'=>'You do not have an applicable scheduled duty. Please contact your Moderator.']);
