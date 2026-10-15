@@ -200,17 +200,18 @@ class EmergencyEscalationService
         $alert->update(['referral_id' => $referral->id]);
         if ($referral->approved_at && $referral->help_seeker_consent && $referral->professional_notified_at && $referral->professional?->user?->is_active) {
             $alert->update(['professional_referred' => true, 'professional_referred_at' => now()]);
-            $this->notifyUser($referral->professional->user_account_id, 'Emergency reported on your referral', 'A new emergency report requires attention on your assigned referral.', route('professional.referral.show', $referral->id, false));
+            $this->notifyUser($referral->professional->user_account_id, 'Emergency reported on your referral', 'A new emergency report requires attention on your assigned referral.', route('professional.referral.show', $referral->id, false), $alert->id);
         }
     }
 
-    private function notifyUser(?int $userId, string $title, string $message, string $link): void
+    private function notifyUser(?int $userId, string $title, string $message, string $link, ?int $emergencyAlertId = null): void
     {
         if (! $userId) {
             return;
         }
 
         Notification::create([
+            'emergency_alert_id' => $emergencyAlertId,
             'user_account_id' => $userId,
             'title' => $title,
             'message' => $message,

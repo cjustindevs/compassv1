@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\EmergencyAlert;
 use App\Models\Notification;
-use App\Models\Referral;
+use App\Services\EmergencyNoticeState;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 
@@ -18,26 +18,38 @@ class EmergencyNoticeController extends Controller
         }
     }
 
-    public function next()
+    public function next(Request $request)
     {
         $this->authorizeStaff();
-        if (auth()->user()->role === 'professional') {
-            return $this->professionalNotice();
+        $data = $request->validate(['current' => 'nullable|string|max:2000']);
+        $state = new EmergencyNoticeState;
+        $owned = Notification::where('user_account_id', auth()->id())->where('notification_type', 'emergency')->whereNull('popup_dismissed_at');
+        $notice = null;
+        if (! empty($data['current'])) {
+            try {
+                $id = Crypt::decryptString($data['current']);
+                $current = ctype_digit($id) && strlen($id) <= 18 ? (clone $owned)->find($id) : null;
+                if ($current && $state->key($current, auth()->user())) {
+                    $notice = $current;
+                }
+            } catch (DecryptException $error) {
+                // A stale/invalid token does not grant access to any other user's notice.
+            }
         }
-        $caseStates = [];
-        $notice = Notification::where('user_account_id', auth()->id())->where('notification_type', 'emergency')
-            ->whereNull('popup_dismissed_at')->lazyByIdDesc(100)->first(function ($notice) use (&$caseStates) {
-                $matched = preg_match('#^/adviser/emergencies?/(\d+)$#', $notice->link ?? '', $match)
-                    || preg_match('/^Emergency #(\d+) requires staff attention/', $notice->message ?? '', $match);
-                if (! $matched) {
-                    return true;
-                } // Older notifications have no case reference.
-                $id = (int) $match[1];
+        $notice ??= (clone $owned)->lazyByIdDesc(100)->first(fn ($notice) => $state->key($notice, auth()->user()) !== null);
+        $professional = auth()->user()->role === 'professional';
+        $url = $professional ? $notice?->link : (auth()->user()->role === 'adviser' ? route('adviser.emergencies') : route('moderator.emergency'));
+        if (! $professional && auth()->user()->role === 'adviser' && $notice) {
+            $url = route('adviser.emergencies.show', (int) substr($state->key($notice, auth()->user()), 6), false);
+        }
 
-                return $caseStates[$id] ??= EmergencyAlert::whereKey($id)->whereNotIn('status', ['resolved', 'closed'])->whereNull('archived_at')->exists();
-            });
-
-        return response()->json(['notice' => $notice ? ['reference' => Crypt::encryptString((string) $notice->id), 'title' => 'Emergency requires attention', 'message' => 'Open your emergency queue to review the case and coordinate support.', 'url' => auth()->user()->role === 'adviser' && preg_match('#^/adviser/emergencies?/\d+$#', $notice->link ?? '') ? $notice->link : (auth()->user()->role === 'adviser' ? route('adviser.emergencies') : route('moderator.emergency'))] : null])->header('Cache-Control', 'private, no-store');
+        return response()->json(['notice' => $notice ? [
+            'id' => $notice->id, 'case_key' => $state->key($notice, auth()->user()),
+            'reference' => Crypt::encryptString((string) $notice->id),
+            'title' => $professional ? 'Urgent emergency referral assigned' : 'Emergency requires attention',
+            'message' => $professional ? 'An Adviser raised an emergency referral to you. Open the assigned referral to review and respond. Personal information requires separate authorized release.' : 'Open your emergency queue to review the case and coordinate support.',
+            'url' => $url,
+        ] : null])->header('Cache-Control', 'private, no-store');
     }
 
     public function dismiss(Request $request)
@@ -48,34 +60,22 @@ class EmergencyNoticeController extends Controller
             $id = Crypt::decryptString($data['reference']);
         } catch (\Throwable $e) {
             abort(404);
-        } $notice = Notification::where('user_account_id', auth()->id())->where('notification_type', 'emergency')->findOrFail($id);
+        }
+        abort_unless(ctype_digit($id) && strlen($id) <= 18, 404);
+        $notice = Notification::where('user_account_id', auth()->id())->where('notification_type', 'emergency')->findOrFail($id);
+        $state = new EmergencyNoticeState;
+        $key = $state->key($notice, auth()->user());
         $notice->forceFill(['popup_dismissed_at' => now()])->save();
+        if ($key) {
+            // Dismiss the current case's existing duplicate notices together; future reports still notify.
+            Notification::where('user_account_id', auth()->id())->where('notification_type', 'emergency')
+                ->whereNull('popup_dismissed_at')->eachById(function ($duplicate) use ($state, $key) {
+                    if ($state->key($duplicate, auth()->user()) === $key) {
+                        $duplicate->forceFill(['popup_dismissed_at' => now()])->save();
+                    }
+                });
+        }
 
         return response()->noContent();
-    }
-
-    private function professionalNotice()
-    {
-        $professionalId = auth()->user()->psychologyProfessional->id;
-        $notice = Notification::where('user_account_id', auth()->id())->where('notification_type', 'emergency')
-            ->whereNull('popup_dismissed_at')->lazyByIdDesc(100)->first(function ($notice) use ($professionalId) {
-                if (! preg_match('#^/professional/referral/(\d+)$#', $notice->link ?? '', $match)) {
-                    return false;
-                }
-
-                return Referral::professionalAuthorized()->whereKey((int) $match[1])->where('professional_id', $professionalId)
-                    ->whereIn('status', [Referral::STATUS_PENDING_PROFESSIONAL, Referral::STATUS_ACCEPTED, Referral::STATUS_IN_PROGRESS])
-                    ->whereExists(function ($query) {
-                        $query->selectRaw('1')->from('emergency_alerts')->whereColumn('emergency_alerts.referral_id', 'referrals.id')
-                            ->whereColumn('emergency_alerts.session_id', 'referrals.session_id')
-                            ->whereNotIn('emergency_alerts.status', ['resolved', 'closed'])->whereNull('emergency_alerts.archived_at');
-                    })->exists();
-            });
-
-        return response()->json(['notice' => $notice ? [
-            'reference' => Crypt::encryptString((string) $notice->id), 'title' => 'Urgent emergency referral assigned',
-            'message' => 'An Adviser raised an emergency referral to you. Open the assigned referral to review and respond. Personal information requires separate authorized release.',
-            'url' => $notice->link,
-        ] : null])->header('Cache-Control', 'private, no-store');
     }
 }

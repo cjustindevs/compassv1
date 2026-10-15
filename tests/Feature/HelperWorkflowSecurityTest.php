@@ -617,23 +617,35 @@ class HelperWorkflowSecurityTest extends TestCase
 
     public function test_manage_pill_and_operational_counts_reflect_current_readiness(): void
     {
+        $assertPillText = function ($response, string $expected): void {
+            // strip_tags treats the sidebar script's '<' operators as markup;
+            // inspect the actual rendered status span rather than stripping the entire document.
+            $document = new \DOMDocument;
+            @$document->loadHTML($response->getContent());
+            $xpath = new \DOMXPath($document);
+            $labels = [];
+            foreach ($xpath->query('//span[contains(concat(" ", normalize-space(@class), " "), " status-pill ")]') as $node) {
+                $labels[] = trim($node->textContent);
+            }
+            $this->assertContains($expected, $labels);
+        };
         $helper = $this->helper();
         $moderator = User::factory()->create(['role' => 'moderator', 'is_active' => true]);
         $this->actingAs($moderator);
 
-        $this->get(route('moderator.manage'))->assertOk()
-            ->assertSee('<span class="status-pill available">', false)
-            ->assertSeeText('Available');
+        $page = $this->get(route('moderator.manage'))->assertOk()
+            ->assertSee('<span class="status-pill available">', false);
+        $assertPillText($page, 'Available');
         $this->assertSame(1, app(HelperEligibilityService::class)->countAvailable(Helper::where('status', 'available')->get()));
 
         // The stored status is still 'available', but readiness has expired:
         // the pill and operational counts must immediately reflect it.
         $helper->getCurrentReadiness()->update(['valid_until' => now()->subHour()]);
         $this->assertSame('available', $helper->fresh()->status);
-        $this->get(route('moderator.manage'))->assertOk()
+        $page = $this->get(route('moderator.manage'))->assertOk()
             ->assertSee('<span class="status-pill offline">', false)
-            ->assertSeeText('Readiness required')
             ->assertDontSee('<span class="status-pill available">', false);
+        $assertPillText($page, 'Readiness required');
         $this->assertSame(0, app(HelperEligibilityService::class)->countAvailable(Helper::where('status', 'available')->get()));
     }
 }

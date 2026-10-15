@@ -55,7 +55,10 @@ class SystemCorrectionsTest extends TestCase {
  $other=User::factory()->create(['role'=>'helper','is_active'=>true]);$this->actingAs($other)->post(route('concerns.store'),['concern_name'=>'Forbidden','is_active'=>1])->assertForbidden();
  }
  public function test_emergency_popup_dismissal_keeps_notification_and_checks_ownership():void {
- $u=User::factory()->create(['role'=>'moderator','is_active'=>true]);$n=Notification::create(['user_account_id'=>$u->id,'title'=>'Emergency','message'=>'Private narrative must not appear','notification_type'=>'emergency']);
+ $u=User::factory()->create(['role'=>'moderator','is_active'=>true]);
+ $seekerUser=User::factory()->create(['role'=>'seeker']);$seeker=\App\Models\HelpSeeker::create(['user_account_id'=>$seekerUser->id,'generated_alias'=>'PopupTestAlias']);
+ $alert=\App\Models\EmergencyAlert::create(['seeker_id'=>$seeker->id,'trigger_reason'=>'Private case narrative']);
+ $n=Notification::create(['user_account_id'=>$u->id,'emergency_alert_id'=>$alert->id,'title'=>'Emergency','message'=>'Private narrative must not appear','notification_type'=>'emergency']);
  $r=$this->actingAs($u)->getJson(route('emergency-notice.next'))->assertOk()->assertDontSee('Private narrative');
  $this->postJson(route('emergency-notice.dismiss'),['reference'=>$r->json('notice.reference')])->assertNoContent();
  $this->assertNotNull(Notification::find($n->id));$this->getJson(route('emergency-notice.next'))->assertJsonPath('notice',null);

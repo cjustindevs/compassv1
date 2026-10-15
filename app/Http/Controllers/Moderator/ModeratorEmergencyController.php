@@ -8,13 +8,14 @@ use App\Services\ModeratorEmergencyCases;
 use App\Traits\BroadcastsSafely;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 class ModeratorEmergencyController extends Controller
 {
     use BroadcastsSafely;
 
-    public function index()
+    public function index(Request $request)
     {
         $service = app(ModeratorEmergencyCases::class);
         $openIncidents = $service->active()->orderByDesc('triggered_at')->orderByDesc('id')->orderBy('source')->paginate(5)->withQueryString();
@@ -36,7 +37,12 @@ class ModeratorEmergencyController extends Controller
         $emergencySignature = $this->signature($all);
         $contacts = EmergencyResource::published()->get();
 
-        return view('moderator.emergency', compact('openIncidents', 'stats', 'priorityDistribution', 'contacts', 'emergencySignature', 'workflow'));
+        $data = compact('openIncidents', 'stats', 'priorityDistribution', 'contacts', 'emergencySignature', 'workflow');
+        if ($request->expectsJson()) {
+            return response()->json(['signature' => $emergencySignature, 'html' => view('moderator.partials.emergency-content', $data)->render()])->header('Cache-Control', 'private, no-store');
+        }
+
+        return response()->view('moderator.emergency', $data)->header('Cache-Control', 'private, no-store');
     }
 
     public function escalate(int $id): RedirectResponse
@@ -54,7 +60,7 @@ class ModeratorEmergencyController extends Controller
         $service = app(ModeratorEmergencyCases::class);
         $active = $service->active()->get();
 
-        return response()->json(['open' => $active->count(), 'active_incident_ids' => $active->pluck('id'), 'signature' => $this->signature($service->query()->get())]);
+        return response()->json(['open' => $active->count(), 'active_incident_ids' => $active->pluck('id'), 'signature' => $this->signature($service->query()->get())])->header('Cache-Control', 'private, no-store');
     }
 
     private function metrics($all, $active): array

@@ -33,7 +33,7 @@ class EmergencyReviewReminders
                     }
                     $recipients = User::where('is_active', true)->whereIn('role', ['adviser', 'moderator'])->get();
                     foreach ($recipients as $user) {
-                        Notification::create(['user_account_id' => $user->id, 'title' => 'Emergency acknowledgment pending',
+                        Notification::create(['user_account_id' => $user->id, 'emergency_alert_id' => $alert->id, 'title' => 'Emergency acknowledgment pending',
                             'message' => 'An emergency review remains unacknowledged. Open the emergency case to coordinate support.',
                             'notification_type' => 'emergency', 'link' => $user->role === 'adviser' ? route('adviser.emergencies.show', $alert->id, false) : '/moderator/emergency']);
                     }

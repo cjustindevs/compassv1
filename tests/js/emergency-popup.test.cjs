@@ -13,24 +13,20 @@ function popup() {
     }
     const nodes = Object.fromEntries(['#staffEmergencyTitle', 'p', '[data-open]', '[data-dismiss]', '[data-error]'].map(key => [key, new Node()]));
     const dialog = new Node(), intervals = [], requests = [], events = {}, assigned = [];
-    const notice = { reference: 'encrypted-reference', title: 'Urgent emergency referral assigned', message: 'An Adviser raised an emergency referral to you.', url: '/professional/referral/8' };
+    const notice = { id: 8, reference: 'encrypted-reference', title: 'Urgent emergency referral assigned', message: 'An Adviser raised an emergency referral to you.', url: '/professional/referral/8' };
     let otherDialog = false, dismissOk = true;
-    let script = fs.readFileSync('resources/views/partials/emergency-notice.blade.php', 'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
-    script = script.replace("@json(route('emergency-notice.next'))", JSON.stringify('/emergency-notice'))
-        .replace("@json(route('emergency-notice.dismiss'))", JSON.stringify('/emergency-notice/dismiss'))
-        .replace('@json(csrf_token())', JSON.stringify('test-token'))
-        .replace("@json(auth()->user()->role === 'professional' ? 'Review assigned referral' : 'Open emergency queue')", JSON.stringify('Review assigned referral'));
-    assert.equal(script.includes('@json'), false);
-    const document = { hidden: false, getElementById: () => dialog, querySelector: () => otherDialog ? {} : null,
+    const script = fs.readFileSync('public/js/staff-emergency-notice.js', 'utf8');
+    dialog.id = 'staffEmergencyNotice';
+    const document = { hidden: false, getElementById: id => id === 'staffEmergencyNotice' ? dialog : {content: JSON.stringify({next:'/emergency-notice',dismiss:'/emergency-notice/dismiss',csrf:'test-token',openLabel:'Review assigned referral'})},
+        querySelectorAll: () => [...(dialog.open ? [dialog] : []), ...(otherDialog ? [{}] : [])],
         addEventListener: (name, fn) => { events[name] = fn; } };
     const navigator = { onLine: true };
-    vm.runInNewContext(script, { document, navigator,
+    vm.runInNewContext(script, { document, navigator, encodeURIComponent,
         window: { addEventListener: (name, fn) => { events[name] = fn; } },
         location: { assign: url => assigned.push(url) },
         setInterval: (fn, ms) => intervals.push({ fn, ms }),
         fetch: async (url, options) => { requests.push({ url, options }); return { ok: options.method === 'POST' ? dismissOk : true, json: async () => ({ notice }) }; },
     });
-    events.DOMContentLoaded();
     return { nodes, dialog, intervals, requests, assigned, events, document, navigator,
         block: value => { otherDialog = value; }, dismissOk: value => { dismissOk = value; },
         flush: () => new Promise(resolve => setImmediate(resolve)), poll: () => intervals[0].fn(),
@@ -47,7 +43,7 @@ test('Professional emergency popup shows the correct message and opens its assig
     await r.nodes['[data-open]'].onclick();
     assert.equal(r.dialog.open, false);
     assert.deepEqual(r.assigned, ['/professional/referral/8']);
-    assert.deepEqual(JSON.parse(r.requests[1].options.body), { reference: 'encrypted-reference' });
+    assert.deepEqual(JSON.parse(r.requests.at(-1).options.body), { reference: 'encrypted-reference' });
 });
 
 test('a popup dismissal failure preserves the dialog and does not navigate', async () => {

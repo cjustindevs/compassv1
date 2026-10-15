@@ -46,3 +46,23 @@ test('staff emergency feeds poll every two seconds without needing a WebSocket c
     assert.equal(room.timings[0],2000);
     const regular=notices();await regular.flush();assert.equal(regular.timings[0],5000);
 });
+
+test('resolved and unverified emergency notices remain in history without producing urgent toasts',async()=>{
+    const room=notices();await room.flush();
+    room.setData({count:2,cursor:14,workflow:{active_emergency_notice_ids:[]},recent:[{id:14,title:'Old emergency',message:'Historical update',link:'/moderator/emergency',type:'emergency',urgent:false}],
+        fresh:[{id:13,title:'Resolved emergency',type:'emergency',urgent:false},{id:14,title:'Ambiguous legacy notice',type:'emergency',urgent:false}]});
+    await room.poll();await room.flush();
+    assert.equal(room.body.children[1].children.filter(node=>node.isEmergency).length,0);
+    assert.equal(room.body.children[0].children[1].children[1].children[0].textContent,'Old emergency');
+    assert.equal(room.storage.get('compass-notices:5'),'14');
+});
+
+test('an already-visible emergency toast is removed on resolution while another active case stays visible',async()=>{
+    const room=notices();await room.flush();
+    const emergency=id=>({id,title:'Emergency '+id,message:'Open case',link:'/moderator/emergency',type:'emergency',urgent:true});
+    room.setData({count:2,cursor:14,workflow:{active_emergency_notice_ids:[13,14]},recent:[],fresh:[emergency(13),emergency(14)]});
+    await room.poll();await room.flush();assert.equal(room.body.children[1].children.filter(node=>node.isEmergency).length,2);
+    room.setData({count:2,cursor:14,workflow:{active_emergency_notice_ids:[14]},recent:[],fresh:[]});
+    await room.poll();await room.flush();
+    assert.deepEqual(room.body.children[1].children.filter(node=>node.isEmergency).map(node=>node.noticeId),[14]);
+});

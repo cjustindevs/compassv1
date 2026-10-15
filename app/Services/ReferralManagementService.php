@@ -433,7 +433,7 @@ class ReferralManagementService
             ])->save();
 
             $urgent = $this->linkEmergencyHandoff($referral);
-            $this->notifyUser($professional->user_account_id, $urgent ? 'Urgent emergency referral assigned' : 'New referral assigned', 'A referral is pending your review.', '/professional/referral/'.$referral->id, $urgent ? 'emergency' : 'referral');
+            $this->notifyUser($professional->user_account_id, $urgent ? 'Urgent emergency referral assigned' : 'New referral assigned', 'A referral is pending your review.', '/professional/referral/'.$referral->id, $urgent ? 'emergency' : 'referral', $urgent ? EmergencyAlert::where('referral_id', $referral->id)->whereNotIn('status', ['resolved', 'closed'])->latest('id')->value('id') : null);
 
             SupportAudit::record('referral_forwarded', $referral, ['professional_id' => $professional->id]);
 
@@ -457,7 +457,7 @@ class ReferralManagementService
             $referral->update(['professional_id' => $professionalId, 'status' => Referral::STATUS_PENDING_PROFESSIONAL, 'professional_notified_at' => now()]);
             SupportAudit::record('referral_professional_assigned', $referral, ['previous_professional_id' => $previous, 'professional_id' => $professionalId, 'reason' => $reason]);
             $urgent = $this->linkEmergencyHandoff($referral);
-            $this->notifyUser($professional->user_account_id, $urgent ? 'Urgent emergency referral assigned' : 'Referral assigned', 'A referral is pending your review.', '/professional/referral/'.$referral->id, $urgent ? 'emergency' : 'referral');
+            $this->notifyUser($professional->user_account_id, $urgent ? 'Urgent emergency referral assigned' : 'Referral assigned', 'A referral is pending your review.', '/professional/referral/'.$referral->id, $urgent ? 'emergency' : 'referral', $urgent ? EmergencyAlert::where('referral_id', $referral->id)->whereNotIn('status', ['resolved', 'closed'])->latest('id')->value('id') : null);
             $this->notifySeeker($referral, 'A professional was assigned to your referral', 'Open Referral decisions to see your assigned professional. An appointment will appear there once the professional accepts and schedules it.');
             $this->notifyHelper(
                 $referral,
@@ -758,13 +758,14 @@ class ReferralManagementService
             'An authorized referral needs professional assignment.', '/adviser/referral/'.$referral->id, 'referral');
     }
 
-    private function notifyUser(?int $userId, string $title, string $message, string $link, string $type): void
+    private function notifyUser(?int $userId, string $title, string $message, string $link, string $type, ?int $emergencyAlertId = null): void
     {
         if (! $userId) {
             return;
         }
 
         Notification::create([
+            'emergency_alert_id' => $emergencyAlertId,
             'user_account_id' => $userId,
             'title' => $title,
             'message' => $message,

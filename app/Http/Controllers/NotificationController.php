@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\EmergencyAlert;
 use App\Models\Notification;
+use App\Services\EmergencyNoticeState;
 use App\Services\ModeratorEmergencyCases;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -119,8 +120,11 @@ class NotificationController extends Controller
     {
         $data = $request->validate(['after' => 'nullable|integer|min:0']);
         $owned = Notification::where('user_account_id', $request->user()->id);
+        $state = new EmergencyNoticeState;
+        $staff = in_array($request->user()->role, ['moderator', 'adviser', 'professional'], true);
         $present = fn ($notice) => ['id' => $notice->id, 'title' => $notice->title, 'message' => $notice->message,
-            'type' => $notice->notification_type, 'link' => $notice->link, 'read' => $notice->is_read];
+            'type' => $notice->notification_type, 'link' => $notice->link, 'read' => $notice->is_read,
+            'urgent' => $staff && $notice->notification_type === 'emergency' ? $state->key($notice, $request->user()) !== null : null];
         $cursor = (int) (clone $owned)->max('id');
         $fresh = (clone $owned)->unread()->when(isset($data['after']), fn ($q) => $q->where('id', '>', $data['after']),
             fn ($q) => $q->where('created_at', '>=', now()->subMinutes(5)))->orderBy('id')->limit(30)->get();
@@ -135,6 +139,11 @@ class NotificationController extends Controller
 
         if ($request->user()->role === 'moderator') {
             $workflow['emergency_count'] = app(ModeratorEmergencyCases::class)->active()->count();
+        }
+
+        if ($staff) {
+            $workflow['active_emergency_notice_ids'] = (clone $owned)->where('notification_type', 'emergency')->get()
+                ->filter(fn ($notice) => $state->key($notice, $request->user()) !== null)->pluck('id')->values();
         }
 
         return response()->json(['count' => (clone $owned)->unread()->count(), 'cursor' => $cursor, 'workflow' => $workflow,

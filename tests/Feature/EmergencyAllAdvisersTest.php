@@ -135,6 +135,6 @@ class EmergencyAllAdvisersTest extends TestCase
         Event::assertNotDispatched(NotificationsChanged::class);
         DB::transaction(fn () => Notification::create(['user_account_id' => $user->id, 'title' => 'Other update', 'message' => 'Routine', 'notification_type' => 'system']));
         Event::assertDispatched(NotificationsChanged::class, fn ($event) => $event->userId === $user->id);
-        $this->actingAs($user)->get(route('adviser.emergencies'))->assertOk()->assertSee('),2000)', false);
+        $this->actingAs($user)->get(route('adviser.emergencies'))->assertOk()->assertSee('js/staff-emergency-notice.js', false);
     }
 }

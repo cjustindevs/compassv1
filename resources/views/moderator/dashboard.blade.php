@@ -200,7 +200,7 @@
         <!-- High Risk Banner -->
 
 
-        <section id="dashboard-analytics" aria-label="Emergency dashboard summaries"><x-dashboard-overview :overview="$overview" :show-recent="false" :smooth-lines="true" /></section>
+        <section id="dashboard-analytics" aria-label="Emergency dashboard summaries">@include('moderator.partials.dashboard-analytics')</section>
 
         <div class="flex flex-wrap gap-6 px-1 py-4 mb-5 border-b border-gray-200">
             <a href="{{ route('moderator.queue') }}">Waiting requests <strong id="statQueue">{{ $stats['queue_waiting'] }}</strong></a>
@@ -253,7 +253,7 @@
                         </div>
                         <div class="flex-1">
                             <p class="font-semibold text-gray-800 text-sm">Emergency Alerts</p>
-                            <p class="text-xs text-gray-500">{{ $stats['emergency_count'] }} open cases require review</p>
+                            <p class="text-xs text-gray-500"><span data-active-emergency-count>{{ $stats['emergency_count'] }}</span> open cases require review</p>
                         </div>
                         <x-ui-icon name="chevron-right" class="text-gray-300" />
                     </a>
@@ -285,41 +285,8 @@
 
     <!-- Bottom Navigation -->
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const overviewSignature = @json($overviewSignature);
-
-            setInterval(function () {
-                fetch('/moderator/dashboard/stats', {
-                    headers: { 'Accept': 'application/json' },
-                })
-                    .then((response) => response.json())
-                    .then((data) => {
-                        if (data.overview_signature && data.overview_signature !== overviewSignature) { window.location.reload(); return; }
-                        const sessions = document.getElementById('statSessions');
-                        const queue = document.getElementById('statQueue');
-                        const emergency = document.getElementById('statEmergency');
-                        const helpers = document.getElementById('statHelpers');
-
-                        if (sessions) sessions.textContent = data.active_sessions;
-                        if (queue) queue.textContent = data.queue_waiting;
-                        if (emergency && Number(emergency.textContent) !== data.emergency_open) { window.location.reload(); return; }
-                        if (helpers) helpers.textContent = data.helpers_available;
-
-                        const qb = document.getElementById('queueBadge');
-                        if (qb) { qb.textContent = data.queue_waiting; qb.style.display = data.queue_waiting > 0 ? 'inline-block' : 'none'; }
-                        const sb = document.getElementById('sessionBadge');
-                        if (sb) { sb.textContent = data.active_sessions; sb.style.display = data.active_sessions > 0 ? 'inline-block' : 'none'; }
-                        const eb = document.getElementById('emergencyBadge');
-                        if (eb) { eb.textContent = data.emergency_open; eb.style.display = data.emergency_open > 0 ? 'inline-block' : 'none'; }
-                        document.getElementById('liveCount') && (document.getElementById('liveCount').textContent = data.active_sessions);
-                        document.getElementById('queueCount') && (document.getElementById('queueCount').textContent = data.queue_waiting);
-                        document.getElementById('emergencyCount') && (document.getElementById('emergencyCount').textContent = data.emergency_open);
-                    })
-                    .catch(() => {});
-            }, 30000);
-        });
-    </script>
+    <meta id="moderatorEmergencyConfig" content="{{ json_encode(['kind' => 'dashboard', 'stats' => route('moderator.dashboard.stats'), 'signature' => $overviewSignature]) }}">
+    <script src="{{ asset('js/moderator-emergency.js') }}?v={{ filemtime(public_path('js/moderator-emergency.js')) }}" defer></script>
 
     @include('layouts.partials.pwa-banner')
 

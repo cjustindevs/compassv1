@@ -37,7 +37,7 @@ class EmergencyStaffNotifications
                 $exists = Notification::withoutGlobalScopes()->where('user_account_id', $user->id)
                     ->where('notification_type', 'emergency')->where('link', $link)->where('title', $title)->where('message', $message)->exists();
                 if ($freshChatReport || ! $exists) {
-                    Notification::create(['user_account_id' => $user->id, 'title' => $title, 'message' => $message,
+                    Notification::create(['user_account_id' => $user->id, 'emergency_alert_id' => $alert->id, 'title' => $title, 'message' => $message,
                         'notification_type' => 'emergency', 'status' => 'unread', 'type_icon' => 'fa-life-ring', 'link' => $link]);
                 }
             }
