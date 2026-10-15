@@ -41,6 +41,8 @@ class AdviserReferralController extends Controller
     {
         $adviserId = app(AdviserScope::class)->actor()->id;
 
+        $completionPending = Referral::where('adviser_id', $adviserId)->whereIn('status', Referral::ACTIVE_STATUSES)->where('help_seeker_consent', true)->whereHas('completionReviews', fn ($q) => $q->where('review_status', 'pending'))->latest('id')->get();
+
         // Get pending referrals (awaiting adviser review)
         $pendingReferrals = Referral::with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'helper.user:id,id,name'])
             ->whereIn('status', [Referral::STATUS_PENDING_ADVISER, Referral::STATUS_CONSENT_REQUESTED])
@@ -79,7 +81,8 @@ class AdviserReferralController extends Controller
             'totalPending',
             'totalApproved',
             'emergencyCount',
-            'professionals'
+            'professionals',
+            'completionPending'
         ));
     }
 

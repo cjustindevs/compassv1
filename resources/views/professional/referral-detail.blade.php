@@ -204,9 +204,10 @@
         }
     </style>
     @vite(['resources/css/app.css'])
+    <link rel="stylesheet" href="{{ asset('css/professional-referral.css') }}?v={{ filemtime(public_path('css/professional-referral.css')) }}">
     @include('partials.ui-assets')
 </head>
-<body class="compass-compact">
+<body class="compass-compact professional-referral-page">
 
     @include('layouts.partials.professional-sidebar')
 
@@ -215,9 +216,6 @@
     <main class="main-content">
         @php($linkedEmergency=\App\Models\EmergencyAlert::where('referral_id',$referral->id)->latest('id')->first())
         @if($linkedEmergency)<section class="card" id="emergency-context" style="border-left:4px solid #d6293c;margin-bottom:16px"><h2 style="font-weight:700">Linked emergency case #{{ $linkedEmergency->id }}</h2><p>{{ ucfirst($linkedEmergency->status) }} · Reported {{ $linkedEmergency->triggered_at?->timezone('Asia/Manila')->format('M d, Y g:i A') }} PHT.</p><p>Acceptance records your referral handoff. Emergency resolution remains with the responsible Adviser.</p></section>@endif
-        @if ($referral->identity_disclosed && $referral->help_seeker_consent && in_array($referral->status, \App\Models\Referral::ACTIVE_STATUSES, true))
-            <a href="{{ route('identity.show', $referral) }}" class="inline-block bg-green-700 text-white p-3 rounded mb-4">View released identity</a>
-        @endif
         @if ($referral->session?->risk_level === 'emergency' && in_array(auth()->id(), config('identity_vault.emergency_responder_ids'), true))
             <form method="POST" action="{{ route('identity.emergency', $referral->session) }}" class="mb-4">
                 @csrf
@@ -239,7 +237,7 @@
                         <span class="status-badge {{ $referral->status }} ml-1">{{ ucfirst(str_replace('_', ' ', $referral->status)) }}</span>
                     </h1>
                     <p class="text-sm text-gray-500 hidden sm:block">
-                        Submitted {{ $referral->created_at->format('M d, Y g:i A') }}
+                        Submitted {{ $referral->created_at->timezone('Asia/Manila')->format('M d, Y g:i A') }}
                     </p>
                 </div>
             </div>
@@ -249,10 +247,14 @@
         </div>
 
         <!-- Action Bar -->
-        <div class="flex gap-3 mb-6 flex-wrap">
+        <div class="professional-actions mb-6">
+        @if ($referral->identity_disclosed && $referral->help_seeker_consent && in_array($referral->status, \App\Models\Referral::ACTIVE_STATUSES, true))
+            <a href="{{ route('identity.show', $referral) }}" class="btn-outline identity-link">View released identity</a>
+        @endif
+
             @if($referral->status === \App\Models\Referral::STATUS_PENDING_PROFESSIONAL)
                 @include('partials.referral-ui-styles')
-                <form class="referral-ui" id="acceptSchedule" method="POST" action="{{ route('professional.referral.accept', $referral->id) }}" style="width:100%;max-width:640px;padding:18px;border:1px solid #dce8df;border-radius:14px">
+                <form class="referral-ui" id="acceptSchedule" method="POST" action="{{ route('professional.referral.accept', $referral->id) }}" style="padding:18px;border:1px solid #dce8df;border-radius:14px">
                     <h3 class="font-semibold mb-3">Schedule the first appointment</h3>
                     <p class="text-sm mb-3">Required before acceptance. Times are Philippine Time (Asia/Manila).</p>
                     @foreach(['starts_at'=>'Start','ends_at'=>'End'] as $field=>$label)
@@ -271,7 +273,7 @@
                 </button>
             @endif
 
-            @if($referral->status === \App\Models\Referral::STATUS_ACCEPTED)
+            @if($referral->status === \App\Models\Referral::STATUS_ACCEPTED && !$referral->hasPendingCompletion())
                 <form method="POST" action="{{ route('professional.referral.start', $referral->id) }}">
                     @csrf
                     <button type="submit" class="btn-primary">
@@ -287,6 +289,7 @@
             @endif
         </div>
 
+        @include('partials.professional-completion')
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             @include('partials.referral-recommendation')
             <!-- Referral Information -->

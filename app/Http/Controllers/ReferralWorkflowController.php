@@ -6,8 +6,10 @@ use App\Models\Adviser;
 use App\Models\PsychologyProfessional;
 use App\Models\Referral;
 use App\Models\Session;
+use App\Services\AdviserScope;
 use App\Services\ReferralManagementService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class ReferralWorkflowController extends Controller
@@ -39,27 +41,29 @@ class ReferralWorkflowController extends Controller
             'consent_obtained' => ['prohibited'],
         ]);
 
-        $adviser = app(\App\Services\AdviserScope::class)->actor();
+        $adviser = app(AdviserScope::class)->actor();
 
         $referral = $this->referrals->reviewReferral($referral, $adviser, $validated);
 
         return response()->json(['success' => true, 'status' => $referral->status]);
     }
 
-    public function consent(Request $request, Referral $referral): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function consent(Request $request, Referral $referral): JsonResponse|RedirectResponse
     {
-        abort_unless($request->user()?->role==='seeker' && $request->user()?->is_active && $request->user()?->helpSeeker?->id === $referral->session?->seeker_id, 403);
+        abort_unless($request->user()?->role === 'seeker' && $request->user()?->is_active && $request->user()?->helpSeeker?->id === $referral->session?->seeker_id, 403);
         abort_unless($referral->status === Referral::STATUS_PENDING_CONSENT, 409);
         $validated = $request->validate(['consent_given' => ['required', 'boolean']]);
 
         $referral = $this->referrals->processConsent($referral, (bool) $validated['consent_given']);
 
-        if (!$request->expectsJson()) {
+        if (! $request->expectsJson()) {
             if ($referral->help_seeker_consent) {
-                return redirect()->route('seeker.referrals')->with('identity_referral_id',$referral->id)->with('success','Referral consent recorded. Review identity disclosure and submit your details to continue.');
+                return redirect()->route('seeker.referrals')->with('identity_referral_id', $referral->id)->with('success', 'Referral consent recorded. Review identity disclosure and submit your details to continue.');
             }
-            return redirect('/selfhelp')->with('success','Your decision is respected. You can continue using the Self-Help Tools whenever you need support.');
+
+            return redirect('/selfhelp')->with('success', 'Your decision is respected. You can continue using the Self-Help Tools whenever you need support.');
         }
+
         return response()->json(['success' => true, 'status' => $referral->status]);
     }
 
@@ -75,7 +79,7 @@ class ReferralWorkflowController extends Controller
 
         $referral = $this->referrals->decideConsentRequest($referral, (bool) $validated['accepted']);
 
-        return response()->json(['success' => true, 'status' => $referral->status, 'referral_id' => $referral->id, 'next_url'=>route('seeker.referrals',['identity'=>$validated['accepted'] ? $referral->id : null])]);
+        return response()->json(['success' => true, 'status' => $referral->status, 'referral_id' => $referral->id, 'next_url' => route('seeker.referrals', ['identity' => $validated['accepted'] ? $referral->id : null])]);
     }
 
     public function accept(Request $request, Referral $referral): JsonResponse
@@ -88,7 +92,7 @@ class ReferralWorkflowController extends Controller
         abort_unless($professional, 403, 'Professional profile required.');
         abort_unless($request->user()?->psychologyProfessional?->id === $professional->id && $referral->professional_id === $professional->id, 403);
 
-        $referral = $this->referrals->acceptReferral($referral, $professional, $request->only(['starts_at','ends_at','meeting_format','meeting_details']));
+        $referral = $this->referrals->acceptReferral($referral, $professional, $request->only(['starts_at', 'ends_at', 'meeting_format', 'meeting_details']));
 
         return response()->json(['success' => true, 'status' => $referral->status]);
     }
@@ -99,7 +103,7 @@ class ReferralWorkflowController extends Controller
         $validated = $request->validate([
             'status' => ['required', 'in:accepted,in_progress,completed,closed'],
             'outcome' => ['nullable', 'string', 'max:2000'],
-            'follow_up_required' => ['nullable', 'boolean'],
+            'follow_up_required' => ['required_if:status,completed,closed', 'boolean'],
             'follow_up_notes' => ['nullable', 'string', 'max:2000'],
         ]);
 

@@ -22,7 +22,7 @@
     @empty
         <p class="text-sm text-gray-500">No appointment has been scheduled.</p>
     @endforelse
-    @if(auth()->user()->role === 'professional' && in_array($referral->status,['accepted','in_progress']))
+    @if(auth()->user()->role === 'professional' && in_array($referral->status,['accepted','in_progress']) && !$referral->hasPendingCompletion())
         <form method="POST" action="{{ route('professional.referral.appointment',$referral) }}" class="ru-grid">
             @csrf
             <label class="text-sm">Meeting format<select name="meeting_format" required class="block w-full border rounded-lg p-2"><option value="in_person">In person</option><option value="video">Video call</option><option value="phone">Phone call</option></select></label>

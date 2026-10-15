@@ -144,6 +144,7 @@
 
 
         @php($identityReady = app(\App\Services\IdentityVaultService::class)->hasCurrentSubmission($referral))
+        @include('adviser.partials.completion-review')
         @include('adviser.partials.referral-next-step')
         <section class="card mb-4" aria-label="Referral coordination status">
             <h2 class="font-semibold mb-3">Professional coordination</h2>

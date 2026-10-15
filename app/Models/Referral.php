@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\IdentityVaultService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Crypt;
 
 class Referral extends Model
 {
@@ -33,7 +34,7 @@ class Referral extends Model
 
     public function getCaseReferenceAttribute(): string
     {
-        return bin2hex(\Illuminate\Support\Facades\Crypt::encryptString((string)$this->id));
+        return bin2hex(Crypt::encryptString((string) $this->id));
     }
 
     protected $table = 'referrals';
@@ -153,6 +154,18 @@ class Referral extends Model
     const PRIORITY_EMERGENCY = 'emergency';
 
     // Relationships
+    public function hasPendingCompletion(): bool
+    {
+        $report = $this->completionReviews()->latest('id')->first();
+
+        return $report && $report->review_status === 'pending' && $report->professional_id === $this->professional_id;
+    }
+
+    public function completionReviews()
+    {
+        return $this->hasMany(ReferralCompletionReview::class);
+    }
+
     public function appointments()
     {
         return $this->hasMany(ReferralAppointment::class)->latest('id');

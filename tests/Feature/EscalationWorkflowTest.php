@@ -3,28 +3,38 @@
 namespace Tests\Feature;
 
 use App\Models\Adviser;
-use App\Models\EmergencyAlert;
-use App\Models\HelpSeeker;
 use App\Models\Helper;
+use App\Models\HelperSchedule;
+use App\Models\HelpSeeker;
 use App\Models\IncidentReport;
 use App\Models\Moderator;
 use App\Models\Notification;
 use App\Models\PsychologyProfessional;
+use App\Models\ReadinessCheck;
 use App\Models\Referral;
 use App\Models\Session;
 use App\Models\User;
+use App\Services\AdviserEmergencyService;
+use App\Services\ConsentService;
 use App\Services\EmergencyEscalationService;
+use App\Services\EmergencyReviewReminders;
+use App\Services\HelperMatchingService;
+use App\Services\HelperWorkflowMaintenance;
+use App\Services\IdentityVaultService;
 use App\Services\IncidentReportService;
 use App\Services\ReferralManagementService;
 use App\Services\RiskClassificationService;
+use App\Services\ScreeningInstrument;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Tests\Concerns\SeekerWorkflowFixtures;
 use Tests\TestCase;
 
 class EscalationWorkflowTest extends TestCase
 {
     use RefreshDatabase;
-    use \Tests\Concerns\SeekerWorkflowFixtures;
+    use SeekerWorkflowFixtures;
 
     public function test_unassigned_emergency_stays_pending_and_duplicate_submission_is_idempotent(): void
     {
@@ -49,7 +59,7 @@ class EscalationWorkflowTest extends TestCase
     {
         Event::fake();
         [$seeker, $session, $helper] = $this->sessionWithAssignedHelper();
-        $session->update(['helper_id'=>null, 'created_date'=>now()->subDays(2)]);
+        $session->update(['helper_id' => null, 'created_date' => now()->subDays(2)]);
         $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $seeker);
         $session->refresh();
         $this->assertTrue($session->permitsEmergencySupport());
@@ -58,34 +68,34 @@ class EscalationWorkflowTest extends TestCase
         $this->assertSame('emergency', $session->queue->priority_level);
         Session::whereKey($session->id)->markAbandoned();
         $this->assertSame('waiting', $session->fresh()->session_status);
-        $alert->update(['status'=>'resolved']);
+        $alert->update(['status' => 'resolved']);
         $this->assertFalse($session->permitsEmergencySupport());
     }
 
     public function test_emergency_can_receive_temporary_helper_without_clearing_review(): void
     {
         Event::fake();
-        config(['app.relax_duty_hours'=>false, 'app.enforce_duty_hours'=>false]);
+        config(['app.relax_duty_hours' => false, 'app.enforce_duty_hours' => false]);
         [$seeker, $session, $helper] = $this->sessionWithAssignedHelper();
         $this->verifiedHelperFixture($helper);
-        $duty = \App\Models\HelperSchedule::create(['helper_id'=>$helper->id, 'date'=>now('Asia/Manila')->toDateString(), 'is_active'=>true, 'created_by'=>$helper->user_account_id]);
-        $session->update(['helper_id'=>null]);
+        $duty = HelperSchedule::create(['helper_id' => $helper->id, 'date' => now('Asia/Manila')->toDateString(), 'is_active' => true, 'created_by' => $helper->user_account_id]);
+        $session->update(['helper_id' => null]);
         $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $seeker);
-        \App\Models\ReadinessCheck::create(['helper_id'=>$helper->id, 'helper_schedule_id'=>$duty->id, 'assessment_date'=>now(),
-            'valid_until'=>now()->addHour(), 'assessment_result'=>'ready', 'is_active'=>true]);
-        $this->mock(\App\Services\ConsentService::class, function ($mock) {
+        ReadinessCheck::create(['helper_id' => $helper->id, 'helper_schedule_id' => $duty->id, 'assessment_date' => now(),
+            'valid_until' => now()->addHour(), 'assessment_result' => 'ready', 'is_active' => true]);
+        $this->mock(ConsentService::class, function ($mock) {
             $mock->shouldReceive('valid')->andReturn(true);
         });
         $session->refresh();
-        $assigned = app(\App\Services\HelperMatchingService::class)->manualAssign($session->queue, $helper->id);
+        $assigned = app(HelperMatchingService::class)->manualAssign($session->queue, $helper->id);
         $this->assertInstanceOf(Session::class, $assigned, is_string($assigned) ? $assigned : 'Assignment failed');
         $this->assertTrue((bool) $assigned->requires_adviser_review);
         $this->assertSame('emergency', $assigned->risk_level);
         $this->assertNull($alert->fresh()->resolved_at);
-        app(\App\Services\HelperWorkflowMaintenance::class)->releaseRecommendation($assigned, 'declined');
+        app(HelperWorkflowMaintenance::class)->releaseRecommendation($assigned, 'declined');
         $assigned->refresh();
         $this->assertNull($assigned->helper_id);
-        $retry = app(\App\Services\HelperMatchingService::class)->manualAssign($assigned->queue->fresh(), $helper->id);
+        $retry = app(HelperMatchingService::class)->manualAssign($assigned->queue->fresh(), $helper->id);
         $this->assertIsString($retry);
         $this->assertStringContainsString('already declined', $retry);
         $this->assertNull($alert->fresh()->resolved_at);
@@ -95,22 +105,22 @@ class EscalationWorkflowTest extends TestCase
     {
         Event::fake();
         [$seeker, $session] = $this->sessionWithAssignedHelper();
-        $moderator = User::factory()->create(['role'=>'moderator','is_active'=>true]);
+        $moderator = User::factory()->create(['role' => 'moderator', 'is_active' => true]);
         $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $seeker);
-        $service = app(\App\Services\EmergencyReviewReminders::class);
+        $service = app(EmergencyReviewReminders::class);
         $this->travel(6)->minutes();
-        config(['emergency.reminder_minutes'=>0]);
+        config(['emergency.reminder_minutes' => 0]);
         $before = Notification::count();
         $service->run();
         $this->assertSame($before, Notification::count());
-        config(['emergency.reminder_minutes'=>5]);
+        config(['emergency.reminder_minutes' => 5]);
         $service->run();
-        $this->assertDatabaseHas('notifications',['user_account_id'=>$moderator->id,'title'=>'Emergency acknowledgment pending']);
+        $this->assertDatabaseHas('notifications', ['user_account_id' => $moderator->id, 'title' => 'Emergency acknowledgment pending']);
         $after = Notification::count();
         $this->assertGreaterThan($before, $after);
         $service->run();
         $this->assertSame($after, Notification::count());
-        $alert->forceFill(['acknowledged_at'=>now()])->save();
+        $alert->forceFill(['acknowledged_at' => now()])->save();
         $this->travel(6)->minutes();
         $service->run();
         $this->assertSame($after, Notification::count());
@@ -119,7 +129,7 @@ class EscalationWorkflowTest extends TestCase
     public function test_risk_classification_identifies_all_levels(): void
     {
         $service = app(RiskClassificationService::class);
-        $base = array_fill_keys(array_keys(\App\Services\ScreeningInstrument::QUESTIONS),'no');
+        $base = array_fill_keys(array_keys(ScreeningInstrument::QUESTIONS), 'no');
 
         $this->assertSame('low', $service->classifyRisk($base)['risk_level']);
         $this->assertSame('moderate', $service->classifyRisk(array_merge($base, ['difficulty_coping' => 'yes']))['risk_level']);
@@ -133,7 +143,7 @@ class EscalationWorkflowTest extends TestCase
 
         [$seeker, $session] = $this->sessionWithAssignedHelper();
         PsychologyProfessional::create($this->profileData('professional', 'pro@example.com'));
-        \Illuminate\Support\Facades\DB::table('identity_vault')->insert(['seeker_id' => $seeker->id, 'real_name' => 'Test Seeker']);
+        DB::table('identity_vault')->insert(['seeker_id' => $seeker->id, 'real_name' => 'Test Seeker']);
 
         $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $seeker, ['reason' => 'Immediate threat']);
 
@@ -168,13 +178,19 @@ class EscalationWorkflowTest extends TestCase
 
         $this->assertNull($referral->professional_id);
         // This service test supplies the vault gateway result; real encrypted storage is tested in IdentityVaultTest.
-        $this->mock(\App\Services\IdentityVaultService::class, function ($mock) { $mock->shouldReceive('hasCurrentSubmission')->once()->andReturn(true); });
+        $this->mock(IdentityVaultService::class, function ($mock) {
+            $mock->shouldReceive('hasCurrentSubmission')->once()->andReturn(true);
+        });
         $referral = $service->forwardToProfessional($referral);
         $this->actingAs($professional->user);
-        $referral = $service->acceptReferral($referral, $professional, ['starts_at'=>now('Asia/Manila')->addDay()->format('Y-m-d\TH:i'),'ends_at'=>now('Asia/Manila')->addDay()->addHour()->format('Y-m-d\TH:i'),'meeting_format'=>'video','meeting_details'=>'Open your secure appointment page.']);
+        $referral = $service->acceptReferral($referral, $professional, ['starts_at' => now('Asia/Manila')->addDay()->format('Y-m-d\TH:i'), 'ends_at' => now('Asia/Manila')->addDay()->addHour()->format('Y-m-d\TH:i'), 'meeting_format' => 'video', 'meeting_details' => 'Open your secure appointment page.']);
         $this->assertSame(Referral::STATUS_ACCEPTED, $referral->status);
 
-        $referral = $service->updateReferralOutcome($referral, ['status' => Referral::STATUS_COMPLETED, 'outcome' => 'Care transferred']);
+        $referral = $service->updateReferralOutcome($referral, ['status' => Referral::STATUS_COMPLETED, 'outcome' => 'Care transferred', 'follow_up_required' => false]);
+        $this->assertSame(Referral::STATUS_ACCEPTED, $referral->status);
+        $report = $referral->completionReviews()->sole();
+        $this->actingAs($adviser->user)->post(route('referrals.completion.review', $report), ['decision' => 'confirmed', 'review_notes' => 'Reviewed the documented outcome.', 'appointments_action' => 'cancelled', 'appointments_reason' => 'Test appointment no longer needed; outcome documented.'])->assertSessionHasNoErrors();
+        $referral->refresh();
         $this->assertSame(Referral::STATUS_COMPLETED, $referral->status);
         $this->assertNotNull($referral->completed_at);
     }
@@ -216,7 +232,7 @@ class EscalationWorkflowTest extends TestCase
         $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $seeker);
         $incident = IncidentReport::where('session_id', $session->id)->firstOrFail();
         $this->actingAs($adviser->user);
-        app(\App\Services\AdviserEmergencyService::class)->record($alert, 'resolved', 'Coordination completed.');
+        app(AdviserEmergencyService::class)->record($alert, 'resolved', 'Coordination completed.');
         $this->assertSame('resolved', $incident->fresh()->status);
         $this->assertNotNull($incident->fresh()->resolved_at);
         $this->assertSame($adviser->user->id, $incident->fresh()->resolved_by);
@@ -231,7 +247,7 @@ class EscalationWorkflowTest extends TestCase
         $alert = app(EmergencyEscalationService::class)->escalateEmergency($session, $seeker);
         $incident = IncidentReport::where('session_id', $session->id)->firstOrFail();
         // Reproduce a legacy resolution that did not update the incident.
-        \Illuminate\Support\Facades\DB::table('emergency_alerts')->where('id', $alert->id)->update(['status' => 'resolved', 'resolved_at' => now(), 'resolution_notes' => 'Legacy resolution.']);
+        DB::table('emergency_alerts')->where('id', $alert->id)->update(['status' => 'resolved', 'resolved_at' => now(), 'resolution_notes' => 'Legacy resolution.']);
         $migration = require database_path('migrations/2026_10_08_120000_reconcile_resolved_emergency_incidents.php');
         $migration->up();
         $this->assertSame('resolved', $incident->fresh()->status);

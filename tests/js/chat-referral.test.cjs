@@ -5,7 +5,7 @@ const vm = require('node:vm');
 
 function room(isSeeker = true) {
     class Node {
-        constructor() { this.handlers = {}; this.open = false; this.hidden = false; this.children = []; this.checked = false; this.opens = 0; }
+        constructor() { this.handlers = {}; this.open = false; this.hidden = false; this.children = []; this.checked = false; this.opens = 0; this.attributes = {}; }
         addEventListener(name, fn) { this.handlers[name] = fn; }
         append(...nodes) { this.children.push(...nodes); }
         prepend(node) { this.children.unshift(node); }
@@ -13,9 +13,11 @@ function room(isSeeker = true) {
         showModal() { this.open = true; this.opens++; }
         close() { const wasOpen = this.open; this.open = false; if (wasOpen) this.handlers.close?.(); }
         focus() { this.focused = true; }
+        setAttribute(name, value) { this.attributes[name] = value; }
+        removeAttribute(name) { delete this.attributes[name]; }
     }
     const ids = {};
-    for (const id of ['chatReferralConfig', 'referralConsentDialog', 'referralConsentCheck', 'referralAccept', 'referralDecline', 'referralDismiss', 'referralConsentTerms', 'referralConsentError', 'chatIdentityDialog', 'chatIdentityOpen', 'chatEmergencyBanner', 'chatEmergencyTitle', 'chatEmergencyStatus', 'chatReferralOpen', 'professionalSupportCard', 'chatSupportOpen', 'professionalSupportStatus', 'referralConsentText']) ids[id] = new Node();
+    for (const id of ['chatReferralConfig', 'referralConsentDialog', 'referralConsentCheck', 'referralAccept', 'referralDecline', 'referralDismiss', 'referralConsentTerms', 'referralConsentError', 'chatIdentityDialog', 'chatEmbeddedClose', 'chatIdentityOpen', 'chatEmergencyBanner', 'chatEmergencyTitle', 'chatEmergencyStatus', 'chatReferralOpen', 'professionalSupportCard', 'chatSupportOpen', 'professionalSupportStatus', 'referralConsentText']) ids[id] = new Node();
     ids.chatReferralConfig.content = JSON.stringify({ isSeeker, stateUrl: '/session/55/referral-prompt', csrf: 'test-token', sessionId: 55 });
     const frame = { src: '', contentWindow: {} }, intervals = [], requests = [], windowEvents = {}, documentEvents = {};
     let state = { referral: null, emergency: null }, postOk = true, otherDialog = false, defer = null;
@@ -136,4 +138,25 @@ test('a failed referral decision keeps consent open and does not show identity',
     assert.equal(r.ids.chatIdentityDialog.open, false);
     assert.match(r.ids.referralConsentError.textContent, /could not be saved/);
     assert.equal(r.ids.referralAccept.disabled, false);
+});
+
+
+test('embedded identity has its own close control; support details restore the outer close control', async () => {
+    const r = room(); await r.flush(); r.state(accepted()); await r.poll();
+    assert.equal(r.ids.chatEmbeddedClose.hidden, true);
+    assert.equal(r.ids.chatIdentityDialog.attributes['data-support'], undefined);
+    r.windowEvents.message({ origin: r.location.origin, source: r.frame.contentWindow, data: { type: 'identity-modal-closed' } });
+    assert.equal(r.ids.chatIdentityDialog.open, false);
+    await r.flush();
+    r.state({ ...accepted(), referral: { ...accepted().referral, support_url: '/seeker/referrals/8/support' } });
+    await r.poll();
+    r.ids.chatSupportOpen.handlers.click();
+    assert.equal(r.ids.chatIdentityDialog.open, true);
+    assert.equal(r.ids.chatEmbeddedClose.hidden, false);
+    assert.equal(r.ids.chatIdentityDialog.attributes['data-support'], '');
+    assert.equal(r.frame.src, '/seeker/referrals/8/support');
+    r.ids.chatIdentityDialog.close(); await r.flush();
+    r.ids.chatIdentityOpen.handlers.click(); await r.flush();
+    assert.equal(r.ids.chatEmbeddedClose.hidden, true);
+    assert.equal(r.ids.chatIdentityDialog.attributes['data-support'], undefined);
 });

@@ -10,7 +10,9 @@ use App\Models\PsychologyProfessional;
 use App\Models\Referral;
 use App\Models\Session;
 use App\Models\User;
+use App\Services\ConsentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
 use Tests\TestCase;
 
 class ProfessionalModuleTest extends TestCase
@@ -115,7 +117,7 @@ class ProfessionalModuleTest extends TestCase
             'adviser_id' => $adviser->id,
             'professional_id' => $this->professional->id,
             'priority_level' => Referral::PRIORITY_HIGH,
-            'help_seeker_consent' => true, 'approved_at'=>now()->subDays(2), 'consent_obtained_at'=>now()->subDay(),
+            'help_seeker_consent' => true, 'approved_at' => now()->subDays(2), 'consent_obtained_at' => now()->subDay(),
             'identity_disclosed' => false,
             'referral_reason' => 'Persistent anxiety affecting daily functioning.',
             'referral_date' => now()->subDay(),
@@ -129,7 +131,7 @@ class ProfessionalModuleTest extends TestCase
             'adviser_id' => $adviser->id,
             'professional_id' => $this->professional->id,
             'priority_level' => Referral::PRIORITY_LOW,
-            'help_seeker_consent' => true, 'approved_at'=>now()->subDays(2), 'consent_obtained_at'=>now()->subDay(),
+            'help_seeker_consent' => true, 'approved_at' => now()->subDays(2), 'consent_obtained_at' => now()->subDay(),
             'identity_disclosed' => true,
             'referral_reason' => 'Career counseling following academic stress.',
             'referral_date' => now()->subDays(10),
@@ -177,7 +179,7 @@ class ProfessionalModuleTest extends TestCase
             ->get(route('professional.referral.show', $this->pendingReferral->id));
 
         $response->assertOk();
-        $response->assertSee('Referral #' . $this->pendingReferral->id);
+        $response->assertSee('Referral #'.$this->pendingReferral->id);
         $response->assertSee('Schedule and accept');
     }
 
@@ -208,7 +210,7 @@ class ProfessionalModuleTest extends TestCase
         $referral = $this->pendingReferral;
         $seeker = $referral->session->seeker;
         $this->actingAs($seeker->user);
-        app(\App\Services\ConsentService::class)->decide($seeker->user, 'referral', 'accepted', $referral->session_id, $referral->id);
+        app(ConsentService::class)->decide($seeker->user, 'referral', 'accepted', $referral->session_id, $referral->id);
         $response = $this->actingAs($this->professionalUser)
             ->post(route('professional.referral.accept', $this->pendingReferral->id), [
                 'starts_at' => now('Asia/Manila')->addDay()->format('Y-m-d\TH:i'),
@@ -318,7 +320,7 @@ class ProfessionalModuleTest extends TestCase
 
         $response->assertRedirect();
         $reference = basename(parse_url($response->headers->get('Location'), PHP_URL_PATH));
-        $this->assertSame((string) $this->pendingReferral->id, \Illuminate\Support\Facades\Crypt::decryptString(hex2bin($reference)));
+        $this->assertSame((string) $this->pendingReferral->id, Crypt::decryptString(hex2bin($reference)));
 
         $this->assertDatabaseHas('professional_notes', [
             'referral_id' => $this->pendingReferral->id,
@@ -345,24 +347,17 @@ class ProfessionalModuleTest extends TestCase
         ]);
     }
 
-    public function test_update_case_status_to_completed_sets_closed_date(): void
+    public function test_completion_submission_waits_for_adviser_confirmation(): void
     {
         $this->pendingReferral->update(['status' => Referral::STATUS_IN_PROGRESS]);
-
-        $response = $this->actingAs($this->professionalUser)
-            ->post(route('professional.cases.status', $this->pendingReferral->id), [
-                'status' => Referral::STATUS_COMPLETED,
-            ]);
-
-        $response->assertRedirect();
-        $reference = basename(parse_url($response->headers->get('Location'), PHP_URL_PATH));
-        $this->assertSame((string) $this->pendingReferral->id, \Illuminate\Support\Facades\Crypt::decryptString(hex2bin($reference)));
-
-        $this->assertDatabaseHas('referrals', [
-            'id' => $this->pendingReferral->id,
-            'status' => Referral::STATUS_COMPLETED,
-        ]);
-
+        $this->actingAs($this->professionalUser)->post(route('professional.cases.status', $this->pendingReferral->id), [
+            'status' => Referral::STATUS_COMPLETED, 'outcome' => 'Professional work completed for this test case.', 'follow_up_required' => false,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame(Referral::STATUS_IN_PROGRESS, $this->pendingReferral->fresh()->status);
+        $this->assertNull($this->pendingReferral->fresh()->closed_date);
+        $review = $this->pendingReferral->completionReviews()->sole();
+        $this->actingAs($this->adviserUser)->post(route('referrals.completion.review', $review), ['decision' => 'confirmed', 'review_notes' => 'Reviewed the professional completion report.'])->assertSessionHasNoErrors();
+        $this->assertSame(Referral::STATUS_COMPLETED, $this->pendingReferral->fresh()->status);
         $this->assertNotNull($this->pendingReferral->fresh()->closed_date);
     }
 

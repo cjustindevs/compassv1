@@ -1,4 +1,6 @@
 @php
+    $embeddedIdentity = $embeddedIdentity ?? false;
+    $identityTag = $embeddedIdentity ? 'section' : 'dialog';
     $identityDialogId = 'identity-dialog-' . $referral->id;
     $identitySaved = isset($referral->session) && app(\App\Services\IdentityVaultService::class)->hasCurrentSubmission($referral) && app(\App\Services\ConsentService::class)->valid($referral->session->seeker, 'identity_disclosure', $referral->id);
     $requiredIdentityFields = ['real_name', 'phone_number'];
@@ -113,9 +115,15 @@
         #{{ $identityDialogId }} .rv-modal__body { max-height: 56dvh; }
         #{{ $identityDialogId }} .rv-modal__foot .rv-btn { flex: 1 1 auto; justify-content: center; }
     }
+    #{{ $identityDialogId }}[open], section#{{ $identityDialogId }} { display:flex;flex-direction:column;box-sizing:border-box; }
+    #{{ $identityDialogId }} .rv-modal__head,#{{ $identityDialogId }} .rv-modal__foot { flex-shrink:0; }
+    #{{ $identityDialogId }} form { display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;margin:0; }
+    #{{ $identityDialogId }} .rv-modal__body { flex:1;min-height:0;max-height:none;overflow-y:auto; }
+    #{{ $identityDialogId }} .rv-steps { flex-wrap:wrap; }
+    section#{{ $identityDialogId }} { position:static;inset:auto;margin:0;width:100%;height:100dvh;max-height:100dvh;border-radius:0;box-shadow:none; }
 </style>
 
-<dialog id="{{ $identityDialogId }}" aria-labelledby="identity-title-{{ $referral->id }}" aria-describedby="identity-sub-{{ $referral->id }}">
+<{{ $identityTag }} data-identity-container id="{{ $identityDialogId }}" aria-labelledby="identity-title-{{ $referral->id }}" aria-describedby="identity-sub-{{ $referral->id }}">
     <div class="rv-modal__head">
         <div>
             <p class="rv-modal__eyebrow">Referral #{{ $referral->id }}</p>
@@ -198,9 +206,9 @@
             </button>
         </div>
     </form>
-</dialog>
+</{{ $identityTag }}>
 
-@if((string)(session('identity_referral_id') ?? request('identity')) === (string)$referral->id)
+@if(!$embeddedIdentity && (string)(session('identity_referral_id') ?? request('identity')) === (string)$referral->id)
     <script>document.addEventListener('DOMContentLoaded',()=>document.getElementById('{{ $identityDialogId }}').showModal());</script>
 @endif
 
@@ -211,7 +219,7 @@
 
     document.addEventListener('click', event => {
         const opener = event.target.closest(CLOSE);
-        if (opener) { opener.closest('dialog')?.close(); return; }
+        if (opener) { const container = opener.closest('[data-identity-container]'); if (container?.tagName === 'DIALOG') container.close(); else document.dispatchEvent(new Event('compass-identity-close')); return; }
         const dialog = event.target.closest('dialog[id^="identity-dialog-"]');
         if (!dialog || event.target !== dialog) return;
         const box = dialog.getBoundingClientRect();

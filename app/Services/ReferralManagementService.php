@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Events\ReferralApproved;
-use App\Events\ReferralCompleted;
 use App\Events\ReferralConsentUpdated;
 use App\Events\ReferralCreated;
 use App\Models\Adviser;
@@ -536,6 +535,12 @@ class ReferralManagementService
 
     public function updateReferralOutcome(Referral $referral, array $data): Referral
     {
+        if (in_array($data['status'] ?? null, [Referral::STATUS_COMPLETED, Referral::STATUS_CLOSED], true)) {
+            app(ReferralCompletionService::class)->submit($referral, $data);
+
+            return $referral->refresh();
+        }
+
         return DB::transaction(fn () => $this->recordOutcome(Referral::lockForUpdate()->findOrFail($referral->id), $data), 3);
     }
 
@@ -544,9 +549,10 @@ class ReferralManagementService
         abort_unless(Auth::user()?->role === 'professional' && Auth::user()?->is_active && Auth::user()?->psychologyProfessional?->id === $referral->professional_id && $referral->professional_id, 403);
         $referral->refresh();
         abort_unless($referral->approved_at && $referral->help_seeker_consent && in_array($referral->status, [Referral::STATUS_ACCEPTED, Referral::STATUS_IN_PROGRESS]), 409);
+        abort_if($referral->hasPendingCompletion(), 409, 'Awaiting Adviser completion review.');
         $status = $data['status'] ?? $referral->status;
         abort_if($referral->status === Referral::STATUS_IN_PROGRESS && $status === Referral::STATUS_ACCEPTED, 409, 'A case cannot return to the accepted state.');
-        abort_unless(in_array($status, [Referral::STATUS_ACCEPTED, Referral::STATUS_IN_PROGRESS, Referral::STATUS_COMPLETED, Referral::STATUS_CLOSED]), 422);
+        abort_unless(in_array($status, [Referral::STATUS_ACCEPTED, Referral::STATUS_IN_PROGRESS]), 422);
 
         $referral->forceFill([
             'status' => $status,
@@ -556,23 +562,6 @@ class ReferralManagementService
             'completed_at' => $status === Referral::STATUS_COMPLETED ? now() : $referral->completed_at,
             'closed_date' => in_array($status, [Referral::STATUS_CLOSED, Referral::STATUS_COMPLETED], true) ? now() : $referral->closed_date,
         ])->save();
-
-        if ($status === Referral::STATUS_COMPLETED) {
-            event(new ReferralCompleted($referral));
-        }
-
-        if (in_array($status, [Referral::STATUS_COMPLETED, Referral::STATUS_CLOSED], true)) {
-            $this->notifySeeker(
-                $referral,
-                'Your referral support has concluded',
-                'The professional support connected to your referral has ended. Your adviser and self-help tools remain available whenever you need them.'
-            );
-            $this->notifyHelper(
-                $referral,
-                'Referral concluded',
-                'Professional support for referral #'.$referral->id.' has concluded.'
-            );
-        }
 
         return $referral->refresh();
     }

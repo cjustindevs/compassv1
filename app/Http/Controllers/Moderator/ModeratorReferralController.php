@@ -30,7 +30,12 @@ class ModeratorReferralController extends Controller
             ->orderBy('user_account_id')
             ->get();
 
-        return view('moderator.unassigned-referrals', compact('referrals', 'advisers'));
+        $completionAssignments = Referral::whereIn('status', Referral::ACTIVE_STATUSES)->where('help_seeker_consent', true)
+            ->whereHas('completionReviews', fn ($q) => $q->where('review_status', 'pending'))
+            ->whereDoesntHave('adviser.user', fn ($q) => $q->where('is_active', true)->where('role', 'adviser'))
+            ->latest('id')->get(['id', 'adviser_id', 'status', 'updated_at']);
+
+        return view('moderator.unassigned-referrals', compact('referrals', 'advisers', 'completionAssignments'));
     }
 
     public function assign(Request $request, Referral $referral): RedirectResponse

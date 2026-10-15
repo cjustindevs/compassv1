@@ -154,6 +154,8 @@
                 </div>
             @endif
         </div>
+        <section class="card mt-4"><h2 class="font-semibold">Completion reports awaiting an active Adviser</h2><p class="text-sm">Assignment information only. Private reports remain with authorized clinical reviewers.</p>
+        @forelse($completionAssignments as $completionAssignment)<div class="py-3 border-b"><p>Referral #{{ $completionAssignment->id }} ? {{ ucwords(str_replace('_',' ',$completionAssignment->status)) }}</p><form method="POST" action="{{ route('referrals.completion.assign',$completionAssignment) }}">@csrf<label>Completion reviewer<select name="adviser_id" required><option value="">Choose active Adviser</option>@foreach($advisers as $adviser)<option value="{{ $adviser->id }}">{{ $adviser->full_name }}</option>@endforeach</select></label><button class="btn-primary" type="submit">Assign completion reviewer</button></form></div>@empty<p class="text-sm">No completion reports need reassignment.</p>@endforelse</section>
     </div>
 </body>
 </html>

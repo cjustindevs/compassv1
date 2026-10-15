@@ -249,9 +249,10 @@
         }
     </style>
     @vite(['resources/css/app.css'])
+    <link rel="stylesheet" href="{{ asset('css/professional-referral.css') }}?v={{ filemtime(public_path('css/professional-referral.css')) }}">
     @include('partials.ui-assets')
 </head>
-<body class="compass-compact">
+<body class="compass-compact professional-referral-page">
 
     @include('layouts.partials.professional-sidebar')
 
@@ -280,7 +281,7 @@
                 <a href="{{ route('professional.cases') }}" class="btn-outline">
                     <x-ui-icon name="arrow-left" class="mr-1" /> Back
                 </a>
-                @if(in_array($case->status, \App\Models\Referral::ACTIVE_STATUSES, true))
+                @if(in_array($case->status, \App\Models\Referral::ACTIVE_STATUSES, true) && !$case->hasPendingCompletion())
                     <button class="btn-outline" onclick="openStatusModal()">
                         <x-ui-icon name="connection" class="mr-1" /> Update Status
                     </button>
@@ -288,6 +289,7 @@
             </div>
         </div>
 
+        @include('partials.professional-completion', ['referral' => $case])
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <!-- Case Details -->
             <div class="lg:col-span-1 space-y-6">
@@ -385,7 +387,7 @@
                     @endif
                 </div>
 
-                @if(in_array($case->status, \App\Models\Referral::ACTIVE_STATUSES, true))
+                @if(in_array($case->status, \App\Models\Referral::ACTIVE_STATUSES, true) && !$case->hasPendingCompletion())
                     <!-- Add Intervention Notes -->
                     <div class="card">
                         <div class="card-header">
@@ -448,7 +450,7 @@
 
                 <h3 class="text-xl font-bold text-gray-800">Update Case Status</h3>
             </div>
-            <p class="text-gray-500 text-sm mb-4">Change the status of case #{{ $case->id }}. The adviser will be notified when a case is completed or closed.</p>
+            <p class="text-gray-500 text-sm mb-4">Change the status of case #{{ $case->id }}. Use Submit completion for Adviser review when the work is finished.</p>
 
             <form method="POST" action="{{ route('professional.cases.status', $case->case_reference) }}">
                 @csrf
@@ -456,8 +458,8 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">New Status <span class="text-red-500">*</span></label>
                     <select name="status" class="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" required>
                         <option value="{{ \App\Models\Referral::STATUS_IN_PROGRESS }}" {{ $case->status === \App\Models\Referral::STATUS_IN_PROGRESS ? 'selected' : '' }}>In Progress</option>
-                        <option value="{{ \App\Models\Referral::STATUS_COMPLETED }}">Completed</option>
-                        <option value="{{ \App\Models\Referral::STATUS_CLOSED }}">Closed</option>
+
+
                     </select>
                 </div>
                 <div class="flex gap-3">

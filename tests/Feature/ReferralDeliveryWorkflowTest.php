@@ -6,15 +6,19 @@ use App\Models\Adviser;
 use App\Models\Helper;
 use App\Models\HelperSchedule;
 use App\Models\HelpSeeker;
+use App\Models\Notification;
 use App\Models\ProfessionalNote;
 use App\Models\PsychologyProfessional;
 use App\Models\Referral;
 use App\Models\Session;
 use App\Models\User;
 use App\Services\HelperReadinessService;
+use App\Services\ReferralAppointmentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Schema;
 use Tests\Concerns\SeekerWorkflowFixtures;
 use Tests\TestCase;
 
@@ -33,17 +37,17 @@ class ReferralDeliveryWorkflowTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['app.enforce_duty_hours'=>false]);
+        config(['app.enforce_duty_hours' => false]);
         config(['database.connections.identity_vault' => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '', 'foreign_key_constraints' => true],
             'identity_vault.key' => 'base64:'.base64_encode(str_repeat('v', 32))]);
-        \Illuminate\Support\Facades\DB::purge('identity_vault');
+        DB::purge('identity_vault');
         $this->artisan('migrate', ['--database' => 'identity_vault', '--path' => 'database/migrations/identity_vault', '--force' => true])->assertSuccessful();
         $this->travelTo(Carbon::parse('2026-09-26 09:00', 'Asia/Manila')->utc());
     }
 
     protected function tearDown(): void
     {
-        \Illuminate\Support\Facades\DB::purge('identity_vault');
+        DB::purge('identity_vault');
         parent::tearDown();
     }
 
@@ -242,7 +246,7 @@ class ReferralDeliveryWorkflowTest extends TestCase
 
         $professional = $referral->fresh()->professional;
         $this->actingAs(User::find($professional->user_account_id))
-            ->post(route('professional.referral.accept', $referral->id), ['starts_at'=>now()->addDays(2)->format('Y-m-d\TH:i'),'ends_at'=>now()->addDays(2)->addHour()->format('Y-m-d\TH:i'),'meeting_format'=>'video','meeting_details'=>'Secure link provided by professional.'])
+            ->post(route('professional.referral.accept', $referral->id), ['starts_at' => now()->addDays(2)->format('Y-m-d\TH:i'), 'ends_at' => now()->addDays(2)->addHour()->format('Y-m-d\TH:i'), 'meeting_format' => 'video', 'meeting_details' => 'Secure link provided by professional.'])
             ->assertRedirect();
         $this->assertSame(Referral::STATUS_ACCEPTED, $referral->fresh()->status);
 
@@ -279,10 +283,10 @@ class ReferralDeliveryWorkflowTest extends TestCase
         $session = $this->makeSession($helper, $this->seekerUser());
         $url = route('helper.session.referral.consent', $session->id);
         $this->post($url, ['summary' => 'Professional support recommended.'])->assertSessionHasNoErrors();
-        $count = \App\Models\Notification::count();
+        $count = Notification::count();
         $this->post($url, ['summary' => 'Professional support recommended.'])->assertSessionHasNoErrors();
         $this->assertDatabaseCount('referrals', 1);
-        $this->assertSame($count, \App\Models\Notification::count());
+        $this->assertSame($count, Notification::count());
     }
 
     public function test_missing_referral_migration_returns_a_form_error_without_partial_submission(): void
@@ -290,7 +294,7 @@ class ReferralDeliveryWorkflowTest extends TestCase
         Event::fake();
         [, $helper] = $this->readyHelper();
         $session = $this->makeSession($helper, $this->seekerUser());
-        \Illuminate\Support\Facades\Schema::table('referrals', fn ($table) => $table->dropColumn('recommendation_form'));
+        Schema::table('referrals', fn ($table) => $table->dropColumn('recommendation_form'));
         $this->post(route('helper.session.referral.consent', $session->id), ['summary' => 'Professional support recommended.'])
             ->assertRedirect()->assertSessionHasErrors('summary');
         $this->assertDatabaseCount('referrals', 0);
@@ -301,16 +305,16 @@ class ReferralDeliveryWorkflowTest extends TestCase
         Event::fake();
         [, $helper] = $this->readyHelper();
         $session = $this->makeSession($helper, $this->seekerUser());
-        $payload = ['summary'=>'Professional follow-up recommended.', 'form_version'=>'appendix-o-v4',
-            'indicators'=>['Help seeker requested professional assistance'], 'session_summary'=>'Private factual summary.',
-            'observations'=>'Persistent distress reported.', 'actions_taken'=>'Active listening and support.',
-            'receiving_office'=>'DWCC Guidance Office', 'referral_explained'=>'yes', 'recommended_urgency'=>'priority'];
+        $payload = ['summary' => 'Professional follow-up recommended.', 'form_version' => 'appendix-o-v4',
+            'indicators' => ['Help seeker requested professional assistance'], 'session_summary' => 'Private factual summary.',
+            'observations' => 'Persistent distress reported.', 'actions_taken' => 'Active listening and support.',
+            'receiving_office' => 'DWCC Guidance Office', 'referral_explained' => 'yes', 'recommended_urgency' => 'priority'];
         $this->post(route('helper.session.referral.consent', $session->id), $payload)->assertSessionHasNoErrors();
         $referral = $session->referrals()->firstOrFail();
         $this->assertSame('Private factual summary.', $referral->recommendation_form['session_summary']);
         $this->assertStringNotContainsString('Private factual summary.', $referral->getRawOriginal('recommendation_form'));
         $this->actingAs($helper->adviser->user)->get(route('adviser.referral.show', $referral->case_reference))->assertOk()->assertSee('Private factual summary.');
-        $this->post(route('adviser.referral.reject', $referral), ['rejection_reason'=>'Please clarify the observations.'])->assertSessionHasNoErrors();
+        $this->post(route('adviser.referral.reject', $referral), ['rejection_reason' => 'Please clarify the observations.'])->assertSessionHasNoErrors();
         $this->assertSame('pending_adviser', $referral->fresh()->status);
         $this->assertNotNull($referral->fresh()->clarification_requested_at);
         $this->assertNull($referral->fresh()->approved_at);
@@ -415,7 +419,7 @@ class ReferralDeliveryWorkflowTest extends TestCase
         $referral->refresh();
 
         $professionalUser = User::find($referral->professional->user_account_id);
-        $this->actingAs($professionalUser)->post(route('professional.referral.accept', $referral->id), ['starts_at'=>now()->addDays(2)->format('Y-m-d\TH:i'),'ends_at'=>now()->addDays(2)->addHour()->format('Y-m-d\TH:i'),'meeting_format'=>'video','meeting_details'=>'Secure link provided by professional.']);
+        $this->actingAs($professionalUser)->post(route('professional.referral.accept', $referral->id), ['starts_at' => now()->addDays(2)->format('Y-m-d\TH:i'), 'ends_at' => now()->addDays(2)->addHour()->format('Y-m-d\TH:i'), 'meeting_format' => 'video', 'meeting_details' => 'Secure link provided by professional.']);
 
         $this->actingAs($professionalUser)->post(route('professional.referral.appointment', $referral->id), [
             'starts_at' => now()->addDays(3)->format('Y-m-d\TH:i'),
@@ -441,22 +445,22 @@ class ReferralDeliveryWorkflowTest extends TestCase
             ->assertSee('Video call link to follow.')
             ->assertSee('Asia/Manila');
         $appointment = $referral->appointments()->latest('id')->firstOrFail();
-        $this->get(route('seeker.referral.support',$referral))->assertOk()->assertSee('Confirm appointment');
-        $this->post(route('seeker.appointment.respond',$appointment),['decision'=>'confirmed'])->assertRedirect()->assertSessionHasNoErrors();
-        $this->assertSame('confirmed',$appointment->fresh()->seeker_response);
-        $count = \App\Models\Notification::where('title','Appointment confirmed')->count();
-        $this->post(route('seeker.appointment.respond',$appointment),['decision'=>'confirmed'])->assertRedirect();
-        $this->assertSame($count,\App\Models\Notification::where('title','Appointment confirmed')->count());
-        $this->actingAs(User::factory()->create(['role'=>'seeker','is_active'=>true]))
-            ->post(route('seeker.appointment.respond',$appointment),['decision'=>'reschedule_requested'])->assertForbidden();
+        $this->get(route('seeker.referral.support', $referral))->assertOk()->assertSee('Confirm appointment');
+        $this->post(route('seeker.appointment.respond', $appointment), ['decision' => 'confirmed'])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame('confirmed', $appointment->fresh()->seeker_response);
+        $count = Notification::where('title', 'Appointment confirmed')->count();
+        $this->post(route('seeker.appointment.respond', $appointment), ['decision' => 'confirmed'])->assertRedirect();
+        $this->assertSame($count, Notification::where('title', 'Appointment confirmed')->count());
+        $this->actingAs(User::factory()->create(['role' => 'seeker', 'is_active' => true]))
+            ->post(route('seeker.appointment.respond', $appointment), ['decision' => 'reschedule_requested'])->assertForbidden();
         $this->actingAs($seekerUser);
-        $appointment->update(['starts_at'=>now()->addMinutes(30),'ends_at'=>now()->addMinutes(90)]);
-        app(\App\Services\ReferralAppointmentService::class)->sendReminders();
-        app(\App\Services\ReferralAppointmentService::class)->sendReminders();
-        $this->assertSame(1,\App\Models\Notification::where('title','Appointment reminder')->where('user_account_id',$seekerUser->id)->count());
-        $this->post(route('seeker.appointment.respond',$appointment),['decision'=>'reschedule_requested'])->assertRedirect();
-        $this->assertSame('reschedule_requested',$appointment->fresh()->seeker_response);
-        $this->assertSame('scheduled',$appointment->fresh()->status);
+        $appointment->update(['starts_at' => now()->addMinutes(30), 'ends_at' => now()->addMinutes(90)]);
+        app(ReferralAppointmentService::class)->sendReminders();
+        app(ReferralAppointmentService::class)->sendReminders();
+        $this->assertSame(1, Notification::where('title', 'Appointment reminder')->where('user_account_id', $seekerUser->id)->count());
+        $this->post(route('seeker.appointment.respond', $appointment), ['decision' => 'reschedule_requested'])->assertRedirect();
+        $this->assertSame('reschedule_requested', $appointment->fresh()->seeker_response);
+        $this->assertSame('scheduled', $appointment->fresh()->status);
 
     }
 
@@ -532,9 +536,8 @@ class ReferralDeliveryWorkflowTest extends TestCase
 
         $professional = $referral->professional;
         $this->assertNotNull($professional, 'Adviser assignment should forward the referral to a professional.');
-        $this->actingAs($professional->user)->postJson(route('professional.referral.accept',$referral))->assertUnprocessable();
-        $this->assertSame(Referral::STATUS_PENDING_PROFESSIONAL,$referral->fresh()->status);
-
+        $this->actingAs($professional->user)->postJson(route('professional.referral.accept', $referral))->assertUnprocessable();
+        $this->assertSame(Referral::STATUS_PENDING_PROFESSIONAL, $referral->fresh()->status);
 
         $this->assertDatabaseHas('notifications', [
             'user_account_id' => $seekerUser->id,
@@ -544,7 +547,7 @@ class ReferralDeliveryWorkflowTest extends TestCase
             ->assertOk()->assertViewHas('pending', fn ($pending) => $pending->contains('id', $referral->id));
 
         $this->actingAs(User::find($professional->user_account_id))
-            ->post(route('professional.referral.accept', $referral->id), ['starts_at'=>now()->addDays(2)->format('Y-m-d\TH:i'),'ends_at'=>now()->addDays(2)->addHour()->format('Y-m-d\TH:i'),'meeting_format'=>'video','meeting_details'=>'Secure link provided by professional.'])
+            ->post(route('professional.referral.accept', $referral->id), ['starts_at' => now()->addDays(2)->format('Y-m-d\TH:i'), 'ends_at' => now()->addDays(2)->addHour()->format('Y-m-d\TH:i'), 'meeting_format' => 'video', 'meeting_details' => 'Secure link provided by professional.'])
             ->assertRedirect();
 
         $this->assertSame(Referral::STATUS_ACCEPTED, $referral->fresh()->status);
@@ -568,19 +571,24 @@ class ReferralDeliveryWorkflowTest extends TestCase
         $referral->refresh();
 
         $professionalUser = User::find($referral->professional->user_account_id);
-        $this->actingAs($professionalUser)->post(route('professional.referral.accept', $referral->id), ['starts_at'=>now()->addDays(2)->format('Y-m-d\TH:i'),'ends_at'=>now()->addDays(2)->addHour()->format('Y-m-d\TH:i'),'meeting_format'=>'video','meeting_details'=>'Secure link provided by professional.']);
+        $this->actingAs($professionalUser)->post(route('professional.referral.accept', $referral->id), ['starts_at' => now()->addDays(2)->format('Y-m-d\TH:i'), 'ends_at' => now()->addDays(2)->addHour()->format('Y-m-d\TH:i'), 'meeting_format' => 'video', 'meeting_details' => 'Secure link provided by professional.']);
 
         $payload = ['intervention_type' => 'session', 'notes' => 'Intervention note.'];
         $this->actingAs($professionalUser)->post(route('professional.cases.notes', $referral->id), $payload);
         $this->assertDatabaseHas('professional_notes', ['referral_id' => $referral->id]);
 
-        $response = $this->actingAs($professionalUser)->post(route('professional.cases.status', $referral->case_reference), ['status' => Referral::STATUS_COMPLETED]);
+        $response = $this->actingAs($professionalUser)->post(route('professional.cases.status', $referral->case_reference), ['status' => Referral::STATUS_COMPLETED, 'outcome' => 'Completed the documented professional intervention.', 'follow_up_required' => false]);
         $response->assertRedirect();
         $this->assertStringNotContainsString('/case/'.$referral->id, $response->headers->get('Location'));
         $this->get($response->headers->get('Location'))->assertOk()->assertDontSee('Save Intervention Note');
-        $this->actingAs(User::factory()->create(['role'=>'professional','is_active'=>true]))->get(route('professional.cases.show',$referral->case_reference))->assertForbidden();
+        $this->actingAs(User::factory()->create(['role' => 'professional', 'is_active' => true]))->get(route('professional.cases.show', $referral->case_reference))->assertForbidden();
         $this->actingAs($professionalUser);
 
+        $report = $referral->completionReviews()->sole();
+        $this->actingAs($helper->adviser->user)->post(route('referrals.completion.review', $report), [
+            'decision' => 'confirmed', 'review_notes' => 'Reviewed the completion report and appointment disposition.',
+            'appointments_action' => 'cancelled', 'appointments_reason' => 'Future test appointment cancelled following documented completion.',
+        ])->assertSessionHasNoErrors();
         $this->assertSame(Referral::STATUS_COMPLETED, $referral->fresh()->status);
 
         // Concluded work must not accrue new clinical notes.

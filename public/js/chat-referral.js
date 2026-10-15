@@ -23,6 +23,8 @@
         if (!isSeeker || !referral?.can_provide_identity || !referral.identity_url) return;
         if (identityDialog.open || (document.querySelector('dialog[open]') && !dialog.open)) return;
         dialog.close();
+        identityDialog.removeAttribute('data-support');
+        const outerClose = document.getElementById('chatEmbeddedClose'); if (outerClose) outerClose.hidden = true;
         identityReferralId = referral.id;
         identityDialog.querySelector('iframe').src = referral.identity_url;
         identityDialog.showModal();
@@ -190,7 +192,7 @@
     });
 
     identityButton.addEventListener('click', () => { manualOpen = true; seen = null; poll(); });
-    document.getElementById('chatSupportOpen').addEventListener('click', () => { if (!referral) return; identityReferralId = null; identityDialog.querySelector('iframe').src = referral.support_url; identityDialog.showModal(); });
+    document.getElementById('chatSupportOpen').addEventListener('click', () => { if (!referral) return; identityReferralId = null; identityDialog.setAttribute('data-support',''); const outerClose = document.getElementById('chatEmbeddedClose'); if (outerClose) outerClose.hidden = false; identityDialog.querySelector('iframe').src = referral.support_url; identityDialog.showModal(); });
     document.getElementById('chatReferralOpen').addEventListener('click', () => { manualOpen=true; seen = null; poll(); });
     window.addEventListener('compass-chat-workflow-changed',()=>{seen=null;poll();});
     poll();

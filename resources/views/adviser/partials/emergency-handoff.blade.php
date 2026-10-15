@@ -14,6 +14,7 @@
             <p><strong>Selected Professional:</strong> {{ $linkedReferral->professional?->full_name ?? 'Assigned Professional' }}</p>
             <p>{{ $linkedReferral->professional_notified_at ? 'An in-system notification was sent. Waiting for the Professional response unless already accepted.' : 'Professional notification is pending.' }} The emergency stays open until its outcome is recorded.</p>
         @endif
+        @if($linkedReferral->completionReviews()->exists())<p role="status"><strong>Professional completion report:</strong> {{ ucwords(str_replace('_',' ',$linkedReferral->completionReviews()->latest('id')->value('review_status'))) }}. Referral completion and emergency resolution are separate.</p>@endif
         @if($canReviewLinkedReferral)
             <a class="cm-button cm-primary" href="{{ route('adviser.referral.show',$alert->referral->id) }}">Continue Professional referral</a>
             @if(!$terminal && !$linkedReferral->professional_id)

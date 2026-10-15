@@ -202,6 +202,7 @@
             </div>
         </div>
 
+        @if($completionPending->isNotEmpty())<section class="card mb-4"><h2 class="font-semibold">Completion reviews pending</h2><p class="text-sm text-gray-500">Professional reports awaiting your final decision.</p>@foreach($completionPending as $completionReferral)<a class="btn-outline" style="display:inline-flex;margin:8px 8px 0 0" href="{{ route('adviser.referral.show',$completionReferral->case_reference) }}#completionReview">Review completion #{{ $completionReferral->id }}</a>@endforeach</section>@endif
         <!-- Stats -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="stat-card">
