@@ -74,7 +74,7 @@ Frontend assets rebuild cleanly (`npm run build`, 13 precache entries, service w
 - **Known environment note**: `php artisan schedule:list` fails on the local machine because `compass_db` is missing the `cache_locks` table while `CACHE_STORE=database`. This is a pre-existing local environment gap affecting every scheduled task, not caused by this work; run `php artisan cache:table` + migrate (or switch `CACHE_STORE` to a driver with the table present) in any environment relying on the scheduler.
 - **Deliverable hygiene**: all changes are uncommitted on `deploy`; the working tree contains 19 modified files, 1 new command, 1 new migration, and this report. No commit or push was made — the branch will only be committed on explicit instruction.
 
-### Appendix: changed surfaces (summary)
+### Changed surfaces (summary)
 
 Referral logic — `app/Services/ReferralManagementService.php`, `app/Models/Referral.php`, `app/Http/Controllers/ReferralWorkflowController.php`, `app/Http/Controllers/Helper/HelperSessionController.php`; views — `resources/views/{seeker/referrals,adviser/referral-detail,helper/referral-status}.blade.php`.
 

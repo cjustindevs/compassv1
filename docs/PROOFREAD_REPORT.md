@@ -20,9 +20,9 @@ Automated scan of ~85 user-facing surfaces against a corpus of common spelling a
 
 ## Verified wording checks (spot checks)
 
-- Consent dialogs and privacy notice match Appendix P/Q wording (voluntary, duty-to-protect, pseudonymous accounts, confidentiality limits). See `COMPLIANCE_MATRIX.md`.
+- Consent dialogs and privacy notice match Form P/Q wording (voluntary, duty-to-protect, pseudonymous accounts, confidentiality limits). See `COMPLIANCE_MATRIX.md`.
 - Helper notes "Guidelines" and adviser evaluation declaration are grammatical and unambiguous.
-- Screening safety question wording matches Appendix M: "Have you recently had thoughts of harming yourself or ending your life?" (with Yes / No / Prefer not to say).
+- Screening safety question wording matches Form M: "Have you recently had thoughts of harming yourself or ending your life?" (with Yes / No / Prefer not to say).
 
 ## Recommendation
 

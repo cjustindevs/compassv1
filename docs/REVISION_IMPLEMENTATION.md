@@ -4,7 +4,7 @@ Status: implementation and automated verification complete for the changes descr
 
 ## Scope and sources
 
-Preserved existing Laravel/Blade architecture, Inter/green styling, accounts, operational data and separate Identity Vault. Reviewed the extracted COMPASS-v4 referral workflow (PDF page 119), emergency workflow (120), Appendix O (263?270), and existing consent/privacy implementation. The public landing testimonials and resource section were removed; authenticated seeker self-help remains at `/selfhelp`.
+Preserved existing Laravel/Blade architecture, Inter/green styling, accounts, operational data and separate Identity Vault. Reviewed the extracted COMPASS-v4 referral workflow (PDF page 119), emergency workflow (120), Form O (263?270), and existing consent/privacy implementation. The public landing testimonials and resource section were removed; authenticated seeker self-help remains at `/selfhelp`.
 
 No AGENTS.md was found during inspection. Prior OTP changes and unrelated missing/permission-denied PDF tooling files were left alone.
 
@@ -46,7 +46,7 @@ After explicit deployment approval: back up databases, deploy code/assets, run `
 
 ## Documentation gaps and limitations
 
-The supplied COMPASS-v4 contains Appendix O referral fields, participation consent and a privacy notice. A separately approved Identity Disclosure Consent and Personal Information form could not be located. The requested verbatim complete forms therefore are NOT certified complete. A question requesting a newer document path remains pending.
+The supplied COMPASS-v4 contains Form O referral fields, participation consent and a privacy notice. A separately approved Identity Disclosure Consent and Personal Information form could not be located. The requested verbatim complete forms therefore are NOT certified complete. A question requesting a newer document path remains pending.
 
 **Identity Disclosure Consent is now derived from the referral consent rather than separately drafted.** The approved referral consent wording was extracted into `resources/views/partials/referral-consent-terms.blade.php` as the single source of truth. Both the in-chat referral prompt and the Identity Disclosure Consent step render that same partial, so the identity step cannot drift from the consent the seeker already accepted; it adds only identity-specific facts (vault encryption, who may authorize release, retention, replacement requiring fresh release, and the logged emergency exception). `IdentityVaultTest::test_identity_disclosure_reuses_the_canonical_referral_consent_terms` guards this. Because no separately approved form exists, this wording remains derived-and-traceable rather than verbatim, and must still be reconciled with the approved form before publication.
 

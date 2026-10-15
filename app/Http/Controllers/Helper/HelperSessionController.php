@@ -400,7 +400,7 @@ class HelperSessionController extends Controller
 
         $validated = $request->validate([
             'summary' => 'required|string|max:500',
-            'form_version' => 'nullable|in:appendix-o-v4',
+            'form_version' => 'nullable|in:referral-v4',
             'indicators' => 'required_with:form_version|array|min:1|max:9',
             'indicators.*' => ['string', Rule::in(ReferralForm::INDICATORS)],
             'session_summary' => 'required_with:form_version|string|max:2000',

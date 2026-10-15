@@ -309,7 +309,7 @@ class ReferralDeliveryWorkflowTest extends TestCase
         Event::fake();
         [, $helper] = $this->readyHelper();
         $session = $this->makeSession($helper, $this->seekerUser());
-        $payload = ['summary' => 'Professional follow-up recommended.', 'form_version' => 'appendix-o-v4',
+        $payload = ['summary' => 'Professional follow-up recommended.', 'form_version' => 'referral-v4',
             'indicators' => ['Help seeker requested professional assistance'], 'session_summary' => 'Private factual summary.',
             'observations' => 'Persistent distress reported.', 'actions_taken' => 'Active listening and support.',
             'receiving_office' => 'DWCC Guidance Office', 'referral_explained' => 'yes', 'recommended_urgency' => 'priority'];

@@ -375,7 +375,7 @@
             <form method="POST" action="{{ route('helper.session.referral.consent', ['id' => $session->id]) }}" id="referralConsentForm">
                 @csrf
                 <input type="hidden" name="_chat_action" value="referral">
-                <input type="hidden" name="form_version" value="appendix-o-v4">
+                <input type="hidden" name="form_version" value="referral-v4">
                 <div class="referral-fields">
                 <p class="text-sm mb-3">Session #{{ $session->id }} · {{ $session->seeker?->generated_alias }} · {{ ucfirst($session->risk_level ?? 'Pending review') }} risk. Identity is requested separately after Adviser approval.</p>
                 <fieldset class="mb-3"><legend class="form-label">Reason indicators</legend>

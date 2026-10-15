@@ -332,7 +332,7 @@ class HelperWorkflowSecurityTest extends TestCase
         $this->assertNull($session2->fresh()->helper_id);
     }
 
-    public function test_notes_and_reflection_accept_only_the_five_appendix_listener_skills(): void
+    public function test_notes_and_reflection_accept_only_the_five_documented_listener_skills(): void
     {
         $helper = $this->helper();
         $session = $this->supportSession($helper);

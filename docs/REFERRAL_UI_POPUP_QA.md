@@ -21,7 +21,7 @@
   and one explanation of the current Professional handoff requirement.
 - Seeker decisions show a short overview, visible Agree/Decline controls and an
   expandable full recommendation. Appointments group date, time, format, response,
-  instructions and actions. The Appendix O heading text is removed.
+  instructions and actions. The referral heading now uses a plain descriptive label.
 - Referral decisions have separate forms with explicit values. Shared confirmation
   preserves named submit-button values, including Decline's `0`.
 
