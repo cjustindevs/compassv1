@@ -45,5 +45,5 @@
             seen=Math.max(seen||0,data.cursor||0);try{sessionStorage.setItem(storageKey,String(seen));}catch{}
         }catch{}finally{pending=false;}
     }
-    refresh();setInterval(refresh,5000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});window.addEventListener('online',refresh);
+    refresh();setInterval(refresh,config.interval===2000?2000:5000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});window.addEventListener('online',refresh);
 })();

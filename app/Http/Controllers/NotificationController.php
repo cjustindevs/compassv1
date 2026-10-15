@@ -129,9 +129,8 @@ class NotificationController extends Controller
         }
 
         $workflow = [];
-        if ($request->user()->role === 'adviser' && $adviser = $request->user()->adviser) {
-            $workflow['emergency_count'] = EmergencyAlert::whereNotIn('status', ['resolved', 'closed'])->where(fn ($q) => $q->where('adviser_id', $adviser->id)
-                ->orWhereHas('session.helper', fn ($h) => $h->where('adviser_id', $adviser->id)))->count();
+        if ($request->user()->is_active && $request->user()->role === 'adviser' && $adviser = $request->user()->adviser) {
+            $workflow['emergency_count'] = EmergencyAlert::visibleForAdviser($adviser->id)->whereNotIn('status', ['resolved', 'closed'])->count();
         }
 
         if ($request->user()->role === 'moderator') {

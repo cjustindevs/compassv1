@@ -167,7 +167,7 @@ class AdviserReferralController extends Controller
         $data = $request->validate(['professional_id' => 'required|integer|exists:psychology_professionals,id', 'reason' => 'required|string|max:1000']);
         $this->transition(fn () => app(ReferralManagementService::class)->assignProfessional($referral, (int) $data['professional_id'], $data['reason']), 'professional_id');
 
-        return back()->with('success', 'Professional assignment recorded.');
+        return back()->with('success', 'Professional assigned and an in-system notification sent. Identity release remains a separate action.');
     }
 
     private function transition(callable $action, string $field): void

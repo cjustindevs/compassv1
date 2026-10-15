@@ -13,7 +13,6 @@ use App\Models\Notification;
 use App\Models\QueueRequest;
 use App\Models\Referral;
 use App\Models\Session;
-use App\Models\User;
 use App\Traits\BroadcastsSafely;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -38,6 +37,8 @@ class EmergencyEscalationService
                     $this->flagEmergencyCase($session, $seeker, $context);
                     $this->linkExistingReferral($existing, $session);
                     SupportAudit::record('chat_emergency_reported', $existing, ['incident_id' => $context['chat_incident_id']]);
+                } else {
+                    app(EmergencyStaffNotifications::class)->deliver($existing);
                 }
 
                 return $existing->refresh();
@@ -100,7 +101,6 @@ class EmergencyEscalationService
         $adviser ??= Adviser::whereHas('user', $eligible)->oldest('id')->first();
         if ($adviser) {
             $session->update(['review_adviser_id' => $adviser->id]);
-            $this->notifyUser($adviser->user_account_id, 'Emergency risk detected', 'An emergency requires your authorized review.', $directLink ? route('adviser.emergencies.show', $alert->id, false) : '/adviser/emergencies');
             $alert->forceFill([
                 'adviser_id' => $adviser->id,
                 'adviser_notified' => true,
@@ -108,9 +108,7 @@ class EmergencyEscalationService
             ])->save();
         }
 
-        foreach (User::where('role', 'moderator')->where('is_active', true)->pluck('id') as $moderatorId) {
-            $this->notifyUser($moderatorId, 'Emergency requires attention', 'Open the emergency queue to coordinate support.', '/moderator/emergency');
-        }
+        app(EmergencyStaffNotifications::class)->deliver($alert, $directLink);
 
         SupportAudit::record('emergency_notification_attempted', $alert, ['channel' => 'in_app', 'result' => $adviser ? 'delivered' : 'no_active_adviser']);
         $alert->forceFill([

@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{{ asset('css/compass-ui.css') }}?v={{ filemtime(public_path('css/compass-ui.css')) }}">
     <script src="{{ asset('js/compass-ui.js') }}?v={{ filemtime(public_path('js/compass-ui.js')) }}" defer></script>
     @auth
-        <meta name="compass-notices" content="{{ json_encode(['user'=>auth()->id(),'feed'=>route('notifications.feed'),'center'=>route('notifications')]) }}">
+        <meta name="compass-notices" content="{{ json_encode(['user'=>auth()->id(),'feed'=>route('notifications.feed'),'interval'=>in_array(auth()->user()->role,['adviser','moderator','professional']) ? 2000 : 5000,'center'=>route('notifications')]) }}">
         <script>window.CompassNoticesEnabled = true;</script>
         <link rel="stylesheet" href="{{ asset('css/live-notifications.css') }}?v={{ filemtime(public_path('css/live-notifications.css')) }}">
         <script src="{{ asset('js/live-notifications.js') }}?v={{ filemtime(public_path('js/live-notifications.js')) }}" defer></script>

@@ -383,6 +383,7 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
     // Referral Queue
     Route::get('/referrals', [AdviserReferralController::class, 'index'])->name('referrals');
     Route::post('/emergencies/{id}/referral-request', [AdviserEmergencyController::class,'requestReferral'])->name('emergencies.referral-request');
+    Route::post('/emergencies/{id}/professional', [AdviserEmergencyController::class, 'raiseToProfessional'])->name('emergencies.professional');
     Route::get('/referral/{id}', [AdviserReferralController::class, 'show'])->name('referral.show');
     Route::post('/referral/{id}/approve', [AdviserReferralController::class, 'approve'])->name('referral.approve');
     Route::post('/referral/{id}/reject', [AdviserReferralController::class, 'reject'])->name('referral.reject');
@@ -624,6 +625,9 @@ Route::get('/session/{session}/referral-prompt', function (Session $session) {
     abort_unless(($user->helpSeeker && $user->helpSeeker->id === $session->seeker_id) || ($user->helper && $user->helper->id === $session->helper_id), 403);
     $referral = $session->referrals()->latest('id')->first();
     $consent = $referral ? $referral->consentRecords()->where('purpose', 'referral')->latest('id')->first() : null;
+    $canProvideIdentity = $user->role === 'seeker' && $referral?->canProvideIdentity();
+    $hasIdentity = $canProvideIdentity && app(\App\Services\IdentityVaultService::class)->hasCurrentSubmission($referral);
+    $identityConsented = $canProvideIdentity && app(\App\Services\ConsentService::class)->valid($session->seeker, 'identity_disclosure', $referral->id);
     $emergency = EmergencyAlert::where('session_id', $session->id)->latest('id')->first();
     $incident = IncidentReport::where('session_id', $session->id)->where('incident_category', 'emergency_flag')->whereIn('status', ['open','under_review','escalated'])->latest('id')->first();
 
@@ -640,8 +644,10 @@ Route::get('/session/{session}/referral-prompt', function (Session $session) {
             'support_url' => route('seeker.referral.support', $referral),
             'appointment_time' => $user->role === 'seeker' && $referral->help_seeker_consent ? $referral->appointments()->where('status','scheduled')->latest('id')->first()?->starts_at?->timezone('Asia/Manila')->format('M d, Y g:i A') : null,
             'professional_name' => $user->role === 'seeker' && app(\App\Services\ConsentService::class)->valid($session->seeker, 'identity_disclosure', $referral->id) ? $referral->professional?->full_name : null,
-            'has_identity' => $user->role === 'seeker' && app(\App\Services\IdentityVaultService::class)->hasCurrentSubmission($referral),
-            'identity_url' => route('identity.form', [$referral, 'embedded' => 1]),
+            'has_identity' => (bool) $hasIdentity,
+            'can_provide_identity' => (bool) $canProvideIdentity,
+            'needs_identity_disclosure' => $canProvideIdentity && (! $hasIdentity || ! $identityConsented),
+            'identity_url' => $canProvideIdentity ? route('identity.form', [$referral, 'embedded' => 1]) : null,
             'recommendation_html' => $user->role === 'seeker' && $referral->approved_at ? view('partials.referral-recommendation', compact('referral'))->render() : null,
         ] : null,
         'consent' => $consent ? ['decision' => $consent->decision, 'consent_given' => (bool) $consent->consent_given, 'withdrawn' => (bool) $consent->withdrawn, 'scope' => $consent->scope] : null,

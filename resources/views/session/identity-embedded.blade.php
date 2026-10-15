@@ -6,4 +6,5 @@
 const modal = document.querySelector('dialog');
 modal.showModal();
 modal.addEventListener('close', () => parent.postMessage({type:'identity-modal-closed'}, location.origin));
+document.addEventListener('compass-identity-saved', () => parent.postMessage({type:'identity-details-saved'}, location.origin));
 </script></body></html>

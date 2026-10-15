@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\EmergencyAlert;
 use App\Models\Helper;
 use App\Models\Notification;
+use App\Models\PsychologyProfessional;
+use App\Models\Referral;
 use App\Services\AdviserEmergencyService;
 use App\Services\AdviserScope;
+use App\Services\ReferralManagementService;
 use App\Services\SupportAudit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,18 +18,15 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class AdviserEmergencyController extends Controller
 {
     public function index(): View
     {
-        $helperIds = $this->helperIds();
-
-        $baseQuery = EmergencyAlert::with(['session', 'session.seeker', 'session.helper', 'referral'])
-            ->where(function ($query) use ($helperIds) {
-                $query->where('adviser_id', Auth::user()->adviser?->id)
-                    ->orWhereHas('session', fn ($session) => $session->whereIn('helper_id', $helperIds));
-            })
+        $adviser = app(AdviserScope::class)->actor();
+        $baseQuery = EmergencyAlert::with(['session', 'session.seeker', 'session.helper', 'adviser', 'referral'])
+            ->visibleForAdviser($adviser->id)
             ->latest('triggered_at')->latest('id');
 
         $openAlerts = (clone $baseQuery)->whereNotIn('status', ['resolved', 'closed'])->paginate(15, ['*'], 'open_page')->withQueryString();
@@ -38,12 +38,20 @@ class AdviserEmergencyController extends Controller
 
     public function show(int $id): View
     {
-        $alert = EmergencyAlert::with(['session', 'session.seeker', 'session.helper', 'session.report', 'session.screeningResponses', 'session.concern', 'referral'])->findOrFail($id);
+        $adviser = app(AdviserScope::class)->actor();
+        $alert = EmergencyAlert::with(['session.seeker', 'session.helper', 'adviser'])->visibleForAdviser($adviser->id)->findOrFail($id);
+        if ((int) $alert->adviser_id !== (int) $adviser->id && (int) $alert->session?->helper?->adviser_id !== (int) $adviser->id) {
+            return view('adviser.emergency-coordination', compact('alert'));
+        }
         $this->authorizeAlert($alert);
+        $alert->load(['session.report', 'session.screeningResponses', 'session.concern', 'referral']);
+        $professionals = PsychologyProfessional::where('is_available', true)
+            ->whereHas('user', fn ($query) => $query->where('is_active', true)->where('role', 'professional'))
+            ->orderBy('first_name')->orderBy('last_name')->orderBy('id')->get();
 
         SupportAudit::record('emergency_documentation_viewed', $alert, ['purpose' => 'emergency_review']);
 
-        return view('adviser.emergency-detail', compact('alert'));
+        return view('adviser.emergency-detail', compact('alert', 'professionals'));
     }
 
     public function resolve(Request $request, int $id): RedirectResponse
@@ -98,6 +106,34 @@ class AdviserEmergencyController extends Controller
         });
 
         return back()->with('success', 'The Helper has been asked to submit the recommendation. Adviser review and Seeker consent remain required.');
+    }
+
+    public function raiseToProfessional(Request $request, int $id): RedirectResponse
+    {
+        $alert = EmergencyAlert::findOrFail($id);
+        $this->authorizeAlert($alert);
+        $data = $request->validate(['professional_id' => 'required|integer|exists:psychology_professionals,id', 'reason' => 'required|string|min:10|max:1000']);
+        try {
+            DB::transaction(function () use ($alert, $data) {
+                // Match the assignment service's lock order: referral, then emergency.
+                abort_unless($alert->referral_id, 409, 'A Helper recommendation must be submitted and approved before Professional assignment.');
+                $referral = Referral::lockForUpdate()->findOrFail($alert->referral_id);
+                $current = EmergencyAlert::lockForUpdate()->findOrFail($alert->id);
+                $this->authorizeAlert($current);
+                abort_if(in_array($current->status, ['resolved', 'closed'], true) || $current->archived_at, 409, 'This emergency review has concluded.');
+                abort_unless($current->referral_id === $referral->id && $current->session_id === $referral->session_id, 409, 'The linked referral changed. Refresh the emergency review.');
+                app(ReferralManagementService::class)->assignProfessional($referral, (int) $data['professional_id'], $data['reason']);
+                DB::table('emergency_review_actions')->insert(['emergency_alert_id' => $current->id, 'actor_id' => auth()->id(), 'action' => 'professional_raised', 'notes' => $data['reason'], 'created_at' => now()]);
+                SupportAudit::record('emergency_professional_raised', $current, ['referral_id' => $referral->id, 'professional_id' => (int) $data['professional_id']]);
+            }, 3);
+        } catch (HttpExceptionInterface $exception) {
+            if (! in_array($exception->getStatusCode(), [409, 422], true)) {
+                throw $exception;
+            }
+            throw ValidationException::withMessages(['professional_id' => $exception->getMessage() ?: 'The referral is not ready for Professional assignment. Refresh its status and complete the pending steps.']);
+        }
+
+        return back()->with('success', 'Emergency raised to the selected Professional. An urgent in-system notification was sent. Identity release remains a separate action.');
     }
 
     private function helperIds()

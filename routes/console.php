@@ -1,10 +1,28 @@
 <?php
 
 use App\Models\Helper;
+use App\Models\Notification;
+use App\Models\SeekerRequestDraft;
 use App\Models\Session;
+use App\Services\AdviserSupervisionMaintenance;
+use App\Services\DutySchedulingService;
+use App\Services\EmergencyReviewReminders;
+use App\Services\EmergencyStaffNotifications;
+use App\Services\HelperMatchingService;
+use App\Services\HelperWorkflowMaintenance;
+use App\Services\MeteredTurnService;
+use App\Services\NotificationRetentionService;
 use App\Services\QueueManagementService;
+use App\Services\ReferralAppointmentService;
+use App\Services\SessionDurationService;
+use App\Services\SessionReconnectionService;
+use App\Services\StaffMailService;
+use App\Services\StaleQueueRequests;
+use App\Services\SupportAudit;
+use App\Services\VoiceConfiguration;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schedule;
 
@@ -13,37 +31,44 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Artisan::command('voice:prepare', function () {
-    $availability = app(\App\Services\VoiceConfiguration::class)->availability();
+    $availability = app(VoiceConfiguration::class)->availability();
     if (in_array($availability, ['disabled', 'configuration_missing', 'migration_missing'], true)) {
         $this->warn('Voice relay readiness: '.$availability.'. See docs/VOICE_CALL_SETUP.md.');
-        $issues = app(\App\Services\VoiceConfiguration::class)->configurationIssues();
-        if ($issues) $this->warn('Check Render environment entries: '.implode(', ', $issues));
+        $issues = app(VoiceConfiguration::class)->configurationIssues();
+        if ($issues) {
+            $this->warn('Check Render environment entries: '.implode(', ', $issues));
+        }
+
         return 0;
     }
-    if (!app(\App\Services\MeteredTurnService::class)->prepare()) {
+    if (! app(MeteredTurnService::class)->prepare()) {
         $this->error('Unable to prepare the voice relay. Check the free TURN account, quota and server settings.');
+
         return 1;
     }
     $this->info('Voice relay credentials prepared. Newly created credentials need two minutes to propagate.');
+
     return 0;
 })->purpose('Prepare and rotate expiring TURN credentials without revealing secrets');
 
 Artisan::command('voice:status', function () {
-    $this->info('Voice relay readiness: '.app(\App\Services\VoiceConfiguration::class)->availability());
-    $issues = app(\App\Services\VoiceConfiguration::class)->configurationIssues();
-    if ($issues) $this->warn('Check Render environment entries: '.implode(', ', $issues));
+    $this->info('Voice relay readiness: '.app(VoiceConfiguration::class)->availability());
+    $issues = app(VoiceConfiguration::class)->configurationIssues();
+    if ($issues) {
+        $this->warn('Check Render environment entries: '.implode(', ', $issues));
+    }
 })->purpose('Show voice availability without displaying credentials');
 
 Schedule::command('voice:prepare')->everyFiveMinutes()->withoutOverlapping()
-    ->when(fn () => app(\App\Services\VoiceConfiguration::class)->configured());
+    ->when(fn () => app(VoiceConfiguration::class)->configured());
 
-Schedule::call(fn()=>app(\App\Services\StaffMailService::class)->deliver())->everyMinute()->name('deliver-staff-mail')->withoutOverlapping();
-Schedule::call(fn()=>app(\App\Services\DutySchedulingService::class)->remind())->hourly()->name('remind-helper-duty')->withoutOverlapping();
+Schedule::call(fn () => app(StaffMailService::class)->deliver())->everyMinute()->name('deliver-staff-mail')->withoutOverlapping();
+Schedule::call(fn () => app(DutySchedulingService::class)->remind())->hourly()->name('remind-helper-duty')->withoutOverlapping();
 
-Schedule::call(fn () => app(\App\Services\StaleQueueRequests::class)->expire())
+Schedule::call(fn () => app(StaleQueueRequests::class)->expire())
     ->everyMinute()->name('expire-stale-queue')->withoutOverlapping();
 
-Schedule::call(fn () => \App\Models\SeekerRequestDraft::where('expires_at', '<=', now())->delete())
+Schedule::call(fn () => SeekerRequestDraft::where('expires_at', '<=', now())->delete())
     ->hourly()->name('purge-expired-seeker-drafts')->withoutOverlapping();
 
 Schedule::call(fn () => app(QueueManagementService::class)->checkQueueAging())
@@ -87,37 +112,46 @@ Schedule::call(function () {
 Schedule::command('sessions:mark-abandoned')->hourly();
 Schedule::command('identity-vault:purge-expired')->daily()->withoutOverlapping();
 
-\Illuminate\Support\Facades\Schedule::call(function () {
-    \App\Models\Session::where('session_status', 'active')
+Schedule::call(function () {
+    Session::where('session_status', 'active')
         ->where('start_time', '<=', now()->subMinutes(90))
-        ->eachById(fn ($session) => app(\App\Services\SessionDurationService::class)->expire($session));
+        ->eachById(fn ($session) => app(SessionDurationService::class)->expire($session));
 })->everyMinute()->name('expire-chat-sessions')->withoutOverlapping();
 
-Schedule::call(fn () => app(\App\Services\HelperMatchingService::class)->matchWaitingRequests())
+Schedule::call(fn () => app(HelperMatchingService::class)->matchWaitingRequests())
     ->everyMinute()->name('match-waiting-seekers')->withoutOverlapping();
 
 Schedule::call(function () {
-    Session::where('session_status','active')->whereNull('warning_sent_at')->where('start_time','<=',now()->subMinutes(85))->where('start_time','>',now()->subMinutes(90))->eachById(function ($session) {
-        \Illuminate\Support\Facades\DB::transaction(function () use ($session) {
-            $session=Session::lockForUpdate()->findOrFail($session->id);
-            if ($session->warning_sent_at || !$session->isActive()) return;
-            $session->update(['warning_sent_at'=>now()]);
-            foreach (array_filter([$session->seeker?->user_account_id,$session->helper?->user_account_id]) as $id) \App\Models\Notification::create(['user_account_id'=>$id,'title'=>'Five minutes remaining','message'=>'This session will close at the 90-minute limit.','notification_type'=>'session']);
-            \App\Services\SupportAudit::record('session_duration_warning',$session);
+    Session::where('session_status', 'active')->whereNull('warning_sent_at')->where('start_time', '<=', now()->subMinutes(85))->where('start_time', '>', now()->subMinutes(90))->eachById(function ($session) {
+        DB::transaction(function () use ($session) {
+            $session = Session::lockForUpdate()->findOrFail($session->id);
+            if ($session->warning_sent_at || ! $session->isActive()) {
+                return;
+            }
+            $session->update(['warning_sent_at' => now()]);
+            foreach (array_filter([$session->seeker?->user_account_id, $session->helper?->user_account_id]) as $id) {
+                Notification::create(['user_account_id' => $id, 'title' => 'Five minutes remaining', 'message' => 'This session will close at the 90-minute limit.', 'notification_type' => 'session']);
+            }
+            SupportAudit::record('session_duration_warning', $session);
         });
     });
 })->everyMinute()->name('warn-session-duration')->withoutOverlapping();
 
-Schedule::call(fn () => app(\App\Services\HelperWorkflowMaintenance::class)->run())->everyMinute()->name('maintain-helper-workflow')->withoutOverlapping();
+Schedule::call(fn () => app(HelperWorkflowMaintenance::class)->run())->everyMinute()->name('maintain-helper-workflow')->withoutOverlapping();
 
 Schedule::command('sessions:check-no-response')->everyMinute()->withoutOverlapping();
 
-Schedule::call(fn () => app(\App\Services\AdviserSupervisionMaintenance::class)->run())->hourly()->name('adviser-supervision-follow-up')->withoutOverlapping();
+Schedule::call(fn () => app(AdviserSupervisionMaintenance::class)->run())->hourly()->name('adviser-supervision-follow-up')->withoutOverlapping();
 
-Schedule::call(fn () => app(\App\Services\ReferralAppointmentService::class)->sendReminders())->everyMinute()->name('referral-appointment-reminders')->withoutOverlapping();
+Schedule::call(fn () => app(ReferralAppointmentService::class)->sendReminders())->everyMinute()->name('referral-appointment-reminders')->withoutOverlapping();
 
-Schedule::call(fn()=>app(\App\Services\SessionReconnectionService::class)->detect())->everyMinute()->name('detect-helper-disconnections')->withoutOverlapping();
+Schedule::call(fn () => app(SessionReconnectionService::class)->detect())->everyMinute()->name('detect-helper-disconnections')->withoutOverlapping();
 
-Schedule::call(fn () => app(\App\Services\EmergencyReviewReminders::class)->run())->everyMinute()->name('emergency-review-reminders')->withoutOverlapping();
+Schedule::call(fn () => app(EmergencyReviewReminders::class)->run())->everyMinute()->name('emergency-review-reminders')->withoutOverlapping();
 
-Schedule::call(fn () => app(\App\Services\NotificationRetentionService::class)->run())->daily()->name('auto-archive-read-notifications')->withoutOverlapping();
+Schedule::call(fn () => app(NotificationRetentionService::class)->run())->daily()->name('auto-archive-read-notifications')->withoutOverlapping();
+
+Artisan::command('emergencies:sync-notifications', function () {
+    app(EmergencyStaffNotifications::class)->reconcileOpen();
+    $this->info('Open emergency notifications synchronized for all active Advisers and Moderators.');
+})->purpose('Deliver missing notices for open emergency cases without duplicating existing notices');

@@ -52,8 +52,12 @@ class EmergencyAlert extends Model
 
     public function synchronizeIncidentResolution(): void
     {
-        if (! $this->session_id || ! in_array($this->status, ['resolved', 'closed'], true)) return;
-        if (self::where('session_id', $this->session_id)->whereNotIn('status', ['resolved', 'closed'])->exists()) return;
+        if (! $this->session_id || ! in_array($this->status, ['resolved', 'closed'], true)) {
+            return;
+        }
+        if (self::where('session_id', $this->session_id)->whereNotIn('status', ['resolved', 'closed'])->exists()) {
+            return;
+        }
         IncidentReport::where('session_id', $this->session_id)
             ->whereIn('incident_category', ['emergency_flag', 'classification_emergency'])
             ->whereIn('status', ['open', 'under_review', 'escalated'])
@@ -83,7 +87,15 @@ class EmergencyAlert extends Model
 
     public function chatIncidents()
     {
-        return $this->hasMany(IncidentReport::class,'emergency_alert_id');
+        return $this->hasMany(IncidentReport::class, 'emergency_alert_id');
+    }
+
+    /** Every active emergency is visible for Adviser coordination; private history stays assigned. */
+    public function scopeVisibleForAdviser(Builder $query, int $adviserId): Builder
+    {
+        return $query->where(fn ($q) => $q->where('adviser_id', $adviserId)
+            ->orWhereHas('session.helper', fn ($h) => $h->where('adviser_id', $adviserId))
+            ->orWhere(fn ($open) => $open->whereNotIn('status', ['resolved', 'closed'])->whereNull('archived_at')));
     }
 
     public function scopePending(Builder $query): Builder

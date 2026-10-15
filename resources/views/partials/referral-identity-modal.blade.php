@@ -303,6 +303,7 @@
             done.dataset.shown = '1';
             const dismiss = form.querySelector('[data-identity-dismiss]');
             if (dismiss) dismiss.textContent = 'Close';
+            document.dispatchEvent(new Event('compass-identity-saved'));
         } catch (error) {
             result.textContent = 'We could not confirm the submission. Check your connection and referral status before retrying.';
             submit.disabled = false;

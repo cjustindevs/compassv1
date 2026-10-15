@@ -6,7 +6,7 @@
 <div class="cm-page er-page">
     <header class="cm-header">
         <div><h1>Emergency review</h1><p class="cm-muted">Review the report, document your response, and coordinate follow-up.</p></div>
-        <a class="cm-button" href="{{ route('adviser.emergencies') }}">Back to emergencies</a>
+        <div class="er-header-actions"><a class="cm-button cm-primary" href="#emergencyProfessionalHandoff">Professional referral</a><a class="cm-button" href="{{ route('adviser.emergencies') }}">Back to emergencies</a></div>
     </header>
     @if(session('success'))<div class="cm-alert" role="status">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="cm-alert cm-error" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
@@ -67,6 +67,6 @@
     </div>
 </div>
 <style>
-.er-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}.er-stack{display:grid;gap:20px;min-width:0}.er-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:20px 0}.er-facts dt{font-size:12px;color:#6b7b74;margin-bottom:5px}.er-facts dd{margin:0;font-weight:600;overflow-wrap:anywhere}.er-reason{border-left:3px solid #d36154;background:#fff6f4;padding:16px;border-radius:8px}.er-reason h2{color:#913a30;font-size:14px}.er-reason p{margin-bottom:0}.er-empty{background:#f7faf8;border-radius:10px;padding:18px;color:#6b7b74;font-size:13px}.er-page .cm-message{line-height:1.7}.er-page textarea{min-height:100px}@media(max-width:1000px){.er-grid{grid-template-columns:1fr}}@media(max-width:600px){.er-facts{grid-template-columns:1fr;gap:12px}.er-page .cm-button{width:100%}}
+.er-header-actions{display:flex;gap:8px;flex-wrap:wrap}.er-professional-handoff{border-top:3px solid #049b50;scroll-margin-top:20px}.er-professional-handoff button:disabled{opacity:.6;cursor:not-allowed}.er-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}.er-stack{display:grid;gap:20px;min-width:0}.er-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:20px 0}.er-facts dt{font-size:12px;color:#6b7b74;margin-bottom:5px}.er-facts dd{margin:0;font-weight:600;overflow-wrap:anywhere}.er-reason{border-left:3px solid #d36154;background:#fff6f4;padding:16px;border-radius:8px}.er-reason h2{color:#913a30;font-size:14px}.er-reason p{margin-bottom:0}.er-empty{background:#f7faf8;border-radius:10px;padding:18px;color:#6b7b74;font-size:13px}.er-page .cm-message{line-height:1.7}.er-page textarea{min-height:100px}@media(max-width:1000px){.er-grid{grid-template-columns:1fr}}@media(max-width:600px){.er-facts{grid-template-columns:1fr;gap:12px}.er-page .cm-button{width:100%}}
 </style>
 @endsection

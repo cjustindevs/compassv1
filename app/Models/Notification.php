@@ -2,9 +2,14 @@
 
 namespace App\Models;
 
+use App\Events\NotificationsChanged;
+use App\Services\SupportAudit;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class Notification extends Model
 {
@@ -31,10 +36,18 @@ class Notification extends Model
     {
         static::addGlobalScope('unarchived', fn (Builder $query) => $query->whereNull('notifications.archived_at'));
         static::created(function (self $notice) {
-            $userId=(int)$notice->user_account_id;
-            \Illuminate\Support\Facades\DB::afterCommit(function () use ($userId) {
-                try { event(new \App\Events\NotificationsChanged($userId)); }
-                catch (\Throwable $e) { \Illuminate\Support\Facades\Log::warning('Notification live signal unavailable; inbox polling remains active.'); }
+            // Emergency delivery uses short database polling. Do not serialize a
+            // synchronous network broadcast for every recipient before returning.
+            if ($notice->notification_type === 'emergency') {
+                return;
+            }
+            $userId = (int) $notice->user_account_id;
+            DB::afterCommit(function () use ($userId) {
+                try {
+                    event(new NotificationsChanged($userId));
+                } catch (\Throwable $e) {
+                    Log::warning('Notification live signal unavailable; inbox polling remains active.');
+                }
             });
         });
     }
@@ -42,15 +55,15 @@ class Notification extends Model
     public function archive(): void
     {
         $this->update(['archived_at' => now()]);
-        \Illuminate\Support\Facades\Cache::forget('unread_count_'.$this->user_account_id);
-        \App\Services\SupportAudit::record('notification_archived', $this);
+        Cache::forget('unread_count_'.$this->user_account_id);
+        SupportAudit::record('notification_archived', $this);
     }
 
     public function restoreToInbox(): void
     {
         $this->update(['archived_at' => null]);
-        \Illuminate\Support\Facades\Cache::forget('unread_count_'.$this->user_account_id);
-        \App\Services\SupportAudit::record('notification_restored', $this);
+        Cache::forget('unread_count_'.$this->user_account_id);
+        SupportAudit::record('notification_restored', $this);
     }
 
     public function user(): BelongsTo
@@ -62,16 +75,16 @@ class Notification extends Model
     public function scopeWithoutDuplicateCompletionReminders(Builder $query): Builder
     {
         return $query->where(function (Builder $q) {
-            $q->where('notifications.title','!=','Session completed')
+            $q->where('notifications.title', '!=', 'Session completed')
                 ->orWhereNull('notifications.link')
-                ->orWhere('notifications.link','not like','/helper/session/%/notes')
+                ->orWhere('notifications.link', 'not like', '/helper/session/%/notes')
                 ->orWhereNotExists(function ($older) {
                     $older->selectRaw('1')->from('notifications as earlier')
-                        ->whereColumn('earlier.user_account_id','notifications.user_account_id')
-                        ->whereColumn('earlier.title','notifications.title')
-                        ->whereColumn('earlier.notification_type','notifications.notification_type')
-                        ->whereColumn('earlier.link','notifications.link')
-                        ->whereColumn('earlier.id','<','notifications.id');
+                        ->whereColumn('earlier.user_account_id', 'notifications.user_account_id')
+                        ->whereColumn('earlier.title', 'notifications.title')
+                        ->whereColumn('earlier.notification_type', 'notifications.notification_type')
+                        ->whereColumn('earlier.link', 'notifications.link')
+                        ->whereColumn('earlier.id', '<', 'notifications.id');
                 });
         });
     }

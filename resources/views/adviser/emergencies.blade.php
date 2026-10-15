@@ -33,7 +33,7 @@
     <div class="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <div>
             <h1 class="text-xl md:text-2xl font-bold text-gray-800">Emergency Management</h1>
-            <p class="text-sm text-gray-500 hidden sm:block">Review emergency escalations for helpers under your supervision.</p>
+            <p class="text-sm text-gray-500 hidden sm:block">Active emergencies are shared with every Adviser. Assigned reviewers and supervisors manage private review actions.</p>
         </div>
         <div class="flex items-center gap-2">
             <span class="px-3 py-1 rounded-full text-sm font-semibold bg-red-50 text-red-700">
@@ -84,7 +84,7 @@
                         <span><strong>Helper:</strong> {{ $alert->session?->helper?->full_name ?: 'Unassigned' }}</span>
                         <time datetime="{{ $alert->triggered_at?->toIso8601String() }}">{{ $alert->triggered_at?->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') ?? 'Recently triggered' }} PHT &middot; {{ $alert->triggered_at?->diffForHumans() }}</time>
                     </div>
-                    <p class="text-sm text-gray-500 av-emergency-reason"><strong>Reason:</strong> {{ $alert->trigger_reason ?? 'Emergency detected' }}</p>
+                    <p class="text-sm text-gray-500 av-emergency-reason"><strong>Responsible reviewer:</strong> {{ $alert->adviser?->full_name ?? 'Awaiting assignment' }}</p>
                 </div>
                 <a href="{{ route('adviser.emergencies.show', $alert->id) }}" class="btn btn-primary btn-sm whitespace-nowrap">
                     <x-ui-icon name="eye" class="mr-1" />View Details

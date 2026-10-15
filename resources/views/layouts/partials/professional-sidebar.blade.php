@@ -86,3 +86,4 @@
 </aside>
 
 @include('components.confirmation-modal')
+@include('partials.emergency-notice')

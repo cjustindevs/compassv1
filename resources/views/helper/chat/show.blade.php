@@ -176,26 +176,6 @@
         .modal-box select:focus { border-color: var(--green-500); }
         .modal-box .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gray-600); margin-top: 10px; cursor: pointer; }
 
-        #referralModal .modal-box { max-width: 1040px; width: min(1040px, calc(100vw - 32px)); max-height: 90dvh; padding: 22px; display: flex; flex-direction: column; overflow: hidden; }
-        #referralConsentForm { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
-        #referralModal .referral-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; overflow-y: auto; min-height: 0; padding: 2px 6px 8px 0; }
-        #referralModal .referral-fields > p, #referralModal fieldset { grid-column: 1 / -1; margin: 0; }
-        #referralModal fieldset { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 16px; padding: 12px; border: 1px solid var(--gray-200); border-radius: 12px; }
-        #referralModal fieldset label { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; line-height: 1.4; margin: 0; }
-        #referralModal fieldset input { margin-top: 2px; flex-shrink: 0; accent-color: var(--green-500); }
-        #referralModal .form-label { display: block; margin: 0 0 5px; font-weight: 600; }
-        #referralModal textarea { min-height: 64px; height: 64px; padding: 8px 10px; font-size: 13px; }
-        #referralModal select, #referral-office { width: 100%; min-height: 38px; padding: 8px 10px; font-size: 13px; border: 1px solid var(--gray-200); border-radius: 10px; }
-        #referralModal .modal-actions { flex-shrink: 0; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gray-200); }
-        #referralModal .btn-info { background: var(--green-500); }
-        #referralModal .btn-info:hover { background: var(--green-600); }
-        @media (max-width: 640px) {
-            #referralModal .modal-box { padding: 16px; max-height: 94dvh; }
-            #referralModal .referral-fields, #referralModal fieldset { grid-template-columns: 1fr; }
-            #referralModal .modal-actions { flex-wrap: wrap; }
-            #referralModal .modal-actions .btn { flex: 1; }
-        }
-
         /* ─── Messages ─── */
         .chat-window { height: calc(100vh - 330px); min-height: 380px; }
 

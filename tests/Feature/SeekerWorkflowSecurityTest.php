@@ -6,6 +6,7 @@ use App\Models\Adviser;
 use App\Models\AuditLog;
 use App\Models\ConcernCategory;
 use App\Models\ConsentRecord;
+use App\Models\EmergencyAlert;
 use App\Models\Helper;
 use App\Models\HelperSchedule;
 use App\Models\HelpSeeker;
@@ -135,7 +136,7 @@ class SeekerWorkflowSecurityTest extends TestCase
         $this->assertSame($adviser->id, $session->review_adviser_id);
         $this->assertTrue((bool) $session->requires_adviser_review);
         $this->actingAs($adviserUser)->get(route('adviser.screenings'))->assertOk()->assertSee('screening-'.$session->id, false);
-        $this->assertDatabaseHas('notifications', ['user_account_id' => $adviserUser->id, 'link' => '/adviser/emergencies']);
+        $this->assertDatabaseHas('notifications', ['user_account_id' => $adviserUser->id, 'link' => route('adviser.emergencies.show', EmergencyAlert::firstOrFail()->id, false)]);
         $this->post(route('adviser.screenings.review', $session), ['risk_level' => 'emergency', 'allow_peer_support' => false, 'reason' => 'Confirmed the recorded immediate safety indicators.', 'evidence_source' => 'Original screening responses'])->assertRedirect()->assertSessionHas('success');
         $this->assertDatabaseHas('screening_responses', ['session_id' => $session->id, 'review_status' => 'reviewed', 'actor_id' => $adviserUser->id]);
         $this->get(route('adviser.screenings'))->assertViewHas('sessions', fn ($rows) => ! $rows->contains('id', $session->id));
@@ -390,10 +391,10 @@ class SeekerWorkflowSecurityTest extends TestCase
     public function test_consent_saves_in_modal_and_pages_highlight_sidebar_links(): void
     {
         $user = $this->seeker(false);
-        $this->actingAs($user)->get(route('request.screening'))->assertOk()->assertSee('id="seekerConsentDialog"',false);
-        $this->postJson(route('seeker.consent.accept'),['agree_privacy' => 1, 'agree_terms' => 1, 'agree_emergency' => 1, 'agree_consent' => 1])->assertOk()->assertJson(['success' => true]);
+        $this->actingAs($user)->get(route('request.screening'))->assertOk()->assertSee('id="seekerConsentDialog"', false);
+        $this->postJson(route('seeker.consent.accept'), ['agree_privacy' => 1, 'agree_terms' => 1, 'agree_emergency' => 1, 'agree_consent' => 1])->assertOk()->assertJson(['success' => true]);
         foreach (['seeker.requests' => 'Request history', 'seeker.privacy' => 'Privacy and consent', 'seeker.referrals' => 'Referral decisions'] as $route => $label) {
-            $this->get(route($route))->assertOk()->assertSee('title="'.$label.'" class="nav-item active"',false)->assertSee('<span class="nav-text">'.$label.'</span>',false);
+            $this->get(route($route))->assertOk()->assertSee('title="'.$label.'" class="nav-item active"', false)->assertSee('<span class="nav-text">'.$label.'</span>', false);
         }
     }
 }
