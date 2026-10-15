@@ -30,9 +30,7 @@
     <td><span class="mo-badge {{ $case->acknowledged_at?'information':'warning' }}">{{ app(\App\Services\ModeratorEmergencyCases::class)->statusLabel($case) }}</span></td>
     <td>{{ \Illuminate\Support\Carbon::parse($case->triggered_at)->timezone('Asia/Manila')->format('M d, Y') }}<br>{{ \Illuminate\Support\Carbon::parse($case->triggered_at)->timezone('Asia/Manila')->format('g:i A') }}<small class="mo-event-outcome">{{ \Illuminate\Support\Carbon::parse($case->triggered_at)->diffForHumans() }}</small></td>
     <td>
-@if($case->session_id)<a class="mo-text-link" href="{{ route('moderator.sessions.show',$case->session_id) }}">View session</a>
-@else<span class="mo-muted">Awaiting linked session</span>
-@endif</td>
+<span class="mo-muted">Coordinate with responsible Adviser</span></td>
 </tr>
 @empty
     <tr><td colspan="6" class="mo-empty">No active emergency cases. Resolved records remain in emergency history.</td></tr>

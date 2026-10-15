@@ -246,7 +246,7 @@
                 </div>
                 <div id="sessionList">
                     @forelse($sessions as $session)
-                        <div class="session-row risk-{{ $session->risk_level ?? 'low' }}" data-id="{{ $session->id }}" onclick="window.location.href='{{ route('moderator.sessions.show', $session->id) }}'">
+                        <div class="session-row risk-{{ $session->risk_level ?? 'low' }}" data-id="{{ $session->id }}">
                             <span class="font-semibold text-gray-800">{{ $session->reference_number }}</span>
                             <span class="text-gray-600 truncate">{{ $session->seeker?->generated_alias ?? 'Anonymous' }}</span>
                             <span class="text-gray-600 truncate">

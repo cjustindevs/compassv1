@@ -17,7 +17,7 @@ class ModeratorEmergencyController extends Controller
     public function index()
     {
         $service = app(ModeratorEmergencyCases::class);
-        $openIncidents = $service->active()->orderBy('triggered_at')->paginate(5)->withQueryString();
+        $openIncidents = $service->active()->orderByDesc('triggered_at')->orderByDesc('id')->orderBy('source')->paginate(5)->withQueryString();
         $all = $service->query()->get();
         $active = $service->active()->get();
         $stats = $this->metrics($all, $active);

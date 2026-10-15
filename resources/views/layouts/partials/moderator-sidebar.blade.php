@@ -40,9 +40,7 @@
         </a>
         <a href="{{ route('moderator.emergency') }}" class="nav-item {{ request()->routeIs('moderator.emergency*') ? 'active' : '' }}">
             <x-ui-icon name="warning"  /><span class="nav-text">Emergency Alerts</span>
-            @if($emergencyCount > 0)
-                <span class="nav-badge danger" id="emergencyBadge">{{ $emergencyCount }}</span>
-            @endif
+            <span class="nav-badge danger" id="emergencyBadge" @if(!$emergencyCount) hidden style="display:none" @endif>{{ $emergencyCount }}</span>
         </a>
 
         <div class="nav-section">Records</div>

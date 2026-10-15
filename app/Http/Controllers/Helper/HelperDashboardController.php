@@ -177,7 +177,7 @@ class HelperDashboardController extends Controller
             ['icon' => 'fa-edit', 'label' => 'Session Notes', 'route' => $activeSessionData ? 'helper.session.notes' : 'helper.cases', 'params' => $activeSessionData ? ['id' => $activeSessionData['id']] : []],
         ];
 
-        $documentationTasks = $helper->sessions()->whereNotNull('start_time')->where('documentation_status', '!=', 'submitted')->whereIn('session_status', ['completed', 'evaluated', 'cancelled', 'no_show'])->orderBy('end_time')->limit(8)->get();
+        $documentationTasks = $helper->sessions()->whereNotNull('start_time')->where('documentation_status', '!=', 'submitted')->whereIn('session_status', ['completed', 'evaluated', 'cancelled', 'no_show'])->orderByDesc('end_time')->orderByDesc('id')->limit(8)->get();
 
         return view('dashboard.helper', ['upcomingDuties' => $upcomingDuties, 'dutySummary' => $dutySummary] + compact(
             'documentationTasks', 'sidebarStats', 'currentReadiness', 'upcomingSession', 'recentSessions',

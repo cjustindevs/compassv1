@@ -35,6 +35,7 @@
         </div>
         <div class="er-stack">
             @include('adviser.partials.emergency-handoff')
+            @include('adviser.partials.emergency-screening-summary')
             @if(!$terminal)
                 <section class="cm-card" aria-labelledby="recordTitle">
                     <h2 id="recordTitle">Record a review action</h2><p class="cm-help">Acknowledge the report or document instructions and coordination.</p>

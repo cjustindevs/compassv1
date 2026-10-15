@@ -3,17 +3,20 @@
 namespace App\Services;
 
 use App\Events\NewCaseAssigned;
+use App\Events\NewHelperAssigned;
 use App\Events\QueueUpdated;
 use App\Models\AuditLog;
-use App\Models\HelpSeeker;
 use App\Models\Helper;
+use App\Models\HelpSeeker;
 use App\Models\Notification;
 use App\Models\QueueRequest;
 use App\Models\Session;
 use App\Models\User;
 use App\Traits\BroadcastsSafely;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -36,15 +39,16 @@ class HelperMatchingService
 
     public function waitingMessage(Session $session): string
     {
-        if (!config('app.relax_duty_hours', false) && !app(OperatingHoursService::class)->acceptsAssignments()) {
+        if (! config('app.relax_duty_hours', false) && ! app(OperatingHoursService::class)->acceptsAssignments()) {
             return 'Peer-helper matching accepts new sessions Monday to Saturday, 6:00 PM to before 10:30 PM (Philippine Time). Your request remains in the queue.';
         }
-        if (!app(ConsentService::class)->valid($session->seeker, 'privacy_policy') || !app(ConsentService::class)->valid($session->seeker, 'informed_consent')) {
+        if (! app(ConsentService::class)->valid($session->seeker, 'privacy_policy') || ! app(ConsentService::class)->valid($session->seeker, 'informed_consent')) {
             return 'Please review and accept the current Privacy Notice and Terms and Condition in Privacy and consent so automatic matching can proceed. Your request is saved.';
         }
-        if (($session->requires_adviser_review || $session->risk_level === 'high') && !$session->permitsEmergencySupport() && !$session->peer_support_approved_at) {
+        if (($session->requires_adviser_review || $session->risk_level === 'high') && ! $session->permitsEmergencySupport() && ! $session->peer_support_approved_at) {
             return 'Your request needs Adviser review before a peer Helper can be assigned. Your request is saved.';
         }
+
         return 'Waiting for a Helper who is ready, on duty, verified and qualified for this request, with free session capacity. Helpers already assigned to another request cannot take a second live session. Matching retries automatically; your request is saved.';
     }
 
@@ -58,14 +62,19 @@ class HelperMatchingService
             return null;
         }
 
-        if ($seeker) $eligibleHelpers=$eligibleHelpers->reject(fn($helper)=>DB::table('helper_conflicts')->where('helper_id',$helper->id)->where('seeker_id',$seeker->id)->exists());
+        if ($seeker) {
+            $eligibleHelpers = $eligibleHelpers->reject(fn ($helper) => DB::table('helper_conflicts')->where('helper_id', $helper->id)->where('seeker_id', $seeker->id)->exists());
+        }
+
         return $this->rankHelpers($eligibleHelpers, $riskLevel, $concernCategory, $language)->first();
     }
 
     protected function getEligibleHelpers(string $riskLevel, ?int $excludeHelperId = null): Collection
     {
         $relaxed = (bool) config('app.relax_duty_hours', false);
-        if (! $relaxed && ! app(OperatingHoursService::class)->acceptsAssignments()) return collect();
+        if (! $relaxed && ! app(OperatingHoursService::class)->acceptsAssignments()) {
+            return collect();
+        }
         $query = Helper::query()
             // Eligible helpers are selected by declared availability OR the
             // operational status, then narrowed authoritatively by
@@ -120,7 +129,7 @@ class HelperMatchingService
             ];
 
             return $helper;
-        })->sortBy([['matching_score','desc'],['current_shift_sessions','asc'],['available_since','asc'],['id','asc']])->values();
+        })->sortBy([['matching_score', 'desc'], ['current_shift_sessions', 'asc'], ['available_since', 'asc'], ['id', 'asc']])->values();
     }
 
     public function getMatchingDetails(Helper $helper): array
@@ -166,9 +175,13 @@ class HelperMatchingService
             app(StaleQueueRequests::class)->expire();
             $queue->refresh();
         }
-        if ($queue->request_status !== 'waiting' || (! config('app.relax_duty_hours', false) && ! app(OperatingHoursService::class)->acceptsAssignments())) return null;
-        $session=$this->pendingSessionForQueue($queue);
-        if (!$session || !$session->submitted_at || !$session->risk_level || (($session->requires_adviser_review || $session->risk_level==='emergency') && !$session->permitsEmergencySupport())) return null;
+        if ($queue->request_status !== 'waiting' || (! config('app.relax_duty_hours', false) && ! app(OperatingHoursService::class)->acceptsAssignments())) {
+            return null;
+        }
+        $session = $this->pendingSessionForQueue($queue);
+        if (! $session || ! $session->submitted_at || ! $session->risk_level || (($session->requires_adviser_review || $session->risk_level === 'emergency') && ! $session->permitsEmergencySupport())) {
+            return null;
+        }
         $excluded = $this->previousEmergencyOffers($session);
         $eligible = $this->getEligibleHelpers($session->risk_level, $excludeHelperId)
             ->reject(fn ($candidate) => in_array($candidate->id, $excluded, true))
@@ -177,9 +190,14 @@ class HelperMatchingService
             // Revalidate under lock. A candidate can become busy after ranking;
             // try the next eligible candidate instead of leaving the queue stuck.
             $result = $this->manualAssign($queue, $helper->id, false, false, 'automatic');
-            if ($result instanceof Session) return $result;
-            if ($queue->fresh()?->request_status !== 'waiting') return null;
+            if ($result instanceof Session) {
+                return $result;
+            }
+            if ($queue->fresh()?->request_status !== 'waiting') {
+                return null;
+            }
         }
+
         return null;
     }
 
@@ -189,28 +207,40 @@ class HelperMatchingService
      * @return Session on success, or a string containing the concrete
      *                 rejection reason when the assignment cannot complete.
      */
-    public function manualAssign(QueueRequest $queue, int $helperId, bool $emergencyOverride = false, bool $reassign = false, string $method = 'manual', ?\Illuminate\Support\Carbon $scheduledStart = null): Session|string|null
+    public function manualAssign(QueueRequest $queue, int $helperId, bool $emergencyOverride = false, bool $reassign = false, string $method = 'manual', ?Carbon $scheduledStart = null): Session|string|null
     {
         $reason = DB::transaction(function () use ($queue, $helperId, $emergencyOverride, $reassign, $method, $scheduledStart) {
             $queue = QueueRequest::whereKey($queue->id)->lockForUpdate()->firstOrFail();
-            if ($queue->request_status !== ($reassign ? 'assigned' : 'waiting')) return 'This request is no longer waiting in the queue.';
+            if ($queue->request_status !== ($reassign ? 'assigned' : 'waiting')) {
+                return 'This request is no longer waiting in the queue.';
+            }
             $helper = Helper::whereKey($helperId)->lockForUpdate()->first();
             $session = $this->pendingSessionForQueue($queue);
-            if (!$session || !$session->submitted_at || !$session->risk_level || (($session->risk_level === 'emergency' || $session->requires_adviser_review) && !$session->permitsEmergencySupport()) || ($session->risk_level === 'high' && !$session->peer_support_approved_at && !$session->permitsPrioritySafetySupport())) {
+            if (! $session || ! $session->submitted_at || ! $session->risk_level || (($session->risk_level === 'emergency' || $session->requires_adviser_review) && ! $session->permitsEmergencySupport()) || ($session->risk_level === 'high' && ! $session->peer_support_approved_at && ! $session->permitsPrioritySafetySupport())) {
                 return 'This request requires a different competency or adviser review and cannot be assigned to a peer helper.';
             }
-            if (in_array($helperId, $this->previousEmergencyOffers($session), true)) return 'This Helper has already declined or missed this emergency support offer.';
-            if ($session->permitsEmergencySupport() && $emergencyOverride) return 'Emergency support requires all normal Helper eligibility checks.';
-            if (!$helper) {
+            if (in_array($helperId, $this->previousEmergencyOffers($session), true)) {
+                return 'This Helper has already declined or missed this emergency support offer.';
+            }
+            if ($session->permitsEmergencySupport() && $emergencyOverride) {
+                return 'Emergency support requires all normal Helper eligibility checks.';
+            }
+            if (! $helper) {
                 return 'The selected helper could not be found.';
             }
-            if (!$helper->user?->is_active) {
+            if (! $helper->user?->is_active) {
                 return 'The selected helper account is inactive.';
             }
-            $consents=app(ConsentService::class);
-            if (!$consents->valid($session->seeker,'privacy_policy') || !$consents->valid($session->seeker,'informed_consent')) return 'The seeker does not have the current consents required for a session.';
-            if (DB::table('helper_conflicts')->where('helper_id',$helperId)->where('seeker_id',$session->seeker_id)->exists()) return 'A declared conflict prevents this assignment.';
-            if (!$helper->canHandleRiskLevel($session->risk_level)) return 'This request requires a different competency or adviser review and cannot be assigned to a peer helper.';
+            $consents = app(ConsentService::class);
+            if (! $consents->valid($session->seeker, 'privacy_policy') || ! $consents->valid($session->seeker, 'informed_consent')) {
+                return 'The seeker does not have the current consents required for a session.';
+            }
+            if (DB::table('helper_conflicts')->where('helper_id', $helperId)->where('seeker_id', $session->seeker_id)->exists()) {
+                return 'A declared conflict prevents this assignment.';
+            }
+            if (! $helper->canHandleRiskLevel($session->risk_level)) {
+                return 'This request requires a different competency or adviser review and cannot be assigned to a peer helper.';
+            }
 
             // Capacity and concurrency rules: a helper is never overloaded past
             // one live session or the two-session duty-shift limit. The
@@ -220,7 +250,7 @@ class HelperMatchingService
             if ($helper->getRemainingCapacity() === 0) {
                 return 'The two-session duty-shift limit has been reached.';
             }
-            if ($helper->activeSessions()->where('id','!=',$session->id)->exists()) {
+            if ($helper->activeSessions()->where('id', '!=', $session->id)->exists()) {
                 return 'The helper is already assigned to an active session.';
             }
 
@@ -238,16 +268,21 @@ class HelperMatchingService
                     return 'Service is closed for new assignments.';
                 }
                 // Single authoritative eligibility check (readiness, shift, capacity…).
-                if (!$helperEligibility->allows($helper,$session)) {
-                    $reasons = $helperEligibility->reasons($helper,$session);
-                    return collect($reasons)->first(fn ($r) => !str_contains($r, 'Service is closed for new assignments.'))
+                if (! $helperEligibility->allows($helper, $session)) {
+                    $reasons = $helperEligibility->reasons($helper, $session);
+
+                    return collect($reasons)->first(fn ($r) => ! str_contains($r, 'Service is closed for new assignments.'))
                         ?? $reasons[0] ?? 'The helper is not currently eligible for this assignment.';
                 }
             }
             $session = $this->pendingSessionForQueue($queue);
-            if ($reassign && (!$session || $session->session_status !== Session::STATUS_HELPER_ASSIGNED)) return 'This request is no longer awaiting helper acceptance.';
+            if ($reassign && (! $session || $session->session_status !== Session::STATUS_HELPER_ASSIGNED)) {
+                return 'This request is no longer awaiting helper acceptance.';
+            }
             $oldHelperId = $session?->helper_id;
-            if ($reassign && $oldHelperId === $helperId) return 'That helper is already assigned to this request.';
+            if ($reassign && $oldHelperId === $helperId) {
+                return 'That helper is already assigned to this request.';
+            }
             $session ??= Session::create([
                 'seeker_id' => $queue->seeker_id, 'session_type' => 'chat',
                 'risk_level' => $queue->priority_level, 'created_date' => now(),
@@ -257,47 +292,54 @@ class HelperMatchingService
                 'moderator_id' => Auth::user()?->moderator?->id ?? $session->moderator_id,
                 'session_status' => Session::STATUS_HELPER_ASSIGNED, 'scheduled_start' => $scheduledStart ?? now()->addMinutes(2),
                 'match_method' => $method, 'matched_by' => $method === 'automatic' ? 'system' : (string) Auth::id(),
-                'helper_accepted_at' => null, 'match_status'=>'awaiting_acceptance',
+                'helper_accepted_at' => null, 'match_status' => 'awaiting_acceptance',
                 'pre_session_brief_expires_at' => $scheduledStart ?? now()->addMinutes($this->preSessionBriefMinutes),
             ]);
             $queue->update([
                 'assigned_helper_id' => $helper->id, 'request_status' => 'assigned',
                 'queue_position' => null, 'estimated_wait' => null, 'matched_date' => now(),
-                'matching_started_at'=>now(), 'helper_proposed_at'=>now(),
+                'matching_started_at' => now(), 'helper_proposed_at' => now(),
                 'scheduled_date' => $scheduledStart,
             ]);
             $helper->update(['status' => 'busy']);
             $helper->syncSessionCounters();
             if ($oldHelperId && $oldHelperId !== $helper->id && ($old = Helper::find($oldHelperId))) {
                 $old->syncSessionCounters();
-                if ($old->status === 'busy' && !$old->activeSessions()->exists()) app(HelperWorkflowMaintenance::class)->restoreOperationalStatus($old);
+                if ($old->status === 'busy' && ! $old->activeSessions()->exists()) {
+                    app(HelperWorkflowMaintenance::class)->restoreOperationalStatus($old);
+                }
             }
             $this->logAssignment($queue, $helper, $method);
-            SupportAudit::record('match_recommended',$session);
-            \Illuminate\Support\Facades\Cache::forget('moderator_dashboard_stats');
+            SupportAudit::record('match_recommended', $session);
+            Cache::forget('moderator_dashboard_stats');
             if ($emergencyOverride) {
-                SupportAudit::record('match_override',$session,[
+                SupportAudit::record('match_override', $session, [
                     'helper_id' => $helper->id,
                     'queue_id' => $queue->id,
                     'moderator_id' => Auth::user()?->moderator?->id,
                     'bypassed_reasons' => $overrideReasons,
                 ]);
             }
-            DB::afterCommit(function () use ($session, $helper, $reassign) {
+            DB::afterCommit(function () use ($session, $helper) {
                 $this->sendAssignmentNotifications($session, $helper);
                 $this->broadcastQueueUpdated();
                 if ($session->seeker) {
-                    $this->broadcastSafely(new \App\Events\NewHelperAssigned($session, $session->seeker->user_account_id, 'Peer Helper '.str_pad((string) $helper->id, 4, '0', STR_PAD_LEFT), $helper->competency_level));
+                    $this->broadcastSafely(new NewHelperAssigned($session, $session->seeker->user_account_id, 'Peer Helper '.str_pad((string) $helper->id, 4, '0', STR_PAD_LEFT), $helper->competency_level));
                 }
             });
+
             return $session;
         });
+
         return $reason;
     }
 
     private function previousEmergencyOffers(Session $session): array
     {
-        if ($session->risk_level !== 'emergency') return [];
+        if ($session->risk_level !== 'emergency') {
+            return [];
+        }
+
         return AuditLog::where('target_type', $session->getTable())->where('target_id', $session->id)
             ->whereIn('action', ['helper_declined', 'helper_recommendation_declined', 'helper_recommendation_expired', 'helper_recommendation_eligibility_changed'])
             ->get()->map(fn ($entry) => (int) ($entry->metadata['helper_id'] ?? 0))->all();
@@ -335,12 +377,31 @@ class HelperMatchingService
         Notification::create([
             'user_account_id' => $helper->user_account_id,
             'title' => 'New case assigned',
-            'message' => 'You have been assigned to support ' . ($session->seeker?->generated_alias ?? 'a seeker') . ($session->requires_immediate_action ? '. Urgent staff safety review is open. Prioritize this assignment and follow the support plan.' : '. Follow the support plan and escalate safety concerns.'),
+            'message' => 'You have been assigned to support '.($session->seeker?->generated_alias ?? 'a seeker').($session->requires_immediate_action ? '. Urgent staff safety review is open. Prioritize this assignment and follow the support plan.' : '. Follow the support plan and escalate safety concerns.'),
             'notification_type' => 'assignment',
             'type_icon' => 'fa-clipboard-list',
-            'link' => '/helper/session/' . $session->id . '/pre-assessment',
+            'link' => '/helper/session/'.$session->id.'/pre-assessment',
             'status' => 'unread',
         ]);
+
+        $alert = $session->emergencyAlerts()->whereNotIn('status', ['resolved', 'closed'])->latest('id')->first();
+        if ($alert) {
+            Notification::create([
+                'user_account_id' => $helper->user_account_id, 'title' => 'Urgent safety case assigned',
+                'message' => 'An emergency review is open for your assigned case. Prioritize the assignment and follow the Adviser instructions.',
+                'notification_type' => 'emergency', 'status' => 'unread',
+                'link' => '/helper/session/'.$session->id.'/pre-assessment',
+            ]);
+            if ($helper->adviser?->user?->is_active && $helper->adviser->user->role === 'adviser'
+                && (int) $helper->adviser_id !== (int) $alert->adviser_id) {
+                Notification::create([
+                    'user_account_id' => $helper->adviser->user_account_id, 'title' => 'Urgent case assigned to your Helper',
+                    'message' => 'Your Helper has been assigned a case with an open emergency review. Coordinate with the responsible reviewer.',
+                    'notification_type' => 'emergency', 'status' => 'unread',
+                    'link' => route('adviser.emergencies.show', $alert->id, false),
+                ]);
+            }
+        }
 
         if ($session->seeker?->user_account_id) {
             Notification::create([

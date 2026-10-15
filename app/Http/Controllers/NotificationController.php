@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\EmergencyAlert;
 use App\Models\Notification;
+use App\Services\ModeratorEmergencyCases;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,7 +34,7 @@ class NotificationController extends Controller
 
         $notifications = Notification::where('user_account_id', Auth::id())
             ->ofType($type)
-            ->latest()
+            ->latest()->latest('id')
             ->paginate(15)->withQueryString();
 
         $unreadCount = Notification::where('user_account_id', Auth::id())
@@ -131,6 +132,10 @@ class NotificationController extends Controller
         if ($request->user()->role === 'adviser' && $adviser = $request->user()->adviser) {
             $workflow['emergency_count'] = EmergencyAlert::whereNotIn('status', ['resolved', 'closed'])->where(fn ($q) => $q->where('adviser_id', $adviser->id)
                 ->orWhereHas('session.helper', fn ($h) => $h->where('adviser_id', $adviser->id)))->count();
+        }
+
+        if ($request->user()->role === 'moderator') {
+            $workflow['emergency_count'] = app(ModeratorEmergencyCases::class)->active()->count();
         }
 
         return response()->json(['count' => (clone $owned)->unread()->count(), 'cursor' => $cursor, 'workflow' => $workflow,

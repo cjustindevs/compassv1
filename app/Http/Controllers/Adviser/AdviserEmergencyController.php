@@ -27,7 +27,7 @@ class AdviserEmergencyController extends Controller
                 $query->where('adviser_id', Auth::user()->adviser?->id)
                     ->orWhereHas('session', fn ($session) => $session->whereIn('helper_id', $helperIds));
             })
-            ->latest('triggered_at');
+            ->latest('triggered_at')->latest('id');
 
         $openAlerts = (clone $baseQuery)->whereNotIn('status', ['resolved', 'closed'])->paginate(15, ['*'], 'open_page')->withQueryString();
         $resolvedAlerts = (clone $baseQuery)->where('status', 'resolved')->paginate(15, ['*'], 'resolved_page')->withQueryString();
@@ -38,7 +38,7 @@ class AdviserEmergencyController extends Controller
 
     public function show(int $id): View
     {
-        $alert = EmergencyAlert::with(['session', 'session.seeker', 'session.helper', 'session.report', 'referral'])->findOrFail($id);
+        $alert = EmergencyAlert::with(['session', 'session.seeker', 'session.helper', 'session.report', 'session.screeningResponses', 'session.concern', 'referral'])->findOrFail($id);
         $this->authorizeAlert($alert);
 
         SupportAudit::record('emergency_documentation_viewed', $alert, ['purpose' => 'emergency_review']);

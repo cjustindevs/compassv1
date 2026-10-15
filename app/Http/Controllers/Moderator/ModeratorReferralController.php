@@ -21,7 +21,7 @@ class ModeratorReferralController extends Controller
         $referrals = Referral::with(['session', 'helper.user'])
             ->where('status', Referral::STATUS_PENDING_ADVISER_ASSIGNMENT)
             ->orderByRaw("CASE priority_level WHEN 'emergency' THEN 0 WHEN 'high' THEN 1 WHEN 'moderate' THEN 2 ELSE 3 END")
-            ->orderBy('created_at')
+            ->latest('created_at')->latest('id')
             ->get();
 
         $advisers = Adviser::with('user')

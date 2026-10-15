@@ -81,8 +81,7 @@
             </td>
         @endforeach
         <td>
-@if($record->linked_session_id)<a class="mo-text-link" href="{{ route('moderator.sessions.show',$record->linked_session_id) }}">View session</a>
-@elseif($record->record_type==='queue_requests')<a class="mo-text-link" href="{{ route('moderator.queue') }}">Open queue</a>
+@if($record->record_type==='queue_requests')<a class="mo-text-link" href="{{ route('moderator.queue') }}">Open queue</a>
 @else<span class="mo-muted">Recorded</span>
 @endif</td>
         </tr>

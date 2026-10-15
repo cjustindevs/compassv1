@@ -4,9 +4,13 @@ namespace Tests\Feature;
 
 use App\Models\Adviser;
 use App\Models\CalendarEvent;
+use App\Models\ConsentRecord;
 use App\Models\EmergencyAlert;
+use App\Models\EmergencyResource;
 use App\Models\Helper;
+use App\Models\HelperSchedule;
 use App\Models\HelpSeeker;
+use App\Models\Message;
 use App\Models\Moderator;
 use App\Models\QueueRequest;
 use App\Models\ReadinessCheck;
@@ -14,26 +18,38 @@ use App\Models\Referral;
 use App\Models\Session;
 use App\Models\SessionReport;
 use App\Models\User;
+use App\Services\ConsentService;
+use App\Services\HelperReadinessService;
+use App\Services\HelperShiftService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
+use Tests\Concerns\SeekerWorkflowFixtures;
 use Tests\TestCase;
 
 class ModeratorAdviserModuleTest extends TestCase
 {
     use RefreshDatabase;
-    use \Tests\Concerns\SeekerWorkflowFixtures;
+    use SeekerWorkflowFixtures;
 
     private function loggedInReadyDutyHelper(Helper $helper): void
     {
         $this->verifiedHelperFixture($helper);
-        if (!\Illuminate\Support\Facades\Schema::hasTable('test_duty_logins')) {
-            \Illuminate\Support\Facades\Schema::create('test_duty_logins', function ($table) {
-                $table->string('id')->primary(); $table->unsignedBigInteger('user_id')->nullable(); $table->integer('last_activity');
-                $table->string('ip_address',45)->nullable(); $table->text('user_agent')->nullable(); $table->text('payload')->default('');
+        if (! Schema::hasTable('test_duty_logins')) {
+            Schema::create('test_duty_logins', function ($table) {
+                $table->string('id')->primary();
+                $table->unsignedBigInteger('user_id')->nullable();
+                $table->integer('last_activity');
+                $table->string('ip_address', 45)->nullable();
+                $table->text('user_agent')->nullable();
+                $table->text('payload')->default('');
             });
         }
-        config(['session.driver'=>'database','session.table'=>'test_duty_logins','session.lifetime'=>120]);
-        \Illuminate\Support\Facades\DB::table('test_duty_logins')->insert(['id'=>'helper-'.$helper->id,'user_id'=>$helper->user_account_id,'last_activity'=>now()->timestamp]);
-        ReadinessCheck::create(['helper_id'=>$helper->id,'assessment_date'=>now(),'valid_until'=>now()->addHours(2),'assessment_result'=>'ready','is_active'=>true]);
+        config(['session.driver' => 'database', 'session.table' => 'test_duty_logins', 'session.lifetime' => 120]);
+        DB::table('test_duty_logins')->insert(['id' => 'helper-'.$helper->id, 'user_id' => $helper->user_account_id, 'last_activity' => now()->timestamp]);
+        ReadinessCheck::create(['helper_id' => $helper->id, 'assessment_date' => now(), 'valid_until' => now()->addHours(2), 'assessment_result' => 'ready', 'is_active' => true]);
     }
 
     public function test_queue_explains_why_a_created_helper_cannot_be_assigned(): void
@@ -82,26 +98,25 @@ class ModeratorAdviserModuleTest extends TestCase
         $this->assertNull($session->fresh()->risk_level);
     }
 
-    public function test_moderator_session_monitor_shows_the_latest_messages_and_logs_content_access(): void
+    public function test_moderator_session_content_is_forbidden_even_with_a_direct_url(): void
     {
         [$modUser] = $this->moderatorUser();
         [$seeker] = $this->seeker();
         $session = Session::create(['seeker_id' => $seeker->id, 'session_type' => 'chat', 'session_status' => 'active', 'risk_level' => 'low', 'created_date' => now()]);
 
-        \App\Models\Message::create(['session_id' => $session->id, 'sender_id' => $seeker->user_account_id, 'sender' => 'seeker', 'message_text' => 'Earliest message that should age out.', 'sent_datetime' => now()->subHours(3)]);
-        \App\Models\Message::create(['session_id' => $session->id, 'sender_id' => $seeker->user_account_id, 'sender' => 'seeker', 'message_text' => 'Second message that should age out.', 'sent_datetime' => now()->subHours(2)]);
+        Message::create(['session_id' => $session->id, 'sender_id' => $seeker->user_account_id, 'sender' => 'seeker', 'message_text' => 'Earliest message that should age out.', 'sent_datetime' => now()->subHours(3)]);
+        Message::create(['session_id' => $session->id, 'sender_id' => $seeker->user_account_id, 'sender' => 'seeker', 'message_text' => 'Second message that should age out.', 'sent_datetime' => now()->subHours(2)]);
         foreach (range(3, 104) as $n) {
-            \App\Models\Message::create(['session_id' => $session->id, 'sender_id' => $seeker->user_account_id, 'sender' => 'seeker', 'message_text' => "Filler message {$n}", 'sent_datetime' => now()->subMinutes(100 - $n)]);
+            Message::create(['session_id' => $session->id, 'sender_id' => $seeker->user_account_id, 'sender' => 'seeker', 'message_text' => "Filler message {$n}", 'sent_datetime' => now()->subMinutes(100 - $n)]);
         }
-        \App\Models\Message::create(['session_id' => $session->id, 'sender_id' => $seeker->user_account_id, 'sender' => 'seeker', 'message_text' => 'Most recent message in the conversation.', 'sent_datetime' => now()]);
+        Message::create(['session_id' => $session->id, 'sender_id' => $seeker->user_account_id, 'sender' => 'seeker', 'message_text' => 'Most recent message in the conversation.', 'sent_datetime' => now()]);
 
-        $this->actingAs($modUser)->get(route('moderator.sessions.show', $session))->assertOk()
-            ->assertSee('Most recent message in the conversation.')
-            ->assertSee('Filler message 20', false)
-            ->assertDontSee('Second message that should age out.')
-            ->assertDontSee('Earliest message that should age out.');
-
-        $this->assertDatabaseHas('audit_logs', ['action' => 'moderator_session_content_viewed', 'target_id' => $session->id, 'user_account_id' => $modUser->id]);
+        $this->actingAs($modUser)->get(route('moderator.sessions.show', $session))->assertForbidden()
+            ->assertDontSee('Most recent message in the conversation.');
+        $this->get(route('chat.transcript', $session->id))->assertForbidden();
+        $this->get(route('api.transcript.download', $session->id))->assertForbidden();
+        $this->get(route('moderator.sessions'))->assertOk()->assertDontSee('/moderator/sessions/'.$session->id);
+        $this->assertDatabaseMissing('audit_logs', ['action' => 'moderator_session_content_viewed', 'target_id' => $session->id, 'user_account_id' => $modUser->id]);
     }
 
     public function test_reviewing_adviser_can_read_the_chat_conversation_for_a_screening_review(): void
@@ -110,11 +125,11 @@ class ModeratorAdviserModuleTest extends TestCase
         $helper = $this->helper($owner);
         [$seeker] = $this->seeker();
         $session = Session::create(['seeker_id' => $seeker->id, 'helper_id' => $helper->id, 'session_type' => 'chat', 'session_status' => 'completed', 'workflow_state' => 'adviser_review_required', 'review_adviser_id' => $owner->id, 'requires_adviser_review' => true, 'completion_status' => 'completed', 'created_date' => now()]);
-        \App\Models\Message::create(['session_id' => $session->id, 'sender_id' => $helper->user_account_id, 'sender' => 'helper', 'message_text' => 'Sent an assessment tip.', 'transcript' => 'Sent an assessment tip.', 'is_transcript' => true, 'sent_datetime' => now()->subMinutes(5)]);
-        \App\Models\Message::create(['session_id' => $session->id, 'sender_id' => $seeker->user_account_id, 'sender' => 'seeker', 'message_text' => 'Your suggestion helped, thank you.', 'transcript' => 'Your suggestion helped, thank you.', 'is_transcript' => true, 'sent_datetime' => now()->subMinutes(2)]);
+        Message::create(['session_id' => $session->id, 'sender_id' => $helper->user_account_id, 'sender' => 'helper', 'message_text' => 'Sent an assessment tip.', 'transcript' => 'Sent an assessment tip.', 'is_transcript' => true, 'sent_datetime' => now()->subMinutes(5)]);
+        Message::create(['session_id' => $session->id, 'sender_id' => $seeker->user_account_id, 'sender' => 'seeker', 'message_text' => 'Your suggestion helped, thank you.', 'transcript' => 'Your suggestion helped, thank you.', 'is_transcript' => true, 'sent_datetime' => now()->subMinutes(2)]);
 
-        \App\Models\ConsentRecord::create(['seeker_id'=>$session->seeker_id,'session_id'=>$session->id,'purpose'=>'transcription','document_type'=>'informed_consent','version'=>\App\Services\ConsentService::VERSION,'decision'=>'accepted','consent_given'=>true,'withdrawn'=>false,'consent_date'=>now()]);
-        $this->actingAs($ownerUser)->post(route('adviser.transcript.access',$session->id),['purpose'=>'incident_investigation','reason'=>'Investigate a documented screening concern.'])->assertOk();
+        ConsentRecord::create(['seeker_id' => $session->seeker_id, 'session_id' => $session->id, 'purpose' => 'transcription', 'document_type' => 'informed_consent', 'version' => ConsentService::VERSION, 'decision' => 'accepted', 'consent_given' => true, 'withdrawn' => false, 'consent_date' => now()]);
+        $this->actingAs($ownerUser)->post(route('adviser.transcript.access', $session->id), ['purpose' => 'incident_investigation', 'reason' => 'Investigate a documented screening concern.'])->assertOk();
         $this->actingAs($ownerUser)->get(route('adviser.screenings.conversation', $session))->assertOk()
             ->assertSee('Sent an assessment tip.')
             ->assertSee('Your suggestion helped, thank you.')
@@ -122,7 +137,7 @@ class ModeratorAdviserModuleTest extends TestCase
             ->assertSee($helper->full_name)
             ->assertDontSee($helper->public_alias);
         $this->assertDatabaseHas('audit_logs', ['action' => 'screening_conversation_viewed', 'target_id' => $session->id]);
-        $this->assertSame(1, \App\Models\ConsentRecord::count());
+        $this->assertSame(1, ConsentRecord::count());
     }
 
     public function test_conversation_access_follows_helper_supervision_for_a_reassessment(): void
@@ -131,10 +146,10 @@ class ModeratorAdviserModuleTest extends TestCase
         $helper = $this->helper($owner);
         [$seeker] = $this->seeker();
         $session = Session::create(['seeker_id' => $seeker->id, 'helper_id' => $helper->id, 'session_type' => 'chat', 'session_status' => 'completed', 'requires_adviser_review' => true, 'completion_status' => 'completed', 'created_date' => now()]);
-        \App\Models\Message::create(['session_id' => $session->id, 'sender_id' => $helper->user_account_id, 'sender' => 'helper', 'message_text' => 'Helper reassessment note.', 'transcript' => 'Helper reassessment note.', 'is_transcript' => true, 'sent_datetime' => now()]);
+        Message::create(['session_id' => $session->id, 'sender_id' => $helper->user_account_id, 'sender' => 'helper', 'message_text' => 'Helper reassessment note.', 'transcript' => 'Helper reassessment note.', 'is_transcript' => true, 'sent_datetime' => now()]);
 
-        \App\Models\ConsentRecord::create(['seeker_id'=>$session->seeker_id,'session_id'=>$session->id,'purpose'=>'transcription','document_type'=>'informed_consent','version'=>\App\Services\ConsentService::VERSION,'decision'=>'accepted','consent_given'=>true,'withdrawn'=>false,'consent_date'=>now()]);
-        $this->actingAs($ownerUser)->post(route('adviser.transcript.access',$session->id),['purpose'=>'incident_investigation','reason'=>'Investigate a documented screening concern.'])->assertOk();
+        ConsentRecord::create(['seeker_id' => $session->seeker_id, 'session_id' => $session->id, 'purpose' => 'transcription', 'document_type' => 'informed_consent', 'version' => ConsentService::VERSION, 'decision' => 'accepted', 'consent_given' => true, 'withdrawn' => false, 'consent_date' => now()]);
+        $this->actingAs($ownerUser)->post(route('adviser.transcript.access', $session->id), ['purpose' => 'incident_investigation', 'reason' => 'Investigate a documented screening concern.'])->assertOk();
         $this->actingAs($ownerUser)->get(route('adviser.screenings.conversation', $session))
             ->assertOk()->assertSee('Helper reassessment note.');
     }
@@ -146,10 +161,10 @@ class ModeratorAdviserModuleTest extends TestCase
         $helper = $this->helper($owner);
         [$seeker] = $this->seeker();
         $session = Session::create(['seeker_id' => $seeker->id, 'helper_id' => $helper->id, 'session_type' => 'chat', 'session_status' => 'completed', 'workflow_state' => 'adviser_review_required', 'review_adviser_id' => $owner->id, 'requires_adviser_review' => true, 'completion_status' => 'completed', 'created_date' => now()]);
-        \App\Models\Message::create(['session_id' => $session->id, 'sender_id' => $helper->user_account_id, 'sender' => 'helper', 'message_text' => 'Private note.', 'transcript' => 'Private note.', 'is_transcript' => true, 'sent_datetime' => now()]);
+        Message::create(['session_id' => $session->id, 'sender_id' => $helper->user_account_id, 'sender' => 'helper', 'message_text' => 'Private note.', 'transcript' => 'Private note.', 'is_transcript' => true, 'sent_datetime' => now()]);
 
-        \App\Models\ConsentRecord::create(['seeker_id'=>$session->seeker_id,'session_id'=>$session->id,'purpose'=>'transcription','document_type'=>'informed_consent','version'=>\App\Services\ConsentService::VERSION,'decision'=>'accepted','consent_given'=>true,'withdrawn'=>false,'consent_date'=>now()]);
-        $this->actingAs($ownerUser)->post(route('adviser.transcript.access',$session->id),['purpose'=>'incident_investigation','reason'=>'Investigate a documented screening concern.'])->assertOk();
+        ConsentRecord::create(['seeker_id' => $session->seeker_id, 'session_id' => $session->id, 'purpose' => 'transcription', 'document_type' => 'informed_consent', 'version' => ConsentService::VERSION, 'decision' => 'accepted', 'consent_given' => true, 'withdrawn' => false, 'consent_date' => now()]);
+        $this->actingAs($ownerUser)->post(route('adviser.transcript.access', $session->id), ['purpose' => 'incident_investigation', 'reason' => 'Investigate a documented screening concern.'])->assertOk();
         $this->actingAs($ownerUser)->get(route('adviser.screenings.conversation', $session))->assertOk();
         $this->actingAs($otherUser)->get(route('adviser.screenings.conversation', $session))->assertForbidden();
     }
@@ -165,16 +180,16 @@ class ModeratorAdviserModuleTest extends TestCase
             ->assertRedirect(route('adviser.schedule', ['date' => $date]));
         $this->get(route('adviser.schedule', ['date' => $date]))->assertOk()->assertSee('All day');
 
-        $shiftId = \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->value('id');
+        $shiftId = HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->value('id');
 
         // Rostering the same helper for the same day twice is refused.
         $this->post(route('adviser.schedule.update'), $payload)->assertSessionHasErrors('date');
-        $this->assertSame(1, \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
+        $this->assertSame(1, HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
 
         // Passing the shift id edits that row in place instead of adding one.
         $this->post(route('adviser.schedule.update'), $payload + ['shift_id' => $shiftId])
             ->assertSessionHasNoErrors();
-        $this->assertSame(1, \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
+        $this->assertSame(1, HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
 
         // The form is per day, so it offers no shift times at all.
         $this->get(route('adviser.schedule'))->assertOk()
@@ -197,22 +212,22 @@ class ModeratorAdviserModuleTest extends TestCase
             ])->assertSessionHasNoErrors();
         }
 
-        $this->assertSame(3, \App\Models\HelperSchedule::where('is_active',true)->whereDate('date', $date)->count());
+        $this->assertSame(3, HelperSchedule::where('is_active', true)->whereDate('date', $date)->count());
 
         foreach ([$first, $second, $third] as $helper) {
-            $this->assertSame(1, \App\Models\HelperSchedule::where('helper_id', $helper->id)
+            $this->assertSame(1, HelperSchedule::where('helper_id', $helper->id)
                 ->whereDate('date', $date)->count());
         }
 
         // Removing one helper's duty leaves the other helpers on that date.
-        $shift = \App\Models\HelperSchedule::where('helper_id', $second->id)->whereDate('date', $date)->firstOrFail();
+        $shift = HelperSchedule::where('helper_id', $second->id)->whereDate('date', $date)->firstOrFail();
 
         $this->actingAs($user)->post(route('adviser.schedule.destroy'), [
             'helper_id' => $second->id, 'date' => $date, 'shift_id' => $shift->id,
         ])->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('helper_schedules', ['id' => $shift->id, 'is_active'=>false]);
-        $this->assertSame(2, \App\Models\HelperSchedule::where('is_active',true)->whereDate('date', $date)->count());
+        $this->assertDatabaseHas('helper_schedules', ['id' => $shift->id, 'is_active' => false]);
+        $this->assertSame(2, HelperSchedule::where('is_active', true)->whereDate('date', $date)->count());
         $this->assertTrue($first->fresh()->schedules()->whereDate('date', $date)->first()->isOnDuty() === false);
     }
 
@@ -222,7 +237,7 @@ class ModeratorAdviserModuleTest extends TestCase
         $helper = $this->helper($adviser);
         $date = now('Asia/Manila')->toDateString();
 
-        $shift = app(\App\Services\HelperShiftService::class)->scheduleDuty(
+        $shift = app(HelperShiftService::class)->scheduleDuty(
             $helper,
             $date,
             attributes: ['created_by' => $user->id],
@@ -246,24 +261,24 @@ class ModeratorAdviserModuleTest extends TestCase
         [$user, $adviser] = $this->adviserUser('twice@example.com');
         $helper = $this->helper($adviser);
         $date = now()->addDays(4)->toDateString();
-        $service = app(\App\Services\HelperShiftService::class);
+        $service = app(HelperShiftService::class);
 
         $service->scheduleDuty($helper, $date, attributes: ['created_by' => $user->id]);
 
         try {
             $service->scheduleDuty($helper, $date, attributes: ['created_by' => $user->id]);
             $this->fail('The same helper should not be rostered twice for one date.');
-        } catch (\Illuminate\Validation\ValidationException $exception) {
+        } catch (ValidationException $exception) {
             $this->assertArrayHasKey('date', $exception->errors());
         }
 
-        $this->assertSame(1, \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
+        $this->assertSame(1, HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
 
         // A different date is fine, and so is a different helper on that date.
         $other = $this->helper($adviser);
         $service->scheduleDuty($helper, now()->addDays(5)->toDateString(), attributes: ['created_by' => $user->id]);
         $service->scheduleDuty($other, $date, attributes: ['created_by' => $user->id]);
-        $this->assertSame(2, \App\Models\HelperSchedule::where('is_active',true)->whereDate('date', $date)->count());
+        $this->assertSame(2, HelperSchedule::where('is_active', true)->whereDate('date', $date)->count());
     }
 
     public function test_a_moderator_can_remove_a_helper_from_a_day(): void
@@ -283,8 +298,8 @@ class ModeratorAdviserModuleTest extends TestCase
             ])->assertSessionHasNoErrors();
         }
 
-        $shift = \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->firstOrFail();
-        $eventId = \App\Models\CalendarEvent::where('helper_schedule_id', $shift->id)->value('id');
+        $shift = HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->firstOrFail();
+        $eventId = CalendarEvent::where('helper_schedule_id', $shift->id)->value('id');
 
         $this->assertNotNull($eventId, 'the duty event should be linked to its day');
 
@@ -292,12 +307,12 @@ class ModeratorAdviserModuleTest extends TestCase
             'helper_id' => $helper->id, 'date' => $date, 'shift_id' => $shift->id,
         ])->assertRedirect(route('moderator.schedules', ['date' => $date]))->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('helper_schedules', ['id' => $shift->id, 'is_active'=>false]);
+        $this->assertDatabaseHas('helper_schedules', ['id' => $shift->id, 'is_active' => false]);
         $this->assertDatabaseMissing('calendar_events', ['id' => $eventId]);
 
         // Only the removed helper loses the day.
-        $this->assertSame(1, \App\Models\HelperSchedule::where('is_active',true)->whereDate('date', $date)->count());
-        $this->assertSame(1, \App\Models\HelperSchedule::where('helper_id', $other->id)->whereDate('date', $date)->count());
+        $this->assertSame(1, HelperSchedule::where('is_active', true)->whereDate('date', $date)->count());
+        $this->assertSame(1, HelperSchedule::where('helper_id', $other->id)->whereDate('date', $date)->count());
     }
 
     public function test_moderator_assignment_requires_current_ready_helper_and_rejects_override(): void
@@ -334,12 +349,12 @@ class ModeratorAdviserModuleTest extends TestCase
 
         // A forged override cannot bypass the same eligibility checks used by automatic matching.
         $this->actingAs($moderatorUser)->postJson(route('moderator.queue.assign'), [
-            'queue_id'=>$queue->id,'helper_id'=>$helper->id,'emergency_override'=>1,
+            'queue_id' => $queue->id, 'helper_id' => $helper->id, 'emergency_override' => 1,
         ])->assertUnprocessable()->assertJsonValidationErrors('emergency_override');
-        $this->assertDatabaseHas('queue_requests',['id'=>$queue->id,'request_status'=>'waiting']);
+        $this->assertDatabaseHas('queue_requests', ['id' => $queue->id, 'request_status' => 'waiting']);
         $this->readyDutyHelper($helper);
-        $this->actingAs($moderatorUser)->post(route('moderator.queue.assign'), ['queue_id'=>$queue->id,'helper_id'=>$helper->id])->assertSessionHas('success');
-        $this->assertDatabaseHas('counseling_sessions',['id'=>$session->id,'helper_id'=>$helper->id,'session_status'=>Session::STATUS_HELPER_ASSIGNED]);
+        $this->actingAs($moderatorUser)->post(route('moderator.queue.assign'), ['queue_id' => $queue->id, 'helper_id' => $helper->id])->assertSessionHas('success');
+        $this->assertDatabaseHas('counseling_sessions', ['id' => $session->id, 'helper_id' => $helper->id, 'session_status' => Session::STATUS_HELPER_ASSIGNED]);
     }
 
     public function test_emergency_override_cannot_exceed_shift_capacity(): void
@@ -349,7 +364,7 @@ class ModeratorAdviserModuleTest extends TestCase
         [$seeker, $seekerUser] = $this->seeker();
         $this->consentFixture($seekerUser);
 
-        \App\Models\HelperSchedule::create([
+        HelperSchedule::create([
             'helper_id' => $helper->id,
             'date' => now('Asia/Manila')->toDateString(),
             'shift_start' => '00:00:00',
@@ -427,13 +442,13 @@ class ModeratorAdviserModuleTest extends TestCase
             'event_date' => $date,
         ])->assertRedirect(route('moderator.schedules', ['date' => $date]))->assertSessionHasNoErrors();
 
-        $this->assertSame(2, \App\Models\HelperSchedule::where('is_active',true)->whereDate('date', $date)->count());
+        $this->assertSame(2, HelperSchedule::where('is_active', true)->whereDate('date', $date)->count());
 
         // Only the same helper twice on one date is refused.
         $this->actingAs($moderatorUser)->from(route('moderator.schedules'))->post(route('moderator.schedules.store'), $payload)
             ->assertRedirect(route('moderator.schedules'))
             ->assertSessionHasErrors('event_date');
-        $this->assertSame(1, \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
+        $this->assertSame(1, HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
     }
 
     public function test_moderator_duty_day_counts_as_duty_for_eligibility(): void
@@ -451,7 +466,7 @@ class ModeratorAdviserModuleTest extends TestCase
         ])->assertRedirect(route('moderator.schedules', ['date' => $date]));
 
         $this->assertDatabaseHas('helper_schedules', ['helper_id' => $helper->id, 'shift_start' => '18:00', 'shift_end' => '23:00']);
-        $this->assertSame(1, \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
+        $this->assertSame(1, HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
         $this->assertDatabaseHas('calendar_events', [
             'title' => 'Duty: '.$helper->full_name,
             'event_type' => CalendarEvent::TYPE_MEETING,
@@ -480,7 +495,7 @@ class ModeratorAdviserModuleTest extends TestCase
         ])->assertRedirect(route('adviser.schedule', ['date' => $date]))->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('helper_schedules', ['helper_id' => $helper->id, 'shift_start' => null, 'shift_end' => null]);
-        $this->assertSame(1, \App\Models\HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
+        $this->assertSame(1, HelperSchedule::where('helper_id', $helper->id)->whereDate('date', $date)->count());
         $this->get(route('adviser.schedule', ['date' => $date]))->assertOk()->assertSee('All day');
     }
 
@@ -575,7 +590,7 @@ class ModeratorAdviserModuleTest extends TestCase
             ->assertRedirect(route('moderator.manage'))->assertSessionHas('success');
 
         $this->assertDatabaseHas('helpers', ['id' => $helper->id, 'adviser_id' => null]);
-        $this->assertNotNull(\Illuminate\Support\Facades\DB::table('adviser_helper_assignments')->where('helper_id', $helper->id)->where('adviser_id', $adviser->id)->value('ended_at'));
+        $this->assertNotNull(DB::table('adviser_helper_assignments')->where('helper_id', $helper->id)->where('adviser_id', $adviser->id)->value('ended_at'));
         $this->assertDatabaseHas('audit_logs', ['action' => 'supervision_relationship_changed', 'target_id' => $helper->id]);
     }
 
@@ -589,7 +604,7 @@ class ModeratorAdviserModuleTest extends TestCase
             ->post(route('moderator.manage.unassign'), ['helper_id' => $helper->id])
             ->assertRedirect(route('moderator.manage'))->assertSessionHas('success');
 
-        $closed = \Illuminate\Support\Facades\DB::table('adviser_helper_assignments')
+        $closed = DB::table('adviser_helper_assignments')
             ->where('helper_id', $helper->id)->where('adviser_id', $adviser->id)->first();
         $this->assertNotNull($closed->ended_at);
         $this->assertSame($user->id, $closed->actor_id);
@@ -623,9 +638,9 @@ class ModeratorAdviserModuleTest extends TestCase
         ])->assertRedirect(route('adviser.helpers'))->assertSessionHas('success');
         $this->assertDatabaseHas('helpers', ['id' => $helper->id, 'adviser_id' => $next->id]);
         $this->assertDatabaseCount('adviser_helper_assignments', 2);
-        $this->assertDatabaseHas('adviser_helper_assignments', ['helper_id'=>$helper->id, 'adviser_id'=>$next->id, 'ended_at'=>null, 'reason'=>'Coverage change']);
-        $this->assertNotNull(\Illuminate\Support\Facades\DB::table('adviser_helper_assignments')->where('helper_id',$helper->id)->where('adviser_id',$adviser->id)->value('ended_at'));
-        $this->assertDatabaseHas('audit_logs', ['action'=>'helper_supervision_transferred','target_id'=>$helper->id]);
+        $this->assertDatabaseHas('adviser_helper_assignments', ['helper_id' => $helper->id, 'adviser_id' => $next->id, 'ended_at' => null, 'reason' => 'Coverage change']);
+        $this->assertNotNull(DB::table('adviser_helper_assignments')->where('helper_id', $helper->id)->where('adviser_id', $adviser->id)->value('ended_at'));
+        $this->assertDatabaseHas('audit_logs', ['action' => 'helper_supervision_transferred', 'target_id' => $helper->id]);
         $this->assertDatabaseHas('referrals', ['id' => $referral->id, 'adviser_id' => $next->id]);
         $this->get(route('adviser.helper.show', $helper->id))->assertForbidden();
         $this->post(route('adviser.helpers.reassign'), [
@@ -641,7 +656,7 @@ class ModeratorAdviserModuleTest extends TestCase
         $session = $referral->session;
         $session->update(['created_date' => now()->subMinutes(20)]);
         foreach ([[$session->seeker->user_account_id, 19], [$referral->helper->user_account_id, 15], [$referral->helper->user_account_id, 1]] as [$sender, $minutes]) {
-            \App\Models\Message::create(['session_id' => $session->id, 'sender_id' => $sender, 'message_text' => 'Test reply', 'sent_datetime' => now()->subMinutes($minutes)]);
+            Message::create(['session_id' => $session->id, 'sender_id' => $sender, 'message_text' => 'Test reply', 'sent_datetime' => now()->subMinutes($minutes)]);
         }
         $this->actingAs($user)->get(route('adviser.reports'))->assertOk()
             ->assertViewHas('avgResponseTime', '5m')
@@ -652,13 +667,13 @@ class ModeratorAdviserModuleTest extends TestCase
     {
         // Freeze the clock: response_minutes is derived from two separate now()
         // reads, so an uncontrolled tick makes the interval 5.02m instead of 5m.
-        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-09-16 19:00', 'Asia/Manila')->utc());
+        $this->travelTo(Carbon::parse('2026-09-16 19:00', 'Asia/Manila')->utc());
 
         [$user, $adviser] = $this->adviserUser('reports-submitted@example.com');
         [$referral] = [$this->referralFor($adviser, 'Submitted review')];
         $session = $referral->session;
         $session->update(['submitted_at' => now()->subMinutes(20)]);
-        \App\Models\Message::create(['session_id' => $session->id, 'sender_id' => $referral->helper->user_account_id, 'message_text' => 'First reply', 'sent_datetime' => now()->subMinutes(15)]);
+        Message::create(['session_id' => $session->id, 'sender_id' => $referral->helper->user_account_id, 'message_text' => 'First reply', 'sent_datetime' => now()->subMinutes(15)]);
         $this->actingAs($user)->get(route('adviser.reports'))->assertOk()
             ->assertViewHas('avgResponseTime', '5m')
             ->assertViewHas('metrics', fn ($metrics) => $metrics['response_minutes'] === 5.0 && $metrics['referral_approval_rate'] === null);
@@ -666,19 +681,20 @@ class ModeratorAdviserModuleTest extends TestCase
 
     public function test_manual_assignment_cannot_assign_the_same_request_twice(): void
     {
-        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-09-16 19:00','Asia/Manila')->utc());
+        $this->travelTo(Carbon::parse('2026-09-16 19:00', 'Asia/Manila')->utc());
         [$user] = $this->moderatorUser();
         $helper = $this->helper();
         [$seeker] = $this->seeker();
         $queue = QueueRequest::create(['seeker_id' => $seeker->id, 'request_status' => 'waiting', 'priority_level' => 'low']);
         $this->consentFixture($seeker->user);
-        Session::create(['seeker_id'=>$seeker->id,'queue_request_id'=>$queue->id,'submitted_at'=>now(),'risk_level'=>'low','session_status'=>'waiting','created_date'=>now()]);
+        Session::create(['seeker_id' => $seeker->id, 'queue_request_id' => $queue->id, 'submitted_at' => now(), 'risk_level' => 'low', 'session_status' => 'waiting', 'created_date' => now()]);
         $this->readyDutyHelper($helper);
         $payload = ['queue_id' => $queue->id, 'helper_id' => $helper->id];
         $this->actingAs($user)->post(route('moderator.queue.assign'), $payload)->assertSessionHas('success');
         $this->post(route('moderator.queue.assign'), $payload)->assertSessionHas('error');
         $this->assertSame(1, Session::where('queue_request_id', $queue->id)->count());
-        $next = $this->helper(); $this->readyDutyHelper($next);
+        $next = $this->helper();
+        $this->readyDutyHelper($next);
         $payload['helper_id'] = $next->id;
         $this->post(route('moderator.queue.reassign'), $payload)->assertSessionHas('success');
         $this->assertDatabaseHas('counseling_sessions', ['queue_request_id' => $queue->id, 'submitted_at' => now(), 'helper_id' => $next->id]);
@@ -690,7 +706,7 @@ class ModeratorAdviserModuleTest extends TestCase
         [$user] = $this->adviserUser('contacts@example.com');
         $data = ['agency_name' => 'Test Support Desk', 'hotline' => '12345', 'description' => 'Test contact only', 'status' => 'active'];
         $this->actingAs($user)->post(route('adviser.emergency-resources.save'), $data)->assertSessionHas('success');
-        $contact = \App\Models\EmergencyResource::where('agency_name', 'Test Support Desk')->firstOrFail();
+        $contact = EmergencyResource::where('agency_name', 'Test Support Desk')->firstOrFail();
         $this->get(route('emergency'))->assertOk()->assertSee('Test Support Desk')->assertDontSee('0917-123-4567');
         $this->post(route('adviser.emergency-resources.save'), [...$data, 'id' => $contact->id, 'status' => 'inactive'])->assertSessionHas('success');
         $this->get(route('emergency'))->assertDontSee('Test Support Desk');
@@ -835,13 +851,13 @@ class ModeratorAdviserModuleTest extends TestCase
         $user ??= User::factory()->create(['role' => 'helper', 'is_active' => true]);
         $helper = Helper::create([
             'user_account_id' => $user->id,
-            'first_name' => 'Helen', 'last_name' => 'Helper' . $user->id,
+            'first_name' => 'Helen', 'last_name' => 'Helper'.$user->id,
             'email' => $user->email, 'status' => 'available', 'availability' => 'available',
             'competency_level' => 3, 'competency_risk_level' => 3, 'max_concurrent_sessions' => 2,
         ]);
         $this->verifiedHelperFixture($helper);
-        \App\Models\HelperSchedule::create(['helper_id' => $helper->id, 'date' => now('Asia/Manila')->toDateString(), 'shift_start' => '00:00:00', 'shift_end' => '23:59:59', 'created_by' => $user->id, 'is_active' => true]);
-        \App\Models\ReadinessCheck::create(['helper_id' => $helper->id, 'assessment_date' => now(), 'valid_until' => now()->addHours(4), 'assessment_result' => 'ready', 'emotionally_ready' => true, 'willing_to_listen' => true, 'stress_level' => 'low', 'availability_status' => 'available', 'skills_confirmed' => \App\Services\HelperReadinessService::SKILLS, 'is_active' => true]);
+        HelperSchedule::create(['helper_id' => $helper->id, 'date' => now('Asia/Manila')->toDateString(), 'shift_start' => '00:00:00', 'shift_end' => '23:59:59', 'created_by' => $user->id, 'is_active' => true]);
+        ReadinessCheck::create(['helper_id' => $helper->id, 'assessment_date' => now(), 'valid_until' => now()->addHours(4), 'assessment_result' => 'ready', 'emotionally_ready' => true, 'willing_to_listen' => true, 'stress_level' => 'low', 'availability_status' => 'available', 'skills_confirmed' => HelperReadinessService::SKILLS, 'is_active' => true]);
 
         return $helper->fresh();
     }
@@ -872,16 +888,17 @@ class ModeratorAdviserModuleTest extends TestCase
         return [$user, $adviser];
     }
 
-    private function readyDutyHelper(Helper $helper): void {
+    private function readyDutyHelper(Helper $helper): void
+    {
         // Preserve explicit scenario dates; otherwise use a stable open service day.
-        $dutyTime = \Illuminate\Support\Carbon::hasTestNow()
-            ? now('Asia/Manila')->setTime(19,0)
-            : \Illuminate\Support\Carbon::parse('2026-10-08 19:00', 'Asia/Manila');
+        $dutyTime = Carbon::hasTestNow()
+            ? now('Asia/Manila')->setTime(19, 0)
+            : Carbon::parse('2026-10-08 19:00', 'Asia/Manila');
         $this->travelTo($dutyTime->utc());
         $this->verifiedHelperFixture($helper);
-        $helper->update(['status'=>'available','availability'=>'available']);
-        \App\Models\HelperSchedule::updateOrCreate(['helper_id'=>$helper->id,'date'=>now('Asia/Manila')->startOfDay()],['shift_start'=>'18:00:00','shift_end'=>'23:00:00','created_by'=>$helper->user_account_id,'is_active'=>true]);
-        \App\Models\ReadinessCheck::create(['helper_id'=>$helper->id,'assessment_date'=>now(),'valid_until'=>now()->addHours(3),'assessment_result'=>'ready','emotionally_ready'=>true,'willing_to_listen'=>true,'stress_level'=>'low','availability_status'=>'available','is_active'=>true]);
+        $helper->update(['status' => 'available', 'availability' => 'available']);
+        HelperSchedule::updateOrCreate(['helper_id' => $helper->id, 'date' => now('Asia/Manila')->startOfDay()], ['shift_start' => '18:00:00', 'shift_end' => '23:00:00', 'created_by' => $helper->user_account_id, 'is_active' => true]);
+        ReadinessCheck::create(['helper_id' => $helper->id, 'assessment_date' => now(), 'valid_until' => now()->addHours(3), 'assessment_result' => 'ready', 'emotionally_ready' => true, 'willing_to_listen' => true, 'stress_level' => 'low', 'availability_status' => 'available', 'is_active' => true]);
     }
 
     private function helper(?Adviser $adviser = null): Helper
@@ -892,7 +909,7 @@ class ModeratorAdviserModuleTest extends TestCase
             'user_account_id' => $user->id,
             'adviser_id' => $adviser?->id,
             'first_name' => 'Helen',
-            'last_name' => 'Helper' . $user->id,
+            'last_name' => 'Helper'.$user->id,
             'email' => $user->email,
             'status' => 'available',
             'competency_level' => 3,
@@ -905,7 +922,7 @@ class ModeratorAdviserModuleTest extends TestCase
         $user = User::factory()->create(['role' => 'seeker']);
         $seeker = HelpSeeker::create([
             'user_account_id' => $user->id,
-            'generated_alias' => 'Seeker' . $user->id,
+            'generated_alias' => 'Seeker'.$user->id,
             'age' => 20,
             'gender' => 'prefer-not-to-say',
         ]);

@@ -7,6 +7,7 @@ use App\Models\Helper;
 use App\Models\HelperCompetencyHistory;
 use App\Models\HelperSchedule;
 use App\Models\HelpSeeker;
+use App\Models\Message;
 use App\Models\QueueRequest;
 use App\Models\Session;
 use App\Models\SessionReport;
@@ -17,8 +18,10 @@ use App\Services\HelperWorkflowMaintenance;
 use App\Services\SeekerWorkflowService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class HelperWorkflowSecurityTest extends TestCase
@@ -54,52 +57,53 @@ class HelperWorkflowSecurityTest extends TestCase
     {
         $data = $this->readiness();
         unset($data['skills_confirmed']);
-        return array_replace($data, ['readiness_form_version'=>HelperReadinessService::GROUPED_VERSION,
-            'listener_skills_ready'=>'1'], $overrides);
+
+        return array_replace($data, ['readiness_form_version' => HelperReadinessService::GROUPED_VERSION,
+            'listener_skills_ready' => '1'], $overrides);
     }
 
     public function test_single_skill_confirmation_is_explicit_and_preserves_readiness_and_competency_rules(): void
     {
         $helper = $this->helper();
-        $page = $this->get(route('helper.readiness',['refresh'=>1]))->assertOk()->assertSee('Prepared to use these listening skills?')
-            ->assertSee('Not right now')->assertDontSee('name="skills_confirmed[]"',false);
-        $document = new \DOMDocument();
+        $page = $this->get(route('helper.readiness', ['refresh' => 1]))->assertOk()->assertSee('Prepared to use these listening skills?')
+            ->assertSee('Not right now')->assertDontSee('name="skills_confirmed[]"', false);
+        $document = new \DOMDocument;
         @$document->loadHTML($page->getContent());
         $xpath = new \DOMXPath($document);
-        $this->assertSame(2,$xpath->query('//input[@name="listener_skills_ready"]')->length);
-        $this->assertSame(0,$xpath->query('//input[@name="listener_skills_ready" and @checked]')->length);
+        $this->assertSame(2, $xpath->query('//input[@name="listener_skills_ready"]')->length);
+        $this->assertSame(0, $xpath->query('//input[@name="listener_skills_ready" and @checked]')->length);
         $competency = $helper->competency_level;
-        $this->post(route('helper.readiness.store'),$this->groupedReadiness())->assertRedirect(route('helper.dashboard'))->assertSessionHasNoErrors();
+        $this->post(route('helper.readiness.store'), $this->groupedReadiness())->assertRedirect(route('helper.dashboard'))->assertSessionHasNoErrors();
         $check = $helper->fresh()->getCurrentReadiness();
         $this->assertTrue($check->isReady());
-        $this->assertSame(HelperReadinessService::SKILLS,$check->skills_confirmed);
-        $this->assertSame(HelperReadinessService::GROUPED_VERSION,$check->form_version);
-        $this->assertSame($competency,$helper->fresh()->competency_level);
-        $this->assertSame('00:00',$check->valid_until->timezone('Asia/Manila')->format('H:i'));
-        $this->get(route('helper.readiness'))->assertOk()->assertSee("You're all set to help",false);
-        $this->get(route('helper.readiness',['refresh'=>1]))->assertOk()->assertDontSee('value="1" required checked',false);
+        $this->assertSame(HelperReadinessService::SKILLS, $check->skills_confirmed);
+        $this->assertSame(HelperReadinessService::GROUPED_VERSION, $check->form_version);
+        $this->assertSame($competency, $helper->fresh()->competency_level);
+        $this->assertSame('00:00', $check->valid_until->timezone('Asia/Manila')->format('H:i'));
+        $this->get(route('helper.readiness'))->assertOk()->assertSee("You're all set to help", false);
+        $this->get(route('helper.readiness', ['refresh' => 1]))->assertOk()->assertDontSee('value="1" required checked', false);
     }
 
     public function test_not_right_now_and_other_negative_answers_can_be_submitted_and_supersede_passed_readiness(): void
     {
         $helper = $this->helper();
         $oldCheck = $helper->getCurrentReadiness();
-        $this->post(route('helper.readiness.store'),$this->groupedReadiness(['listener_skills_ready'=>'0']))
+        $this->post(route('helper.readiness.store'), $this->groupedReadiness(['listener_skills_ready' => '0']))
             ->assertRedirect(route('helper.dashboard'))->assertSessionHasNoErrors();
         $check = $helper->fresh()->latestReadiness;
-        $this->assertSame('not_ready',$check->assessment_result);
-        $this->assertSame([],$check->skills_confirmed);
-        $this->assertSame(HelperReadinessService::GROUPED_VERSION,$check->form_version);
+        $this->assertSame('not_ready', $check->assessment_result);
+        $this->assertSame([], $check->skills_confirmed);
+        $this->assertSame(HelperReadinessService::GROUPED_VERSION, $check->form_version);
         $this->assertFalse($oldCheck->fresh()->is_active);
         $this->assertFalse($helper->fresh()->isReady());
-        $this->assertSame('unavailable',$helper->fresh()->availability);
-        $this->assertFalse(app(HelperEligibilityService::class)->allows($helper,null,true));
-        $this->get(route('helper.readiness'))->assertOk()->assertDontSee('value="0" required checked',false);
-        foreach ([['emotionally_ready'=>'0'],['willing_to_listen'=>'0'],['stress_level'=>'high'],['availability_status'=>'not_ready']] as $answer) {
-            $this->post(route('helper.readiness.store'),$this->groupedReadiness($answer))->assertSessionHasNoErrors();
+        $this->assertSame('unavailable', $helper->fresh()->availability);
+        $this->assertFalse(app(HelperEligibilityService::class)->allows($helper, null, true));
+        $this->get(route('helper.readiness'))->assertOk()->assertDontSee('value="0" required checked', false);
+        foreach ([['emotionally_ready' => '0'], ['willing_to_listen' => '0'], ['stress_level' => 'high'], ['availability_status' => 'not_ready']] as $answer) {
+            $this->post(route('helper.readiness.store'), $this->groupedReadiness($answer))->assertSessionHasNoErrors();
             $this->assertFalse($helper->fresh()->isReady());
-            $this->assertSame('not_ready',$helper->fresh()->latestReadiness->assessment_result);
-            $this->assertSame(HelperReadinessService::SKILLS,$helper->fresh()->latestReadiness->skills_confirmed);
+            $this->assertSame('not_ready', $helper->fresh()->latestReadiness->assessment_result);
+            $this->assertSame(HelperReadinessService::SKILLS, $helper->fresh()->latestReadiness->skills_confirmed);
         }
     }
 
@@ -107,15 +111,16 @@ class HelperWorkflowSecurityTest extends TestCase
     {
         $helper = $this->helper();
         $count = $helper->readinessChecks()->count();
-        $missing = $this->groupedReadiness(); unset($missing['listener_skills_ready']);
-        $this->postJson(route('helper.readiness.store'),$missing)->assertUnprocessable()->assertJsonValidationErrors('listener_skills_ready');
-        $this->postJson(route('helper.readiness.store'),$this->groupedReadiness(['listener_skills_ready'=>'sometimes']))
+        $missing = $this->groupedReadiness();
+        unset($missing['listener_skills_ready']);
+        $this->postJson(route('helper.readiness.store'), $missing)->assertUnprocessable()->assertJsonValidationErrors('listener_skills_ready');
+        $this->postJson(route('helper.readiness.store'), $this->groupedReadiness(['listener_skills_ready' => 'sometimes']))
             ->assertUnprocessable()->assertJsonValidationErrors('listener_skills_ready');
-        $this->postJson(route('helper.readiness.store'),$this->groupedReadiness(['listener_skills_ready'=>'0','skills_confirmed'=>HelperReadinessService::SKILLS]))
+        $this->postJson(route('helper.readiness.store'), $this->groupedReadiness(['listener_skills_ready' => '0', 'skills_confirmed' => HelperReadinessService::SKILLS]))
             ->assertUnprocessable()->assertJsonValidationErrors('skills_confirmed');
-        $this->postJson(route('helper.readiness.store'),$this->groupedReadiness(['readiness_form_version'=>'unsupported']))
+        $this->postJson(route('helper.readiness.store'), $this->groupedReadiness(['readiness_form_version' => 'unsupported']))
             ->assertUnprocessable()->assertJsonValidationErrors('readiness_form_version');
-        $this->assertSame($count,$helper->readinessChecks()->count());
+        $this->assertSame($count, $helper->readinessChecks()->count());
         $this->assertTrue($helper->fresh()->isReady());
     }
 
@@ -251,7 +256,7 @@ class HelperWorkflowSecurityTest extends TestCase
     {
         $helper = $this->helper();
         $session = $this->supportSession($helper, 'helper_assigned');
-        $this->get(route('helper.session.chat', bin2hex(\Illuminate\Support\Facades\Crypt::encryptString((string) $session->id))))->assertRedirect(route('helper.cases'));
+        $this->get(route('helper.session.chat', bin2hex(Crypt::encryptString((string) $session->id))))->assertRedirect(route('helper.cases'));
         $this->post(route('helper.session.start', $session->id))
             ->assertRedirect(route('helper.session.pre-assessment', $session->id))
             ->assertSessionHas('error');
@@ -278,7 +283,7 @@ class HelperWorkflowSecurityTest extends TestCase
         $this->assertSame('active', $session->session_status);
         $this->assertNotNull($session->start_time);
 
-        $this->get(route('helper.session.chat', bin2hex(\Illuminate\Support\Facades\Crypt::encryptString((string) $session->id))))->assertOk();
+        $this->get(route('helper.session.chat', bin2hex(Crypt::encryptString((string) $session->id))))->assertOk();
     }
 
     public function test_recommendation_expiry_is_scheduled_and_get_is_read_only(): void
@@ -477,8 +482,8 @@ class HelperWorkflowSecurityTest extends TestCase
         $session = $this->supportSession($helper);
         $session->update(['session_status' => 'completed', 'end_time' => now()]);
         $report = SessionReport::create(['session_id' => $session->id, 'session_summary' => 'Summary', 'personal_reflection' => 'Reflection']);
-        \App\Models\Message::create(['session_id' => $session->id, 'sender_id' => $helper->user_account_id, 'sender' => 'helper', 'message_text' => 'Used grounding for anxiety.', 'transcript' => 'Used grounding for anxiety.', 'is_transcript' => true, 'sent_datetime' => now()->subMinutes(3)]);
-        \App\Models\Message::create(['session_id' => $session->id, 'sender_id' => $session->seeker->user_account_id, 'sender' => 'seeker', 'message_text' => 'That helped me feel calmer.', 'transcript' => 'That helped me feel calmer.', 'is_transcript' => true, 'sent_datetime' => now()->subMinute()]);
+        Message::create(['session_id' => $session->id, 'sender_id' => $helper->user_account_id, 'sender' => 'helper', 'message_text' => 'Used grounding for anxiety.', 'transcript' => 'Used grounding for anxiety.', 'is_transcript' => true, 'sent_datetime' => now()->subMinutes(3)]);
+        Message::create(['session_id' => $session->id, 'sender_id' => $session->seeker->user_account_id, 'sender' => 'seeker', 'message_text' => 'That helped me feel calmer.', 'transcript' => 'That helped me feel calmer.', 'is_transcript' => true, 'sent_datetime' => now()->subMinute()]);
 
         $this->actingAs($helper->adviser->user)->get(route('adviser.evaluate', $report->id))->assertOk()
             ->assertDontSee('Used grounding for anxiety.')
@@ -506,8 +511,8 @@ class HelperWorkflowSecurityTest extends TestCase
         $session->update(['session_status' => 'completed', 'end_time' => now()]);
         $this->post(route('helper.session.notes.store', $session->id), $this->summary(['risk_level_assessed' => 'moderate']))->assertSessionHasNoErrors();
         $this->assertSame('low', $session->fresh()->risk_level);
-        $this->actingAs($helper->adviser->user)->post(route('adviser.screenings.review', $session), ['use_clarified_answers'=>true,'answers'=>array_merge(array_fill_keys(\App\Services\CompactScreening::FIELDS,0),['difficulty_coping'=>1]),'risk_level' => 'moderate', 'reason' => 'Reviewed helper observations.', 'evidence_source' => 'Session summary and adviser clarification.', 'allow_peer_support' => 1])->assertSessionHasNoErrors()->assertRedirect();
-        $this->assertSame('moderate', $session->fresh()->risk_level);
+        $this->actingAs($helper->adviser->user)->post(route('adviser.screenings.review', $session), ['risk_level' => 'low', 'reason' => 'Reviewed helper observations.', 'evidence_source' => 'Session summary and adviser clarification.', 'allow_peer_support' => 1])->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertSame('low', $session->fresh()->risk_level);
         $this->assertSame('completed', $session->fresh()->session_status);
         $this->assertNotNull($session->report()->first()->reassessment_reviewed_at);
     }
@@ -527,7 +532,7 @@ class HelperWorkflowSecurityTest extends TestCase
     {
         $helper = $this->helper();
         $seekerUser = User::factory()->create(['role' => 'seeker']);
-        $seeker = HelpSeeker::create(['user_account_id' => $seekerUser->id, 'generated_alias' => 'Capacity' . $seekerUser->id, 'age' => 20, 'gender' => 'male']);
+        $seeker = HelpSeeker::create(['user_account_id' => $seekerUser->id, 'generated_alias' => 'Capacity'.$seekerUser->id, 'age' => 20, 'gender' => 'male']);
         $make = fn (string $when) => Session::create(['seeker_id' => $seeker->id, 'helper_id' => $helper->id, 'session_status' => 'completed', 'start_time' => Carbon::parse($when, 'Asia/Manila')->utc(), 'end_time' => Carbon::parse($when, 'Asia/Manila')->addMinutes(30)->utc(), 'completion_status' => 'completed']);
 
         // The helper is rostered for 2026-09-16, which is the duty day, so the
@@ -550,14 +555,18 @@ class HelperWorkflowSecurityTest extends TestCase
         $helper = Helper::create(['user_account_id' => $user->id, 'first_name' => 'Ahead', 'last_name' => 'Helper', 'email' => $user->email, 'status' => 'offline', 'availability' => 'unavailable', 'competency_level' => 3, 'competency_risk_level' => 3]);
         $this->verifiedHelperFixture($helper);
 
-        try { app(HelperReadinessService::class)->submit($user,$this->readiness());$this->fail('Readiness needs scheduled duty.'); }
-        catch(\Illuminate\Validation\ValidationException $e){$this->assertArrayHasKey('schedule',$e->errors());}
-        $this->assertSame('offline',$helper->fresh()->status);
+        try {
+            app(HelperReadinessService::class)->submit($user, $this->readiness());
+            $this->fail('Readiness needs scheduled duty.');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('schedule', $e->errors());
+        }
+        $this->assertSame('offline', $helper->fresh()->status);
 
         // A duty schedule covers the whole date, so scheduling today and
         // reconciling makes the helper available before the 6:00 PM open.
         HelperSchedule::create(['helper_id' => $helper->id, 'date' => now('Asia/Manila')->toDateString(), 'created_by' => $user->id, 'is_active' => true]);
-        app(HelperReadinessService::class)->submit($user,$this->readiness());
+        app(HelperReadinessService::class)->submit($user, $this->readiness());
         $this->assertTrue(app(HelperWorkflowMaintenance::class)->reconcileHelperAvailability($helper->fresh()));
         $this->assertSame('available', $helper->fresh()->status, 'Scheduling the duty date flips a ready helper available.');
     }

@@ -7,7 +7,6 @@ use App\Models\IncidentReport;
 use App\Models\Referral;
 use App\Models\Session;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -17,8 +16,7 @@ class ModeratorSessionController extends Controller
     {
         $sessions = Session::with(['seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'concern:id,concern_name'])
             ->whereIn('session_status', ['active', 'helper_assigned'])
-            ->orderByRaw("CASE WHEN session_status = 'active' THEN 0 ELSE 1 END")
-            ->latest('created_date')
+            ->latest('created_date')->latest('id')
             ->limit(50)
             ->get();
 
@@ -51,26 +49,7 @@ class ModeratorSessionController extends Controller
 
     public function show($id)
     {
-        $session = Session::with([
-            'seeker',
-            'helper',
-            'helper.latestCompetency',
-            'concern',
-            'messages' => fn ($q) => $q->orderByDesc('created_at')->limit(100),
-            'callLog',
-            'report',
-            'evaluation',
-            'incidents' => fn ($q) => $q->latest()->limit(5),
-        ])->findOrFail($id);
-
-        // Show the newest messages first, then restore chronological order so the
-        // monitor reflects the latest conversation even after the 100th message.
-        $session->setRelation('messages', $session->messages->reverse()->values());
-        $session->elapsed_label = $this->elapsed($session);
-
-        \App\Services\SupportAudit::record('moderator_session_content_viewed', $session, ['messages_shown' => $session->messages->count()]);
-
-        return view('moderator.session-detail', compact('session'));
+        abort(403, 'Moderators coordinate assignments and emergency status. Session content is restricted.');
     }
 
     public function stats(): JsonResponse
@@ -86,8 +65,7 @@ class ModeratorSessionController extends Controller
                 ->count(),
             'sessions' => Session::with('helper:id,id,first_name,last_name')
                 ->whereIn('session_status', ['active', 'helper_assigned'])
-                ->orderByRaw("CASE WHEN session_status = 'active' THEN 0 ELSE 1 END")
-                ->latest('created_date')
+                ->latest('created_date')->latest('id')
                 ->limit(50)
                 ->get()
                 ->map(fn (Session $session) => [
@@ -115,21 +93,21 @@ class ModeratorSessionController extends Controller
             $activity[] = [
                 'type' => 'session',
                 'icon' => 'fas fa-comments',
-                'message' => ($session->seeker?->generated_alias ?? 'A seeker') . ' is in an active ' . $session->mode_label . ' session',
-                'time' => $session->start_time?->diffForHumans(),
+                'message' => ($session->seeker?->generated_alias ?? 'A seeker').' is in an active '.$session->mode_label.' session',
+                'time' => $session->start_time?->diffForHumans(), 'timestamp' => $session->start_time?->timestamp ?? 0,
             ];
         }
 
         foreach (Session::with(['seeker:id,generated_alias', 'helper:id,first_name,last_name'])
             ->where('session_status', 'helper_assigned')
-            ->latest('created_date')
+            ->latest('created_date')->latest('id')
             ->limit(3)
             ->get() as $session) {
             $activity[] = [
                 'type' => 'assignment',
                 'icon' => 'fas fa-user-check',
-                'message' => ($session->seeker?->generated_alias ?? 'A seeker') . ' was assigned to ' . ($session->helper?->full_name ?? 'a helper'),
-                'time' => $session->created_at?->diffForHumans(),
+                'message' => ($session->seeker?->generated_alias ?? 'A seeker').' was assigned to '.($session->helper?->full_name ?? 'a helper'),
+                'time' => $session->created_at?->diffForHumans(), 'timestamp' => $session->created_at?->timestamp ?? 0,
             ];
         }
 
@@ -137,12 +115,12 @@ class ModeratorSessionController extends Controller
             $activity[] = [
                 'type' => 'emergency',
                 'icon' => 'fas fa-exclamation-triangle',
-                'message' => 'Incident flagged: ' . Str::limit($incident->incident_category, 45),
-                'time' => $incident->created_at?->diffForHumans(),
+                'message' => 'Incident flagged: '.Str::limit($incident->incident_category, 45),
+                'time' => $incident->created_at?->diffForHumans(), 'timestamp' => $incident->created_at?->timestamp ?? 0,
             ];
         }
 
-        usort($activity, fn ($a, $b) => strcmp($b['time'] ?? '', $a['time'] ?? ''));
+        usort($activity, fn ($a, $b) => $b['timestamp'] <=> $a['timestamp']);
 
         return array_slice($activity, 0, 8);
     }
@@ -160,7 +138,7 @@ class ModeratorSessionController extends Controller
         }
 
         return $minutes >= 60
-            ? floor($minutes / 60) . 'h ' . ($minutes % 60) . 'm'
-            : $minutes . 'm';
+            ? floor($minutes / 60).'h '.($minutes % 60).'m'
+            : $minutes.'m';
     }
 }

@@ -118,6 +118,7 @@ class OctoberQaRevisionTest extends TestCase
         $session->refresh();
         $this->assertSame($helper->id, $session->helper_id);
         $this->assertSame('helper_assigned', $session->session_status);
+        $this->assertDatabaseHas('notifications', ['user_account_id' => $hu->id, 'notification_type' => 'emergency', 'title' => 'Urgent safety case assigned']);
         $this->actingAs($au)->post(route('adviser.screenings.review', $session), ['risk_level' => 'high', 'allow_peer_support' => '1', 'reason' => 'Original screening reviewed alongside support.', 'evidence_source' => 'Original seeker screening'])->assertSessionHasNoErrors();
         $this->assertSame('helper_assigned', $session->fresh()->session_status);
         $this->assertDatabaseCount('referrals', 0);

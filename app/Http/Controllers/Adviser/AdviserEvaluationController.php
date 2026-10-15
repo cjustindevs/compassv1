@@ -21,7 +21,7 @@ class AdviserEvaluationController extends Controller
      */
     public function index(Request $request)
     {
-        $request->validate(['history'=>'nullable|in:current,archived']);
+        $request->validate(['history' => 'nullable|in:current,archived']);
         $adviser = Auth::user()?->adviser;
         abort_unless($adviser, 403, 'No Adviser profile is linked to this account.');
 
@@ -38,14 +38,14 @@ class AdviserEvaluationController extends Controller
         // Get all session reports that haven't been reviewed
         $pendingReports = SessionReport::with(['session', 'session.seeker', 'session.helper', 'session.concern'])
             ->pendingEvaluationForAdviser((int) $adviser->id)
-            ->orderBy('created_at', 'asc')
+            ->latest('created_at')->latest('id')
             ->paginate(15, ['*'], 'pending_page')->withQueryString();
 
         // Get completed evaluations for reference
         $completedReports = SessionReport::with(['session', 'session.seeker', 'session.helper'])
             ->where('adviser_reviewed', true)
             ->whereHas('session', fn ($query) => $query->whereIn('helper_id', $helperIds)
-                ->when($request->input('history')==='archived', fn($q)=>$q->whereNotNull('archived_at'), fn($q)=>$q->whereNull('archived_at')))
+                ->when($request->input('history') === 'archived', fn ($q) => $q->whereNotNull('archived_at'), fn ($q) => $q->whereNull('archived_at')))
             ->orderBy('updated_at', 'desc')
             ->paginate(15, ['*'], 'completed_page')->withQueryString();
 

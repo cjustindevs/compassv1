@@ -38,11 +38,11 @@ function reviewForm(confirmed, storedFollowUp = false) {
     };
 }
 
-test('approval confirmation preserves the clicked approval button and uses backend-provided single-answer routing', async () => {
+test('approval confirmation preserves its outcome without manipulating saved screening fields', async () => {
     const review = reviewForm(true);
-    assert.equal(review.risk.value, 'low');
-    assert.equal(review.answer.required, true);
-    assert.equal(review.answer.disabled, false);
+    assert.equal(review.risk.value, '');
+    assert.equal(review.answer.required, undefined);
+    assert.equal(review.answer.disabled, undefined);
     const button = await review.submit('approve');
     assert.equal(review.submitted, button);
     assert.equal(review.submitted.value, 'approve');

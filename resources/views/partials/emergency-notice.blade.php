@@ -5,9 +5,9 @@
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
  const dialog=document.getElementById('staffEmergencyNotice');let notice=null,busy=false;
- async function poll(){if(busy||dialog.open||document.querySelector('dialog[open]'))return;busy=true;try{const r=await fetch(@json(route('emergency-notice.next')),{headers:{Accept:'application/json'}});if(r.ok){notice=(await r.json()).notice;if(notice)dialog.showModal();}}finally{busy=false;}}
+ async function poll(){if(busy||document.hidden||!navigator.onLine||dialog.open||document.querySelector('dialog[open]'))return;busy=true;try{const r=await fetch(@json(route('emergency-notice.next')),{headers:{Accept:'application/json'},cache:'no-store'});if(r.ok){notice=(await r.json()).notice;if(notice)dialog.showModal();}}finally{busy=false;}}
  async function dismiss(open){if(busy)return;busy=true;try{const r=await fetch(@json(route('emergency-notice.dismiss')),{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':@json(csrf_token())},body:JSON.stringify({reference:notice.reference})});if(!r.ok)throw Error();dialog.close();if(open)location.assign(notice.url);}catch(e){dialog.querySelector('[data-error]').textContent='Unable to save this action. Please try again.';}finally{busy=false;}}
- dialog.querySelector('[data-dismiss]').onclick=()=>dismiss(false);dialog.querySelector('[data-open]').onclick=()=>dismiss(true);dialog.addEventListener('cancel',e=>{e.preventDefault();dismiss(false);});poll().catch(()=>{});setInterval(()=>poll().catch(()=>{}),15000);
+ dialog.querySelector('[data-dismiss]').onclick=()=>dismiss(false);dialog.querySelector('[data-open]').onclick=()=>dismiss(true);dialog.addEventListener('cancel',e=>{e.preventDefault();dismiss(false);});poll().catch(()=>{});setInterval(()=>poll().catch(()=>{}),5000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll().catch(()=>{});});window.addEventListener('online',()=>poll().catch(()=>{}));
 });
 </script>
 @endif

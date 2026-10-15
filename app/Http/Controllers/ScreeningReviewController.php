@@ -1,149 +1,172 @@
 <?php
+
 namespace App\Http\Controllers;
-use App\Models\{Session, ScreeningResponse};
-use App\Services\{SupportAudit, RiskClassificationService};
+
+use App\Models\ConcernCategory;
+use App\Models\Notification;
+use App\Models\QueueRequest;
+use App\Models\Referral;
+use App\Models\ScreeningResponse;
+use App\Models\Session;
+use App\Services\AdviserTranscriptAccess;
+use App\Services\CompactScreening;
+use App\Services\EmergencyEscalationService;
+use App\Services\RiskClassificationService;
+use App\Services\ScreeningFollowUp;
+use App\Services\SupportAudit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\View\View;
 use Illuminate\Validation\ValidationException;
-class ScreeningReviewController extends Controller {
-    public function index(Request $request) {
-        abort_unless($request->user()->role==='adviser' && $request->user()->adviser,403);
-        $sessions=Session::with(['seeker','helper','concern','report','screeningResponses'])->withCount('messages')
+use Illuminate\View\View;
+
+class ScreeningReviewController extends Controller
+{
+    public function index(Request $request)
+    {
+        abort_unless($request->user()->role === 'adviser' && $request->user()->adviser, 403);
+        $sessions = Session::with(['seeker', 'helper', 'concern', 'report', 'screeningResponses'])->withCount('messages')
             ->pendingScreeningReviewForAdviser((int) $request->user()->adviser->id)
-            ->get();
-        return view('adviser.screenings',compact('sessions'));
+            ->latest('created_date')->latest('id')->get();
+
+        return view('adviser.screenings', compact('sessions'));
     }
-    public function conversation(Request $request, Session $session): View {
-        $adviser=$request->user()->adviser;
-        abort_unless($request->user()->role==='adviser' && $request->user()->is_active && $adviser,403);
-        abort_unless((int)$session->review_adviser_id===(int)$adviser->id || (int)$session->helper?->adviser_id===(int)$adviser->id,403);
-        abort_unless(app(\App\Services\AdviserTranscriptAccess::class)->allowed($session),403,'Conversation access requires purpose and current authorization.');
-        $session->load(['seeker','helper','concern']);
-        $messages=$session->messages()->orderBy('sent_datetime','asc')->orderBy('id','asc')->limit(500)->get();
-        SupportAudit::record('screening_conversation_viewed',$session,['reviewer'=>$adviser->id,'purpose'=>'screening_review']);
-        return view('adviser.screening-conversation',compact('session','messages'));
+
+    public function conversation(Request $request, Session $session): View
+    {
+        $adviser = $request->user()->adviser;
+        abort_unless($request->user()->role === 'adviser' && $request->user()->is_active && $adviser, 403);
+        abort_unless((int) $session->review_adviser_id === (int) $adviser->id || (int) $session->helper?->adviser_id === (int) $adviser->id, 403);
+        abort_unless(app(AdviserTranscriptAccess::class)->allowed($session), 403, 'Conversation access requires purpose and current authorization.');
+        $session->load(['seeker', 'helper', 'concern']);
+        $messages = $session->messages()->orderBy('sent_datetime', 'asc')->orderBy('id', 'asc')->limit(500)->get();
+        SupportAudit::record('screening_conversation_viewed', $session, ['reviewer' => $adviser->id, 'purpose' => 'screening_review']);
+
+        return view('adviser.screening-conversation', compact('session', 'messages'));
     }
-    public function review(Request $request, Session $session) {
-        abort_unless($request->user()->role==='adviser' && $request->user()->is_active && $request->user()->adviser
-            && (int)$session->review_adviser_id===(int)$request->user()->adviser->id,403);
-        $request->validate(['review_action'=>'sometimes|required|in:approve,record',
-            'use_clarified_safety_answer'=>'nullable|boolean','use_clarified_answers'=>'nullable|boolean','use_seeker_follow_up'=>'nullable|boolean']);
+
+    public function review(Request $request, Session $session)
+    {
+        abort_unless($request->user()->role === 'adviser' && $request->user()->is_active && $request->user()->adviser
+            && (int) $session->review_adviser_id === (int) $request->user()->adviser->id, 403);
+        $request->validate(['answers' => 'prohibited', 'clarified_safety_answer' => 'prohibited',
+            'use_clarified_answers' => 'prohibited', 'use_clarified_safety_answer' => 'prohibited', 'review_action' => 'sometimes|required|in:approve,record',
+            'use_seeker_follow_up' => 'nullable|boolean']);
         // Explicit buttons map to the existing outcome; older clients stay compatible.
-        if ($request->has('review_action')) $request->merge(['allow_peer_support'=>$request->input('review_action') === 'approve']);
-        $storedFollowUp = $request->boolean('use_seeker_follow_up');
-        if ($storedFollowUp) $request->merge(['evidence_source'=>'seeker_follow_up']);
-        $data=$request->validate(['risk_level'=>($storedFollowUp ? 'nullable' : 'required').'|in:low,moderate,high,emergency','reason'=>'required|string|min:10|max:1000','evidence_source'=>'required|string|max:255','allow_peer_support'=>'required|boolean']);
-        $helperRequest=$session->report?->reassessment_requested_at && !$session->report?->reassessment_reviewed_at;
-        if (!in_array($session->workflow_state,['adviser_review_required','emergency_escalated'],true) && !$session->permitsEmergencySupport() && !$helperRequest) {
-            return back()->with('error','This request is no longer awaiting a screening review, so the reassessment was not recorded.');
+        if ($request->has('review_action')) {
+            $request->merge(['allow_peer_support' => $request->input('review_action') === 'approve']);
         }
-        DB::transaction(function () use ($request,$session,$data) {
-            $session=Session::lockForUpdate()->findOrFail($session->id);
-            abort_unless((int)$session->review_adviser_id===(int)$request->user()->adviser->id,403);
-            $helperRequest=$session->report?->reassessment_requested_at && !$session->report?->reassessment_reviewed_at;
-            abort_unless(in_array($session->workflow_state,['adviser_review_required','emergency_escalated'],true) || $session->permitsEmergencySupport() || $helperRequest,409);
-            abort_if(!$helperRequest && $session->screeningResponses()->where('review_status','reviewed')->exists(),409,'This screening has already been reviewed.');
-            if($helperRequest) abort_unless((int)$session->helper?->adviser_id === (int)$request->user()->adviser->id,403);
-            $original=$session->screeningResponses()->oldest('id')->first();
-            $parallelSupport=$session->permitsPrioritySafetySupport();
-            if (!$helperRequest && $original?->follow_up_requested_at && !$request->boolean('use_seeker_follow_up')) {
-                throw ValidationException::withMessages(['follow_up_answer'=>'Review the saved follow-up response before making a decision. Do not replace the Seeker answer.']);
+        $storedFollowUp = $request->boolean('use_seeker_follow_up');
+        if ($storedFollowUp) {
+            $request->merge(['evidence_source' => 'seeker_follow_up']);
+        }
+        $data = $request->validate(['risk_level' => ($storedFollowUp ? 'nullable' : 'required').'|in:low,moderate,high,emergency', 'reason' => 'required|string|min:10|max:1000', 'evidence_source' => 'required|string|max:255', 'allow_peer_support' => 'required|boolean']);
+        $helperRequest = $session->report?->reassessment_requested_at && ! $session->report?->reassessment_reviewed_at;
+        if (! in_array($session->workflow_state, ['adviser_review_required', 'emergency_escalated'], true) && ! $session->permitsEmergencySupport() && ! $helperRequest) {
+            return back()->with('error', 'This request is no longer awaiting a screening review, so the reassessment was not recorded.');
+        }
+        DB::transaction(function () use ($request, $session, $data) {
+            $session = Session::lockForUpdate()->findOrFail($session->id);
+            abort_unless((int) $session->review_adviser_id === (int) $request->user()->adviser->id, 403);
+            $helperRequest = $session->report?->reassessment_requested_at && ! $session->report?->reassessment_reviewed_at;
+            abort_unless(in_array($session->workflow_state, ['adviser_review_required', 'emergency_escalated'], true) || $session->permitsEmergencySupport() || $helperRequest, 409);
+            abort_if(! $helperRequest && $session->screeningResponses()->where('review_status', 'reviewed')->exists(), 409, 'This screening has already been reviewed.');
+            if ($helperRequest) {
+                abort_unless((int) $session->helper?->adviser_id === (int) $request->user()->adviser->id, 403);
+            }
+            $original = $session->screeningResponses()->oldest('id')->first();
+            $parallelSupport = $session->permitsPrioritySafetySupport();
+            if (! $helperRequest && $original?->follow_up_requested_at && ! $request->boolean('use_seeker_follow_up')) {
+                throw ValidationException::withMessages(['follow_up_answer' => 'Review the saved follow-up response before making a decision. Do not replace the Seeker answer.']);
             }
             $answers = $original?->responses ?? [];
             $rule = 'classification_confirmed';
             $version = $original?->instrument_version ?? 'existing-classification-review';
             if ($request->boolean('use_seeker_follow_up')) {
-                if ($helperRequest || $original?->instrument_version !== \App\Services\CompactScreening::SINGLE_VERSION
+                if ($helperRequest || $original?->instrument_version !== CompactScreening::SINGLE_VERSION
                     || ($original->responses['suicidal_thoughts'] ?? null) !== 'prefer_not_to_say'
-                    || !$original->follow_up_requested_at || !$original->follow_up_answered_at
-                    || !in_array($original->follow_up_answer, ['yes','no'], true)) {
-                    throw ValidationException::withMessages(['follow_up_answer'=>'A Yes or No follow-up response from the Seeker is needed before approval. The request remains pending.']);
+                    || ! $original->follow_up_requested_at || ! $original->follow_up_answered_at
+                    || ! in_array($original->follow_up_answer, ['yes', 'no'], true)) {
+                    throw ValidationException::withMessages(['follow_up_answer' => 'A Yes or No follow-up response from the Seeker is needed before approval. The request remains pending.']);
                 }
                 if ($request->boolean('use_clarified_answers') || $request->boolean('use_clarified_safety_answer')) {
-                    throw ValidationException::withMessages(['follow_up_answer'=>'Use the saved Seeker response without supplying replacement answers.']);
+                    throw ValidationException::withMessages(['follow_up_answer' => 'Use the saved Seeker response without supplying replacement answers.']);
                 }
-                if (!$data['allow_peer_support']) throw ValidationException::withMessages(['review_action'=>'Keep this follow-up pending until a final support decision can be recorded.']);
-                $answers = ['suicidal_thoughts'=>$original->follow_up_answer];
-                $result = app(\App\Services\CompactScreening::class)->classifySingle($answers);
+                if (! $data['allow_peer_support']) {
+                    throw ValidationException::withMessages(['review_action' => 'Keep this follow-up pending until a final support decision can be recorded.']);
+                }
+                $answers = ['suicidal_thoughts' => $original->follow_up_answer];
+                $result = app(CompactScreening::class)->classifySingle($answers);
                 // Always derive classification from the saved response, never form input.
                 $data['risk_level'] = $result['risk_level'];
                 $rule = $result['rule_code'];
-            } elseif ($request->boolean('use_clarified_answers')) {
-                if ($request->boolean('use_clarified_safety_answer')) throw ValidationException::withMessages(['clarified_safety_answer'=>'Choose one clarification method for this review.']);
-                if ($original && !in_array($original->instrument_version, [\App\Services\CompactScreening::VERSION, \App\Services\CompactScreening::FORM_VERSION, \App\Services\CompactScreening::SINGLE_VERSION], true)) {
-                    throw ValidationException::withMessages(['use_clarified_answers'=>'Clarify the original instrument; do not replace it with a different questionnaire.']);
-                }
-                $rules = [];
-                foreach (\App\Services\CompactScreening::rules() as $field=>$validation) $rules['answers.'.$field] = $validation;
-                $answers = $request->validate($rules)['answers'];
-                $result = app(\App\Services\CompactScreening::class)->classify($answers);
-                if ($result['risk_level'] !== $data['risk_level']) throw ValidationException::withMessages(['risk_level'=>'Selected classification does not match the clarified answers.']);
-                $rule = $result['rule_code'];
-                $version = \App\Services\CompactScreening::VERSION;
-            } elseif ($request->boolean('use_clarified_safety_answer')) {
-                if ($original?->instrument_version !== \App\Services\CompactScreening::SINGLE_VERSION) {
-                    throw ValidationException::withMessages(['clarified_safety_answer'=>'This clarification is only available for the single-question intake.']);
-                }
-                $clarification = $request->validate(['clarified_safety_answer'=>'required|in:yes,no']);
-                $answers = ['suicidal_thoughts'=>$clarification['clarified_safety_answer']];
-                $result = app(\App\Services\CompactScreening::class)->classifySingle($answers);
-                if ($result['risk_level'] !== $data['risk_level']) throw ValidationException::withMessages(['risk_level'=>'Select the classification shown for the clarified safety answer.']);
-                $rule = $result['rule_code'];
             } else {
                 if ($data['risk_level'] !== $session->risk_level) {
-                    throw ValidationException::withMessages(['risk_level'=>$original?->instrument_version === \App\Services\CompactScreening::SINGLE_VERSION
-                        ? 'Clarify the original safety answer before assigning or changing its classification. Unasked questions cannot be assumed.'
-                        : 'A changed classification requires complete, documented clarification answers.']);
+                    throw ValidationException::withMessages(['risk_level' => $original?->instrument_version === CompactScreening::SINGLE_VERSION
+                        ? 'Original Seeker answers are read-only. Use the saved Seeker follow-up response when available.'
+                        : 'The screening review confirms the saved classification. Original answers cannot be replaced.']);
                 }
             }
-            if ($data['risk_level'] === 'emergency' && $data['allow_peer_support']) throw ValidationException::withMessages(['allow_peer_support'=>'Emergency routing cannot be approved for ordinary peer support.']);
-            if (mb_strlen(trim($data['reason'])) < 10) throw ValidationException::withMessages(['reason'=>'Provide a documented review justification of at least 10 characters.']);
-            $screening=ScreeningResponse::create(['seeker_id'=>$session->seeker_id,'session_id'=>$session->id,
-                'responses'=>$answers, 'risk_level'=>$data['risk_level'],'priority'=>app(RiskClassificationService::class)->getQueuePriority($data['risk_level']),
-                'action'=>'adviser_reassessment','reason'=>$data['reason'],'classified_at'=>now(),'classified_by'=>'adviser',
-                'is_complete'=>true,'instrument_version'=>$version,'rule_code'=>$rule,
-                'review_status'=>'reviewed','actor_id'=>$request->user()->id,'evidence_source'=>$data['evidence_source']]);
-            $session->update(['risk_level'=>$data['risk_level'],'risk_updated_at'=>now(),'risk_update_reason'=>$data['reason'],'risk_updated_by'=>$request->user()->id]);
-            if ($data['risk_level']==='high' && !$parallelSupport && !\App\Models\Referral::where('session_id',$session->id)->exists()) {
-                $referral=\App\Models\Referral::create(['session_id'=>$session->id,'helper_id'=>$session->helper_id,'adviser_id'=>$request->user()->adviser->id,'priority_level'=>'high','help_seeker_consent'=>false,'referral_reason'=>'Adviser reassessment requires professional referral review.','referral_date'=>now(),'status'=>'pending_adviser']);
-                SupportAudit::record('referral_proposed',$referral);
+            if ($data['risk_level'] === 'emergency' && $data['allow_peer_support']) {
+                throw ValidationException::withMessages(['allow_peer_support' => 'Emergency routing cannot be approved for ordinary peer support.']);
             }
-            SupportAudit::record('risk_reassessed',$screening,['original_screening_id'=>$original?->id,'evidence_source'=>$data['evidence_source']]);
-            \App\Models\Notification::create(['user_account_id'=>$session->seeker->user_account_id,
-                'title'=>'Screening reviewed','message'=>'Your adviser has reviewed your screening. Open your request to see the next step.',
-                'notification_type'=>'system','link'=>'/seeker/requests']);
-            if ($session->queue_request_id) \App\Models\QueueRequest::whereKey($session->queue_request_id)
-                ->where('request_status','waiting')->update(['priority_level'=>$data['risk_level']]);
+            if (mb_strlen(trim($data['reason'])) < 10) {
+                throw ValidationException::withMessages(['reason' => 'Provide a documented review justification of at least 10 characters.']);
+            }
+            $screening = ScreeningResponse::create(['seeker_id' => $session->seeker_id, 'session_id' => $session->id,
+                'responses' => $answers, 'risk_level' => $data['risk_level'], 'priority' => app(RiskClassificationService::class)->getQueuePriority($data['risk_level']),
+                'action' => 'adviser_reassessment', 'reason' => $data['reason'], 'classified_at' => now(), 'classified_by' => 'adviser',
+                'is_complete' => true, 'instrument_version' => $version, 'rule_code' => $rule,
+                'review_status' => 'reviewed', 'actor_id' => $request->user()->id, 'evidence_source' => $data['evidence_source']]);
+            $session->update(['risk_level' => $data['risk_level'], 'risk_updated_at' => now(), 'risk_update_reason' => $data['reason'], 'risk_updated_by' => $request->user()->id]);
+            if ($data['risk_level'] === 'high' && ! $parallelSupport && ! Referral::where('session_id', $session->id)->exists()) {
+                $referral = Referral::create(['session_id' => $session->id, 'helper_id' => $session->helper_id, 'adviser_id' => $request->user()->adviser->id, 'priority_level' => 'high', 'help_seeker_consent' => false, 'referral_reason' => 'Adviser reassessment requires professional referral review.', 'referral_date' => now(), 'status' => 'pending_adviser']);
+                SupportAudit::record('referral_proposed', $referral);
+            }
+            SupportAudit::record('risk_reassessed', $screening, ['original_screening_id' => $original?->id, 'evidence_source' => $data['evidence_source']]);
+            Notification::create(['user_account_id' => $session->seeker->user_account_id,
+                'title' => 'Screening reviewed', 'message' => 'Your adviser has reviewed your screening. Open your request to see the next step.',
+                'notification_type' => 'system', 'link' => '/seeker/requests']);
+            if ($session->queue_request_id) {
+                QueueRequest::whereKey($session->queue_request_id)
+                    ->where('request_status', 'waiting')->update(['priority_level' => $data['risk_level']]);
+            }
 
             if ($helperRequest) {
-                $session->report->update(['reassessment_reviewed_at'=>now()]);
-                $session->update(['requires_adviser_review'=>!$data['allow_peer_support'],'peer_support_approved_at'=>$data['allow_peer_support']?now():null]);
-                if ($data['risk_level']==='emergency' && !$session->isCompleted()) app(\App\Services\EmergencyEscalationService::class)->escalateEmergency($session,$session->seeker,['reason'=>$data['reason']]);
+                $session->report->update(['reassessment_reviewed_at' => now()]);
+                $session->update(['requires_adviser_review' => ! $data['allow_peer_support'], 'peer_support_approved_at' => $data['allow_peer_support'] ? now() : null]);
+                if ($data['risk_level'] === 'emergency' && ! $session->isCompleted()) {
+                    app(EmergencyEscalationService::class)->escalateEmergency($session, $session->seeker, ['reason' => $data['reason']]);
+                }
+
                 return;
             }
-            if($parallelSupport && $data['allow_peer_support'] && $data['risk_level']!=='emergency'){
-                $session->update(['requires_adviser_review'=>false,'peer_support_approved_at'=>now()]);
+            if ($parallelSupport && $data['allow_peer_support'] && $data['risk_level'] !== 'emergency') {
+                $session->update(['requires_adviser_review' => false, 'peer_support_approved_at' => now()]);
+
                 return;
             }
-            if ($data['risk_level']==='emergency') {
-                app(\App\Services\EmergencyEscalationService::class)->escalateEmergency($session,$session->seeker,['screening_id'=>$screening->id,'rule_code'=>'adviser_reassessment','reason'=>$data['reason']]);
+            if ($data['risk_level'] === 'emergency') {
+                app(EmergencyEscalationService::class)->escalateEmergency($session, $session->seeker, ['screening_id' => $screening->id, 'rule_code' => 'adviser_reassessment', 'reason' => $data['reason']]);
             } elseif ($data['allow_peer_support']) {
-                $concernAlreadySelected = $original?->instrument_version === \App\Services\CompactScreening::SINGLE_VERSION
-                    && \App\Models\ConcernCategory::active()->whereKey($session->concern_id)->exists();
-                $session->update(['requires_adviser_review'=>false,'peer_support_approved_at'=>now(),'session_status'=>'screening_completed',
-                    'workflow_state'=>$concernAlreadySelected ? 'session_preferences_required' : 'concern_required']);
+                $concernAlreadySelected = $original?->instrument_version === CompactScreening::SINGLE_VERSION
+                    && ConcernCategory::active()->whereKey($session->concern_id)->exists();
+                $session->update(['requires_adviser_review' => false, 'peer_support_approved_at' => now(), 'session_status' => 'screening_completed',
+                    'workflow_state' => $concernAlreadySelected ? 'session_preferences_required' : 'concern_required']);
             }
         });
-        return back()->with('success',$data['allow_peer_support']
+
+        return back()->with('success', $data['allow_peer_support']
             ? 'Peer support approved. The Seeker can continue through the existing request steps and matching. Original responses were retained.'
             : 'Review recorded without peer-support approval; original responses were retained.');
     }
-    public function followUp(Request $request, Session $session) {
-        abort_unless($request->user()->role==='adviser' && $request->user()->is_active && $request->user()->adviser
-            && (int)$session->review_adviser_id === (int)$request->user()->adviser->id,403);
-        $data = $request->validate(['follow_up_note'=>'nullable|string|max:300']);
-        $created = app(\App\Services\ScreeningFollowUp::class)->request($request->user(), $session, $data['follow_up_note'] ?? null);
+
+    public function followUp(Request $request, Session $session)
+    {
+        abort_unless($request->user()->role === 'adviser' && $request->user()->is_active && $request->user()->adviser
+            && (int) $session->review_adviser_id === (int) $request->user()->adviser->id, 403);
+        $data = $request->validate(['follow_up_note' => 'nullable|string|max:300']);
+        $created = app(ScreeningFollowUp::class)->request($request->user(), $session, $data['follow_up_note'] ?? null);
+
         return redirect()->to(route('adviser.screenings').'#screening-'.$session->id)
             ->with('success', $created ? 'Follow-up sent. The request stays pending until you review the response.' : 'This follow-up was already sent. No duplicate notification was created.');
     }

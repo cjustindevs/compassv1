@@ -163,7 +163,7 @@
                     <summary><span>Review screening and record decision</span><span class="screening-expand-hint" aria-hidden="true">Open review</span></summary>
                     <div class="screening-review-content">
                 @if($single)
-                    <p class="screening-safety-note text-sm text-amber-800">{{ $followUpFlow ? 'This intake asked one safety question. Use the follow-up below to obtain a response on the Seeker waiting page. Other questions were not assessed.' : 'This intake asked one safety question. Clarify that answer if needed; other questions were not assessed. Record the source of any follow-up separately from the original response.' }}</p>
+                    <p class="screening-safety-note text-sm text-amber-800">{{ $followUpFlow ? 'This intake asked one safety question. Use the follow-up below to obtain a response on the Seeker waiting page. Other questions were not assessed.' : 'This intake asked one safety question. The saved answer is read-only; other questions were not assessed.' }}</p>
                 @endif
                 <p class="screening-guidance text-sm text-blue-800"><span class="font-semibold">Guidance:</span> {{ $riskMeta['guidance'] }}</p>
 
@@ -206,29 +206,8 @@
                               class="border-t border-gray-100 p-4 space-y-4">
                             @csrf
                             <input type="hidden" name="_review_session" value="{{ $session->id }}">
-                            <div class="grid grid-cols-1 gap-4">
-                                <label class="block text-sm font-medium text-gray-700">Reassessed risk
-                                    <select name="risk_level" required class="mt-1 block w-full rounded-lg border-gray-300">
-                                        <option value="" disabled @selected($retry ? !old('risk_level') : !$session->risk_level)>Select reassessed risk</option>
-                                        @foreach(['low', 'moderate', 'high', 'emergency'] as $riskOption)
-                                            <option value="{{ $riskOption }}" @selected(($retry ? old('risk_level') : $session->risk_level) === $riskOption)>{{ $riskMap[$riskOption]['label'] }}</option>
-                                        @endforeach
-                                    </select>
-                                    <span class="mt-1 block text-xs text-gray-400">{{ $single && !$reassessment ? 'The clarified answer uses the same routing as the original single-question intake.' : 'Changing the classification requires complete clarification using the original instrument.' }}</span>
-                                </label>
-                            </div>
-                            @if($single && !$reassessment)
-                            <p class="text-sm text-gray-500">Review the original saved safety answer above. No replacement answer is required to confirm its classification.</p>
-                            @elseif(!$screening || in_array($screening->instrument_version, [\App\Services\CompactScreening::VERSION, \App\Services\CompactScreening::FORM_VERSION, \App\Services\CompactScreening::SINGLE_VERSION], true))
-                            <fieldset class="rounded-xl bg-gray-50 p-4 space-y-3"><legend class="font-semibold text-sm">Documented clarification</legend>
-                            <label class="text-sm"><input type="checkbox" name="use_clarified_answers" value="1" @checked($retry && old('use_clarified_answers'))> Reassess using clarified answers</label>
-                            <p class="text-xs text-gray-500">Complete every answer only when clarification has been obtained. The classification must match the deterministic routing rules. Without clarification, only the current classification can be confirmed.</p>
-                            <div class="grid sm:grid-cols-2 gap-3">
-                            @foreach(\App\Services\CompactScreening::FIELDS as $field)
-                            <label class="text-sm">{{ ucfirst(str_replace('_',' ',$field)) }}<select name="answers[{{ $field }}]" class="block w-full rounded-lg border-gray-300"><option value="">Not clarified</option><option value="0" @selected($retry && old('answers.'.$field) === '0')>No</option><option value="1" @selected($retry && old('answers.'.$field) === '1')>Yes</option></select></label>
-                            @endforeach
-                            </div></fieldset>
-                            @else<p class="text-sm text-gray-500">This legacy screening may be confirmed. Changing its classification requires clarification using its original approved instrument.</p>@endif
+                            <input type="hidden" name="risk_level" value="{{ $session->risk_level }}">
+                            <p class="text-sm text-gray-600">Saved classification: <strong>{{ $riskMeta['label'] }}</strong>. Original Seeker answers are read-only. Record review notes separately; emergency coordination is managed in Emergencies.</p>
                             <label class="block text-sm font-medium text-gray-700">Review / follow-up source
                                 <input name="evidence_source" required maxlength="255" class="mt-1 block w-full rounded-lg border-gray-300" value="{{ $retry ? old('evidence_source') : '' }}" placeholder="Which answers or session notes support this decision?">
                             </label>
@@ -271,19 +250,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('[data-screening-review-form]').forEach(form => {
-        const check = form.querySelector('[name="use_clarified_safety_answer"]');
-        const answer = form.querySelector('[name="clarified_safety_answer"]');
-        const risk = form.querySelector('[name="risk_level"]');
-        const syncAnswer = () => {
-            if (!check || !answer) return;
-            answer.disabled = !check.checked;
-            answer.required = check.checked;
-            if (check.checked && answer.value) risk.value = answer.selectedOptions[0].dataset.risk;
-        };
-        check?.addEventListener('change', syncAnswer);
-        answer?.addEventListener('change', syncAnswer);
-        syncAnswer();
-        form.addEventListener('reset', () => setTimeout(syncAnswer, 0));
         form.addEventListener('submit', async event => {
             if (form.dataset.reviewConfirmed === '1' || typeof window.confirmAction !== 'function') return;
             event.preventDefault();

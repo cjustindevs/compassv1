@@ -69,6 +69,7 @@ class EmergencyEscalationService
             // Operational alert priority is separate from the original screening classification.
             'risk_level' => 'emergency',
             'triggered_by' => Auth::id(),
+            'triggered_at' => now(),
             'trigger_reason' => $context['reason'] ?? 'Immediate safety threat detected',
             'status' => 'pending',
         ]);
@@ -85,6 +86,7 @@ class EmergencyEscalationService
             'title' => 'Emergency support resources',
             'message' => 'Emergency resources are available on the emergency page. COMPASS does not replace emergency services and cannot promise an immediate response.',
             'notification_type' => 'emergency',
+            'status' => 'unread',
             'type_icon' => 'fa-life-ring',
             'link' => '/emergency',
         ]);
@@ -92,14 +94,10 @@ class EmergencyEscalationService
 
     private function sendEmergencyNotifications(HelpSeeker $seeker, Session $session, EmergencyAlert $alert, bool $directLink = false): void
     {
-        $adviser = $session->review_adviser_id ? Adviser::find($session->review_adviser_id) : ($session->helper_id ? $session->helper?->adviser : Adviser::whereHas('user', fn ($q) => $q->where('is_active', true))->oldest()->first());
-
-        if ($adviser && ! $adviser->user?->is_active) {
-            $adviser = $session->helper?->adviser;
-        }
-        if ($adviser && ! $adviser->user?->is_active) {
-            $adviser = null;
-        }
+        $eligible = fn ($q) => $q->where('role', 'adviser')->where('is_active', true);
+        $adviser = Adviser::whereHas('user', $eligible)->find($session->review_adviser_id);
+        $adviser ??= Adviser::whereHas('user', $eligible)->find($session->helper?->adviser_id);
+        $adviser ??= Adviser::whereHas('user', $eligible)->oldest('id')->first();
         if ($adviser) {
             $session->update(['review_adviser_id' => $adviser->id]);
             $this->notifyUser($adviser->user_account_id, 'Emergency risk detected', 'An emergency requires your authorized review.', $directLink ? route('adviser.emergencies.show', $alert->id, false) : '/adviser/emergencies');
@@ -219,6 +217,7 @@ class EmergencyEscalationService
             'title' => $title,
             'message' => $message,
             'notification_type' => 'emergency',
+            'status' => 'unread',
             'type_icon' => 'fa-life-ring',
             'link' => $link,
         ]);

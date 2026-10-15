@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Adviser;
 
 use App\Http\Controllers\Controller;
-use App\Models\Helper;
-use App\Models\Notification;
 use App\Models\PsychologyProfessional;
 use App\Models\Referral;
 use App\Models\Session;
@@ -13,6 +11,9 @@ use App\Services\ReferralManagementService;
 use App\Traits\BroadcastsSafely;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class AdviserReferralController extends Controller
 {
@@ -23,12 +24,17 @@ class AdviserReferralController extends Controller
      */
     private function referralId($reference): int
     {
-        if (ctype_digit((string)$reference) && strlen((string)$reference) < 20) return (int)$reference;
+        if (ctype_digit((string) $reference) && strlen((string) $reference) < 20) {
+            return (int) $reference;
+        }
         try {
-            $value = \Illuminate\Support\Facades\Crypt::decryptString(hex2bin($reference));
-            abort_unless(ctype_digit($value),404);
-            return (int)$value;
-        } catch (\Throwable $e) { abort(404); }
+            $value = Crypt::decryptString(hex2bin($reference));
+            abort_unless(ctype_digit($value), 404);
+
+            return (int) $value;
+        } catch (\Throwable $e) {
+            abort(404);
+        }
     }
 
     public function index()
@@ -37,25 +43,24 @@ class AdviserReferralController extends Controller
 
         // Get pending referrals (awaiting adviser review)
         $pendingReferrals = Referral::with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'helper.user:id,id,name'])
-            ->whereIn('status', [Referral::STATUS_PENDING_ADVISER,Referral::STATUS_CONSENT_REQUESTED])
+            ->whereIn('status', [Referral::STATUS_PENDING_ADVISER, Referral::STATUS_CONSENT_REQUESTED])
             ->forAdviser($adviserId)
-            ->orderBy('priority_level', 'desc')
-            ->orderBy('created_at', 'asc')
-            ->paginate(15,['*'],'pending_page')->withQueryString();
+            ->latest('created_at')->latest('id')
+            ->paginate(15, ['*'], 'pending_page')->withQueryString();
 
         // Get approved referrals (awaiting professional)
         $approvedReferrals = Referral::with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'professional:id,id,first_name,last_name'])
-            ->whereIn('status', [Referral::STATUS_PENDING_CONSENT,Referral::STATUS_PENDING_PROFESSIONAL,Referral::STATUS_NO_PROFESSIONAL_AVAILABLE,Referral::STATUS_ACCEPTED,Referral::STATUS_IN_PROGRESS])
+            ->whereIn('status', [Referral::STATUS_PENDING_CONSENT, Referral::STATUS_PENDING_PROFESSIONAL, Referral::STATUS_NO_PROFESSIONAL_AVAILABLE, Referral::STATUS_ACCEPTED, Referral::STATUS_IN_PROGRESS])
             ->forAdviser($adviserId)
-            ->orderBy('created_at', 'asc')
-            ->paginate(15,['*'],'approved_page')->withQueryString();
+            ->latest('created_at')->latest('id')
+            ->paginate(15, ['*'], 'approved_page')->withQueryString();
 
         // Get completed referrals
         $completedReferrals = Referral::with(['session.seeker:id,id,generated_alias', 'helper:id,id,first_name,last_name', 'professional:id,id,first_name,last_name'])
-            ->whereIn('status', [Referral::STATUS_COMPLETED, Referral::STATUS_CLOSED,Referral::STATUS_DECLINED])
+            ->whereIn('status', [Referral::STATUS_COMPLETED, Referral::STATUS_CLOSED, Referral::STATUS_DECLINED])
             ->forAdviser($adviserId)
             ->orderBy('updated_at', 'desc')
-            ->paginate(15,['*'],'completed_page')->withQueryString();
+            ->paginate(15, ['*'], 'completed_page')->withQueryString();
 
         // Get statistics
         $totalPending = $pendingReferrals->total();
@@ -95,14 +100,16 @@ class AdviserReferralController extends Controller
         ])->findOrFail($this->referralId($id));
 
         $this->authorizeReferral($referral);
-        if (ctype_digit((string)$id) && strlen((string)$id) < 20) return redirect()->route('adviser.referral.show', $referral->case_reference);
-
+        if (ctype_digit((string) $id) && strlen((string) $id) < 20) {
+            return redirect()->route('adviser.referral.show', $referral->case_reference);
+        }
 
         // Get the session report if exists
         $sessionReport = $referral->session->report ?? null;
 
-        $professionals = PsychologyProfessional::where('is_available',true)->whereHas('user',fn($q)=>$q->where('is_active',true)->where('role','professional'))->get();
-        return view('adviser.referral-detail', compact('referral', 'sessionReport','professionals'));
+        $professionals = PsychologyProfessional::where('is_available', true)->whereHas('user', fn ($q) => $q->where('is_active', true)->where('role', 'professional'))->get();
+
+        return view('adviser.referral-detail', compact('referral', 'sessionReport', 'professionals'));
     }
 
     /**
@@ -167,13 +174,13 @@ class AdviserReferralController extends Controller
     {
         try {
             $action();
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $exception) {
+        } catch (HttpExceptionInterface $exception) {
             // Browser forms should explain unmet workflow prerequisites on the page.
             // Keep authorization failures and unexpected server errors unchanged.
-            if (!in_array($exception->getStatusCode(), [409, 422], true)) {
+            if (! in_array($exception->getStatusCode(), [409, 422], true)) {
                 throw $exception;
             }
-            throw \Illuminate\Validation\ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 $field => $exception->getMessage() ?: 'This referral has changed. Refresh its status before trying again.',
             ]);
         }
