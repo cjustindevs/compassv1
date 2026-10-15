@@ -10,9 +10,9 @@
         !$linkedReferral => 'Request the Helper recommendation below before selecting a Professional.',
         !$canReviewLinkedReferral => 'Only the assigned referral reviewer can choose or change its Professional.',
         !$linkedReferral->isOpen() => 'This referral has concluded.',
-        !$linkedReferral->approved_at => 'Open the linked referral and record Adviser approval first.',
+        !$linkedReferral->approved_at => 'Waiting for Adviser referral approval. Open the linked recommendation to review it.',
         !$linkedReferral->help_seeker_consent => 'Waiting for Seeker referral consent in live chat.',
-        !app(\App\Services\IdentityVaultService::class)->hasCurrentSubmission($linkedReferral) => 'Waiting for Seeker contact submission in live chat.',
+        !app(\App\Services\IdentityVaultService::class)->hasCurrentSubmission($linkedReferral) => 'Waiting for Seeker contact details. The Seeker can complete Identity Disclosure Consent in live chat.',
         !in_array($linkedReferral->status, ['pending_professional','no_professional_available'], true) => 'Open the linked referral to request a Professional transfer.',
         default => null,
     };
@@ -32,16 +32,7 @@
         @if($linkedReferral->completionReviews()->exists())<p role="status"><strong>Professional completion report:</strong> {{ ucwords(str_replace('_',' ',$linkedReferral->completionReviews()->latest('id')->value('review_status'))) }}. Referral completion and emergency resolution are separate.</p>@endif
         @if($canReviewLinkedReferral)
             <a class="cm-button cm-primary" href="{{ route('adviser.referral.show',$alert->referral->id) }}">Continue Professional referral</a>
-            @if(!$terminal)
-                @if(!$linkedReferral->isOpen())
-                    <p role="status">This referral has concluded. No Professional assignment is available.</p>
-                @elseif(!$linkedReferral->approved_at)
-                    <p role="status"><strong>Waiting for Adviser referral approval.</strong> Open the recommendation above and review it first.</p>
-                @elseif(!$linkedReferral->help_seeker_consent)
-                    <p role="status"><strong>Waiting for Seeker referral consent.</strong> The Seeker can decide in the live-chat popup.</p>
-                @elseif(!app(\App\Services\IdentityVaultService::class)->hasCurrentSubmission($linkedReferral))
-                    <p role="status"><strong>Waiting for Seeker contact details.</strong> The Seeker can complete Identity Disclosure Consent in the live chat.</p>
-                @elseif(in_array($linkedReferral->status, ['pending_professional','no_professional_available'], true))
+            @if(!$terminal && !$handoffBlockReason)
                     <h3>{{ $linkedReferral->professional_id ? 'Change Professional' : 'Raise to Professional' }}</h3>
                     <p class="cm-help">Select the Professional who will review this session's emergency referral. This does not add them to the live chat or automatically release personal details.</p>
                     <form method="POST" action="{{ route('adviser.emergencies.professional', $alert) }}" data-confirm="Raise emergency to this Professional?" data-confirm-message="The selected Professional will receive an urgent referral notification and a link to review this case. Identity release is separate." data-confirm-text="Raise and notify">
@@ -51,7 +42,6 @@
                         <button type="submit" class="cm-button cm-primary" @disabled($handoffCandidates->isEmpty())>Raise and notify Professional</button>
                         @if($handoffCandidates->isEmpty())<p role="status">No active, available Professional. Keep coordinating the emergency; no handoff has been sent.</p>@endif
                     </form>
-                @endif
             @endif
         @else
             <p role="status">Referral reviewer: {{ $alert->referral->adviser?->full_name ?? 'Awaiting assignment' }}. Coordinate with this reviewer to continue the referral.</p>

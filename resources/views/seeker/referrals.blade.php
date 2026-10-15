@@ -10,120 +10,22 @@
     <!-- Tailwind -->
     <!-- Google Fonts -->
     <style>
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --green-50:  #EAF8F0;
-            --green-100: #D0F0D8;
-            --green-500: #04A052;
-            --green-600: #038A45;
-            --green-700: #027039;
-            --gray-50:   #F9FAFB;
-            --gray-100:  #F3F4F6;
-            --gray-200:  #E5E7EB;
-            --gray-400:  #9CA3AF;
-            --gray-500:  #6B7280;
-            --gray-600:  #4B5563;
-            --gray-700:  #374151;
-            --gray-800:  #163B2D;
-            --red-600:   #DC2626;
-        }
-        body { background: #F8FBF9; }
-
-        .main-content { margin-left: 260px; padding: 24px 40px 80px; min-height: 100vh; }
-
-        .page-card {
-            background: white;
-            border-radius: 24px;
-            padding: 32px 36px;
-            border: 1px solid var(--gray-200);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.01);
-        }
-
-        .page-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 11px 22px;
-            border-radius: 50px;
-            background: var(--green-500);
-            color: #fff;
-            font-weight: 600;
-            font-size: 14px;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .page-button:hover { background: var(--green-600); }
-        .page-button.light { background: #fff; color: var(--green-700); border: 1px solid var(--green-100); }
-        .page-button.danger { background: #fff; color: var(--red-600); border: 1px solid #FECACA; }
-
-        .info-note {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 16px 18px;
-            background: var(--green-50);
-            border: 1px solid var(--green-100);
-            border-radius: 14px;
-            margin-bottom: 24px;
-            color: var(--gray-700);
-            font-size: 14px;
-            line-height: 1.7;
-        }
-        .info-note :is(i, .compass-icon) { color: var(--green-500); margin-top: 3px; }
-
-        .referral-card {
-            padding: 22px;
-            border: 1px solid var(--gray-200);
-            border-radius: 16px;
-            margin-bottom: 14px;
-        }
-        .referral-card h3 { font-size: 15px; font-weight: 600; color: var(--gray-800); margin-bottom: 6px; }
-        .referral-card p { font-size: 14px; line-height: 1.7; color: var(--gray-500); margin-bottom: 16px; }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            background: var(--green-50);
-            color: var(--green-700);
-        }
-        .status-badge.muted { background: var(--gray-100); color: var(--gray-500); }
-
-        .hamburger {
-            display: none;
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: var(--gray-700);
-            cursor: pointer;
-            padding: 4px;
-        }
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.25);
-            z-index: 99;
-        }
-        .sidebar-overlay.active { display: block; }
-
-
-        @media (min-width: 769px) { .sidebar-overlay { display: none !important; } }
-        @media (max-width: 1024px) {
-            .main-content { padding: 20px 24px 80px; }
-            .page-card { padding: 24px 20px; }
-        }
-        @media (max-width: 768px) {
-            .main-content { margin-left: 0; padding: 16px 16px 100px; }
-            .hamburger { display: block; }
-            .page-card { padding: 20px 16px; border-radius: 16px; }
-        }
+        *{font-family:Inter,sans-serif;box-sizing:border-box}body{margin:0;background:#f8fbf9;color:#163b2d}
+        .main-content{margin-left:260px;padding:24px 32px 48px;min-height:100vh}.referrals-content{width:100%;max-width:none;margin:0}
+        .referrals-intro{font-size:14px;line-height:1.6;color:#64748b;margin:0 0 18px;max-width:760px}
+        .referral-card{background:#fff;border:1px solid #dfe8e2;border-radius:14px;padding:20px;margin-bottom:16px;min-width:0}
+        .referral-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}.referral-heading h2{font-size:18px;font-weight:700;margin:0 0 4px}.referral-meta{font-size:12px;color:#64748b;margin:0}
+        .status-badge{display:inline-flex;align-items:center;white-space:nowrap;font-size:12px;font-weight:600;border-radius:20px;background:#eaf8f0;color:#027039;padding:5px 10px}.status-badge.muted{background:#f1f5f3;color:#52645a}
+        .referral-overview{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,1fr);gap:20px;align-items:start}.referral-overview>*{min-width:0}
+        .referral-card h3{font-size:14px;font-weight:700;margin:0 0 8px}.referral-card p{font-size:14px;line-height:1.6;overflow-wrap:anywhere}.referral-summary{white-space:pre-wrap;margin:0 0 16px;color:#475569}
+        .referral-facts{display:flex;gap:24px;flex-wrap:wrap;margin:0}.referral-facts dt{font-size:12px;color:#64748b;margin-bottom:4px}.referral-facts dd{margin:0;font-size:14px;font-weight:600}
+        .referral-decision{padding:16px;border:1px solid #cce7d6;background:#f6fcf8;border-radius:10px}.referral-decision p{margin:0 0 10px}
+        .referral-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.referral-actions form{margin:0}.page-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;min-height:42px;border:1px solid #049b50;border-radius:9px;background:#049b50;color:white;font-size:14px;font-weight:600;text-decoration:none;cursor:pointer}.page-button:hover{background:#037d41}.page-button.light{background:white;color:#08763f;border-color:#cce3d5}.page-button.danger{background:white;color:#b42332;border-color:#eabdc2}.page-button:focus-visible,summary:focus-visible{outline:2px solid #078749;outline-offset:3px}
+        .referral-decision .rv-consent-terms__list{list-style:disc;padding-left:18px;margin:12px 0 0;font-size:13px;color:#475569;line-height:1.6}.referral-decision .rv-consent-terms__list li+li{margin-top:6px}
+        .referral-details{border-top:1px solid #e6ede8;margin-top:18px;padding-top:14px}.referral-details summary{cursor:pointer;font-size:13px;font-weight:600;color:#08763f}.referral-details[open]>summary{margin-bottom:12px}.referral-details>section{margin:0;border:0;padding:0}.referral-details dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.referral-details dl>div{min-width:0;margin:0!important}.referral-details dt{font-size:12px;color:#64748b;margin-bottom:4px}.referral-details dd{margin:0;font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+        .referral-coordination{background:#f5f9f7;border-radius:10px;padding:14px;margin:14px 0}.referral-coordination p{margin:0}.referral-empty{text-align:center;padding:36px 16px}.referral-empty h2{font-size:18px}.referral-flash{padding:12px 16px;border:1px solid #cce7d6;background:#eaf8f0;border-radius:10px;margin-bottom:16px;font-size:14px}
+        .hamburger{display:none;background:none;border:0;font-size:24px;color:#374151;cursor:pointer;padding:4px}.sidebar-overlay{display:none;position:fixed;inset:0;background:#0004;z-index:99}.sidebar-overlay.active{display:block}
+        @media(min-width:769px){.sidebar-overlay{display:none!important}}@media(max-width:1100px){.referral-overview{grid-template-columns:1fr}.main-content{padding-left:24px;padding-right:24px}}@media(max-width:768px){.main-content{margin-left:0;padding:16px 16px 40px}.hamburger{display:block}.referral-card{padding:16px}.referral-details dl{grid-template-columns:1fr}.referral-actions>*{flex:1 1 auto}.referral-actions form .page-button{width:100%}.referral-heading{flex-wrap:wrap}}
     </style>
     @vite(['resources/css/app.css'])
     @include('partials.ui-assets')
@@ -137,6 +39,7 @@
 
     <!-- MAIN CONTENT -->
     <main class="main-content">
+        <div class="referrals-content">
 
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
@@ -154,89 +57,83 @@
             </div>
         </div>
 
-        <!-- Referrals Card -->
-        <div class="page-card">
-
-            <div class="info-note">
-
-                <p>A referral offers support from an authorized professional. Your adviser must approve it, and you decide whether to proceed. Contact details are collected separately only when needed for coordination.</p>
-            </div>
-
-            @if(session('success'))
-                <div role="status" class="info-note mb-4">{{ session('success') }}</div>
-            @endif
+            <p class="referrals-intro">Review your approved recommendations here. You choose whether to proceed. Contact details and identity disclosure are a separate step.</p>
+            @if(session('success'))<div role="status" class="referral-flash">{{ session('success') }}</div>@endif
+            @if($errors->any())<div role="alert" class="referral-flash">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
 
             @forelse($referrals as $referral)
-                @php($statusLabel = ucwords(str_replace('_', ' ', $referral->status)))
-                <article class="referral-card">
-                    <div class="flex items-center justify-between flex-wrap gap-3 mb-2">
-                        <h3>
-                            Referral #{{ $referral->id }}
-                        </h3>
-                        <span class="status-badge {{ $referral->help_seeker_consent ? '' : 'muted' }}">{{ $statusLabel }}</span>
+                @php
+                    $statusLabel = ucwords(str_replace('_', ' ', $referral->status));
+                    $canDecide = $referral->approved_at && $referral->status === \App\Models\Referral::STATUS_PENDING_CONSENT;
+                    $recommendationSummary = $referral->referral_reason ?: ($referral->recommendation_form['session_summary'] ?? null);
+                @endphp
+                <article class="referral-card" aria-labelledby="referral-title-{{ $referral->id }}">
+                    <header class="referral-heading">
+                        <div><h2 id="referral-title-{{ $referral->id }}">Referral #{{ $referral->id }}</h2><p class="referral-meta">{{ $referral->referral_date?->timezone('Asia/Manila')->format('M d, Y g:i A') }} PHT</p></div>
+                        <span class="status-badge {{ $canDecide ? '' : 'muted' }}">{{ $canDecide ? 'Your decision needed' : $statusLabel }}</span>
+                    </header>
+                    <div class="{{ $canDecide ? 'referral-overview' : '' }}">
+                        <section aria-label="Recommendation overview">
+                            <h3>Why this was recommended</h3>
+                            <p class="referral-summary">{{ $recommendationSummary ?: 'Professional support has been recommended. Review the recommendation details below.' }}</p>
+                            <dl class="referral-facts"><div><dt>Priority</dt><dd>{{ ucfirst($referral->priority_level) }}</dd></div><div><dt>Adviser review</dt><dd>{{ $referral->approved_at ? 'Approved' : 'Awaiting review' }}</dd></div></dl>
+                        </section>
+                        @if($canDecide)
+                            <section class="referral-decision" aria-labelledby="referral-decision-{{ $referral->id }}">
+                                <h3 id="referral-decision-{{ $referral->id }}">Would you like to proceed?</h3>
+                                <p>Your Adviser approved this recommendation. Agreeing allows the assigned Professional to review authorized referral records.</p>
+                                @include('partials.referral-consent-terms')
+                                <div class="referral-actions">
+                                    <form method="POST" action="{{ route('referrals.consent', $referral) }}" data-referral-decision="agree" data-confirm="Agree to this referral?" data-confirm-message="Your decision will be recorded. Contact details and identity disclosure remain a separate step." data-confirm-text="Agree to referral" data-confirm-class="bg-green-700 hover:bg-green-800">
+                                        @csrf<input type="hidden" name="consent_given" value="1"><button class="page-button" type="submit">Agree to referral</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('referrals.consent', $referral) }}" data-referral-decision="decline" data-confirm="Decline this referral?" data-confirm-message="This records your decision not to proceed. You can continue using self-help tools. An open safety review is handled separately." data-confirm-text="Decline referral">
+                                        @csrf<input type="hidden" name="consent_given" value="0"><button class="page-button danger" type="submit">Decline referral</button>
+                                    </form>
+                                </div>
+                            </section>
+                        @endif
                     </div>
-
-                    @if($referral->approved_at && $referral->help_seeker_consent)
-                        <div class="rounded-xl bg-gray-50 p-4 my-3 text-sm">
-                            @if($referral->professional && app(\App\Services\ConsentService::class)->valid($referral->session->seeker, 'identity_disclosure', $referral->id))
-                                <p class="text-xs uppercase tracking-wide text-gray-500">Your assigned professional</p>
-                                <p class="text-lg font-semibold text-green-700 my-2">{{ trim(($referral->professional->first_name ?? '').' '.($referral->professional->last_name ?? '')) ?: 'Professional name awaiting profile completion' }}</p>
-                                <p>See Professional appointments below for your schedule and meeting instructions. All times are in Asia/Manila.</p>
-                            @elseif($referral->professional)
-                                <p>Complete identity-disclosure consent to view your professional coordination details.</p>
-                            @else
-                                <p><strong>Professional assignment pending.</strong> After your identity details are saved, your adviser assigns a professional for review. You will be notified when an appointment is scheduled.</p>
-                            @endif
-                        </div>
-                    @endif
-                    @if($referral->status === \App\Models\Referral::STATUS_PENDING_CONSENT)
-                        <p>Your adviser has reviewed your helper's recommendation and approved professional support beyond the scope of peer support.</p>
-                        <div class="rounded-xl bg-gray-50 p-4 my-3 text-sm space-y-1">
-                            <p><span class="text-gray-400">Recommended by your adviser</span><br><span class="font-medium text-gray-700">{{ $referral->referral_reason }}</span></p>
-                            <p><span class="text-gray-400">Priority</span><br><span class="font-medium text-gray-700">{{ ucfirst($referral->priority_level) }}</span></p>
-                        </div>
-                        <p class="mb-3">Agreeing allows the assigned professional to review the authorized case records and lets you provide contact details for coordination. You may decline at any time — your decision is respected.</p>
-                        <p class="text-sm mb-3 whitespace-pre-line">{{ $referral->referral_reason }}</p>
-                        @include('partials.referral-recommendation')
-                        @include('partials.referral-consent-terms')
-                        <form method="POST" action="{{ route('referrals.consent', $referral) }}" data-confirm="Confirm your referral consent decision?" class="flex flex-wrap gap-3">
-                            @csrf
-                            <button class="page-button" type="submit" name="consent_given" value="1">Agree to referral</button>
-                            <button class="page-button light" type="submit" name="consent_given" value="0">Decline</button>
-                        </form>
-                    @elseif($referral->canProvideIdentity())
-                        <p>You agreed to this referral. Provide your contact details when coordination is needed, or withdraw consent to stop future professional access.</p>
-                        <div class="flex flex-wrap gap-3">
-                            <button type="button" class="page-button light" onclick="document.getElementById('identity-dialog-{{ $referral->id }}').showModal()"><x-ui-icon name="badge"  /> Provide contact details for coordination</button>
+                    @if(!$canDecide)
+                        @if($referral->approved_at && $referral->help_seeker_consent)
+                            <div class="referral-coordination">
+                                @if($referral->professional && app(\App\Services\ConsentService::class)->valid($referral->session->seeker, 'identity_disclosure', $referral->id))
+                                    <p><strong>Your assigned professional: {{ $referral->professional->full_name }}</strong></p>
+                                @elseif($referral->professional)
+                                    <p>Complete identity-disclosure consent to view your professional coordination details.</p>
+                                @else
+                                    <p><strong>Professional assignment pending.</strong> After your identity details are saved, your Adviser assigns a Professional for review.</p>
+                                @endif
+                            </div>
+                        @endif
+                        @if($referral->canProvideIdentity())
+                            <p>You agreed to this referral. Contact details are optional and collected separately for coordination.</p>
+                            <div class="referral-actions">
+                                <button type="button" class="page-button light" onclick="document.getElementById('identity-dialog-{{ $referral->id }}').showModal()">Provide contact details for coordination</button>
+                                <form method="POST" action="{{ route('seeker.privacy.decision') }}" data-confirm="Withdraw referral consent and stop future professional access?">
+                                    @csrf<input type="hidden" name="purpose" value="referral"><input type="hidden" name="decision" value="withdrawn"><input type="hidden" name="referral_id" value="{{ $referral->id }}"><button class="page-button danger" type="submit">Withdraw referral consent</button>
+                                </form>
+                            </div>
                             @include('partials.referral-identity-modal')
-                            <form method="POST" action="{{ route('seeker.privacy.decision') }}" data-confirm="Withdraw referral consent and stop future professional access?">
-                                @csrf
-                                <input type="hidden" name="purpose" value="referral">
-                                <input type="hidden" name="decision" value="withdrawn">
-                                <input type="hidden" name="referral_id" value="{{ $referral->id }}">
-                                <button class="page-button danger" type="submit">Withdraw referral consent</button>
-                            </form>
-                        </div>
-                    @elseif($referral->help_seeker_consent)
-                        <p>You agreed to this referral. It is no longer an open case, so no further action is available here.</p>
-                    @elseif($referral->status === \App\Models\Referral::STATUS_CONSENT_REQUESTED)
-                        <p>Your helper recommended a professional referral. Please review the consent request in the chat window so the referral can be submitted.</p>
-                    @elseif(in_array($referral->status,['closed','declined','completed']))
-                        <p>This referral is {{ $statusLabel }}. You can continue accessing self-help tools.</p>
-                        <a href="{{ url('/selfhelp') }}" class="page-button light">Open self-help tools</a>
-                    @else
-                        <p>This referral is awaiting your adviser's review. There is nothing to do right now.</p>
+                        @elseif($referral->help_seeker_consent)
+                            <p>You agreed to this referral. It is no longer an open case, so no further action is available here.</p>
+                        @elseif($referral->status === \App\Models\Referral::STATUS_CONSENT_REQUESTED)
+                            <p>Your Helper recommended a referral. Open the consent request in your live chat to review the next step.</p>
+                        @elseif(in_array($referral->status, ['closed','declined','completed'], true))
+                            <p>{{ $referral->consent_declined_at ? 'You declined this referral. Your decision was recorded.' : 'This referral is '.strtolower($statusLabel).'.' }}</p>
+                            <a href="{{ url('/selfhelp') }}" class="page-button light">Open self-help tools</a>
+                        @else
+                            <p>This referral is awaiting your Adviser's review. There is nothing to do right now.</p>
+                        @endif
                     @endif
-                @include('partials.referral-appointments')
+                    @if($referral->recommendation_form)
+                        <details class="referral-details"><summary>View full recommendation</summary>@include('partials.referral-recommendation')</details>
+                    @endif
+                    @include('partials.referral-appointments')
                 </article>
             @empty
-                <div class="text-center py-12">
-                    <h3 class="text-lg font-semibold text-gray-800">No referral decisions yet</h3>
-                    <p class="text-gray-500 text-sm mt-1">Recommendations from your adviser will appear here.</p>
-                </div>
+                <div class="referral-card referral-empty"><h2>No referral decisions yet</h2><p>Recommendations will appear here when they are ready for review.</p></div>
             @endforelse
-
-        </div>
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
@@ -244,9 +141,10 @@
             Every decision you make is respected.
         </div>
 
+        </div>
     </main>
 
-    @include('partials.workflow-notice')
+    @include('partials.workflow-notice', ['inlineNotices'=>['success'], 'inlineErrors'=>true])
     @include('layouts.partials.pwa-banner')
 
 </body>

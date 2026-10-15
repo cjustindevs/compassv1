@@ -82,7 +82,8 @@
         .flash-success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
         .flash-error { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
 
-        .adviser-page-content { max-width:1280px; margin:0 auto; }
+        .adviser-page-content { width:100%; max-width:none; margin:0; }
+        .referral-detail-page :is(p,dd){overflow-wrap:anywhere}.referral-detail-page :is(.mb-6){margin-bottom:16px}.referral-detail-page>section,.referral-detail-page>.card{width:100%;margin:12px 0}.referral-detail-page>section:first-of-type{margin-top:0}
         .adviser-page-content .card { border-radius:12px; box-shadow:none; padding:16px; }
         .adviser-page-content .btn-primary { background:#049b50; border-radius:10px; padding:10px 18px; box-shadow:none; font-size:14px; }
         .adviser-page-content .btn-primary:hover { transform:none; background:#037d41; }
@@ -109,7 +110,7 @@
 @endpush
 
 @section('content')
-<div class="adviser-page-content">
+<div class="adviser-page-content referral-detail-page">
     @if ($referral->session?->risk_level === 'emergency')
         <form class="form-maximized card mb-4" method="POST" action="{{ route('identity.emergency-review', $referral->session) }}">
             @csrf
@@ -313,7 +314,7 @@
             </div>
 
         </div>
-</div>
+
     <!-- Approve Modal -->
     <div class="modal-overlay av-referral-modal" id="approveModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 999; align-items: center; justify-content: center;">
         <div class="modal-box av-referral-dialog">
@@ -431,4 +432,5 @@
     @include('partials.referral-recommendation')
     <x-supervision-history :record="$referral" />
 @include('partials.referral-appointments')
+</div>
 @endsection

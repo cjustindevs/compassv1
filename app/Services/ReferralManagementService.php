@@ -138,25 +138,10 @@ class ReferralManagementService
         $emergency = $session->emergencyAlerts()->whereNotIn('status', ['resolved', 'closed'])->latest('id')->first();
         $priority = $this->normalisePriority($emergency ? 'emergency' : ($data['urgency'] ?? $data['priority_level'] ?? $session->risk_level));
 
-        // A seeker may only carry one open referral at a time, but a repeat
-        // submission for the SAME session must update the existing row rather
-        // than be silently discarded.
-        if ($conflicting = $this->findOpenReferralForSeeker($seeker)) {
-            if ($conflicting->session_id !== $session->id) {
-                throw ValidationException::withMessages(['summary' => 'This seeker already has an open referral from another session. Ask the assigned Adviser to review that referral before submitting another recommendation.']);
-            }
-        }
-
         return DB::transaction(function () use ($session, $seeker, $reason, $priority, $data, $emergency) {
             HelpSeeker::whereKey($seeker->id)->lockForUpdate()->firstOrFail();
-            // Re-check inside the transaction: two concurrent submissions for
-            // different sessions must not both pass the pre-flight check.
-            if ($conflicting = $this->findOpenReferralForSeeker($seeker)) {
-                if ($conflicting->session_id !== $session->id) {
-                    throw ValidationException::withMessages(['summary' => 'This seeker already has an open referral from another session. Ask the assigned Adviser to review that referral before submitting another recommendation.']);
-                }
-            }
-
+            // Recommendations belong to a session. Another session's open referral
+            // must not block this submission; the Seeker lock serializes retries.
             $adviserId = $this->resolveAdviserId($session);
             $status = $adviserId
                 ? Referral::STATUS_PENDING_ADVISER
@@ -580,14 +565,6 @@ class ReferralManagementService
         if (empty($data['reason']) && empty($data['referral_reason'])) {
             throw new \InvalidArgumentException('Referral reason is required.');
         }
-    }
-
-    /** An open referral already raised for this seeker, from any session. */
-    private function findOpenReferralForSeeker(HelpSeeker $seeker): ?Referral
-    {
-        return Referral::whereHas('session', fn ($query) => $query->where('seeker_id', $seeker->id))
-            ->whereIn('status', self::OPEN_STATUSES['status'])
-            ->first();
     }
 
     /** An open referral already raised against this specific session. */

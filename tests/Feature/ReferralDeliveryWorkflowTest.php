@@ -259,7 +259,7 @@ class ReferralDeliveryWorkflowTest extends TestCase
         $this->assertSame(1, Referral::where('session_id', $referral->session_id)->count());
     }
 
-    public function test_recommendation_conflicting_with_another_sessions_open_referral_is_rejected(): void
+    public function test_another_sessions_open_referral_does_not_block_a_new_recommendation(): void
     {
         Event::fake();
         [, $helper] = $this->readyHelper();
@@ -268,12 +268,16 @@ class ReferralDeliveryWorkflowTest extends TestCase
 
         $this->post(route('helper.session.referral.consent', $first->id), ['summary' => 'First referral.']);
 
-        $second = $this->makeSession($helper, $seekerUser, Session::STATUS_EVALUATED);
+        $firstReferral = Referral::where('session_id', $first->id)->firstOrFail();
+        $second = $this->makeSession($helper, $seekerUser, Session::STATUS_ACTIVE);
 
         $this->post(route('helper.session.referral.consent', $second->id), ['summary' => 'Second referral.'])
-            ->assertRedirect()->assertSessionHasErrors('summary');
+            ->assertRedirect()->assertSessionHasNoErrors();
 
-        $this->assertSame(1, Referral::count());
+        $this->assertSame(2, Referral::count());
+        $this->assertSame('First referral.', $firstReferral->fresh()->referral_reason);
+        $this->assertSame(Referral::STATUS_PENDING_ADVISER, $firstReferral->fresh()->status);
+        $this->assertDatabaseHas('referrals', ['session_id'=>$second->id, 'referral_reason'=>'Second referral.', 'status'=>Referral::STATUS_PENDING_ADVISER, 'help_seeker_consent'=>false]);
     }
 
     public function test_identical_recommendation_retry_does_not_duplicate_notifications(): void

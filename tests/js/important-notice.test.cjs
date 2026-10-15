@@ -19,6 +19,8 @@ function room(storage=new Map()) {
         sessionStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value)},
         location:{assign:url=>requests.push({navigation:url})},setInterval:fn=>ticks.push(fn),
         fetch:async(url,options)=>{requests.push({url,options});return {ok:success};}};
+    context.localStorage = context.sessionStorage;
+    vm.runInNewContext(fs.readFileSync('public/js/notification-presentation.js','utf8'),context);
     vm.runInNewContext(fs.readFileSync('public/js/important-notice.js','utf8'),context);
     return {api:context.window.CompassImportantNotices,dialog:body.children[0],requests,storage,tick:()=>ticks[0](),another:value=>another=value,success:value=>success=value,flush:()=>new Promise(resolve=>setImmediate(resolve))};
 }
@@ -33,11 +35,11 @@ test('important actions show one centered dialog; acknowledgement only reads the
     r.tick();assert.equal(r.dialog.children[0].textContent,'Assignment');
 });
 
-test('sensitive dialogs defer presentation and emergency preemption preserves the pending notice',()=>{
+test('sensitive dialogs defer presentation; an already displayed notice does not reopen after preemption or navigation',()=>{
     const r=room();r.another(true);r.api.enqueue({id:1,title:'Review',type:'referral'});assert.equal(r.dialog.open,false);
     r.another(false);r.tick();assert.equal(r.dialog.open,true);r.api.suspend();assert.equal(r.dialog.open,false);
-    r.another(true);r.tick();assert.equal(r.dialog.open,false);r.another(false);r.tick();assert.equal(r.dialog.open,true);
-    const resumed=room(r.storage);assert.equal(resumed.dialog.children[0].textContent,'Review');
+    r.another(true);r.tick();assert.equal(r.dialog.open,false);r.another(false);r.tick();assert.equal(r.dialog.open,false);
+    const resumed=room(r.storage);resumed.api.enqueue({id:1,title:'Review',type:'referral'});resumed.tick();assert.equal(resumed.dialog.open,false);
 });
 
 test('resolved emergency notices close and failed acknowledgement preserves pending work',async()=>{
@@ -54,4 +56,12 @@ test('recovered unread referrals are deduplicated until acknowledged',async()=>{
     await r.dialog.children[3].children[1].onclick();r.tick();
     assert.equal(r.dialog.open,false);
     assert.equal(JSON.parse(r.storage.get('compass-important:7')).length,0);
+});
+
+test('a shown but unread referral is not repeated by stale polling or a fresh page',async()=>{
+    const r=room(),notice={id:11,title:'Referral review',type:'referral'};
+    r.api.enqueue(notice);
+    const next=room(r.storage);next.api.enqueue(notice);next.tick();assert.equal(next.dialog.open,false);
+    await r.dialog.children[3].children[1].onclick();r.api.enqueue(notice);r.tick();assert.equal(r.dialog.open,false);
+    r.api.enqueue({id:12,title:'New referral',type:'referral'});assert.equal(r.dialog.open,true);
 });

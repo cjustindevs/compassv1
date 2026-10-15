@@ -4,9 +4,16 @@
     <h3 class="font-semibold text-gray-800">Professional appointments</h3>
     <p class="text-sm text-gray-500 mb-3">All times are Philippine Time (Asia/Manila).</p>
     @forelse($referral->appointments as $appointment)
-        <div class="ru-entry" id="appointment-{{ $appointment->id }}">
-            <p class="text-sm">Meeting format: {{ $appointment->meeting_format ? ucwords(str_replace('_',' ', $appointment->meeting_format)) : 'See meeting instructions' }}</p>
-            <p class="text-sm">Seeker response: {{ ucwords(str_replace('_',' ', $appointment->seeker_response ?? 'Awaiting confirmation')) }}</p>
+        <div class="ru-entry ru-appointment" id="appointment-{{ $appointment->id }}">
+            <header class="ru-appointment-heading">
+                <div><h4>{{ $appointment->starts_at->timezone('Asia/Manila')->format('M d, Y') }}</h4><p>{{ $appointment->starts_at->timezone('Asia/Manila')->format('g:i A') }} to {{ $appointment->ends_at->timezone('Asia/Manila')->format('g:i A') }} PHT</p></div>
+                <span class="ru-appointment-status">{{ ucfirst($appointment->status) }}</span>
+            </header>
+            <dl class="ru-appointment-facts">
+                <div><dt>Meeting format</dt><dd>{{ $appointment->meeting_format ? ucwords(str_replace('_',' ', $appointment->meeting_format)) : 'See meeting instructions' }}</dd></div>
+                <div><dt>Seeker response</dt><dd>{{ ucwords(str_replace('_',' ', $appointment->seeker_response ?? 'Awaiting confirmation')) }}</dd></div>
+            </dl>
+            <p class="ru-appointment-instructions">{{ $appointment->meeting_details }}</p>
             @if(auth()->user()->role === 'seeker' && $appointment->status === 'scheduled' && $appointment->starts_at->isFuture() && in_array($referral->status,['accepted','in_progress']))
                 <form method="POST" action="{{ route('seeker.appointment.respond',$appointment) }}" class="ru-actions">
                     @csrf
@@ -14,10 +21,6 @@
                     <button name="decision" value="reschedule_requested" class="border rounded-lg px-3 py-2" @disabled($appointment->seeker_response === 'reschedule_requested')>Request another schedule</button>
                 </form>
             @endif
-
-            <span class="text-sm font-semibold">{{ $appointment->starts_at->timezone('Asia/Manila')->format('M d, Y g:i A') }} to {{ $appointment->ends_at->timezone('Asia/Manila')->format('g:i A') }}</span>
-            <span class="text-xs text-green-700">{{ ucfirst($appointment->status) }}</span>
-            <p class="text-sm whitespace-pre-wrap mt-2">{{ $appointment->meeting_details }}</p>
         </div>
     @empty
         <p class="text-sm text-gray-500">No appointment has been scheduled.</p>

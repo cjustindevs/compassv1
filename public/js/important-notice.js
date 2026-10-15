@@ -3,6 +3,8 @@
     if (!meta) return;
     if (window.CompassImportantNotices) return;
     const config = JSON.parse(meta.content), key = `compass-important:${config.user}`;
+    const presentation = window.CompassPopupPresentation;
+    const popupKey = notice => presentation?.key(notice);
     let queue = [], current = null, saving = false;
     try { queue = JSON.parse(sessionStorage.getItem(key) || '[]'); } catch {}
     const save = () => { try { sessionStorage.setItem(key, JSON.stringify(queue)); } catch {} };
@@ -15,7 +17,9 @@
     open.type = acknowledge.type = 'button'; actions.append(open, acknowledge); dialog.append(title, message, error, actions); document.body.append(dialog);
     const safe = path => typeof path === 'string' && /^\/(?!\/)/.test(path) && !/[\\\u0000-\u0020]/.test(path) ? path : config.center;
     function show() {
-        if (dialog.open || saving || document.hidden || !queue.length || document.querySelector('dialog[open]')) return;
+        if (dialog.open || saving || document.hidden || !queue.length || document.querySelector('dialog[open]') || document.querySelector('.modal-overlay.active')) return;
+        while (queue.length && presentation?.has(popupKey(queue[0]))) { queue.shift(); save(); }
+        if (!queue.length || (presentation && !presentation.claim(popupKey(queue[0])))) return;
         current = queue[0]; title.textContent = current.title; message.textContent = current.message; error.textContent = ''; dialog.showModal();
     }
     async function finish(navigate) {
@@ -30,9 +34,9 @@
         finally { saving = false; }
     }
     window.CompassImportantNotices = {
-        suspend() { if (dialog.open) dialog.close(); },
+        suspend() { if (dialog.open) { queue = queue.filter(item => item.id !== current?.id); save(); current = null; dialog.close(); } },
         reconcileUnread(ids) { queue = queue.filter(item => ids.includes(item.id)); save(); if (current && !queue.some(item => item.id === current.id)) { current = null; dialog.close(); } },
-        enqueue(notice) { if (!queue.some(item => item.id === notice.id)) { queue.push(notice); save(); } show(); },
+        enqueue(notice) { if (presentation?.has(popupKey(notice))) return; if (!queue.some(item => item.id === notice.id)) { queue.push(notice); save(); } show(); },
         reconcile(activeIds) { queue = queue.filter(item => item.type !== 'emergency' || activeIds.includes(item.id)); save(); if (current && !queue.some(item => item.id === current.id)) { current = null; dialog.close(); } },
     };
     open.onclick = () => finish(true); acknowledge.onclick = () => finish(false);

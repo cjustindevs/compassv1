@@ -15,6 +15,7 @@
         <meta name="compass-notices" content="{{ json_encode(['user'=>auth()->id(),'feed'=>route('notifications.feed'),'interval'=>in_array(auth()->user()->role,['adviser','moderator','professional']) ? 2000 : 5000,'center'=>route('notifications')]) }}">
         <script>window.CompassNoticesEnabled = true;</script>
         <link rel="stylesheet" href="{{ asset('css/live-notifications.css') }}?v={{ filemtime(public_path('css/live-notifications.css')) }}">
+        <script src="{{ asset('js/notification-presentation.js') }}?v={{ filemtime(public_path('js/notification-presentation.js')) }}" defer></script>
         <script src="{{ asset('js/important-notice.js') }}?v={{ filemtime(public_path('js/important-notice.js')) }}" defer></script>
         <script src="{{ asset('js/live-notifications.js') }}?v={{ filemtime(public_path('js/live-notifications.js')) }}" defer></script>
         @endunless

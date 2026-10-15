@@ -4,10 +4,9 @@
 @include('partials.management-ui-styles')
 @php($terminal = in_array($alert->status, ['resolved', 'closed']))
 <div class="cm-page er-page">
-    @if(!$terminal)<a class="cm-button" href="{{ route('adviser.emergency.coordinate', ['emergency_alerts', $alert->id]) }}">Open Helper assignment</a>@endif
     <header class="cm-header">
         <div><h1>Emergency review</h1><p class="cm-muted">Review the report, document your response, and coordinate follow-up.</p></div>
-        <div class="er-header-actions"><a class="cm-button cm-primary" href="#emergencyProfessionalHandoff">Professional referral</a><a class="cm-button" href="{{ route('adviser.emergencies') }}">Back to emergencies</a></div>
+        <div class="er-header-actions">@if(!$terminal)<a class="cm-button" href="{{ route('adviser.emergency.coordinate', ['emergency_alerts', $alert->id]) }}">Open Helper assignment</a>@endif <a class="cm-button cm-primary" href="#emergencyProfessionalHandoff">Professional referral</a><a class="cm-button" href="{{ route('adviser.emergencies') }}">Back to emergencies</a></div>
     </header>
     @if(session('success'))<div class="cm-alert" role="status">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="cm-alert cm-error" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
@@ -22,21 +21,15 @@
                 </dl>
                 <div class="er-reason"><h2>Reason for escalation</h2><p class="cm-message">{{ $alert->trigger_reason }}</p></div>
             </section>
+            @include('adviser.partials.emergency-handoff')
+            @include('adviser.partials.emergency-screening-summary')
             <details class="cm-card" aria-labelledby="documentationTitle">
                 <summary id="documentationTitle">Supporting documentation</summary>
                 <p class="cm-message">{{ $alert->session?->report?->session_summary ?? 'No session summary submitted yet.' }}</p>
                 @if($alert->session)<a class="cm-button" href="{{ route('adviser.session.show', $alert->session_id) }}">Review session documentation</a>@endif
             </details>
-            <details class="cm-card" aria-labelledby="historyTitle">
-                <summary id="historyTitle">Action history</summary><p class="cm-help">Latest actions first. Times are Philippine Time.</p>
-                @forelse(\Illuminate\Support\Facades\DB::table('emergency_review_actions')->where('emergency_alert_id',$alert->id)->orderByDesc('id')->get() as $action)
-                    <article class="cm-entry"><h2>{{ ucfirst($action->action) }}</h2><p class="cm-muted">{{ \Illuminate\Support\Carbon::parse($action->created_at)->timezone('Asia/Manila')->format('M d, Y g:i A') }} PHT</p><p class="cm-message">{{ $action->notes }}</p></article>
-                @empty<div class="er-empty">No actions recorded yet. Your saved actions will appear here.</div>@endforelse
-            </details>
         </div>
         <div class="er-stack">
-            @include('adviser.partials.emergency-handoff')
-            @include('adviser.partials.emergency-screening-summary')
             @if(!$terminal)
                 <section class="cm-card" aria-labelledby="recordTitle">
                     <h2 id="recordTitle">Record a review action</h2><p class="cm-help">Acknowledge the report or document instructions and coordination.</p>
@@ -64,11 +57,17 @@
             @else
                 <section class="cm-card"><h2>Review concluded</h2><p class="cm-help">This emergency is {{ $alert->status }}. Its documentation and action history remain available for review.</p></section>
             @endif
+            <details class="cm-card" aria-labelledby="historyTitle">
+                <summary id="historyTitle">Action history</summary><p class="cm-help">Latest actions first. Times are Philippine Time.</p>
+                @forelse(\Illuminate\Support\Facades\DB::table('emergency_review_actions')->where('emergency_alert_id',$alert->id)->orderByDesc('id')->get() as $action)
+                    <article class="cm-entry"><h2>{{ ucfirst($action->action) }}</h2><p class="cm-muted">{{ \Illuminate\Support\Carbon::parse($action->created_at)->timezone('Asia/Manila')->format('M d, Y g:i A') }} PHT</p><p class="cm-message">{{ $action->notes }}</p></article>
+                @empty<div class="er-empty">No actions recorded yet. Your saved actions will appear here.</div>@endforelse
+            </details>
         </div>
     </div>
 </div>
 <style>
-.er-header-actions{display:flex;gap:8px;flex-wrap:wrap}.er-professional-handoff{border-top:3px solid #049b50;scroll-margin-top:20px}.er-professional-handoff button:disabled{opacity:.6;cursor:not-allowed}.er-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:12px;align-items:start}.er-stack{display:grid;gap:12px;min-width:0}.er-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0}.er-facts dt{font-size:12px;color:#6b7b74;margin-bottom:5px}.er-facts dd{margin:0;font-weight:600;overflow-wrap:anywhere}.er-reason{border-left:3px solid #d36154;background:#fff6f4;padding:16px;border-radius:8px}.er-reason h2{color:#913a30;font-size:14px}.er-reason p{margin-bottom:0}.er-empty{background:#f7faf8;border-radius:10px;padding:18px;color:#6b7b74;font-size:13px}.er-page .cm-message{line-height:1.5}.er-page textarea{min-height:76px}@media(max-width:1000px){.er-grid{grid-template-columns:1fr}}@media(max-width:600px){.er-facts{grid-template-columns:1fr;gap:12px}.er-page .cm-button{width:100%}}
-.er-page .cm-card{padding:16px}.er-page summary{cursor:pointer;font-weight:700;font-size:14px}.er-page details[open]>summary{margin-bottom:12px}.er-page .cm-entry{padding:10px 0}.er-page .cm-field{margin-bottom:10px}.er-page .cm-help{margin:6px 0 12px}
+.er-header-actions{display:flex;gap:8px;flex-wrap:wrap}.er-professional-handoff{border-top:3px solid #049b50;scroll-margin-top:20px}.er-professional-handoff button:disabled{opacity:.6;cursor:not-allowed}.er-page{width:100%;max-width:none;padding:24px 32px}.er-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}.er-stack{display:grid;gap:12px;min-width:0}.er-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0}.er-facts dt{font-size:12px;color:#6b7b74;margin-bottom:5px}.er-facts dd{margin:0;font-weight:600;overflow-wrap:anywhere}.er-reason{border-left:3px solid #d36154;background:#fff6f4;padding:16px;border-radius:8px}.er-reason h2{color:#913a30;font-size:14px}.er-reason p{margin-bottom:0}.er-empty{background:#f7faf8;border-radius:10px;padding:18px;color:#6b7b74;font-size:13px}.er-page .cm-message{line-height:1.5}.er-page textarea{min-height:76px}@media(max-width:1000px){.er-grid{grid-template-columns:1fr}}@media(max-width:600px){.er-page{padding:16px}.er-facts{grid-template-columns:1fr;gap:12px}.er-page .cm-button{width:100%}}
+.er-page .cm-header{margin-bottom:16px}.er-page .cm-card{padding:16px}.er-page .cm-field :is(select,textarea){max-width:100%}.er-page .cm-button{min-height:40px}.er-page summary{cursor:pointer;font-weight:700;font-size:14px}.er-page details[open]>summary{margin-bottom:12px}.er-page .cm-entry{padding:10px 0}.er-page .cm-field{margin-bottom:10px}.er-page .cm-help{margin:6px 0 12px}
 </style>
 @endsection

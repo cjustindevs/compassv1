@@ -16,6 +16,7 @@ the relevant validation checklist and current code when verifying behavior.
 
 ## Workflow validation and QA
 
+- [Referral UI and once-only popup checks](REFERRAL_UI_POPUP_QA.md)
 - [Helper availability, workload and review UI](HELPER_OPERATIONAL_UI_QA.md)
 - [October 15 escalation and operations revision](OCTOBER_15_ESCALATION_REVISION_QA.md)
 - [Emergency resolution synchronization](EMERGENCY_RESOLUTION_SYNC_QA.md)

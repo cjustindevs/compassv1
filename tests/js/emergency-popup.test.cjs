@@ -18,6 +18,7 @@ function popup() {
     const script = fs.readFileSync('public/js/staff-emergency-notice.js', 'utf8');
     dialog.id = 'staffEmergencyNotice';
     const document = { hidden: false, getElementById: id => id === 'staffEmergencyNotice' ? dialog : {content: JSON.stringify({next:'/emergency-notice',dismiss:'/emergency-notice/dismiss',csrf:'test-token',openLabel:'Review assigned referral'})},
+        querySelector: () => null,
         querySelectorAll: () => [...(dialog.open ? [dialog] : []), ...(otherDialog ? [{}] : [])],
         addEventListener: (name, fn) => { events[name] = fn; } };
     const navigator = { onLine: true };

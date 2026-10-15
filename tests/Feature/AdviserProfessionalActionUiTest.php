@@ -49,6 +49,20 @@ class AdviserProfessionalActionUiTest extends TestCase
         return [$adviserUser, $helperUser, $session];
     }
 
+    public function test_referral_clarification_and_history_remain_inside_the_detail_layout(): void
+    {
+        [$adviser,$helper,$session] = $this->records();
+        $referral = Referral::create(['session_id'=>$session->id,'helper_id'=>$session->helper_id,'adviser_id'=>$adviser->adviser->id,
+            'status'=>'pending_adviser','priority_level'=>'low','referral_reason'=>'Review this request.','referral_date'=>now()]);
+        $referral->forceFill(['clarification_requested_at'=>now(),'clarification_question'=>'Please clarify the recommendation.',
+            'recommendation_form'=>['session_summary'=>'Session summary for review']])->save();
+        $page = $this->get(route('adviser.referral.show',$referral->case_reference))->assertOk();
+        $document = new \DOMDocument; @$document->loadHTML($page->getContent()); $xpath = new \DOMXPath($document);
+        $this->assertSame(1,$xpath->query('//section[@aria-label="Referral clarification"]/ancestor::div[contains(@class,"referral-detail-page")]')->length);
+        $this->assertSame(1,$xpath->query('//section[@aria-label="Referral recommendation"]/ancestor::div[contains(@class,"referral-detail-page")]')->length);
+        $this->assertSame(1,$xpath->query('//h3[normalize-space(.)="Version history"]/ancestor::div[contains(@class,"referral-detail-page")]')->length);
+    }
+
     public function test_emergency_page_offers_real_referral_request_and_shows_waiting_state_after_submit(): void
     {
         [$adviser,$helper,$session] = $this->records();

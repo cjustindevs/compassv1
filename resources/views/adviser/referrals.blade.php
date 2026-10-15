@@ -182,11 +182,12 @@
             .card { padding: 16px; }
             .modal-box { padding: 20px 16px; }
         }
+        .referral-queue-page{width:100%;max-width:none;margin:0}.referral-queue-page .card{padding:16px;border-radius:12px;box-shadow:none}.referral-queue-page .stat-card{padding:14px 18px}.referral-queue-page .referral-item{gap:16px;padding:14px 0;align-items:flex-start}.referral-queue-page .referral-info{min-width:0;flex:1}.referral-queue-page .alias{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.referral-queue-page .details{margin:6px 0}.referral-queue-page .reason{overflow-wrap:anywhere}.referral-queue-page .actions{flex-shrink:0;justify-content:flex-end}.referral-queue-page .actions button,.referral-queue-page .actions a{padding:8px 12px;min-height:38px;font-size:13px;border-radius:8px}@media(max-width:900px){.referral-queue-page .referral-item{flex-direction:column}.referral-queue-page .actions{width:100%;justify-content:flex-start}}
     </style>
 @endpush
 
 @section('content')
-<div class="adviser-page-content">
+<div class="adviser-page-content referral-queue-page">
         <!-- Top Bar -->
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
@@ -242,7 +243,7 @@
                                     <span class="status-badge pending">@if($referral->reviewed_at || $referral->approved_at || $referral->professional_id)Review recorded @elseif($referral->clarification_requested_at && ! $referral->clarification_received_at)Awaiting Helper revision @elseif($referral->clarification_received_at)Revision submitted @else New @endif</span>
                                 </div>
                                 <div class="details">
-                                    Helper: {{ $referral->helper->first_name ?? 'Unknown' }}
+                                    Session #{{ $referral->session_id }} &middot; Helper: {{ $referral->helper->first_name ?? 'Unknown' }}
                                     · {{ $referral->created_at->format('M d, Y') }}
                                 </div>
                                 <div class="reason text-sm text-gray-600">
@@ -288,7 +289,7 @@
                                 <span class="status-badge approved">Approved</span>
                             </div>
                             <div class="details text-gray-400">
-                                Helper: {{ $referral->helper->first_name ?? 'Unknown' }}
+                                Session #{{ $referral->session_id }} &middot; Helper: {{ $referral->helper->first_name ?? 'Unknown' }}
                                 · {{ $referral->created_at->format('M d, Y') }}
                                 @if($referral->professional)
                                     · Assigned to: {{ $referral->professional->first_name ?? '' }}

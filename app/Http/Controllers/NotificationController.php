@@ -124,6 +124,7 @@ class NotificationController extends Controller
         $staff = in_array($request->user()->role, ['moderator', 'adviser', 'professional'], true);
         $present = fn ($notice) => ['id' => $notice->id, 'title' => $notice->title, 'message' => $notice->message,
             'type' => $notice->notification_type, 'link' => $notice->link, 'read' => $notice->is_read,
+            'popup_key' => $staff && $notice->notification_type === 'emergency' && ($caseKey = $state->key($notice, $request->user())) ? 'emergency:'.$caseKey : 'notification:'.$notice->id,
             'important' => in_array($notice->notification_type, ['referral', 'emergency'], true)
                 || ($notice->notification_type === 'assignment' && ! in_array($notice->title, ['Helper ready for duty', 'Duty scheduled', 'Duty updated', 'Duty cancelled'], true)),
             'urgent' => $staff && $notice->notification_type === 'emergency' ? $state->key($notice, $request->user()) !== null : null];

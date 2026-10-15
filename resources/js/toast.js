@@ -128,6 +128,10 @@ function initConfirmDelegation() {
         const form = e.target.closest('form[data-confirm]');
         if (!form || form.dataset.confirmed === '1') return;
         e.preventDefault();
+        if (form.dataset.confirmPending === '1') return;
+        form.dataset.confirmPending = '1';
+        // Native form.submit() omits the clicked button, including a Decline value of "0".
+        const choice = e.submitter?.name ? { name: e.submitter.name, value: e.submitter.value } : null;
 
         const ok = await confirmAction({
             title:    form.dataset.confirm || 'Are you sure?',
@@ -137,9 +141,13 @@ function initConfirmDelegation() {
             icon:     form.dataset.confirmIcon || '' + uiIcon('warning', 'text-yellow-500 text-5xl') + '',
         });
 
+        delete form.dataset.confirmPending;
         if (ok) {
             form.dataset.confirmed = '1';
+            const input = choice ? document.createElement('input') : null;
+            if (input) { input.type = 'hidden'; input.name = choice.name; input.value = choice.value; form.appendChild(input); }
             form.submit();
+            input?.remove();
         }
     }, true);
 

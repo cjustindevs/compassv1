@@ -1,9 +1,13 @@
 (() => {
     const dialog = document.getElementById('staffEmergencyNotice');
     if (!dialog) return;
+    if (window.CompassStaffEmergencyInitialized) return;
+    window.CompassStaffEmergencyInitialized = true;
     const config = JSON.parse(document.getElementById('staffEmergencyConfig').content);
+    const presentation = window.CompassPopupPresentation;
+    const popupKey = item => item ? presentation?.key({...item, type:'emergency'}) : null;
     let notice = null, busy = false;
-    const otherDialog = () => [...document.querySelectorAll('dialog[open]')].some(node => node !== dialog && node.id !== 'compassImportantNotice');
+    const otherDialog = () => [...document.querySelectorAll('dialog[open]')].some(node => node !== dialog && node.id !== 'compassImportantNotice') || !!document.querySelector('.modal-overlay.active');
     async function current() {
         const url = config.next + (notice ? '?current=' + encodeURIComponent(notice.reference) : '');
         const response = await fetch(url, {headers: {Accept: 'application/json'}, cache: 'no-store'});
@@ -11,6 +15,11 @@
         return (await response.json()).notice;
     }
     function render(next) {
+        if (next && otherDialog()) return;
+        const sameVisibleCase = dialog.open && notice && next && popupKey(notice) === popupKey(next);
+        if (next && !sameVisibleCase && presentation && !presentation.claim(popupKey(next))) {
+            notice = null; if (dialog.open) dialog.close(); return;
+        }
         notice = next;
         if (!notice) { if (dialog.open) dialog.close(); return; }
         dialog.querySelector('#staffEmergencyTitle').textContent = notice.title;
@@ -19,10 +28,23 @@
         dialog.querySelector('[data-error]').textContent = '';
         if (!dialog.open && !otherDialog()) { window.CompassImportantNotices?.suspend(); dialog.showModal(); }
     }
+    async function retire(item) {
+        const response = await fetch(config.dismiss, {method:'POST',
+            headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':config.csrf},
+            body:JSON.stringify({reference:item.reference})});
+        if (!response.ok) throw Error();
+    }
     async function poll() {
         if (busy || document.hidden || !navigator.onLine || otherDialog()) return;
         busy = true;
-        try { render(await current()); } catch (_) { /* Keep the current UI during a temporary outage. */ }
+        try {
+            const next = await current();
+            const alreadyOpen = dialog.open && notice && next && popupKey(notice) === popupKey(next);
+            if (next && !alreadyOpen && presentation?.has(popupKey(next))) {
+                // Only retire its popup; the case and unread notification stay intact.
+                await retire(next); render(null);
+            } else render(next);
+        } catch (_) { /* Keep the current UI during a temporary outage. */ }
         finally { busy = false; }
     }
     async function dismiss(open) {

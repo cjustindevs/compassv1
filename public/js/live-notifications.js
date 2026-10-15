@@ -23,6 +23,8 @@
     function toast(notice){
         if (notice.type === 'emergency' && document.getElementById('staffEmergencyNotice')) return;
         if (notice.important && window.CompassImportantNotices) { window.CompassImportantNotices.enqueue(notice); return; }
+        const presentation = window.CompassPopupPresentation;
+        if (presentation && !presentation.claim(presentation.key(notice))) return;
         const card=el('article');card.noticeId=notice.id;card.isEmergency=notice.type==='emergency';card.className='compass-notice-toast'+(notice.type==='emergency'?' is-emergency':'');
         const dismiss=el('button','×');dismiss.type='button';dismiss.setAttribute('aria-label','Dismiss notification');dismiss.addEventListener('click',()=>card.remove());
         const link=el('a','Open');link.href=safe(notice.link);card.append(el('strong',notice.title),el('p',notice.message),link,dismiss);toasts.append(card);
@@ -50,7 +52,7 @@
             const all=el('a','View all notifications');all.href=config.center;all.className='compass-notice-all';inbox.append(all);
             // Do not lose alerts while a confirmation or sensitive form dialog is open.
             for (const notice of data.attention || []) window.CompassImportantNotices?.enqueue(notice);
-            if(document.querySelector('dialog[open]'))return;
+            if(document.querySelector('dialog[open]') || document.querySelector('.modal-overlay.active'))return;
             const fresh=data.fresh.filter(notice=>notice.urgent!==false&&(seen===null||notice.id>seen));
             const routine=fresh.filter(n=>n.type!=='emergency');
             fresh.filter(n=>n.type==='emergency').forEach(toast);
