@@ -1,7 +1,8 @@
 <?php
 namespace App\Services;
-use App\Models\{TrainingRecommendation,HelperCompetencyHistory,Notification};
+use App\Models\{TrainingRecommendation,HelperCompetencyHistory,Notification,Helper};
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 class TrainingRecommendationService {
     public function create(array $data): TrainingRecommendation {
         $adviser=app(AdviserScope::class)->actor();
@@ -9,6 +10,11 @@ class TrainingRecommendationService {
             $evaluation=HelperCompetencyHistory::lockForUpdate()->findOrFail($data['evaluation_id']);
             abort_unless($evaluation->helper?->adviser_id===$adviser->id,403);
             abort_unless(isset(CompetencyRubric::CRITERIA[$data['criterion']]) && $evaluation->rubric_version && $evaluation->evidence,422,'Use a documented, versioned competency evaluation.');
+            Helper::whereKey($evaluation->helper_id)->lockForUpdate()->firstOrFail();
+            if (TrainingRecommendation::where('helper_id', $evaluation->helper_id)->where('criterion', $data['criterion'])
+                ->whereIn('status', ['assigned', 'in_progress', 'completed'])->exists()) {
+                throw ValidationException::withMessages(['criterion'=>'This Helper already has ongoing training or an activity awaiting review for this skill. Review the existing activity first.']);
+            }
             $task=TrainingRecommendation::create(array_intersect_key($data,array_flip(['criterion','reason','activity','priority','due_date']))+['evaluation_id'=>$evaluation->id,'helper_id'=>$evaluation->helper_id,'adviser_id'=>$adviser->id]);
             app(SupervisionVersions::class)->record($task,'Training assigned on documented evidence');
             SupportAudit::record('training_assigned',$task);

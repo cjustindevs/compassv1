@@ -79,10 +79,7 @@ class DashboardOverview
             $cards[array_key_last($cards)]['samples'] = $samples->count();
             $add('Awaiting response', $waiting, 'Unanswered cases becoming actionable in the selected period; excluded from average response time.');
             $add('Average resolution', $resolution, 'Emergency trigger to resolution in minutes; selected period by resolution date. Support-session completion is not substituted for Adviser resolution.');
-            $evaluations = \App\Models\HelperCompetencyHistory::with('helper')->whereHas('helper', fn ($q) => $q->where('adviser_id', $adviser->id))
-                ->where('evaluation_date', '>=', $period->start->utc())->where('evaluation_date', '<', $period->end->utc())->where('evaluation_date', '<=', now())->get()
-                ->filter(fn ($evaluation) => $evaluation->normalized_score >= 1 && $evaluation->normalized_score <= 5);
-            $chart('Helper competency comparison', $evaluations->groupBy('helper_id')->mapWithKeys(fn ($rows) => [($rows->first()->helper?->full_name ?: 'Helper').' #'.$rows->first()->helper_id => round($rows->avg('normalized_score'), 2)])->all(), 'Average recorded evaluation rating out of five in the selected period. Helpers without evaluations are excluded.');
+            $competencyComparison = app(AdviserCompetencyComparison::class)->forAdviser($adviser->id, $period, request());
         }
         $chart('Cases by status', $caseStatus, 'Support requests, excluding cancelled/no-show records. Each appears once. Emergency review is separate from chat closure.');
         $historicalCases = $cases->filter(fn ($case) => ($at = $case->created_date ?? $case->created_at) && $at->gte($period->start) && $at->lt($period->end) && $at->lte(now()));
@@ -109,7 +106,7 @@ class DashboardOverview
                 'label' => ($r instanceof EmergencyAlert ? 'Emergency review' : 'Support case').' - '.ucwords(str_replace('_', ' ', $r->status ?? $r->session_status)),
                 'at' => ($r->resolved_at ?? $r->acknowledged_at ?? $r->end_time ?? $r->start_time ?? $r->triggered_at ?? $r->created_date ?? $r->created_at)?->copy()->timezone('Asia/Manila')->format('M d, Y g:i A'),
             ])->all();
-        return compact('cards', 'charts', 'recent');
+        return compact('cards', 'charts', 'recent') + ['competency_comparison' => $competencyComparison ?? null];
     }
 
     private function durations(Collection $rows, string $start, string $end): Collection

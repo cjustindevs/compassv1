@@ -17,6 +17,7 @@ the relevant validation checklist and current code when verifying behavior.
 
 ## Workflow validation and QA
 
+- [Adviser competency comparison and training](ADVISER_COMPETENCY_COMPARISON_QA.md)
 - [October 19 queue, escalation and modal checks](OCTOBER_19_QUEUE_ESCALATION_QA.md)
 - [Referral UI and once-only popup checks](REFERRAL_UI_POPUP_QA.md)
 - [Helper availability, workload and review UI](HELPER_OPERATIONAL_UI_QA.md)

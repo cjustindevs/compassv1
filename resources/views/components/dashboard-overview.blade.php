@@ -18,7 +18,7 @@
 @endphp
 <section class="co-overview" aria-label="Dashboard summaries">
     @if(in_array(auth()->user()?->role, ['adviser','moderator'], true))
-        <x-analytics-period :action="route(auth()->user()->role.'.dashboard')" :dates="\App\Services\AnalyticsPeriod::fromRequest(request())->dates()" />
+        <x-analytics-period :action="route(auth()->user()->role.'.dashboard')" :dates="\App\Services\AnalyticsPeriod::fromRequest(request())->dates()" :filters="$overview['competency_comparison']['filters'] ?? []" />
     @endif
     @if(auth()->user()?->role === 'adviser')
         <nav class="co-task-links" aria-label="Live support actions">
@@ -30,6 +30,9 @@
     <div class="co-kpis">@foreach($primary as $card)<article class="stat-card dashboard-card co-kpi"><h3 title="{{ $card['definition'] }}">{{ $card['label'] }}</h3><strong @if(auth()->user()?->role === 'moderator') @if($card['label'] === 'Waiting requests') id="statQueue" @elseif($card['label'] === 'Active sessions') id="statSessions" @elseif($card['label'] === 'Available Helpers') id="statHelpers" @endif @endif>{{ $formatValue($card['value']) }}</strong>@if(isset($card['samples']))<small>{{ $card['samples'] }} records measured</small>@endif @if(isset($card['link']))<a class="co-metric-link" href="{{ $card['link'] }}">View records</a>@endif</article>@endforeach</div>
     <details class="co-definitions" @if(auth()->user()?->role === 'moderator') open @endif><summary>Operational status and supporting metrics</summary><div class="co-secondary">@foreach($secondary as $card)<div><span title="{{ $card['definition'] }}">{{ $card['label'] }}</span><strong title="{{ $card['definition'] }}" @if(auth()->user()?->role === 'moderator' && $card['label'] === 'Active emergencies') id="statEmergency" @endif>{{ $formatValue($card['value']) }}</strong>@if(isset($card['samples']))<small>{{ $card['samples'] }} cases measured</small>@endif</div>@endforeach</div></details>
     @if($showDefinitions)<details class="co-definitions"><summary>Metric definitions</summary><dl>@foreach($overview['cards'] as $card)<dt>{{ $card['label'] }}: {{ $card['value'] }}</dt><dd>{{ $card['definition'] }}</dd>@endforeach</dl></details>@endif
+    @if($overview['competency_comparison'] ?? null)
+        <x-adviser-competency-comparison :comparison="$overview['competency_comparison']" />
+    @endif
     <div class="co-charts">@foreach($orderedCharts as $chart)<x-dashboard-chart :chart="$chart" :smooth="$smoothLines" />@endforeach</div>
     @if($showRecent)<article class="card dashboard-card co-recent"><header class="card-header"><h3>{{ auth()->user()?->role === 'moderator' ? 'Recent emergency activity' : 'Recent case activity' }}</h3></header><ul>@forelse($overview['recent'] as $item)<li><span>{{ $item['label'] }}</span><time>{{ $item['at'] }}</time></li>@empty<li>No recorded case activity yet.</li>@endforelse</ul></article>@endif
 </section>
