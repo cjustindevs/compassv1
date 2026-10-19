@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Reports - COMPASS')
 @section('content')
+<p style="margin:16px 24px"><a class="cm-button" href="{{ route('queue.performance') }}">Queue performance and assignment metrics</a></p>
 <div class="adviser-page-content av-page">
 <header><div><h1>Reports</h1><p class="av-muted">Authorized supervision records. {{ $filters['start']->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') }} to {{ $filters['end']->copy()->subMicrosecond()->timezone('Asia/Manila')->format('M d, Y g:i A') }} (Philippine Time).</p></div><div class="av-actions"><a class="av-button" href="{{ route('adviser.reports.export', array_merge(request()->except(['page','cases_page']),['format'=>'csv'])) }}">Export case CSV</a><a class="av-button" href="{{ route('adviser.reports.export', array_merge(request()->except(['page','cases_page']),['format'=>'pdf'])) }}">Export case PDF</a></div></header>
 @if(session('success'))<p class="av-note" role="status">{{ session('success') }}</p>@endif

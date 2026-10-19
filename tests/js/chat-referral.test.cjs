@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-function room(isSeeker = true) {
+function room(isSeeker = true, presentation = null) {
     class Node {
         constructor() { this.handlers = {}; this.open = false; this.hidden = false; this.children = []; this.checked = false; this.opens = 0; this.attributes = {}; }
         addEventListener(name, fn) { this.handlers[name] = fn; }
@@ -28,7 +28,7 @@ function room(isSeeker = true) {
     };
     const navigator = { onLine: true }, location = { origin: 'https://compass.test' };
     const context = { document, navigator, location, Set,
-        window: { confirm: () => true, addEventListener: (name, fn) => { windowEvents[name] = fn; } },
+        window: { CompassPopupPresentation:presentation, confirm: () => true, addEventListener: (name, fn) => { windowEvents[name] = fn; } },
         setInterval: (fn, ms) => intervals.push({ fn, ms }),
         fetch: async (url, options) => {
             requests.push({ url, options });
@@ -159,4 +159,13 @@ test('embedded identity has its own close control; support details restore the o
     r.ids.chatIdentityOpen.handlers.click(); await r.flush();
     assert.equal(r.ids.chatEmbeddedClose.hidden, true);
     assert.equal(r.ids.chatIdentityDialog.attributes['data-support'], undefined);
+});
+
+test('a consent prompt is shown once across navigation but explicit Review referral can reopen it',async()=>{
+    const seen=new Set(),presentation={has:key=>seen.has(key),claim:key=>{if(seen.has(key))return false;seen.add(key);return true;}};
+    const pending={...accepted(),referral:{...accepted().referral,status:'pending_consent',help_seeker_consent:false,can_provide_identity:false,needs_identity_disclosure:false},consent:null};
+    const first=room(true,presentation);await first.flush();first.state(pending);await first.poll();assert.equal(first.ids.referralConsentDialog.open,true);
+    first.ids.referralConsentDialog.close();
+    const next=room(true,presentation);await next.flush();next.state(pending);await next.poll();assert.equal(next.ids.referralConsentDialog.opens,0);
+    next.ids.chatReferralOpen.handlers.click();await next.flush();assert.equal(next.ids.referralConsentDialog.open,true);
 });

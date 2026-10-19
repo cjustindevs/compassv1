@@ -308,7 +308,7 @@
                     <x-ui-icon name="check" class="mr-2" /> Approve Referral
                 </button>
                 <button class="btn-danger" onclick="openRejectModal({{ $referral->id }})">
-                    <x-ui-icon name="close" class="mr-2" /> Return for Revision
+                    <x-ui-icon name="close" class="mr-2" /> Reject Referral
                 </button>
                 @endif
             </div>
@@ -316,7 +316,7 @@
         </div>
 
     <!-- Approve Modal -->
-    <div class="modal-overlay av-referral-modal" id="approveModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 999; align-items: center; justify-content: center;">
+    <dialog class="workflow-dialog adviser-review-dialog" id="approveModal" aria-label="Approve referral">
         <div class="modal-box av-referral-dialog">
             <div class="flex items-center gap-3 mb-4">
 
@@ -324,22 +324,23 @@
             </div>
             <p class="text-gray-500 text-sm mb-4">Record a short review note. This is stored alongside the approval for accountability.</p>
 
-            <form class="form-maximized" id="approveForm" method="POST" action="{{ route('adviser.referral.approve', $referral->case_reference) }}">
-                @csrf
+            <form class="form-maximized" id="approveForm" method="POST" action="{{ route('adviser.referral.approve', $referral->case_reference) }}"><div class="workflow-dialog__body">
+                @csrf<input type="hidden" name="_workflow_action" value="approveModal">
+                @error('review_notes')<p role="alert">{{ $message }}</p>@enderror
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Review Notes <span class="text-red-500">*</span></label>
-                    <textarea name="review_notes" class="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" rows="4" placeholder="Summarize your assessment of this referral..." required maxlength="1000"></textarea>
+                    <textarea name="review_notes" class="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" rows="4" placeholder="Summarize your assessment of this referral..." required maxlength="1000">{{ old('review_notes') }}</textarea>
                 </div>
-                <div class="flex gap-3 av-referral-actions">
+                </div><div class="workflow-dialog__footer av-referral-actions">
                     <button type="button" class="btn-outline flex-1" onclick="closeApproveModal()">Cancel</button>
                     <button type="submit" class="btn-primary flex-1">Approve Referral</button>
                 </div>
             </form>
         </div>
-    </div>
+    </dialog>
 
     <!-- Request Revision Modal -->
-    <div class="modal-overlay av-referral-modal" id="reviseModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 999; align-items: center; justify-content: center;">
+    <dialog class="workflow-dialog adviser-review-dialog" id="reviseModal" aria-label="Request referral revision">
         <div class="modal-box av-referral-dialog">
             <div class="flex items-center gap-3 mb-4">
 
@@ -347,42 +348,44 @@
             </div>
             <p class="text-gray-500 text-sm mb-4">Return this referral to the Helper with comments. The Helper can revise the recommendation, and approval stays blocked until they respond.</p>
 
-            <form class="form-maximized" id="reviseForm" method="POST" action="{{ route('adviser.referral.request-info', $referral->case_reference) }}">
-                @csrf
+            <form class="form-maximized" id="reviseForm" method="POST" action="{{ route('adviser.referral.request-info', $referral->case_reference) }}"><div class="workflow-dialog__body">
+                @csrf<input type="hidden" name="_workflow_action" value="reviseModal">
+                @error('info_request')<p role="alert">{{ $message }}</p>@enderror
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Comments for the Helper <span class="text-red-500">*</span></label>
-                    <textarea name="info_request" class="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" rows="4" placeholder="Explain what to revise or clarify in the recommendation..." required minlength="10" maxlength="2000"></textarea>
+                    <textarea name="info_request" class="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" rows="4" placeholder="Explain what to revise or clarify in the recommendation..." required minlength="10" maxlength="2000">{{ old('info_request') }}</textarea>
                 </div>
-                <div class="flex gap-3 av-referral-actions">
+                </div><div class="workflow-dialog__footer av-referral-actions">
                     <button type="button" class="btn-outline flex-1" onclick="closeReviseModal()">Cancel</button>
                     <button type="submit" class="btn-primary flex-1" style="background:#f59e0b;">Request Revision</button>
                 </div>
             </form>
         </div>
-    </div>
+    </dialog>
 
     <!-- Reject Modal -->
-    <div class="modal-overlay av-referral-modal" id="rejectModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 999; align-items: center; justify-content: center;">
+    <dialog class="workflow-dialog adviser-review-dialog" id="rejectModal" aria-label="Reject referral">
         <div class="modal-box av-referral-dialog">
             <div class="flex items-center gap-3 mb-4">
 
-                <h3 class="text-xl font-bold text-gray-800">Return for Revision</h3>
+                <h3 class="text-xl font-bold text-gray-800">Reject Referral</h3>
             </div>
-            <p class="text-gray-500 text-sm mb-4">Explain what the Helper must revise before you can approve this referral.</p>
+            <p class="text-gray-500 text-sm mb-4">Record why this recommendation will not proceed. This does not resolve a linked emergency.</p>
 
-            <form class="form-maximized" id="rejectForm" method="POST" action="{{ route('adviser.referral.reject', $referral->case_reference) }}">
-                @csrf
+            <form class="form-maximized" id="rejectForm" method="POST" action="{{ route('adviser.referral.decline', $referral->case_reference) }}"><div class="workflow-dialog__body">
+                @csrf<input type="hidden" name="_workflow_action" value="rejectModal">
+                @error('rejection_reason')<p role="alert">{{ $message }}</p>@enderror
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Revision comments <span class="text-red-500">*</span></label>
-                    <textarea name="rejection_reason" class="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" rows="4" placeholder="Explain the required corrections..." required></textarea>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Rejection reason <span class="text-red-500">*</span></label>
+                    <textarea name="rejection_reason" class="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" rows="4" placeholder="Explain why this referral is being rejected..." required>{{ old('rejection_reason') }}</textarea>
                 </div>
-                <div class="flex gap-3 av-referral-actions">
+                </div><div class="workflow-dialog__footer av-referral-actions">
                     <button type="button" class="btn-outline flex-1" onclick="closeRejectModal()">Cancel</button>
-                    <button type="submit" class="btn-danger flex-1">Return for Revision</button>
+                    <button type="submit" class="btn-danger flex-1">Reject Referral</button>
                 </div>
             </form>
         </div>
-    </div>
+    </dialog>
 
     <style>
         .modal-overlay { display: none; }
@@ -392,34 +395,37 @@
 
     <script>
         function openApproveModal() {
-            document.getElementById('approveModal').classList.add('active');
+            window.CompassDialogs.open(document.getElementById('approveModal'), document.activeElement);
         }
 
         function closeApproveModal() {
-            document.getElementById('approveModal').classList.remove('active');
+            window.CompassDialogs.close(document.getElementById('approveModal'));
         }
 
         function openRejectModal(id) {
-            document.getElementById('rejectModal').classList.add('active');
+            window.CompassDialogs.open(document.getElementById('rejectModal'), document.activeElement);
         }
 
         function closeRejectModal() {
-            document.getElementById('rejectModal').classList.remove('active');
+            window.CompassDialogs.close(document.getElementById('rejectModal'));
         }
 
         function openReviseModal() {
-            document.getElementById('reviseModal').classList.add('active');
+            window.CompassDialogs.open(document.getElementById('reviseModal'), document.activeElement);
         }
 
         function closeReviseModal() {
-            document.getElementById('reviseModal').classList.remove('active');
+            window.CompassDialogs.close(document.getElementById('reviseModal'));
         }
 
         document.getElementById('rejectModal')?.addEventListener('click', function(e) {
             if (e.target === this) {
-                this.classList.remove('active');
+                window.CompassDialogs.close(this);
             }
         });
+        @if($errors->any() && in_array(old('_workflow_action'), ['approveModal','reviseModal','rejectModal']))
+        document.addEventListener('DOMContentLoaded', () => window.CompassDialogs.open(document.getElementById(@json(old('_workflow_action')))));
+        @endif
     </script>
 
     @if($referral->clarification_requested_at)

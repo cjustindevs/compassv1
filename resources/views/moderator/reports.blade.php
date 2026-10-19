@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('title','Operations Reports - COMPASS')
 @section('content')
+<p style="margin:16px 24px"><a class="cm-button" href="{{ route('queue.performance') }}">Queue performance and assignment metrics</a></p>
 <link rel="stylesheet" href="{{ asset('css/moderator-operations.css') }}?v={{ filemtime(public_path('css/moderator-operations.css')) }}">
 @php
     $tab=request('tab') ?: 'operations'; $report=$roleReport;

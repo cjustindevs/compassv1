@@ -17,6 +17,7 @@ class HelperWorkflowMaintenance
         $this->reconcileAllReadyHelpers();
         $this->reconcileStaleAvailability();
         $this->releaseUnavailableRecommendations();
+        Helper::eachById(fn ($helper) => app(HelperDutyEvidence::class)->observe($helper));
         ReadinessCheck::where('is_active', true)->whereNull('expiry_notified_at')->where('valid_until', '<=', now())->eachById(function ($check) {
             DB::transaction(function () use ($check) {
                 $helper = Helper::lockForUpdate()->findOrFail($check->helper_id);

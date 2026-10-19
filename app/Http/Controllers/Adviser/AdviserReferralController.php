@@ -141,6 +141,18 @@ class AdviserReferralController extends Controller
         return redirect()->route('adviser.referrals')->with('info', 'Recommendation returned to the Helper with your comments. Approval remains pending until the revision is reviewed.');
     }
 
+    /** Final rejection is separate from returning a recommendation for revision. */
+    public function decline(Request $request, $id)
+    {
+        $referral = Referral::findOrFail($this->referralId($id));
+        $this->authorizeReferral($referral);
+        $data = $request->validate(['rejection_reason'=>'required|string|min:10|max:1000']);
+        $this->transition(fn () => app(ReferralManagementService::class)->reviewReferral($referral, Auth::user()->adviser,
+            ['approved'=>false, 'decline_reason'=>$data['rejection_reason']]), 'rejection_reason');
+
+        return redirect()->route('adviser.referrals')->with('success', 'Referral rejected. The Helper and Seeker were notified. Any emergency remains a separate review.');
+    }
+
     /**
      * Request more information
      */

@@ -8,16 +8,16 @@
     let polling=false;
     const status=document.createElement('p');status.className='chat-workflow-feedback';status.setAttribute('role','status');
     document.querySelector('.room-card')?.before(status);
-    function open(dialog,trigger){if(dialog.open)return;dialog._trigger=trigger;dialog.showModal();dialog.querySelector('textarea,input:not([type="hidden"]),button')?.focus();}
+    function open(dialog,trigger){if(dialog.open)return;dialog._trigger=trigger;if(window.CompassDialogs){if(!window.CompassDialogs.open(dialog,trigger))return;}else dialog.showModal();dialog.querySelector('textarea,input:not([type="hidden"]),button')?.focus();}
     const openers={referralBtn:referralDialog,emergencyBtn:emergencyDialog};
     Object.entries(openers).forEach(([id,dialog])=>document.getElementById(id)?.addEventListener('click',()=>{open(dialog,document.getElementById(id));refresh();}));
     for(const dialog of [referralDialog,emergencyDialog]){
-        dialog.querySelectorAll('.modal-close').forEach(button=>button.addEventListener('click',()=>dialog.close()));
+        dialog.querySelectorAll('.modal-close').forEach(button=>button.addEventListener('click',()=>window.CompassDialogs?window.CompassDialogs.close(dialog):dialog.close()));
         dialog.addEventListener('close',()=>dialog._trigger?.focus());
-        dialog.addEventListener('click',event=>{if(event.target!==dialog)return;const box=dialog.getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)dialog.close();});
+        dialog.addEventListener('click',event=>{if(event.target!==dialog)return;const box=dialog.getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom){if(window.CompassDialogs)window.CompassDialogs.close(dialog);else dialog.close();}});
         dialog.querySelectorAll('form').forEach(form=>{
             let submitting=false;
-            const error=document.createElement('div');error.className='chat-action-errors';error.setAttribute('role','alert');error.setAttribute('tabindex','-1');form.prepend(error);
+            const error=document.createElement('div');error.className='chat-action-errors';error.setAttribute('role','alert');error.setAttribute('tabindex','-1');const body=form.querySelector('.workflow-form-body');(body?.classList?.contains('workflow-form-body')?body:form).prepend(error);
             form.addEventListener('submit',async event=>{
                 event.preventDefault();if(submitting||!form.reportValidity())return;submitting=true;error.replaceChildren();
                 const button=form.querySelector('button[type="submit"]'),label=button.textContent;button.disabled=true;button.textContent='Saving...';
@@ -30,7 +30,7 @@
                         for(const message of messages){const p=document.createElement('p');p.textContent=message;error.append(p);}error.focus();return;
                     }
                     status.textContent=data.message||(form===initialForm?'Recommendation saved. Awaiting Adviser review.':form===clarifyForm?'Revision saved for Adviser review.':'Emergency report saved for staff review.');
-                    dialog.close();await refresh();window.dispatchEvent(new Event('compass-chat-workflow-changed'));
+                    if(form.dataset)delete form.dataset.dirty;dialog.close();await refresh();window.dispatchEvent(new Event('compass-chat-workflow-changed'));
                 }catch{error.textContent='The connection was interrupted. Your entries are retained; retry to confirm the saved status.';}
                 finally{submitting=false;button.disabled=false;button.textContent=label;}
             });

@@ -23,6 +23,7 @@ class QueueRequest extends Model
     }
 
     protected $fillable = [
+        'first_processed_at', 'is_test_record', 'duplicate_of_id',
         'wait_urgency',
         'queued_at',
         'matching_started_at',
@@ -52,6 +53,7 @@ class QueueRequest extends Model
     ];
 
     protected $casts = [
+        'first_processed_at'=>'datetime', 'is_test_record'=>'boolean', 'helper_accepted_at'=>'datetime',
         'queued_at' => 'datetime',
         'request_date' => 'datetime',
         'scheduled_date' => 'datetime',

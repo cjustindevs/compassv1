@@ -28,7 +28,8 @@ class StaffMailService
             return;
         }
         Cache::lock('staff-mail-delivery', 120)->get(function () {
-            foreach (StaffMail::whereNull('sent_at')->where('attempts', '<', 5)->where('available_at', '<=', now())->orderBy('id')->limit(3)->get() as $mail) {
+            foreach (StaffMail::whereNull('sent_at')->where('attempts', '<', 5)->where('available_at', '<=', now())
+                ->orderByRaw("CASE WHEN event_key LIKE 'emergency-alert:%' THEN 0 ELSE 1 END")->orderBy('id')->limit(3)->get() as $mail) {
                 try {
                     $payload = $mail->payload;
                     $html = view('emails.staff-update', ['message' => $payload['message']])->render();

@@ -7,6 +7,7 @@ the relevant validation checklist and current code when verifying behavior.
 
 ## Overview and setup
 
+- [Defense code-navigation reviewer](DEFENSE_CODE_REVIEWER.md)
 - [Project overview](README.md)
 - [Render deployment](RENDER_DEPLOYMENT.md)
 - [Email and OTP hosting](OTP_HOSTING.md)
@@ -16,6 +17,7 @@ the relevant validation checklist and current code when verifying behavior.
 
 ## Workflow validation and QA
 
+- [October 19 queue, escalation and modal checks](OCTOBER_19_QUEUE_ESCALATION_QA.md)
 - [Referral UI and once-only popup checks](REFERRAL_UI_POPUP_QA.md)
 - [Helper availability, workload and review UI](HELPER_OPERATIONAL_UI_QA.md)
 - [October 15 escalation and operations revision](OCTOBER_15_ESCALATION_REVISION_QA.md)

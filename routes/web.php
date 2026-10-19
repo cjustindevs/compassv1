@@ -399,6 +399,7 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
     Route::get('/referral/{id}', [AdviserReferralController::class, 'show'])->name('referral.show');
     Route::post('/referral/{id}/approve', [AdviserReferralController::class, 'approve'])->name('referral.approve');
     Route::post('/referral/{id}/reject', [AdviserReferralController::class, 'reject'])->name('referral.reject');
+    Route::post('/referral/{id}/decline', [AdviserReferralController::class, 'decline'])->name('referral.decline');
     Route::post('/referral/{id}/request-info', [AdviserReferralController::class, 'requestInfo'])->name('referral.request-info');
     Route::post('/referral/{id}/assign', [AdviserReferralController::class, 'assignProfessional'])->name('referral.assign');
 
@@ -418,6 +419,7 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
     Route::post('/referrals/{referral}/transfer', [\App\Http\Controllers\ProfessionalTransferController::class, 'store'])->name('referral.transfer');
     Route::post('/referrals/{referral}/transfer/cancel', [\App\Http\Controllers\ProfessionalTransferController::class, 'cancel'])->name('referral.transfer.cancel');
     Route::get('/emergency/cases/{source}/{id}', [\App\Http\Controllers\EmergencyCoordinationController::class, 'show'])->name('emergency.coordinate');
+    Route::get('/emergency/cases/{source}/{id}/helpers', [\App\Http\Controllers\EmergencyCoordinationController::class, 'helperOptions'])->name('emergency.helpers');
     Route::post('/emergency/cases/{source}/{id}/assign', [\App\Http\Controllers\EmergencyCoordinationController::class, 'assign'])->name('emergency.assign');
     Route::post('/emergency/cases/{source}/{id}/escalation', [\App\Http\Controllers\EmergencyCoordinationController::class, 'escalate'])->name('emergency.escalation');
     Route::get('/schedule', [ModeratorScheduleController::class, 'index'])->name('schedule');
@@ -556,6 +558,7 @@ Route::middleware(['auth', 'role:moderator'])->prefix('moderator')->name('modera
     // Emergency Alerts
     Route::get('/emergency', [ModeratorEmergencyController::class, 'index'])->name('emergency');
     Route::get('/emergency/cases/{source}/{id}', [\App\Http\Controllers\EmergencyCoordinationController::class, 'show'])->name('emergency.coordinate');
+    Route::get('/emergency/cases/{source}/{id}/helpers', [\App\Http\Controllers\EmergencyCoordinationController::class, 'helperOptions'])->name('emergency.helpers');
     Route::post('/emergency/cases/{source}/{id}/assign', [\App\Http\Controllers\EmergencyCoordinationController::class, 'assign'])->name('emergency.assign');
     Route::post('/emergency/cases/{source}/{id}/escalation', [\App\Http\Controllers\EmergencyCoordinationController::class, 'escalate'])->name('emergency.escalation');
     Route::post('/emergency/{id}/escalate', [ModeratorEmergencyController::class, 'escalate'])->name('emergency.escalate');
@@ -750,6 +753,10 @@ Route::get('/emergency-notice', [EmergencyNoticeController::class, 'next'])->mid
 Route::post('/emergency-notice/dismiss', [EmergencyNoticeController::class, 'dismiss'])->middleware('auth')->name('emergency-notice.dismiss');
 
 Route::get('/notification-archive', [NotificationArchiveController::class, 'index'])->middleware('auth')->name('notifications.archive');
+Route::middleware(['auth','role:moderator,adviser'])->group(function () {
+    Route::get('/queue-performance', [\App\Http\Controllers\QueuePerformanceController::class, 'index'])->name('queue.performance');
+    Route::get('/queue-performance/export', [\App\Http\Controllers\QueuePerformanceController::class, 'export'])->name('queue.performance.export');
+});
 Route::post('/notification-archive/{id}/restore', [NotificationArchiveController::class, 'restore'])->middleware('auth')->name('notifications.restore');
 Route::post('/notification-archive/auto-archive', [NotificationArchiveController::class, 'updateAutoArchive'])->middleware('auth')->name('notifications.auto-archive');
 

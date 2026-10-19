@@ -6,6 +6,7 @@
 </head><body>
 @include('partials.referral-identity-modal', ['embeddedIdentity' => true])
 <script>
+document.addEventListener('compass-identity-dirty', () => parent.postMessage({type:'identity-form-dirty'}, location.origin));
 document.addEventListener('compass-identity-close', () => parent.postMessage({type:'identity-modal-closed'}, location.origin));
 document.addEventListener('compass-identity-saved', () => parent.postMessage({type:'identity-details-saved'}, location.origin));
 </script></body></html>

@@ -80,6 +80,7 @@
         #referralConsentDialog .rv-modal__foot .rv-btn { flex: 1 1 auto; justify-content: center; }
     }
 </style>
+<style>#referralConsentDialog[open]{display:flex;flex-direction:column;max-height:calc(100dvh - 24px)}#referralConsentDialog .rv-modal__head,#referralConsentDialog .rv-modal__foot{flex:none}#referralConsentDialog .rv-modal__body{min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain}</style>
 <dialog id="referralConsentDialog" aria-labelledby="referralConsentHeading" aria-describedby="referralConsentText">
     <div class="rv-modal__head">
         <div>

@@ -179,10 +179,11 @@ class HelperMatchingService
             return null;
         }
         $session = $this->pendingSessionForQueue($queue);
-        if (! $session || ! $session->submitted_at || ! $session->risk_level || (($session->requires_adviser_review || $session->risk_level === 'emergency') && ! $session->permitsEmergencySupport())) {
+        if (! $session || ! $session->submitted_at || ! $session->permitsPeerMatching()) {
             return null;
         }
         $excluded = $this->previousEmergencyOffers($session);
+        app(QueueAssignmentHistory::class)->processed($queue);
         $eligible = $this->getEligibleHelpers($session->risk_level, $excludeHelperId)
             ->reject(fn ($candidate) => in_array($candidate->id, $excluded, true))
             ->reject(fn ($candidate) => DB::table('helper_conflicts')->where('helper_id', $candidate->id)->where('seeker_id', $session->seeker_id)->exists());
@@ -216,8 +217,11 @@ class HelperMatchingService
             }
             $helper = Helper::whereKey($helperId)->lockForUpdate()->first();
             $session = $this->pendingSessionForQueue($queue);
-            if (! $session || ! $session->submitted_at || ! $session->risk_level || (($session->risk_level === 'emergency' || $session->requires_adviser_review) && ! $session->permitsEmergencySupport()) || ($session->risk_level === 'high' && ! $session->peer_support_approved_at && ! $session->permitsPrioritySafetySupport())) {
+            if (! $session || ! $session->submitted_at || ! $session->permitsPeerMatching()) {
                 return 'This request requires a different competency or adviser review and cannot be assigned to a peer helper.';
+            }
+            if (config('app.relax_duty_hours', false) || app(OperatingHoursService::class)->acceptsAssignments()) {
+                app(QueueAssignmentHistory::class)->processed($queue);
             }
             if (in_array($helperId, $this->previousEmergencyOffers($session), true)) {
                 return 'This Helper has already declined or missed this emergency support offer.';
@@ -310,6 +314,7 @@ class HelperMatchingService
                 }
             }
             $this->logAssignment($queue, $helper, $method);
+            app(QueueAssignmentHistory::class)->offered($queue, $session, $helper, $method, $emergencyOverride);
             SupportAudit::record('match_recommended', $session);
             Cache::forget('moderator_dashboard_stats');
             if ($emergencyOverride) {

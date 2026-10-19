@@ -15,7 +15,7 @@ class EmergencyStaffNotifications
     {
         DB::transaction(function () use ($alert, $freshChatReport) {
             $alert = EmergencyAlert::lockForUpdate()->findOrFail($alert->id);
-            if (in_array($alert->status, ['resolved', 'closed'], true) || $alert->archived_at) {
+            if (in_array($alert->status, ModeratorEmergencyCases::TERMINAL, true) || $alert->archived_at) {
                 return;
             }
             if (! $alert->adviser?->user?->is_active || $alert->adviser?->user?->role !== 'adviser') {
@@ -37,8 +37,12 @@ class EmergencyStaffNotifications
                 $exists = Notification::withoutGlobalScopes()->where('user_account_id', $user->id)
                     ->where('notification_type', 'emergency')->where('link', $link)->where('title', $title)->where('message', $message)->exists();
                 if ($freshChatReport || ! $exists) {
-                    Notification::create(['user_account_id' => $user->id, 'emergency_alert_id' => $alert->id, 'title' => $title, 'message' => $message,
+                    $notice = Notification::create(['user_account_id' => $user->id, 'emergency_alert_id' => $alert->id, 'title' => $title, 'message' => $message,
                         'notification_type' => 'emergency', 'status' => 'unread', 'type_icon' => 'fa-life-ring', 'link' => $link]);
+                    // Queue only new events. Provider requests never delay case creation,
+                    // and reconciliation does not email old displayed notices again.
+                    app(StaffMailService::class)->enqueue($user, 'emergency-alert:'.$alert->id.':notice:'.$notice->id,
+                        'COMPASS - Emergency requires attention', 'Emergency #'.$alert->id.' requires staff review. Sign in to COMPASS and open your emergency notifications. No response has been confirmed by this email.');
                 }
             }
             if ($alert->adviser?->user?->is_active && $alert->adviser->user->role === 'adviser' && (! $alert->adviser_notified || ! $alert->notification_sent)) {

@@ -5,6 +5,7 @@ use App\Services\SupportAudit;
 use Illuminate\Support\Facades\DB;
 class SessionWorkflowObserver {
     public function updated(Session $session): void {
+        app(\App\Services\QueueAssignmentHistory::class)->synchronize($session);
         if ($session->getOriginal('session_type') === 'voice'
             && (($session->wasChanged('session_status') && !$session->isActive()) || $session->wasChanged('helper_id') || $session->wasChanged('session_type'))
             && \Illuminate\Support\Facades\Schema::hasTable('voice_calls')) {

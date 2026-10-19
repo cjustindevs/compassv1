@@ -9,6 +9,8 @@
     <meta name="compass-icon-sprite" content="{{ asset('images/compass-icons.svg') }}?v={{ filemtime(public_path('images/compass-icons.svg')) }}">
     <meta name="compass-display-preferences" content="{{ json_encode(['font_size' => auth()->user()?->font_size ?? 'medium', 'high_contrast' => (bool) auth()->user()?->high_contrast, 'reduced_motion' => (bool) auth()->user()?->reduced_motion]) }}">
     <link rel="stylesheet" href="{{ asset('css/compass-ui.css') }}?v={{ filemtime(public_path('css/compass-ui.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/workflow-dialogs.css') }}?v={{ filemtime(public_path('css/workflow-dialogs.css')) }}">
+    <script src="{{ asset('js/workflow-dialogs.js') }}?v={{ filemtime(public_path('js/workflow-dialogs.js')) }}" defer></script>
     <script src="{{ asset('js/compass-ui.js') }}?v={{ filemtime(public_path('js/compass-ui.js')) }}" defer></script>
     @auth
         @unless($embeddedScreen ?? false)

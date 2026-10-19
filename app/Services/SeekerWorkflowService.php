@@ -84,7 +84,7 @@ class SeekerWorkflowService {
             $session->update(['workflow_state'=>'submitted','submitted_at'=>now(),'preferred_language'=>$data['preferred_language']]);
             \App\Models\SeekerRequestDraft::where('seeker_id', $session->seeker_id)->delete();
             $queue=QueueRequest::create(['seeker_id'=>$session->seeker_id,'request_date'=>now(),'queued_at'=>now(),
-                'request_status'=>'waiting','priority_level'=>$session->risk_level,'preferred_session_type'=>$mode,'voice_consent'=>$mode==='voice']);
+                'request_status'=>'waiting','priority_level'=>$session->permitsEmergencySupport() ? 'emergency' : $session->risk_level,'preferred_session_type'=>$mode,'voice_consent'=>$mode==='voice']);
             app(QueueManagementService::class)->prepareQueue($queue);
             $session->update(['queue_request_id'=>$queue->id,'session_status'=>'waiting','workflow_state'=>'queued']);
             SupportAudit::record('request_submitted',$session); SupportAudit::record('queue_entry_created',$queue);

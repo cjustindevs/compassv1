@@ -50,15 +50,26 @@ class Session extends Model
     {
         return ($this->risk_level === 'emergency' || $this->permitsPrioritySafetySupport())
             && $this->requires_immediate_action
-            && ($this->emergencyAlerts()->whereNotIn('status', ['resolved', 'closed'])->exists()
-                || $this->supportEmergencyAlert()->whereNotIn('status', ['resolved', 'closed'])->exists());
+            && ($this->emergencyAlerts()->whereNotIn('status', \App\Services\ModeratorEmergencyCases::TERMINAL)->whereNull('archived_at')->exists()
+                || $this->supportEmergencyAlert()->whereNotIn('status', \App\Services\ModeratorEmergencyCases::TERMINAL)->whereNull('archived_at')->exists());
+    }
+
+    /** Adviser approval and an active safety-support branch are distinct permissions. */
+    public function permitsPeerMatching(): bool
+    {
+        if (!in_array($this->risk_level, ['low', 'moderate', 'high', 'emergency'], true)) return false;
+        if ($this->permitsEmergencySupport()) return true;
+        if ($this->risk_level === 'emergency') return false;
+
+        return (!$this->requires_adviser_review && $this->risk_level !== 'high')
+            || $this->peer_support_approved_at !== null;
     }
 
     public function permitsPrioritySafetySupport(): bool
     {
         return $this->risk_level==='high' && $this->requires_immediate_action
             && $this->screeningResponses()->where('instrument_version',\App\Services\CompactScreening::SINGLE_VERSION)->where('rule_code','single_safety_yes')->exists()
-            && $this->emergencyAlerts()->whereNotIn('status',['resolved','closed'])->exists();
+            && $this->emergencyAlerts()->whereNotIn('status',\App\Services\ModeratorEmergencyCases::TERMINAL)->whereNull('archived_at')->exists();
     }
 
     public function supportEmergencyAlert()
@@ -69,6 +80,7 @@ class Session extends Model
     protected $table = 'counseling_sessions';
 
     protected $fillable = [
+        'is_test_record', 'duplicate_of_id',
         'match_status',
         'documentation_status',
         'completion_reason',

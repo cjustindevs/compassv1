@@ -35,6 +35,9 @@ class AppServiceProvider extends ServiceProvider
         foreach ([\App\Models\Helper::class,\App\Models\ReadinessCheck::class,\App\Models\HelperSchedule::class,\App\Models\HelperAvailabilityLog::class,\App\Models\SessionReport::class,\App\Models\HelperCompetencyHistory::class,\App\Models\AdviserFeedback::class,\App\Models\HelperJournalEntry::class] as $model) \Illuminate\Support\Facades\Gate::policy($model,\App\Policies\HelperRecordPolicy::class);
         \App\Models\Referral::observe(\App\Observers\ReferralAuditObserver::class);
         \App\Models\Session::observe(\App\Observers\SessionWorkflowObserver::class);
+        foreach ([\App\Models\Helper::class, \App\Models\HelperSchedule::class, \App\Models\ReadinessCheck::class, \App\Models\User::class] as $model) {
+            $model::observe(\App\Observers\HelperDutyEvidenceObserver::class);
+        }
 
         \Illuminate\Support\Facades\RateLimiter::for('registration-actions', function (\Illuminate\Http\Request $request) {
             return \Illuminate\Cache\RateLimiting\Limit::perMinute(30)

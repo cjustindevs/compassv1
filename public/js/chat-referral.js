@@ -17,24 +17,33 @@
     const identityDialog = document.getElementById('chatIdentityDialog');
     const identityButton = document.getElementById('chatIdentityOpen');
     let referral = null, seen = null, deciding = false, manualOpen = false, polling = false;
-    let identityReferralId = null;
+    let identityReferralId = null, identityDirty = false;
     const promptedIdentity = new Set();
+    const presentation = window.CompassPopupPresentation;
+    const promptKey = (stage,id) => `workflow:${stage}:${id}`;
+    function showConsent() {
+        if (window.CompassDialogs) return window.CompassDialogs.open(dialog, document.getElementById('chatReferralOpen'));
+        dialog.showModal(); return true;
+    }
     function openIdentity() {
         if (!isSeeker || !referral?.can_provide_identity || !referral.identity_url) return;
         if (identityDialog.open || (document.querySelector('dialog[open]') && !dialog.open)) return;
         dialog.close();
         identityDialog.removeAttribute('data-support');
         const outerClose = document.getElementById('chatEmbeddedClose'); if (outerClose) outerClose.hidden = true;
-        identityReferralId = referral.id;
+        identityReferralId = referral.id; identityDirty = false;
         identityDialog.querySelector('iframe').src = referral.identity_url;
-        identityDialog.showModal();
+        if(window.CompassDialogs)window.CompassDialogs.open(identityDialog,identityButton);else identityDialog.showModal();
+        presentation?.claim(promptKey('identity',referral.id));
         promptedIdentity.add(referral.id);
     }
     window.addEventListener('message', event => {
         if (event.origin !== location.origin || event.source !== identityDialog.querySelector('iframe').contentWindow) return;
-        if (event.data?.type === 'identity-modal-closed') identityDialog.close();
-        if (event.data?.type === 'identity-details-saved') { seen = null; poll(); }
+        if(event.data?.type === 'identity-form-dirty')identityDirty=true;
+        if (event.data?.type === 'identity-modal-closed') {identityDirty=false;identityDialog.close();}
+        if (event.data?.type === 'identity-details-saved') { identityDirty=false;seen = null; poll(); }
     });
+    identityDialog.addEventListener('cancel',event=>{if(identityDirty && !window.confirm('Discard your unsaved contact details?'))event.preventDefault();});
     identityDialog.addEventListener('close', () => { identityReferralId = null; seen = null; poll(); });
 
     function enabledButtons() {
@@ -69,13 +78,14 @@
             document.getElementById('professionalSupportStatus').textContent = 'Referral accepted. Review identity-disclosure consent and provide your contact details here without leaving chat.';
         }
         if(document.querySelector('dialog[open]') && !dialog.open)return;
-        if (isSeeker && referral.needs_identity_disclosure && (manualOpen || !promptedIdentity.has(referral.id))) {
+        if (isSeeker && referral.needs_identity_disclosure && (manualOpen || (!promptedIdentity.has(referral.id) && !presentation?.has(promptKey('identity',referral.id))))) {
             manualOpen = false;
             openIdentity();
             return;
         }
         const key = referral.id + ':' + referral.status + ':' + (data.consent?.decision ?? 'none') + ':' + referral.needs_identity_disclosure;
         if (key === seen) return;
+        if (!manualOpen && !dialog.open && referral.status === 'pending_consent' && presentation?.has(promptKey('referral-consent',referral.id))) { seen = key; return; }
         seen = key;
         errorEl.textContent = '';
         if (!isSeeker) {
@@ -89,7 +99,7 @@
             acceptBtn.hidden = true;
             declineBtn.hidden = true;
             dismissBtn.hidden = false;
-            if (manualOpen && !dialog.open) { dialog.showModal(); manualOpen=false; }
+            if (manualOpen && !dialog.open) { showConsent(); manualOpen=false; }
             return;
         }
 
@@ -107,7 +117,8 @@
             if (!recommendation) { recommendation = document.createElement('div'); recommendation.id = 'chatReferralRecommendation'; terms.prepend(recommendation); }
             recommendation.innerHTML = referral.recommendation_html || '';
             dismissBtn.hidden = false;
-            if (!dialog.open) dialog.showModal();
+            if (!dialog.open) { showConsent(); if(referral.status==='pending_consent')presentation?.claim(promptKey('referral-consent',referral.id)); }
+            manualOpen=false;
             return;
         }
 
@@ -124,7 +135,8 @@
             acceptBtn.hidden = true;
             declineBtn.hidden = true;
             dismissBtn.hidden = false;
-            if (!dialog.open) dialog.showModal();
+            if (!dialog.open) { showConsent(); if(referral.status==='pending_consent')presentation?.claim(promptKey('referral-consent',referral.id)); }
+            manualOpen=false;
             return;
         }
 
@@ -134,7 +146,8 @@
         declineBtn.hidden = false;
         dismissBtn.hidden = true;
         enabledButtons();
-        if (!dialog.open) dialog.showModal();
+        if (!dialog.open) { showConsent(); if(referral.status==='pending_consent')presentation?.claim(promptKey('referral-consent',referral.id)); }
+            manualOpen=false;
     }
 
     async function poll() {
@@ -171,7 +184,7 @@
             const saved = await response.json();
             dialog.close();
             if (accepted) { seen = null; promptedIdentity.delete(referral.id); await poll(); }
-            else { document.getElementById('referralConsentText').textContent = 'Your decision is respected. Self-help resources remain available whenever you need them.'; terms.hidden = true; acceptBtn.hidden = true; declineBtn.hidden = true; dismissBtn.hidden = false; dialog.showModal(); }
+            else { document.getElementById('referralConsentText').textContent = 'Your decision is respected. Self-help resources remain available whenever you need them.'; terms.hidden = true; acceptBtn.hidden = true; declineBtn.hidden = true; dismissBtn.hidden = false; showConsent(); }
         } catch (error) {
             errorEl.textContent = error.message;
         } finally {

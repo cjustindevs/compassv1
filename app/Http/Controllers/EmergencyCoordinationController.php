@@ -11,6 +11,7 @@ use App\Services\HelperEligibilityService;
 use App\Services\HelperMatchingService;
 use App\Services\ModeratorEmergencyCases;
 use App\Services\SupportAudit;
+use App\Services\QueueHelperOptions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -34,10 +35,23 @@ class EmergencyCoordinationController extends Controller
         $terminal = in_array($case->status, ModeratorEmergencyCases::TERMINAL, true) || $case->archived_at;
         $current = app(ModeratorEmergencyCases::class)->active()->where('source', $source)->where('id', $id)->exists();
         $canAssign = $current && ! $terminal && $session?->queue_request_id && ! $session->helper_id && $session->session_status === Session::STATUS_WAITING;
-        $helpers = $canAssign ? Helper::with('user', 'adviser.user')->orderBy('first_name')->get()
-            ->filter(fn ($helper) => app(HelperEligibilityService::class)->allows($helper, $session)) : collect();
+        $helperChoices = $canAssign ? app(QueueHelperOptions::class)->forSession($session, Helper::with('user', 'adviser.user')->orderBy('first_name')->get())
+            : ['helpers'=>[], 'unavailable'=>[], 'reason'=>'No queued assignment is actionable. Ask the responsible Adviser to review the support request.'];
+        $helpers = collect($helperChoices['helpers']);
 
-        return response()->view('emergency-coordination', compact('case', 'terminal', 'current', 'canAssign', 'helpers'))->header('Cache-Control', 'private, no-store');
+        return response()->view('emergency-coordination', compact('case', 'terminal', 'current', 'canAssign', 'helpers', 'helperChoices'))->header('Cache-Control', 'private, no-store');
+    }
+
+    public function helperOptions(string $source, int $id)
+    {
+        $case = $this->incident($source, $id, true);
+        $session = Session::find($case->session_id);
+        $actionable = app(ModeratorEmergencyCases::class)->active()->where('source', $source)->where('id', $id)->exists()
+            && $session?->queue_request_id && !$session->helper_id && $session->session_status === Session::STATUS_WAITING;
+        $choices = $actionable ? app(QueueHelperOptions::class)->forSession($session, Helper::with('user', 'adviser.user')->get())
+            : ['helpers'=>[], 'unavailable'=>[], 'reason'=>'The case changed or already has a Helper. Refresh to view the current assignment.'];
+
+        return response()->json($choices)->header('Cache-Control', 'private, no-store');
     }
 
     public function assign(Request $request, string $source, int $id)

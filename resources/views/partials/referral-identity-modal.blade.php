@@ -216,10 +216,16 @@
 <script>
 (() => {
     const CLOSE = '[data-identity-close]';
+    document.addEventListener('input', event => { const form=event.target.closest('[data-identity-form]'); if(form && !form.dataset.identitySaved) { form.dataset.dirty='1'; document.dispatchEvent(new Event('compass-identity-dirty')); } });
 
     document.addEventListener('click', event => {
         const opener = event.target.closest(CLOSE);
-        if (opener) { const container = opener.closest('[data-identity-container]'); if (container?.tagName === 'DIALOG') container.close(); else document.dispatchEvent(new Event('compass-identity-close')); return; }
+        if (opener) {
+            const container = opener.closest('[data-identity-container]');
+            const form = container.querySelector('form');
+            if (form?.dataset.dirty === '1' && !form.dataset.identitySaved && !window.confirm('Discard your unsaved contact details?')) return;
+            if (container?.tagName === 'DIALOG') container.close(); else document.dispatchEvent(new Event('compass-identity-close')); return;
+        }
         const dialog = event.target.closest('dialog[id^="identity-dialog-"]');
         if (!dialog || event.target !== dialog) return;
         const box = dialog.getBoundingClientRect();
@@ -241,7 +247,7 @@
         const form = event.target.closest('[data-identity-form]');
         if (!form) return;
         event.preventDefault();
-        if (form.dataset.identitySaved) return;
+        if (form.dataset.identitySaved || form.dataset.submitting === '1') return;
 
         const result = form.querySelector('[data-identity-result]');
         const submit = form.querySelector('[data-identity-submit]');
@@ -263,6 +269,7 @@
             return;
         }
 
+        form.dataset.submitting = '1';
         submit.disabled = true;
         const label = submit.innerHTML;
         submit.textContent = 'Storing securely…';
@@ -303,6 +310,7 @@
             consent.checked = true;
             consent.disabled = true;
             form.dataset.identitySaved = '1';
+            delete form.dataset.dirty;
             submit.hidden = true;
             fields.hidden = true;
             submit.textContent = "Submitted";
@@ -316,6 +324,8 @@
             result.textContent = 'We could not confirm the submission. Check your connection and referral status before retrying.';
             submit.disabled = false;
             submit.innerHTML = label;
+        } finally {
+            delete form.dataset.submitting;
         }
     });
 })();

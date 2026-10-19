@@ -372,7 +372,7 @@
 
             <div id="referralStateChip" hidden style="margin-bottom:14px;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;"></div>
 
-            <form method="POST" action="{{ route('helper.session.referral.consent', ['id' => $session->id]) }}" id="referralConsentForm">
+            <form method="POST" action="{{ route('helper.session.referral.consent', ['id' => $session->id]) }}" id="referralConsentForm"><div class="workflow-form-body">
                 @csrf
                 <input type="hidden" name="_chat_action" value="referral">
                 <input type="hidden" name="form_version" value="referral-v4">
@@ -406,15 +406,15 @@
                 <textarea id="referral-remarks" name="helper_remarks" maxlength="1000" rows="2">{{ old('helper_remarks') }}</textarea>
                 </div><p class="text-sm">Seeker decision: pending. Only the seeker can record consent after approval.</p>
                 </div>
-                <div class="modal-actions">
+                </div><div class="modal-actions">
                     <button type="button" class="btn btn-cancel modal-close" data-modal="referralModal">Cancel</button>
                     <button type="submit" class="btn btn-info" id="requestConsentBtn"><x-ui-icon name="send" style="margin-right:6px;" /> Submit for Adviser Review</button>
                 </div>
             </form>
-            <form method="POST" id="referralClarificationForm" hidden>@csrf
+            <form method="POST" id="referralClarificationForm" hidden><div class="workflow-form-body">@csrf
                 <p id="referralClarificationQuestion"></p>
                 <label class="form-label" for="referralClarification">Response to Adviser</label><textarea id="referralClarification" name="response" required minlength="10" maxlength="2000" rows="4">{{ old('response') }}</textarea>
-                <div class="modal-actions"><button type="button" class="modal-close" data-modal="referralModal">Cancel</button><button type="submit" class="btn-info">Submit revision</button></div>
+                </div><div class="modal-actions"><button type="button" class="modal-close" data-modal="referralModal">Cancel</button><button type="submit" class="btn-info">Submit revision</button></div>
             </form>
 
 
@@ -427,7 +427,7 @@
             <h3 id="emergencyModalTitle"> Flag as Emergency</h3>
             <p class="modal-sub">This immediately notifies a support coordinator. Use only when the seeker is at immediate risk.</p>
             <div id="emergencyReferralState" hidden style="margin-bottom:14px;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;background:#fffbeb;color:#92400e;"></div>
-            <form method="POST" action="{{ route('helper.session.emergency', ['id' => $session->id]) }}">
+            <form method="POST" action="{{ route('helper.session.emergency', ['id' => $session->id]) }}"><div class="workflow-form-body">
                 @csrf
                 <input type="hidden" name="_chat_action" value="emergency">
                 <div class="emergency-fields">
@@ -436,7 +436,7 @@
                 <label class="form-label" style="margin-top:14px;" for="emergencyAction">Immediate action taken (optional)</label>
                 <textarea id="emergencyAction" name="immediate_action" rows="2" maxlength="500" placeholder="Record the immediate support or escalation steps you took...">{{ old('immediate_action') }}</textarea>
                 </div>
-                <div class="modal-actions">
+                </div><div class="modal-actions">
                     <button type="button" class="btn btn-cancel modal-close" data-modal="emergencyModal">Cancel</button>
                     <button type="submit" class="btn btn-danger"><x-ui-icon name="warning" style="margin-right:6px;" /> Flag Emergency</button>
                 </div>

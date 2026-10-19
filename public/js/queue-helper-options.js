@@ -4,7 +4,7 @@
     async function refresh(){
         if(busy||document.hidden||!navigator.onLine)return;busy=true;
         try{
-            const forms=[...document.querySelectorAll('.assign-form[data-queue-id],.reassign-form[data-queue-id]')];
+            const forms=[...document.querySelectorAll('.assign-form[data-queue-id],.reassign-form[data-queue-id]')].filter(form=>form.dataset.submitting!=='1');
             const ids=[...new Set(forms.map(form=>form.dataset.queueId))];if(!ids.length)return;
             const query=new URLSearchParams();ids.forEach(id=>query.append('queue_ids[]',id));
             const response=await fetch(config.dataset.queueHelperOptions+'?'+query,{headers:{Accept:'application/json'},cache:'no-store'});if(!response.ok)return;
@@ -18,6 +18,8 @@
                 select.value=choices.some(row=>String(row.id)===selected)?selected:'';
                 const button=form.querySelector('button[type="submit"]');if(button)button.disabled=!choices.length;
                 if(note)note.textContent=request?.reason||'This request changed or was assigned. Refresh the queue to see its current status.';
+                const list=form.querySelector('[data-unavailable-list]');
+                if(list?.replaceChildren){list.replaceChildren();for(const row of request?.unavailable||[]){const item=document.createElement('li');item.textContent=row.name+' — '+row.reason+(row.readiness_passed?' Readiness passed; another requirement blocks assignment.':'');list.append(item);}}
             }
         }catch{}finally{busy=false;}
     }

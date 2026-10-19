@@ -232,7 +232,7 @@
                             {{ $item->wait_minutes }} min
                         </span>
                         <div class="queue-actions">
-                            <form method="POST" action="{{ route('moderator.queue.assign') }}" class="assign-form" data-queue-id="{{ $item->id }}">
+                            <button type="button" class="btn-outline" data-dialog-open="assign-{{ $item->id }}">Assign Helper</button><dialog class="workflow-dialog" id="assign-{{ $item->id }}" aria-labelledby="title-assign-{{ $item->id }}"><header class="workflow-dialog__header"><div><h2 id="title-assign-{{ $item->id }}">Assign Helper</h2><p>Queue #{{ $item->id }} &middot; {{ $item->seeker?->generated_alias }}</p></div><button type="button" data-dialog-close aria-label="Close assignment">&times;</button></header><form method="POST" action="{{ route('moderator.queue.assign') }}" class="assign-form" data-queue-id="{{ $item->id }}"><div class="workflow-dialog__body">
                                 @csrf
                                 <input type="hidden" name="queue_id" value="{{ $item->id }}">
                                 <label class="sr-only" for="helper-{{ $item->id }}">Eligible helper for queue request {{ $item->id }}</label>
@@ -243,10 +243,10 @@
                                     @endforeach
                                 </select>
                                 <small data-helper-reason style="display:block;max-width:340px;white-space:normal;font-size:11px">{{ $item->helper_choices['reason'] }}</small>
-                                <button type="submit" class="btn-primary whitespace-nowrap" @disabled(empty($item->helper_choices['helpers']))>
+
+                            @include('partials.helper-unavailable', ['choices'=>$item->helper_choices])</div><footer class="workflow-dialog__footer"><button type="button" class="btn-outline" data-dialog-close>Cancel</button><button type="submit" class="btn-primary whitespace-nowrap" @disabled(empty($item->helper_choices['helpers']))>
                                     <x-ui-icon name="user-check"  /> Assign
-                                </button>
-                            </form>
+                                </button></footer></form></dialog>
                         </div>
                     </div>
                 @empty
@@ -295,7 +295,7 @@
                                     <x-ui-icon name="calendar"  /> Schedule
                                 </button>
                             </form>
-                            <form method="POST" action="{{ route('moderator.queue.reassign') }}" class="reassign-form" data-queue-id="{{ $item->id }}">
+                            <button type="button" class="btn-outline" data-dialog-open="reassign-{{ $item->id }}">Reassign Helper</button><dialog class="workflow-dialog" id="reassign-{{ $item->id }}" aria-labelledby="title-reassign-{{ $item->id }}"><header class="workflow-dialog__header"><div><h2 id="title-reassign-{{ $item->id }}">Reassign Helper</h2><p>Queue #{{ $item->id }} &middot; {{ $item->seeker?->generated_alias }}</p></div><button type="button" data-dialog-close aria-label="Close assignment">&times;</button></header><form method="POST" action="{{ route('moderator.queue.reassign') }}" class="reassign-form" data-queue-id="{{ $item->id }}"><div class="workflow-dialog__body">
                                 @csrf
                                 <input type="hidden" name="queue_id" value="{{ $item->id }}">
                                 <label class="sr-only" for="reassign-{{ $item->id }}">Replacement helper for queue request {{ $item->id }}</label>
@@ -306,10 +306,10 @@
                                     @endforeach
                                 </select>
                                 <small data-helper-reason style="display:block;max-width:340px;white-space:normal;font-size:11px">{{ $item->helper_choices['reason'] }}</small>
-                                <button type="submit" class="btn-outline whitespace-nowrap" @disabled(empty($item->helper_choices['helpers']))>
+
+                            @include('partials.helper-unavailable', ['choices'=>$item->helper_choices])</div><footer class="workflow-dialog__footer"><button type="button" class="btn-outline" data-dialog-close>Cancel</button><button type="submit" class="btn-outline whitespace-nowrap" @disabled(empty($item->helper_choices['helpers']))>
                                     <x-ui-icon name="refresh"  /> Reassign
-                                </button>
-                            </form>
+                                </button></footer></form></dialog>
                         </div>
                     </div>
                 @empty
@@ -411,6 +411,7 @@
 
             // ── Assign: validate the selection and block double submission ──
             document.querySelectorAll('form.assign-form').forEach((form) => {
+                if (window.CompassDialogs && form.closest('dialog.workflow-dialog')) return;
                 form.addEventListener('submit', function (event) {
                     if (form.dataset.submitting === '1') {
                         event.preventDefault();
