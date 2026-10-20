@@ -26,11 +26,13 @@ class Notification extends Model
         'status',
         'read_at',
         'archived_at',
+        'popup_event_key',
     ];
 
     protected $casts = [
         'read_at' => 'datetime',
         'archived_at' => 'datetime',
+        'popup_presented_at' => 'datetime',
     ];
 
     protected static function booted(): void

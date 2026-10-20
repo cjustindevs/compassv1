@@ -57,7 +57,7 @@ class SessionController extends Controller
 
         $report = $session->report;
 
-        return view('session.chat', compact('session', 'messages', 'helperName', 'seekerName', 'report'));
+        return view($session->session_type === 'voice' ? 'session.voice' : 'session.chat', compact('session', 'messages', 'helperName', 'seekerName', 'report'));
     }
 
     /**

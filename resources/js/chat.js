@@ -154,6 +154,7 @@ class ChatApp {
                 this.applySessionState(data.session);
                 this.removeEmptyState();
                 data.messages.forEach((msg) => this.renderMessage(msg));
+                this.messagesContainer.dataset.historyLoaded = 'true';
                 if (follow) {
                     this.scrollToBottom();
                 }
@@ -197,6 +198,7 @@ class ChatApp {
         const div = document.createElement('div');
         div.className = `message ${role}`;
         div.dataset.id = msg.id;
+        div.dataset.senderId = String(msg.sender_id ?? '');
         div.innerHTML = `
             <strong class="sender-name">${this.escapeHtml(senderName)}</strong>
             <div class="text">${this.escapeHtml(msg.message)}</div>

@@ -2,8 +2,12 @@
     const configNode = document.getElementById('chatReferralConfig');
     if (!configNode) return;
     const config = JSON.parse(configNode.content);
-    const cardSlot = document.querySelector('.chat-header');
-    if (cardSlot) { cardSlot.insertAdjacentElement('afterend', document.getElementById('professionalSupportCard')); document.getElementById('professionalSupportCard').append(document.getElementById('chatReferralOpen'), document.getElementById('chatIdentityOpen')); }
+    const cardSlot = document.querySelector('[data-professional-support-slot]') || document.querySelector('.chat-header');
+    if (cardSlot) {
+        cardSlot.insertAdjacentElement('afterend', document.getElementById('professionalSupportCard'));
+        cardSlot.insertAdjacentElement('afterend', document.getElementById('chatEmergencyBanner'));
+        document.getElementById('professionalSupportCard').append(document.getElementById('chatReferralOpen'), document.getElementById('chatIdentityOpen'));
+    }
     const dialog = document.getElementById('referralConsentDialog');
     if (!dialog) return;
     const isSeeker = config.isSeeker;

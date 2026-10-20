@@ -218,4 +218,43 @@ class VoiceCallTest extends TestCase
         $this->assertDatabaseHas('messages',['session_id'=>$session->id,'message_text'=>'Typed fallback','is_transcript'=>true]);
         $this->assertDatabaseCount('call_logs',0);
     }
+
+    public function test_both_roles_get_a_dedicated_voice_room_with_workflow_actions_and_a_single_bell_slot(): void
+    {
+        [$seeker,$helper,$session]=$this->room();
+        $page=$this->get(route('session.chat'))->assertOk()->assertViewIs('session.voice')
+            ->assertSee('data-voice-room',false)->assertSee('id="voiceMessages"',false)
+            ->assertSee('data-voice-retry',false)->assertSee('id="referralConsentDialog"',false)
+            ->assertSee('id="chatIdentityDialog"',false)->assertSee('data-confirm="End support session?"',false)
+            ->assertDontSee($helper->email)->assertDontSee('private-app-secret');
+        $this->assertSame(1, substr_count($page->getContent(), 'data-notification-slot'));
+        $this->actingAs($helper)->followingRedirects()->get(route('helper.session.chat', $session->id))->assertOk()
+            ->assertViewIs('session.voice')->assertSee('PrivateFox42')->assertSee('id="emergencyBtn"',false)
+            ->assertSee('id="referralModal"',false)->assertSee('id="emergencyModal"',false);
+        $session->update(['session_type'=>'chat']);
+        $this->actingAs($seeker)->get(route('session.chat'))->assertViewIs('session.chat')->assertDontSee('data-voice-room',false);
+    }
+
+    public function test_private_voice_subscription_authorizes_both_participants_and_rejects_unrelated_users(): void
+    {
+        [$seeker,$helper,$session]=$this->room();
+        // The test app boots with the log broadcaster; register channels on the configured Reverb driver.
+        require base_path('routes/channels.php');
+        foreach ([$seeker,$helper] as $participant) {
+            $this->actingAs($participant)->postJson('/broadcasting/auth', ['socket_id'=>'123.456',
+                'channel_name'=>'private-voice.'.$session->id.'.'.$participant->id])->assertOk()->assertJsonStructure(['auth']);
+            $this->postJson('/broadcasting/auth', ['socket_id'=>'123.456',
+                'channel_name'=>'private-voice.'.$session->id.'.'.($participant->id === $seeker->id ? $helper->id : $seeker->id)])->assertForbidden();
+        }
+        $outsider=User::factory()->create(['role'=>'seeker']);
+        $this->actingAs($outsider)->postJson('/broadcasting/auth', ['socket_id'=>'123.456',
+            'channel_name'=>'private-voice.'.$session->id.'.'.$outsider->id])->assertForbidden();
+    }
+
+    public function test_authenticated_landing_page_does_not_mount_notification_popups_or_a_bell(): void
+    {
+        $this->room();
+        $this->get(route('home'))->assertOk()->assertDontSee('name="compass-notices"',false)
+            ->assertDontSee('js/live-notifications.js')->assertDontSee('js/important-notice.js');
+    }
 }

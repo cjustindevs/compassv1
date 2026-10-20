@@ -2,6 +2,41 @@
 
 Voice is disabled by default. Code installation alone does not enable calling. These steps configure the existing Render service and a Metered TURN free account; no second Render service or paid telephony account is needed.
 
+## Re-enable the existing Render and Metered setup (October 20)
+
+The installed feature already uses WebRTC audio, Laravel Reverb signaling, and Metered TURN. Reuse the existing Render service and Metered account. Preserve the existing Reverb application credentials, Metered developer secret, Laravel `APP_KEY`, database settings, and mail settings.
+
+In **Render → COMPASS service → Environment**, confirm:
+
+```dotenv
+APP_URL=https://compassv1-lyfm.onrender.com
+VOICE_CALLS_ENABLED=true
+RUN_REVERB=true
+RUN_SCHEDULER=true
+BROADCAST_CONNECTION=reverb
+
+REVERB_HOST=127.0.0.1
+REVERB_PORT=8080
+REVERB_SCHEME=http
+REVERB_SERVER_HOST=0.0.0.0
+REVERB_SERVER_PORT=8080
+REVERB_ALLOWED_ORIGINS=compassv1-lyfm.onrender.com
+
+VOICE_WS_HOST=compassv1-lyfm.onrender.com
+VOICE_WS_PORT=443
+VOICE_WS_SCHEME=https
+```
+
+Keep `REVERB_APP_ID`, `REVERB_APP_KEY`, `REVERB_APP_SECRET`, `METERED_DOMAIN`, and `METERED_SECRET_KEY` populated with the values already configured for these accounts. `METERED_DOMAIN` is the Metered project hostname, not the Render hostname. Add any currently used custom frontend hostname to the allowed-origins list. Do not add another set of keys or put private secrets in `VITE_*` variables.
+
+Save and deploy the environment changes. Look for `Starting Reverb on internal port 8080` and successful `Voice relay credentials prepared` startup messages. Allow two minutes for newly prepared TURN credentials before choosing Voice in Preferences. If Shell is available, `php artisan voice:status` should report `ready`. A working WebSocket alone does not prove TURN readiness or bidirectional audio.
+
+Start a **new** Seeker request, select **Voice call** in Preferences, and accept live-audio participation. Existing Chat requests remain Chat requests. The Helper must have duty and readiness, accept the assignment, and start the session. Open the same session on two devices, then **Call → Accept call → allow microphone**. Verify Ringing, Connecting, On call, Mute, and Leave call using the live acceptance checklist below.
+
+The local `.env` is separate from Render Environment. Enabling a local flag or editing `.env.example` does not update the deployed service.
+
+References: [Render public WebSockets use WSS and the service's shared port](https://render.com/docs/websocket), [Reverb server and public connection settings](https://laravel.com/docs/12.x/reverb), [Metered expiring credentials](https://www.metered.ca/docs/turnserver-guides/expiring-turn-credentials/).
+
 ## 1. Create the free TURN account
 
 1. Open https://www.metered.ca/stun-turn/ and choose the free TURN trial. At the time of implementation it advertises 500 MB per month (incoming plus outgoing traffic) and no credit card requirement.
@@ -29,6 +64,7 @@ Keep the existing Laravel `APP_KEY` unchanged. It encrypts account data and the 
 Open the existing COMPASS service → **Environment**. Add or update these entries. Replace the example domain and placeholders with your actual values. Do not create duplicate entries.
 
 ```dotenv
+APP_URL=https://compassv1-lyfm.onrender.com
 VOICE_CALLS_ENABLED=true
 RUN_REVERB=true
 RUN_SCHEDULER=true
@@ -66,7 +102,7 @@ After the code is pushed and the variables are saved, deploy the updated Docker 
 
 Startup launches Reverb, prepares expiring TURN credentials, and keeps the existing scheduler running. The scheduler checks preparation every five minutes and rotates the pool approximately every fifteen minutes. Credentials expire after two hours and are encrypted in the database.
 
-**Wait at least two minutes after the first successful preparation.** Metered documents that new credentials can take up to two minutes to propagate. Voice stays absent from Preferences until a usable pool exists; chat remains available.
+**Wait at least two minutes after the first successful preparation.** Metered documents that new credentials can take up to two minutes to propagate. Preferences shows Voice in a disabled state until a usable pool exists; chat remains available.
 
 Look for these messages in Render logs:
 
@@ -135,7 +171,11 @@ Optional browser developer checks: the public socket uses `wss://YOUR_SERVICE.on
 
 Reference: [Render free limits](https://render.com/docs/free).
 
-## Verification status
+## Voice room and notification update
+
+Voice sessions now open a dedicated room with an in-page Messages drawer, separate call/session controls, and retained referral, emergency, consent, and identity actions. Initial signaling has a 20-second timeout and Retry; API requests have a 15-second timeout. Historical notifications stay in the inbox without being replayed as popups. See [the updated acceptance checklist](VOICE_ROOM_NOTIFICATION_QA.md).
+
+## Earlier verification status (before this update)
 
 Automated checks cover call ownership, private signaling, consent, stale attempts, relay-only/audio-only validation, credential encryption/propagation, microphone cleanup, call-vs-session separation, and existing chat/session regressions. A successful automated test or build does **not** establish real network audio quality. Live two-device verification awaits your free account configuration.
 

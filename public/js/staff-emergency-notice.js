@@ -6,7 +6,7 @@
     const config = JSON.parse(document.getElementById('staffEmergencyConfig').content);
     const presentation = window.CompassPopupPresentation;
     const popupKey = item => item ? presentation?.key({...item, type:'emergency'}) : null;
-    let notice = null, busy = false;
+    let notice = null, busy = false, ownedKey = null;
     const otherDialog = () => [...document.querySelectorAll('dialog[open]')].some(node => node !== dialog && node.id !== 'compassImportantNotice') || !!document.querySelector('.modal-overlay.active');
     async function current() {
         const url = config.next + (notice ? '?current=' + encodeURIComponent(notice.reference) : '');
@@ -14,19 +14,21 @@
         if (!response.ok) throw Error();
         return (await response.json()).notice;
     }
-    function render(next) {
+    async function render(next) {
         if (next && otherDialog()) return;
-        const sameVisibleCase = dialog.open && notice && next && popupKey(notice) === popupKey(next);
-        if (next && !sameVisibleCase && presentation && !presentation.claim(popupKey(next))) {
+        const sameVisibleCase = notice && next && ownedKey === popupKey(next);
+        const allowed = !next || sameVisibleCase || !presentation || (presentation.claimRemote ? await presentation.claimRemote({...next, type:'emergency'}) : presentation.claim(popupKey(next)));
+        if (!allowed) {
             notice = null; if (dialog.open) dialog.close(); return;
         }
         notice = next;
+        ownedKey = next ? popupKey(next) : null;
         if (!notice) { if (dialog.open) dialog.close(); return; }
         dialog.querySelector('#staffEmergencyTitle').textContent = notice.title;
         dialog.querySelector('p').textContent = notice.message;
         dialog.querySelector('[data-open]').textContent = config.openLabel;
         dialog.querySelector('[data-error]').textContent = '';
-        if (!dialog.open && !otherDialog()) { window.CompassImportantNotices?.suspend(); dialog.showModal(); }
+        if (!dialog.open && !document.hidden && !otherDialog()) { window.CompassImportantNotices?.suspend(); dialog.showModal(); }
     }
     async function retire(item) {
         const response = await fetch(config.dismiss, {method:'POST',
@@ -39,11 +41,11 @@
         busy = true;
         try {
             const next = await current();
-            const alreadyOpen = dialog.open && notice && next && popupKey(notice) === popupKey(next);
+            const alreadyOpen = notice && next && ownedKey === popupKey(next);
             if (next && !alreadyOpen && presentation?.has(popupKey(next))) {
                 // Only retire its popup; the case and unread notification stay intact.
-                await retire(next); render(null);
-            } else render(next);
+                await retire(next); await render(null);
+            } else await render(next);
         } catch (_) { /* Keep the current UI during a temporary outage. */ }
         finally { busy = false; }
     }
@@ -53,7 +55,7 @@
         try {
             const previousId = notice.id;
             const next = await current();
-            if (!next || next.id !== previousId) { render(next); return; }
+            if (!next || next.id !== previousId) { await render(next); return; }
             notice = next;
             const response = await fetch(config.dismiss, {method: 'POST',
                 headers: {Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': config.csrf},

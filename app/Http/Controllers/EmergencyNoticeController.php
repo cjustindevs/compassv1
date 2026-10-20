@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Notification;
 use App\Services\EmergencyNoticeState;
+use App\Services\NotificationPopupDelivery;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -23,6 +24,7 @@ class EmergencyNoticeController extends Controller
         $this->authorizeStaff();
         $data = $request->validate(['current' => 'nullable|string|max:2000']);
         $state = new EmergencyNoticeState;
+        $delivery = app(NotificationPopupDelivery::class);
         $owned = Notification::where('user_account_id', auth()->id())->where('notification_type', 'emergency')->whereNull('popup_dismissed_at');
         $notice = null;
         if (! empty($data['current'])) {
@@ -36,7 +38,9 @@ class EmergencyNoticeController extends Controller
                 // A stale/invalid token does not grant access to any other user's notice.
             }
         }
-        $notice ??= (clone $owned)->lazyByIdDesc(100)->first(fn ($notice) => $state->key($notice, auth()->user()) !== null);
+        $notice ??= (clone $owned)->whereNull('popup_presented_at')
+            ->where('created_at', '>=', now()->subMinutes(NotificationPopupDelivery::FRESH_MINUTES))
+            ->lazyByIdDesc(100)->first(fn ($notice) => $delivery->eligible($notice, auth()->user()));
         $professional = auth()->user()->role === 'professional';
         $url = $professional ? $notice?->link : (auth()->user()->role === 'adviser' ? route('adviser.emergencies') : route('moderator.emergency'));
         if (! $professional && auth()->user()->role === 'adviser' && $notice) {
@@ -52,6 +56,8 @@ class EmergencyNoticeController extends Controller
 
         return response()->json(['notice' => $notice ? [
             'id' => $notice->id, 'case_key' => $state->key($notice, auth()->user()),
+            'popup_key' => $delivery->key($notice, auth()->user()),
+            'present_url' => route('notifications.present', $notice->id, false),
             'reference' => Crypt::encryptString((string) $notice->id),
             'title' => $professional ? 'Urgent emergency referral assigned' : 'Emergency requires attention',
             'message' => $professional ? 'An Adviser raised an emergency referral to you. Open the assigned referral to review and respond. Personal information requires separate authorized release.' : 'Open your emergency queue to review the case and coordinate support.',
@@ -71,13 +77,15 @@ class EmergencyNoticeController extends Controller
         abort_unless(ctype_digit($id) && strlen($id) <= 18, 404);
         $notice = Notification::where('user_account_id', auth()->id())->where('notification_type', 'emergency')->findOrFail($id);
         $state = new EmergencyNoticeState;
-        $key = $state->key($notice, auth()->user());
+        $delivery = app(NotificationPopupDelivery::class);
+        $key = $delivery->key($notice, auth()->user());
+        $caseKey = $state->key($notice, auth()->user());
         $notice->forceFill(['popup_dismissed_at' => now()])->save();
         if ($key) {
             // Dismiss the current case's existing duplicate notices together; future reports still notify.
             Notification::where('user_account_id', auth()->id())->where('notification_type', 'emergency')
-                ->whereNull('popup_dismissed_at')->eachById(function ($duplicate) use ($state, $key) {
-                    if ($state->key($duplicate, auth()->user()) === $key) {
+                ->whereNull('popup_dismissed_at')->where('id', '<=', $notice->id)->eachById(function ($duplicate) use ($delivery, $key, $caseKey, $state) {
+                    if ($delivery->key($duplicate, auth()->user()) === $key || ($caseKey && $state->key($duplicate, auth()->user()) === $caseKey)) {
                         $duplicate->forceFill(['popup_dismissed_at' => now()])->save();
                     }
                 });

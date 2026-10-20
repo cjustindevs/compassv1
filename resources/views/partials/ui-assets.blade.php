@@ -13,7 +13,7 @@
     <script src="{{ asset('js/workflow-dialogs.js') }}?v={{ filemtime(public_path('js/workflow-dialogs.js')) }}" defer></script>
     <script src="{{ asset('js/compass-ui.js') }}?v={{ filemtime(public_path('js/compass-ui.js')) }}" defer></script>
     @auth
-        @unless($embeddedScreen ?? false)
+        @unless(($embeddedScreen ?? false) || request()->routeIs('home', 'login', 'register', 'seeker.register', 'seeker.consent', 'password.*', 'verification.*'))
         <meta name="compass-notices" content="{{ json_encode(['user'=>auth()->id(),'feed'=>route('notifications.feed'),'interval'=>in_array(auth()->user()->role,['adviser','moderator','professional']) ? 2000 : 5000,'center'=>route('notifications')]) }}">
         <script>window.CompassNoticesEnabled = true;</script>
         <link rel="stylesheet" href="{{ asset('css/live-notifications.css') }}?v={{ filemtime(public_path('css/live-notifications.css')) }}">

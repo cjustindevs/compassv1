@@ -15,7 +15,7 @@
         <button type="button" data-choice="wait">Keep waiting</button>
     </div>
     <p data-connection-error role="alert"></p>
-    <div class="connection-footer"><span class="connection-muted">You can reopen this notice from chat.</span><button type="button" id="closeConnection">Back to chat</button></div>
+    <div class="connection-footer"><span class="connection-muted">You can reopen this notice from your session.</span><button type="button" id="closeConnection">Back to session</button></div>
 </dialog>
 @endif
 <style>

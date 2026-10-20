@@ -31,3 +31,29 @@ test('blocked or malformed storage still deduplicates within the page',()=>{
     const api=page(new Map(),7,true);assert.equal(api.claim('notification:3'),true);assert.equal(api.claim('notification:3'),false);
     const corrupt=page(new Map([['compass-popup-seen:7','not json']]));assert.equal(corrupt.claim('notification:3'),true);
 });
+
+test('fresh browsers and hostnames ask the server before presenting the same recipient event',async()=>{
+    const delivered=new Set(),requests=[];
+    function device(){
+        const context={window:{},document:{querySelector:selector=>({content:selector.includes('csrf')?'csrf':JSON.stringify({user:7})})},
+            fetch:async(url,options)=>{requests.push({url,options});const first=!delivered.has(url);delivered.add(url);return {ok:true,json:async()=>({present:first})};}};
+        vm.runInNewContext(fs.readFileSync('public/js/notification-presentation.js','utf8'),context);
+        return context.window.CompassPopupPresentation;
+    }
+    const notice={id:42,popup_key:'new-referral:42'};
+    assert.equal(await device().claimRemote(notice),true);
+    assert.equal(await device().claimRemote(notice),false);
+    assert.equal(requests[0].url,'/notifications/42/present');
+    assert.equal(requests[0].options.headers['X-CSRF-TOKEN'],'csrf');
+});
+
+test('failed popup claims can retry and unsafe presentation URLs are never fetched',async()=>{
+    let requests=0,fail=true;
+    const context={window:{},document:{querySelector:()=>({content:JSON.stringify({user:7})})},fetch:async()=>{
+        requests++;if(fail)throw Error('offline');return {ok:true,json:async()=>({present:true})};}};
+    vm.runInNewContext(fs.readFileSync('public/js/notification-presentation.js','utf8'),context);
+    const api=context.window.CompassPopupPresentation,notice={id:4};
+    assert.equal(await api.claimRemote(notice),false);fail=false;
+    assert.equal(await api.claimRemote(notice),true);assert.equal(requests,2);
+    assert.equal(await api.claimRemote({id:5,present_url:'//other.test/present'}),false);assert.equal(requests,2);
+});

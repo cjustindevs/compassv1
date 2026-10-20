@@ -51,7 +51,7 @@
 
         <div class="header-actions">
             <a class="icon-button header-action" href="{{ route('admin.settings') }}" aria-label="Account settings" title="Account settings"><x-admin.icon name="sliders" :size="19" /></a>
-
+            <div data-notification-slot></div>
         </div>
     </div>
 </header>

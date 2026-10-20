@@ -14,17 +14,28 @@
     const use=document.createElementNS('http://www.w3.org/2000/svg','use');use.setAttribute('href',(document.querySelector('meta[name="compass-icon-sprite"]')?.content||'/images/compass-icons.svg')+'#bell');svg.append(use);bell.append(svg);
     const count=el('span');count.className='compass-notice-count';count.hidden=true;bell.append(count);
     const inbox=el('section');inbox.id='compass-notice-inbox';inbox.className='compass-notice-dropdown';inbox.hidden=true;inbox.setAttribute('aria-label','Recent notifications');
-    root.append(bell,inbox);document.body.append(root);
+    const workLink=el('a');workLink.className='compass-notice-pending';workLink.href=config.center;workLink.hidden=true;
+    root.append(bell,inbox,workLink);
+    const slot=document.querySelector('[data-notification-slot]');
+    if(slot)slot.append(root);
+    else {
+        root.className+=' compass-notification-header';
+        const main=document.querySelector('main')||document.querySelector('.main-content')||document.body;
+        if(main.prepend)main.prepend(root);else main.append(root);
+    }
     const toasts=el('div');toasts.className='compass-notice-toasts';toasts.setAttribute('aria-live','polite');document.body.append(toasts);
     const close=()=>{inbox.hidden=true;bell.setAttribute('aria-expanded','false');};
     bell.addEventListener('click',()=>{inbox.hidden=!inbox.hidden;bell.setAttribute('aria-expanded',String(!inbox.hidden));if(!inbox.hidden)refresh();});
     document.addEventListener('click',event=>{if(!root.contains(event.target))close();});
     document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!inbox.hidden){close();bell.focus();}});
-    function toast(notice){
+    async function toast(notice){
         if (notice.type === 'emergency' && document.getElementById('staffEmergencyNotice')) return;
         if (notice.important && window.CompassImportantNotices) { window.CompassImportantNotices.enqueue(notice); return; }
         const presentation = window.CompassPopupPresentation;
-        if (presentation && !presentation.claim(presentation.key(notice))) return;
+        // Minor updates remain in the inbox while someone is using the voice room.
+        if (!notice.important && document.querySelector('[data-voice-room]')) return;
+        const allowed = presentation?.claimRemote ? await presentation.claimRemote(notice) : !presentation || presentation.claim(presentation.key(notice));
+        if (!allowed) return;
         const card=el('article');card.noticeId=notice.id;card.isEmergency=notice.type==='emergency';card.className='compass-notice-toast'+(notice.type==='emergency'?' is-emergency':'');
         const dismiss=el('button','×');dismiss.type='button';dismiss.setAttribute('aria-label','Dismiss notification');dismiss.addEventListener('click',()=>card.remove());
         const link=el('a','Open');link.href=safe(notice.link);card.append(el('strong',notice.title),el('p',notice.message),link,dismiss);toasts.append(card);
@@ -36,6 +47,7 @@
         try{
             const response=await fetch(config.feed+(seen===null?'':'?after='+seen),{headers:{Accept:'application/json'},cache:'no-store'});if(!response.ok)return;
             const data=await response.json();count.textContent=data.count>99?'99+':String(data.count);count.hidden=!data.count;bell.setAttribute('aria-label',`${data.count} unread notifications`);
+            const pendingCount=data.workflow?.pending_action_count||0;workLink.hidden=!pendingCount;workLink.textContent=`${pendingCount} unread action updates`;
             if (Array.isArray(data.workflow?.unread_important_notice_ids)) window.CompassImportantNotices?.reconcileUnread(data.workflow.unread_important_notice_ids);
             if (Array.isArray(data.workflow?.active_emergency_notice_ids)) {
                 const active = new Set(data.workflow.active_emergency_notice_ids);
@@ -55,11 +67,11 @@
             if(document.querySelector('dialog[open]') || document.querySelector('.modal-overlay.active'))return;
             const fresh=data.fresh.filter(notice=>notice.urgent!==false&&(seen===null||notice.id>seen));
             const routine=fresh.filter(n=>n.type!=='emergency');
-            fresh.filter(n=>n.type==='emergency').forEach(toast);
-            routine.filter(n=>n.important).forEach(toast);
+            for(const notice of fresh.filter(n=>n.type==='emergency'))await toast(notice);
+            for(const notice of routine.filter(n=>n.important))await toast(notice);
             const minor=routine.filter(n=>!n.important);
-            if(minor.length>3)toast({title:`${minor.length} new notifications`,message:'Open Notifications to review all your updates.',link:config.center,type:'system'});
-            else minor.forEach(toast);
+            // Each item is arbitrated by the server; at most three minor toasts are visible.
+            for(const notice of minor)await toast(notice);
             seen=Math.max(seen||0,data.cursor||0);try{sessionStorage.setItem(storageKey,String(seen));}catch{}
         }catch{}finally{pending=false;}
     }

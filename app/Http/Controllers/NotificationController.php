@@ -6,6 +6,7 @@ use App\Models\EmergencyAlert;
 use App\Models\Notification;
 use App\Services\EmergencyNoticeState;
 use App\Services\ModeratorEmergencyCases;
+use App\Services\NotificationPopupDelivery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -120,17 +121,20 @@ class NotificationController extends Controller
     {
         $data = $request->validate(['after' => 'nullable|integer|min:0']);
         $owned = Notification::where('user_account_id', $request->user()->id);
+        $delivery = app(NotificationPopupDelivery::class);
         $state = new EmergencyNoticeState;
         $staff = in_array($request->user()->role, ['moderator', 'adviser', 'professional'], true);
         $present = fn ($notice) => ['id' => $notice->id, 'title' => $notice->title, 'message' => $notice->message,
             'type' => $notice->notification_type, 'link' => $notice->link, 'read' => $notice->is_read,
-            'popup_key' => $staff && $notice->notification_type === 'emergency' && ($caseKey = $state->key($notice, $request->user())) ? 'emergency:'.$caseKey : 'notification:'.$notice->id,
+            'popup_key' => $delivery->key($notice, $request->user()),
+            'present_url' => route('notifications.present', $notice->id, false),
             'important' => in_array($notice->notification_type, ['referral', 'emergency'], true)
                 || ($notice->notification_type === 'assignment' && ! in_array($notice->title, ['Helper ready for duty', 'Duty scheduled', 'Duty updated', 'Duty cancelled'], true)),
             'urgent' => $staff && $notice->notification_type === 'emergency' ? $state->key($notice, $request->user()) !== null : null];
         $cursor = (int) (clone $owned)->max('id');
-        $fresh = (clone $owned)->unread()->when(isset($data['after']), fn ($q) => $q->where('id', '>', $data['after']),
-            fn ($q) => $q->where(fn ($initial) => $initial->whereIn('notification_type', ['emergency', 'referral', 'assignment'])->orWhere('created_at', '>=', now()->subMinutes(5))))->orderBy('id')->limit(30)->get();
+        $fresh = (clone $owned)->unread()->whereNull('popup_presented_at')
+            ->where('created_at', '>=', now()->subMinutes(NotificationPopupDelivery::FRESH_MINUTES))
+            ->when(isset($data['after']), fn ($q) => $q->where('id', '>', $data['after']))->orderBy('id')->limit(30)->get();
         if ($fresh->count() === 30) {
             $cursor = (int) $fresh->last()->id;
         }
@@ -151,11 +155,22 @@ class NotificationController extends Controller
         }
 
         // Actionable unread work must survive an old browser cursor or an interrupted page load.
-        $attention = (clone $owned)->unread()->whereIn('notification_type', ['referral','assignment'])
+        $attention = (clone $owned)->unread()->whereNull('popup_presented_at')
+            ->where('created_at', '>=', now()->subMinutes(NotificationPopupDelivery::FRESH_MINUTES))
+            ->whereIn('notification_type', ['referral','assignment'])
             ->whereNotIn('title', ['Helper ready for duty','Duty scheduled','Duty updated','Duty cancelled'])
-            ->orderByDesc('id')->limit(30)->get()->map($present);
+            ->orderByDesc('id')->limit(30)->get()->filter(fn ($notice) => $delivery->eligible($notice, $request->user()))->map($present)->values();
+        $workflow['pending_action_count'] = (clone $owned)->unread()->whereIn('notification_type', ['referral','assignment','emergency'])
+            ->whereNotIn('title', ['Helper ready for duty','Duty scheduled','Duty updated','Duty cancelled'])
+            ->get()->filter(fn ($notice) => $delivery->actionable($notice, $request->user()))->count();
         return response()->json(['count' => (clone $owned)->unread()->count(), 'cursor' => $cursor, 'workflow' => $workflow, 'attention'=>$attention,
             'recent' => (clone $owned)->latest('id')->limit(8)->get()->map($present), 'fresh' => $fresh->map($present)])
+            ->header('Cache-Control', 'private, no-store');
+    }
+
+    public function presentPopup(int $id, Request $request): JsonResponse
+    {
+        return response()->json(['present' => app(NotificationPopupDelivery::class)->claim($id, $request->user())])
             ->header('Cache-Control', 'private, no-store');
     }
 }

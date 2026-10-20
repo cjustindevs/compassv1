@@ -96,7 +96,7 @@ class HelperChatController extends Controller
 
         $seekerName = $session->seeker->generated_alias ?? 'Seeker';
 
-        return view('helper.chat.show', [
+        return view($session->session_type === 'voice' ? 'session.voice' : 'helper.chat.show', [
             'session' => $session,
             'activeSession' => $session,
             'messages' => $messages,

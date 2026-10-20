@@ -240,7 +240,9 @@
         }
         .chat-input input:focus {
             border-color: #04A052;
-            box-shadow: 0 0 0 3px rgba(4, 160, 82, 0.08);
+            outline: 2px solid #04A052;
+            outline-offset: 0;
+            box-shadow: none !important;
         }
         .chat-input input:disabled { opacity: 0.6; cursor: not-allowed; }
         .chat-input button {
@@ -357,6 +359,7 @@
                 </div>
             </div>
             <span class="session-timer" id="sessionTimer" data-started-at="{{ optional($session->start_time)->timestamp }}">00:00</span>
+            <div data-notification-slot></div>
             <form method="POST" action="{{ route('session.end') }}"
                   data-confirm="End session?"
                   data-confirm-message="This will end the session for both you and the helper."

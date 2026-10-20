@@ -35,7 +35,8 @@ class EmergencyReviewReminders
                     foreach ($recipients as $user) {
                         Notification::create(['user_account_id' => $user->id, 'emergency_alert_id' => $alert->id, 'title' => 'Emergency acknowledgment pending',
                             'message' => 'An emergency review remains unacknowledged. Open the emergency case to coordinate support.',
-                            'notification_type' => 'emergency', 'link' => $user->role === 'adviser' ? route('adviser.emergencies.show', $alert->id, false) : '/moderator/emergency']);
+                            'notification_type' => 'emergency', 'popup_event_key'=>'emergency:alert:'.$alert->id,
+                            'link' => $user->role === 'adviser' ? route('adviser.emergencies.show', $alert->id, false) : '/moderator/emergency']);
                     }
                     SupportAudit::record('emergency_acknowledgment_reminder', $alert, ['recipient_count' => $recipients->count()]);
                 }, 3);

@@ -15,8 +15,10 @@
         <style>
             body, body input, body select, body button, body textarea { font-family: 'Inter', sans-serif; }
             .mobile-appbar {
-                display: none;
+                display: flex;
                 align-items: center;
+                justify-content: space-between;
+                gap: 12px;
                 padding: 12px 16px;
                 background: #ffffff;
                 border-bottom: 1px solid #e5e7eb;
@@ -73,6 +75,7 @@
                     <button type="button" class="hamburger" id="hamburgerBtn" aria-label="Open sidebar">
                         <x-ui-icon name="menu"  />
                     </button>
+                    <div data-notification-slot style="margin-left:auto"></div>
                 </div>
             @endauth
 

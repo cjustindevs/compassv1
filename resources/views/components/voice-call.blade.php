@@ -1,4 +1,4 @@
-@props(['session'])
+@props(['session', 'dedicated' => false])
 @if($session->session_type === 'voice' && $session->isActive())
 @php
     $configuration = app(\App\Services\VoiceConfiguration::class);
@@ -6,7 +6,7 @@
         'state'=>route('voice.state',$session), 'credentials'=>route('voice.credentials',$session),
         'start'=>route('voice.start',$session), 'action'=>route('voice.action',$session), 'signal'=>route('voice.signal',$session)];
 @endphp
-<section class="voice-call-panel" data-voice-call data-voice-state="checking" aria-label="Live voice call">
+<section class="voice-call-panel {{ $dedicated ? 'voice-call-dedicated' : '' }}" data-voice-call data-voice-state="checking" aria-label="Live voice call">
     <div class="voice-call-visual" aria-hidden="true"><x-ui-icon name="phone" /><span></span><span></span><span></span></div>
     <div class="voice-call-copy">
         <div class="voice-call-heading"><h2>Voice support</h2><span class="voice-call-badge" data-voice-badge>Checking</span><time data-voice-duration hidden aria-label="Call duration">00:00</time></div>
@@ -21,6 +21,7 @@
         <button type="button" data-voice-mute hidden aria-pressed="false">Mute</button>
         <button type="button" data-voice-leave hidden>Leave call</button>
         <button type="button" data-voice-play hidden>Play audio</button>
+        <button type="button" data-voice-retry hidden>Retry connection</button>
     </div>
     <audio data-voice-audio autoplay playsinline></audio>
     <script type="application/json" data-voice-config>@json($voiceConfig)</script>

@@ -7,6 +7,7 @@ use App\Models\EmergencyAlert;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /** Stored notices for every active emergency coordinator; no WebSocket dependency. */
 class EmergencyStaffNotifications
@@ -29,6 +30,7 @@ class EmergencyStaffNotifications
                     $alert->session?->update(['review_adviser_id' => $owner->id]);
                 }
             }
+            $popupEvent = 'emergency:alert:'.$alert->id.($freshChatReport ? ':report:'.Str::uuid() : '');
             foreach (User::where('is_active', true)->whereIn('role', ['adviser', 'moderator'])->get(['id', 'role']) as $user) {
                 $adviser = $user->role === 'adviser';
                 $link = $adviser ? route('adviser.emergencies.show', $alert->id, false) : '/moderator/emergency';
@@ -38,7 +40,7 @@ class EmergencyStaffNotifications
                     ->where('notification_type', 'emergency')->where('link', $link)->where('title', $title)->where('message', $message)->exists();
                 if ($freshChatReport || ! $exists) {
                     $notice = Notification::create(['user_account_id' => $user->id, 'emergency_alert_id' => $alert->id, 'title' => $title, 'message' => $message,
-                        'notification_type' => 'emergency', 'status' => 'unread', 'type_icon' => 'fa-life-ring', 'link' => $link]);
+                        'notification_type' => 'emergency', 'status' => 'unread', 'type_icon' => 'fa-life-ring', 'link' => $link, 'popup_event_key' => $popupEvent]);
                     // Queue only new events. Provider requests never delay case creation,
                     // and reconciliation does not email old displayed notices again.
                     app(StaffMailService::class)->enqueue($user, 'emergency-alert:'.$alert->id.':notice:'.$notice->id,

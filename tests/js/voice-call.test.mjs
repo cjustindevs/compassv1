@@ -4,7 +4,7 @@ import { VoiceCallClient } from '../../resources/js/voice-call-client.mjs';
 
 function room() {
     const elements = {};
-    for (const name of ['audio','status','badge','title','duration','start','accept','decline','mute','leave','play']) {
+    for (const name of ['audio','status','badge','title','duration','start','accept','decline','mute','leave','play','retry']) {
         elements[name]={hidden:false,disabled:false,textContent:'',attributes:{},handlers:{},
             addEventListener(event,handler){this.handlers[event]=handler;},setAttribute(key,value){this.attributes[key]=value;},async play(){}};
     }
@@ -55,6 +55,66 @@ test('outgoing call requires relay-only audio and leaving releases microphone wi
     assert.equal(client.ended,false);
     assert.deepEqual(requests.at(-1).body,{call_id:'current-call',action:'leave'});
     assert.equal(requests.some(request=>request.url.includes('session/end')),false);
+});
+
+function connectRoom() {
+    const r=room(), channels=[], timers=new Map(), events={};let serial=0, reconnects=0;
+    r.client.signalReady=false;
+    r.env.setTimeout=(fn,delay)=>{const id=++serial;timers.set(id,{fn,delay});return id;};
+    r.env.clearTimeout=id=>timers.delete(id);
+    const echo={connector:{pusher:{connection:{bind:(event,fn)=>{events[event]=fn;}},connect(){reconnects++;}}},
+        private(name){const handlers={};channels.push({name,handlers});return {subscribed(fn){handlers.ready=fn;return this;},error(fn){handlers.error=fn;return this;},listen(){return this;}};},
+        leave(){},disconnect(){}};
+    r.client.connect(echo);
+    return {...r,channels,timers,events,reconnects:()=>reconnects,flush:()=>new Promise(resolve=>setImmediate(resolve))};
+}
+
+test('initial private subscription times out and polling cannot erase authorization failures',async()=>{
+    const r=connectRoom();await r.flush();
+    const deadline=r.client.transportTimer;r.events.disconnected();assert.equal(r.client.transportTimer,deadline);
+    [...r.timers.values()].find(timer=>timer.delay===20000).fn();
+    assert.match(r.elements.status.textContent,/took too long/);
+    await r.client.poll();assert.match(r.elements.status.textContent,/took too long/);
+    assert.equal(r.elements.retry.hidden,false);assert.equal(r.elements.start.disabled,true);
+    r.channels[0].handlers.error({status:403});
+    await r.client.poll();assert.match(r.elements.status.textContent,/authorize/);
+    r.events.disconnected();await r.client.poll();assert.match(r.elements.status.textContent,/authorize/);
+    r.client.destroy();
+});
+
+test('retry ignores a stale authorization callback and enables Call only after the new private subscription succeeds',async()=>{
+    const r=connectRoom();await r.flush();r.channels[0].handlers.error({status:403});
+    r.client.retryConnection();await r.flush();assert.equal(r.reconnects(),1);
+    r.channels[0].handlers.ready();assert.equal(r.client.signalReady,false);
+    r.channels.at(-1).handlers.ready();await r.flush();
+    assert.equal(r.client.signalReady,true);assert.equal(r.elements.retry.hidden,true);
+    assert.equal(r.elements.start.disabled,false);assert.equal(r.elements.badge.textContent,'Ready');
+    r.client.destroy();
+});
+
+test('a slow state response cannot cancel microphone preparation or overwrite an ended session',async()=>{
+    const r=room();let resolveState, resolveMicrophone;
+    const fetch=r.env.fetch, microphone=r.env.navigator.mediaDevices.getUserMedia;
+    r.env.fetch=(url,options)=>url.startsWith('/state')?new Promise(resolve=>{resolveState=resolve;}):fetch(url,options);
+    r.env.navigator.mediaDevices.getUserMedia=()=>new Promise(resolve=>{resolveMicrophone=resolve;});
+    const poll=r.client.poll(), begin=r.client.begin(false);
+    resolveState({ok:true,json:async()=>({available:true,session:{ended:false},call:null})});await poll;
+    resolveMicrophone(await microphone());await begin;
+    assert.equal(r.client.call.status,'ringing');assert.equal(r.track.stopped,false);
+    const late=r.client.poll();r.client.endLocally();
+    resolveState({ok:true,json:async()=>({available:true,session:{ended:false},call:null})});await late;
+    assert.equal(r.client.ended,true);assert.match(r.elements.status.textContent,/support session has ended/);
+});
+
+test('a stalled response body is aborted and produces a retryable error',async()=>{
+    const r=room();let abort;
+    r.env.AbortController=AbortController;
+    r.env.setTimeout=(fn,delay)=>{assert.equal(delay,15000);abort=fn;return 9;};
+    r.env.fetch=async(url,options)=>({ok:true,json:()=>new Promise((resolve,reject)=>{
+        options.signal.addEventListener('abort',()=>{const e=new Error();e.name='AbortError';reject(e);});
+    })});
+    const request=r.client.request('state');await Promise.resolve();abort();
+    await assert.rejects(request,/did not respond/);
 });
 
 test('microphone refusal and failed credential delivery never leave capture running',async()=>{

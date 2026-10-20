@@ -18,7 +18,7 @@ function room(storage=new Map()) {
         document, navigator, location: {assign: url => links.push(url)}, window: {addEventListener: (name, fn) => { handlers[name] = fn; }},
         localStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value)},
         setInterval: (fn, ms) => intervals.push({fn, ms}), encodeURIComponent,
-        fetch: async (url, options) => { requests.push({url, options}); if (deferred) return deferred; return {ok: !fail, json: async () => ({notice: state})}; },
+        fetch: async (url, options) => { requests.push({url, options}); if (deferred) return deferred; return {ok: !fail, json: async () => url.endsWith('/present') ? ({present:true}) : ({notice: state})}; },
     };
     vm.runInNewContext(fs.readFileSync('public/js/notification-presentation.js','utf8'),context);
     vm.runInNewContext(fs.readFileSync('public/js/staff-emergency-notice.js', 'utf8'), context);
@@ -57,7 +57,7 @@ test('Open revalidates a resolved case before dismissing or navigating', async (
     const r = room(); await r.flush(); r.state(null);
     await r.slots['[data-open]'].onclick();
     assert.equal(r.dialog.open, false); assert.equal(r.links.length, 0);
-    assert.equal(r.requests.filter(item => item.options.method === 'POST').length, 0);
+    assert.equal(r.requests.filter(item => item.options.method === 'POST' && !item.url.endsWith('/present')).length, 0);
 });
 
 test('successful dismissal uses the authenticated token and does not reopen a dismissed case', async () => {

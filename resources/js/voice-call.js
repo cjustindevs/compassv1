@@ -8,12 +8,14 @@ function initialize() {
         const config = JSON.parse(root.querySelector('[data-voice-config]').textContent);
         const csrf = document.querySelector('meta[name="csrf-token"]').content;
         const client = new VoiceCallClient(root,config,{window,navigator,RTCPeerConnection:window.RTCPeerConnection,
-            MediaStream:window.MediaStream,csrf,fetch:window.fetch.bind(window),setInterval,clearInterval,setTimeout,clearTimeout});
+            MediaStream:window.MediaStream,AbortController:window.AbortController,csrf,fetch:window.fetch.bind(window),setInterval,clearInterval,setTimeout,clearTimeout});
         if (!config.socket.key) { client.message('Voice is unavailable. You can continue using text chat.', 'unavailable'); return; }
+        try {
         const pusher = new Pusher(config.socket.key,{cluster:'mt1',wsHost:config.socket.host || window.location.hostname,
             wsPort:config.socket.port,wssPort:config.socket.port,forceTLS:config.socket.secure,enabledTransports:['ws','wss'],
             disableStats:true,channelAuthorization:{endpoint:'/broadcasting/auth',transport:'ajax',headers:{'X-CSRF-TOKEN':csrf}}});
         client.connect(new Echo({broadcaster:'reverb',client:pusher}));
+        } catch { client.transportFailed('The call service could not start. Reload this session or use messages.'); }
     });
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',initialize,{once:true});
