@@ -50,6 +50,12 @@ class VoiceConfiguration
 
     public function publicSocket(): array
     {
+        $renderHost = config('voice.render_hostname');
+        if (is_string($renderHost) && preg_match('/^[a-z0-9-]+\.onrender\.com$/i', $renderHost)) {
+            // This Docker deployment proxies Reverb through the current service's public port.
+            // Copied environments must never send its browsers to another Render instance.
+            return ['key'=>config('broadcasting.connections.reverb.key'), 'host'=>$renderHost, 'port'=>443, 'secure'=>true];
+        }
         return ['key'=>config('broadcasting.connections.reverb.key'), 'host'=>config('voice.ws_host'),
             'port'=>config('voice.ws_port'), 'secure'=>config('voice.ws_scheme') === 'https'];
     }

@@ -29,6 +29,8 @@ VOICE_WS_SCHEME=https
 
 Keep `REVERB_APP_ID`, `REVERB_APP_KEY`, `REVERB_APP_SECRET`, `METERED_DOMAIN`, and `METERED_SECRET_KEY` populated with the values already configured for these accounts. `METERED_DOMAIN` is the Metered project hostname, not the Render hostname. Add any currently used custom frontend hostname to the allowed-origins list. Do not add another set of keys or put private secrets in `VITE_*` variables.
 
+On Render, the app now uses the service's `RENDER_EXTERNAL_HOSTNAME` for public secure WebSockets and adds it to Reverb's allowed origins. Render supplies this hostname through its [default environment variables](https://render.com/docs/environment-variables). This prevents a copied environment from connecting the new website to the old service's socket. Keep `APP_URL` current for generated links. Startup and `voice:status` print a non-secret `Voice signaling host` line so the selected hostname can be checked. Outside Render, the explicit `VOICE_WS_*` settings still apply.
+
 Save and deploy the environment changes. Look for `Starting Reverb on internal port 8080` and successful `Voice relay credentials prepared` startup messages. Allow two minutes for newly prepared TURN credentials before choosing Voice in Preferences. If Shell is available, `php artisan voice:status` should report `ready`. A working WebSocket alone does not prove TURN readiness or bidirectional audio.
 
 Start a **new** Seeker request, select **Voice call** in Preferences, and accept live-audio participation. Existing Chat requests remain Chat requests. The Helper must have duty and readiness, accept the assignment, and start the session. Open the same session on two devices, then **Call → Accept call → allow microphone**. Verify Ringing, Connecting, On call, Mute, and Leave call using the live acceptance checklist below.
@@ -173,7 +175,7 @@ Reference: [Render free limits](https://render.com/docs/free).
 
 ## Voice room and notification update
 
-Voice sessions now open a dedicated room with an in-page Messages drawer, separate call/session controls, and retained referral, emergency, consent, and identity actions. Initial signaling has a 20-second timeout and Retry; API requests have a 15-second timeout. Historical notifications stay in the inbox without being replayed as popups. See [the updated acceptance checklist](VOICE_ROOM_NOTIFICATION_QA.md).
+Voice sessions now open a dedicated room with an in-page Messages drawer, separate call/session controls, and retained referral, emergency, consent, and identity actions. A missed WebSocket connection can recover through authenticated two-second polling; encrypted negotiation packets expire after two minutes and are deleted when the call ends. No audio is stored. Initial socket setup has a 20-second timeout and Retry; API requests have a 15-second timeout. Historical notifications stay in the inbox without being replayed as popups, and the unread action summary stays inside the header bell's dropdown. See [the updated acceptance checklist](VOICE_ROOM_NOTIFICATION_QA.md).
 
 ## Earlier verification status (before this update)
 

@@ -14,12 +14,15 @@
 
         body {
             background: #F8FBF9;
-            min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
+            flex-direction: column;
+            align-items: stretch;
+            padding: 0;
         }
+        .completion-header { display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;max-width:1080px;margin:0 auto;padding:16px 24px; }
+        .completion-header a { color:#176240;font-size:13px;text-decoration:none;font-weight:600; }
+        .completion-main { flex:1;display:grid;place-items:center;width:100%;padding:24px 20px max(32px,env(safe-area-inset-bottom));min-width:0; }
 
         .thank-you-card {
             background: white;
@@ -27,6 +30,7 @@
             padding: 56px 48px;
             max-width: 560px;
             width: 100%;
+            min-width: 0;
             text-align: center;
             border: 1px solid #e5e7eb;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.06);
@@ -139,9 +143,11 @@
     </style>
     @vite(['resources/css/app.css'])
     @include('partials.ui-assets')
+    <link rel="stylesheet" href="{{ asset('css/session-completion.css') }}?v={{ filemtime(public_path('css/session-completion.css')) }}">
 </head>
-<body>
-
+<body class="session-completion">
+    <header class="completion-header"><a href="{{ route('seeker.dashboard') }}">COMPASS</a><div data-notification-slot></div></header>
+    <main class="completion-main">
     <div class="thank-you-card">
 
 
@@ -171,6 +177,7 @@
             </a>
         </div>
     </div>
+    </main>
 
     @include('layouts.partials.pwa-banner')
 

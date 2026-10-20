@@ -15,13 +15,13 @@
     const count=el('span');count.className='compass-notice-count';count.hidden=true;bell.append(count);
     const inbox=el('section');inbox.id='compass-notice-inbox';inbox.className='compass-notice-dropdown';inbox.hidden=true;inbox.setAttribute('aria-label','Recent notifications');
     const workLink=el('a');workLink.className='compass-notice-pending';workLink.href=config.center;workLink.hidden=true;
-    root.append(bell,inbox,workLink);
+    root.append(bell,inbox);
     const slot=document.querySelector('[data-notification-slot]');
     if(slot)slot.append(root);
     else {
-        root.className+=' compass-notification-header';
-        const main=document.querySelector('main')||document.querySelector('.main-content')||document.body;
-        if(main.prepend)main.prepend(root);else main.append(root);
+        // Only an existing page header can host a bell. Never insert siblings into a page's content grid or body.
+        const header=document.querySelector('[data-page-header], .main-content > .top-bar, .main-content > .flex.items-center.justify-between, main > header');
+        if(header){root.className+=' is-header-action';header.append(root);}
     }
     const toasts=el('div');toasts.className='compass-notice-toasts';toasts.setAttribute('aria-live','polite');document.body.append(toasts);
     const close=()=>{inbox.hidden=true;bell.setAttribute('aria-expanded','false');};
@@ -59,6 +59,7 @@
             document.querySelectorAll('#emergencyCount,#statEmergency,[data-active-emergency-count]').forEach(node=>{if(data.workflow?.emergency_count!==undefined)node.textContent=data.workflow.emergency_count;});
             document.querySelectorAll('#notifBadge,#notificationBadge').forEach(badge=>{badge.textContent=data.count;badge.style.display=data.count?'inline-flex':'none';});
             inbox.replaceChildren(el('h2','Notifications'));
+            if(pendingCount)inbox.append(workLink);
             for(const notice of data.recent){const link=el('a');link.className='compass-notice-item'+(!notice.read?' is-unread':'');link.href=safe(notice.link);link.append(el('strong',notice.title),el('small',notice.message));inbox.append(link);}
             if(!data.recent.length)inbox.append(el('p','No notifications yet.'));
             const all=el('a','View all notifications');all.href=config.center;all.className='compass-notice-all';inbox.append(all);

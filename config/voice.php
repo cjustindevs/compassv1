@@ -7,6 +7,7 @@ return [
     'ws_host' => env('VOICE_WS_HOST'),
     'ws_port' => (int) env('VOICE_WS_PORT', 443),
     'ws_scheme' => env('VOICE_WS_SCHEME', 'https'),
+    'render_hostname' => env('RENDER_EXTERNAL_HOSTNAME'),
     'ring_seconds' => 45,
     'connection_seconds' => 60,
     'heartbeat_seconds' => 45,

@@ -1,5 +1,11 @@
 <?php
 
+$allowedOrigins = array_values(array_filter(array_map('trim', explode(',', env('REVERB_ALLOWED_ORIGINS', '*')))));
+$renderHostname = env('RENDER_EXTERNAL_HOSTNAME');
+if (is_string($renderHostname) && preg_match('/^[a-z0-9-]+\.onrender\.com$/i', $renderHostname)) {
+    $allowedOrigins[] = $renderHostname;
+}
+
 return [
 
     /*
@@ -82,7 +88,7 @@ return [
                     'scheme' => env('REVERB_SCHEME', 'https'),
                     'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
                 ],
-                'allowed_origins' => array_map('trim', explode(',', env('REVERB_ALLOWED_ORIGINS', '*'))),
+                'allowed_origins' => array_values(array_unique($allowedOrigins)),
                 'ping_interval' => env('REVERB_APP_PING_INTERVAL', 60),
                 'activity_timeout' => env('REVERB_APP_ACTIVITY_TIMEOUT', 30),
                 'max_connections' => env('REVERB_APP_MAX_CONNECTIONS'),

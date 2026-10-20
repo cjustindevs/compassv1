@@ -47,12 +47,14 @@ Artisan::command('voice:prepare', function () {
         return 1;
     }
     $this->info('Voice relay credentials prepared. Newly created credentials need two minutes to propagate.');
+    $this->info('Voice signaling host: '.(app(VoiceConfiguration::class)->publicSocket()['host'] ?: 'current website').'.');
 
     return 0;
 })->purpose('Prepare and rotate expiring TURN credentials without revealing secrets');
 
 Artisan::command('voice:status', function () {
     $this->info('Voice relay readiness: '.app(VoiceConfiguration::class)->availability());
+    $this->info('Voice signaling host: '.(app(VoiceConfiguration::class)->publicSocket()['host'] ?: 'current website').'.');
     $issues = app(VoiceConfiguration::class)->configurationIssues();
     if ($issues) {
         $this->warn('Check Render environment entries: '.implode(', ', $issues));
@@ -61,6 +63,9 @@ Artisan::command('voice:status', function () {
 
 Schedule::command('voice:prepare')->everyFiveMinutes()->withoutOverlapping()
     ->when(fn () => app(VoiceConfiguration::class)->configured());
+
+Schedule::call(fn () => \App\Models\VoiceSignalPacket::where('expires_at', '<=', now())->delete())
+    ->everyMinute()->name('purge-expired-voice-signals')->withoutOverlapping();
 
 Schedule::call(fn () => app(StaffMailService::class)->deliver())->everyMinute()->name('deliver-staff-mail')->withoutOverlapping();
 Schedule::call(fn () => app(DutySchedulingService::class)->remind())->hourly()->name('remind-helper-duty')->withoutOverlapping();

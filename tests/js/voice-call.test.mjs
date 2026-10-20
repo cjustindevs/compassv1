@@ -117,6 +117,39 @@ test('a stalled response body is aborted and produces a retryable error',async()
     await assert.rejects(request,/did not respond/);
 });
 
+test('authenticated signal polling enables Call and recovers an answer when no WebSocket exists',async()=>{
+    const r=room();r.client.signalReady=false;
+    r.setState({available:true,signaling_available:true,session:{ended:false},call:null});
+    await r.client.poll();assert.equal(r.elements.start.disabled,false);
+    await r.client.begin(false);
+    r.setState({available:true,signaling_available:true,session:{ended:false},call:{...r.client.call,status:'connecting'},signals:[],signal_cursor:0});
+    await r.client.poll();assert.equal(r.requests.filter(request=>request.body?.type==='offer').length,1);
+    r.setState({available:true,signaling_available:true,session:{ended:false},call:{...r.client.call,status:'connecting'},
+        signals:[{signal_id:7,call_id:r.client.call.id,type:'answer',sdp:'recovered-answer'}],signal_cursor:7});
+    await r.client.poll();assert.equal(r.client.pc.remoteDescription.sdp,'recovered-answer');assert.equal(r.client.signalCursor,7);
+    assert.equal(r.elements.duration.hidden,true);
+});
+
+test('WebSocket and polling deliveries of one signal are applied once and in sequence',async()=>{
+    const r=room();await r.client.begin(false);const applied=[];
+    r.client.pc.setRemoteDescription=async description=>{await new Promise(resolve=>setImmediate(resolve));applied.push(description.type);r.client.pc.remoteDescription=description;};
+    r.client.pc.addIceCandidate=async()=>{applied.push('candidate');};
+    const answer={signal_id:8,call_id:r.client.call.id,type:'answer',sdp:'audio-answer'};
+    const candidate={signal_id:9,call_id:r.client.call.id,type:'candidate',candidate:{candidate:'relay'}};
+    await Promise.all([r.client.enqueueSignal(answer),r.client.enqueueSignal(candidate),r.client.enqueueSignal(answer)]);
+    assert.deepEqual(applied,['answer','candidate']);
+});
+
+test('ending audio detaches stale callbacks and releases both local and received tracks',async()=>{
+    const r=room();await r.client.begin(false);const peer=r.client.pc;
+    let receiverStopped=false,transceiverStopped=false;
+    peer.getTransceivers=()=>[{stop(){transceiverStopped=true;throw Error('Already closed');}}];
+    r.elements.audio.srcObject={getTracks:()=>[{stop(){receiverStopped=true;}}]};
+    r.client.stopMedia();
+    assert.equal(receiverStopped,true);assert.equal(transceiverStopped,true);
+    assert.equal(peer.ontrack,null);assert.equal(peer.onicecandidate,null);assert.equal(peer.closed,true);
+});
+
 test('microphone refusal and failed credential delivery never leave capture running',async()=>{
     const denied=room();
     denied.env.navigator.mediaDevices.getUserMedia=async()=>{const error=new Error('Denied');error.name='NotAllowedError';throw error;};

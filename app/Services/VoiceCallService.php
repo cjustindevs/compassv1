@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\{ConsentRecord, Session, User, VoiceCall};
+use App\Models\{ConsentRecord, Session, User, VoiceCall, VoiceSignalPacket};
 use Illuminate\Support\Facades\{DB, Gate};
 use Illuminate\Support\Str;
 
@@ -35,6 +35,7 @@ class VoiceCallService
     {
         if (in_array($call->status, VoiceCall::OPEN, true)) {
             $call->update(['status'=>$status, 'end_reason'=>$reason, 'ended_at'=>now()]);
+            VoiceSignalPacket::where('call_id', $call->id)->delete();
             SupportAudit::record('voice_call_'.$status, Session::findOrFail($call->session_id), ['call_id'=>$call->id,'reason'=>$reason]);
         }
         return $call;

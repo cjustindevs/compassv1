@@ -257,4 +257,81 @@ class VoiceCallTest extends TestCase
         $this->get(route('home'))->assertOk()->assertDontSee('name="compass-notices"',false)
             ->assertDontSee('js/live-notifications.js')->assertDontSee('js/important-notice.js');
     }
+
+    public function test_offer_answer_and_candidates_are_recovered_through_authenticated_polling_without_websocket_delivery(): void
+    {
+        [$seeker,$helper,$session]=$this->room();
+        $call=$this->postJson(route('voice.start',$session))->json('call.id');
+        $this->actingAs($helper)->postJson(route('voice.action',$session),['call_id'=>$call,'action'=>'accept'])->assertOk();
+        $sdp="v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=ice-ufrag:temporary-negotiation\r\n";
+        $this->actingAs($seeker)->postJson(route('voice.signal',$session),['call_id'=>$call,'type'=>'offer','sdp'=>$sdp])->assertOk();
+        $stored=\Illuminate\Support\Facades\DB::table('voice_signals')->sole();
+        $this->assertStringNotContainsString('temporary-negotiation',$stored->payload);
+        $this->getJson(route('voice.state',['session'=>$session->id,'call_id'=>$call]))->assertJsonCount(0,'signals');
+        $offer=$this->actingAs($helper)->getJson(route('voice.state',['session'=>$session->id,'call_id'=>$call]))
+            ->assertOk()->assertJsonPath('signaling_available',true)->assertJsonCount(1,'signals')->assertJsonPath('signals.0.type','offer');
+        $this->assertSame($sdp,$offer->json('signals.0.sdp'));
+        $this->actingAs(User::factory()->create(['role'=>'seeker']))->getJson(route('voice.state',['session'=>$session->id,'call_id'=>$call]))->assertForbidden();
+        $this->actingAs($helper);
+        $cursor=$offer->json('signal_cursor');
+        $this->getJson(route('voice.state',['session'=>$session->id,'call_id'=>$call,'after_signal_id'=>$cursor]))->assertJsonCount(0,'signals');
+        $this->postJson(route('voice.signal',$session),['call_id'=>$call,'type'=>'answer','sdp'=>$sdp])->assertOk();
+        $this->actingAs($seeker)->getJson(route('voice.state',['session'=>$session->id,'call_id'=>$call]))->assertJsonPath('signals.0.type','answer');
+        $this->postJson(route('voice.action',$session),['call_id'=>$call,'action'=>'leave'])->assertOk();
+        $this->assertDatabaseCount('voice_signals',0);
+        $this->assertSame('active',$session->fresh()->session_status);
+    }
+
+    public function test_failed_realtime_broadcast_does_not_discard_a_signal_or_expose_its_contents(): void
+    {
+        [$seeker,$helper,$session]=$this->room();
+        $call=$this->postJson(route('voice.start',$session))->json('call.id');
+        $this->actingAs($helper)->postJson(route('voice.action',$session),['call_id'=>$call,'action'=>'accept'])->assertOk();
+        Event::fake()->except([VoiceSignal::class]);
+        \Illuminate\Support\Facades\Broadcast::shouldReceive('queue')->once()->andThrow(new \RuntimeException('private broadcaster detail'));
+        $this->actingAs($seeker)->postJson(route('voice.signal',$session),['call_id'=>$call,'type'=>'offer',
+            'sdp'=>"v=0\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n"])->assertOk()->assertDontSee('private broadcaster detail');
+        $this->actingAs($helper)->getJson(route('voice.state',['session'=>$session->id,'call_id'=>$call]))->assertJsonCount(1,'signals');
+        \App\Models\VoiceSignalPacket::query()->update(['expires_at'=>now()->subSecond()]);
+        $this->getJson(route('voice.state',['session'=>$session->id,'call_id'=>$call]))->assertJsonCount(0,'signals');
+    }
+
+    public function test_completion_pages_place_the_single_bell_in_a_header_outside_the_content_card(): void
+    {
+        [$seeker,$helper,$session]=$this->room();
+        $session->update(['session_status'=>'completed','end_time'=>now(),'duration'=>1]);
+        $this->get(route('session.evaluation'))->assertOk()->assertSee('data-evaluation-header',false)->assertSee('data-notification-slot',false);
+        $page=$this->get(route('session.thank-you'))->assertOk()->assertSee('class="completion-header"',false)
+            ->assertSee('<main class="completion-main">',false)->assertSee('css/session-completion.css',false);
+        $this->assertSame(1,substr_count($page->getContent(),'data-notification-slot'));
+    }
+
+    public function test_render_uses_its_current_public_hostname_even_when_voice_settings_were_copied_from_an_old_service(): void
+    {
+        $this->room();
+        config(['voice.render_hostname'=>'current-compass.onrender.com','voice.ws_host'=>'old-compass.onrender.com',
+            'voice.ws_port'=>8080,'voice.ws_scheme'=>'http']);
+        $socket=app(VoiceConfiguration::class)->publicSocket();
+        $this->assertSame('current-compass.onrender.com',$socket['host']);
+        $this->assertSame(443,$socket['port']);$this->assertTrue($socket['secure']);
+        $this->get(route('session.voice'))->assertOk()->assertSee('current-compass.onrender.com')->assertDontSee('old-compass.onrender.com');
+        $this->artisan('voice:status')->expectsOutput('Voice signaling host: current-compass.onrender.com.')->assertSuccessful();
+        config(['voice.render_hostname'=>null,'voice.ws_host'=>'127.0.0.1']);
+        $this->assertSame(['key'=>'public-app-key','host'=>'127.0.0.1','port'=>8080,'secure'=>false],app(VoiceConfiguration::class)->publicSocket());
+    }
+
+    public function test_current_render_origin_is_allowed_without_accepting_unrelated_origins(): void
+    {
+        $repository=\Illuminate\Support\Env::getRepository();
+        $previousHost=env('RENDER_EXTERNAL_HOSTNAME');$previousOrigins=env('REVERB_ALLOWED_ORIGINS');
+        try {
+            $repository->set('RENDER_EXTERNAL_HOSTNAME','current-compass.onrender.com');
+            $repository->set('REVERB_ALLOWED_ORIGINS','old-compass.onrender.com');
+            $configuration=require config_path('reverb.php');
+            $this->assertSame(['old-compass.onrender.com','current-compass.onrender.com'],$configuration['apps']['apps'][0]['allowed_origins']);
+        } finally {
+            $previousHost === null ? $repository->clear('RENDER_EXTERNAL_HOSTNAME') : $repository->set('RENDER_EXTERNAL_HOSTNAME',$previousHost);
+            $previousOrigins === null ? $repository->clear('REVERB_ALLOWED_ORIGINS') : $repository->set('REVERB_ALLOWED_ORIGINS',$previousOrigins);
+        }
+    }
 }

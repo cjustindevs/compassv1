@@ -357,8 +357,9 @@
     </style>
     @vite(['resources/css/app.css'])
     @include('partials.ui-assets')
+    <link rel="stylesheet" href="{{ asset('css/session-completion.css') }}?v={{ filemtime(public_path('css/session-completion.css')) }}">
 </head>
-<body class="compass-compact">
+<body class="compass-compact session-evaluation">
 
     @include('partials.sidebar', [
         'active' => ['session.evaluation*'],
@@ -372,7 +373,7 @@
     <main class="main-content">
 
         <!-- Top Bar -->
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center justify-between mb-6 gap-3" data-evaluation-header>
             <div class="flex items-center gap-4">
                 <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
                     <x-ui-icon name="menu"  />
@@ -386,6 +387,7 @@
             </div>
             <div class="flex items-center gap-3">
                 <span class="text-xs text-gray-400 hidden sm:inline">{{ now()->format('M d, Y') }}</span>
+                <div data-notification-slot></div>
             </div>
         </div>
 
