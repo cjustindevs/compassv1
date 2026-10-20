@@ -58,6 +58,12 @@ export class VoiceCallClient {
 
     connect(echo) {
         this.echo = echo;
+        // Polling is independent of socket setup, including a synchronous subscription failure.
+        if (!this.interval) {
+            this.interval = this.env.setInterval(() => this.poll(), 2000);
+            this.durationInterval = this.env.setInterval(() => this.updateDuration(), 1000);
+            this.poll();
+        }
         if (echo) {
             this.subscribe();
             echo.private(`session.${this.config.sessionId}`).listen('SessionEnded', () => this.endLocally());
@@ -75,9 +81,6 @@ export class VoiceCallClient {
                 if (!this.ended) this.transportFailed('Unable to connect to the call service. Retry the connection or use messages.');
             });
         }
-        this.interval = this.env.setInterval(() => this.poll(), 2000);
-        this.durationInterval = this.env.setInterval(() => this.updateDuration(), 1000);
-        this.poll();
     }
 
     watchTransport(reset = false) {
@@ -280,15 +283,21 @@ export class VoiceCallClient {
         if (this.microphonePending) throw new Error('The previous microphone request is still waiting for the browser. '+this.microphoneHelp());
         const generation = this.generation;
         this.microphoneState = 'Waiting for browser permission'; this.renderDetails();
-        // Request capture directly from the click, before any network request or permission query.
-        const capture = this.env.navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
-        this.microphonePending = true;
         return new Promise((resolve,reject) => {
             let waiting = true;
+            // Install the guard before opening a device, so setup errors cannot orphan a capture request.
             const timeout = this.env.setTimeout(() => {
                 waiting = false; this.microphoneState = 'Permission request did not respond';
                 reject(new Error('The browser did not finish the microphone request within 20 seconds. '+this.microphoneHelp()));
             }, 20000);
+            this.microphonePending = true;
+            let capture;
+            try {
+                // Still runs synchronously from the tap, before network requests or permission queries.
+                capture = this.env.navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
+            } catch (error) {
+                this.microphonePending = false; this.env.clearTimeout(timeout); reject(error); return;
+            }
             Promise.resolve(capture).then(stream => {
                 this.microphonePending = false; this.env.clearTimeout(timeout);
                 if (!waiting || generation !== this.generation || this.ended) {

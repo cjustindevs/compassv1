@@ -328,3 +328,23 @@ test('successful audio and manual leaving clear the local connection deadline',a
         assert.equal([...timers.values()].some(timer=>timer.delay===45000),false);
     }
 });
+
+test('a timer setup failure cannot start capture or strand microphone setup as pending',async()=>{
+    const r=room();let captured=false;
+    r.env.setTimeout=()=>{throw new TypeError('Illegal invocation');};
+    r.env.navigator.mediaDevices.getUserMedia=async()=>{captured=true;return {getTracks:()=>[r.track]};};
+    await r.client.checkMicrophone();
+    assert.equal(captured,false);assert.equal(r.client.microphonePending,false);assert.equal(r.client.busy,false);
+    assert.equal(r.requests.length,0);
+});
+
+test('availability polling starts before socket setup and survives a synchronous subscription failure without duplicate intervals',async()=>{
+    const r=room();let intervals=0;
+    r.client.signalReady=false;r.env.setInterval=()=>++intervals;
+    r.setState({available:true,signaling_available:true,session:{ended:false},call:null});
+    assert.throws(()=>r.client.connect({private(){throw Error('Socket subscription failed');}}),/Socket subscription failed/);
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(r.client.httpReady,true);assert.equal(r.elements.start.disabled,false);
+    assert.equal(r.elements.badge.textContent,'Ready');assert.equal(intervals,2);
+    r.client.connect(null);assert.equal(intervals,2);
+});

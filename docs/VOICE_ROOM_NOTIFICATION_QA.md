@@ -56,7 +56,7 @@ The evaluation page now has an explicit header bell slot. The thank-you page has
 
 - Full PHP regression suite: 810 passed, 7,833 assertions.
 - Final focused voice checks: 20 passed, 193 assertions, including the two hostname/origin regressions added after the full suite.
-- All JavaScript suites after the Safari follow-up: 107 passed, including authenticated fallback, duplicate packet handling, notification placement, and media cleanup.
+- All JavaScript suites after the browser-timer follow-up: 110 passed, including authenticated fallback, duplicate packet handling, notification placement, media cleanup, and strict browser timer receivers.
 - Production Vite/PWA build and Blade template compilation passed.
 - No connected browser was available for visual or microphone testing. The public hostname mismatch was verified directly; a socket HTTP upgrade alone does not prove private subscription or live audio. Live browser audio remains unverified until the two-device acceptance test.
 - Render's existing startup migration step applies the additive `voice_signals` migration after deployment. No reset or reseeding is required.
@@ -75,3 +75,13 @@ The deployed public assets contain the microphone request, use the new service h
 On each Safari device, reopen the session, choose Check microphone, and allow access if prompted. If Ask is configured but no prompt appears, inspect the microphone result before placing another call. Then use Call and Accept call. If audio fails, report the Connection details from both devices. A microphone check confirms access; only a two-device conversation confirms actual bidirectional audio.
 
 References: [getUserMedia permission and pending requests](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia), [Safari microphone website settings](https://support.apple.com/guide/iphone/browse-the-web-privately-iphb01fc3c85/ios).
+
+## Browser timer startup failure
+
+The next screenshot showed Checking call availability together with a previous microphone request still pending. A regression using Window-restricted timer functions reproduced a startup exception: the browser entry passed raw timer methods into a separate environment object, and the client called them with that object as receiver. Earlier Node timer mocks did not enforce the browser's receiver requirement.
+
+All four timer functions are now explicitly bound to Window. Availability polling starts before socket subscription and remains active if subscription setup throws. The microphone timeout is installed before requesting capture, so an exception during guard setup cannot start capture or leave the pending flag set without handlers. Regression checks cover the original failure, cleanup, and independent polling.
+
+An attached browser was unavailable during this investigation. The regression reproduction and deployed bundle verification establish the code correction; Safari/Chrome microphone access and two-device audio still require a live device check. After deployment, reopen both session pages, use Check microphone, and inspect Connection details if setup still fails.
+
+Reference: [browser timer interfaces and receiver](https://html.spec.whatwg.org/multipage/webappapis.html#windoworworkerglobalscope-mixin).

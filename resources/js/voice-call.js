@@ -10,7 +10,9 @@ function initialize() {
             config = JSON.parse(root.querySelector('[data-voice-config]').textContent);
             const csrf = document.querySelector('meta[name="csrf-token"]').content;
             client = new VoiceCallClient(root,config,{window,document,navigator,RTCPeerConnection:window.RTCPeerConnection,
-                MediaStream:window.MediaStream,AbortController:window.AbortController,csrf,fetch:window.fetch.bind(window),setInterval,clearInterval,setTimeout,clearTimeout});
+                MediaStream:window.MediaStream,AbortController:window.AbortController,csrf,fetch:window.fetch.bind(window),
+                setInterval:window.setInterval.bind(window),clearInterval:window.clearInterval.bind(window),
+                setTimeout:window.setTimeout.bind(window),clearTimeout:window.clearTimeout.bind(window)});
         } catch {
             root.setAttribute('data-voice-state','unavailable');
             root.querySelector('[data-voice-title]').textContent = 'Call controls could not start';
