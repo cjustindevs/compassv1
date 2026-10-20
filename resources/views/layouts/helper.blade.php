@@ -64,7 +64,7 @@
             </div>
             <div style="display:flex;align-items:center;gap:12px;">
                 <span style="font-size:12px;color:var(--gray-400);">{{ now('Asia/Manila')->format('M d, Y') }}</span>
-                <div data-notification-slot></div>
+
             </div>
         </div>
 
