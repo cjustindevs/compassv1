@@ -4,7 +4,8 @@ import { VoiceCallClient } from '../../resources/js/voice-call-client.mjs';
 
 function room() {
     const elements = {};
-    for (const name of ['audio','status','badge','title','duration','start','accept','decline','mute','leave','play','retry']) {
+    for (const name of ['audio','status','badge','title','duration','start','accept','decline','mute','leave','play','retry','microphone','microphone-status',
+        'detail-microphone','detail-server','detail-signaling','detail-audio','detail-error']) {
         elements[name]={hidden:false,disabled:false,textContent:'',attributes:{},handlers:{},
             addEventListener(event,handler){this.handlers[event]=handler;},setAttribute(key,value){this.attributes[key]=value;},async play(){}};
     }
@@ -36,7 +37,7 @@ function room() {
             if(url==='/action') data={call:{id:body.call_id,is_caller:true,status:body.action==='accept'?'connecting':'ended'}};
             return {ok:true,status:200,json:async()=>data};
         }};
-    const root={attributes:{},setAttribute(key,value){this.attributes[key]=value;},querySelector:selector=>elements[selector.match(/data-voice-(\w+)/)[1]]};
+    const root={attributes:{},setAttribute(key,value){this.attributes[key]=value;},querySelector:selector=>elements[selector.match(/data-voice-([\w-]+)/)[1]]};
     const client=new VoiceCallClient(root,config,env);
     client.available=true;client.signalReady=true;
     return {client,env,track,elements,requests,callbacks,setState:value=>{state=value;}};
@@ -191,8 +192,8 @@ test('server session deadline and page exit close audio instead of attempting a 
 test('the last server deadline stops capture even if later state requests fail',async()=>{
     const {client,env,track,setState}=room();
     let deadline;
-    env.setTimeout=(callback,delay)=>{assert.equal(delay,1000);deadline=callback;return 3;};
     await client.begin(false);
+    env.setTimeout=(callback,delay)=>{assert.equal(delay,1000);deadline=callback;return 3;};
     setState({available:true,session:{ended:false,remaining_seconds:1},call:client.call});
     await client.poll();
     env.fetch=async()=>{throw new Error('Network unavailable');};
@@ -243,4 +244,87 @@ test('incoming call UI requires explicit acceptance and keeps the microphone off
     assert.equal(elements.badge.textContent,'Connecting');
     assert.equal(elements.accept.hidden,true);
     assert.equal(elements.duration.hidden,true);
+});
+
+test('Check microphone requests capture from the click without signaling readiness and releases it without placing a call',async()=>{
+    const r=room();r.client.available=false;r.client.signalReady=false;r.client.httpReady=false;r.client.render();
+    let requested=false;
+    r.env.navigator.mediaDevices.getUserMedia=constraints=>{
+        requested=true;assert.equal(constraints.video,false);
+        assert.equal(r.requests.length,0);return Promise.resolve({getTracks:()=>[r.track]});
+    };
+    assert.equal(r.elements.microphone.disabled,false);
+    const check=r.client.checkMicrophone();assert.equal(requested,true);await check;
+    assert.equal(r.track.stopped,true);assert.equal(r.client.stream,null);assert.equal(r.client.call,null);
+    assert.equal(r.requests.length,0);assert.match(r.elements['microphone-status'].textContent,/Microphone allowed/);
+});
+
+test('a silent Safari permission request times out, avoids a duplicate request, and stops a late granted stream',async()=>{
+    const r=room();let grant,timeout,requests=0;
+    r.env.navigator.userAgent='Mozilla/5.0 (iPhone) Version/18.0 Mobile Safari/604.1';
+    r.env.navigator.mediaDevices.getUserMedia=()=>{requests++;return new Promise(resolve=>{grant=resolve;});};
+    r.env.setTimeout=(fn,delay)=>{assert.equal(delay,20000);timeout=fn;return 4;};
+    const attempt=r.client.begin(false);
+    assert.equal(requests,1);assert.equal(r.client.busy,true);
+    timeout();await attempt;
+    assert.equal(r.client.busy,false);assert.equal(r.client.pc,null);assert.equal(r.requests.length,0);
+    assert.match(r.elements.status.textContent,/20 seconds/);assert.match(r.elements.status.textContent,/In Safari/);
+    assert.equal(r.elements.start.disabled,false);
+    await r.client.checkMicrophone();assert.equal(requests,1);
+    grant({getTracks:()=>[r.track]});await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(r.track.stopped,true);assert.equal(r.client.microphonePending,false);
+    assert.equal(r.client.call,null);
+});
+
+test('ending a session while Safari waits for permission stops late capture and preserves the ended screen',async()=>{
+    const r=room();let grant;
+    r.env.navigator.mediaDevices.getUserMedia=()=>new Promise(resolve=>{grant=resolve;});
+    const attempt=r.client.begin(false);r.client.endLocally();
+    grant({getTracks:()=>[r.track]});await attempt;
+    assert.equal(r.track.stopped,true);assert.equal(r.client.pc,null);assert.equal(r.requests.length,0);
+    assert.equal(r.elements.badge.textContent,'Call ended');assert.match(r.elements.status.textContent,/support session has ended/);
+});
+
+test('blocked Safari permission, missing hardware, and page policy produce distinct actionable microphone errors',async()=>{
+    const denied=room();denied.env.navigator.userAgent='Version/18.0 Safari/604.1';
+    denied.env.navigator.mediaDevices.getUserMedia=async()=>{const error=new Error('Denied');error.name='NotAllowedError';throw error;};
+    await denied.client.checkMicrophone();assert.match(denied.elements['microphone-status'].textContent,/Website Settings/);
+    assert.match(denied.elements['detail-error'].textContent,/denied or blocked/);
+    const missing=room();missing.env.navigator.mediaDevices.getUserMedia=async()=>{const error=new Error();error.name='NotFoundError';throw error;};
+    await missing.client.begin(false);assert.match(missing.elements.status.textContent,/No microphone was found/);
+    const blocked=room();let captured=false;
+    blocked.env.document={permissionsPolicy:{features:()=>['microphone'],allowsFeature:()=>false}};
+    blocked.env.navigator.mediaDevices.getUserMedia=async()=>{captured=true;};
+    await blocked.client.begin(false);assert.equal(captured,false);assert.match(blocked.elements.status.textContent,/embedded page/);
+    assert.equal(blocked.requests.length,0);
+    const unsupported=room();unsupported.env.document={featurePolicy:{allowsFeature:()=>false}};
+    await unsupported.client.checkMicrophone();assert.equal(unsupported.track.stopped,true);
+    assert.match(unsupported.elements['microphone-status'].textContent,/Microphone allowed/);
+});
+
+test('audio negotiation has a local deadline even when the server keeps reporting Connecting',async()=>{
+    const r=room(),timers=new Map();let serial=0;
+    r.env.setTimeout=(fn,delay)=>{const id=++serial;timers.set(id,{fn,delay});return id;};
+    r.env.clearTimeout=id=>timers.delete(id);
+    await r.client.begin(false);await r.client.offer();
+    const oldCall={...r.client.call,status:'connecting'};
+    const deadline=[...timers.values()].find(timer=>timer.delay===45000);
+    assert.ok(deadline);deadline.fn();await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(r.client.pc,null);assert.equal(r.track.stopped,true);
+    assert.equal(r.requests.at(-1).body.action,'fail');assert.match(r.elements.status.textContent,/45 seconds/);
+    r.setState({available:true,signaling_available:true,session:{ended:false},call:oldCall});
+    await r.client.poll();assert.equal(r.elements.badge.textContent,'Call failed');assert.equal(r.elements.start.hidden,false);
+    assert.match(r.elements.status.textContent,/45 seconds/);
+});
+
+test('successful audio and manual leaving clear the local connection deadline',async()=>{
+    for (const finish of ['connected','leave']) {
+        const r=room(),timers=new Map();let serial=0;
+        r.env.setTimeout=(fn,delay)=>{const id=++serial;timers.set(id,{fn,delay});return id;};r.env.clearTimeout=id=>timers.delete(id);
+        await r.client.begin(false);await r.client.offer();
+        assert.ok([...timers.values()].some(timer=>timer.delay===45000));
+        if (finish==='connected') { r.client.pc.connectionState='connected';r.client.pc.onconnectionstatechange(); }
+        else await r.client.leave();
+        assert.equal([...timers.values()].some(timer=>timer.delay===45000),false);
+    }
 });

@@ -56,7 +56,22 @@ The evaluation page now has an explicit header bell slot. The thank-you page has
 
 - Full PHP regression suite: 810 passed, 7,833 assertions.
 - Final focused voice checks: 20 passed, 193 assertions, including the two hostname/origin regressions added after the full suite.
-- All JavaScript suites: 99 passed, including authenticated fallback, duplicate packet handling, notification placement, and media cleanup.
+- All JavaScript suites after the Safari follow-up: 107 passed, including authenticated fallback, duplicate packet handling, notification placement, and media cleanup.
 - Production Vite/PWA build and Blade template compilation passed.
 - No connected browser was available for visual or microphone testing. The public hostname mismatch was verified directly; a socket HTTP upgrade alone does not prove private subscription or live audio. Live browser audio remains unverified until the two-device acceptance test.
 - Render's existing startup migration step applies the additive `voice_signals` migration after deployment. No reset or reseeding is required.
+
+## Safari microphone follow-up
+
+The deployed public assets contain the microphone request, use the new service hostname, and are not blocked by a server microphone policy. The user's Safari website setting is Ask. These checks do not prove that Safari actually reached or completed capture on the user's device.
+
+- **Check microphone** requests audio directly from a tap, independently of WebSocket/API readiness. It releases capture immediately after the check and never places a call. Call and Accept call still request capture directly from their own tap.
+- A pending capture request times out after 20 seconds with browser-setting instructions. A later granted stream is stopped rather than keeping the microphone running. A still-pending request is not duplicated by another check.
+- Permission denial, page-policy restrictions, missing hardware, and failure to open the microphone have distinct messages. Microphone access cannot be forced when the browser or device blocks it.
+- The client enforces its own 45-second audio-negotiation deadline. A delayed server acknowledgement cannot turn that failed attempt into an endless Connecting or an incorrect other-tab message.
+- Collapsed **Connection details** shows microphone access, session service reachability, live/fallback signaling, audio/ICE state, and the last issue. It contains no credentials, network addresses, personal identity, or conversation content.
+- Initialization errors show a reload message instead of leaving the controls checking forever.
+
+On each Safari device, reopen the session, choose Check microphone, and allow access if prompted. If Ask is configured but no prompt appears, inspect the microphone result before placing another call. Then use Call and Accept call. If audio fails, report the Connection details from both devices. A microphone check confirms access; only a two-device conversation confirms actual bidirectional audio.
+
+References: [getUserMedia permission and pending requests](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia), [Safari microphone website settings](https://support.apple.com/guide/iphone/browse-the-web-privately-iphb01fc3c85/ios).

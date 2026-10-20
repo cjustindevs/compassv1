@@ -6,7 +6,9 @@ export class VoiceCallClient {
         this.available = false; this.ended = false; this.offerSent = false; this.restarts = 0;
         this.transportError = null; this.transportAttempt = 0;
         this.httpReady = false; this.signalCursor = 0; this.seenSignals = new Set(); this.signalQueue = Promise.resolve();
-        this.callFailure = null;
+        this.callFailure = null; this.failedCallId = null;
+        this.microphoneState = 'Not checked'; this.microphonePending = false; this.lastError = null;
+        this.serverState = 'Checking';
         this.uiState = 'checking'; this.connectedSince = null;
         this.audio = root.querySelector('[data-voice-audio]');
         this.status = root.querySelector('[data-voice-status]');
@@ -22,10 +24,15 @@ export class VoiceCallClient {
         this.buttons.play.addEventListener('click', () => this.play());
         this.retryButton = root.querySelector('[data-voice-retry]');
         this.retryButton?.addEventListener('click', () => this.retryConnection());
+        this.microphoneButton = root.querySelector('[data-voice-microphone]');
+        this.microphoneButton?.addEventListener('click', () => this.checkMicrophone());
+        this.microphoneStatus = root.querySelector('[data-voice-microphone-status]');
+        this.details = Object.fromEntries(['microphone','server','signaling','audio','error'].map(name => [name,root.querySelector(`[data-voice-detail-${name}]`)]));
         this.env.window.addEventListener('pagehide', () => this.destroy());
         this.env.window.addEventListener('offline', () => this.message('Connection interrupted. Reconnecting…', 'reconnecting'));
         this.env.window.addEventListener('online', () => this.poll());
         this.render();
+        this.root.setAttribute('data-voice-initialized', 'true');
     }
 
     async request(name, data = null, query = '') {
@@ -117,7 +124,17 @@ export class VoiceCallClient {
     }
 
     message(text, state = 'ready') {
+        if (['failed','unavailable'].includes(state)) this.lastError = text;
         this.status.textContent = text; this.uiState = state; this.renderPresentation();
+    }
+
+    renderDetails() {
+        const values = {microphone:this.microphoneState, server:this.serverState,
+            signaling:this.signalReady ? 'Live connection ready' : this.httpReady ? 'Secure fallback ready' : 'Not connected',
+            audio:this.pc ? `${this.pc.connectionState || 'new'} / ICE ${this.pc.iceConnectionState || 'new'}` : 'Not started',
+            error:this.lastError || 'None'};
+        for (const [name,value] of Object.entries(values)) if (this.details[name]) this.details[name].textContent = value;
+        if (this.microphoneStatus) this.microphoneStatus.textContent = this.microphoneState;
     }
 
     renderPresentation() {
@@ -134,6 +151,7 @@ export class VoiceCallClient {
         if (this.badge) this.badge.textContent = badge;
         if (this.title) this.title.textContent = title;
         this.updateDuration();
+        this.renderDetails();
     }
 
     updateDuration() {
@@ -163,6 +181,10 @@ export class VoiceCallClient {
         this.buttons.mute.hidden = !this.stream || this.ended;
         this.buttons.leave.hidden = !this.pc || !active || this.ended;
         this.buttons.leave.textContent = this.call?.status === 'ringing' && this.call?.is_caller ? 'Cancel call' : 'Leave call';
+        if (this.microphoneButton) {
+            this.microphoneButton.hidden = !!this.pc || this.ended;
+            this.microphoneButton.disabled = this.busy;
+        }
         this.renderPresentation();
     }
 
@@ -175,6 +197,7 @@ export class VoiceCallClient {
             if (this.ended || this.busy || generation !== this.generation) return;
             this.available = data.available;
             this.httpReady = data.signaling_available === true;
+            this.serverState = 'Connected';
             if (data.session.ended) {
                 this.endLocally(); return;
             }
@@ -185,6 +208,12 @@ export class VoiceCallClient {
             const next = data.call;
             if (this.call && (!next || this.call.id !== next.id)) this.stopMedia();
             this.call = next;
+            if (next?.id === this.failedCallId && !this.pc && ['ringing','connecting','connected'].includes(next.status)) {
+                // A delayed failure acknowledgement must not turn this tab's failed call into "another tab".
+                this.call = {...next,status:'failed'};
+                this.message(this.callFailure || 'The call failed. Retry or use messages.', 'failed');
+                return;
+            }
             for (const signal of data.signals || []) await this.enqueueSignal(signal);
             if (this.ended || generation !== this.generation) return;
             this.signalCursor = Math.max(this.signalCursor, data.signal_cursor || 0);
@@ -212,14 +241,86 @@ export class VoiceCallClient {
             if ([401,403,409,419].includes(error.status)) { this.ended = true; this.stopMedia(); }
             this.transportError = error.message;
             this.httpReady = false;
+            this.serverState = error.status ? `Request failed (${error.status})` : 'Not responding';
             this.message(error.message, 'unavailable');
         } finally { this.polling = false; this.render(); }
     }
 
-    async prepare() {
-        if (!this.env.navigator.mediaDevices?.getUserMedia || !this.env.RTCPeerConnection) throw new Error('This browser cannot start an audio call. Use HTTPS and allow microphone access, or use text chat.');
+    microphoneHelp() {
+        return /Safari/.test(this.env.navigator.userAgent || '') && !/Chrome|CriOS|FxiOS|EdgiOS/.test(this.env.navigator.userAgent || '')
+            ? 'In Safari, open Page Menu, then Website Settings (under More if shown), set Microphone to Allow, and reload this page.'
+            : 'Allow Microphone in this website\'s browser settings, then reload this page.';
+    }
+
+    microphoneError(error) {
+        if (['NotAllowedError','PermissionDeniedError','SecurityError'].includes(error.name)) {
+            this.microphoneState = 'Blocked by browser or device';
+            return 'Microphone access was denied or blocked. '+this.microphoneHelp();
+        }
+        if (['NotFoundError','DevicesNotFoundError'].includes(error.name)) {
+            this.microphoneState = 'No microphone found';
+            return 'No microphone was found. Connect or enable a microphone, then try again.';
+        }
+        if (['NotReadableError','TrackStartError','AbortError'].includes(error.name)) {
+            this.microphoneState = 'Could not open microphone';
+            return 'The microphone could not start. Close other apps using it, then try again.';
+        }
+        return error.message;
+    }
+
+    async captureMicrophone() {
+        if (this.env.window.isSecureContext === false) throw new Error('Microphone access requires HTTPS. Open this session on the secure COMPASS website.');
+        const policy = this.env.document?.permissionsPolicy || this.env.document?.featurePolicy;
+        // Unsupported policy directives can return false; only trust an explicitly supported directive.
+        if (policy?.features?.().includes('microphone') && policy.allowsFeature && !policy.allowsFeature('microphone')) {
+            this.microphoneState = 'Blocked by page policy';
+            throw new Error('This page cannot access the microphone. Open COMPASS directly in Safari or Chrome, outside an embedded page.');
+        }
+        if (!this.env.navigator.mediaDevices?.getUserMedia) throw new Error('Microphone access is unavailable in this browser. Open the HTTPS website directly in Safari or Chrome.');
+        if (this.microphonePending) throw new Error('The previous microphone request is still waiting for the browser. '+this.microphoneHelp());
         const generation = this.generation;
-        const stream = await this.env.navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
+        this.microphoneState = 'Waiting for browser permission'; this.renderDetails();
+        // Request capture directly from the click, before any network request or permission query.
+        const capture = this.env.navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
+        this.microphonePending = true;
+        return new Promise((resolve,reject) => {
+            let waiting = true;
+            const timeout = this.env.setTimeout(() => {
+                waiting = false; this.microphoneState = 'Permission request did not respond';
+                reject(new Error('The browser did not finish the microphone request within 20 seconds. '+this.microphoneHelp()));
+            }, 20000);
+            Promise.resolve(capture).then(stream => {
+                this.microphonePending = false; this.env.clearTimeout(timeout);
+                if (!waiting || generation !== this.generation || this.ended) {
+                    stream.getTracks().forEach(track => track.stop());
+                    if (waiting) reject(new Error('Microphone request cancelled.'));
+                    return;
+                }
+                waiting = false; this.microphoneState = 'Microphone access allowed'; resolve(stream);
+            }, error => {
+                this.microphonePending = false; this.env.clearTimeout(timeout);
+                if (waiting) { waiting = false; reject(error); }
+            });
+        });
+    }
+
+    async checkMicrophone() {
+        if (this.busy || this.pc || this.ended) return;
+        this.busy = true; this.render();
+        try {
+            const stream = await this.captureMicrophone();
+            stream.getTracks().forEach(track => track.stop());
+            this.microphoneState = 'Microphone allowed. Check finished; microphone released.';
+        } catch (error) {
+            if (!this.ended) this.lastError = this.microphoneError(error);
+            this.microphoneState = this.lastError || this.microphoneState;
+        } finally { this.busy = false; this.render(); }
+    }
+
+    async prepare() {
+        if (!this.env.RTCPeerConnection) throw new Error('This browser cannot start an audio call. Open COMPASS in Safari or Chrome, or use messages.');
+        const generation = this.generation;
+        const stream = await this.captureMicrophone();
         if (generation !== this.generation || this.ended) { stream.getTracks().forEach(track => track.stop()); throw new Error('Call cancelled.'); }
         this.stream = stream;
         const credentials = await this.request('credentials');
@@ -247,17 +348,32 @@ export class VoiceCallClient {
                 this.message('Connected · live audio', 'connected');
                 this.request('action',{call_id:this.call.id,action:'connected'}).catch(error => this.fail(error.message));
                 this.env.clearTimeout(this.reconnectTimer);
+                this.env.clearTimeout(this.audioDeadlineTimer); this.audioDeadlineTimer = null;
             } else if (peer.connectionState === 'disconnected') {
                 this.message('Audio interrupted. Reconnecting…', 'reconnecting');
                 this.env.clearTimeout(this.reconnectTimer);
                 this.reconnectTimer = this.env.setTimeout(() => this.restart(), 5000);
             } else if (peer.connectionState === 'failed') this.restart();
+            this.renderDetails();
         };
+        peer.oniceconnectionstatechange = () => { if (this.pc === peer) this.renderDetails(); };
+    }
+
+    watchAudioConnection() {
+        if (this.audioDeadlineTimer || !this.pc || this.pc.connectionState === 'connected') return;
+        const peer = this.pc;
+        this.audioDeadlineTimer = this.env.setTimeout(() => {
+            this.audioDeadlineTimer = null;
+            if (this.pc === peer && peer.connectionState !== 'connected') {
+                this.fail('Audio did not connect within 45 seconds. Leave the call, check the microphone on both devices, and try again. Connection details show the last completed step.');
+            }
+        }, 45000);
     }
 
     async begin(accept) {
         if (this.busy || this.ended || !(this.signalReady || this.httpReady) || !this.available) return;
         this.callFailure = null;
+        this.lastError = null;
         this.busy = true; this.render();
         try {
             this.message('Allow microphone access to continue…', 'permission');
@@ -266,11 +382,14 @@ export class VoiceCallClient {
             const data = accept ? await this.request('action',{call_id:this.call.id,action:'accept'}) : await this.request('start',{});
             if (this.ended || generation !== this.generation) return;
             this.call = data.call;
+            this.failedCallId = null;
+            if (accept) this.watchAudioConnection();
             this.message(accept ? 'Connecting audio…' : 'Waiting for your session partner to answer…', accept ? 'connecting' : 'ringing');
         } catch (error) {
+            if (this.ended) { this.stopMedia(); return; }
             if (accept && this.call) await this.request('action',{call_id:this.call.id,action:'decline'}).catch(() => {});
             this.stopMedia();
-            this.callFailure = error.name === 'NotAllowedError' ? 'Microphone access was denied. Allow it in browser settings, or continue using text chat.' : error.message;
+            this.callFailure = this.microphoneError(error);
             this.message(this.callFailure, 'failed');
         } finally { this.busy = false; this.render(); }
     }
@@ -283,6 +402,7 @@ export class VoiceCallClient {
     async offer(restart = false) {
         if (!this.pc || this.ended) return;
         this.offerSent = true;
+        this.watchAudioConnection();
         const peer = this.pc;
         const offer = await peer.createOffer(restart ? {iceRestart:true} : undefined);
         if (this.pc !== peer) return;
@@ -325,6 +445,7 @@ export class VoiceCallClient {
     async restart() {
         if (!this.pc || this.ended || this.restarting || this.pc.connectionState === 'connected') return;
         this.env.clearTimeout(this.reconnectTimer);
+        this.watchAudioConnection();
         if (++this.restarts > 2) return this.fail('Audio could not reconnect. Retry the call or continue using text chat.');
         this.restarting = true;
         if (this.call?.is_caller && (this.signalReady || this.httpReady)) {
@@ -353,6 +474,8 @@ export class VoiceCallClient {
 
     async fail(message) {
         const id = this.call?.id;
+        this.failedCallId = id;
+        if (this.call) this.call = {...this.call,status:'failed'};
         this.stopMedia(); this.callFailure = message; this.message(message, 'failed'); this.render();
         if (id) await this.request('action',{call_id:id,action:'fail'}).catch(() => {});
     }
@@ -374,12 +497,14 @@ export class VoiceCallClient {
     stopMedia() {
         this.generation++;
         this.env.clearTimeout(this.reconnectTimer);
+        this.env.clearTimeout(this.audioDeadlineTimer); this.audioDeadlineTimer = null;
         const peer = this.pc; this.pc = null;
         if (peer) {
-            peer.onicecandidate = peer.ontrack = peer.onconnectionstatechange = null;
+            peer.onicecandidate = peer.ontrack = peer.onconnectionstatechange = peer.oniceconnectionstatechange = null;
             peer.getTransceivers?.().forEach(transceiver => { try { transceiver.stop?.(); } catch {} });
             peer.close();
         }
+        if (this.stream) this.microphoneState = 'Microphone released';
         this.stream?.getTracks().forEach(track => track.stop()); this.stream = null;
         this.audio.srcObject?.getTracks?.().forEach(track => track.stop());
         this.audio.srcObject = null; this.buttons.play.hidden = true;

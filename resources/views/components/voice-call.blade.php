@@ -22,7 +22,19 @@
         <button type="button" data-voice-leave hidden>Leave call</button>
         <button type="button" data-voice-play hidden>Play audio</button>
         <button type="button" data-voice-retry hidden>Retry connection</button>
+        <button type="button" data-voice-microphone disabled>Check microphone</button>
     </div>
+    <div class="voice-call-check"><span data-voice-microphone-status role="status">Microphone not checked</span></div>
+    <details class="voice-call-details">
+        <summary>Connection details</summary>
+        <dl>
+            <div><dt>Microphone</dt><dd data-voice-detail-microphone>Not checked</dd></div>
+            <div><dt>Session service</dt><dd data-voice-detail-server>Checking</dd></div>
+            <div><dt>Call messages</dt><dd data-voice-detail-signaling>Checking</dd></div>
+            <div><dt>Audio connection</dt><dd data-voice-detail-audio>Not started</dd></div>
+            <div><dt>Last issue</dt><dd data-voice-detail-error>None</dd></div>
+        </dl>
+    </details>
     <audio data-voice-audio autoplay playsinline></audio>
     <script type="application/json" data-voice-config>@json($voiceConfig)</script>
 </section>

@@ -28,6 +28,12 @@
 .voice-call-actions [data-voice-mute][aria-pressed="true"] { background:#fff4da; color:#81570a; border-color:#ead798; }
 .voice-call-actions button:disabled { opacity:.55; cursor:not-allowed; }
 .voice-call-actions button:focus-visible { outline:2px solid #049b50; outline-offset:3px; }
+.voice-call-check { width:100%;font-size:12px;line-height:1.5;color:#526b5d; }
+.voice-call-details { width:100%;max-width:520px;text-align:left;font-size:12px;line-height:1.5;color:#526b5d; }
+.voice-call-details summary { cursor:pointer;font-weight:600;text-align:center;padding:6px; }
+.voice-call-details dl { display:grid;gap:8px;margin:8px 0 0;padding:12px;border:1px solid #d5e6dc;border-radius:10px;background:white; }
+.voice-call-details dl div { display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px; }
+.voice-call-details dt { font-weight:600; }.voice-call-details dd { margin:0;overflow-wrap:anywhere; }
 @keyframes voice-ring { 50% { box-shadow:0 0 0 7px rgba(4,160,82,.1); } }
 @keyframes voice-spin { to { transform:rotate(360deg); } }
 @media(prefers-reduced-motion:reduce) { .voice-call-visual,.voice-call-visual::after { animation:none !important; } }
