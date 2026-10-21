@@ -53,7 +53,7 @@ class RoleKpiTest extends TestCase
         $result = $service->summarize($service->cohort(Session::query(), $period)->get(), collect([$helper->id]), $period);
         $m = $result['metrics'];
         $this->assertSame(1, $m['completed']);
-        $this->assertSame(5.0, $m['response_minutes']);
+        $this->assertSame(15.0, $m['response_minutes']);
         $this->assertSame(8.0, $m['waiting_minutes']);
         $this->assertSame(20.0, $m['duration_minutes']);
         $this->assertSame(50.0, $m['completion_rate']);
@@ -72,7 +72,7 @@ class RoleKpiTest extends TestCase
         HelperSchedule::create(['helper_id'=>$helper->id, 'date'=>'2026-10-15', 'shift_start'=>'18:00', 'shift_end'=>'23:00', 'is_active'=>true, 'created_by'=>$helper->user_account_id]);
         $owned = $this->supportCase($helper);
         $foreign = $this->supportCase($this->helper());
-        Message::create(['session_id'=>$owned->id, 'sender_id'=>$helper->user_account_id, 'message_text'=>'Actual reply', 'sent_datetime'=>now()->subMinutes(45)]);
+        Message::create(['session_id'=>$owned->id, 'sender_id'=>$helper->user_account_id, 'message_text'=>'Actual reply', 'sent_datetime'=>now()->subMinutes(35)]);
         $helperPage = $this->actingAs($helper->user)->get(route('helper.dashboard', ['period'=>'today']))->assertOk();
         $this->assertSame(1, $helperPage->viewData('performance')['metrics']['completed']);
         $this->assertSame(5.0, $helperPage->viewData('performance')['metrics']['duty_hours']);
@@ -82,7 +82,7 @@ class RoleKpiTest extends TestCase
         $cards = collect($adviserPage->viewData('overview')['cards'])->pluck('value','label');
         $this->assertSame('1', $cards['Completed sessions']);
         $this->assertSame('5 min', $cards['Average Helper Response Time']);
-        $this->assertSame('No data', $cards['Average Adviser Response Time']);
+        $this->assertSame('No data', $cards['Average referral review time']);
         $this->get(route('adviser.reports', ['period'=>'today']))->assertOk()->assertViewHas('metrics', fn ($m) => $m['completed'] === 1 && $m['response_minutes'] === 5.0 && $m['duty_hours'] === 5.0);
     }
 
@@ -94,9 +94,13 @@ class RoleKpiTest extends TestCase
         $result = $service->summarize(Session::query()->get(), collect([$helper->id]), $period);
         foreach (['response_minutes','satisfaction','competency','completion_rate','documentation_rate','workload'] as $key) $this->assertNull($result['metrics'][$key]);
         $this->assertNull($result['growth']);
+        $this->actingAs($helper->adviser->user);
         foreach ([3, 4] as $i => $score) {
-            $record = HelperCompetencyHistory::create(['helper_id'=>$helper->id, 'adviser_id'=>$helper->adviser_id, 'overall_score'=>$score, 'evaluation_date'=>now()->subMinutes(10-$i)]);
-            $record->forceFill(['rubric_version'=>CompetencyRubric::VERSION])->save();
+            $case = $this->supportCase($helper);
+            $report = \App\Models\SessionReport::create(['session_id'=>$case->id, 'session_summary'=>'Recorded summary', 'personal_reflection'=>'Recorded reflection']);
+            $record = app(\App\Services\AdviserEvaluationService::class)->save($report,
+                array_fill_keys(array_keys(CompetencyRubric::CRITERIA), $score) + ['recommended_action'=>'Follow up']);
+            $record->update(['evaluation_date'=>now()->subMinutes(10-$i)]);
         }
         $result = $service->summarize(Session::query()->get(), collect([$helper->id]), $period);
         $this->assertSame(3.5, $result['metrics']['competency']);
@@ -138,7 +142,7 @@ class RoleKpiTest extends TestCase
         $session = $this->supportCase($this->helper());
         $user = $session->seeker->user;
         $this->consentFixture($user);
-        $this->actingAs($user)->get(route('seeker.dashboard'))->assertOk()->assertSee('Feedback status')->assertSee('1 awaiting feedback')
+        $this->actingAs($user)->get(route('seeker.dashboard'))->assertOk()->assertSee('Feedback due')->assertViewHas('seekerIndicators', fn ($cards) => collect($cards)->firstWhere('label','Feedback due')['raw'] === 1.0)
             ->assertDontSee('Average Helper Response Time')->assertDontSee('Average competency score');
     }
 

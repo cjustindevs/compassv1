@@ -159,8 +159,13 @@ class ProfessionalModuleTest extends TestCase
             ->assertJson([
                 'pending' => 1,
                 'active' => 0,
-                'completed' => 1,
+                // A legacy completed status has no Adviser confirmation evidence.
+                'completed' => 0,
             ]);
+        $completed = Referral::where('professional_id',$this->professional->id)->where('status',Referral::STATUS_COMPLETED)->firstOrFail();
+        $completed->completionReviews()->create(['professional_id'=>$this->professional->id,'submitted_by'=>$this->professionalUser->id,
+            'summary'=>'Recorded completion evidence','review_status'=>'confirmed','reviewed_by'=>$this->adviserUser->id,'reviewed_at'=>now()]);
+        $this->getJson(route('professional.dashboard.stats'))->assertOk()->assertJsonPath('completed',1);
     }
 
     public function test_referrals_page_shows_pipeline(): void

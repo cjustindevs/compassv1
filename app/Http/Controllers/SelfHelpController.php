@@ -360,14 +360,14 @@ class SelfHelpController extends Controller
     {
         $resource = SelfHelpResource::published()->findOrFail($id);
 
-        $progress = UserResourceProgress::updateOrCreate(
+        $progress = UserResourceProgress::firstOrCreate(
             ['user_id' => Auth::id(), 'resource_id' => $resource->id],
-            [
-                'progress_percentage' => 100,
-                'last_accessed' => now(),
-                'completed_at' => now(),
-            ]
+            ['progress_percentage' => 0, 'last_accessed' => now()]
         );
+        \Illuminate\Support\Facades\DB::transaction(function () use ($progress) {
+            $saved = UserResourceProgress::lockForUpdate()->findOrFail($progress->id);
+            $saved->update(['progress_percentage' => 100, 'last_accessed' => now(), 'completed_at' => $saved->completed_at ?? now()]);
+        });
 
         if (request()->expectsJson()) {
             return response()->json(['completed' => true]);

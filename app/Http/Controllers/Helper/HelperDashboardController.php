@@ -44,7 +44,7 @@ class HelperDashboardController extends Controller
         $helperId = $helper->id;
         $period = \App\Services\AnalyticsPeriod::fromRequest(request());
         $performanceService = app(\App\Services\SessionPerformance::class);
-        $performanceRows = $performanceService->cohort($helper->sessions()->getQuery(), $period)->get();
+        $performanceRows = $helper->sessions()->get();
         $performance = $performanceService->summarize($performanceRows, collect([$helperId]), $period);
         $dutySummary = app(HelperDutySummary::class)->forHelper($helper);
         $upcomingDuties = HelperSchedule::where('helper_id', $helperId)->where('is_active', true)

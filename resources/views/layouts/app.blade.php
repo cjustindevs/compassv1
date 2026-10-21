@@ -13,6 +13,8 @@
         @vite(['resources/css/app.css', 'resources/css/helper-components.css', 'resources/js/app.js'])
 
         <style>
+            .workspace-content { padding: 28px; min-width: 0; }
+            @media(max-width:768px) { .workspace-content { padding: 20px 16px; } }
             body, body input, body select, body button, body textarea { font-family: 'Inter', sans-serif; }
             .mobile-appbar {
                 display: flex;
@@ -80,7 +82,7 @@
             @endauth
 
             <!-- Page Content -->
-            <main>
+            <main class="workspace-content">
                 @hasSection('content')
                     @yield('content')
                 @else

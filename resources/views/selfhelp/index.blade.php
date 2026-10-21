@@ -212,14 +212,11 @@
                             <a href="{{ route('selfhelp.show', $r->id) }}" class="progress-card">
                                 <div class="flex items-center justify-between gap-2">
                                     <h3 class="font-semibold text-sm text-gray-800">{{ $r->title }}</h3>
-                                    <span class="text-xs font-bold text-[#04A052] whitespace-nowrap">{{ $entry->progress_percentage }}%</span>
+                                    <span class="text-xs font-bold text-[#04A052] whitespace-nowrap">Previously opened</span>
                                 </div>
                                 <p class="text-xs text-gray-400 mt-1 mb-2">
                                     {{ $categoryLabels[$r->category] ?? ucfirst($r->category) }} @if($r->duration) &middot; {{ $r->duration }} @endif
                                 </p>
-                                <div class="progress-track" role="progressbar" aria-valuenow="{{ $entry->progress_percentage }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ $r->title }} progress">
-                                    <div class="fill" style="width: {{ $entry->progress_percentage }}%"></div>
-                                </div>
                             </a>
                         @endforeach
                     </div>

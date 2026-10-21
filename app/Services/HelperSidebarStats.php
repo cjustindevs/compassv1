@@ -1,12 +1,12 @@
 <?php
 namespace App\Services;
-use App\Models\{Helper, HelperCompetencyHistory};
+use App\Models\Helper;
 class HelperSidebarStats
 {
     public function forHelper(Helper $helper): array
     {
         $helper = $helper->fresh();
-        $latest = HelperCompetencyHistory::where('helper_id', $helper->id)->latest('evaluation_date')->latest('id')->first();
+        $latest = app(CompetencyEvidence::class)->evaluations(collect([$helper->id]))->first();
         $state = app(HelperEligibilityService::class)->status($helper);
         // Current workload and explicit availability take precedence over eligibility reasons.
         if ($helper->sessions()->where('session_status', 'active')->exists()) {
@@ -24,7 +24,7 @@ class HelperSidebarStats
         }
         return [
             'totalSessions'=>$helper->sessions()->count(),
-            'competencyScore'=>$latest ? round($latest->normalized_score * 20, 1) : null,
+            'competencyScore'=>$latest ? round($latest->normalized_score, 2) : null,
             'availabilityStatus'=>$state['assignable'] ? 'available' : 'unavailable',
             'availabilityLabel'=>$state['label'],
             'availabilityReason'=>$state['reason'] ?? 'You can receive a case under the current assignment rules.',

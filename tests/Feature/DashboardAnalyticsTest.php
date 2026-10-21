@@ -28,7 +28,7 @@ class DashboardAnalyticsTest extends TestCase
     {
         $user = User::factory()->create(['role' => 'seeker']);
         $seeker = HelpSeeker::create(['user_account_id' => $user->id, 'generated_alias' => 'PrivateAlias'.$user->id]);
-        $case = Session::create($attributes + ['seeker_id' => $seeker->id, 'session_type' => 'chat', 'session_status' => 'completed', 'risk_level' => 'low', 'submitted_at' => now()->subDays(2), 'created_date' => now()->subDays(2), 'end_time' => now()->subDay()]);
+        $case = Session::create($attributes + ['seeker_id' => $seeker->id, 'session_type' => 'chat', 'session_status' => 'completed', 'risk_level' => 'low', 'submitted_at' => now()->subDays(2), 'created_date' => now()->subDays(2), 'start_time'=>now()->subDays(3), 'end_time' => now()->subDay()]);
         $case->forceFill($attributes)->save(); // Archive fields are deliberately not mass assignable in production.
         return $case;
     }
@@ -64,7 +64,10 @@ class DashboardAnalyticsTest extends TestCase
     public function test_professional_events_use_their_own_dates_and_ignore_later_edits(): void
     {
         $professional = $this->professional();
-        $this->referral($professional, ['professional_notified_at' => '2026-09-01 00:00:00', 'status' => 'completed', 'completed_at' => '2026-10-10 02:00:00', 'closed_date' => '2026-10-10 02:00:00', 'accepted_at' => '2026-09-01 02:00:00']);
+        $finished = $this->referral($professional, ['professional_notified_at' => '2026-09-01 00:00:00', 'status' => 'completed', 'completed_at' => '2026-10-10 02:00:00', 'closed_date' => '2026-10-10 02:00:00', 'accepted_at' => '2026-09-01 02:00:00']);
+        $reviewer = User::factory()->create(['role'=>'adviser']);
+        $finished->completionReviews()->create(['professional_id'=>$professional->id,'submitted_by'=>$professional->user_account_id,
+            'summary'=>'Completion evidence','review_status'=>'confirmed','reviewed_by'=>$reviewer->id,'reviewed_at'=>'2026-10-10 02:00:00']);
         $this->referral($professional, ['status' => 'accepted', 'professional_notified_at' => '2026-10-10 00:00:00', 'accepted_at' => '2026-10-10 02:00:00', 'updated_at' => now()]);
         $this->referral($professional, ['status' => 'closed', 'closed_date' => '2026-10-10 02:00:00']);
         $this->referral($professional, ['status' => 'accepted', 'accepted_at' => '2026-10-09 00:00:00']); // Invalid negative interval.
@@ -103,7 +106,8 @@ class DashboardAnalyticsTest extends TestCase
         $this->referral($professional, ['status' => 'accepted', 'professional_notified_at' => null], ['archived_at' => now()]);
         $this->referral($professional, ['status' => 'completed', 'completed_at' => null, 'closed_date' => null]);
         $this->actingAs($professional->user)->get(route('professional.dashboard', $this->dates()))->assertOk()
-            ->assertViewHas('analytics', fn ($data) => $data['active_now'] === 0 && $data['response_hours'] === null && $data['missing_completion_dates'] === 1);
+            ->assertViewHas('analytics', fn ($data) => $data['active_now'] === 0 && $data['response_hours'] === null && $data['missing_completion_dates'] === 1
+                && $data['confirmed_completions'] === 0 && $data['legacy_completions_without_confirmation'] === 1);
         $this->get(route('professional.reports', ['from' => '2026-10-10', 'to' => '2026-10-12']))->assertOk()
             ->assertViewHas('records', fn ($records) => $records->total() === 2);
     }

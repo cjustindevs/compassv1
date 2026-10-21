@@ -21,12 +21,12 @@ class ModeratorDashboardController extends Controller
     {
         app(StaleQueueRequests::class)->expire();
         $stats = [
-            'queue_waiting' => QueueRequest::where('request_status', 'waiting')->count(),
-            'queue_assigned' => QueueRequest::where('request_status', 'assigned')->count(),
-            'active_sessions' => Session::where('session_status', 'active')->count(),
+            'queue_waiting' => QueueRequest::where('is_test_record',false)->whereNull('duplicate_of_id')->where('request_status', 'waiting')->count(),
+            'queue_assigned' => QueueRequest::where('is_test_record',false)->whereNull('duplicate_of_id')->where('request_status', 'assigned')->count(),
+            'active_sessions' => Session::where('is_test_record',false)->whereNull('duplicate_of_id')->where('session_status', 'active')->count(),
             'emergency_count' => app(ModeratorEmergencyCases::class)->active()->count(),
             'available_helpers' => $this->availableHelperCount(),
-            'unserved' => QueueRequest::where('request_status', 'waiting')
+            'unserved' => QueueRequest::where('is_test_record',false)->whereNull('duplicate_of_id')->where('request_status', 'waiting')
                 ->where('request_date', '<', now()->subMinutes(30))
                 ->count(),
         ];
@@ -63,13 +63,13 @@ class ModeratorDashboardController extends Controller
 
         return response()->json([
             'overview_html' => view('moderator.partials.dashboard-analytics', compact('overview'))->render(),
-            'queue_waiting' => QueueRequest::where('request_status', 'waiting')->count(),
-            'queue_assigned' => QueueRequest::where('request_status', 'assigned')->count(),
-            'active_sessions' => Session::where('session_status', 'active')->count(),
+            'queue_waiting' => QueueRequest::where('is_test_record',false)->whereNull('duplicate_of_id')->where('request_status', 'waiting')->count(),
+            'queue_assigned' => QueueRequest::where('is_test_record',false)->whereNull('duplicate_of_id')->where('request_status', 'assigned')->count(),
+            'active_sessions' => Session::where('is_test_record',false)->whereNull('duplicate_of_id')->where('session_status', 'active')->count(),
             'emergency_open' => app(ModeratorEmergencyCases::class)->active()->count(),
             'overview_signature' => hash('sha256', json_encode($overview)),
             'helpers_available' => $this->availableHelperCount(),
-            'unserved' => QueueRequest::where('request_status', 'waiting')
+            'unserved' => QueueRequest::where('is_test_record',false)->whereNull('duplicate_of_id')->where('request_status', 'waiting')
                 ->where('request_date', '<', now()->subMinutes(30))
                 ->count(),
         ])->header('Cache-Control', 'private, no-store');

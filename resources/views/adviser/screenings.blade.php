@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Screening reviews – COMPASS')
+@section('title', 'Intake & Safety Reviews – COMPASS')
 
 @section('content')
 @php
@@ -14,7 +14,7 @@
         'moderate' => ['label' => 'Moderate', 'classes' => 'bg-amber-50 text-amber-700 ring-amber-200', 'dot' => 'bg-amber-500', 'guidance' => 'Peer support can proceed with closer monitoring and scheduled review points.'],
         'high' => ['label' => 'High', 'classes' => 'bg-orange-50 text-orange-700 ring-orange-200', 'dot' => 'bg-orange-500', 'guidance' => 'Adviser-led support with professional referral review recommended.'],
         'emergency' => ['label' => 'Emergency', 'classes' => 'bg-red-50 text-red-700 ring-red-200', 'dot' => 'bg-red-500', 'guidance' => 'Immediate escalation to emergency services is required now.'],
-        'unclassified' => ['label' => 'Unclassified', 'classes' => 'bg-gray-100 text-gray-600 ring-gray-200', 'dot' => 'bg-gray-400', 'guidance' => 'Review the screening answers and assign a risk level before the request moves forward.'],
+        'unclassified' => ['label' => 'Unclassified', 'classes' => 'bg-gray-100 text-gray-600 ring-gray-200', 'dot' => 'bg-gray-400', 'guidance' => 'No classification was assumed. Review the saved answer alongside peer matching.'],
     ];
     $flagKeys = [
         'suicidal_thoughts', 'immediate_intent', 'current_suicide_plan', 'access_to_means',
@@ -32,9 +32,9 @@
 <div class="adviser-page-content adviser-compact-page screening-reviews space-y-5">
     <header class="flex flex-wrap items-start justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">Screening reviews</h1>
+            <h1 class="text-2xl font-bold text-gray-800">Intake & Safety Reviews</h1>
             <p class="text-sm text-gray-500 mt-1">
-                Review assigned screenings and Helper reassessments. Original responses are retained.
+                Review intake and optional follow-up alongside matching. Original answers stay unchanged.
             </p>
         </div>
     </header>
@@ -73,6 +73,7 @@
             $helperAlias = $session->helper?->full_name ?? 'Unassigned';
             $submitted = ($session->created_date ?? $session->created_at)?->timezone('Asia/Manila')->format('M d, Y \a\t g:i A');
             $reassessment = (bool) ($session->report?->reassessment_requested_at);
+            $parallelIntake = $session->permitsParallelScreeningSupport();
             $risk = $session->risk_level ?? 'unclassified';
             $riskMeta = $riskMap[$risk] ?? $riskMap['unclassified'];
             $answers = collect($screening?->responses ?? []);
@@ -107,6 +108,7 @@
                     </div>
                 </div>
 
+                @if($parallelIntake)<p class="text-sm text-green-800">Peer support: {{ \App\Services\SeekerRequestPresentation::status($session) }}. This review does not gate matching.</p>@endif
                 <dl class="screening-review-meta grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm bg-gray-50 rounded-xl p-4">
                     <div>
                         <dt class="text-gray-400 text-xs uppercase tracking-wide">Concern</dt>

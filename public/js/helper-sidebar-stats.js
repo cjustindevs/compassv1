@@ -19,7 +19,7 @@
             const {sidebar, ready, status: readinessStatus, valid_until} = await response.json();
             if (!sidebar) return;
             panel.querySelector('#sessionCount').textContent = sidebar.totalSessions;
-            panel.querySelector('#compScore').textContent = sidebar.competencyScore === null ? 'No data' : sidebar.competencyScore + '%';
+            panel.querySelector('#compScore').textContent = sidebar.competencyScore === null ? '—' : sidebar.competencyScore + '/5';
             const status = panel.querySelector('#availStatus');
             status.textContent = sidebar.availabilityLabel;
             status.style.color = sidebar.availabilityStatus === 'available' ? 'var(--green-500)' : 'var(--yellow-500)';

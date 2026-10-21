@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 
 class ModeratorOperations
 {
-    public function overview(): array
+    public function overview(?\App\Models\User $actor = null): array
     {
         $service = app(ModeratorEmergencyCases::class);
         $all = $service->query()->get();
@@ -31,21 +31,35 @@ class ModeratorOperations
             $months[$date->format($daily ? 'M j, Y' : 'M Y')] = $detections->get($date->format($format), 0);
         }
 
-        return ['cards' => [
-            ['label' => 'Waiting requests', 'value' => QueueRequest::where('request_status', 'waiting')->count(), 'definition' => 'Live: requests still waiting for assignment.', 'link' => route('moderator.queue')],
+        $reportRequest = clone request();
+        if ($actor) $reportRequest->setUserResolver(fn () => $actor);
+        $queuePerformance = app(QueuePerformance::class)->report($reportRequest);
+        $queueCards = collect($queuePerformance['cards']);
+        $result = ['cards' => [
+            ['label' => 'Waiting requests', 'value' => QueueRequest::where('is_test_record',false)->whereNull('duplicate_of_id')->where('request_status', 'waiting')->count(), 'definition' => 'Live: requests still waiting for assignment.', 'link' => route('moderator.queue')],
             ['label' => 'Available Helpers', 'value' => app(HelperEligibilityService::class)->countAvailable(\App\Models\Helper::all()), 'definition' => 'Live: matching eligibility, including duty, readiness and capacity.', 'link' => route('moderator.schedules')],
-            ['label' => 'Active sessions', 'value' => Session::where('session_status', 'active')->count(), 'definition' => 'Live: ongoing peer-support sessions.', 'link' => route('moderator.sessions')],
+            ['label' => 'Active sessions', 'value' => Session::where('is_test_record',false)->whereNull('duplicate_of_id')->where('session_status', 'active')->count(), 'definition' => 'Live: ongoing peer-support sessions.', 'link' => route('moderator.sessions')],
             ['label' => 'Average waiting time', 'value' => SessionPerformance::display($performance['waiting_minutes'], ' min'), 'samples' => $performance['samples'], 'definition' => 'Queue entry to actual start in the selected activity cohort. Ongoing waits excluded.', 'link' => route('moderator.reports', $period->dates() + ['period'=>request('period','monthly')])],
             ['label' => 'Active emergencies', 'value' => $active->count(), 'definition' => 'Live: unarchived, nonterminal operational emergency cases. Alert/incident mirrors count once.'],
             ['label' => 'Resolved emergencies', 'value' => $all->whereIn('status', ['resolved', 'closed'])->filter(fn ($case) => $case->resolved_at && Carbon::parse($case->resolved_at)->gte($period->start) && Carbon::parse($case->resolved_at)->lt($period->end))->count(), 'definition' => 'Resolved or closed in the selected period, including retained archives.'],
             ['label' => 'Pending / unassigned', 'value' => $active->filter(fn ($e) => ! $e->acknowledged_at || ! $e->adviser_id)->count(), 'definition' => 'Live: active cases without staff acknowledgment or an assigned Adviser.'],
             ['label' => 'Average Helper workload', 'value' => SessionPerformance::display($performance['workload']), 'samples' => $performance['helpers'], 'definition' => 'Completed sessions per Helper who served in the selected activity cohort.'],
-            ['label' => 'Queue timeouts', 'value' => $period->constrain(QueueRequest::where('request_status', 'expired'), 'COALESCE(expired_at,updated_at)')->count(), 'definition' => 'Expired queue records in the selected period, using expiry time or legacy updated time.'],
+            ['label' => 'Queue timeouts', 'value' => $period->constrain(QueueRequest::where('is_test_record',false)->whereNull('duplicate_of_id')->where('request_status', 'expired'), 'COALESCE(expired_at,updated_at)')->count(), 'definition' => 'Expired queue records in the selected period, using expiry time or legacy updated time.'],
         ], 'charts' => [
             ['title' => 'Active emergency status', 'values' => $status, 'definition' => 'Current active cases only. The chart total equals Active emergencies.'],
             ['title' => 'Severity / priority', 'values' => $active->groupBy('risk_level')->map->count()->all(), 'definition' => 'Recorded severity of the same active cases.'],
             ['title' => 'Emergency trend', 'values' => $months, 'definition' => 'Emergency detections in the selected Philippine date range. Longer ranges use monthly buckets.'],
         ], 'recent' => []];
+        $wait = $queueCards->firstWhere('label', 'Average Waiting Time');
+        $result['cards'][3] = ['label'=>'Average waiting time', 'value'=>$wait['value'], 'raw'=>$wait['raw'], 'unit'=>' min', 'samples'=>null,
+            'definition'=>$wait['sample'].'; actual queue entry to session start. Outside-hours starts reported separately.', 'link'=>route('queue.performance', $period->dates())];
+        foreach (['Maximum Waiting Time','Helper Utilization Rate','Successful Assignment Rate','Emergency Response Time'] as $label) {
+            $card = $queueCards->firstWhere('label', $label);
+            $result['cards'][] = ['label'=>$label, 'value'=>$card['value'], 'raw'=>$card['raw'], 'unit'=>$card['unit'], 'definition'=>$card['sample'], 'link'=>route('queue.performance', $period->dates())];
+        }
+        $result['cards'][] = ['label'=>'Waiting 15+ minutes', 'value'=>QueueRequest::where('is_test_record',false)->whereNull('duplicate_of_id')->where('request_status','waiting')->whereRaw('COALESCE(queued_at,request_date) <= ?', [now()->subMinutes(15)])->count(), 'definition'=>'Live requests still awaiting assignment.'];
+        $result['quality'] = $queuePerformance['quality'];
+        return $result;
     }
 
     public function report(Request $request, bool $export = false): array

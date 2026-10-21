@@ -14,17 +14,17 @@
 @include('helper.partials.duty-summary')
 @php
     $m = $performance['metrics']; $n = $performance['samples'];
-    $metricValue = fn ($key, $unit = '') => \App\Services\SessionPerformance::display($m[$key], $unit);
+    $metricValue = fn ($key, $unit = '') => \App\Services\SessionPerformance::number($m[$key], $unit);
     $reportLink = route('helper.reports', $analyticsDates + ['period'=>request('period','monthly')]);
     $performanceCards = [
-        ['label'=>'Completed sessions','value'=>$m['completed'],'detail'=>'Selected activity cohort','link'=>$reportLink],
-        ['label'=>'Competency score','value'=>$metricValue('competency','/5'),'detail'=>'Average recorded evaluations in selected period','samples'=>$n['competency'],'link'=>route('helper.competency')],
-        ['label'=>'Satisfaction rating','value'=>$metricValue('satisfaction','/5'),'detail'=>'Submitted Seeker feedback','samples'=>$n['satisfaction'],'link'=>$reportLink],
-        ['label'=>'Pending documentation','value'=>$m['documentation_pending'],'detail'=>'Required records in selected activity cohort','link'=>route('helper.cases')],
+        ['label'=>'Completed sessions','value'=>$m['completed'],'detail'=>'Actual session end in selected period','link'=>$reportLink],
+        ['label'=>'Competency score','value'=>$metricValue('competency','/5'),'detail'=>'Finalized current-rubric evaluations','samples'=>$n['competency'],'link'=>route('helper.competency')],
+        ['label'=>'Positive helpfulness feedback','value'=>$metricValue('helpfulness_rate','%'),'detail'=>'Helpful / Very Helpful answers','samples'=>$n['helpfulness_rate'],'link'=>$reportLink],
+        ['label'=>'Documentation completion','value'=>$metricValue('documentation_rate','%'),'detail'=>'Summary and reflection submitted','samples'=>$n['documentation_rate'],'link'=>route('helper.cases')],
     ];
 @endphp
 <x-performance-cards :cards="$performanceCards" />
-<p class="hf-muted">Live: {{ $stats['active_sessions'] }} active sessions | {{ $stats['pending_requests'] }} assignments awaiting action. Current duty and readiness remain independent of historical filters.</p>
+<div style="display:flex;align-items:center;flex-wrap:wrap;gap:16px;margin:12px 0"><x-helper-capacity :helper="$helper" /><p class="hf-muted">Pending documentation: <strong>{{ $helper->sessions()->whereNotNull('start_time')->whereNotNull('end_time')->where('end_time','<=',now())->where('documentation_status', '!=', 'submitted')->whereIn('session_status',['completed','evaluated','cancelled','no_show'])->count() }}</strong></p></div>
 <p class="hf-muted"><strong>Upcoming Session:</strong> @if($upcomingSession){{ $upcomingSession->scheduled_start->copy()->timezone('Asia/Manila')->format('M d, g:i A') }} PHT | {{ $upcomingSession->reference_number }}@else No upcoming sessions. @endif</p>
 @if(count($emergencyCases))
 <section class="card">
@@ -43,7 +43,7 @@
 @endforeach
 <div><dt>Competency growth</dt><dd>{{ $performance['growth'] === null ? 'Insufficient history' : ($performance['growth'] >= 0 ? '+' : '').$performance['growth'].' points / 5' }}</dd></div>
 </dl>
-<p class="hf-muted">Response time measures request submission to your first actual message. Waiting time measures queue entry to session start. Satisfaction is converted from the stored 1-10 score to 1-5. Scheduled hours are planned coverage, not verified attendance. Documentation completion requires both summary and reflection; it is not an on-time rate. Historical metrics include archived sessions.</p>
+<p class="hf-muted">Response time measures session start to your first message or connected voice call. Waiting time measures queue entry to session start. Helpfulness uses original categorical feedback; legacy composite ratings stay in history. Scheduled hours are planned coverage, not verified attendance. Documentation completion requires both summary and reflection; it is not an on-time rate. Historical metrics include archived sessions.</p>
 <a href="{{ $reportLink }}" class="link">View service report</a>
 </details>
 @php

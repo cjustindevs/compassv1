@@ -22,6 +22,8 @@
 @endpush
 
 @section('content')
+
+
 <div class="adviser-page-content">
         <!-- Top Bar -->
         <div class="flex items-center gap-4 mb-6">
@@ -37,6 +39,7 @@
             <div class="flash-success"> {{ session('success') }}</div>
         @endif
 
+        <div style="margin-bottom:16px"><x-helper-capacity :helper="$helper" /></div>
         <!-- Back Link -->
         <a href="{{ route('adviser.helpers') }}" class="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6 text-sm font-medium">
             <x-ui-icon name="arrow-left"  /> Back to Helpers

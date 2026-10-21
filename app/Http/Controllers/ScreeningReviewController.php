@@ -48,6 +48,24 @@ class ScreeningReviewController extends Controller
     {
         abort_unless($request->user()->role === 'adviser' && $request->user()->is_active && $request->user()->adviser
             && (int) $session->review_adviser_id === (int) $request->user()->adviser->id, 403);
+        if ($request->input('review_action') === 'complete_intake') {
+            $request->validate(['reason'=>'required|string|min:10|max:1000', 'answers'=>'prohibited', 'risk_level'=>'prohibited', 'clarified_safety_answer'=>'prohibited']);
+            DB::transaction(function () use ($request, $session) {
+                $case = Session::lockForUpdate()->findOrFail($session->id);
+                abort_unless((int) $case->review_adviser_id === (int) $request->user()->adviser->id, 403);
+                abort_unless($case->permitsParallelScreeningSupport() && !$case->report?->reassessment_requested_at, 409);
+                if (!$case->requires_adviser_review) return;
+                $original = $case->screeningResponses()->oldest('id')->firstOrFail();
+                ScreeningResponse::create(['seeker_id'=>$case->seeker_id, 'session_id'=>$case->id,
+                    'responses'=>$original->responses, 'risk_level'=>$case->risk_level, 'priority'=>$original->priority,
+                    'action'=>'intake_review_completed', 'reason'=>$request->string('reason')->toString(), 'classified_at'=>now(),
+                    'classified_by'=>'adviser', 'instrument_version'=>$original->instrument_version, 'rule_code'=>$original->rule_code,
+                    'review_status'=>'reviewed', 'is_complete'=>true, 'actor_id'=>$request->user()->id, 'evidence_source'=>'original_intake_review']);
+                $case->update(['requires_adviser_review'=>false]);
+                SupportAudit::record('intake_review_completed', $case);
+            });
+            return back()->with('success', 'Intake review completed. Session progress, answers, emergency coordination, and referral decisions are unchanged.');
+        }
         $request->validate(['answers' => 'prohibited', 'clarified_safety_answer' => 'prohibited',
             'use_clarified_answers' => 'prohibited', 'use_clarified_safety_answer' => 'prohibited', 'review_action' => 'sometimes|required|in:approve,record',
             'use_seeker_follow_up' => 'nullable|boolean']);

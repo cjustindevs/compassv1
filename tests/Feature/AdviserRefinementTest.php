@@ -32,7 +32,7 @@ class AdviserRefinementTest extends TestCase
             ->assertOk()->assertSee('Registered Helper')->assertDontSee('Foreign Helper')->assertDontSee($helper->public_alias)
             ->assertSee('Sessions / Cases')->assertSee('Activity History')
             ->assertViewHas('sessions', fn($sessions)=>$sessions->total()===1);
-        $this->get(route('adviser.reports',['tab'=>'performance','case_status'=>'active']))->assertOk()->assertSee('No data')->assertViewHas('metrics',fn($metrics)=>$metrics['total']===0);
+        $this->get(route('adviser.reports',['tab'=>'performance','case_status'=>'active']))->assertOk()->assertSee('—')->assertViewHas('metrics',fn($metrics)=>$metrics['total']===0);
         $this->get(route('adviser.reports',['tab'=>'safety']))->assertOk()->assertSee('Emergency case activity')->assertDontSee('Service performance');
         $this->get(route('adviser.reports',['tab'=>'activity']))->assertOk()->assertSee('Your recorded actions')->assertDontSee('Session records</h2>',false);
         $csv=$this->get(route('adviser.reports.export',['case_status'=>'active','format'=>'csv']))->assertOk()->streamedContent();

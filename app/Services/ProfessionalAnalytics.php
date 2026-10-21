@@ -11,12 +11,13 @@ use Illuminate\Validation\Rule;
 class ProfessionalAnalytics
 {
     public const RECEIVED_DATE = 'COALESCE(professional_notified_at, created_at)';
-    public const COMPLETED_DATE = "COALESCE(completed_at, CASE WHEN status = 'completed' THEN closed_date END)";
+    public const COMPLETED_DATE = "(SELECT MAX(reviewed_at) FROM referral_completion_reviews WHERE referral_completion_reviews.referral_id = referrals.id AND review_status = 'confirmed' AND reviewed_by IS NOT NULL)";
     public const STATUSES = [Referral::STATUS_PENDING_PROFESSIONAL, Referral::STATUS_ACCEPTED, Referral::STATUS_IN_PROGRESS, Referral::STATUS_COMPLETED, Referral::STATUS_CLOSED];
 
     public function base(int $professionalId): Builder
     {
-        return Referral::professionalAuthorized()->where('professional_id', $professionalId);
+        return Referral::professionalAuthorized()->where('professional_id', $professionalId)
+            ->whereHas('session', fn ($q) => $q->where('is_test_record', false)->whereNull('duplicate_of_id'));
     }
 
     public function filters(Request $request): array
@@ -40,7 +41,7 @@ class ProfessionalAnalytics
         if ($filters['activity'] === 'completed') $query->whereIn('status', Referral::COMPLETED_STATUSES);
         if ($filters['activity'] === 'closed') $query->where('status', Referral::STATUS_CLOSED);
 
-        return $period->constrain($query, $date)->orderByDesc(DB::raw($date))->orderByDesc('id');
+        return $period->constrain($query, $date)->select('referrals.*')->selectRaw(self::COMPLETED_DATE.' AS confirmed_completion_at')->withCasts(['confirmed_completion_at'=>'datetime'])->orderByDesc(DB::raw($date))->orderByDesc('id');
     }
 
     public function data(int $professionalId, AnalyticsPeriod $period, ?string $status = null): array
@@ -52,7 +53,7 @@ class ProfessionalAnalytics
         $reply = $period->constrain(clone $base, 'accepted_at')->whereIn('status', [...Referral::ACTIVE_STATUSES, ...Referral::COMPLETED_STATUSES])->whereNotNull('professional_notified_at')
             ->whereColumn('accepted_at', '>=', 'professional_notified_at');
         $samples = (clone $reply)->count();
-        $hours = $samples ? round((float) $reply->selectRaw('AVG('.\App\Support\DatabaseHelper::secondsBetween('accepted_at', 'professional_notified_at').') / 3600 AS hours')->value('hours'), 1) : null;
+        $hours = $samples ? round((float) $reply->selectRaw('AVG('.\App\Support\DatabaseHelper::secondsBetween('accepted_at', 'professional_notified_at').') / 3600 AS hours')->value('hours'), 4) : null;
         $completed = $period->series((clone $base)->whereIn('status', Referral::COMPLETED_STATUSES), self::COMPLETED_DATE);
         $accepted = (clone $received)->whereNotNull('accepted_at')->whereColumn('accepted_at', '>=', DB::raw(self::RECEIVED_DATE))->where('accepted_at', '<=', now('UTC'))->count();
         $total = (clone $received)->count();
@@ -64,8 +65,10 @@ class ProfessionalAnalytics
             'closed' => $period->constrain((clone $base)->where('status', Referral::STATUS_CLOSED), 'closed_date')->count(),
             'pending_now' => (clone $current)->where('status', Referral::STATUS_PENDING_PROFESSIONAL)->count(),
             'active_now' => (clone $current)->whereIn('status', Referral::ACTIVE_STATUSES)->count(),
-            'response_hours' => $hours, 'response_samples' => $samples,
+            'response_hours' => $hours, 'response_minutes' => $hours === null ? null : round($hours * 60, 2), 'response_samples' => $samples,
             'awaiting_review_now' => $awaitingReview,
+            'confirmed_completions' => $completed['total'],
+            'legacy_completions_without_confirmation' => (clone $base)->whereIn('status', Referral::COMPLETED_STATUSES)->whereDoesntHave('completionReviews', fn ($q) => $q->where('review_status','confirmed')->whereNotNull('reviewed_by'))->count(),
             'outcomes' => $period->constrain((clone $base)->where('status', Referral::STATUS_COMPLETED), self::COMPLETED_DATE)
                 ->selectRaw('outcome, COUNT(*) AS total')->groupBy('outcome')->pluck('total', 'outcome')->all(),
             'accepted' => $accepted, 'acceptance_rate' => $total ? round(100 * $accepted / $total, 1) : null,

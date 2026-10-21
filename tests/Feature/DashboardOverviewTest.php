@@ -114,7 +114,7 @@ class DashboardOverviewTest extends TestCase
         $helper = $this->helper();
         $this->caseFor($helper, 'completed');
         $this->actingAs($helper->adviser->user)->get(route('adviser.dashboard'))
-            ->assertOk()->assertSee('Cases by status')->assertSee('No data')
+            ->assertOk()->assertSee('Cases by status')->assertSee('—')
             ->assertSee('<path d="M ', false)->assertSee('co-donut-total')->assertSee('View chart data and definition')
             ->assertSee('css/dashboard-overview.css')->assertDontSee('At a glance');
         $moderator = User::factory()->create(['role' => 'moderator', 'is_active' => true]);
@@ -123,7 +123,7 @@ class DashboardOverviewTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
         // The existing Administrator reference uses account KPIs; its detailed
         // role distribution remains in Reports rather than the Dashboard.
-        $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()->assertSee('Total Users')->assertSee('Active Accounts');
+        $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()->assertSee('Total Users')->assertSee('Enabled accounts');
     }
 
     public function test_overview_rejects_other_roles(): void

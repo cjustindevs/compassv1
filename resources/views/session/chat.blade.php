@@ -3,17 +3,17 @@
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>COMPASS – Chat with {{ $helperName }}</title>
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #F8FBF9; height: 100vh; overflow: hidden; }
+        body { background: #F8FBF9; height: 100dvh; overflow: hidden; }
 
         .chat-wrapper {
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            height: 100dvh;
             max-width: 900px;
             margin: 0 auto;
             background: #ffffff;
@@ -316,14 +316,14 @@
 
         /* ─── Responsive ─── */
         @media (max-width: 640px) {
-            .chat-header { padding: 12px 14px; }
+            .chat-header { padding: max(12px, env(safe-area-inset-top)) 14px 12px; }
             .chat-header .helper-info .avatar { width: 34px; height: 34px; font-size: 15px; }
             .chat-header .helper-info .name { font-size: 14px; }
             .chat-header .session-timer { display: inline; }
             .chat-messages { padding: 14px 14px; }
             .chat-messages .message { max-width: 85%; padding: 8px 12px; }
             .chat-messages .message .text { font-size: 13px; }
-            .chat-input { padding: 12px 14px; gap: 8px; }
+            .chat-input { padding: 12px 14px max(12px, env(safe-area-inset-bottom)); gap: 8px; }
             .chat-input button { padding: 11px 16px; font-size: 13px; }
         }
         @media (max-width: 400px) {
@@ -331,6 +331,10 @@
             .chat-header .back-btn span { display: none; }
             .chat-header .back-btn { font-size: 16px; }
         }
+
+        .chat-session-controls{display:flex;justify-content:flex-end;padding:8px 16px;background:#fff;border-top:1px solid #e5e7eb;flex-shrink:0}
+        .chat-session-end .end-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:8px 16px;border:1px solid #b91c1c;border-radius:8px;background:#b91c1c;color:#fff;font-size:13px;font-weight:600;cursor:pointer}
+        @media(max-width:640px){.chat-session-controls{padding:8px 14px}.chat-session-end{width:100%}.chat-session-end .end-btn{width:100%}}
     </style>
 
     @vite(['resources/js/app.js', 'resources/js/chat.js'])
@@ -360,14 +364,7 @@
             </div>
             <span class="session-timer" id="sessionTimer" data-started-at="{{ optional($session->start_time)->timestamp }}">00:00</span>
             <div data-notification-slot></div>
-            <form method="POST" action="{{ route('session.end', ['session_id'=>$session->id]) }}"
-                  data-confirm="End session?"
-                  data-confirm-message="This will end the session for both you and the helper."
-                  data-confirm-text="End session"
-                  data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
-                @csrf
-                <button type="submit" class="end-btn"><x-ui-icon name="phone-off"  /> End</button>
-            </form>
+
         </div>
 
         <x-voice-call :session="$session" />
@@ -404,6 +401,14 @@
             </div>
         </div>
 
+<div class="chat-session-controls"><form class="chat-session-end" method="POST" action="{{ route('session.end', ['session_id'=>$session->id]) }}"
+                  data-confirm="End session?"
+                  data-confirm-message="This will end the session for both you and the helper."
+                  data-confirm-text="End session"
+                  data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
+                @csrf
+                <button type="submit" class="end-btn"><x-ui-icon name="phone-off"  /> End session</button>
+            </form></div>
         <!-- Input -->
         <div class="chat-input">
             <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off" autofocus>

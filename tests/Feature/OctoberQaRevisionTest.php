@@ -124,18 +124,21 @@ class OctoberQaRevisionTest extends TestCase
         $this->assertDatabaseCount('referrals', 0);
     }
 
-    public function test_prefer_not_to_say_retains_review_hold_and_cannot_submit_preferences(): void
+    public function test_prefer_not_to_say_preserves_unknown_risk_and_queues_while_review_continues(): void
     {
         $this->staff();
         $this->seeker();
         $concern = ConcernCategory::firstOrCreate(['concern_name' => 'QA concern'], ['is_active' => true]);
         $this->post(route('request.screening.process'), ['screening_form_version' => CompactScreening::SINGLE_VERSION, 'safety_check' => 'prefer_not_to_say', 'concern_id' => $concern->id, 'description' => 'Need support today.'])->assertSessionHasNoErrors();
         $session = Session::firstOrFail();
-        $this->assertSame('adviser_review_required', $session->workflow_state);
+        $this->assertSame('session_preferences_required', $session->workflow_state);
+        $this->assertTrue($session->requires_adviser_review);
+        $this->assertTrue($session->permitsParallelScreeningSupport());
         $this->assertNull($session->risk_level);
         $this->assertFalse($session->permitsPrioritySafetySupport());
-        $this->post(route('request.preferences.process'), ['support_mode' => 'chat', 'preferred_language' => 'English'])->assertStatus(409);
-        $this->assertDatabaseCount('queue_requests', 0);
+        $this->post(route('request.preferences.process'), ['support_mode' => 'chat', 'preferred_language' => 'English'])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('queue_requests', 1);
+        $this->assertNull($session->fresh()->risk_level);
     }
 
     public function test_editing_duty_invalidates_readiness_and_cancelled_date_collision_is_readable(): void

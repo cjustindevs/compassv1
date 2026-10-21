@@ -145,8 +145,15 @@
     }
 
     #confirmationModal .btn-modal-confirm {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #B91C1C;
         color: white;
         border: none;
+        min-height: 44px;
+        opacity: 1;
+        visibility: visible;
     }
 
     #confirmationModal .btn-modal-confirm:hover {

@@ -224,12 +224,12 @@
             <p class="analytics-period-caption">{{ $dates['from'] }} – {{ $dates['to'] }} · Philippine Time. The status filter applies to all measures and records. Each measure uses its named event date; the table uses your selected date basis.</p>
             <dl class="analytics-measures">
                 <div><dt>Total Referrals Received</dt><dd>{{ number_format($analytics['received']['total']) }}</dd><small>Notification date; legacy creation fallback</small></div>
-                <div><dt>Completed Referrals</dt><dd>{{ number_format($analytics['completed']['total']) }}</dd><small>Completion date; may have been received earlier</small></div>
+                <div><dt>Completed Referrals</dt><dd>{{ number_format($analytics['completed']['total']) }}</dd><small>Adviser confirmation date; may have been received earlier</small></div>
                 <div><dt>Closed Referrals</dt><dd>{{ number_format($analytics['closed']) }}</dd><small>Closed status and recorded closure date</small></div>
                 <div><dt>Average Acceptance Time</dt><dd>{{ $analytics['response_hours'] === null ? 'No data' : $analytics['response_hours'].' h' }}</dd><small>{{ $analytics['response_samples'] }} valid acceptances in period</small></div>
             </dl>
             <details class="analytics-definitions"><summary>Calculations and data coverage</summary>
-                <p>Received uses professional notification dates. {{ $analytics['legacy_received'] }} records in this period use legacy creation dates because no notification timestamp exists. Completion uses completed_at, or closed_date only for legacy completed records. Closed-only records remain separate.</p>
+                <p>Received uses professional notification dates. {{ $analytics['legacy_received'] }} records in this period use legacy creation dates because no notification timestamp exists. Completion uses the recorded Adviser confirmation time. {{ $analytics['legacy_completions_without_confirmation'] }} legacy finished records have no confirmation evidence and are excluded from confirmed totals. Closed-only records remain separate.</p>
                 <p>Acceptance Rate: {{ $analytics['acceptance_rate'] === null ? 'No data' : $analytics['acceptance_rate'].'%' }}. {{ $analytics['accepted'] }} of {{ $analytics['received']['total'] }} referrals received in this period have a recorded acceptance. This is a received-referral cohort, not a rate of decisions made in this period.</p>
                 <p>Acceptance time measures professional notification to recorded acceptance; missing, negative, and future intervals are excluded. {{ $analytics['missing_completion_dates'] }} historical finished records lack usable completion dates and are excluded from completion totals. Archived cases remain in authorized history.</p>
                 <p>Charts and Reports use the same sources. CSV includes all matching table records and the same filters. Printing includes only the current page; use CSV for the full filtered dataset.</p>
@@ -242,7 +242,7 @@
                         @forelse($records as $referral)
                             @php
                                 $receivedAt = $referral->professional_notified_at ?? $referral->created_at;
-                                $completedAt = $referral->completed_at ?? ($referral->status === 'completed' ? $referral->closed_date : null);
+                                $completedAt = $referral->confirmed_completion_at;
                                 $closedAt = $referral->status === 'closed' ? $referral->closed_date : null;
                             @endphp
                             <tr><td>#{{ $referral->id }}</td><td>{{ $referral->session?->seeker?->generated_alias ?? 'Anonymous' }}</td><td>{{ ucfirst($referral->priority_level) }}</td><td>{{ Str::headline($referral->status) }}</td><td>{{ $receivedAt?->timezone('Asia/Manila')->format('M d, Y g:i A') ?? 'Unrecorded' }}@if(!$referral->professional_notified_at)<br><small>Legacy creation date</small>@endif</td><td>{{ $completedAt?->timezone('Asia/Manila')->format('M d, Y g:i A') ?? 'Unrecorded' }}</td><td>{{ $closedAt?->timezone('Asia/Manila')->format('M d, Y g:i A') ?? 'Unrecorded' }}</td><td class="no-print"><a class="analytics-button" href="{{ route('professional.referral.show', $referral->id) }}">View</a></td></tr>

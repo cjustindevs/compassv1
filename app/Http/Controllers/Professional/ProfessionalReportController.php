@@ -40,10 +40,10 @@ class ProfessionalReportController extends Controller
             $file = fopen('php://output', 'w');
             $write = fn ($cells) => fputcsv($file, array_map(fn ($cell) => is_string($cell) && preg_match('/^[=+\-@\t\r]/', $cell) ? "'".$cell : $cell, $cells));
             $write(['COMPASS Professional Referral Report', $range->dates()['from'].' to '.$range->dates()['to'], 'Asia/Manila', $filters['activity'], $filters['status'] ?? 'All statuses']);
-            $write(['Referral ID', 'Seeker Alias', 'Priority', 'Status', 'Received / legacy creation', 'Received date source', 'Accepted', 'Completed', 'Closed']);
+            $write(['Referral ID', 'Seeker Alias', 'Priority', 'Status', 'Received / legacy creation', 'Received date source', 'Accepted', 'Adviser-confirmed completion', 'Closed']);
             foreach ($query->lazy(250) as $referral) {
                 $format = fn ($date) => $date?->timezone(AnalyticsPeriod::TIMEZONE)->format('Y-m-d H:i:s') ?? '';
-                $completed = $referral->completed_at ?? ($referral->status === 'completed' ? $referral->closed_date : null);
+                $completed = $referral->confirmed_completion_at;
                 $write([$referral->id, $referral->session?->seeker?->generated_alias ?? 'Anonymous', ucfirst($referral->priority_level), ucwords(str_replace('_', ' ', $referral->status)),
                     $format($referral->professional_notified_at ?? $referral->created_at), $referral->professional_notified_at ? 'Professional notification' : 'Legacy creation date',
                     $format($referral->accepted_at), $format($completed), $format($referral->status === 'closed' ? $referral->closed_date : null)]);

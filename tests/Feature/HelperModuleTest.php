@@ -751,6 +751,7 @@ class HelperModuleTest extends TestCase
     {
         $seekerUser = User::where('role', 'seeker')->firstOrFail();
         $seeker = $seekerUser->helpSeeker;
+        Session::where('seeker_id',$seeker->id)->where('session_status','active')->update(['session_status'=>'completed','end_time'=>now()]);
 
         // A pending request exists in the database, but the PHP session
         // has no flash data — exactly what a logged-out seeker sees.
@@ -773,6 +774,7 @@ class HelperModuleTest extends TestCase
     {
         $seekerUser = User::where('role', 'seeker')->firstOrFail();
         $seeker = $seekerUser->helpSeeker;
+        Session::where('seeker_id',$seeker->id)->where('session_status','active')->update(['session_status'=>'completed','end_time'=>now()]);
 
         $session = Session::create([
             'seeker_id' => $seeker->id,
@@ -1056,7 +1058,7 @@ class HelperModuleTest extends TestCase
 
         $this->actingAs($seekerUser)
             ->post(route('session.end'))
-            ->assertRedirect(route('session.evaluation'));
+            ->assertRedirect(route('session.evaluation', ['session_id'=>$session->id]));
 
         $this->assertDatabaseHas('counseling_sessions', [
             'id' => $session->id,
@@ -1075,7 +1077,7 @@ class HelperModuleTest extends TestCase
 
         // The seeker lands on the evaluation page with the session still in scope.
         $this->actingAs($seekerUser)
-            ->get(route('session.evaluation'))
+            ->get(route('session.evaluation', ['session_id'=>$session->id]))
             ->assertOk()
             ->assertSee('Post-Session Evaluation');
     }
@@ -1131,8 +1133,8 @@ class HelperModuleTest extends TestCase
         session(['session_id' => $session->id]);
 
         $this->actingAs($seekerUser)
-            ->get(route('session.chat'))
-            ->assertRedirect(route('session.evaluation'));
+            ->get(route('session.chat', ['session_id'=>$session->id]))
+            ->assertRedirect(route('session.evaluation', ['session_id'=>$session->id]));
     }
 
     public function test_helper_chat_redirects_to_notes_when_session_already_ended(): void
@@ -1418,7 +1420,7 @@ class HelperModuleTest extends TestCase
         $this->actingAs($seekerUser)
             ->withSession(['session_id' => $session->id])
             ->from(route('session.evaluation'))
-            ->get(route('session.evaluation'))
+            ->get(route('session.evaluation', ['session_id'=>$session->id]))
             ->assertRedirect(route('seeker.requests.show', $session));
     }
 
@@ -1463,6 +1465,7 @@ class HelperModuleTest extends TestCase
     public function test_helper_can_recommend_a_referral(): void
     {
         $session = $this->makeActiveSession();
+        $this->conversationFixture($session);
         $seekerUser = User::where('role', 'seeker')->firstOrFail();
 
         $this->actingAs($this->helperUser)

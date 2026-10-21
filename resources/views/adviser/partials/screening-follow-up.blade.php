@@ -1,4 +1,14 @@
 <section class="screening-follow-up screening-decision-control rounded-xl border border-gray-200">
+    @if($session->permitsParallelScreeningSupport())
+    <details class="p-4"><summary class="text-sm font-semibold cursor-pointer">Complete intake review</summary>
+        <p class="text-sm text-gray-600 mt-2">Record your review without requesting another answer. Matching continues; linked emergency and referral cases remain separate.</p>
+        <form method="POST" action="{{ route('adviser.screenings.review', $session) }}" class="space-y-3 mt-3">@csrf
+            <label class="block text-sm" for="intake-note-{{ $session->id }}">Review and next steps</label>
+            <textarea id="intake-note-{{ $session->id }}" name="reason" required minlength="10" maxlength="1000" rows="3" class="block w-full rounded-lg border-gray-300"></textarea>
+            <button name="review_action" value="complete_intake" class="rounded-lg bg-green-600 text-white px-4 py-2 text-sm">Complete intake review</button>
+        </form>
+    </details>
+    @endif
     <h3 class="screening-decision-heading">One-question follow-up</h3>
     <div class="p-4 space-y-3">
         <p class="text-sm text-gray-600">Send an optional follow-up. Matching continues during review.</p>

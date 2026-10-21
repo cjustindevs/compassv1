@@ -659,7 +659,7 @@ class ModeratorAdviserModuleTest extends TestCase
         [$user, $adviser] = $this->adviserUser('reports@example.com');
         $referral = $this->referralFor($adviser, 'Pending review');
         $session = $referral->session;
-        $session->update(['created_date' => now()->subMinutes(20)]);
+        $session->update(['created_date' => now()->subMinutes(20), 'start_time'=>now()->subMinutes(20)]);
         foreach ([[$session->seeker->user_account_id, 19], [$referral->helper->user_account_id, 15], [$referral->helper->user_account_id, 1]] as [$sender, $minutes]) {
             Message::create(['session_id' => $session->id, 'sender_id' => $sender, 'message_text' => 'Test reply', 'sent_datetime' => now()->subMinutes($minutes)]);
         }
@@ -677,7 +677,7 @@ class ModeratorAdviserModuleTest extends TestCase
         [$user, $adviser] = $this->adviserUser('reports-submitted@example.com');
         [$referral] = [$this->referralFor($adviser, 'Submitted review')];
         $session = $referral->session;
-        $session->update(['submitted_at' => now()->subMinutes(20)]);
+        $session->update(['submitted_at' => now()->subMinutes(20), 'start_time'=>now()->subMinutes(20)]);
         Message::create(['session_id' => $session->id, 'sender_id' => $referral->helper->user_account_id, 'message_text' => 'First reply', 'sent_datetime' => now()->subMinutes(15)]);
         $this->actingAs($user)->get(route('adviser.reports'))->assertOk()
             ->assertViewHas('avgResponseTime', '5m')

@@ -29,6 +29,7 @@
 @section('content')
     <div class="card" style="max-width:560px;margin:0 auto;">
         <p class="text-sm text-gray-500 mb-4">Work through each step out loud or in your head. Tap each card to mark it complete.</p>
+        <p id="groundingSteps" role="status" class="text-sm mb-4">0/5 steps completed</p>
 
         <div class="ground-step" role="button" tabindex="0" aria-pressed="false" data-step="1">
             <span class="step-num">5</span><h4>Things you can see</h4>
@@ -69,6 +70,7 @@
                 step.addEventListener('click', function () {
                     this.classList.toggle('completed');
                     this.setAttribute('aria-pressed', String(this.classList.contains('completed')));
+                    document.getElementById('groundingSteps').textContent = document.querySelectorAll('.ground-step.completed').length + '/5 steps completed';
                 });
             });
         });

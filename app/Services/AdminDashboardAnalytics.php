@@ -13,8 +13,9 @@ class AdminDashboardAnalytics
     public function data(AnalyticsPeriod $period): array
     {
         $registrations = $period->series(User::query(), 'created_at');
-        $requests = $period->series(Session::query(), self::SUBMISSION_DATE);
-        $completed = $period->series(Session::whereIn('session_status', [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED]), 'end_time');
+        $valid = Session::where('is_test_record', false)->whereNull('duplicate_of_id');
+        $requests = $period->series(clone $valid, self::SUBMISSION_DATE);
+        $completed = $period->series((clone $valid)->whereIn('session_status', [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED])->whereNotNull('start_time')->whereColumn('end_time','>=','start_time'), 'end_time');
         $roles = User::query()->selectRaw('role, COUNT(*) AS total')->groupBy('role')->pluck('total', 'role');
 
         return $period->dates() + [

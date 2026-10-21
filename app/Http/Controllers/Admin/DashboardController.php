@@ -28,12 +28,7 @@ class DashboardController extends Controller
             'technical' => $technical,
             'admin' => $request->user(),
             'searchQuery' => $request->string('q')->trim()->toString(),
-            'primaryStats' => [
-                ['label' => 'Active Accounts', 'value' => number_format(User::where('is_active', true)->count()), 'detail' => 'Enabled accounts, including users who are offline', 'icon' => 'user-check', 'link'=>route('admin.users', ['status'=>'active'])],
-                ['label' => 'Current System Health', 'value' => $technical['health'], 'detail' => 'Current monitoring status; not historical uptime', 'icon' => 'shield', 'link'=>route('admin.system-health')],
-                ['label' => 'Security Events', 'value' => $technical['security_events'], 'detail' => 'Recorded security events in selected period', 'icon' => 'shield', 'link'=>route('admin.audit-logs')],
-                ['label' => 'Latest Backup Status', 'value' => $technical['backup'], 'detail' => 'Configured backup provider records', 'icon' => 'shield', 'link'=>route('admin.backup-restore')],
-            ],
+            'primaryStats' => app(\App\Services\DashboardIndicators::class)->admin($period, $technical),
             'recentLogs' => AuditLog::with('actor')->whereIn('module', ['auth', 'authentication', 'users', 'system', 'backups'])
                 ->latest('created_at')->latest('id')->limit(6)->get(),
         ]);

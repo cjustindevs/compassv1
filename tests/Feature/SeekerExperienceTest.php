@@ -129,7 +129,7 @@ class SeekerExperienceTest extends TestCase
         $this->assertNull($case->risk_level);
         $this->assertSame($adviser->id, $case->review_adviser_id);
         $this->assertTrue($case->requires_adviser_review);
-        $this->actingAs($adviserUser)->get('/adviser/screenings')->assertOk()->assertSee('This intake asked one safety question.')->assertDontSee('name="use_clarified_safety_answer"', false)->assertDontSee('name="answers[current_suicide_plan]"', false);
+        $this->actingAs($adviserUser)->get('/adviser/screenings')->assertOk()->assertSee('One-question follow-up')->assertDontSee('name="use_clarified_safety_answer"', false)->assertDontSee('name="answers[current_suicide_plan]"', false);
         $this->post(route('adviser.screenings.follow-up', $case), [])->assertSessionHasNoErrors();
         $this->actingAs($case->seeker->user)->post(route('request.follow-up.respond', $case), [
             'screening_id' => $original->id, 'follow_up_answer' => 'no',
@@ -163,20 +163,22 @@ class SeekerExperienceTest extends TestCase
         $owner = $this->seeker();
         $this->actingAs($owner)->post(route('request.screening.process'), $this->singleAnswer('prefer_not_to_say'))->assertRedirect();
         $case = Session::firstOrFail();
-        $this->get(route('request.matching'))->assertOk()->assertSee('Your request is under staff review.')->assertDontSee('Assigned Reviewer')
+        $this->post(route('request.preferences.process'), ['support_mode'=>'chat','preferred_language'=>'English'])->assertRedirect()->assertSessionHasNoErrors();
+        $this->get(route('request.matching'))->assertOk()->assertViewHas('session', fn ($s) => $s->id === $case->id)->assertDontSee('Assigned Reviewer')
             ->assertDontSee($adviser->email)->assertDontSee($adviserUser->email);
         $this->actingAs($this->seeker())->get(route('request.matching'))->assertRedirect(route('request.screening'));
         $this->actingAs($owner);
         $case->update(['review_adviser_id' => null]);
-        $this->get(route('request.matching'))->assertOk()->assertSee('Your request is under staff review.')->assertDontSee('Assigned Reviewer');
+        $this->get(route('request.matching'))->assertOk()->assertViewHas('session', fn ($s) => $s->id === $case->id)->assertDontSee('Assigned Reviewer');
         $case->update(['review_adviser_id' => $adviser->id]);
         $adviser->update(['first_name' => '', 'last_name' => '']);
-        $this->get(route('request.matching'))->assertOk()->assertSee('Your request is under staff review.')->assertDontSee($adviser->email);
+        $this->get(route('request.matching'))->assertOk()->assertViewHas('session', fn ($s) => $s->id === $case->id)->assertDontSee($adviser->email);
         $adviser->update(['first_name' => '<script>unsafe</script>', 'last_name' => 'Reviewer']);
         $this->get(route('request.matching'))->assertOk()->assertDontSee('&lt;script&gt;unsafe&lt;/script&gt; Reviewer', false)
             ->assertDontSee('<script>unsafe</script>', false);
-        $this->assertSame('adviser_review_required', $case->fresh()->workflow_state);
-        $this->assertDatabaseCount('queue_requests', 0);
+        $this->assertTrue($case->fresh()->requires_adviser_review);
+        $this->assertNull($case->fresh()->risk_level);
+        $this->assertDatabaseCount('queue_requests', 1);
     }
 
     public function test_visible_screening_records_thoughts_without_inventing_a_current_plan(): void

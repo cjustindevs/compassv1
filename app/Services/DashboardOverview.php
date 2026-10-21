@@ -11,9 +11,9 @@ class DashboardOverview
     public function forUser(User $user): array
     {
         abort_unless($user->is_active && in_array($user->role, ['admin', 'moderator', 'adviser'], true), 403);
-        if ($user->role === 'moderator') return app(ModeratorOperations::class)->overview();
-        $sessions = Session::query()->select(['id', 'helper_id', 'concern_id', 'concern_category', 'session_status', 'created_date', 'created_at', 'start_time', 'end_time'])->with('concern');
-        $alerts = EmergencyAlert::query()->select(['id', 'session_id', 'adviser_id', 'status', 'risk_level', 'professional_referred', 'triggered_at', 'acknowledged_at', 'resolved_at', 'created_at']);
+        if ($user->role === 'moderator') return app(ModeratorOperations::class)->overview($user);
+        $sessions = Session::where('is_test_record', false)->whereNull('duplicate_of_id')->select(['id', 'helper_id', 'concern_id', 'concern_category', 'session_status', 'created_date', 'created_at', 'start_time', 'end_time'])->with('concern');
+        $alerts = EmergencyAlert::whereHas('session', fn ($q) => $q->where('is_test_record', false)->whereNull('duplicate_of_id'))->select(['id', 'session_id', 'adviser_id', 'status', 'risk_level', 'professional_referred', 'triggered_at', 'acknowledged_at', 'resolved_at', 'created_at']);
         if ($user->role === 'adviser') {
             $adviser = app(AdviserScope::class)->actor($user);
             $sessions->where(fn ($q) => $q->whereHas('helper', fn ($h) => $h->where('adviser_id', $adviser->id))
@@ -43,42 +43,47 @@ class DashboardOverview
         $add('Active cases', $caseStatus['Active'] + $caseStatus['Escalated'], 'Live: active support sessions plus requests with an open emergency review. Pending requests are shown separately.');
         $add('Resolved cases', $cases->filter(fn ($case) => in_array($case->session_status, ['completed','evaluated'], true) && $case->end_time && $case->end_time->gte($period->start) && $case->end_time->lt($period->end) && $case->end_time->lte(now()))->count(), 'Completed or evaluated sessions ending in the selected period; missing end dates are excluded.');
         $add('Pending cases', $caseStatus['Pending'], 'Live: nonterminal support requests not active and without an open emergency alert.');
-        $add('Escalated cases', $caseStatus['Escalated'], 'Live: support requests with an open emergency alert.');
+        $add('Escalated cases', $open->pluck('session_id')->unique()->count(), 'Live: authorized support requests with an open emergency alert, including requests awaiting a Helper.');
         if ($user->role === 'adviser') {
             $analytics = app(AdviserAnalytics::class)->report(['start'=>\Illuminate\Support\Carbon::instance($period->start->utc()), 'end'=>\Illuminate\Support\Carbon::instance($period->end->utc())], $adviser->id);
             $metrics = $analytics['metrics'];
             foreach ([
-                'Completed sessions' => ['completed', '', 'Completed/evaluated sessions in the selected activity cohort.'],
-                'Average Helper Response Time' => ['response_minutes', ' min', 'Request submission to first actual assigned Helper message.'],
-                'Satisfaction rating' => ['satisfaction', '/5', 'Submitted Seeker feedback converted from 1–10 to 1–5.'],
-                'Average competency score' => ['competency', '/5', 'Recorded finalized evaluations in the selected period.'],
+                'Completed sessions' => ['completed', '', 'Valid started sessions completed/evaluated with end time in the selected period.'],
+                'Average Helper Response Time' => ['response_minutes', ' min', 'Session start to first assigned Helper message or connected voice call; by session start date.'],
+                'Positive helpfulness feedback' => ['helpfulness_rate', '%', 'Helpful or Very Helpful / valid original helpfulness answers submitted in the period.'],
+                'Average competency score' => ['competency', '/5', 'Finalized, evidenced current-rubric evaluations by evaluation date; same records as the comparison.'],
                 'Average waiting time' => ['waiting_minutes', ' min', 'Queue entry to actual session start; ongoing waits excluded.'],
                 'Session completion rate' => ['completion_rate', '%', 'Completed started sessions / all started sessions in the same activity cohort.'],
                 'Referral rate' => ['referral_rate', '%', 'Completed sessions with a recommendation, counted once per session.'],
                 'Referral approval rate' => ['referral_approval_rate', '%', 'Approved recommendations / reviewed recommendations. Pending reviews excluded.'],
                 'Emergency escalation rate' => ['emergency_rate', '%', 'Unique emergency-flagged requests / requests in the selected activity cohort.'],
-                'Average Helper workload' => ['workload', '', 'Completed sessions per Helper who served during the selected activity cohort.'],
+                'Average Helper workload' => ['workload', '', 'Sessions completed in the period / Helpers with a recorded start or completion in the period.'],
                 'Scheduled duty hours' => ['duty_hours', ' hr', 'Planned active shifts overlapping the selected dates; not verified attendance.'],
                 'Documentation completion rate' => ['documentation_rate', '%', 'Required ended sessions with both submitted summary and reflection. Not an on-time rate.'],
             ] as $label => [$key, $unit, $definition]) {
-                $add($label, SessionPerformance::display($metrics[$key], $unit), $definition.' Current records; archived sessions are available in Reports.');
+                $add($label, SessionPerformance::display($metrics[$key], $unit), $definition);
+                $cards[array_key_last($cards)]['raw'] = $metrics[$key];
+                $cards[array_key_last($cards)]['unit'] = $unit;
                 $cards[array_key_last($cards)]['link'] = route('adviser.reports', $period->dates());
                 if (isset($analytics['samples'][$key])) $cards[array_key_last($cards)]['samples'] = $analytics['samples'][$key];
             }
             $referrals = Referral::whereIn('session_id', $caseRows->pluck('id'))->forAdviser($adviser->id)->get();
-            // One first response per support case; notification reads are not actions.
-            $events = $emergencies->map(fn ($row) => ['case' => $row->session_id ?: 'alert-'.$row->id, 'start' => $row->triggered_at, 'end' => $row->acknowledged_at, 'open' => ! in_array($row->status, ['resolved', 'closed'], true)])
-                ->merge($referrals->map(fn ($row) => ['case' => $row->session_id, 'start' => $row->created_at, 'end' => $row->reviewed_at, 'open' => $row->isOpen()]));
-            $firstResponses = $events->filter(fn ($event) => $event['start'] && $event['end'] && $event['end']->gte($event['start']) && $event['end']->lte(now()))
-                ->sortBy(fn ($event) => $event['end']->timestamp)->unique('case');
-            $samples = $firstResponses->filter(fn ($event) => $event['end']->gte($period->start) && $event['end']->lt($period->end))
-                ->map(fn ($event) => $event['start']->diffInSeconds($event['end']) / 60);
-            $waiting = $events->filter(fn ($event) => $event['open'] && $event['start'] && ! $event['end'] && $event['start']->gte($period->start) && $event['start']->lt($period->end))
-                ->reject(fn ($event) => $firstResponses->contains('case', $event['case']))->unique('case')->count();
-            $add('Average Adviser Response Time', $this->formatAverage($samples), 'First recorded emergency acknowledgement or referral review per support case; responses in the selected period. '.$samples->count().' cases measured. Notification reads do not count.');
-            $cards[array_key_last($cards)]['samples'] = $samples->count();
-            $add('Awaiting response', $waiting, 'Unanswered cases becoming actionable in the selected period; excluded from average response time.');
-            $add('Average resolution', $resolution, 'Emergency trigger to resolution in minutes; selected period by resolution date. Support-session completion is not substituted for Adviser resolution.');
+            $reviewSamples = $referrals->filter(fn ($r) => $r->created_at && $r->reviewed_at && $r->reviewed_at->gte($r->created_at)
+                && $r->reviewed_at->gte($period->start) && $r->reviewed_at->lt($period->end) && $r->reviewed_at->lte(now()))
+                ->map(fn ($r) => $r->created_at->diffInSeconds($r->reviewed_at) / 60);
+            $add('Average referral review time', $this->formatAverage($reviewSamples), 'Recommendation creation to recorded review; by review date. Separate from emergency acknowledgment.');
+            $cards[array_key_last($cards)] += ['raw'=>SessionPerformance::average($reviewSamples->all()), 'unit'=>' min', 'samples'=>$reviewSamples->count()];
+            $reportRequest = clone request();
+            $reportRequest->setUserResolver(fn () => $user);
+            $emergencyMetric = collect(app(QueuePerformance::class)->report($reportRequest)['cards'])->firstWhere('label', 'Emergency Response Time');
+            $add('Emergency acknowledgment time', $emergencyMetric['value'], $emergencyMetric['sample'].'; trigger to authorized acknowledgment, by emergency identification date.');
+            $cards[array_key_last($cards)] += ['raw'=>$emergencyMetric['raw'], 'unit'=>' min'];
+            $add('Average emergency resolution', $resolution, 'Emergency trigger to resolution; by resolution date.');
+            $add('Intake reviews pending', Session::pendingScreeningReviewForAdviser($adviser->id)->count(), 'Live assigned intake and reassessment reviews.');
+            $add('Referral reviews pending', Referral::forAdviser($adviser->id)->whereIn('status', [Referral::STATUS_PENDING_ADVISER, Referral::STATUS_PENDING_ADVISER_ASSIGNMENT])->count(), 'Live recommendations awaiting review.');
+            $add('Evaluations pending', \App\Models\SessionReport::pendingEvaluationForAdviser($adviser->id)->count(), 'Live documentation awaiting competency evaluation.');
+            $add('Helpers at capacity', Helper::where('adviser_id', $adviser->id)->get()->filter(fn ($h) => $h->currentAssignedSessionsCount() >= Helper::MAX_SESSIONS_PER_SHIFT)->count(), 'Current duty limit reached; completed sessions still consume duty allowance.');
+            $add('Feedback coverage', SessionPerformance::display($metrics['feedback_coverage'], '%'), 'Completed sessions in period with submitted feedback by reporting cutoff / valid completed sessions.');
             $competencyComparison = app(AdviserCompetencyComparison::class)->forAdviser($adviser->id, $period, request());
         }
         $chart('Cases by status', $caseStatus, 'Support requests, excluding cancelled/no-show records. Each appears once. Emergency review is separate from chat closure.');

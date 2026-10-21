@@ -196,30 +196,13 @@
                 @endif
             </div>
 
-            @if(in_array($resource->category, ['exercise', 'meditation', 'tool'], true))
-                <div class="progress-panel mt-8">
-                    <div class="flex items-center justify-between mb-3">
-                        <h2 class="font-bold text-sm text-gray-800">Your progress</h2>
-                        <span class="text-sm font-extrabold text-[#04A052]" id="progressValue">{{ $progress->progress_percentage }}%</span>
-                    </div>
-                    <div class="progress-track mb-4" role="progressbar" aria-valuenow="{{ $progress->progress_percentage }}" aria-valuemin="0" aria-valuemax="100" aria-label="Your progress on this resource">
-                        <div class="fill" id="progressFill" style="width: {{ $progress->progress_percentage }}%"></div>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-3">
-                        <div class="flex-1 min-w-[200px]">
-                            <label for="progressSlider" class="sr-only">Progress percentage</label>
-                            <input type="range" id="progressSlider" min="0" max="100" step="5"
-                                   value="{{ $progress->progress_percentage }}">
-                        </div>
-                        <div class="flex gap-2">
-                            <button type="button" class="btn btn-outline text-xs px-4 py-2" id="updateProgressBtn" onclick="saveProgress()">Update</button>
-                            <button type="button" class="btn btn-primary text-xs px-4 py-2" id="completeBtn" onclick="markComplete()">
-                                <span id="completeLabel">{{ $progress->is_completed ? 'Completed' : 'Mark complete' }}</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            @endif
+            <section class="progress-panel mt-8" aria-label="Resource activity">
+                <h2 class="font-bold text-sm text-gray-800">Your activity</h2>
+                <p id="resourceActivityState" class="text-sm mt-2" role="status">{{ $progress->is_completed ? ($resource->category === 'article' ? 'Read' : 'Completed') : ($progress->progress_percentage > 0 ? 'Previously in progress' : 'Opened') }}</p>
+                @if($progress->progress_percentage > 0 && !$progress->is_completed)<p class="text-xs text-gray-500 mt-2">Previous self-reported progress is retained in your history.</p>@endif
+                <p class="text-xs text-gray-500 my-3">{{ $resource->category === 'article' ? 'Mark as read when you finish reading.' : 'Mark complete after you finish the activity. This records your own completion.' }}</p>
+                <button type="button" class="btn btn-primary text-sm" id="completeBtn" onclick="markComplete()" @disabled($progress->is_completed)><span id="completeLabel">{{ $progress->is_completed ? 'Completed' : ($resource->category === 'article' ? 'Mark as read' : 'Mark complete') }}</span></button>
+            </section>
         </div>
 
         {{-- Content --}}
@@ -313,42 +296,15 @@
             }
         }
 
-        const slider = document.getElementById('progressSlider');
-        if (slider) {
-            slider.addEventListener('input', function () {
-                document.getElementById('progressValue').textContent = slider.value + '%';
-                document.getElementById('progressFill').style.width = slider.value + '%';
-            });
-        }
-
-        async function saveProgress() {
-            if (!slider) return;
-            const btn = document.getElementById('updateProgressBtn');
-            btn.disabled = true;
-            document.getElementById('progressInput').value = slider.value;
-            try {
-                await post('{{ route("selfhelp.progress", $resource->id) }}?percentage=' + slider.value);
-                showToast('Progress saved (' + slider.value + '%).');
-            } catch (e) {
-                document.getElementById('progressForm').submit();
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
         async function markComplete() {
             const btn = document.getElementById('completeBtn');
             const label = document.getElementById('completeLabel');
             btn.disabled = true;
             try {
                 await post('{{ route("selfhelp.complete", $resource->id) }}');
-                if (slider) {
-                    slider.value = 100;
-                    document.getElementById('progressValue').textContent = '100%';
-                    document.getElementById('progressFill').style.width = '100%';
-                }
+                document.getElementById('resourceActivityState').textContent = @json($resource->category === 'article' ? 'Read' : 'Completed');
                 label.textContent = 'Completed';
-                showToast('Great job! Resource marked as complete.');
+                showToast('Activity saved.');
             } catch (e) {
                 btn.disabled = false;
                 document.getElementById('completeForm').submit();

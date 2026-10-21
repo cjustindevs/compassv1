@@ -207,7 +207,7 @@
                                 <th>Status</th>
                                 <th>Level</th>
                                 <th>Score</th>
-                                <th>Active Cases</th>
+                                <th>Duty / capacity</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -232,8 +232,7 @@
                                         {{ $row['competency_score'] > 0 ? $row['competency_score'] . ' / 5' : '—' }}
                                     </td>
                                     <td>
-                                        <span class="font-semibold text-gray-700">{{ $row['active_cases'] }}</span>
-                                        <span class="text-xs text-gray-400">active</span>
+                                        <x-helper-capacity :helper="$helper" />
                                     </td>
                                     <td>
                                         <a href="{{ route('adviser.helper.show', ['id' => $helper->id]) }}" class="btn-outline">

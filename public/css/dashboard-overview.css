@@ -3,3 +3,9 @@
 .co-charts>.co-chart:last-child:nth-child(odd){grid-column:1 / -1}
 
 .co-metric-link{display:inline-block;margin-top:8px;font-size:12px;color:#087341;text-decoration:underline}.co-secondary small{display:block;font-size:11px;color:#64748b;margin-top:4px}
+
+.co-kpis{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:18px 0 24px}.co-overview .co-kpi{border-top:3px solid #169568;display:flex;flex-direction:column;gap:8px;padding:20px}
+.co-kpi h3{font-weight:600;margin:0;line-height:1.5}.co-kpi>strong{display:block;font-size:clamp(30px,2.8vw,38px);color:#173b2c;font-variant-numeric:tabular-nums;margin:4px 0}
+.co-kpi small{display:block;color:#64748b;font-size:11px}.co-kpi-info{font-size:12px;color:#64748b}.co-kpi-info summary{cursor:pointer;color:#476454}.co-kpi-info p{line-height:1.6;margin-top:8px}.co-metric-link{margin-top:auto}.co-task-links{gap:10px}.co-task-links a{padding:8px 12px;border:1px solid #dce7e0;border-radius:8px;background:#fff}
+@media(max-width:700px){.co-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.co-overview .co-kpi{padding:16px}.co-kpi>strong{font-size:28px}}
+@media(max-width:350px){.co-kpis{grid-template-columns:1fr}}

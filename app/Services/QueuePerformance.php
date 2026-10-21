@@ -23,9 +23,11 @@ class QueuePerformance
         $start = $period->start->utc(); $end = $period->end->utc()->min($asOf);
         $helpers = Helper::query(); $sessions = Session::where('is_test_record',false)->whereNull('duplicate_of_id'); $alerts = EmergencyAlert::query();
         if ($user->role === 'adviser') {
-            $actor = app(AdviserScope::class)->actor();
+            $actor = app(AdviserScope::class)->actor($user);
             $helpers->where('adviser_id', $actor->id);
-            $sessions->where(fn ($q) => $q->where('review_adviser_id', $actor->id)->orWhereHas('helper', fn ($h) => $h->where('adviser_id', $actor->id)));
+            $sessions->where(fn ($q) => $q->where('review_adviser_id', $actor->id)
+                ->orWhereHas('helper', fn ($h) => $h->where('adviser_id', $actor->id))
+                ->orWhereHas('emergencyAlerts', fn ($a) => $a->where('adviser_id', $actor->id)));
             $alerts->where('adviser_id', $actor->id);
         }
         if ($filters['risk'] ?? null) $sessions->where('risk_level', $filters['risk']);
@@ -99,6 +101,13 @@ class QueuePerformance
             ['label'=>'Successful Assignment Rate','value'=>SessionPerformance::display(SessionPerformance::ratio($successful,$regular->count()),'%'),'sample'=>$successful.' accepted / '.$regular->count().' processed regular requests; '.$pending.' pending'],
             ['label'=>'Emergency Response Time','value'=>SessionPerformance::display(SessionPerformance::average($responses),' min'),'sample'=>count($responses).' acknowledged; '.$unacknowledged.' unacknowledged'],
         ];
+        $raw = [SessionPerformance::average($waits), $waits ? max($waits) : null,
+            $dutySeconds ? 100*$activeSeconds/$dutySeconds : null,
+            SessionPerformance::ratio($successful, $regular->count()), SessionPerformance::average($responses)];
+        foreach ($cards as $i => &$card) {
+            $card['raw'] = $raw[$i]; $card['unit'] = in_array($i, [2,3], true) ? '%' : ' min';
+        }
+        unset($card);
         $quality = ['after_hours_started'=>count($outsideWaits), 'after_hours_average'=>SessionPerformance::average($outsideWaits),
             'missing_wait_evidence'=>$invalidWaits, 'invalid_acknowledgments'=>$invalidAcknowledgments,
             'legacy_processed_unknown'=>(clone $queues)->whereNull('first_processed_at')->whereBetween('request_date',[$start,$end])->count()];

@@ -73,8 +73,8 @@
                 <span class="label">Sessions</span>
             </div>
             <div class="stat">
-                <span class="value" id="compScore">{{ $competencyScore === null ? 'No data' : $competencyScore.'%' }}</span>
-                <span class="label">Competency</span>
+                <span class="value" id="compScore">{{ $competencyScore === null ? '—' : $competencyScore.'/5' }}</span>
+                <span class="label">Latest score /5</span>
             </div>
             <div class="stat">
                 <span class="value" id="availStatus" role="status" aria-live="polite" style="color: {{ $availabilityStatus === 'available' ? 'var(--green-500)' : 'var(--yellow-500)' }};">{{ $availabilityLabel }}</span>

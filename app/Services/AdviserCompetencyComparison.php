@@ -13,29 +13,7 @@ class AdviserCompetencyComparison
     /** Current, documented results only; correction snapshots are never separate samples. */
     public function evaluations(int $adviserId, ?AnalyticsPeriod $period = null): Collection
     {
-        return HelperCompetencyHistory::with('helper:id,first_name,last_name')
-            ->whereHas('helper', fn ($q) => $q->where('adviser_id', $adviserId))
-            ->where('rubric_version', CompetencyRubric::VERSION)
-            ->where('evaluation_date', '<=', now())
-            ->when($period, fn ($q) => $q->where('evaluation_date', '>=', $period->start->utc())
-                ->where('evaluation_date', '<', $period->end->utc()))
-            ->whereExists(fn ($q) => $q->selectRaw('1')->from('session_reports')
-                ->join('counseling_sessions', 'counseling_sessions.id', '=', 'session_reports.session_id')
-                ->whereColumn('session_reports.id', 'helper_competency_history.report_id')
-                ->whereColumn('counseling_sessions.helper_id', 'helper_competency_history.helper_id')
-                ->where('session_reports.adviser_reviewed', true)
-                ->whereIn('counseling_sessions.session_status', ['completed', 'evaluated']))
-            ->orderByDesc('evaluation_date')->orderByDesc('id')->get()
-            ->filter(function ($evaluation) {
-                if ((int) ($evaluation->evidence['session_report_id'] ?? 0) !== (int) $evaluation->report_id) return false;
-                $scores = [];
-                foreach (CompetencyRubric::CRITERIA as $key => [, , $field]) {
-                    $value = $evaluation->$field;
-                    if ($value === null || $value < 1 || $value > 5 || floor($value) !== $value) return false;
-                    $scores[$key] = (int) $value;
-                }
-                return abs(CompetencyRubric::score($scores) - $evaluation->overall_score) < 0.011;
-            })->unique('report_id')->values();
+        return app(CompetencyEvidence::class)->evaluations(Helper::where('adviser_id', $adviserId)->pluck('id'), $period);
     }
 
     public function forAdviser(int $adviserId, AnalyticsPeriod $period, Request $request): array

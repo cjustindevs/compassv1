@@ -1,4 +1,8 @@
-# Role-specific dashboard KPI validation
+# Previous role-specific dashboard KPI baseline
+
+Superseded by [October 22 dashboard QA](OCTOBER_22_DASHBOARD_QA.md).
+The definitions and verification counts below describe the earlier revision,
+not the current KPI implementation.
 
 This revision reads actual COMPASS records. It does not change screening,
 queue priority, consent, scheduling eligibility, or emergency/referral actions.

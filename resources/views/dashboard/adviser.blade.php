@@ -11,7 +11,7 @@
             @php
                 $eligibility = app(\App\Services\HelperEligibilityService::class)->status($helper);
             @endphp
-            <tr><td><a class="av-link" href="{{ route('adviser.helper.show', $helper->id) }}">{{ $helper->full_name ?: 'Name not recorded' }}</a></td><td><span class="av-badge {{ $eligibility['assignable'] ? '' : 'av-badge-muted' }}">{{ $eligibility['label'] }}</span></td><td>{{ ucwords(str_replace('_', ' ', $helper->getReadinessStatus())) }}</td><td>{{ $helper->currentAssignedSessionsCount() }} / {{ \App\Models\Helper::MAX_SESSIONS_PER_SHIFT }}</td><td>{{ ([1=>'Trainee',2=>'Beginner',3=>'Intermediate',4=>'Advanced',5=>'Expert'][$helper->competency_level] ?? 'Not assessed') }}</td></tr>
+            <tr><td><a class="av-link" href="{{ route('adviser.helper.show', $helper->id) }}">{{ $helper->full_name ?: 'Name not recorded' }}</a></td><td><span class="av-badge {{ $eligibility['assignable'] ? '' : 'av-badge-muted' }}">{{ $eligibility['label'] }}</span></td><td>{{ ucwords(str_replace('_', ' ', $helper->getReadinessStatus())) }}</td><td><x-helper-capacity :helper="$helper" /></td><td>{{ ([1=>'Trainee',2=>'Beginner',3=>'Intermediate',4=>'Advanced',5=>'Expert'][$helper->competency_level] ?? 'Not assessed') }}</td></tr>
         @empty<tr><td colspan="5" class="av-empty">No Helpers are currently assigned to you.</td></tr>
         @endforelse
         </tbody></table></div>

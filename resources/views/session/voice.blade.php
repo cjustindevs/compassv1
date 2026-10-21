@@ -25,7 +25,7 @@
         <a class="voice-back" href="{{ $isHelper ? route('helper.cases') : route('seeker.dashboard') }}" aria-label="Back to dashboard"><x-ui-icon name="arrow-left" /></a>
         <div class="voice-peer"><strong>{{ $peer }}</strong><small>Voice support · <span id="sessionTimer">00:00</span></small></div>
         <div data-notification-slot></div>
-        <form method="POST" action="{{ $isHelper ? route('helper.session.end', ['id' => $session->id]) : route('session.end', ['session_id'=>$session->id]) }}"
+        <form class="voice-session-end-form" method="POST" action="{{ $isHelper ? route('helper.session.end', ['id' => $session->id]) : route('session.end', ['session_id'=>$session->id]) }}"
               data-confirm="End support session?" data-confirm-message="This ends both the voice call and text chat for you and your session partner." data-confirm-text="End session">
             @csrf
             <button class="voice-end" type="submit">End session</button>

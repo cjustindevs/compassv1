@@ -161,11 +161,11 @@ class EscalationOperationsTest extends TestCase
     public function test_adviser_response_kpi_uses_recorded_actions_and_notification_importance_is_explicit(): void
     {
         [$mod, $helper, $queue, $session, $alert] = $this->setupCase();
-        $alert->forceFill(['triggered_at' => now()->subMinutes(10), 'acknowledged_at' => now()->subMinutes(5)])->save();
+        $alert->forceFill(['triggered_at' => now()->subMinutes(10), 'acknowledged_at' => now()->subMinutes(5), 'acknowledged_by'=>$helper->adviser->user_account_id])->save();
         $user = $helper->adviser->user;
         $this->actingAs($user)->get(route('adviser.dashboard', ['period' => 'today']))->assertOk()
-            ->assertViewHas('overview', fn ($overview) => collect($overview['cards'])->firstWhere('label', 'Average Adviser Response Time')['value'] === '5 min')
-            ->assertSee('1 cases measured');
+            ->assertViewHas('overview', fn ($overview) => collect($overview['cards'])->firstWhere('label', 'Emergency acknowledgment time')['value'] === '5 min')
+            ->assertSee('1 acknowledged');
         Notification::create(['user_account_id' => $user->id, 'title' => 'Referral needs review', 'message' => 'Review requested', 'notification_type' => 'referral', 'link' => '/adviser/referrals']);
         Notification::create(['user_account_id' => $user->id, 'title' => 'Routine update', 'message' => 'Saved', 'notification_type' => 'update']);
         $data = $this->getJson(route('notifications.feed'))->assertOk()->json('fresh');

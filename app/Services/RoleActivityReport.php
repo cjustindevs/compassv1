@@ -63,6 +63,7 @@ class RoleActivityReport
         }
         $sessions->when($data['concern_id'] ?? null, fn ($q, $id) => $q->where('concern_id', $id))
             ->when($data['referral_status'] ?? null, fn ($q, $status) => $q->whereHas('referrals', fn ($r) => $r->where('status', $status)));
+        $sessions->where('is_test_record', false)->whereNull('duplicate_of_id');
         $helperIds = $helpers->pluck('id');
         $authorizedIds = (clone $sessions)->select('id');
         $alerts = EmergencyAlert::query();
@@ -76,8 +77,9 @@ class RoleActivityReport
         if ($adminPeriod && $request->input('activity_date') === 'submitted') $activityDate = AdminDashboardAnalytics::SUBMISSION_DATE;
         if ($adminPeriod && $request->input('activity_date') === 'completed') {
             $activityDate = 'end_time';
-            $sessions->whereIn('session_status', [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED]);
+            $sessions->whereIn('session_status', [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED])->whereNotNull('start_time')->whereColumn('end_time','>=','start_time');
         }
+        $performanceSessions = clone $sessions;
         $sessions->where(DB::raw($activityDate), '<=', now('UTC'));
         $sessions->whereBetween(DB::raw($activityDate), [$start, $end])
             ->when($data['case_status'] ?? null, fn ($q, $status) => $q->where('session_status', $status));
@@ -108,12 +110,13 @@ class RoleActivityReport
             'Helper acceptance time' => $mean($rows, 'submitted_at', 'helper_accepted_at'), 'Completed session duration' => $mean($rows->whereIn('session_status', ['completed', 'evaluated']), 'start_time', 'end_time')];
         if ($user->role === 'helper') {
             $performancePeriod = new AnalyticsPeriod(\Carbon\CarbonImmutable::instance($start), \Carbon\CarbonImmutable::instance($end)->addMicrosecond());
-            $performance = app(SessionPerformance::class)->summarize($rows, $helperIds, $performancePeriod);
+            $performance = app(SessionPerformance::class)->summarize($performanceSessions->when($data['case_status'] ?? null, fn ($q, $v) => $q->where('session_status', $v))->get(), $helperIds, $performancePeriod);
             foreach (['response_minutes'=>['Average Helper Response Time',' min'], 'waiting_minutes'=>['Average waiting time',' min'],
-                'satisfaction'=>['Satisfaction rating','/5'], 'competency'=>['Competency score','/5'], 'completion_rate'=>['Session completion rate','%'],
+                'helpfulness_rate'=>['Positive helpfulness feedback','%'], 'competency'=>['Competency score','/5'], 'completion_rate'=>['Session completion rate','%'],
                 'duty_hours'=>['Scheduled duty hours',' hr'], 'documentation_rate'=>['Documentation completion rate','%']] as $key=>[$label,$unit]) {
                 $summary[$label] = SessionPerformance::display($performance['metrics'][$key], $unit);
             }
+            $summary['Completed cases'] = $performance['metrics']['completed'];
             $summary['Pending documentation'] = $performance['metrics']['documentation_pending'];
         }
         $groups = ['Cases by status' => $rows->groupBy('session_status')->map->count()->all(),
@@ -189,8 +192,8 @@ class RoleActivityReport
             $registrationQuery = $adminPeriod->constrain(User::query(), 'created_at');
             $registrations = $adminPeriod->series(User::query(), 'created_at');
             $summary['Registrations in period'] = $registrations['total'];
-            $summary['Requests submitted in period'] = $adminPeriod->constrain(Session::query(), AdminDashboardAnalytics::SUBMISSION_DATE)->count();
-            $summary['Sessions completed in period'] = $adminPeriod->constrain(Session::whereIn('session_status', [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED]), 'end_time')->count();
+            $summary['Requests submitted in period'] = $adminPeriod->constrain(Session::where('is_test_record',false)->whereNull('duplicate_of_id'), AdminDashboardAnalytics::SUBMISSION_DATE)->count();
+            $summary['Sessions completed in period'] = $adminPeriod->constrain(Session::where('is_test_record',false)->whereNull('duplicate_of_id')->whereIn('session_status', [Session::STATUS_COMPLETED, Session::STATUS_EVALUATED])->whereNotNull('start_time')->whereColumn('end_time','>=','start_time'), 'end_time')->count();
             $tables[] = ['title' => 'Account registrations', 'columns' => ['Account reference', 'Role', 'Account status now', 'Registered (Philippine Time)'],
                 'records' => $this->records($registrationQuery->latest('created_at')->latest('id'), $export, 'registrations_page'),
                 'format' => fn ($u) => ['Account #'.$u->id, User::ROLE_LABELS[$u->role] ?? ucfirst($u->role), $u->is_active ? 'Enabled' : 'Disabled', $u->created_at?->timezone('Asia/Manila')->format('M d, Y g:i A')]];

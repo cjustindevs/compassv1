@@ -50,7 +50,7 @@ class SidebarComposer
                     'helperName'         => $user->name ?? 'Helper',
                     'assignedAdviser'    => null,
                     'totalSessions'      => 0,
-                    'competencyScore'    => 0,
+                    'competencyScore'    => null,
                     'availabilityStatus' => 'offline',
                     'availabilityLabel'  => 'Offline',
                     'caseBadgeCount'     => 0,

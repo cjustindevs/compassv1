@@ -371,3 +371,6 @@
     .compass-ui .auth-page .registration-action { width: 100%; }
     .compass-ui .auth-page .email-dialog { padding: 16px; }
 }
+
+/* The shared app shell owns the sidebar gutter; nested adviser pages do not add another gutter. */
+.compass-ui:not(.compass-ui-admin) .workspace-content > .adviser-page-content{padding:0}

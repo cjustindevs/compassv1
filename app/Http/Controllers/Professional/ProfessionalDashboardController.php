@@ -69,8 +69,9 @@ class ProfessionalDashboardController extends Controller
             ->unread()
             ->count();
 
+        $indicators = app(\App\Services\DashboardIndicators::class)->professional($request->user(), $analytics);
         return view('professional.dashboard', compact(
-            'professional',
+            'professional', 'indicators',
             'pendingReferrals',
             'activeCases',
             'completedCases',
@@ -93,17 +94,18 @@ class ProfessionalDashboardController extends Controller
         }
 
         $professionalId = $professional->id;
+        $base = app(ProfessionalAnalytics::class)->base($professionalId);
 
         return response()->json([
-            'pending' => Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
+            'pending' => (clone $base)
                 ->whereHas('session', fn ($q) => $q->whereNull('archived_at'))
                 ->where('status', Referral::STATUS_PENDING_PROFESSIONAL)->count(),
-            'active' => Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
+            'active' => (clone $base)
                 ->whereHas('session', fn ($q) => $q->whereNull('archived_at'))
                 ->whereIn('status', Referral::ACTIVE_STATUSES)->count(),
-            'completed' => Referral::professionalAuthorized()->professionalAuthorized()->where('professional_id', $professionalId)
-                ->whereIn('status', Referral::COMPLETED_STATUSES)->count(),
-            'awaiting_review' => Referral::professionalAuthorized()->where('professional_id', $professionalId)
+            'completed' => (clone $base)
+                ->whereIn('status', Referral::COMPLETED_STATUSES)->whereHas('completionReviews', fn ($q) => $q->where('review_status','confirmed')->whereNotNull('reviewed_by')->where('reviewed_at','<=',now()))->count(),
+            'awaiting_review' => (clone $base)
                 ->whereHas('session', fn ($q) => $q->whereNull('archived_at'))->whereIn('status', Referral::ACTIVE_STATUSES)->get()
                 ->filter(fn ($referral) => $referral->hasPendingCompletion())->count(),
         ]);

@@ -19,8 +19,8 @@ class AdminRefinementTest extends TestCase
         User::factory()->create(['is_active' => true]);
         $this->mock(DashboardOverview::class)->shouldNotReceive('forUser');
         $response = $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk();
-        $response->assertViewHas('primaryStats', fn ($stats) => count($stats) === 4 && $stats[0]['value'] === '2'
-            && $stats[1]['value'] === 'Not monitored' && $stats[2]['value'] === 0 && $stats[3]['value'] === 'Not configured');
+        $response->assertViewHas('primaryStats', fn ($stats) => count($stats) === 6 && $stats[0]['label'] === 'Registered accounts' && $stats[0]['raw'] === 3.0
+            && $stats[1]['label'] === 'Enabled accounts' && $stats[1]['raw'] === 2.0 && $stats[5]['raw'] === 0.0);
         $response->assertViewHas('technical', fn ($data) => $data['total'] === 3 && $data['inactive'] === 1);
         foreach (['Active Cases', 'Case Categories', 'Metric Definitions', 'User Growth', 'Infrastructure monitoring', 'Access and security', 'Active Sessions'] as $text) $response->assertDontSee($text);
         $response->assertSee('View all audit logs')->assertSee('Recent administrative activity')->assertDontSee(route('concerns.manage'));

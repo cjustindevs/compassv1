@@ -60,6 +60,10 @@ class AdviserCompetencyComparisonTest extends TestCase
         $this->assertSame(2, $row['count']);
         $this->assertSame('referral_accuracy', $row['weakest']);
         $this->assertSame(3.0, $row['scores']['referral_accuracy']);
+        $dashboard = $this->get(route('adviser.dashboard', ['period'=>'today']))->assertOk();
+        $kpi = collect($dashboard->viewData('overview')['cards'])->firstWhere('label','Average competency score');
+        $this->assertSame($row['overall'], $kpi['raw']);
+        $this->assertSame($row['count'], $kpi['samples']);
 
         app(AdviserEvaluationService::class)->save(SessionReport::findOrFail($first->report_id),
             ['active_listening' => 4, 'correction_reason' => 'Correcting the documented listening rating.'] + $scores + ['recommended_action' => 'Follow up']);
@@ -82,7 +86,7 @@ class AdviserCompetencyComparisonTest extends TestCase
         $this->assertNull(collect($data['rows']->items())->firstWhere('helper.id', $empty->id)['score']);
         $this->get(route('adviser.dashboard', ['period' => 'today']))->assertOk()
             ->assertSee('Training review suggested')->assertSee('Based on 1 evaluation')
-            ->assertSee('4.60/5')->assertSee('Not evaluated')->assertSee('View skill breakdown and evaluations')
+            ->assertSee('4.60/5')->assertSee('Not evaluated')->assertSee('View details')
             ->assertSee('width:92%', false)->assertDontSee('PrivateSeeker');
     }
 

@@ -253,30 +253,7 @@
         </div>
 
             <x-analytics-period :action="route('professional.dashboard')" :dates="$analyticsDates" :report-url="route('professional.reports', $analyticsDates)" />
-        <!-- Stats -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-            <div class="stat-card">
-                <div class="stat-number" id="statPending">{{ $pendingReferrals }}</div>
-                <div class="stat-label">Pending Referrals</div>
-                <p class="text-xs text-gray-400 mt-2">Awaiting your decision</p>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="statActive">{{ $activeCases }}</div>
-                <div class="stat-label">Accepted / Ongoing Referrals</div>
-                <p class="text-xs text-gray-400 mt-2">In your care right now</p>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ $completedCases === null ? 'Unavailable' : number_format($completedCases) }}</div>
-                <div class="stat-label">Completed Referrals</div>
-                <p class="text-xs text-gray-400 mt-2">{{ $analyticsDates['from'] }} – {{ $analyticsDates['to'] }} · excludes closed-only cases</p>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="statAwaitingReview">{{ $analytics['awaiting_review_now'] ?? 'Unavailable' }}</div>
-                <div class="stat-label">Awaiting Adviser Review</div>
-                <p class="text-xs text-gray-400 mt-2">Live: submitted completion reports; cases remain active until confirmed</p>
-            </div>
-
-        </div>
+        <x-performance-cards :cards="$indicators" />
 
         <!-- Quick Actions (mobile) -->
         <div class="flex gap-3 mb-6 sm:hidden">
