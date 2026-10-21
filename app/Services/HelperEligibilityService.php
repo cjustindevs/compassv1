@@ -60,7 +60,7 @@ class HelperEligibilityService
             ->get()->contains(fn ($entry) => (int) ($entry->metadata['helper_id'] ?? 0) === $helper->id)) {
             $reasons[] = 'This Helper already declined or missed this emergency support offer.';
         }
-        if (! $helper->canHandleRiskLevel($session->risk_level) || ! $session->permitsPeerMatching()) {
+        if (! $helper->canHandleRiskLevel($session->matchingRiskLevel()) || ! $session->permitsPeerMatching()) {
             $reasons[] = 'This request requires a different competency or adviser review.';
         }
         if (DB::table('helper_conflicts')->where('helper_id', $helper->id)->where('seeker_id', $session->seeker_id)->exists()) {

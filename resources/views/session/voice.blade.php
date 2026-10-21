@@ -25,7 +25,7 @@
         <a class="voice-back" href="{{ $isHelper ? route('helper.cases') : route('seeker.dashboard') }}" aria-label="Back to dashboard"><x-ui-icon name="arrow-left" /></a>
         <div class="voice-peer"><strong>{{ $peer }}</strong><small>Voice support · <span id="sessionTimer">00:00</span></small></div>
         <div data-notification-slot></div>
-        <form method="POST" action="{{ $isHelper ? route('helper.session.end', ['id' => $session->id]) : route('session.end') }}"
+        <form method="POST" action="{{ $isHelper ? route('helper.session.end', ['id' => $session->id]) : route('session.end', ['session_id'=>$session->id]) }}"
               data-confirm="End support session?" data-confirm-message="This ends both the voice call and text chat for you and your session partner." data-confirm-text="End session">
             @csrf
             <button class="voice-end" type="submit">End session</button>
@@ -39,14 +39,14 @@
             <div class="voice-tools">
                 <button type="button" data-messages-toggle aria-expanded="false" aria-controls="voiceMessages"><x-ui-icon name="message" /> Messages <span data-message-count hidden></span></button>
                 @if($isHelper)
-                    @if($session->isReferralEligible())<button type="button" id="referralBtn">Referral</button>@endif
-                    <button type="button" id="emergencyBtn" class="voice-emergency">Emergency</button>
+                    @if($session->isReferralEligible())<button type="button" id="referralBtn" @disabled(!$session->canRecommendReferral()) title="Exchange messages or connect a voice call first">Referral</button>@endif
+                    <button type="button" id="emergencyBtn" @disabled(!$session->canReportEmergency()) title="A participant message or connected voice call is required" class="voice-emergency">Emergency</button>
                 @endif
             </div>
             <p class="voice-hint">Messages stay available during the call. Leaving the call does not end your support session.</p>
             @if(!$isHelper && !$report?->help_seeker_condition)
                 <details class="voice-checkin"><summary>Optional: how are you feeling?</summary>
-                    <form data-voice-checkin action="{{ route('session.checkin') }}">
+                    <form data-voice-checkin action="{{ route('session.checkin', ['session_id'=>$session->id]) }}">
                         <label for="voiceCondition">Your Helper sees only your answer.</label>
                         <select id="voiceCondition" name="condition" required><option value="">Choose an answer</option>
                             @foreach(['coping_well'=>'Coping well','mild_distress'=>'Mild distress','moderate_distress'=>'Moderate distress','severe_distress'=>'Severe distress','prefer_not_to_say'=>'Prefer not to say'] as $value=>$label)

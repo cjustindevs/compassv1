@@ -19,6 +19,7 @@ class SessionDurationService
         $deadline = $session->start_time?->copy()->addMinutes(self::MAX_MINUTES);
 
         return [
+            'session_id' => $session->id,
             'status' => $timedOut ? 'completed' : $session->session_status,
             'ended' => $session->isCompleted() || $timedOut,
             'requires_completion' => (bool) $timedOut,
@@ -26,7 +27,8 @@ class SessionDurationService
             'limit_seconds' => self::MAX_MINUTES * 60,
             'message' => $session->auto_completed ? 'The 90-minute session limit has been reached.' : 'This session has ended.',
             'warning' => $session->start_time && now()->gte($session->start_time->copy()->addMinutes(85)),
-            'seeker_redirect' => $session->completion_reason === 'connection_handoff' ? '/session/chat' : '/session/evaluation',
+            'seeker_redirect' => $session->completion_reason === 'connection_handoff' ? '/session/chat'
+                : (in_array($session->session_status, ['cancelled', 'no_show'], true) ? '/seeker/requests' : '/session/evaluation?session_id='.$session->id),
             'helper_redirect' => '/helper/session/'.$session->id.'/notes',
         ];
     }

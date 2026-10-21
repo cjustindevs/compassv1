@@ -37,7 +37,7 @@ class QueueHelperOptions
             }
             $scoreKey = json_encode([$helper->id, $session->risk_level, $session->concern?->concern_name, $session->preferred_language]);
             $eligible->push(['id'=>$helper->id, 'label'=>$helper->full_name.' | Ready | '.$helper->getRemainingCapacity().'/'.Helper::MAX_SESSIONS_PER_SHIFT.' remaining | '.$helper->competency_level.'/5',
-                'score'=>$this->scores[$scoreKey] ??= $helper->calculateMatchingScore($session->risk_level ?? 'low', $session->concern?->concern_name, $session->preferred_language)]);
+                'score'=>$this->scores[$scoreKey] ??= $helper->calculateMatchingScore($session->matchingRiskLevel(), $session->concern?->concern_name, $session->preferred_language)]);
         }
         arsort($reasons);
         return ['helpers'=>$eligible->sortByDesc('score')->values()->map(fn ($row) => ['id'=>$row['id'],'label'=>$row['label']])->all(), 'unavailable'=>$unavailable,

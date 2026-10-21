@@ -410,7 +410,7 @@
                     <p class="text-gray-500 mt-2">A helper accepted your request. Your session is now active.</p>
 
                     <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-                        <a href="{{ route($session->session_type === 'voice' && ! $session->voice_consent_obtained ? 'request.voice-consent' : ($session->session_type === 'voice' ? 'session.voice' : 'session.chat')) }}" class="btn-primary">
+                        <a href="{{ route($session->session_type === 'voice' && ! $session->voice_consent_obtained ? 'request.voice-consent' : ($session->session_type === 'voice' ? 'session.voice' : 'session.chat'), ['session_id'=>$session->id]) }}" class="btn-primary">
                             <x-ui-icon name="message" class="mr-2" /> {{ $session->session_type === 'voice' ? 'Continue to Voice' : 'Open chat' }}
                         </a>
                         <a href="{{ route('seeker.dashboard') }}" class="btn-outline w-full sm:w-auto">
@@ -566,6 +566,7 @@
             You are not alone. We are here for you.
         </div>
 
+    @include('request.partials.screening-follow-up')
     </main>
 
     <!-- ══════════════════════════════════════════════ -->

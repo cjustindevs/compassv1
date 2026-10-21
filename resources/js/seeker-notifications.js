@@ -66,19 +66,16 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         })
         .listen('SessionEnded', (event) => {
+            // The room controller alone handles completion for its own session.
+            if (document.getElementById('sessionId')) return;
             showToast(
                 'Session Ended',
                 event.message || 'Your session has been ended.',
-                event.seeker_redirect || '/session/evaluation',
+                event.seeker_redirect || `/session/evaluation?session_id=${event.session_id}`,
                 'Leave Feedback'
             );
 
-            // On the chat/voice page, move the seeker to the evaluation page.
-            if (window.location.pathname.includes('/session/')) {
-                setTimeout(() => {
-                    window.location.href = safePath(event.seeker_redirect, '/session/evaluation');
-                }, 2500);
-            }
+
         });
 
     // Fallback: if the websocket is down, poll the unread count so the

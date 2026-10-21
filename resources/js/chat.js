@@ -58,6 +58,7 @@ class ChatApp {
     }
 
     async applySessionState(state) {
+        if (state?.session_id != null && String(state.session_id) !== String(this.sessionId)) return;
         if (!state || this.ended) return;
         if (state.requires_completion) {
             this.setInputDisabled(true);
@@ -257,6 +258,7 @@ class ChatApp {
     // ─────────────────────────── Session ended ───────────────────────────
 
     handleSessionEnded(event) {
+        if (event.session_id != null && String(event.session_id) !== String(this.sessionId)) return;
         if (this.ended) return;
         this.ended = true;
         clearInterval(this.statusInterval);
@@ -274,7 +276,7 @@ class ChatApp {
         // seeker → evaluation page, helper → session notes.
         const url = this.safePath(this.currentUserRole === 'helper'
             ? (event.helper_redirect || `/helper/session/${this.sessionId}/notes`)
-            : (event.seeker_redirect || '/session/evaluation'));
+            : (event.seeker_redirect || `/session/evaluation?session_id=${this.sessionId}`));
 
         setTimeout(() => {
             window.location.href = url;

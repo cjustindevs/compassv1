@@ -122,7 +122,7 @@ class SessionReconnectionService
             $incident = SessionReconnection::lockForUpdate()->findOrFail($incident->id);
             if (! $session->isActive() || $incident->status !== 'requested' || app(SessionDurationService::class)->expire($session)) {
                 throw ValidationException::withMessages(['connection' => 'This request is no longer awaiting replacement.']);
-            }if (($session->requires_immediate_action || $session->risk_level === 'emergency') && !$session->permitsEmergencySupport()) {
+            }if (($session->requires_immediate_action || $session->risk_level === 'emergency') && !$session->permitsEmergencySupport() && !$session->permitsParallelScreeningSupport()) {
                 throw ValidationException::withMessages(['connection' => 'An emergency is active. Coordinate with the responsible Adviser instead of ordinary replacement matching.']);
             }$excluded = $session->permitsEmergencySupport() ? \App\Models\AuditLog::where('target_type',$session->getTable())->where('target_id',$session->id)->whereIn('action',['replacement_offer_declined','replacement_offer_expired'])->get()->map(fn($row)=>(int)($row->metadata['helper_id'] ?? 0))->all() : [];
             $helper = app(HelperMatchingService::class)->findBestMatch($session->seeker, $session->risk_level ?? 'low', $session->concern_category, null, $session->helper_id, $excluded);
@@ -149,7 +149,7 @@ class SessionReconnectionService
                 SupportAudit::record('replacement_offer_declined', $session, ['helper_id'=>$helper->id]);
 
                 return;
-            }if (! app(HelperEligibilityService::class)->allows($helper, $session) || ! $helper->canHandleRiskLevel($session->risk_level ?? 'low') || (($session->requires_immediate_action || $session->risk_level === 'emergency') && !$session->permitsEmergencySupport()) || DB::table('helper_conflicts')->where('helper_id', $helper->id)->where('seeker_id', $session->seeker_id)->exists()) {
+            }if (! app(HelperEligibilityService::class)->allows($helper, $session) || ! $helper->canHandleRiskLevel($session->matchingRiskLevel()) || (($session->requires_immediate_action || $session->risk_level === 'emergency') && !$session->permitsEmergencySupport() && !$session->permitsParallelScreeningSupport()) || DB::table('helper_conflicts')->where('helper_id', $helper->id)->where('seeker_id', $session->seeker_id)->exists()) {
                 throw ValidationException::withMessages(['connection' => 'Eligibility changed. Ask the Moderator to review this replacement.']);
             }
             $continuation = Session::create(['seeker_id' => $session->seeker_id, 'helper_id' => $helper->id, 'concern_id' => $session->concern_id, 'concern_category' => $session->concern_category, 'risk_level' => $session->risk_level, 'session_type' => $session->session_type, 'peer_support_approved_at' => $session->peer_support_approved_at, 'requires_closer_monitoring' => $session->requires_closer_monitoring, 'session_status' => 'active', 'start_time' => $session->start_time, 'helper_accepted_at' => now(), 'created_date' => now(), 'submitted_at' => $session->submitted_at, 'review_adviser_id' => $helper->adviser_id]);

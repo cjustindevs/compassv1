@@ -53,3 +53,16 @@ test('an HTML or unconfirmed successful response cannot falsely close the form',
     const r=room();await r.flush();r.ids.referralBtn.handlers.click();r.setPost({ok:true,json:async()=>{throw new Error('HTML response');}});
     await r.submit(r.ids.referralConsentForm);assert.equal(r.ids.referralModal.open,true);assert.match(r.ids.referralConsentForm.children[0].textContent,/could not be confirmed/);
 });
+
+
+test('empty room action controls unlock only when server confirms conversation evidence', async()=>{
+    const r=room();await r.flush();
+    r.setState({referral:null,emergency:null,actions:{referral:false,emergency:false}});await r.poll();
+    r.ids.referralBtn.handlers.click();r.ids.emergencyBtn.handlers.click();
+    assert.notEqual(r.ids.referralModal.open,true);assert.notEqual(r.ids.emergencyModal.open,true);
+    r.setState({referral:null,emergency:null,actions:{referral:false,emergency:true}});await r.poll();
+    assert.equal(r.ids.referralBtn.disabled,true);assert.equal(r.ids.emergencyBtn.disabled,false);
+    r.ids.emergencyBtn.handlers.click();await r.flush();assert.equal(r.ids.emergencyModal.open,true);
+    r.setState({referral:null,emergency:null,actions:{referral:true,emergency:true}});await r.poll();
+    assert.equal(r.ids.referralBtn.disabled,false);
+});

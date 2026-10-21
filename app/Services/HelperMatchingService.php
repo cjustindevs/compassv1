@@ -45,11 +45,11 @@ class HelperMatchingService
         if (! app(ConsentService::class)->valid($session->seeker, 'privacy_policy') || ! app(ConsentService::class)->valid($session->seeker, 'informed_consent')) {
             return 'Please review and accept the current Privacy Notice and Terms and Condition in Privacy and consent so automatic matching can proceed. Your request is saved.';
         }
-        if (($session->requires_adviser_review || $session->risk_level === 'high') && ! $session->permitsEmergencySupport() && ! $session->peer_support_approved_at) {
+        if (! $session->permitsPeerMatching()) {
             return 'Your request needs Adviser review before a peer Helper can be assigned. Your request is saved.';
         }
 
-        return 'Waiting for a Helper who is ready, on duty, verified and qualified for this request, with free session capacity. Helpers already assigned to another request cannot take a second live session. Matching retries automatically; your request is saved.';
+        return 'Finding a ready, qualified Helper with duty capacity. Matching retries automatically.';
     }
 
     public function findBestMatch(?HelpSeeker $seeker, string $riskLevel, ?string $concernCategory, ?string $language, ?int $excludeHelperId = null, array $excludedHelperIds = []): ?Helper
@@ -184,10 +184,10 @@ class HelperMatchingService
         }
         $excluded = $this->previousEmergencyOffers($session);
         app(QueueAssignmentHistory::class)->processed($queue);
-        $eligible = $this->getEligibleHelpers($session->risk_level, $excludeHelperId)
+        $eligible = $this->getEligibleHelpers($session->matchingRiskLevel(), $excludeHelperId)
             ->reject(fn ($candidate) => in_array($candidate->id, $excluded, true))
             ->reject(fn ($candidate) => DB::table('helper_conflicts')->where('helper_id', $candidate->id)->where('seeker_id', $session->seeker_id)->exists());
-        foreach ($this->rankHelpers($eligible, $session->risk_level, $session->concern?->concern_name, $session->preferred_language ?? $queue->seeker?->user?->preferred_language) as $helper) {
+        foreach ($this->rankHelpers($eligible, $session->matchingRiskLevel(), $session->concern?->concern_name, $session->preferred_language ?? $queue->seeker?->user?->preferred_language) as $helper) {
             // Revalidate under lock. A candidate can become busy after ranking;
             // try the next eligible candidate instead of leaving the queue stuck.
             $result = $this->manualAssign($queue, $helper->id, false, false, 'automatic');
@@ -242,7 +242,7 @@ class HelperMatchingService
             if (DB::table('helper_conflicts')->where('helper_id', $helperId)->where('seeker_id', $session->seeker_id)->exists()) {
                 return 'A declared conflict prevents this assignment.';
             }
-            if (! $helper->canHandleRiskLevel($session->risk_level)) {
+            if (! $helper->canHandleRiskLevel($session->matchingRiskLevel())) {
                 return 'This request requires a different competency or adviser review and cannot be assigned to a peer helper.';
             }
 

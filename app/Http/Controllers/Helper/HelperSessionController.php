@@ -295,11 +295,11 @@ class HelperSessionController extends Controller
         ]);
 
         app(SessionDurationService::class)->expire($session);
-        abort_unless($session->isActive() && $session->helper_accepted_at, 409, 'An emergency report can only be submitted from your live session.');
+        abort_unless($session->canReportEmergency(), 409, 'A participant message or connected voice call is required before reporting an emergency.');
 
         [$incident, $alert, $created] = DB::transaction(function () use ($session, $validated) {
             $session = Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
-            abort_unless($session->isActive() && $session->helper_accepted_at, 409, 'This session is no longer live.');
+            abort_unless($session->canReportEmergency(), 409, 'A live conversation is required to report an emergency.');
             $incident = IncidentReport::where('session_id', $session->id)
                 ->where('incident_category', 'emergency_flag')
                 ->whereIn('status', ['open', 'under_review', 'escalated'])
@@ -396,7 +396,7 @@ class HelperSessionController extends Controller
             ->where('helper_id', $helper->id)
             ->findOrFail($id);
 
-        abort_unless($session->isReferralEligible(), 409, 'A referral recommendation may only be raised for a live or concluded session.');
+        abort_unless($session->canRecommendReferral(), 409, 'Exchange messages or connect a voice call before recommending a referral.');
 
         $validated = $request->validate([
             'summary' => 'required|string|max:500',
@@ -439,7 +439,7 @@ class HelperSessionController extends Controller
             'priority_level' => 'required|in:low,moderate,high,emergency',
         ]);
 
-        abort_unless($session->isReferralEligible(), 409, 'A referral recommendation may only be raised for a live or concluded session.');
+        abort_unless($session->canRecommendReferral(), 409, 'Exchange messages or connect a voice call before recommending a referral.');
 
         $referral = Referral::where('id', $validated['referral_id'])
             ->where('session_id', $session->id)

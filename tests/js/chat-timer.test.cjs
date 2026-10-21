@@ -57,3 +57,13 @@ test('polling and websocket end notices trigger only one overlay and preserve lo
     assert.equal(overlays, 1);
     assert.equal(app.messageInput.disabled, true);
 });
+
+
+test('a delayed end event for an older session cannot end the current chat', async () => {
+    const { app } = room(); app.sessionId='42';
+    let overlays=0; app.showTyping=()=>{}; app.showEndedOverlay=()=>overlays++;
+    app.handleSessionEnded({session_id:41, seeker_redirect:'/session/evaluation?session_id=41'});
+    await app.applySessionState({session_id:41, ended:true});
+    assert.equal(app.ended,false); assert.equal(overlays,0);
+    app.handleSessionEnded({session_id:42}); assert.equal(app.ended,true); assert.equal(overlays,1);
+});

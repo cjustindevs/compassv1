@@ -81,7 +81,7 @@ class ConsentReferralEmergencyTest extends TestCase
     {
         $seeker = $seekerUser->helpSeeker;
 
-        return Session::create([
+        $session = Session::create([
             'seeker_id' => $seeker->id,
             'helper_id' => $helper->id,
             'risk_level' => 'low',
@@ -91,6 +91,8 @@ class ConsentReferralEmergencyTest extends TestCase
             'submitted_at' => now(),
             'created_date' => now(),
         ]);
+        $this->conversationFixture($session);
+        return $session;
     }
 
     private function professional(): PsychologyProfessional

@@ -22,6 +22,11 @@ class NotificationPopupDelivery
 
     public function actionable(Notification $notice, User $user): bool
     {
+        if (preg_match('/^queue-wait:(\d+)$/', $notice->popup_event_key ?? '', $match)) {
+            $queue = \App\Models\QueueRequest::find((int) $match[1]);
+            return $queue && $queue->request_status === 'waiting' && !$queue->assigned_helper_id
+                && Session::where('queue_request_id', $queue->id)->where('session_status', 'waiting')->whereNull('helper_id')->exists();
+        }
         if ($notice->notification_type === 'emergency' && in_array($user->role, ['adviser', 'moderator', 'professional'], true)) {
             return $this->emergencies->key($notice, $user) !== null;
         }

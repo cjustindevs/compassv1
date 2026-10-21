@@ -1429,6 +1429,7 @@ class HelperModuleTest extends TestCase
     public function test_helper_can_flag_an_emergency(): void
     {
         $session = $this->makeActiveSession();
+        $this->conversationFixture($session);
 
         $this->actingAs($this->helperUser)
             ->from(route('helper.session.chat', ['id' => $session->id]))

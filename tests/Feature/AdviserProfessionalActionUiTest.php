@@ -20,7 +20,7 @@ use Tests\TestCase;
 
 class AdviserProfessionalActionUiTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, \Tests\Concerns\SeekerWorkflowFixtures;
 
     protected function setUp(): void
     {
@@ -46,6 +46,7 @@ class AdviserProfessionalActionUiTest extends TestCase
         $session = Session::create(['seeker_id' => $seeker->id, 'helper_id' => $helper->id, 'review_adviser_id' => $adviser->id, 'session_status' => 'active', 'session_type' => 'chat', 'start_time' => now(), 'helper_accepted_at' => now(), 'created_date' => now()]);
         $this->actingAs($adviserUser);
 
+        $this->conversationFixture($session);
         return [$adviserUser, $helperUser, $session];
     }
 

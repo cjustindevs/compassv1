@@ -64,5 +64,6 @@
         @if(!$session->evaluation->answers)<p class="text-sm text-gray-500">This older feedback record does not contain the original questionnaire answers.</p>@endif
     </section>
     @endif
+@include('request.partials.screening-follow-up')
 </x-seeker-step>
 @endsection

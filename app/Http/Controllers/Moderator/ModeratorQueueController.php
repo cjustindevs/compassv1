@@ -26,11 +26,12 @@ class ModeratorQueueController extends Controller
 {
     use BroadcastsSafely;
 
-    public function index()
+    public function index(Request $request)
     {
         app(\App\Services\StaleQueueRequests::class)->expire();
         $queueItems = QueueRequest::with(['seeker', 'assignedHelper'])
             ->where('request_status', 'waiting')
+            ->when($request->filled('queue_id'), fn ($q) => $q->whereKey($request->integer('queue_id')))
             ->orderByRaw("CASE priority_level WHEN 'emergency' THEN 0 WHEN 'high' THEN 1 WHEN 'moderate' THEN 2 ELSE 3 END")
             ->orderBy('request_date')
             ->paginate(15)->withQueryString();

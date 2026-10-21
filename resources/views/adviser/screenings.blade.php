@@ -163,7 +163,7 @@
                     <summary><span>Review screening and record decision</span><span class="screening-expand-hint" aria-hidden="true">Open review</span></summary>
                     <div class="screening-review-content">
                 @if($single)
-                    <p class="screening-safety-note text-sm text-amber-800">{{ $followUpFlow ? 'This intake asked one safety question. Use the follow-up below to obtain a response on the Seeker waiting page. Other questions were not assessed.' : 'This intake asked one safety question. The saved answer is read-only; other questions were not assessed.' }}</p>
+                    <p class="screening-safety-note text-sm text-amber-800">{{ $followUpFlow ? 'One-question intake. Follow up alongside peer matching; original answers stay unchanged.' : 'This intake asked one safety question. The saved answer is read-only; other questions were not assessed.' }}</p>
                 @endif
                 <p class="screening-guidance text-sm text-blue-800"><span class="font-semibold">Guidance:</span> {{ $riskMeta['guidance'] }}</p>
 

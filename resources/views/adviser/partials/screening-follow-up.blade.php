@@ -1,7 +1,7 @@
 <section class="screening-follow-up screening-decision-control rounded-xl border border-gray-200">
     <h3 class="screening-decision-heading">One-question follow-up</h3>
     <div class="p-4 space-y-3">
-        <p class="text-sm text-gray-600">The Seeker chose not to answer. Send the same safety question to their waiting page; their original response stays unchanged.</p>
+        <p class="text-sm text-gray-600">Send an optional follow-up. Matching continues during review.</p>
         <p class="text-sm font-medium">{{ \App\Services\CompactScreening::SINGLE_QUESTION }}</p>
         @if(!$screening->follow_up_requested_at)
             <form method="POST" action="{{ route('adviser.screenings.follow-up',$session) }}" class="space-y-3">

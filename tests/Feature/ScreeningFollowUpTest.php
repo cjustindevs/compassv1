@@ -73,7 +73,8 @@ class ScreeningFollowUpTest extends TestCase
         $this->assertDatabaseCount('queue_requests', 0);
         $this->assertDatabaseCount('screening_responses', 1);
         $this->get(route('adviser.screenings'))->assertSee('Waiting for the Seeker')->assertDontSee('<button type="submit" name="review_action"', false);
-        $this->actingAs($seeker)->get(route('request.matching'))->assertOk()->assertSee('Your Adviser')
+        $this->actingAs($seeker)->get(route('request.matching'))->assertRedirect(route('request.preferences'));
+        $this->get(route('seeker.requests.show', $case))->assertOk()->assertSee('Your Adviser')
             ->assertSee(CompactScreening::SINGLE_QUESTION)->assertSee('Send response')->assertSee('data-followup-form', false);
     }
 
@@ -97,7 +98,7 @@ class ScreeningFollowUpTest extends TestCase
         $this->assertNull($case->fresh()->peer_support_approved_at);
         $this->assertSame('adviser_review_required', $case->fresh()->workflow_state);
         $this->assertDatabaseCount('queue_requests', 0);
-        $this->get(route('request.matching'))->assertSee('Response saved:')->assertDontSee('<input type="radio" name="follow_up_answer"', false);
+        $this->get(route('seeker.requests.show', $case))->assertSee('Response saved:')->assertDontSee('<input type="radio" name="follow_up_answer"', false);
         $this->actingAs($adviser)->getJson(route('adviser.notifications.unread-count', ['include_reviews' => 1]))
             ->assertOk()->assertJsonCount(1, 'reviews')->assertJsonPath('screening_count', 1);
     }
@@ -184,7 +185,7 @@ class ScreeningFollowUpTest extends TestCase
         HelpSeeker::create(['user_account_id' => $other->id, 'generated_alias' => 'OtherSeeker', 'age' => 20, 'gender' => 'prefer-not-to-say']);
         $this->actingAs($other)->postJson(route('request.follow-up.respond', $case), ['screening_id' => $original->id, 'follow_up_answer' => 'no'])->assertForbidden();
         $this->get(route('request.matching'))->assertRedirect(route('request.screening'));
-        $this->actingAs($seeker)->get(route('request.matching'))->assertOk()->assertSee('&lt;script&gt;privateNote()', false)
+        $this->actingAs($seeker)->get(route('seeker.requests.show', $case))->assertOk()->assertSee('&lt;script&gt;privateNote()', false)
             ->assertDontSee('<script>privateNote()', false)->assertDontSee($adviser->email);
         $seeker->update(['is_active' => false]);
         $this->postJson(route('request.follow-up.respond', $case), ['screening_id' => $original->id, 'follow_up_answer' => 'no'])->assertForbidden();

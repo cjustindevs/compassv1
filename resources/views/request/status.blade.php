@@ -57,36 +57,11 @@
 <p>Your request is under staff review. You will be notified when a decision is recorded.</p>
 </aside>
 </section>
-@if(($followUp ?? null)?->instrument_version === \App\Services\CompactScreening::SINGLE_VERSION && $followUp->follow_up_requested_at)
-<section class="seeker-follow-up" aria-labelledby="follow-up-heading">
-<h2 id="follow-up-heading" class="font-semibold">Your Adviser's follow-up</h2>
-@if($followUp->follow_up_note)<p>{{ $followUp->follow_up_note }}</p>@endif
-@if(!$followUp->follow_up_answered_at)
-<p>Your Adviser is asking the same safety question. You can still choose not to answer; your request will remain pending for review.</p>
-<form method="POST" action="{{ route('request.follow-up.respond',$session) }}" data-followup-form>
-@csrf
-<input type="hidden" name="screening_id" value="{{ $followUp->id }}">
-<fieldset>
-<legend>{{ \App\Services\CompactScreening::SINGLE_QUESTION }}</legend>
-<div class="follow-up-choices">
-@foreach(['yes'=>'Yes','no'=>'No','prefer_not_to_say'=>'Prefer not to say'] as $value=>$label)
-<label class="follow-up-choice"><input type="radio" name="follow_up_answer" value="{{ $value }}" required @checked(old('follow_up_answer') === $value)> {{ $label }}</label>
-@endforeach
-</div>
-</fieldset>
-@error('follow_up_answer')<p class="text-red-700" role="alert">{{ $message }}</p>@enderror
-<button type="submit" class="seeker-button">Send response</button>
-</form>
-@else
-<p><strong>Response saved:</strong> {{ match($followUp->follow_up_answer) { 'yes'=>'Yes','no'=>'No',default=>'Prefer not to say' } }}</p>
-<p>{{ $followUp->follow_up_answer === 'prefer_not_to_say' ? 'Your choice was respected. Your request remains pending; no safety classification has been assumed.' : 'Your Adviser has been notified. Matching starts only after their approval and completion of your preferences.' }}</p>
-@endif
-</section>
-@endif
+
 @break
 @case('closed')<h2 class="font-semibold">This request has ended</h2>@if($session->session_status === \App\Models\Session::STATUS_NO_SHOW)<p>The helper was not able to join, and this request has been closed. If you still need support, you can start a new request.</p>@elseif($session->session_status === \App\Models\Session::STATUS_CANCELLED)<p>This request was cancelled. If you still need support, you can start a new request.</p>@else<p>This conversation has been closed. If you still need support, you can start a new request.</p>@endif@break
 @case('session_ready')<h2 class="font-semibold">Your helper is preparing</h2><p>Your request has been accepted. Chat opens when the helper starts the session.</p>@break
-@case('session_active')<h2 class="font-semibold">Session status</h2>@if($session->helper_accepted_at && $session->helper)<a class="seeker-button" href="{{ route('session.chat') }}">Open chat</a>@elseif(!$session->helper_accepted_at)<p>This older request has no recorded helper acceptance. Please contact your adviser for assistance with this request.</p>@else<p>The helper connection for this request cannot be confirmed. Please contact your support team for assistance.</p>@endif@break
+@case('session_active')<h2 class="font-semibold">Session status</h2>@if($session->helper_accepted_at && $session->helper)<a class="seeker-button" href="{{ route('session.chat', ['session_id'=>$session->id]) }}">Open chat</a>@elseif(!$session->helper_accepted_at)<p>This older request has no recorded helper acceptance. Please contact your adviser for assistance with this request.</p>@else<p>The helper connection for this request cannot be confirmed. Please contact your support team for assistance.</p>@endif@break
 @case('helper_pending_acceptance')<h2 class="font-semibold">Waiting for helper acceptance</h2><p>{{ $session->helper?->public_alias ?? 'Peer Helper' }} has been invited. Chat opens after acceptance when the helper starts the session.</p>@break
 @default
 @if(in_array($session->workflow_state, ['screening_required', 'concern_required', 'session_preferences_required', 'ready_for_submission'], true))
@@ -97,6 +72,7 @@
 <h2 class="font-semibold">Waiting for an available helper</h2><p>{{ app(\App\Services\OperatingHoursService::class)->message() }}</p>
 @endif
 @endswitch
+@include('request.partials.screening-follow-up')
 <footer class="status-footer">
 <div class="status-refresh"><p>This page refreshes every 15 seconds while you wait.</p><a class="seeker-button secondary" href="{{ route('request.matching') }}">Refresh status</a></div>
 <details class="status-history"><summary>Status history</summary><ol>@forelse($events as $event)<li>{{ \App\Services\SeekerRequestPresentation::STATES[$event->to_state] ?? 'Request updated' }}<time>{{ \Illuminate\Support\Carbon::parse($event->occurred_at)->timezone('Asia/Manila')->format('M d, Y g:i A') }} PHT</time></li>@empty<li>No status updates recorded yet.</li>@endforelse</ol></details>

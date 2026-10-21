@@ -227,6 +227,7 @@ class CompassImplementationTest extends TestCase
         $this->verifiedHelperFixture($helper);
         $seeker = $this->seeker();
         $session = Session::create(['seeker_id' => $seeker->helpSeeker->id, 'helper_id' => $helper->id, 'risk_level'=>'low','session_status' => 'active','helper_accepted_at'=>now(),'start_time'=>now()]);
+        $this->conversationFixture($session);
         $this->actingAs($helper->user)->post(route('helper.session.referral.consent', ['id' => $session->id]), [
             'summary' => 'Additional professional support is recommended.',
         ])->assertSessionHasNoErrors();

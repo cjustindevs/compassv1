@@ -7,8 +7,17 @@ class SeekerWorkflowService {
     public function __construct(private ConsentService $consents, private RiskClassificationService $risk) {}
     public function current(User $user): ?Session {
         Gate::authorize('seeker-workflow');
-        return Session::where('seeker_id',$user->helpSeeker->id)
-            ->whereNotIn('session_status',['completed','evaluated','cancelled','no_show'])->latest('id')->first();
+        $session = Session::where('seeker_id',$user->helpSeeker->id)
+            ->whereNotIn('session_status',['completed','evaluated','cancelled','no_show'])
+            ->orderByRaw("CASE WHEN session_status = 'active' THEN 0 ELSE 1 END")->latest('id')->first();
+        // Resume existing short-intake requests without creating a second request.
+        if ($session && $session->workflow_state === 'adviser_review_required' && !$session->submitted_at
+            && $session->permitsParallelScreeningSupport()) {
+            Session::whereKey($session->id)->where('workflow_state', 'adviser_review_required')->whereNull('submitted_at')
+                ->update(['session_status'=>'screening_completed', 'workflow_state'=>$session->concern_id ? 'session_preferences_required' : 'concern_required']);
+            $session->refresh();
+        }
+        return $session;
     }
     public function screen(User $user, array $answers, ?array $compactDetails = null): Session {
         $this->consents->requireGeneral($user);
@@ -24,11 +33,12 @@ class SeekerWorkflowService {
             catch (\RuntimeException $e) { $review = true; $result = ['risk_level'=>null,'rule_code'=>'review_unresolved','priority'=>2,'action'=>'adviser_review_required','reason'=>'Unresolved screening responses']; }
             $emergency = $result['risk_level'] === 'emergency';
             $fastSafety=$version===CompactScreening::SINGLE_VERSION && ($answers['suicidal_thoughts']??null)==='yes';
+            $parallelIntake=$version===CompactScreening::SINGLE_VERSION && in_array($answers['suicidal_thoughts']??null,['yes','prefer_not_to_say'],true);
             $review = $emergency || ($review || ($compactDetails === null && !ScreeningInstrument::approved()) || $result['risk_level']==='high');
             $adviser = $review ? $this->pickReviewer() : null;
             $session = Session::create(['seeker_id'=>$user->helpSeeker->id,'risk_level'=>$result['risk_level'],
-                'session_type'=>'chat','session_status'=>$emergency?'emergency':($review&&!$fastSafety?'pending_review':'screening_completed'),
-                'workflow_state'=>$emergency?'emergency_escalated':($review&&!$fastSafety?'adviser_review_required':($compactDetails !== null ? 'session_preferences_required' : 'concern_required')),
+                'session_type'=>'chat','session_status'=>$emergency?'emergency':($review&&!$parallelIntake?'pending_review':'screening_completed'),
+                'workflow_state'=>$emergency?'emergency_escalated':($review&&!$parallelIntake?'adviser_review_required':($compactDetails !== null ? 'session_preferences_required' : 'concern_required')),
                 'requires_adviser_review'=>$review,'review_adviser_id'=>$adviser?->id,
                 'requires_closer_monitoring'=>$result['risk_level']==='moderate','elevated_priority'=>$result['risk_level']==='moderate',
                 'concern_id'=>$compactDetails['concern_id'] ?? null,'completion_status'=>'pending','created_date'=>now()]);
@@ -47,7 +57,7 @@ class SeekerWorkflowService {
             if ($emergency) app(EmergencyEscalationService::class)->escalateEmergency($session,$user->helpSeeker,['reason'=>$result['reason'],'screening_id'=>$screening->id,'rule_code'=>$result['rule_code']]);
             if ($fastSafety) app(EmergencyEscalationService::class)->escalateEmergency($session,$user->helpSeeker,['reason'=>'Disclosed safety concern needs urgent staff review alongside prioritized peer support. A current plan was not assessed.','screening_id'=>$screening->id,'rule_code'=>$result['rule_code'],'preserve_classification'=>true]);
             if ($review && $adviser && !$fastSafety) Notification::create(['user_account_id'=>$adviser->user_account_id,'title'=>'Screening review required',
-                'message'=>$emergency ? 'An emergency screening needs your review. Temporary peer support does not replace emergency coordination.' : 'A preliminary screening needs your review before peer support.','notification_type'=>'system','link'=>'/adviser/screenings#screening-'.$session->id]);
+                'message'=>$emergency ? 'An emergency screening needs your review. Temporary peer support does not replace emergency coordination.' : 'A screening needs review alongside peer support.','notification_type'=>'system','link'=>'/adviser/screenings#screening-'.$session->id]);
             \App\Models\SeekerRequestDraft::where('seeker_id', $session->seeker_id)->delete();
             return $session;
         });
@@ -75,7 +85,7 @@ class SeekerWorkflowService {
             $session=Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
             Gate::authorize('update',$session);
             if ($session->submitted_at) return $session;
-            abort_unless($session->workflow_state==='session_preferences_required' && $session->concern_id && (!$session->requires_adviser_review || $session->permitsPrioritySafetySupport()) && $session->risk_level!=='emergency',409,'Complete the required steps before submitting.');
+            abort_unless($session->workflow_state==='session_preferences_required' && $session->concern_id && (!$session->requires_adviser_review || $session->permitsParallelScreeningSupport()) && $session->risk_level!=='emergency',409,'Complete the required steps before submitting.');
             $mode = $data['support_mode'] ?? 'chat';
             abort_unless($mode === 'chat' || ($mode === 'voice' && app(VoiceConfiguration::class)->ready() && in_array($data['voice_participation'] ?? null,[true,1,'1','yes','on','true'],true)),422,'Voice participation must be available and accepted.');
             if ($mode === 'voice') app(ConsentService::class)->decide($user,'voice_participation','accepted',$session->id,null,'Live audio only; no recording or automatic transcription.');
@@ -84,7 +94,7 @@ class SeekerWorkflowService {
             $session->update(['workflow_state'=>'submitted','submitted_at'=>now(),'preferred_language'=>$data['preferred_language']]);
             \App\Models\SeekerRequestDraft::where('seeker_id', $session->seeker_id)->delete();
             $queue=QueueRequest::create(['seeker_id'=>$session->seeker_id,'request_date'=>now(),'queued_at'=>now(),
-                'request_status'=>'waiting','priority_level'=>$session->permitsEmergencySupport() ? 'emergency' : $session->risk_level,'preferred_session_type'=>$mode,'voice_consent'=>$mode==='voice']);
+                'request_status'=>'waiting','priority_level'=>$session->queuePriorityLevel(),'preferred_session_type'=>$mode,'voice_consent'=>$mode==='voice']);
             app(QueueManagementService::class)->prepareQueue($queue);
             $session->update(['queue_request_id'=>$queue->id,'session_status'=>'waiting','workflow_state'=>'queued']);
             SupportAudit::record('request_submitted',$session); SupportAudit::record('queue_entry_created',$queue);
@@ -148,7 +158,7 @@ class SeekerWorkflowService {
             $session->update(['session_status'=>'active','start_time'=>now(),'match_status'=>'assigned','workflow_state'=>'session_active']);
             $helper->update(['status'=>'busy']);$helper->syncSessionCounters();
             SupportAudit::record('session_started',$session);
-            Notification::create(['user_account_id'=>$session->seeker->user_account_id,'title'=>'Your session has started','message'=>'Your helper is ready. You can open chat.','notification_type'=>'session','link'=>'/session/chat']);
+            Notification::create(['user_account_id'=>$session->seeker->user_account_id,'title'=>'Your session has started','message'=>'Your helper is ready. You can open chat.','notification_type'=>'session','link'=>'/session/chat?session_id='.$session->id]);
             if($session->requires_immediate_action) Notification::create(['user_account_id'=>$helper->user_account_id,'title'=>'Review referral recommendation','message'=>'This safety-flagged session has started. Review whether a professional referral recommendation is appropriate; referral consent and Adviser review remain required.','notification_type'=>'referral','link'=>'/helper/chat/'.$session->id]);
             DB::afterCommit(fn()=>$this->broadcastSafely(new \App\Events\SessionUpdated($session,$session->seeker->user_account_id)));
             return $session;

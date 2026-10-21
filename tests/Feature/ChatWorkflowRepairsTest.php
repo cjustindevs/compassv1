@@ -28,7 +28,7 @@ use Tests\TestCase;
 
 class ChatWorkflowRepairsTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, \Tests\Concerns\SeekerWorkflowFixtures;
 
     protected function setUp(): void
     {
@@ -49,6 +49,7 @@ class ChatWorkflowRepairsTest extends TestCase
         $seeker = HelpSeeker::create(['user_account_id' => $seekerUser->id, 'generated_alias' => 'PrivateOtter55']);
         $session = Session::create(['seeker_id' => $seeker->id, 'helper_id' => $helper->id, 'risk_level' => 'low', 'session_type' => 'chat', 'session_status' => 'active', 'helper_accepted_at' => now(), 'start_time' => now(), 'created_date' => now()]);
 
+        $this->conversationFixture($session);
         return [$helperUser, $adviserUser, $seekerUser, $session];
     }
 

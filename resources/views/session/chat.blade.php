@@ -360,7 +360,7 @@
             </div>
             <span class="session-timer" id="sessionTimer" data-started-at="{{ optional($session->start_time)->timestamp }}">00:00</span>
             <div data-notification-slot></div>
-            <form method="POST" action="{{ route('session.end') }}"
+            <form method="POST" action="{{ route('session.end', ['session_id'=>$session->id]) }}"
                   data-confirm="End session?"
                   data-confirm-message="This will end the session for both you and the helper."
                   data-confirm-text="End session"
@@ -430,7 +430,7 @@ document.addEventListener('DOMContentLoaded', function () {
         error.textContent = '';
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
         try {
-            const response = await fetch('{{ route('session.checkin') }}', {
+            const response = await fetch('{{ route('session.checkin', ['session_id'=>$session->id]) }}', {
                 method: 'POST',
                 headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                 body: new URLSearchParams({ condition: condition, _token: csrfToken })

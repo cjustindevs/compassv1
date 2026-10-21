@@ -148,7 +148,7 @@ class RequestSupportController extends Controller
             return redirect()->route('request.screening');
         }
 
-        if ($session->permitsEmergencySupport() || in_array($session->workflow_state, ['adviser_review_required', 'emergency_escalated'])
+        if ((!$session->isActive() && $session->permitsEmergencySupport()) || in_array($session->workflow_state, ['adviser_review_required', 'emergency_escalated'])
             || ($session->isActive() && (! $session->helper_accepted_at || ! $session->helper))) {
             // Display only the assigned reviewer's name, never contact/account details.
             if ($session->workflow_state === 'adviser_review_required') {
@@ -197,7 +197,7 @@ class RequestSupportController extends Controller
         $data = $request->validate(['screening_id' => 'required|integer|min:1', 'follow_up_answer' => 'required|in:yes,no,prefer_not_to_say']);
         $saved = app(ScreeningFollowUp::class)->respond($request->user(), $session, (int) $data['screening_id'], $data['follow_up_answer']);
 
-        return redirect()->route('request.matching')->with('success', $saved ? 'Response saved. Your Adviser will review it before matching can continue.' : 'Your response was already saved.');
+        return redirect()->route('request.matching')->with('success', $saved ? 'Response saved. Matching continues while staff review.' : 'Your response was already saved.');
     }
 
     public function cancel(Request $request, Session $session)
@@ -308,6 +308,7 @@ class RequestSupportController extends Controller
 
     private function next(Session $session)
     {
+        if ($session->workflow_state === 'session_active') return redirect()->route('session.chat', ['session_id'=>$session->id]);
         return redirect()->route(match ($session->workflow_state) {
             'concern_required' => 'request.concern','session_preferences_required' => 'request.preferences','session_active' => 'session.chat',default => 'request.matching',
         });

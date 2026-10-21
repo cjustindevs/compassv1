@@ -679,6 +679,7 @@ Route::get('/session/{session}/referral-prompt', function (Session $session) {
             'identity_url' => $canProvideIdentity ? route('identity.form', [$referral, 'embedded' => 1]) : null,
             'recommendation_html' => $user->role === 'seeker' && $referral->approved_at ? view('partials.referral-recommendation', compact('referral'))->render() : null,
         ] : null,
+        'actions' => $user->role === 'helper' ? ['referral' => $session->canRecommendReferral(), 'emergency' => (bool) $session->canReportEmergency()] : null,
         'consent' => $consent ? ['decision' => $consent->decision, 'consent_given' => (bool) $consent->consent_given, 'withdrawn' => (bool) $consent->withdrawn, 'scope' => $consent->scope] : null,
         'emergency' => $emergency ? ['alert_id' => $emergency->id, 'status' => $emergency->status, 'active' => ! in_array($emergency->status, ['resolved', 'closed']),
             'acknowledged' => (bool) ($incident ? $incident->reviewed_at : $emergency->acknowledged_at), 'referral_id' => $emergency->referral_id, 'professional_referred' => (bool) $emergency->professional_referred,

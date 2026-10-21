@@ -1,6 +1,12 @@
 <?php
 namespace Tests\Concerns;
 trait SeekerWorkflowFixtures {
+    protected function conversationFixture(\App\Models\Session $session): void {
+        foreach (['seeker'=>$session->seeker?->user_account_id, 'helper'=>$session->helper?->user_account_id] as $sender=>$userId) {
+            if ($userId) \App\Models\Message::create(['session_id'=>$session->id, 'sender'=>$sender, 'sender_id'=>$userId,
+                'message_text'=>'A participant message in this test conversation.', 'sent_datetime'=>now()]);
+        }
+    }
     protected function verifiedHelperFixture(\App\Models\Helper $helper): void {
         $adviser=$helper->adviser;
         if (!$adviser) {

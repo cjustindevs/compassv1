@@ -103,7 +103,7 @@ class ReferralDeliveryWorkflowTest extends TestCase
 
     private function makeSession(Helper $helper, User $seekerUser, string $status = Session::STATUS_ACTIVE, ?string $riskLevel = 'low'): Session
     {
-        return Session::create([
+        $session = Session::create([
             'seeker_id' => $seekerUser->helpSeeker->id,
             'helper_id' => $helper->id,
             'risk_level' => $riskLevel,
@@ -113,6 +113,8 @@ class ReferralDeliveryWorkflowTest extends TestCase
             'submitted_at' => now(),
             'created_date' => now(),
         ]);
+        $this->conversationFixture($session);
+        return $session;
     }
 
     private function adviserUser(array $overrides = []): User

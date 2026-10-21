@@ -61,20 +61,21 @@ class ScreeningReviewController extends Controller
         }
         $data = $request->validate(['risk_level' => ($storedFollowUp ? 'nullable' : 'required').'|in:low,moderate,high,emergency', 'reason' => 'required|string|min:10|max:1000', 'evidence_source' => 'required|string|max:255', 'allow_peer_support' => 'required|boolean']);
         $helperRequest = $session->report?->reassessment_requested_at && ! $session->report?->reassessment_reviewed_at;
-        if (! in_array($session->workflow_state, ['adviser_review_required', 'emergency_escalated'], true) && ! $session->permitsEmergencySupport() && ! $helperRequest) {
+        if (!$helperRequest && $session->screeningResponses()->where('review_status', 'reviewed')->exists()) return back()->with('info', 'This screening has already been reviewed.');
+        if (! in_array($session->workflow_state, ['adviser_review_required', 'emergency_escalated'], true) && ! $session->permitsEmergencySupport() && ! $session->permitsParallelScreeningSupport() && ! $helperRequest) {
             return back()->with('error', 'This request is no longer awaiting a screening review, so the reassessment was not recorded.');
         }
         DB::transaction(function () use ($request, $session, $data) {
             $session = Session::lockForUpdate()->findOrFail($session->id);
             abort_unless((int) $session->review_adviser_id === (int) $request->user()->adviser->id, 403);
             $helperRequest = $session->report?->reassessment_requested_at && ! $session->report?->reassessment_reviewed_at;
-            abort_unless(in_array($session->workflow_state, ['adviser_review_required', 'emergency_escalated'], true) || $session->permitsEmergencySupport() || $helperRequest, 409);
+            abort_unless(in_array($session->workflow_state, ['adviser_review_required', 'emergency_escalated'], true) || $session->permitsEmergencySupport() || $session->permitsParallelScreeningSupport() || $helperRequest, 409);
             abort_if(! $helperRequest && $session->screeningResponses()->where('review_status', 'reviewed')->exists(), 409, 'This screening has already been reviewed.');
             if ($helperRequest) {
                 abort_unless((int) $session->helper?->adviser_id === (int) $request->user()->adviser->id, 403);
             }
             $original = $session->screeningResponses()->oldest('id')->first();
-            $parallelSupport = $session->permitsPrioritySafetySupport();
+            $parallelSupport = $session->permitsParallelScreeningSupport();
             if (! $helperRequest && $original?->follow_up_requested_at && ! $request->boolean('use_seeker_follow_up')) {
                 throw ValidationException::withMessages(['follow_up_answer' => 'Review the saved follow-up response before making a decision. Do not replace the Seeker answer.']);
             }
@@ -118,7 +119,7 @@ class ScreeningReviewController extends Controller
                 'is_complete' => true, 'instrument_version' => $version, 'rule_code' => $rule,
                 'review_status' => 'reviewed', 'actor_id' => $request->user()->id, 'evidence_source' => $data['evidence_source']]);
             $session->update(['risk_level' => $data['risk_level'], 'risk_updated_at' => now(), 'risk_update_reason' => $data['reason'], 'risk_updated_by' => $request->user()->id]);
-            if ($data['risk_level'] === 'high' && ! $parallelSupport && ! Referral::where('session_id', $session->id)->exists()) {
+            if ($data['risk_level'] === 'high' && ! $session->permitsPrioritySafetySupport() && ! Referral::where('session_id', $session->id)->exists()) {
                 $referral = Referral::create(['session_id' => $session->id, 'helper_id' => $session->helper_id, 'adviser_id' => $request->user()->adviser->id, 'priority_level' => 'high', 'help_seeker_consent' => false, 'referral_reason' => 'Adviser reassessment requires professional referral review.', 'referral_date' => now(), 'status' => 'pending_adviser']);
                 SupportAudit::record('referral_proposed', $referral);
             }
@@ -128,7 +129,7 @@ class ScreeningReviewController extends Controller
                 'notification_type' => 'system', 'link' => '/seeker/requests']);
             if ($session->queue_request_id) {
                 QueueRequest::whereKey($session->queue_request_id)
-                    ->where('request_status', 'waiting')->update(['priority_level' => $data['risk_level']]);
+                    ->where('request_status', 'waiting')->update(['priority_level' => $session->queuePriorityLevel()]);
             }
 
             if ($helperRequest) {
@@ -140,8 +141,8 @@ class ScreeningReviewController extends Controller
 
                 return;
             }
-            if ($parallelSupport && $data['allow_peer_support'] && $data['risk_level'] !== 'emergency') {
-                $session->update(['requires_adviser_review' => false, 'peer_support_approved_at' => now()]);
+            if ($parallelSupport && $data['risk_level'] !== 'emergency' && $session->submitted_at) {
+                $session->update(['requires_adviser_review' => !$data['allow_peer_support'], 'peer_support_approved_at' => $data['allow_peer_support'] ? now() : null]);
 
                 return;
             }
@@ -168,6 +169,6 @@ class ScreeningReviewController extends Controller
         $created = app(ScreeningFollowUp::class)->request($request->user(), $session, $data['follow_up_note'] ?? null);
 
         return redirect()->to(route('adviser.screenings').'#screening-'.$session->id)
-            ->with('success', $created ? 'Follow-up sent. The request stays pending until you review the response.' : 'This follow-up was already sent. No duplicate notification was created.');
+            ->with('success', $created ? 'Follow-up sent. Peer matching can continue while you review.' : 'This follow-up was already sent. No duplicate notification was created.');
     }
 }

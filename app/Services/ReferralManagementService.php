@@ -48,7 +48,7 @@ class ReferralManagementService
 
         return DB::transaction(function () use ($session, $summary) {
             $session = Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
-            abort_unless($session->isReferralEligible(), 409, 'A referral recommendation may only be raised for a live or concluded session. This session was cancelled, so no referral was created.');
+            abort_unless($session->canRecommendReferral(), 409, 'A referral needs a live or concluded conversation. Exchange messages or connect a voice call first.');
 
             return $this->createReferral($session, $session->seeker, ['reason' => $summary['summary'] ?? '', 'recommendation_form' => $summary['recommendation_form'] ?? null]);
         }, 3);

@@ -1,7 +1,7 @@
 <dialog class="chat-action-dialog" id="referralModal" aria-labelledby="referralModalTitle" data-chat-open-modal="{{ $errors->any() ? old('_chat_action','') : '' }}">
         <div class="modal-box">
             <h3 id="referralModalTitle"> Recommend a Referral</h3>
-            <p class="modal-sub">Recommend professional support for this seeker. Your adviser reviews the recommendation before the seeker is asked for consent.</p>
+            <p class="modal-sub">Your Adviser reviews this recommendation before Seeker consent.</p>
 
             <div id="referralStateChip" hidden style="margin-bottom:14px;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;"></div>
 
@@ -58,7 +58,7 @@
     <dialog class="chat-action-dialog" id="emergencyModal" aria-labelledby="emergencyModalTitle">
         <div class="modal-box">
             <h3 id="emergencyModalTitle"> Flag as Emergency</h3>
-            <p class="modal-sub">This immediately notifies a support coordinator. Use only when the seeker is at immediate risk.</p>
+            <p class="modal-sub">Report immediate risk to staff.</p>
             <div id="emergencyReferralState" hidden style="margin-bottom:14px;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;background:#fffbeb;color:#92400e;"></div>
             <form method="POST" action="{{ route('helper.session.emergency', ['id' => $session->id]) }}"><div class="workflow-form-body">
                 @csrf

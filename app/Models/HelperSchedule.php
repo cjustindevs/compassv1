@@ -145,6 +145,20 @@ class HelperSchedule extends Model
         return $this->is_active && $this->isWithinShift();
     }
 
+    public function getCapacityUsedAttribute(): int
+    {
+        return $this->helper?->assignedSessionsCountForShift($this) ?? 0;
+    }
+
+    public function getDutyStatusAttribute(): string
+    {
+        if ($this->archived_at) return 'Past duty (Archived)';
+        [, $end] = $this->window();
+        if ($end->lte(now())) return 'Past duty';
+        if (!$this->isOnDuty()) return 'Scheduled';
+        return $this->capacity_used >= Helper::MAX_SESSIONS_PER_SHIFT ? 'At Capacity' : 'On duty';
+    }
+
     public function getShiftLabelAttribute(): string
     {
         if(!$this->shift_start && !$this->shift_end)return 'All day';

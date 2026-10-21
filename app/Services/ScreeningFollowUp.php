@@ -22,7 +22,7 @@ class ScreeningFollowUp
                 'follow_up_requested_by'=>$user->id, 'follow_up_requested_at'=>now()]);
             Notification::create(['user_account_id'=>$session->seeker->user_account_id,
                 'title'=>'Adviser follow-up requested', 'message'=>'Your Adviser has one follow-up question. Open your support request to respond.',
-                'notification_type'=>'system', 'link'=>'/request/matching']);
+                'notification_type'=>'system', 'link'=>route('seeker.requests.show', $session, false)]);
             SupportAudit::record('screening_follow_up_requested', $original);
             return true;
         });
@@ -56,7 +56,7 @@ class ScreeningFollowUp
     private function pendingOriginal(Session $session): ScreeningResponse
     {
         $original = $session->screeningResponses()->oldest('id')->lockForUpdate()->first();
-        if ($session->workflow_state !== 'adviser_review_required' || !$session->requires_adviser_review
+        if (($session->workflow_state !== 'adviser_review_required' && !$session->permitsParallelScreeningSupport()) || !$session->requires_adviser_review
             || in_array($session->session_status, ['completed','evaluated','cancelled','no_show'], true)
             || $session->report?->reassessment_requested_at
             || $session->screeningResponses()->where('review_status','reviewed')->exists()

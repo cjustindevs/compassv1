@@ -8,9 +8,9 @@
     let polling=false;
     const status=document.createElement('p');status.className='chat-workflow-feedback';status.setAttribute('role','status');
     document.querySelector('.room-card')?.before(status);
-    function open(dialog,trigger){if(dialog.open)return;dialog._trigger=trigger;if(window.CompassDialogs){if(!window.CompassDialogs.open(dialog,trigger))return;}else dialog.showModal();dialog.querySelector('textarea,input:not([type="hidden"]),button')?.focus();}
+    function open(dialog,trigger){if(dialog.open||trigger?.disabled)return;dialog._trigger=trigger;if(window.CompassDialogs){if(!window.CompassDialogs.open(dialog,trigger))return;}else dialog.showModal();dialog.querySelector('textarea,input:not([type="hidden"]),button')?.focus();}
     const openers={referralBtn:referralDialog,emergencyBtn:emergencyDialog};
-    Object.entries(openers).forEach(([id,dialog])=>document.getElementById(id)?.addEventListener('click',()=>{open(dialog,document.getElementById(id));refresh();}));
+    Object.entries(openers).forEach(([id,dialog])=>document.getElementById(id)?.addEventListener('click',()=>{const trigger=document.getElementById(id);if(trigger?.disabled)return;open(dialog,trigger);refresh();}));
     for(const dialog of [referralDialog,emergencyDialog]){
         dialog.querySelectorAll('.modal-close').forEach(button=>button.addEventListener('click',()=>window.CompassDialogs?window.CompassDialogs.close(dialog):dialog.close()));
         dialog.addEventListener('close',()=>dialog._trigger?.focus());
@@ -37,6 +37,13 @@
         });
     }
     function state(data){
+        if(data.actions){
+            for(const [id,key] of [['referralBtn','referral'],['emergencyBtn','emergency']]){
+                const button=document.getElementById(id);if(!button)continue;
+                button.disabled=!data.actions[key];
+                button.title=button.disabled?(key==='referral'?'Exchange messages or connect a voice call first':'A participant message or connected voice call is required'):'';
+            }
+        }
         const referral=data.referral,chip=document.getElementById('referralStateChip');
         initialForm.hidden=!!referral&&!['closed','declined','completed','cancelled'].includes(referral.status);
         clarifyForm.hidden=!referral?.clarification_requested;

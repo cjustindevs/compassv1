@@ -57,6 +57,7 @@ class Session extends Model
     /** Adviser approval and an active safety-support branch are distinct permissions. */
     public function permitsPeerMatching(): bool
     {
+        if ($this->permitsParallelScreeningSupport()) return true;
         if (!in_array($this->risk_level, ['low', 'moderate', 'high', 'emergency'], true)) return false;
         if ($this->permitsEmergencySupport()) return true;
         if ($this->risk_level === 'emergency') return false;
@@ -68,8 +69,47 @@ class Session extends Model
     public function permitsPrioritySafetySupport(): bool
     {
         return $this->risk_level==='high' && $this->requires_immediate_action
-            && $this->screeningResponses()->where('instrument_version',\App\Services\CompactScreening::SINGLE_VERSION)->where('rule_code','single_safety_yes')->exists()
-            && $this->emergencyAlerts()->whereNotIn('status',\App\Services\ModeratorEmergencyCases::TERMINAL)->whereNull('archived_at')->exists();
+            && $this->screeningResponses()->where('instrument_version',\App\Services\CompactScreening::SINGLE_VERSION)->where('rule_code','single_safety_yes')->exists();
+    }
+
+    /** Intake review runs alongside matching; the original answer stays immutable. */
+    public function permitsParallelScreeningSupport(): bool
+    {
+        if ($this->risk_level === 'emergency') return false;
+        $original = $this->screeningResponses()->oldest('id')->first();
+        return $original?->instrument_version === \App\Services\CompactScreening::SINGLE_VERSION
+            && in_array($original->responses['suicidal_thoughts'] ?? null, ['yes', 'prefer_not_to_say'], true);
+    }
+
+    /** Unknown is not Low risk: use high-qualified Helpers without relabelling it. */
+    public function matchingRiskLevel(): string
+    {
+        return $this->risk_level ?? 'high';
+    }
+
+    public function queuePriorityLevel(): string
+    {
+        return $this->permitsPrioritySafetySupport() || $this->permitsEmergencySupport()
+            ? 'emergency' : $this->matchingRiskLevel();
+    }
+
+    public function hasConversation(bool $requireExchange = false): bool
+    {
+        if (VoiceCall::where('session_id', $this->id)->whereNotNull('connected_at')->exists()) return true;
+        $messages = $this->messages()->whereNull('audio_url')->whereRaw("TRIM(message_text) <> ''");
+        $seeker = (clone $messages)->where('sender', 'seeker')->where('sender_id', $this->seeker?->user_account_id)->exists();
+        $helper = (clone $messages)->where('sender', 'helper')->where('sender_id', $this->helper?->user_account_id)->exists();
+        return $requireExchange ? $seeker && $helper : $seeker || $helper;
+    }
+
+    public function canRecommendReferral(): bool
+    {
+        return $this->isReferralEligible() && $this->hasConversation(true);
+    }
+
+    public function canReportEmergency(): bool
+    {
+        return $this->isActive() && $this->helper_accepted_at && $this->hasConversation();
     }
 
     public function supportEmergencyAlert()
@@ -248,7 +288,10 @@ class Session extends Model
                 $q->where(fn (Builder $pending) => $pending
                     ->where(fn (Builder $state) => $state
                         ->whereIn('workflow_state', ['adviser_review_required', 'emergency_escalated'])
-                        ->orWhereHas('emergencyAlerts', fn (Builder $alert) => $alert->whereNotIn('status', ['resolved', 'closed'])))
+                        ->orWhereHas('emergencyAlerts', fn (Builder $alert) => $alert->whereNotIn('status', ['resolved', 'closed']))
+                        ->orWhereHas('screeningResponses', fn (Builder $screening) => $screening
+                            ->where('instrument_version', \App\Services\CompactScreening::SINGLE_VERSION)
+                            ->whereIn('responses->suicidal_thoughts', ['yes', 'prefer_not_to_say'])))
                     ->whereDoesntHave('screeningResponses', fn (Builder $response) => $response->where('review_status', 'reviewed')))
                     ->orWhereHas('report', fn (Builder $report) => $report
                         ->whereNotNull('reassessment_requested_at')->whereNull('reassessment_reviewed_at'));

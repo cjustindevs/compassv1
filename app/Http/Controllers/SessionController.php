@@ -27,9 +27,9 @@ class SessionController extends Controller
     /**
      * Show the live chat session (messages come from the database)
      */
-    public function chat()
+    public function chat(Request $request)
     {
-        $session = $this->activeSession();
+        $session = $this->requestedSession($request);
 
         if (!$session) {
             return redirect()->route('request.screening')
@@ -38,8 +38,12 @@ class SessionController extends Controller
 
 
 
+        if (in_array($session->session_status, [Session::STATUS_CANCELLED, Session::STATUS_NO_SHOW], true)) {
+            return redirect()->route('seeker.requests.show', $session);
+        }
+
         if ($session->isCompleted()) {
-            return redirect()->route('session.evaluation')
+            return redirect()->route('session.evaluation', ['session_id' => $session->id])
                 ->with('info', 'This session has already ended.');
         }
 
@@ -81,7 +85,7 @@ class SessionController extends Controller
             'condition' => ['required', Rule::in(array_keys($options))],
         ]);
 
-        $session = $this->activeSession();
+        $session = $this->requestedSession($request);
         if (! $session || ! $session->isActive()) {
             return response()->json(['error' => 'Only an active session can record a check-in.'], 409);
         }
@@ -104,7 +108,7 @@ class SessionController extends Controller
             'message' => 'required|string|max:1000',
         ]);
 
-        $session = $this->activeSession();
+        $session = $this->requestedSession($request);
 
         if (!$session) {
             return response()->json(['error' => 'No active session found.'], 404);
@@ -146,9 +150,9 @@ class SessionController extends Controller
     /**
      * Show the live voice session
      */
-    public function voice() {
+    public function voice(Request $request) {
         abort_unless(config('voice.enabled'),503,'Voice is unavailable. Please use text chat.');
-        return $this->chat();
+        return $this->chat($request);
     }
 
     /**
@@ -156,7 +160,7 @@ class SessionController extends Controller
      */
     public function endSession(Request $request)
     {
-        $session = $this->activeSession();
+        $session = $this->requestedSession($request);
 
         if (!$session) {
             return redirect()->route('request.screening')
@@ -164,8 +168,9 @@ class SessionController extends Controller
         }
 
         app(\App\Services\SessionDurationService::class)->expire($session);
+        if (in_array($session->session_status, [Session::STATUS_CANCELLED, Session::STATUS_NO_SHOW], true)) return redirect()->route('seeker.requests.show', $session);
         if ($session->isCompleted()) {
-            return redirect()->route('session.evaluation');
+            return redirect()->route('session.evaluation', ['session_id'=>$session->id]);
         }
 
         abort_unless($session->isActive() && $session->helper_accepted_at,409,'Only an accepted active session can be completed.');
@@ -174,7 +179,7 @@ class SessionController extends Controller
             ? max(1, (int) $session->start_time->diffInMinutes($now))
             : 0;
 
-        if (!app(\App\Services\SessionDurationService::class)->complete($session)) return redirect()->route('session.evaluation');
+        if (!app(\App\Services\SessionDurationService::class)->complete($session)) return redirect()->route('session.evaluation', ['session_id'=>$session->id]);
         // Tell the helper (and anyone watching the room) the session has ended.
         $this->broadcastSafely(new SessionEnded($session, 'seeker'));
 
@@ -207,7 +212,7 @@ class SessionController extends Controller
             'session_ended_at' => $now,
         ]);
 
-        return redirect()->route('session.evaluation');
+        return redirect()->route('session.evaluation', ['session_id'=>$session->id]);
     }
 
     /**
@@ -369,13 +374,27 @@ class SessionController extends Controller
     /**
      * Load the ongoing session for the current seeker.
      *
-     * Fast path: the session id stored in the PHP session. Fallback: the latest
-     * active session row in the database so the flow survives refreshes and
-     * browser closes. Never returns a session that belongs to another seeker.
+     * Prefer the current open request over a saved history/evaluation pointer.
+     * A completed pointer is used only when there is no ongoing request.
+     * Never returns a session that belongs to another seeker.
      */
+    private function requestedSession(Request $request): ?Session
+    {
+        Gate::authorize('seeker-workflow');
+        return $request->filled('session_id')
+            ? Session::where('seeker_id', $request->user()->helpSeeker?->id)->findOrFail($request->integer('session_id'))
+            : $this->activeSession();
+    }
+
     private function activeSession(): ?Session
     {
         \Illuminate\Support\Facades\Gate::authorize('seeker-workflow');
+        // A saved evaluation/history pointer must never take over a live request.
+        $current = app(\App\Services\SeekerWorkflowService::class)->current(Auth::user());
+        if ($current) {
+            session(['session_id' => $current->id]);
+            return $current->loadMissing(['helper', 'seeker']);
+        }
         $sessionId = session('session_id');
         $session = $sessionId ? Session::with(['helper', 'seeker'])->find($sessionId) : null;
 

@@ -322,10 +322,10 @@
                 @endif
                 <span class="status-badge {{ $session->session_status === 'active' ? 'active' : 'helper-assigned' }}">{{ $session->status_label }}</span>
                 @if($session->isReferralEligible())
-                    <button type="button" class="action-btn referral-btn" id="referralBtn"><x-ui-icon name="arrow-right"  /> Referral</button>
+                    <button type="button" class="action-btn referral-btn" id="referralBtn" @disabled(!$session->canRecommendReferral()) title="Exchange messages or connect a voice call first"><x-ui-icon name="arrow-right"  /> Referral</button>
                 @endif
                 @if($session->session_status !== 'completed')
-                    <button type="button" class="action-btn emergency-btn" id="emergencyBtn"><x-ui-icon name="warning"  /> Emergency</button>
+                    <button type="button" class="action-btn emergency-btn" id="emergencyBtn" @disabled(!$session->canReportEmergency()) title="A participant message or connected voice call is required"><x-ui-icon name="warning"  /> Emergency</button>
                     <form method="POST" action="{{ route('helper.session.end', ['id' => $session->id]) }}"
                           data-confirm="End session?"
                           data-confirm-message="This will end the session for both you and the seeker."

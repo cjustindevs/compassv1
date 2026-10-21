@@ -29,19 +29,15 @@ document.addEventListener('DOMContentLoaded', function () {
             );
         })
         .listen('SessionEnded', (event) => {
+            // The room controller alone handles completion for its own session.
+            if (document.getElementById('sessionId')) return;
             showToast(
                 'Session Ended',
                 event.message || 'A session has ended. Please complete your session notes.',
                 event.helper_redirect || `/helper/session/${event.session_id}/notes`
             );
 
-            // On the chat/voice page, move the helper to the session notes.
-            if (window.location.pathname.includes('/helper/session/') &&
-                (window.location.pathname.includes('/chat') || window.location.pathname.includes('/voice'))) {
-                setTimeout(() => {
-                    window.location.href = safePath(event.helper_redirect, `/helper/session/${event.session_id}/notes`);
-                }, 2500);
-            }
+
         })
         .listen('ReferralApproved', (event) => {
             incrementBadge('notifBadge');
