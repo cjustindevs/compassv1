@@ -1,13 +1,15 @@
 <section class="screening-follow-up screening-decision-control rounded-xl border border-gray-200">
     @if($session->permitsParallelScreeningSupport())
-    <details class="p-4"><summary class="text-sm font-semibold cursor-pointer">Complete screening review</summary>
-        <p class="text-sm text-gray-600 mt-2">Record your review without requesting another answer. Matching continues; linked emergency and referral cases remain separate.</p>
+    <div class="screening-complete-review">
+        <h4 class="text-sm font-semibold">Complete screening review</h4>
+        <p class="text-sm text-gray-600 mt-2">Save your notes and close this review. Peer matching continues.</p>
         <form method="POST" action="{{ route('adviser.screenings.review', $session) }}" class="space-y-3 mt-3">@csrf
+            <input type="hidden" name="_review_session" value="{{ $session->id }}">
             <label class="block text-sm" for="intake-note-{{ $session->id }}">Review and next steps</label>
-            <textarea id="intake-note-{{ $session->id }}" name="reason" required minlength="10" maxlength="1000" rows="3" class="block w-full rounded-lg border-gray-300"></textarea>
+            <textarea id="intake-note-{{ $session->id }}" name="reason" required minlength="10" maxlength="1000" rows="3" class="block w-full rounded-lg border-gray-300">{{ $retry ? old('reason') : '' }}</textarea>
             <button name="review_action" value="complete_intake" class="rounded-lg bg-green-600 text-white px-4 py-2 text-sm">Complete screening review</button>
         </form>
-    </details>
+    </div>
     @endif
     <h3 class="screening-decision-heading">One-question follow-up</h3>
     <div class="p-4 space-y-3">

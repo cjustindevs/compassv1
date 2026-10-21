@@ -99,13 +99,14 @@ class AdviserScreeningNoticeTest extends TestCase
                 'priority' => 2, 'action' => 'adviser_review_required']);
         }
         $this->actingAs($user)->get(route('adviser.screenings'))->assertOk()->assertSee('Prefer not to say')
-            ->assertSee('Review screening and record decision')->assertSee('Send follow-up')
+            ->assertSee('data-screening-toggle', false)->assertSee('Saved answers')->assertSee('Review action')->assertSee('Send follow-up')
+            ->assertDontSee('screening-review-expand')->assertDontSee('<details', false)
             ->assertDontSee('No immediate danger cues were recorded')->assertSee('Original concern');
         $note = 'Retry this follow-up '.str_repeat('x', 300);
         $this->post(route('adviser.screenings.follow-up', $case), ['_review_session' => $case->id, 'follow_up_note' => $note])
             ->assertSessionHasErrors('follow_up_note');
         $response = $this->get(route('adviser.screenings'))->assertOk();
-        $this->assertSame(1, substr_count($response->getContent(), 'class="screening-review-expand"  open '));
+        $this->assertSame(1, substr_count($response->getContent(), 'data-initial-open="true"'));
         $this->assertSame(1, substr_count($response->getContent(), '>'.$note.'</textarea>'));
         $this->assertSame('adviser_review_required', $case->fresh()->workflow_state);
     }

@@ -62,7 +62,7 @@
 
     <nav class="flex flex-wrap gap-2" aria-label="Filter screening reviews">
         <button type="button" data-filter="all" class="px-3 py-1.5 rounded-full text-sm font-medium border bg-gray-900 text-white border-gray-900">All ({{ $counts['all'] }})</button>
-        <button type="button" data-filter="pre-session" class="px-3 py-1.5 rounded-full text-sm font-medium border bg-white text-gray-600 border-gray-300">Awaiting decision ({{ $counts['pre-session'] }})</button>
+        <button type="button" data-filter="pre-session" class="px-3 py-1.5 rounded-full text-sm font-medium border bg-white text-gray-600 border-gray-300">Pre-session ({{ $counts['pre-session'] }})</button>
         <button type="button" data-filter="reassessment" class="px-3 py-1.5 rounded-full text-sm font-medium border bg-white text-gray-600 border-gray-300">Helper reassessment ({{ $counts['reassessment'] }})</button>
     </nav>
 
@@ -97,7 +97,7 @@
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="px-2.5 py-1 rounded-full text-xs font-medium {{ $reassessment ? 'bg-purple-50 text-purple-700 ring-1 ring-purple-200' : 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' }}">
-                            {{ $reassessment ? 'Helper reassessment' : ($followUpFlow && $screening->follow_up_requested_at ? ($screening->follow_up_answered_at ? 'Follow-up received' : 'Awaiting Seeker response') : 'Awaiting decision') }}
+                            {{ $reassessment ? 'Helper reassessment' : ($followUpFlow && $screening->follow_up_requested_at ? ($screening->follow_up_answered_at ? 'Follow-up received' : 'Awaiting Seeker response') : 'Review needed') }}
                         </span>
                         @if(app(\App\Services\AdviserTranscriptAccess::class)->allowed($session))
                             <a href="{{ route('adviser.screenings.conversation', $session) }}"
@@ -161,9 +161,20 @@
                     </div>
                 @endif
 
-                <details class="screening-review-expand" @if($retry) open @endif>
-                    <summary><span>Review screening and record decision</span><span class="screening-expand-hint" aria-hidden="true">Open review</span></summary>
-                    <div class="screening-review-content">
+                <div class="screening-review-launcher">
+                    <p>View the saved answers, then choose a review action.</p>
+                    <button type="button" class="av-button av-button-primary" data-screening-toggle
+                        aria-controls="screening-workspace-{{ $session->id }}" aria-expanded="true" hidden>
+                        <span data-review-toggle-label>Close review</span><x-ui-icon name="chevron-down" />
+                    </button>
+                </div>
+                <div id="screening-workspace-{{ $session->id }}" class="screening-review-content"
+                    data-screening-workspace data-initial-open="{{ $retry ? 'true' : 'false' }}" tabindex="-1"
+                    role="region" aria-labelledby="screening-workspace-heading-{{ $session->id }}">
+                    <header class="screening-workspace-heading">
+                        <h3 id="screening-workspace-heading-{{ $session->id }}">Review {{ $session->reference_number }}</h3>
+                        <span>Review open</span>
+                    </header>
                 @if($single)
                     <p class="screening-safety-note text-sm text-amber-800">{{ $followUpFlow ? 'One-question screening. Follow up alongside peer matching; original answers stay unchanged.' : 'This screening asked one safety question. The saved answer is read-only; other questions were not assessed.' }}</p>
                 @endif
@@ -171,11 +182,8 @@
 
                 <div class="screening-controls">
                 <div class="screening-answer-control rounded-xl border border-gray-200 p-3">
-                    <details class="text-sm">
-                        <summary class="cursor-pointer font-medium text-gray-700">
-                            <x-ui-icon name="clipboard" class="mr-1 text-gray-400" />
-                            View original screening answers
-                        </summary>
+                        <h3 class="screening-column-heading"><span>1</span> Saved answers</h3>
+                        <p class="screening-section-caption">Original Seeker answers are read-only.</p>
                         <dl class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                             @forelse($answers as $key => $answer)
                                 @php($question = $key === 'suicidal_thoughts' && $screening?->instrument_version === \App\Services\CompactScreening::SINGLE_VERSION ? \App\Services\CompactScreening::SINGLE_QUESTION : (\App\Services\ScreeningInstrument::QUESTIONS[$key] ?? ucfirst(str_replace('_', ' ', $key))))
@@ -195,9 +203,10 @@
                                 <p class="text-gray-500 col-span-2">No response details recorded for this reassessment.</p>
                             @endforelse
                         </dl>
-                    </details>
                 </div>
 
+                <div class="screening-action-column">
+                <h3 class="screening-column-heading"><span>2</span> Review action</h3>
                 @if($followUpFlow)
                     @include('adviser.partials.screening-follow-up')
                 @else
@@ -228,10 +237,13 @@
                 </div>
                 @endif
                 </div>
+                </div>
 
-                <p class="text-xs text-gray-400">Original screening responses are retained with the reassessment in the request record.</p>
+                <footer class="screening-workspace-footer">
+                    <p>Changes are saved when you submit a review action.</p>
+                    <button type="button" class="av-button" data-screening-close hidden>Close review</button>
+                </footer>
                     </div>
-                </details>
             </div>
         </section>
     @empty
@@ -249,6 +261,7 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('js/screening-review-workspace.js') }}?v={{ filemtime(public_path('js/screening-review-workspace.js')) }}" defer></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('[data-screening-review-form]').forEach(form => {
@@ -296,11 +309,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     });
-    const target = document.getElementById(location.hash.slice(1));
-    if (target?.matches('[data-filter-target]')) {
-        const review = target.querySelector('.screening-review-expand');
-        if (review) review.open = true;
-    }
 });
 </script>
 @endpush

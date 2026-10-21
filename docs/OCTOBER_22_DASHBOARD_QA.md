@@ -102,6 +102,11 @@ consumers; they are not the new helpfulness KPI.
 
 ## Intake review and self-help
 
+Screening Reviews now uses an explicit Open review / Close review button. A
+highlighted workspace shows Saved answers and Review action together, without
+nested dropdowns. Opening/closing saves nothing. Submissions keep their existing
+review endpoints; validation reopens the failed case and preserves its note.
+
 Navigation uses the original **Screening Reviews** label and explains assigned screening
 follow-ups versus Helper-requested reassessments. The original Yes/Prefer not to
 say flow continues matching in parallel. An assigned active Adviser can document
