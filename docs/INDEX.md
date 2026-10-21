@@ -8,7 +8,7 @@ the relevant validation checklist and current code when verifying behavior.
 ## Overview and setup
 
 - [Defense code-navigation reviewer](DEFENSE_CODE_REVIEWER.md)
-- [Project overview](README.md)
+- [Project overview and setup](../README.md)
 - [Render deployment](RENDER_DEPLOYMENT.md)
 - [Email and OTP hosting](OTP_HOSTING.md)
 - [Voice call setup](VOICE_CALL_SETUP.md)
