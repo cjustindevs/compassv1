@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Intake & Safety Reviews – COMPASS')
+@section('title', 'Screening Reviews – COMPASS')
 
 @section('content')
 @php
@@ -32,9 +32,9 @@
 <div class="adviser-page-content adviser-compact-page screening-reviews space-y-5">
     <header class="flex flex-wrap items-start justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">Intake & Safety Reviews</h1>
+            <h1 class="text-2xl font-bold text-gray-800">Screening Reviews</h1>
             <p class="text-sm text-gray-500 mt-1">
-                Review intake and optional follow-up alongside matching. Original answers stay unchanged.
+                Review pre-session answers and Helper requests for reassessment.
             </p>
         </div>
     </header>
@@ -165,7 +165,7 @@
                     <summary><span>Review screening and record decision</span><span class="screening-expand-hint" aria-hidden="true">Open review</span></summary>
                     <div class="screening-review-content">
                 @if($single)
-                    <p class="screening-safety-note text-sm text-amber-800">{{ $followUpFlow ? 'One-question intake. Follow up alongside peer matching; original answers stay unchanged.' : 'This intake asked one safety question. The saved answer is read-only; other questions were not assessed.' }}</p>
+                    <p class="screening-safety-note text-sm text-amber-800">{{ $followUpFlow ? 'One-question screening. Follow up alongside peer matching; original answers stay unchanged.' : 'This screening asked one safety question. The saved answer is read-only; other questions were not assessed.' }}</p>
                 @endif
                 <p class="screening-guidance text-sm text-blue-800"><span class="font-semibold">Guidance:</span> {{ $riskMeta['guidance'] }}</p>
 

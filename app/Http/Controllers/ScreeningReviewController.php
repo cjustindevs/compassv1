@@ -64,7 +64,7 @@ class ScreeningReviewController extends Controller
                 $case->update(['requires_adviser_review'=>false]);
                 SupportAudit::record('intake_review_completed', $case);
             });
-            return back()->with('success', 'Intake review completed. Session progress, answers, emergency coordination, and referral decisions are unchanged.');
+            return back()->with('success', 'Screening review completed.');
         }
         $request->validate(['answers' => 'prohibited', 'clarified_safety_answer' => 'prohibited',
             'use_clarified_answers' => 'prohibited', 'use_clarified_safety_answer' => 'prohibited', 'review_action' => 'sometimes|required|in:approve,record',

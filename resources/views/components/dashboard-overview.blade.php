@@ -28,7 +28,7 @@
     @if(isset($card['link']))<a class="co-metric-link" href="{{ $card['link'] }}">View records</a>@endif</article>@endforeach</div>
     @if(auth()->user()?->role === 'adviser')
         <nav class="co-task-links" aria-label="Live support actions">
-        @foreach(['Intake reviews pending'=>'adviser.screenings','Referral reviews pending'=>'adviser.referrals','Evaluations pending'=>'adviser.evaluations','Escalated cases'=>'adviser.emergencies','Helpers at capacity'=>'adviser.schedule'] as $label=>$target)
+        @foreach(['Screening reviews pending'=>'adviser.screenings','Referral reviews pending'=>'adviser.referrals','Evaluations pending'=>'adviser.evaluations','Escalated cases'=>'adviser.emergencies','Helpers at capacity'=>'adviser.schedule'] as $label=>$target)
         <a href="{{ route($target) }}"><strong>{{ collect($overview['cards'])->firstWhere('label',$label)['value'] ?? 0 }}</strong> {{ $label === 'Escalated cases' ? 'Live emergencies' : $label }}</a>
         @endforeach</nav>
     @endif

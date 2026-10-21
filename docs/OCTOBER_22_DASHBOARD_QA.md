@@ -102,10 +102,10 @@ consumers; they are not the new helpfulness KPI.
 
 ## Intake review and self-help
 
-Navigation now reads **Intake & Safety Reviews** and explains assigned intake
+Navigation uses the original **Screening Reviews** label and explains assigned screening
 follow-ups versus Helper-requested reassessments. The original Yes/Prefer not to
 say flow continues matching in parallel. An assigned active Adviser can document
-Complete intake review with a note; this clears the task and creates a review/audit
+Complete screening review with a note; this clears the task and creates a review/audit
 event without replacing answers, unknown risk, classification, queue or session
 progress. It does not resolve emergencies, approve referrals or disclose identity.
 It cannot close a Helper-requested reassessment. Repeated completion is idempotent.

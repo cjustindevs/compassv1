@@ -79,7 +79,7 @@ class DashboardOverview
             $add('Emergency acknowledgment time', $emergencyMetric['value'], $emergencyMetric['sample'].'; trigger to authorized acknowledgment, by emergency identification date.');
             $cards[array_key_last($cards)] += ['raw'=>$emergencyMetric['raw'], 'unit'=>' min'];
             $add('Average emergency resolution', $resolution, 'Emergency trigger to resolution; by resolution date.');
-            $add('Intake reviews pending', Session::pendingScreeningReviewForAdviser($adviser->id)->count(), 'Live assigned intake and reassessment reviews.');
+            $add('Screening reviews pending', Session::pendingScreeningReviewForAdviser($adviser->id)->count(), 'Live assigned screening and reassessment reviews.');
             $add('Referral reviews pending', Referral::forAdviser($adviser->id)->whereIn('status', [Referral::STATUS_PENDING_ADVISER, Referral::STATUS_PENDING_ADVISER_ASSIGNMENT])->count(), 'Live recommendations awaiting review.');
             $add('Evaluations pending', \App\Models\SessionReport::pendingEvaluationForAdviser($adviser->id)->count(), 'Live documentation awaiting competency evaluation.');
             $add('Helpers at capacity', Helper::where('adviser_id', $adviser->id)->get()->filter(fn ($h) => $h->currentAssignedSessionsCount() >= Helper::MAX_SESSIONS_PER_SHIFT)->count(), 'Current duty limit reached; completed sessions still consume duty allowance.');

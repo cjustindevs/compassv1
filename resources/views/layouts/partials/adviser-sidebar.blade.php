@@ -20,8 +20,8 @@
         <a href="{{ route('adviser.dashboard') }}" class="nav-item {{ request()->routeIs('adviser.dashboard') ? 'active' : '' }}">
             <x-ui-icon name="dashboard"  /><span class="nav-text">Dashboard</span>
         </a>
-        <a href="{{ route('adviser.screenings') }}" data-adviser-badge="pendingReviewsBadge" class="nav-item {{ request()->routeIs('adviser.screenings*') ? 'active' : '' }}" title="Intake & Safety Reviews">
-            <x-ui-icon name="clipboard"  /><span class="nav-text">Intake & Safety Reviews</span>
+        <a href="{{ route('adviser.screenings') }}" data-adviser-badge="pendingReviewsBadge" class="nav-item {{ request()->routeIs('adviser.screenings*') ? 'active' : '' }}" title="Screening Reviews">
+            <x-ui-icon name="clipboard"  /><span class="nav-text">Screening Reviews</span>
             @if($screeningBadge > 0)
                 <span class="nav-badge" id="pendingReviewsBadge">{{ $screeningBadge }}</span>
             @endif
