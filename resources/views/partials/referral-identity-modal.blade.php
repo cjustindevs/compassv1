@@ -3,7 +3,7 @@
     $identityTag = $embeddedIdentity ? 'section' : 'dialog';
     $identityDialogId = 'identity-dialog-' . $referral->id;
     $identitySaved = isset($referral->session) && app(\App\Services\IdentityVaultService::class)->hasCurrentSubmission($referral) && app(\App\Services\ConsentService::class)->valid($referral->session->seeker, 'identity_disclosure', $referral->id);
-    $requiredIdentityFields = ['real_name', 'phone_number'];
+    $requiredIdentityFields = [];
 @endphp
 <style>
     #{{ $identityDialogId }} [hidden] { display:none !important; }
@@ -120,6 +120,9 @@
     #{{ $identityDialogId }} form { display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;margin:0; }
     #{{ $identityDialogId }} .rv-modal__body { flex:1;min-height:0;max-height:none;overflow-y:auto; }
     #{{ $identityDialogId }} .rv-steps { flex-wrap:wrap; }
+    #{{ $identityDialogId }} .rv-full{grid-column:1/-1}
+    #{{ $identityDialogId }} .rv-field select{width:100%;min-height:44px;border:1px solid #d4e1d8;border-radius:9px;padding:10px;background:#fff;font:inherit}
+    #{{ $identityDialogId }} .rv-emergency-contact{border-top:1px solid #e1e9e4;margin-top:18px;padding-top:12px}
     section#{{ $identityDialogId }} { position:static;inset:auto;margin:0;width:100%;height:100dvh;max-height:100dvh;border-radius:0;box-shadow:none; }
 </style>
 
@@ -128,7 +131,7 @@
         <div>
             <p class="rv-modal__eyebrow">Referral #{{ $referral->id }}</p>
             <h2 id="identity-title-{{ $referral->id }}">Identity Disclosure Consent</h2>
-            <p class="rv-modal__sub" id="identity-sub-{{ $referral->id }}">A separate, final step. It adds contact details to the referral you already approved &mdash; it does not replace it.</p>
+            <p class="rv-modal__sub" id="identity-sub-{{ $referral->id }}">Share contact details for this approved referral.</p>
         </div>
         <button type="button" class="rv-icon-btn" data-identity-close aria-label="Close identity disclosure consent">
             <x-ui-icon name="close"  />
@@ -145,49 +148,29 @@
                 <li>Professional release</li>
             </ol>
 
-            <div class="rv-card">
-                <h3>The referral consent you already accepted</h3>
-                @include('partials.referral-consent-terms')
-            </div>
-
-            <div class="rv-card">
-                <h3>What this step adds</h3>
-                <div class="rv-facts">
-                    <div><span>Details are encrypted in the separate <strong>Identity Vault</strong>, never in the operational database, and are never shown in the chat window.</span></div>
-                    <div><span>Only your <strong>assigned adviser</strong> can authorize release, and only to the professional assigned to this referral.</span></div>
-                    <div><span>Your helper and moderators can never view it. Submitting replaces any earlier submission, and a replacement needs a fresh release.</span></div>
-                    <div><span>Stored for up to {{ config('identity_vault.retention_days') }} days, then deleted. Withdrawing referral consent stops all future professional access.</span></div>
-                    <div><span>If your safety is at risk, a restricted emergency procedure may still release information to protect life, and this is logged.</span></div>
-                </div>
-            </div>
-
+            <p class="rv-hint">Details are encrypted in the Identity Vault. Your assigned Adviser controls release to the assigned Professional. Helpers and Moderators cannot view them. Retention: up to {{ config('identity_vault.retention_days') }} days. Withdrawing referral consent stops future Professional access.</p>
+            <section data-focus-panel data-focus-label="View referral consent">@include('partials.referral-consent-terms')</section>
             <fieldset data-identity-fields hidden disabled>
-                <legend>Your contact details</legend>
-                <p class="rv-hint">Use details a professional can actually reach you on. Everything you enter here is optional except the two marked required.</p>
+                <legend>Help Seeker information</legend>
                 <div class="rv-grid">
-                    @foreach(\App\Services\IdentityVaultService::FIELDS as $field)
-                        @php($isRequired = in_array($field, $requiredIdentityFields, true))
-                        <div class="rv-field" data-field="{{ $field }}">
-                            <label for="identity-{{ $referral->id }}-{{ $field }}">
-                                {{ ucwords(str_replace('_',' ',$field)) }}
-                                @if($isRequired)<span class="rv-req" title="Required">*</span>@else<span class="rv-opt">(optional)</span>@endif
-                            </label>
-                            <input id="identity-{{ $referral->id }}-{{ $field }}"
-                                   name="{{ $field }}"
-                                   type="{{ $field === 'email' ? 'email' : 'text' }}"
-                                   maxlength="500"
-                                   @required($isRequired)
-                                   @if($isRequired)aria-required="true"@endif
-                                   autocomplete="{{ $field === 'email' ? 'email' : ($field === 'real_name' ? 'name' : 'tel') }}">
-                            <p class="rv-error" data-error-for="{{ $field }}"></p>
-                        </div>
-                    @endforeach
+                    <div class="rv-field rv-full"><label for="identity-alias-{{ $referral->id }}">Help Seeker Username</label><input id="identity-alias-{{ $referral->id }}" value="{{ $referral->session?->seeker?->generated_alias ?? '' }}" readonly></div>
+                    <div class="rv-field"><label for="identity-{{ $referral->id }}-age">Age <span class="rv-opt">(optional)</span></label><input id="identity-{{ $referral->id }}-age" name="age" type="number" min="1" max="120"><p class="rv-error" data-error-for="age"></p></div>
+                    <div class="rv-field"><label for="identity-{{ $referral->id }}-gender">Gender <span class="rv-opt">(optional)</span></label><select id="identity-{{ $referral->id }}-gender" name="gender"><option value="">Select</option><option value="female">Female</option><option value="male">Male</option><option value="non_binary">Non-binary</option><option value="prefer_not_to_say">Prefer not to say</option></select><p class="rv-error" data-error-for="gender"></p></div>
+                    <div class="rv-field"><label for="identity-{{ $referral->id }}-phone_number">Contact number</label><input id="identity-{{ $referral->id }}-phone_number" name="phone_number" type="tel" maxlength="30" autocomplete="tel"><p class="rv-error" data-error-for="phone_number"></p></div>
+                    <div class="rv-field"><label for="identity-{{ $referral->id }}-email">Email</label><input id="identity-{{ $referral->id }}-email" name="email" type="email" maxlength="254" autocomplete="email"><p class="rv-error" data-error-for="email"></p></div>
+                    <p class="rv-hint rv-full">Provide a contact number or email.</p>
                 </div>
+                <div class="rv-emergency-contact"><label class="rv-consent"><input type="checkbox" name="emergency_contact_authorized" value="1" data-emergency-contact-authorized><span>I authorize an emergency contact, if needed.</span></label>
+                <div class="rv-grid" data-emergency-contact-fields hidden>
+                    @foreach(['emergency_contact_name'=>'Name','emergency_contact_relationship'=>'Relationship','emergency_contact_phone'=>'Contact number'] as $field=>$label)
+                    <div class="rv-field"><label for="identity-{{ $referral->id }}-{{ $field }}">{{ $label }}</label><input id="identity-{{ $referral->id }}-{{ $field }}" name="{{ $field }}" type="{{ $field==='emergency_contact_phone' ? 'tel' : 'text' }}" maxlength="200" data-emergency-contact-input disabled><p class="rv-error" data-error-for="{{ $field }}"></p></div>
+                    @endforeach
+                </div></div>
             </fieldset>
 
             <label class="rv-consent">
                 <input type="checkbox" name="identity_disclosure" value="1" required @checked($identitySaved) @disabled($identitySaved)>
-                <span>I have read the referral consent above, and I voluntarily consent to store these contact details and authorize their disclosure to the professional assigned to this referral.</span>
+                <span>I voluntarily consent to storing these details and their authorized disclosure for this referral.</span>
             </label>
 
             <p class="rv-alert" role="alert" data-identity-result></p>
@@ -216,6 +199,12 @@
 <script>
 (() => {
     const CLOSE = '[data-identity-close]';
+    document.addEventListener('change', event => {
+        if (!event.target.matches('[data-emergency-contact-authorized]')) return;
+        const form = event.target.form, enabled = event.target.checked;
+        form.querySelector('[data-emergency-contact-fields]').hidden = !enabled;
+        form.querySelectorAll('[data-emergency-contact-input]').forEach(input => { input.disabled = !enabled; if (!enabled) input.value = ''; });
+    });
     document.addEventListener('input', event => { const form=event.target.closest('[data-identity-form]'); if(form && !form.dataset.identitySaved) { form.dataset.dirty='1'; document.dispatchEvent(new Event('compass-identity-dirty')); } });
 
     document.addEventListener('click', event => {

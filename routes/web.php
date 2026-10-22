@@ -445,6 +445,7 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
     Route::get('/emergencies/{id}', [AdviserEmergencyController::class, 'show'])->name('emergencies.show');
     Route::post('/emergencies/{id}/resolve', [AdviserEmergencyController::class, 'resolve'])->name('emergencies.resolve');
     Route::post('/emergencies/{id}/action', [AdviserEmergencyController::class, 'action'])->name('emergencies.action');
+    Route::post('/emergencies/{id}/coordinator', [AdviserEmergencyController::class, 'transferCoordinator'])->name('emergencies.coordinator');
 
     // Calendar
     Route::get('/calendar', [AdviserCalendarController::class, 'index'])->name('calendar');
@@ -594,7 +595,10 @@ Route::middleware(['auth', 'role:moderator'])->prefix('moderator')->name('modera
 // CHAT ROUTES (AJAX / Reverb)
 // =============================================
 Route::middleware(['auth'])->prefix('api')->group(function () {
+    Route::post('/session/{session}/notices', [\App\Http\Controllers\SessionNoticeController::class, 'claim'])->whereNumber('session')->middleware('throttle:60,1')->name('session.notices.claim');
     Route::prefix('voice/{session}')->whereNumber('session')->group(function () {
+        Route::post('/consent', [VoiceCallController::class, 'consent'])->middleware('throttle:voice-start')->name('voice.consent');
+        Route::post('/consent-request', [VoiceCallController::class, 'requestConsent'])->middleware('throttle:voice-start')->name('voice.consent-request');
         Route::get('/state', [VoiceCallController::class, 'state'])->middleware('throttle:voice-state')->name('voice.state');
         Route::get('/credentials', [VoiceCallController::class, 'credentials'])->middleware('throttle:voice-credentials')->name('voice.credentials');
         Route::post('/start', [VoiceCallController::class, 'start'])->middleware('throttle:voice-start')->name('voice.start');

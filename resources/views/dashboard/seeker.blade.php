@@ -823,7 +823,6 @@
         <div id="tab-dashboard" class="tab-content">
 
             <x-performance-cards :cards="$seekerIndicators" />
-            <p class="text-sm text-gray-500 mb-4">Your current request and referral status are live and do not depend on the history date filter.</p>
 
             <!-- Recent Sessions -->
             <x-analytics-period :action="route('seeker.dashboard')" :dates="$analyticsDates" />
@@ -949,6 +948,7 @@
         });
     </script>
 
+    @include('partials.completion-notice')
     @include('layouts.partials.pwa-banner')
 
 </body>

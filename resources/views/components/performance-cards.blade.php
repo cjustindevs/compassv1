@@ -3,9 +3,6 @@
 @foreach($cards as $card)
 <article class="performance-kpi">
     <h3>{{ $card['label'] }}</h3><strong @if(!empty($card['id'])) id="{{ $card['id'] }}" @endif>{{ $card['value'] }}</strong>
-    <p>{{ $card['detail'] ?? 'Selected period' }}</p>
-    @if(isset($card['samples']))<small>{{ $card['samples'] }} records measured</small>@endif
-    @if(!empty($card['link']))<a href="{{ $card['link'] }}">{{ $card['action'] ?? 'View records' }}</a>@endif
 </article>
 @endforeach
 </div>

@@ -242,7 +242,7 @@ class HelpSeekerModuleTest extends TestCase
                 'understood_score' => 'Yes', 'reuse_score' => 'Yes',
                 'comments' => 'Thank you.',
             ])
-            ->assertRedirect(route('session.thank-you'));
+            ->assertRedirect(route('seeker.dashboard'))->assertSessionHas('completion_notice.title','Thank you!');
 
         $this->assertDatabaseHas('help_seeker_evaluations', [
             'session_id' => $session->id,

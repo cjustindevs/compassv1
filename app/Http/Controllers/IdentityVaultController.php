@@ -20,9 +20,19 @@ class IdentityVaultController extends Controller
     {
         // Never flash this form's input into the operational session database.
         $rules = array_fill_keys(IdentityVaultService::FIELDS, ['nullable', 'string', 'max:500']);
-        $rules['real_name'] = ['required', 'string', 'max:200'];
-        $rules['phone_number'] = ['required', 'string', 'regex:/^[+0-9 ()-]{7,30}$/'];
-        $rules['email'] = ['nullable', 'email', 'max:254'];
+        $rules['real_name'] = ['nullable', 'string', 'max:200'];
+        $rules['phone_number'] = ['nullable','required_without:email', 'string', 'regex:/^[+0-9 ()-]{7,30}$/'];
+        $rules['email'] = ['nullable','required_without:phone_number', 'email', 'max:254'];
+        $rules['age'] = ['nullable','integer','between:1,120'];
+        $rules['gender'] = ['nullable','in:female,male,non_binary,prefer_not_to_say'];
+        foreach (['emergency_contact_name','emergency_contact_phone','emergency_contact_relationship'] as $field) {
+            $rules[$field] = $request->boolean('emergency_contact_authorized') ? ['nullable','string','max:200'] : ['prohibited'];
+        }
+        if ($request->boolean('emergency_contact_authorized')) {
+            $rules['emergency_contact_name'][] = 'required_with:emergency_contact_phone,emergency_contact_relationship';
+            $rules['emergency_contact_phone'][] = 'required_with:emergency_contact_name,emergency_contact_relationship';
+            $rules['emergency_contact_phone'][] = 'regex:/^[+0-9 ()-]{7,30}$/';
+        }
         $validator = Validator::make($request->only(IdentityVaultService::FIELDS), $rules);
         if ($validator->fails()) {
             return response()->json(['message' => 'Please check the identity fields.', 'errors' => $validator->errors()], 422);
@@ -30,7 +40,8 @@ class IdentityVaultController extends Controller
         abort_unless($request->user()?->role === 'seeker' && $request->user()->is_active && $request->user()->helpSeeker?->id === $referral->session->seeker_id,403);
         abort_unless($referral->canProvideIdentity(),403);
         abort_unless($request->boolean('identity_disclosure'),422,'Confirm identity disclosure consent before submitting your details.');
-        app(\App\Services\ConsentService::class)->decide($request->user(),'identity_disclosure','accepted',$referral->session_id,$referral->id);
+        app(\App\Services\ConsentService::class)->decide($request->user(),'identity_disclosure','accepted',$referral->session_id,$referral->id,
+            $request->boolean('emergency_contact_authorized') ? 'Referral contact and authorized emergency contact' : 'Referral contact');
         $vault->storeForReferral($referral, $validator->validated());
         // Vault commits first. If operational coordination fails, a retry remains safe;
         // no professional can be assigned without the committed vault submission.
@@ -43,13 +54,13 @@ class IdentityVaultController extends Controller
                 'notification_type' => 'referral', 'link' => '/adviser/referral/' . $referral->id,
             ]);
         }
-        return response()->json(['message' => 'Your identity was securely stored. Your adviser will assign a professional for review and authorize the necessary identity release. You will receive notifications when a professional is assigned and an appointment is scheduled.']);
+        return response()->json(['message' => 'Details saved securely. Your Adviser will coordinate the next step.']);
     }
 
     public function release(Request $request, Referral $referral, IdentityVaultService $vault)
     {
         $data=$request->validate(['fields'=>'nullable|array|min:1','fields.*'=>['required',\Illuminate\Validation\Rule::in(IdentityVaultService::FIELDS)],'reason'=>'nullable|string|min:20|max:1000']);
-        $vault->releaseForReferral($referral,$data['fields'] ?? ['real_name','phone_number'],$data['reason'] ?? 'Contact details necessary for approved referral coordination');
+        $vault->releaseForReferral($referral,$data['fields'] ?? ['phone_number','email'],$data['reason'] ?? 'Contact details necessary for approved referral coordination');
         return back()->with('success', 'Identity released to the assigned professional.');
     }
 

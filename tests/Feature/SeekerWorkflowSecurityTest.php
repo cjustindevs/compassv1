@@ -258,7 +258,7 @@ class SeekerWorkflowSecurityTest extends TestCase
         $answers = array_map(fn ($options) => $options[0], EvaluationInstrument::OPTIONS);
         $this->postJson(route('session.evaluation.process'), $answers + ['session_id' => $session->id])->assertStatus(409);
         $session->update(['session_status' => 'completed', 'completion_status' => 'completed', 'end_time' => now()]);
-        $this->post(route('session.evaluation.process'), $answers + ['session_id' => $session->id])->assertRedirect(route('session.thank-you'));
+        $this->post(route('session.evaluation.process'), $answers + ['session_id' => $session->id])->assertRedirect(route('seeker.dashboard'))->assertSessionHas('completion_notice.title','Thank you!');
         $this->assertDatabaseHas('help_seeker_evaluations', ['session_id' => $session->id, 'overall_score' => 10]);
         $this->postJson(route('session.evaluation.process'), $answers + ['session_id' => $session->id])->assertStatus(409);
         $this->assertSame(['helpfulness_score' => 1, 'comfort_score' => 1, 'feeling_after_score' => 1, 'understood_score' => 1, 'reuse_score' => 1], EvaluationInstrument::scores(array_map(fn ($x) => end($x), EvaluationInstrument::OPTIONS)));

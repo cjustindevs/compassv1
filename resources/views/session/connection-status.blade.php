@@ -1,4 +1,5 @@
 @isset($session)
+@include('partials.session-notices')
 <div id="connectionNotice" hidden role="status">
     <span data-connection-text></span>
     @if(auth()->user()->role === 'seeker')
@@ -42,7 +43,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  const dialog=document.getElementById('connectionDialog');
  const anchor=document.querySelector('.chat-header, .room-header'); if(anchor)anchor.insertAdjacentElement('afterend',box);
  const headers={'Accept':'application/json','Content-Type':'application/json','X-CSRF-TOKEN':@json(csrf_token())};
- let lastState=null, polling=false, submitting=false;
+ let polling=false, submitting=false, absenceClaimed=null;
  const openDialog=()=>{if(dialog && !dialog.open)dialog.showModal();};
  document.getElementById('reviewConnection')?.addEventListener('click',openDialog);
  document.getElementById('closeConnection')?.addEventListener('click',()=>dialog.close());
@@ -55,19 +56,21 @@ document.addEventListener('DOMContentLoaded',()=>{
  const ended=!active&&(interrupted||data.status==='reconnected');
  const recovered=data.status==='reconnected'&&active;
  box.hidden=!interrupted&&!recovered&&!ended;
- const text=ended?'This conversation has ended. If you still need support, you can start a new request.':recovered?'Your Helper is connected again. You can continue your conversation.':data.status==='offered'?'A replacement Helper is reviewing the offer. We will open the new chat when they accept.':data.status==='requested'?'Your Moderator has been notified that you would like another Helper. Please wait while they review availability.':data.status==='waiting'?'You chose to keep waiting. We will let you know when your Helper reconnects.':data.can_choose?'Your Helper has not reconnected yet. You can keep waiting or ask the Moderator to find another available Helper.':'We have lost contact with your Helper and notified the Moderator. Please allow two minutes for reconnection before choosing another Helper.';
+ const text=ended?'This conversation has ended. If you still need support, you can start a new request.':recovered?'Your Helper is connected again. You can continue your conversation.':data.status==='offered' ? 'A replacement Helper is reviewing the offer. We will open the new chat when they accept.':data.status==='requested' ? 'Your Moderator has been notified that you would like another Helper. Please wait while they review availability.':data.status==='waiting' ? 'You chose to keep waiting. We will let you know when your Helper reconnects.':data.can_choose?'Your Helper has not reconnected yet. You can keep waiting or ask the Moderator to find another available Helper.':'We have lost contact with your Helper and notified the Moderator. Please allow two minutes for reconnection before choosing another Helper.';
  box.querySelector('[data-connection-text]').textContent=text;
  if(dialog){
  dialog.querySelector('[data-connection-text]').textContent=text;
- dialog.querySelector('h2').textContent=ended?'This conversation has ended':recovered?'Your Helper is back':data.status==='offered'?'Replacement offer sent':data.status==='requested'?'Replacement requested':'Your Helper is reconnecting';
+ dialog.querySelector('h2').textContent=ended?'This conversation has ended':recovered?'Your Helper is back':data.status==='offered' ? 'Replacement offer sent':data.status==='requested' ? 'Replacement requested':'Your Helper is reconnecting';
  dialog.querySelector('[data-connection-actions]').hidden=!interrupted||!data.can_choose;
  dialog.querySelector('[data-choice=replace]').hidden=['requested','offered'].includes(data.status);
  dialog.querySelector('[data-choice=wait]').textContent=['requested','offered'].includes(data.status)?'Cancel replacement and keep waiting':'Keep waiting';
- const state=String(data.status)+':'+Boolean(data.can_choose)+':'+Boolean(active);
- // Open once per meaningful change, allowing dismissal without repeated polling popups.
- if(state!==lastState && !ended && (interrupted || (recovered && lastState!==null)))openDialog();
+ // Prolonged absence is claimed on the server once per interruption and Seeker.
+ if(interrupted && active && data.show_absence_notice && absenceClaimed!==data.incident_id){
+   const notices=window.CompassSessionNotices;
+   if(notices && await notices.claim('helper_disconnected',data.incident_id)){absenceClaimed=data.incident_id;openDialog();}
+ }
+ if(interrupted && data.absent_minutes)box.querySelector('[data-connection-text]').textContent=`Helper disconnected for ${data.absent_minutes} minutes. ${text}`;
  if((ended||!interrupted)&&!recovered&&dialog.open)dialog.close();
- lastState=state;
  }
  }catch(e){}finally{polling=false;}}
  dialog?.querySelectorAll('[data-choice]').forEach(button=>button.addEventListener('click',async()=>{

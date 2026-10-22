@@ -164,7 +164,7 @@ class CompassImplementationTest extends TestCase
         $data = $scores + ['session_id' => $session->id];
         $this->actingAs($user)->postJson(route('session.evaluation.process'), $data)->assertStatus(409);
         $session->update(['session_status' => 'completed']);
-        $this->post(route('session.evaluation.process'), $data)->assertRedirect(route('session.thank-you'));
+        $this->post(route('session.evaluation.process'), $data)->assertRedirect(route('seeker.dashboard'))->assertSessionHas('completion_notice.title','Thank you!');
         $this->assertDatabaseHas('help_seeker_evaluations', ['session_id' => $session->id, 'overall_score' => 10]);
         $this->postJson(route('session.evaluation.process'), $data)->assertStatus(409);
         $this->actingAs($this->seeker())->postJson(route('session.evaluation.process'), $data)->assertNotFound();

@@ -21,12 +21,14 @@ class ModeratorEmergencyCases
             CASE WHEN e.adviser_notified THEN 1 ELSE 0 END as adviser_notified,
             COALESCE(detector.role,'system') as detected_by,
             h.first_name as helper_first_name, h.last_name as helper_last_name,
-            a.first_name as adviser_first_name, a.last_name as adviser_last_name")
+            a.first_name as adviser_first_name, a.last_name as adviser_last_name,
+            pa.first_name as primary_adviser_first_name, pa.last_name as primary_adviser_last_name, h.adviser_id as primary_adviser_id")
             ->leftJoin('users as detector', 'detector.id', '=', 'e.triggered_by')
             ->leftJoin('counseling_sessions as s', 's.id', '=', 'e.session_id')
             ->leftJoin('help_seekers as hs', 'hs.id', '=', 'e.seeker_id')
             ->leftJoin('helpers as h', 'h.id', '=', 's.helper_id')
             ->leftJoin('advisers as a', 'a.id', '=', 'e.adviser_id')
+            ->leftJoin('advisers as pa', 'pa.id', '=', 'h.adviser_id')
             ->when(! $history, fn ($query) => $query->where(fn ($q) => $q->whereNull('e.session_id')->orWhereNotExists(fn ($newer) => $newer->selectRaw('1')->from('emergency_alerts as n')->whereColumn('n.session_id', 'e.session_id')->whereColumn('n.id', '>', 'e.id'))));
         $legacy = DB::table('incident_reports as i')->selectRaw("i.id, 'incident_reports' as source, i.session_id,
             i.status, COALESCE(i.risk_level,'emergency') as risk_level,
@@ -36,12 +38,14 @@ class ModeratorEmergencyCases
             0 as professional_referred, 0 as adviser_notified,
             COALESCE(detector.role,'system') as detected_by,
             h.first_name as helper_first_name, h.last_name as helper_last_name,
-            a.first_name as adviser_first_name, a.last_name as adviser_last_name")
+            a.first_name as adviser_first_name, a.last_name as adviser_last_name,
+            pa.first_name as primary_adviser_first_name, pa.last_name as primary_adviser_last_name, h.adviser_id as primary_adviser_id")
             ->leftJoin('users as detector', 'detector.id', '=', 'i.user_account_id')
             ->leftJoin('counseling_sessions as s', 's.id', '=', 'i.session_id')
             ->leftJoin('help_seekers as hs', 'hs.id', '=', 's.seeker_id')
             ->leftJoin('helpers as h', 'h.id', '=', 's.helper_id')
             ->leftJoin('advisers as a', 'a.id', '=', 's.review_adviser_id')
+            ->leftJoin('advisers as pa', 'pa.id', '=', 'h.adviser_id')
             ->where(fn ($q) => $q->whereIn('i.incident_category', ['emergency_flag', 'classification_emergency'])->orWhere('i.risk_level', 'emergency'))
             ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('emergency_alerts as e')->whereColumn('e.session_id', 'i.session_id'))
             ->when(! $history, fn ($query) => $query->where(fn ($q) => $q->whereNull('i.session_id')->orWhereNotExists(fn ($n) => $n->selectRaw('1')->from('incident_reports as n')->whereColumn('n.session_id', 'i.session_id')->whereColumn('n.id', '>', 'i.id')->where(fn ($category) => $category->whereIn('n.incident_category', ['emergency_flag', 'classification_emergency'])->orWhere('n.risk_level', 'emergency')))));

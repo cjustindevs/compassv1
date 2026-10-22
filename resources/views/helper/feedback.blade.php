@@ -82,12 +82,11 @@
 <td>{{ ($evaluation->submitted_at ?? $evaluation->created_at)?->copy()->timezone('Asia/Manila')->format('M d, Y') }}</td>
 <td>{{ $evaluation->session?->reference_number ?? 'Unrecorded' }}</td>
 <td>{{ $evaluation->overall_score!==null ? number_format($evaluation->overall_score,1).' / 10' : 'Not recorded' }}</td>
-<td>{{ \Illuminate\Support\Str::limit($evaluation->comments ?: 'No written comments',150) }}</td>
+<td>{{ \Illuminate\Support\Str::limit($evaluation->comments ?: '—',150) }}</td>
 <td>
-<details>
-<summary class="link" style="cursor:pointer">View</summary>
-<p class="hf-muted" style="min-width:180px;margin-top:10px">{{ $evaluation->comments ?: 'No written comments' }}</p>
-</details>
+@if(mb_strlen($evaluation->comments ?? '') > 150)
+<section data-focus-panel data-focus-label="View feedback"><p>{{ $evaluation->comments }}</p></section>
+@else — @endif
 </td>
 </tr>
 @empty<tr>

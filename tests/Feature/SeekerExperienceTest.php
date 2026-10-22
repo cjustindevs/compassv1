@@ -164,7 +164,7 @@ class SeekerExperienceTest extends TestCase
         $this->actingAs($owner)->post(route('request.screening.process'), $this->singleAnswer('prefer_not_to_say'))->assertRedirect();
         $case = Session::firstOrFail();
         $this->post(route('request.preferences.process'), ['support_mode'=>'chat','preferred_language'=>'English'])->assertRedirect()->assertSessionHasNoErrors();
-        $this->get(route('request.matching'))->assertOk()->assertViewHas('session', fn ($s) => $s->id === $case->id)->assertDontSee('Assigned Reviewer')
+        $this->get(route('request.matching'))->assertOk()->assertViewHas('session', fn ($s) => $s->id === $case->id)->assertSee('Assigned Reviewer')
             ->assertDontSee($adviser->email)->assertDontSee($adviserUser->email);
         $this->actingAs($this->seeker())->get(route('request.matching'))->assertRedirect(route('request.screening'));
         $this->actingAs($owner);
@@ -174,7 +174,7 @@ class SeekerExperienceTest extends TestCase
         $adviser->update(['first_name' => '', 'last_name' => '']);
         $this->get(route('request.matching'))->assertOk()->assertViewHas('session', fn ($s) => $s->id === $case->id)->assertDontSee($adviser->email);
         $adviser->update(['first_name' => '<script>unsafe</script>', 'last_name' => 'Reviewer']);
-        $this->get(route('request.matching'))->assertOk()->assertDontSee('&lt;script&gt;unsafe&lt;/script&gt; Reviewer', false)
+        $this->get(route('request.matching'))->assertOk()->assertSee('&lt;script&gt;unsafe&lt;/script&gt; Reviewer', false)
             ->assertDontSee('<script>unsafe</script>', false);
         $this->assertTrue($case->fresh()->requires_adviser_review);
         $this->assertNull($case->fresh()->risk_level);
@@ -196,6 +196,10 @@ class SeekerExperienceTest extends TestCase
         $this->assertSame(CompactScreening::FORM_VERSION, $screen->instrument_version);
         $this->assertArrayNotHasKey('access_to_means', $screen->responses);
         $this->assertDatabaseCount('queue_requests', 0);
+        $this->get(route('request.matching'))->assertOk()->assertViewIs('request.matching')
+            ->assertSee('data-matching-blocked', false)->assertSee('Staff review in progress')
+            ->assertDontSee('data-queue-position', false);
+        $this->assertFalse($case->fresh()->permitsPeerMatching());
     }
 
     public function test_missing_answers_and_ambiguous_old_form_are_rejected(): void
@@ -336,7 +340,7 @@ class SeekerExperienceTest extends TestCase
         $this->actingAs($owner)->get(route('session.evaluation', ['session_id' => $case->id]))->assertOk()->assertSee('comments-count')->assertSee('Maybe');
         $this->get(route('seeker.requests', ['status' => 'feedback_pending']))->assertOk()->assertViewHas('requests', fn ($rows) => $rows->total() === 1);
         $this->postJson(route('session.evaluation.process'), array_replace($data, ['comments' => str_repeat('x', 501)]))->assertUnprocessable()->assertJsonValidationErrors('comments');
-        $this->post(route('session.evaluation.process'), $data)->assertRedirect(route('session.thank-you'));
+        $this->post(route('session.evaluation.process'), $data)->assertRedirect(route('seeker.dashboard'))->assertSessionHas('completion_notice.title','Thank you!');
         $this->post(route('session.evaluation.process'), array_replace($data, ['comments' => 'Changed']))->assertRedirect(route('seeker.requests.show', $case));
         $this->get(route('session.evaluation', ['session_id' => $case->id]))->assertRedirect(route('seeker.requests.show', $case));
         $this->get(route('seeker.requests.show', $case))->assertOk()->assertSee('Your submitted feedback')->assertSee('Useful support');

@@ -190,6 +190,7 @@ class Session extends Model
         'end_time' => 'datetime',
         'created_date' => 'datetime',
         'last_helper_message_at' => 'datetime',
+        'helper_heartbeat_at' => 'datetime',
         'no_response_escalated_at' => 'datetime',
         'voice_recording_consent' => 'boolean',
         'voice_consent_obtained' => 'boolean',

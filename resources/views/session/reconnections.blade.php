@@ -16,19 +16,20 @@
     @if($moderator)
     <form method="GET" class="cr-filter"><label for="connection-state">Connection status</label><select name="state" id="connection-state" onchange="this.form.submit()">@foreach(['active'=>'Active','declined'=>'Declined offers','cancelled'=>'Cancelled','completed'=>'Completed','all'=>'All history'] as $value=>$label)<option value="{{ $value }}" @selected($state === $value)>{{ $label }}</option>@endforeach</select><noscript><button>Apply</button></noscript></form>
     @endif
-    <div class="cr-list-heading"><h2>{{ $moderator ? ($state==='active'?'Chats needing attention':'Connection history') : 'Your invitations' }}</h2><span class="ru-muted">Philippine Time (PHT)</span></div>
+    <div class="cr-list-heading"><h2>{{ $moderator ? ($state==='active' ? 'Chats needing attention':'Connection history') : 'Your invitations' }}</h2><span class="ru-muted">Philippine Time (PHT)</span></div>
     @forelse($incidents as $incident)
     @php
         $emergency = $incident->session->requires_immediate_action || $incident->session->risk_level === 'emergency';
         $labels = ['interrupted'=>'Reconnecting', 'waiting'=>'Seeker chose to wait', 'requested'=>'Replacement requested', 'offered'=>'Awaiting Helper response', 'reconnected'=>'Original Helper reconnected', 'transferred'=>'Transferred to another Helper', 'closed'=>'Connection review closed'];
         $explanations = ['interrupted'=>'Allow the reconnection window to finish. The Seeker can then request a replacement.', 'waiting'=>'The Seeker is waiting for their original Helper. No replacement is requested.', 'requested'=>'The Seeker has requested another Helper. Find an eligible Helper to send an invitation.', 'offered'=>'An invitation has been sent. The Helper must accept before the chat is transferred.', 'reconnected'=>'The original Helper reconnected.', 'transferred'=>'A replacement Helper accepted and continued the chat.', 'closed'=>'This connection review has ended.'];
         $connectionState = in_array($incident->session->session_status, ['cancelled','no_show']) ? 'Cancelled' : (($incident->session->isActive() && in_array($incident->status,['interrupted','waiting','requested','offered'])) ? 'Active' : 'Completed');
+        $absenceMinutes = app(\App\Services\SessionReconnectionService::class)->absentMinutes($incident->session, $incident);
     @endphp
     <section class="ru-card">
         <div class="cr-header"><h2>Interrupted chat <span class="ru-muted">#{{ $incident->session_id }}</span></h2><span class="cr-badge">{{ $moderator ? $connectionState.' | ' : '' }}{{ $labels[$incident->status] ?? ucfirst($incident->status) }}</span></div>
         <p>{{ $emergency && $connectionState === 'Active' ? 'Coordinate this emergency with the responsible Adviser. Ordinary replacement matching is unavailable.' : ($explanations[$incident->status] ?? 'See the recorded session status.') }}</p>
         @if($moderator && $incident->last_declined_at)<p class="ru-muted">Last replacement offer declined: {{ \Illuminate\Support\Carbon::parse($incident->last_declined_at)->timezone('Asia/Manila')->format('M j, g:i A') }} PHT. {{ $connectionState === 'Active' ? 'The request remains open for another eligible Helper.' : 'See the final session status below.' }}</p>@endif
-        <dl class="cr-details"><div><dt>Interruption detected</dt><dd>{{ $incident->detected_at->timezone('Asia/Manila')->format('M j, g:i A') }} PHT</dd></div><div><dt>Session deadline</dt><dd>{{ $incident->session->start_time?->copy()->addMinutes(90)->timezone('Asia/Manila')->format('g:i A') ?? 'Unavailable' }} PHT</dd></div></dl>
+        <dl class="cr-details"><div><dt>Interruption detected</dt><dd>{{ $incident->detected_at->timezone('Asia/Manila')->format('M j, g:i A') }} PHT</dd></div><div><dt>{{ $connectionState === 'Active' ? 'Disconnected for' : 'Final status' }}</dt><dd>{{ $connectionState === 'Active' ? $absenceMinutes.' minutes' : $connectionState }}</dd></div><div><dt>Session deadline</dt><dd>{{ $incident->session->start_time?->copy()->addMinutes(90)->timezone('Asia/Manila')->format('g:i A') ?? 'Unavailable' }} PHT</dd></div></dl>
         <div class="cr-bottom">
         @if($moderator)
             <p class="ru-muted">Only eligible Helpers receive an offer. The original session deadline stays the same.</p>

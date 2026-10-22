@@ -31,7 +31,7 @@ class EmergencyNoticeController extends Controller
             try {
                 $id = Crypt::decryptString($data['current']);
                 $current = ctype_digit($id) && strlen($id) <= 18 ? (clone $owned)->find($id) : null;
-                if ($current && $state->key($current, auth()->user())) {
+                if ($current && $delivery->actionable($current, auth()->user())) {
                     $notice = $current;
                 }
             } catch (DecryptException $error) {
@@ -54,13 +54,14 @@ class EmergencyNoticeController extends Controller
                 : route('moderator.emergency.coordinate', ['emergency_alerts', (int) substr($caseKey, 6)], false);
         }
 
+        $copy = $notice ? app(\App\Services\EmergencyNotificationPresentation::class)->present($notice, auth()->user()) : null;
         return response()->json(['notice' => $notice ? [
             'id' => $notice->id, 'case_key' => $state->key($notice, auth()->user()),
             'popup_key' => $delivery->key($notice, auth()->user()),
             'present_url' => route('notifications.present', $notice->id, false),
             'reference' => Crypt::encryptString((string) $notice->id),
-            'title' => $professional ? 'Urgent emergency referral assigned' : 'Emergency requires attention',
-            'message' => $professional ? 'An Adviser raised an emergency referral to you. Open the assigned referral to review and respond. Personal information requires separate authorized release.' : 'Open your emergency queue to review the case and coordinate support.',
+            'title' => $professional ? 'Urgent emergency referral assigned' : $copy['title'],
+            'message' => $professional ? 'An Adviser raised an emergency referral to you. Open the assigned referral to review and respond. Personal information requires separate authorized release.' : $copy['message'],
             'url' => $url,
         ] : null])->header('Cache-Control', 'private, no-store');
     }

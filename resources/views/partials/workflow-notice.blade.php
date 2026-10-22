@@ -1,3 +1,4 @@
+@include('partials.completion-notice')
 @php
     $notice = collect(['error', 'success', 'info', 'status'])
         ->reject(fn ($key) => in_array($key, $inlineNotices ?? [], true))

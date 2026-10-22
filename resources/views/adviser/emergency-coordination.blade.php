@@ -7,7 +7,9 @@
     <section class="cm-card">
         <a class="cm-button cm-primary" href="{{ route('adviser.emergency.coordinate', ['emergency_alerts', $alert->id]) }}">Open / Assign Helper</a>
         <h2>{{ $alert->acknowledged_at ? 'Reviewer has acknowledged this case' : 'Awaiting reviewer acknowledgment' }}</h2>
-        <p>Responsible reviewer: <strong>{{ $alert->adviser?->full_name ?? 'Awaiting assignment' }}</strong></p>
+        <p>Responsible emergency coordinator: <strong>{{ app(\App\Services\EmergencyCoordinator::class)->name($alert->adviser) }}</strong></p>
+        <p>Primary Adviser: <strong>{{ app(\App\Services\EmergencyCoordinator::class)->name($alert->session?->helper?->adviser) }}</strong></p>
+        <p class="cm-help">Shared awareness only. This case is not assigned to you.</p>
         <p>Assigned Helper: <strong>{{ $alert->session?->helper?->full_name ?? 'Awaiting match' }}</strong></p>
         <p>Status: <strong>{{ ucfirst($alert->status) }}</strong></p>
         <p>Reported {{ $alert->triggered_at?->timezone('Asia/Manila')->format('M d, Y g:i A') }} PHT.</p>

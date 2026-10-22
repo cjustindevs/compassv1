@@ -22,6 +22,7 @@ class AdviserScope
     {
         $id = $this->actor()->id;
         abort_unless($session->helper?->adviser_id === $id || $session->review_adviser_id === $id
+            || $session->emergencyAlerts()->where('adviser_id', $id)->exists()
             || Referral::where('session_id', $session->id)->where('adviser_id', $id)
                 ->whereNotIn('status', [Referral::STATUS_CLOSED, Referral::STATUS_DECLINED, Referral::STATUS_COMPLETED])->exists(), 403);
     }

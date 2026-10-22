@@ -176,51 +176,12 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderMatchingState(state, event) {
         const container = document.getElementById('matchingLiveState');
         if (!container) return;
-
+        // Announce the update without inserting a second competing queue card.
         container.classList.remove('hidden');
         container.style.display = 'block';
-
-        if (state === 'searching') {
-            container.innerHTML = `
-                <div class="text-center py-6">
-
-                    <h2 class="text-2xl font-bold text-gray-800">Helper declined. Looking for another helper...</h2>
-                    <p class="text-gray-500 mt-2 max-w-md mx-auto">
-                        We are searching for another available helper for your request.
-                    </p>
-                    <div class="mt-4 flex justify-center">
-                        <div class="animate-pulse flex space-x-2">
-                            <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                            <div class="w-3 h-3 bg-yellow-500 rounded-full animation-delay-200"></div>
-                            <div class="w-3 h-3 bg-yellow-500 rounded-full animation-delay-400"></div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        } else if (state === 'assigned') {
-            const name = escapeHtml(event.helper_name || 'A peer helper');
-            const level = event.competency_level
-                ? `<span class="text-xs text-green-600 font-medium">Level ${escapeHtml(String(event.competency_level))} Peer Helper</span>`
-                : '';
-            container.innerHTML = `
-                <div class="text-center py-6">
-
-                    <h2 class="text-2xl font-bold text-gray-800">New Helper Assigned!</h2>
-                    <p class="text-gray-500 mt-2 max-w-md mx-auto">
-                        ${name} has been assigned to your request. Waiting for them to accept...
-                    </p>
-                    <div class="mt-4 inline-block px-4 py-2 bg-green-50 rounded-xl border border-green-200">
-                        <span class="font-semibold text-gray-800">${name}</span> ${level}
-                    </div>
-                    <div class="mt-4 flex justify-center">
-                        <div class="animate-pulse flex space-x-2">
-                            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                            <div class="w-3 h-3 bg-green-500 rounded-full animation-delay-200"></div>
-                            <div class="w-3 h-3 bg-green-500 rounded-full animation-delay-400"></div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
+        container.setAttribute('role', 'status');
+        container.textContent = state === 'searching'
+            ? 'Helper unavailable. Finding another eligible Helper...'
+            : `${event.helper_name || 'A peer helper'} was invited. Waiting for acceptance...`;
     }
 });

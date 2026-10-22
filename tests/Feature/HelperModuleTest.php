@@ -1167,7 +1167,7 @@ class HelperModuleTest extends TestCase
 
         $this->actingAs($seekerUser)
             ->post(route('session.evaluation.process'), $this->validEvaluationPayload())
-            ->assertRedirect(route('session.thank-you'));
+            ->assertRedirect(route('seeker.dashboard'))->assertSessionHas('completion_notice.title','Thank you!');
 
         $this->assertDatabaseHas('counseling_sessions', [
             'id' => $session->id,
@@ -1355,7 +1355,7 @@ class HelperModuleTest extends TestCase
 
         $this->actingAs($seekerUser)
             ->post(route('session.evaluation.process'), $this->validEvaluationPayload())
-            ->assertRedirect(route('session.thank-you'));
+            ->assertRedirect(route('seeker.dashboard'))->assertSessionHas('completion_notice.title','Thank you!');
 
         $this->assertDatabaseHas('help_seeker_evaluations', [
             'session_id' => $session->id,

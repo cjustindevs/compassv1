@@ -135,7 +135,9 @@ Schedule::call(function () {
             }
             $session->update(['warning_sent_at' => now()]);
             foreach (array_filter([$session->seeker?->user_account_id, $session->helper?->user_account_id]) as $id) {
-                Notification::create(['user_account_id' => $id, 'title' => 'Five minutes remaining', 'message' => 'This session will close at the 90-minute limit.', 'notification_type' => 'session']);
+                Notification::withoutGlobalScopes()->firstOrCreate(['user_account_id'=>$id,'popup_event_key'=>'session-ending:'.$session->id],
+                    ['title'=>'Five minutes remaining','message'=>'Please begin wrapping up. This session closes at the 90-minute limit.','notification_type'=>'session',
+                        'link'=>$id===$session->helper?->user_account_id ? '/helper/cases/'.$session->id : '/seeker/requests/'.$session->id]);
             }
             SupportAudit::record('session_duration_warning', $session);
         });

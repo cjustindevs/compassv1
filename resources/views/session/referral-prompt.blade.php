@@ -1,6 +1,6 @@
 @isset($session)
-<div id="chatEmergencyBanner" hidden role="status" style="padding:12px 16px;margin:12px 0;border:1px solid #efccd0;border-left:4px solid #ca293c;border-radius:10px;background:#fff5f5;color:#872333;font-size:13px">
-    <strong id="chatEmergencyTitle">Emergency reported</strong><p id="chatEmergencyStatus" style="margin:5px 0"></p><a href="{{ route('emergency') }}" style="display:inline-block;padding:6px 10px;border:1px solid #e3b7c0;border-radius:8px;color:inherit;text-decoration:none">Emergency resources</a>
+<div id="chatEmergencyBanner" class="emergency-mini-status" hidden role="status">
+    <div><strong id="chatEmergencyTitle">Emergency reported</strong><p id="chatEmergencyStatus" style="margin:3px 0 0"></p></div><a href="{{ route('emergency') }}">Emergency resources</a>
 </div>
 <style>
     #referralConsentDialog {

@@ -195,7 +195,7 @@
             <details open><summary>Identity release permissions</summary><p class="release-intro">Choose the contact details {{ $referral->professional->full_name }} needs for coordination. Identity values remain private.</p>
             <fieldset class="my-3" @disabled(! $identityReady)><legend class="font-semibold">Select only the necessary information</legend><div class="identity-field-grid">
                 @foreach(\App\Services\IdentityVaultService::FIELDS as $field)
-                    <label class="flex items-center gap-2"><input type="checkbox" name="fields[]" value="{{ $field }}" @checked(in_array($field,['real_name','phone_number']))> {{ ucwords(str_replace('_',' ',$field)) }}</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" name="fields[]" value="{{ $field }}" @checked(in_array($field,['phone_number','email']))> {{ ucwords(str_replace('_',' ',$field)) }}</label>
                 @endforeach
             </div></fieldset>
             <label class="block my-3">Purpose of this disclosure<textarea name="reason" required minlength="20" maxlength="1000" class="block w-full rounded border-gray-300" placeholder="Explain why these fields are needed for this referral.">{{ old('reason') }}</textarea></label>

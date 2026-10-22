@@ -319,53 +319,16 @@
                     </form>
                 </div>
             </div>
-            <div>
-                @forelse($helpers as $helper)
-                    <div class="helper-row">
-                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-semibold text-xs flex-shrink-0">
-                            {{ substr($helper->first_name, 0, 1) }}{{ substr($helper->last_name, 0, 1) }}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="font-semibold text-gray-800 text-sm">
-                                {{ $helper->full_name }}
-                                @if($helper->adviser)
-                                    <span class="text-xs font-normal text-gray-400">· {{ $helper->adviser->full_name }}</span>
-                                @else
-                                    <span class="text-xs font-normal text-amber-500">· Unassigned</span>
-                                @endif
-                            </p>
-                            <p class="text-xs text-gray-400">ID: H-{{ str_pad($helper->id, 3, '0', STR_PAD_LEFT) }} · {{ $helper->email }}</p>
-                        </div>
-                        <span class="competency-pill {{ $helper->latestCompetency?->competency_level ?? 'trainee' }}">
-                            {{ ucfirst($helper->latestCompetency?->competency_level ?? 'trainee') }}
-                        </span>
-                        <span class="text-xs text-gray-500 hidden md:inline">{{ $helper->score }}% score</span>
-                        <span class="text-xs text-gray-500">{{ $helper->active_cases }} active · {{ $helper->total_cases }} total</span>
-                        <span class="status-pill {{ $helper->eligibility['assignable'] ? 'available' : ($helper->status === 'busy' ? 'busy' : 'offline') }}">
-                            {{ $helper->eligibility['assignable'] ? 'Available' : $helper->eligibility['label'] }}
-                        </span>
-                        @if(! $helper->adviser)
-                            <form method="POST" data-helper-assignment action="{{ route('moderator.manage.assign') }}" class="flex items-center gap-2">
-                                @csrf
-                                <input type="hidden" name="helper_id" value="{{ $helper->id }}">
-                                <select name="adviser_id" class="text-xs border border-gray-200 rounded-xl px-2 py-1.5 outline-none focus:border-[#04A052]" required>
-                                    <option value="">Assign to...</option>
-                                    @foreach($advisers as $adviser)
-                                        <option value="{{ $adviser->id }}" {{ $adviser->remaining_slots <= 0 ? 'disabled' : '' }}>
-                                            {{ $adviser->full_name }}{{ $adviser->remaining_slots <= 0 ? ' (full)' : '' }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <button type="submit" class="btn-primary" aria-label="Assign helper" title="Assign helper"><x-ui-icon name="user-plus"  /></button>
-                            </form>
-                        @endif
-                    </div>
-                @empty
-<div class="text-center py-10 text-gray-400">
-                        <p>No helpers in this list</p>
-                    </div>
-                @endforelse
-            </div>
+            <div class="compact-table-wrap"><table class="compact-data-table"><thead><tr><th>Helper</th><th>Primary Adviser</th><th>Duty / readiness</th><th>Capacity</th><th>Status</th><th>Action</th></tr></thead><tbody>
+            @forelse($helpers as $helper)
+            <tr><td><strong>{{ $helper->full_name }}</strong><small>H-{{ str_pad($helper->id,3,'0',STR_PAD_LEFT) }}</small></td><td>{{ $helper->adviser?->full_name ?? 'Unassigned' }}</td>
+            <td>{{ \App\Models\HelperSchedule::coveringShiftFor($helper->id) ? 'On duty' : 'Off duty' }}<small>{{ $helper->getCurrentReadiness()?->assessment_result === 'ready' ? 'Ready' : 'Readiness required' }}</small></td>
+            <td><x-helper-capacity :helper="$helper" /></td><td><span class="status-pill {{ $helper->eligibility['assignable'] ? 'available' : 'offline' }}">{{ $helper->eligibility['label'] }}</span></td><td>
+            @if(!$helper->adviser)
+            <form method="POST" data-helper-assignment action="{{ route('moderator.manage.assign') }}" class="flex items-center gap-2">@csrf<input type="hidden" name="helper_id" value="{{ $helper->id }}"><label class="sr-only" for="assign-adviser-{{ $helper->id }}">Assign Adviser</label><select id="assign-adviser-{{ $helper->id }}" name="adviser_id" required><option value="">Select Adviser</option>@foreach($advisers as $adviser)<option value="{{ $adviser->id }}" @disabled($adviser->remaining_slots <= 0)>{{ $adviser->full_name }}</option>@endforeach</select><button type="submit" class="btn-primary">Assign</button></form>
+            @else — @endif</td></tr>
+            @empty<tr><td colspan="6">No helpers in this list</td></tr>@endforelse
+            </tbody></table></div>
         </div>
 
         <div class="mt-4">{{ $helpers->links() }}</div>

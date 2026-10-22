@@ -9,7 +9,7 @@ class NotificationPopupDelivery
 {
     public const FRESH_MINUTES = 5;
 
-    public function __construct(private EmergencyNoticeState $emergencies) {}
+    public function __construct(private EmergencyNoticeState $emergencies, private EmergencyNotificationPresentation $emergencyCopy) {}
 
     public function key(Notification $notice, User $user): string
     {
@@ -22,13 +22,18 @@ class NotificationPopupDelivery
 
     public function actionable(Notification $notice, User $user): bool
     {
+        if (preg_match('/^session-ending:(\d+)$/',$notice->popup_event_key ?? '',$match)) {
+            $session = Session::find((int)$match[1]);
+            $remaining = $session ? app(SessionDurationService::class)->state($session)['remaining_seconds'] : null;
+            return $session && $session->isActive() && $remaining !== null && $remaining > 0 && $remaining <= 300;
+        }
         if (preg_match('/^queue-wait:(\d+)$/', $notice->popup_event_key ?? '', $match)) {
             $queue = \App\Models\QueueRequest::find((int) $match[1]);
             return $queue && $queue->request_status === 'waiting' && !$queue->assigned_helper_id
                 && Session::where('queue_request_id', $queue->id)->where('session_status', 'waiting')->whereNull('helper_id')->exists();
         }
         if ($notice->notification_type === 'emergency' && in_array($user->role, ['adviser', 'moderator', 'professional'], true)) {
-            return $this->emergencies->key($notice, $user) !== null;
+            return $this->emergencyCopy->current($notice, $user) && $this->emergencies->key($notice, $user) !== null;
         }
         if (preg_match('#/(?:referral|referrals)/(\d+)(?:/|$)#', $notice->link ?? '', $match)) {
             $referral = Referral::find((int) $match[1]);

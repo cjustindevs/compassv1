@@ -3,6 +3,7 @@
 @section('content')
 @php
     $inlineNotices = ['success'];
+    $emergencyCopy = app(\App\Services\EmergencyNotificationPresentation::class);
 @endphp
 <div class="adviser-page-content av-page notification-page">
 <header><div><h1>{{ $history==='archived' ? 'Archived Notifications' : 'Notifications' }}</h1><p class="av-muted">{{ $history==='archived' ? 'Saved notification history. Restore a notification to return it to your inbox.' : 'Case updates and supervision alerts. '.$unreadCount.' unread.' }}</p></div><div class="av-actions">
@@ -14,10 +15,11 @@
 @forelse($notifications as $notification)
 @php
     $emergency = str_contains(strtolower($notification->notification_type ?? ''), 'emergency') || str_contains(strtolower($notification->title ?? ''),'emergency');
-    $description = \Illuminate\Support\Str::limit(strip_tags($notification->message ?? ''), 180);
+    $copy = $emergencyCopy->present($notification, auth()->user());
+    $description = \Illuminate\Support\Str::limit(strip_tags($copy['message'] ?? ''), 180);
 @endphp
 <article class="av-panel av-notification ui-notification-row {{ !$notification->is_read && $history==='inbox' ? 'av-notification-unread' : '' }} {{ $emergency ? 'av-notification-emergency' : '' }}">
-<div class="ui-notification-content"><header class="av-heading"><div><h2>{{ \Illuminate\Support\Str::limit($notification->title ?: 'System update', 90) }}</h2><p class="av-muted">{{ $description }}</p><time datetime="{{ $notification->created_at->toIso8601String() }}">{{ $notification->created_at->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') }} PHT / {{ $notification->created_at->diffForHumans() }}</time></div><span class="av-badge {{ $emergency ? 'av-badge-alert' : 'av-badge-muted' }}">{{ $history==='archived' ? 'Archived' : ($notification->is_read ? 'Read' : 'Unread') }}</span></header></div>
+<div class="ui-notification-content"><header class="av-heading"><div><h2>{{ \Illuminate\Support\Str::limit($copy['title'] ?: 'System update', 90) }}</h2><p class="av-muted">{{ $description }}</p><time datetime="{{ $notification->created_at->toIso8601String() }}">{{ $notification->created_at->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') }} PHT / {{ $notification->created_at->diffForHumans() }}</time></div><span class="av-badge {{ $emergency ? 'av-badge-alert' : 'av-badge-muted' }}">{{ $history==='archived' ? 'Archived' : ($notification->is_read ? 'Read' : 'Unread') }}</span></header></div>
 <div class="av-actions ui-notification-actions">
 @if($history==='archived')<form method="POST" action="{{ route('adviser.notifications.restore',$notification->id) }}">@csrf<button class="av-button" type="submit">Restore to inbox</button></form>
 @else

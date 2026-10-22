@@ -254,6 +254,11 @@ class HelperSessionController extends Controller
         $hasReflection = filled($validated['personal_reflection'] ?? null) || ! empty($validated['skills_applied'] ?? []);
         app(HelperDocumentationService::class)->save(Auth::user(), $session, $validated, $hasReflection ? 'both' : 'summary');
 
+        if ($session->fresh()->documentation_status === 'submitted') return redirect()->route('helper.cases')->with('completion_notice',[
+            'title'=>'Documentation submitted.', 'message'=>'Your summary and reflection have been saved.',
+            'url'=>route('helper.cases'), 'label'=>'Back to assigned cases',
+        ]);
+
         return back()->with('success', 'Session notes saved successfully.');
     }
 
@@ -273,6 +278,11 @@ class HelperSessionController extends Controller
         $session = Session::where('helper_id', Auth::user()->helper->id)->findOrFail($id);
 
         app(HelperDocumentationService::class)->save(Auth::user(), $session, $validated, 'reflection');
+
+        if ($session->fresh()->documentation_status === 'submitted') return redirect()->route('helper.cases')->with('completion_notice',[
+            'title'=>'Documentation submitted.', 'message'=>'Your summary and reflection have been saved.',
+            'url'=>route('helper.cases'), 'label'=>'Back to assigned cases',
+        ]);
 
         return back()->with('success', 'Personal reflection saved.');
     }

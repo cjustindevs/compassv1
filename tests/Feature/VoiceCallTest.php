@@ -334,4 +334,78 @@ class VoiceCallTest extends TestCase
             $previousOrigins === null ? $repository->clear('REVERB_ALLOWED_ORIGINS') : $repository->set('REVERB_ALLOWED_ORIGINS',$previousOrigins);
         }
     }
+
+    public function test_active_text_chat_enables_calls_only_after_seeker_consent_without_changing_session(): void
+    {
+        [$seeker,$helper,$session]=$this->room();
+        $session->update(['session_type'=>'chat']);
+        $started=$session->start_time->toIso8601String();
+        app(ConsentService::class)->decide($seeker,'voice_participation','withdrawn',$session->id);
+        $this->postJson(route('voice.start',$session))->assertStatus(409);
+        $this->actingAs($helper)->postJson(route('voice.consent',$session),['voice_participation'=>true])->assertForbidden();
+        $this->postJson(route('voice.consent-request',$session))->assertOk();
+        $this->postJson(route('voice.consent-request',$session))->assertOk();
+        $this->assertSame(1,\App\Models\Notification::where('popup_event_key','voice-consent:'.$session->id)->count());
+        $this->actingAs($seeker)->postJson(route('voice.consent',$session),[])->assertUnprocessable();
+        $this->postJson(route('voice.consent',$session),['voice_participation'=>true])->assertOk();
+        $count=ConsentRecord::count();
+        $this->postJson(route('voice.consent',$session),['voice_participation'=>true])->assertOk();
+        $this->assertSame($count,ConsentRecord::count());
+        $call=$this->postJson(route('voice.start',$session))->assertOk()->json('call.id');
+        $this->actingAs($helper)->postJson(route('voice.action',$session),['call_id'=>$call,'action'=>'accept'])->assertOk();
+        $this->postJson(route('voice.action',$session),['call_id'=>$call,'action'=>'leave'])->assertOk();
+        $this->assertSame('chat',$session->fresh()->session_type);
+        $this->assertSame('active',$session->fresh()->session_status);
+        $this->assertSame($started,$session->fresh()->start_time->toIso8601String());
+    }
+
+    public function test_five_minute_toast_claims_are_scoped_to_session_participant_and_deadline(): void
+    {
+        [$seeker,$helper,$session]=$this->room();
+        $this->postJson(route('session.notices.claim',$session),['event'=>'ending_soon'])->assertOk()->assertJsonPath('show',false);
+        $session->update(['start_time'=>now()->subMinutes(85),'helper_accepted_at'=>now()->subMinutes(86)]);
+        $this->postJson(route('session.notices.claim',$session),['event'=>'ending_soon'])->assertOk()->assertJsonPath('show',true);
+        $this->postJson(route('session.notices.claim',$session),['event'=>'ending_soon'])->assertOk()->assertJsonPath('show',false);
+        $this->actingAs($helper)->postJson(route('session.notices.claim',$session),['event'=>'ending_soon'])->assertOk()->assertJsonPath('show',true);
+        $this->actingAs(User::factory()->create(['role'=>'seeker']))->postJson(route('session.notices.claim',$session),['event'=>'ending_soon'])->assertForbidden();
+        $this->travel(6)->minutes();
+        $this->actingAs($seeker)->postJson(route('session.notices.claim',$session),['event'=>'ending_soon'])->assertOk()->assertJsonPath('show',false);
+    }
+
+    public function test_connected_audio_is_not_reported_as_a_missing_text_response(): void
+    {
+        [$seeker,$helper,$session]=$this->room();
+        $session->update(['start_time'=>now()->subMinutes(8)]);
+        VoiceCall::create(['id'=>(string)\Illuminate\Support\Str::uuid(),'session_id'=>$session->id,'caller_user_id'=>$seeker->id,'callee_user_id'=>$helper->id,
+            'status'=>'connected','connected_at'=>now()->subMinutes(7),'caller_seen_at'=>now(),'callee_seen_at'=>now()]);
+        $this->artisan('sessions:check-no-response')->assertSuccessful();
+        $this->assertNull($session->fresh()->no_response_escalated_at);
+        $this->actingAs($helper)->getJson(route('voice.state',$session))->assertOk();
+        $this->assertTrue($session->fresh()->helper_heartbeat_at->gte(now()->subSecond()));
+    }
+
+    public function test_a_finished_audio_call_receives_a_new_response_window_and_reports_actual_elapsed_time(): void
+    {
+        [$seeker, $helper, $session] = $this->room();
+        $session->update(['start_time' => now()->subMinutes(20)]);
+        $moderator = User::factory()->create(['role' => 'moderator', 'is_active' => true]);
+        VoiceCall::create([
+            'id' => (string) \Illuminate\Support\Str::uuid(), 'session_id' => $session->id,
+            'caller_user_id' => $seeker->id, 'callee_user_id' => $helper->id,
+            'status' => 'ended', 'connected_at' => now()->subMinutes(18), 'ended_at' => now()->subMinute(),
+        ]);
+
+        $this->artisan('sessions:check-no-response')->assertSuccessful();
+        $this->assertNull($session->fresh()->no_response_escalated_at);
+        $this->travel(15)->minutes();
+        $this->artisan('sessions:check-no-response')->assertSuccessful();
+        $this->assertNotNull($session->fresh()->no_response_escalated_at);
+        $notice = \App\Models\Notification::where('user_account_id', $moderator->id)
+            ->where('title', 'Helper not responding')->sole();
+        $this->assertStringContainsString('16 minutes when detected', $notice->message);
+        $this->artisan('sessions:check-no-response')->assertSuccessful();
+        $this->assertSame(1, \App\Models\Notification::where('user_account_id', $moderator->id)
+            ->where('title', 'Helper not responding')->count());
+    }
+
 }

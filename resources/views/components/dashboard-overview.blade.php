@@ -23,9 +23,7 @@
     @endif
     <div class="co-kpis">@foreach($primary as $card)<article class="co-kpi"><h3 title="{{ $card['definition'] }}">{{ $card['label'] }}</h3>
     <strong @if(auth()->user()?->role === 'moderator') @if($card['label'] === 'Waiting requests') id="statQueue" @elseif($card['label'] === 'Active sessions') id="statSessions" @elseif($card['label'] === 'Available Helpers') id="statHelpers" @elseif($card['label'] === 'Active emergencies') id="statEmergency" @endif @endif>{{ array_key_exists('raw',$card) ? \App\Services\SessionPerformance::number($card['raw'], $card['unit'] ?? '') : ($card['value'] === 'No data' ? '—' : $formatValue($card['value'])) }}</strong>
-    @if(isset($card['samples']))<small>n={{ $card['samples'] }}</small>@endif
-    <details class="co-kpi-info"><summary>Definition</summary><p>{{ $card['definition'] }}</p></details>
-    @if(isset($card['link']))<a class="co-metric-link" href="{{ $card['link'] }}">View records</a>@endif</article>@endforeach</div>
+    </article>@endforeach</div>
     @if(auth()->user()?->role === 'adviser')
         <nav class="co-task-links" aria-label="Live support actions">
         @foreach(['Screening reviews pending'=>'adviser.screenings','Referral reviews pending'=>'adviser.referrals','Evaluations pending'=>'adviser.evaluations','Escalated cases'=>'adviser.emergencies','Helpers at capacity'=>'adviser.schedule'] as $label=>$target)
@@ -33,7 +31,7 @@
         @endforeach</nav>
     @endif
     <details class="co-definitions" @if(auth()->user()?->role === 'moderator') open @endif><summary>Operational status and supporting metrics</summary><div class="co-secondary">@foreach($secondary as $card)<div><span title="{{ $card['definition'] }}">{{ $card['label'] }}</span><strong title="{{ $card['definition'] }}" @if(auth()->user()?->role === 'moderator' && $card['label'] === 'Active emergencies') id="statEmergency" @endif>{{ array_key_exists('raw',$card) ? \App\Services\SessionPerformance::number($card['raw'], $card['unit'] ?? '') : $formatValue($card['value']) }}</strong>@if(isset($card['samples']))<small>{{ $card['samples'] }} cases measured</small>@endif</div>@endforeach</div></details>
-    @if($showDefinitions)<details class="co-definitions"><summary>Metric definitions</summary><dl>@foreach($overview['cards'] as $card)<dt>{{ $card['label'] }}: {{ $card['value'] }}</dt><dd>{{ $card['definition'] }}</dd>@endforeach</dl></details>@endif
+
     @if($overview['competency_comparison'] ?? null)
         <x-adviser-competency-comparison :comparison="$overview['competency_comparison']" />
     @endif

@@ -8,13 +8,20 @@ use Illuminate\Support\Str;
 
 class VoiceCallService
 {
+    public function hasConsent(Session $session): bool
+    {
+        $consent = ConsentRecord::where('seeker_id',$session->seeker_id)->where('session_id',$session->id)
+            ->where('purpose','voice_participation')->latest('id')->first();
+        return $consent && $consent->version === ConsentService::VERSION && $consent->consent_given
+            && !$consent->withdrawn && $consent->decision === 'accepted';
+    }
     public function authorize(User $user, Session $session): void
     {
         Gate::forUser($user)->authorize('participate', $session);
         abort_unless($session->helper_accepted_at && $session->isActive() && $session->start_time, 409, 'Only an accepted, active session can use voice.');
         app(SessionDurationService::class)->expire($session);
         abort_if($session->isCompleted(), 409, 'This session has ended.');
-        abort_unless($session->session_type === 'voice', 409, 'This request uses text chat.');
+        abort_unless(in_array($session->session_type, ['voice','chat'], true), 409, 'Voice is unavailable for this session.');
         abort_unless($session->seeker?->user?->is_active && $session->helper?->user?->is_active, 409, 'The other participant is unavailable.');
         abort_unless(app(ConsentService::class)->isFull($session->seeker), 409, 'Current support consent is required.');
         $consent = ConsentRecord::where('seeker_id',$session->seeker_id)->where('session_id',$session->id)
@@ -52,6 +59,9 @@ class VoiceCallService
     {
         Gate::forUser($user)->authorize('participate', $session);
         app(SessionDurationService::class)->expire($session);
+        if ($user->role === 'helper' && $session->isActive() && (int)$session->helper_id === (int)$user->helper?->id) {
+            app(SessionReconnectionService::class)->heartbeat($session);
+        }
         return DB::transaction(function () use ($user, $session, $activeCall) {
             Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
             $call = VoiceCall::where('session_id',$session->id)->latest('created_at')->latest('id')->first();
@@ -63,6 +73,8 @@ class VoiceCallService
                 elseif ($activeCall === $call->id) $call->update([$call->caller_user_id === $user->id ? 'caller_seen_at' : 'callee_seen_at'=>now()]);
             }
             return ['available'=>$allowed && app(VoiceConfiguration::class)->ready(),
+                'voice_consent_required'=>!$this->hasConsent($session),
+                'voice_requested'=>\App\Models\AuditLog::where('target_type',$session->getTable())->where('target_id',$session->id)->where('action','voice_consent_requested')->exists(),
                 'session'=>app(SessionDurationService::class)->state($session->fresh()),
                 'call'=>$call ? $this->present($call,$user) : null];
         });

@@ -85,12 +85,15 @@ class EmergencyCoordinationController extends Controller
             abort_if(in_array($case->status, ModeratorEmergencyCases::TERMINAL, true) || $case->archived_at, 409, 'This emergency has concluded.');
             $session = Session::findOrFail($case->session_id);
             abort_if($session->helper_id, 409, 'A Helper is already assigned. Refresh the emergency.');
+            $coordinator = trim($case->adviser_first_name.' '.$case->adviser_last_name) ?: 'Awaiting assignment';
             foreach (User::where('role', 'adviser')->where('is_active', true)->get() as $user) {
+                $assigned = (int)$case->adviser_id === (int)$user->adviser?->id;
                 Notification::withoutGlobalScopes()->firstOrCreate([
-                    'user_account_id' => $user->id, 'title' => 'Emergency needs Adviser coordination',
+                    'user_account_id' => $user->id, 'title' => $assigned ? 'Emergency needs your coordination' : 'Shared emergency coordination request',
                     'link' => route('adviser.emergency.coordinate', [$source, $id], false),
                 ], ['notification_type' => 'emergency', 'emergency_alert_id' => $source === 'emergency_alerts' ? $id : null,
-                    'message' => 'An unassigned emergency needs coordination. Review eligible Helpers and the Professional handoff.']);
+                    'message' => 'Coordinator: '.$coordinator.'. '.($assigned ? 'Review eligible Helpers and coordinate the next action.' : 'Shared awareness: coordinate with the responsible reviewer.'),
+                    'popup_event_key' => 'emergency:coordination:'.$source.':'.$id.':'.($case->adviser_id ?? 'unassigned')]);
             }
             SupportAudit::record('emergency_coordination_requested', $session, ['source' => $source, 'incident_id' => $id]);
         }, 3);

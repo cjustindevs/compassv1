@@ -128,7 +128,7 @@ class IdentityVaultTest extends TestCase
         $this->assertStringNotContainsString('private@example.com', json_encode($row));
         $this->assertDatabaseCount('identity_vault', 0);
         $this->actingAs($referral->professional->user)->get(route('identity.show', $referral))->assertForbidden();
-        $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral))->assertRedirect();
+        $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral), ['fields'=>['real_name','phone_number']])->assertRedirect();
         $this->actingAs($referral->professional->user)->get(route('identity.show', $referral))
             ->assertOk()->assertSee('Private Test Name')->assertDontSee('private@example.com')->assertHeader('Cache-Control', 'no-store, private');
         $this->post(route('identity.acknowledge', $referral))->assertRedirect();
@@ -166,13 +166,13 @@ class IdentityVaultTest extends TestCase
     public function test_replacing_identity_requires_a_new_release_even_for_the_same_referral(): void
     {
         $referral = $this->referral(); $this->store($referral);
-        $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral))->assertRedirect();
+        $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral), ['fields'=>['real_name','phone_number']])->assertRedirect();
         $this->actingAs($referral->session->seeker->user)->postJson(route('identity.store', $referral), [
             'identity_disclosure' => true, 'real_name' => 'Updated Private Name', 'phone_number' => '+639171234567',
         ])->assertOk();
         $this->assertFalse($referral->fresh()->identity_disclosed);
         $this->actingAs($referral->professional->user)->get(route('identity.show', $referral))->assertForbidden();
-        $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral))->assertRedirect();
+        $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral), ['fields'=>['real_name','phone_number']])->assertRedirect();
         $this->actingAs($referral->professional->user)->get(route('identity.show', $referral))->assertOk()->assertSee('Updated Private Name');
     }
 
@@ -190,7 +190,7 @@ class IdentityVaultTest extends TestCase
     public function test_audit_failure_fails_closed_without_returning_plaintext(): void
     {
         $referral = $this->referral(); $this->store($referral);
-        $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral))->assertRedirect();
+        $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral), ['fields'=>['real_name','phone_number']])->assertRedirect();
         DB::connection('identity_vault')->getSchemaBuilder()->drop('idv_access_logs');
         $this->actingAs($referral->professional->user)->getJson(route('identity.show', $referral))
             ->assertStatus(503)->assertDontSee('Private Test Name');
@@ -199,7 +199,7 @@ class IdentityVaultTest extends TestCase
     public function test_expired_identity_is_unreadable_and_purged(): void
     {
         $referral = $this->referral(); $this->store($referral);
-        $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral))->assertRedirect();
+        $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral), ['fields'=>['real_name','phone_number']])->assertRedirect();
         $this->travel(366)->days();
         $this->actingAs($referral->professional->user)->getJson(route('identity.show', $referral))->assertStatus(503)->assertDontSee('Private Test Name');
         auth()->logout();
@@ -216,7 +216,7 @@ class IdentityVaultTest extends TestCase
             ->assertRedirect()
             ->assertSessionHasErrors('identity_release');
         $this->store($referral);
-        $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral))->assertRedirect();
+        $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral), ['fields'=>['real_name','phone_number']])->assertRedirect();
     }
 
     public function test_embedded_identity_modal_restores_saved_consent(): void
@@ -308,7 +308,7 @@ class IdentityVaultTest extends TestCase
     {
         $referral = $this->referral();
         $this->store($referral);
-        $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral))->assertRedirect();
+        $this->actingAs($referral->adviser->user)->post(route('identity.release', $referral), ['fields'=>['real_name','phone_number']])->assertRedirect();
         $professional = $referral->professional->user;
 
         $referral->update(['status' => Referral::STATUS_COMPLETED, 'completed_at' => now()]);
@@ -336,4 +336,37 @@ class IdentityVaultTest extends TestCase
         $this->post($url, $reason)->assertOk()->assertSee('Private Test Name');
         $this->assertDatabaseHas('idv_release_records', ['release_reason' => 'life_threatening_emergency', 'consent_obtained' => false, 'reviewed_at' => null], 'identity_vault');
     }
+
+    public function test_new_referral_form_accepts_email_only_and_encrypts_optional_demographics(): void
+    {
+        $referral=$this->referral();
+        $this->actingAs($referral->session->seeker->user)->postJson(route('identity.store',$referral),[
+            'identity_disclosure'=>true,'email'=>'reach@example.test','age'=>21,'gender'=>'prefer_not_to_say',
+        ])->assertOk();
+        $row=DB::connection('identity_vault')->table('idv_identities')->first();
+        $this->assertNotSame('21',$row->age);
+        $this->assertNotSame('prefer_not_to_say',$row->gender);
+        $this->assertNull($row->real_name);
+        $this->assertNull($row->phone_number);
+        $this->actingAs($referral->adviser->user);
+        app(IdentityVaultService::class)->releaseForReferral($referral,['email','age','gender']);
+        $this->actingAs($referral->professional->user);
+        $released=app(IdentityVaultService::class)->readForReferral($referral->fresh());
+        $this->assertSame('21',$released['age']);
+        $this->assertSame('reach@example.test',$released['email']);
+        $this->assertArrayNotHasKey('real_name',$released);
+    }
+
+    public function test_identity_form_requires_contact_and_explicit_emergency_contact_authorization(): void
+    {
+        $referral=$this->referral();
+        $this->actingAs($referral->session->seeker->user);
+        $this->postJson(route('identity.store',$referral),['identity_disclosure'=>true,'age'=>21])->assertUnprocessable();
+        $data=['identity_disclosure'=>true,'email'=>'reach@example.test','emergency_contact_name'=>'Authorized Contact','emergency_contact_phone'=>'+639170000000'];
+        $this->postJson(route('identity.store',$referral),$data)->assertUnprocessable();
+        $this->postJson(route('identity.store',$referral),$data+['emergency_contact_authorized'=>true,'age'=>999])->assertUnprocessable();
+        $this->postJson(route('identity.store',$referral),$data+['emergency_contact_authorized'=>true,'age'=>21])->assertOk();
+        $this->assertNotSame('Authorized Contact',DB::connection('identity_vault')->table('idv_identities')->value('emergency_contact_name'));
+    }
+
 }

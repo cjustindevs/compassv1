@@ -19,7 +19,7 @@
 @endphp
 <section class="cm-card er-professional-handoff" id="emergencyProfessionalHandoff" aria-labelledby="emergencyHandoffTitle">
     <h2 id="emergencyHandoffTitle">Professional handoff</h2>
-    <p class="cm-help">Raise professional support through an urgent referral. Referral approval, Seeker consent, contact submission, and authorized identity release remain separate steps.</p>
+
     @if($handoffBlockReason)
         <div class="cm-field"><label for="emergencyProfessionalUnavailable">Professional</label><select id="emergencyProfessionalUnavailable" disabled aria-describedby="professionalUnavailableReason"><option>{{ $linkedReferral?->professional?->full_name ?? 'Choose a Professional when the required steps are complete' }}</option></select><small id="professionalUnavailableReason" role="status">{{ $handoffBlockReason }}</small></div>
     @endif
@@ -27,7 +27,7 @@
         <p><strong>Referral #{{ $alert->referral->id }}</strong> &middot; {{ ucwords(str_replace('_',' ',$alert->referral->status)) }}</p>
         @if($linkedReferral->professional_id)
             <p><strong>Selected Professional:</strong> {{ $linkedReferral->professional?->full_name ?? 'Assigned Professional' }}</p>
-            <p>{{ $linkedReferral->professional_notified_at ? 'An in-system notification was sent. Waiting for the Professional response unless already accepted.' : 'Professional notification is pending.' }} The emergency stays open until its outcome is recorded.</p>
+            <p>{{ $linkedReferral->accepted_at ? 'Professional accepted the referral.' : ($linkedReferral->professional_notified_at ? 'Professional notified; awaiting response.' : 'Professional notification is pending.') }}</p>
         @endif
         @if($linkedReferral->completionReviews()->exists())<p role="status"><strong>Professional completion report:</strong> {{ ucwords(str_replace('_',' ',$linkedReferral->completionReviews()->latest('id')->value('review_status'))) }}. Referral completion and emergency resolution are separate.</p>@endif
         @if($canReviewLinkedReferral)

@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="{{ asset('css/workflow-dialogs.css') }}?v={{ filemtime(public_path('css/workflow-dialogs.css')) }}">
     <script src="{{ asset('js/workflow-dialogs.js') }}?v={{ filemtime(public_path('js/workflow-dialogs.js')) }}" defer></script>
     <script src="{{ asset('js/compass-ui.js') }}?v={{ filemtime(public_path('js/compass-ui.js')) }}" defer></script>
+    <link rel="stylesheet" href="{{ asset('css/interface-refinement.css') }}?v={{ filemtime(public_path('css/interface-refinement.css')) }}">
+    <script src="{{ asset('js/focused-actions.js') }}?v={{ filemtime(public_path('js/focused-actions.js')) }}" defer></script>
     @auth
         @unless(($embeddedScreen ?? false) || request()->routeIs('home', 'login', 'register', 'seeker.register', 'seeker.consent', 'password.*', 'verification.*'))
         <meta name="compass-notices" content="{{ json_encode(['user'=>auth()->id(),'feed'=>route('notifications.feed'),'interval'=>in_array(auth()->user()->role,['adviser','moderator','professional']) ? 2000 : 5000,'center'=>route('notifications')]) }}">

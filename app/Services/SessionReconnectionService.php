@@ -19,6 +19,12 @@ class SessionReconnectionService
     // real disconnection instead of flagging an alive helper on every tick.
     public const HEARTBEAT_STALE_SECONDS = 120;
 
+    public function absentMinutes(Session $session, SessionReconnection $incident): int
+    {
+        $lastSeen = $session->helper_heartbeat_at ?? $session->start_time ?? $incident->detected_at;
+        return max(0, (int) Carbon::parse($lastSeen)->diffInMinutes(now(), false));
+    }
+
     public function current(Session $session)
     {
         return SessionReconnection::where('session_id', $session->id)->latest('id')->first();
@@ -76,12 +82,23 @@ class SessionReconnectionService
                     SupportAudit::record('replacement_offer_expired', $session, ['helper_id'=>$previousHelperId]);
                     $this->staff($session, 'Replacement offer expired');
                 }
+                $minutes = $this->absentMinutes($session, $incident);
+                foreach ([10, 15] as $threshold) {
+                    if ($minutes < $threshold || \App\Models\AuditLog::where('target_type', $incident->getTable())
+                        ->where('target_id', $incident->id)->where('action', 'connection_follow_up_'.$threshold)->exists()) continue;
+                    if ($threshold === 10) {
+                        $this->notice($session->seeker?->user_account_id, 'Helper disconnected for '.$minutes.' minutes', '/session/chat');
+                    } else {
+                        $this->staff($session, 'Helper disconnected for '.$minutes.' minutes — follow-up needed');
+                    }
+                    SupportAudit::record('connection_follow_up_'.$threshold, $incident, ['elapsed_minutes'=>$minutes]);
+                }
             });
         });
-        Session::where('session_status', 'active')->where('session_type', 'chat')->whereNotNull('helper_heartbeat_at')->where('helper_heartbeat_at', '<=', now()->subSeconds(self::HEARTBEAT_STALE_SECONDS))->eachById(function ($row) {
+        Session::where('session_status', 'active')->whereRaw('COALESCE(helper_heartbeat_at, start_time) <= ?', [now()->subSeconds(self::HEARTBEAT_STALE_SECONDS)])->eachById(function ($row) {
             DB::transaction(function () use ($row) {
                 $session = Session::lockForUpdate()->findOrFail($row->id);
-                if (! $session->isActive() || ! $session->helper_heartbeat_at || Carbon::parse($session->helper_heartbeat_at)->gt(now()->subSeconds(self::HEARTBEAT_STALE_SECONDS))) {
+                if (! $session->isActive() || !$session->start_time || Carbon::parse($session->helper_heartbeat_at ?? $session->start_time)->gt(now()->subSeconds(self::HEARTBEAT_STALE_SECONDS))) {
                     return;
                 }if (app(SessionDurationService::class)->expire($session)) {
                     return;
@@ -125,7 +142,7 @@ class SessionReconnectionService
             }if (($session->requires_immediate_action || $session->risk_level === 'emergency') && !$session->permitsEmergencySupport() && !$session->permitsParallelScreeningSupport()) {
                 throw ValidationException::withMessages(['connection' => 'An emergency is active. Coordinate with the responsible Adviser instead of ordinary replacement matching.']);
             }$excluded = $session->permitsEmergencySupport() ? \App\Models\AuditLog::where('target_type',$session->getTable())->where('target_id',$session->id)->whereIn('action',['replacement_offer_declined','replacement_offer_expired'])->get()->map(fn($row)=>(int)($row->metadata['helper_id'] ?? 0))->all() : [];
-            $helper = app(HelperMatchingService::class)->findBestMatch($session->seeker, $session->risk_level ?? 'low', $session->concern_category, null, $session->helper_id, $excluded);
+            $helper = app(HelperMatchingService::class)->findBestMatch($session->seeker, $session->matchingRiskLevel(), $session->concern_category, $session->preferred_language, $session->helper_id, $excluded);
             if (! $helper) {
                 throw ValidationException::withMessages(['connection' => 'No eligible Helper is available. The Seeker remains in the current session. Try again when availability changes.']);
             }$incident->update(['status' => 'offered', 'offered_helper_id' => $helper->id, 'offered_at' => now()]);

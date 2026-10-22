@@ -8,7 +8,6 @@
 @php($inlineNotices = ['success'])
 <x-seeker-step title="Request History">
     <div class="seeker-toolbar">
-        <p class="text-sm text-gray-500">Your support requests and feedback &middot; Dates use Philippine Time.</p>
         <a class="seeker-button" href="{{ route($activeRequest ? 'request.matching' : 'request.screening') }}">{{ $activeRequest ? 'View active request' : 'Request support' }}</a>
     </div>
     <section class="request-section">
@@ -26,7 +25,7 @@
         </form>
         <h2>Your requests <span class="text-gray-500 font-normal">({{ $requests->total() }})</span></h2>
         <div class="seeker-table-wrap" tabindex="0" aria-label="Support request records">
-            <table class="seeker-table">
+            <table class="seeker-table compact-data-table">
                 <thead><tr><th>Reference</th><th>Concern</th><th>Date (PHT)</th><th>Status</th><th>Action</th></tr></thead>
                 <tbody>
                 @forelse($requests as $item)

@@ -348,3 +348,16 @@ test('availability polling starts before socket setup and survives a synchronous
     assert.equal(r.elements.badge.textContent,'Ready');assert.equal(intervals,2);
     r.client.connect(null);assert.equal(intervals,2);
 });
+
+
+test('an incoming call opens chat controls once and subsequent polling respects dismissal',async()=>{
+    const r=room(), toggle={setAttribute(){}};
+    r.client.root.dataset={chat:'true'};r.client.root.hidden=true;
+    r.env.document={querySelector:()=>toggle};
+    r.setState({available:true,signaling_available:true,session:{ended:false},call:{id:'incoming-one',is_caller:false,status:'ringing'}});
+    await r.client.poll();assert.equal(r.client.root.hidden,false);
+    r.client.root.hidden=true;
+    await r.client.poll();assert.equal(r.client.root.hidden,true);
+    r.setState({available:true,signaling_available:true,session:{ended:false},call:{id:'incoming-two',is_caller:false,status:'ringing'}});
+    await r.client.poll();assert.equal(r.client.root.hidden,false);
+});

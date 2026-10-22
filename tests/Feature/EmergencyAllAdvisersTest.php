@@ -137,4 +137,42 @@ class EmergencyAllAdvisersTest extends TestCase
         Event::assertDispatched(NotificationsChanged::class, fn ($event) => $event->userId === $user->id);
         $this->actingAs($user)->get(route('adviser.emergencies'))->assertOk()->assertSee('js/staff-emergency-notice.js', false);
     }
+
+    public function test_acknowledged_emergency_gets_one_stalled_progress_reminder_until_another_action(): void
+    {
+        config(['emergency.reminder_minutes'=>0,'emergency.progress_reminder_minutes'=>15]);
+        $owner=$this->adviser();$seeker=$this->seeker();
+        User::factory()->create(['role'=>'moderator']);
+        $case=Session::create(['seeker_id'=>$seeker->helpSeeker->id,'review_adviser_id'=>$owner->adviser->id,'created_date'=>now(),'session_status'=>'waiting','risk_level'=>'high']);
+        $alert=EmergencyAlert::create(['session_id'=>$case->id,'seeker_id'=>$case->seeker_id,'adviser_id'=>$owner->adviser->id,'risk_level'=>'emergency','status'=>'notified','triggered_at'=>now()->subMinutes(30),'trigger_reason'=>'Test coordination','acknowledged_at'=>now()->subMinutes(20),'acknowledged_by'=>$owner->id]);
+        $alert->forceFill(['acknowledged_at'=>now()->subMinutes(20),'acknowledged_by'=>$owner->id])->save();
+        app(EmergencyReviewReminders::class)->run();app(EmergencyReviewReminders::class)->run();
+        $this->assertSame(1,\App\Models\AuditLog::where('action','emergency_progress_reminder')->count());
+        DB::table('emergency_review_actions')->insert(['emergency_alert_id'=>$alert->id,'actor_id'=>$owner->id,'action'=>'coordination','notes'=>'Follow-up recorded','created_at'=>now()]);
+        $this->travel(16)->minutes();app(EmergencyReviewReminders::class)->run();
+        $this->assertSame(2,\App\Models\AuditLog::where('action','emergency_progress_reminder')->count());
+        $alert->update(['status'=>'resolved','resolved_at'=>now()]);$this->travel(16)->minutes();app(EmergencyReviewReminders::class)->run();
+        $this->assertSame(2,\App\Models\AuditLog::where('action','emergency_progress_reminder')->count());
+    }
+
+
+    public function test_resolved_tab_orders_by_resolution_and_keeps_foreign_history_private(): void
+    {
+        $owner=$this->adviser();$other=$this->adviser();$seeker=$this->seeker();
+        $case=Session::create(['seeker_id'=>$seeker->helpSeeker->id,'review_adviser_id'=>$owner->adviser->id,'created_date'=>now(),'session_status'=>'completed','risk_level'=>'high']);
+        $older=EmergencyAlert::create(['session_id'=>$case->id,'seeker_id'=>$case->seeker_id,'adviser_id'=>$owner->adviser->id,'triggered_at'=>now()->subDay(),'trigger_reason'=>'Older case','status'=>'resolved','resolved_at'=>now()->subHours(3),'resolution_notes'=>'Older resolution.']);
+        $newer=EmergencyAlert::create(['session_id'=>$case->id,'seeker_id'=>$case->seeker_id,'adviser_id'=>$owner->adviser->id,'triggered_at'=>now()->subDays(5),'trigger_reason'=>'Newly resolved case','status'=>'resolved','resolved_at'=>now()->subHour(),'resolution_notes'=>'New resolution.']);
+        $this->actingAs($owner)->get(route('adviser.emergencies',['tab'=>'resolved']))->assertOk()
+            ->assertViewHas('tab','resolved')->assertViewHas('resolvedAlerts',fn($rows)=>$rows->first()->id===$newer->id && $rows->perPage()===10)
+            ->assertSee('View case')->assertSee('Resolved on')->assertDontSee('Successfully handled');
+        $this->get(route('adviser.emergencies',['tab'=>'resolved','q'=>'#'.$older->id]))->assertOk()
+            ->assertViewHas('resolvedAlerts',fn($rows)=>$rows->total()===1 && $rows->first()->id===$older->id);
+        $this->get(route('adviser.emergencies',['tab'=>'resolved','q'=>'testalias']))->assertOk()
+            ->assertViewHas('resolvedAlerts',fn($rows)=>$rows->total()===2);
+        $this->get(route('adviser.emergencies.show',$newer))->assertOk()->assertSee('New resolution.')
+            ->assertDontSee('name="resolution_notes"',false)->assertDontSee('data-focus-label="Resolve emergency"',false);
+        $this->actingAs($other)->get(route('adviser.emergencies',['tab'=>'resolved']))->assertOk()
+            ->assertViewHas('resolvedAlerts',fn($rows)=>$rows->total()===0);
+    }
+
 }

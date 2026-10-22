@@ -636,7 +636,7 @@
 
                 <section class="mb-6" aria-labelledby="safety-check-heading">
                     <h3 id="safety-check-heading" class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Safety Check</h3>
-                    <p class="text-xs text-gray-500 mb-2">If you choose Prefer not to say, an Adviser will review your request and may send one follow-up question before matching can continue.</p>
+                    <p class="text-xs text-gray-500 mb-2">If you choose Prefer not to say, matching continues while an Adviser reviews your request and may send one follow-up question.</p>
                     <fieldset class="request-safety-question" @error('safety_check') aria-describedby="safety-check-error" aria-invalid="true" @enderror>
                         <legend>{{ \App\Services\CompactScreening::SINGLE_QUESTION }} <span class="text-red-500" aria-label="required">*</span></legend>
                         <div class="safety-buttons">

@@ -61,7 +61,7 @@ class AdviserProfessionalActionUiTest extends TestCase
         $document = new \DOMDocument; @$document->loadHTML($page->getContent()); $xpath = new \DOMXPath($document);
         $this->assertSame(1,$xpath->query('//section[@aria-label="Referral clarification"]/ancestor::div[contains(@class,"referral-detail-page")]')->length);
         $this->assertSame(1,$xpath->query('//section[@aria-label="Referral recommendation"]/ancestor::div[contains(@class,"referral-detail-page")]')->length);
-        $this->assertSame(1,$xpath->query('//h3[normalize-space(.)="Version history"]/ancestor::div[contains(@class,"referral-detail-page")]')->length);
+        $this->assertSame(1,$xpath->query('//h3[normalize-space(.)="Update history"]/ancestor::div[contains(@class,"referral-detail-page")]')->length);
     }
 
     public function test_emergency_page_offers_real_referral_request_and_shows_waiting_state_after_submit(): void

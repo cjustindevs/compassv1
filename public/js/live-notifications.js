@@ -66,7 +66,9 @@
             // Do not lose alerts while a confirmation or sensitive form dialog is open.
             for (const notice of data.attention || []) window.CompassImportantNotices?.enqueue(notice);
             if(document.querySelector('dialog[open]') || document.querySelector('.modal-overlay.active'))return;
-            const fresh=data.fresh.filter(notice=>notice.urgent!==false&&(seen===null||notice.id>seen));
+            // Session deadlines have their own visible, once-only toast in the room.
+            const fresh=data.fresh.filter(notice=>notice.urgent!==false&&(seen===null||notice.id>seen)
+                && !String(notice.popup_key || '').startsWith('session-ending:') && notice.title !== 'Five minutes remaining');
             const routine=fresh.filter(n=>n.type!=='emergency');
             for(const notice of fresh.filter(n=>n.type==='emergency'))await toast(notice);
             for(const notice of routine.filter(n=>n.important))await toast(notice);

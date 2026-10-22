@@ -305,7 +305,10 @@ class SessionController extends Controller
         if (!$created) return redirect()->route('seeker.requests.show',$session)->with('info','Your feedback has already been submitted.');
         session(['evaluation_completed' => true]);
         session()->forget(['screening_data', 'preferences_data', 'risk_level', 'helper_id', 'session_id', 'voice_consent']);
-        return redirect()->route('session.thank-you');
+        return redirect()->route('seeker.dashboard')->with('completion_notice',[
+            'title'=>'Thank you!', 'message'=>'Your feedback has been submitted.',
+            'url'=>route('seeker.dashboard'), 'label'=>'Go to dashboard', 'secondary'=>route('seeker.requests'),
+        ]);
     }
 
     /**

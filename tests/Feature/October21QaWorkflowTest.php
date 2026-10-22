@@ -61,6 +61,42 @@ class October21QaWorkflowTest extends TestCase
             ['screening_form_version'=>CompactScreening::SINGLE_VERSION, 'concern_id'=>$concern->id, 'description'=>'I need support with school.']);
     }
 
+    public function test_repeated_yes_and_undisclosed_intakes_use_one_queue_interface_without_changing_priority(): void
+    {
+        foreach (['yes', 'yes', 'prefer_not_to_say', 'no'] as $answer) {
+            $user = $this->seeker();
+            $this->actingAs($user);
+            $case = $this->intake($user, $answer);
+            $this->post(route('request.preferences.process'), ['support_mode' => 'chat', 'preferred_language' => 'English'])
+                ->assertRedirect(route('request.matching'))->assertSessionHasNoErrors();
+            $response = $this->get(route('request.matching'))->assertOk()->assertViewIs('request.matching')
+                ->assertSee('data-queue-heading', false)->assertSee('data-queue-position', false)
+                ->assertDontSee('before matching can continue')->assertDontSee('data-matching-blocked', false);
+            if ($answer !== 'no') $response->assertSee('data-queue-review', false)->assertSee('Finding a Helper continues while staff review.');
+            $case->refresh();
+            $this->assertSame($answer === 'yes' ? 'high' : ($answer === 'no' ? 'low' : null), $case->risk_level);
+            $this->assertSame($answer === 'yes' ? 'emergency' : ($answer === 'no' ? 'low' : 'high'), $case->queue->priority_level);
+            $this->assertSame($answer, $case->screeningResponses()->oldest('id')->first()->responses['suicidal_thoughts']);
+        }
+    }
+
+    public function test_urgent_queue_keeps_review_visible_through_helper_acceptance_and_review_closure(): void
+    {
+        $helper = $this->helper(); $user = $this->seeker(); $this->actingAs($user);
+        $case = $this->intake($user, 'yes');
+        app(SeekerWorkflowService::class)->submit($user, ['support_mode' => 'chat', 'preferred_language' => 'English']);
+        $case->refresh();
+        $this->assertNotNull($case->helper_id);
+        $this->get(route('request.matching'))->assertViewIs('request.matching')->assertSee('Waiting for helper acceptance')->assertSee('Urgent staff review');
+        $workflow = app(SeekerWorkflowService::class);
+        $workflow->accept($case->helper->user, $case);
+        $this->get(route('request.matching'))->assertViewIs('request.matching')->assertSee('Your helper is preparing')->assertSee('data-queue-review', false);
+        $case->emergencyAlerts()->update(['status' => 'resolved', 'resolved_at' => now()]);
+        $this->get(route('request.matching'))->assertViewIs('request.matching')->assertSee('Review closed')->assertSee('Your helper is preparing');
+        $workflow->start($case->helper->user, $case->fresh());
+        $this->get(route('request.matching'))->assertViewIs('request.matching')->assertSee('Your chat is ready');
+    }
+
     public function test_old_evaluation_pointer_cannot_take_over_new_chat_or_voice(): void
     {
         $user = $this->seeker(); $helper = $this->helper();

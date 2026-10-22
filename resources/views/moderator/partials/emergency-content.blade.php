@@ -20,8 +20,8 @@
 <div class="mo-table-wrap"><table class="mo-table"><thead><tr><th>Case / Alias</th><th>Detected by</th><th>Risk</th><th>Status</th><th>Onset (Philippine Time)</th><th>Actions</th></tr></thead><tbody>
 @forelse($openIncidents as $case)
 <tr>
-    <td><strong>{{ $case->source==='incident_reports'?'Incident':'Emergency' }} #{{ $case->id }}</strong><br>{{ $case->seeker_alias ?? 'Anonymous' }}<small class="mo-event-outcome">Helper: {{ trim($case->helper_first_name.' '.$case->helper_last_name) ?: 'Unassigned' }}<br>Adviser: {{ trim($case->adviser_first_name.' '.$case->adviser_last_name) ?: 'Unassigned' }}</small></td>
-    <td>{{ $case->detected_by==='seeker'?'Seeker':ucwords(str_replace('_',' ',$case->detected_by)) }}</td>
+    <td><strong>{{ $case->source==='incident_reports' ? 'Incident':'Emergency' }} #{{ $case->id }}</strong><br>{{ $case->seeker_alias ?? 'Anonymous' }}<small class="mo-event-outcome">Helper: {{ trim($case->helper_first_name.' '.$case->helper_last_name) ?: 'Unassigned' }}<br>Primary Adviser: {{ trim(($case->primary_adviser_first_name ?? '').' '.($case->primary_adviser_last_name ?? '')) ?: 'Unassigned' }}<br>Emergency coordinator: {{ trim($case->adviser_first_name.' '.$case->adviser_last_name) ?: 'Unassigned' }}</small></td>
+    <td>{{ $case->detected_by==='seeker' ? 'Seeker':ucwords(str_replace('_',' ',$case->detected_by)) }}</td>
     <td><span class="mo-badge {{ in_array($case->risk_level,['emergency','high'])?'danger':'warning' }}">{{ ucfirst($case->risk_level) }}</span></td>
     <td><span class="mo-badge {{ $case->acknowledged_at?'information':'warning' }}">{{ app(\App\Services\ModeratorEmergencyCases::class)->statusLabel($case) }}</span></td>
     <td>{{ \Illuminate\Support\Carbon::parse($case->triggered_at)->timezone('Asia/Manila')->format('M d, Y') }}<br>{{ \Illuminate\Support\Carbon::parse($case->triggered_at)->timezone('Asia/Manila')->format('g:i A') }}<small class="mo-event-outcome">{{ \Illuminate\Support\Carbon::parse($case->triggered_at)->diffForHumans() }}</small></td>

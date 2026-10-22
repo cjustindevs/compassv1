@@ -57,7 +57,7 @@
 
     function handleState(data) {
         const emergency=data.emergency,banner=document.getElementById('chatEmergencyBanner');
-        banner.hidden=!emergency;
+        banner.hidden=!emergency?.active;
         if(emergency){document.getElementById('chatEmergencyTitle').textContent=emergency.chat_reported?'Emergency reported':'Urgent support review';
             document.getElementById('chatEmergencyStatus').textContent=emergency.active?(emergency.acknowledged?'Staff acknowledged the report. Coordination is ongoing.':'Awaiting staff acknowledgment. A response is not yet confirmed.'):'Emergency review '+emergency.status+'.';
             if(emergency.active&&emergency.professional_referred)document.getElementById('chatEmergencyStatus').textContent+=' A linked referral has been sent to an assigned Professional.';}

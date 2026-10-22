@@ -129,11 +129,13 @@
 
         <!-- Notification list -->
         <div id="notifList" class="ui-notification-list">
+            @php($emergencyCopy = app(\App\Services\EmergencyNotificationPresentation::class))
             @forelse($notifications as $notification)
+                @php($copy = $emergencyCopy->present($notification, auth()->user()))
                 <div class="notif-card ui-notification-row {{ auth()->user()->role === 'moderator' && $notification->notification_type === 'emergency' ? 'moderator-emergency-notification' : '' }} {{ $notification->is_read ? '' : 'unread' }}" id="notif-{{ $notification->id }}" data-id="{{ $notification->id }}">
                     <div class="flex-1 min-w-0 ui-notification-content">
-                        <h4 class="font-semibold text-gray-800 text-sm">{{ auth()->user()->role === 'moderator' ? \Illuminate\Support\Str::limit($notification->title, 80) : $notification->title }}</h4>
-                        <p class="text-sm text-gray-500 mt-1">@if(auth()->user()->role === 'moderator'){{ \Illuminate\Support\Str::limit(preg_split('/(?<=[.!?])\s+/', strip_tags($notification->message), 2)[0], 180) }}@else{{ $notification->message }}@endif</p>
+                        <h4 class="font-semibold text-gray-800 text-sm">{{ auth()->user()->role === 'moderator' ? \Illuminate\Support\Str::limit($copy['title'], 80) : $copy['title'] }}</h4>
+                        <p class="text-sm text-gray-500 mt-1">@if(auth()->user()->role === 'moderator'){{ \Illuminate\Support\Str::limit($notification->notification_type === 'emergency' ? strip_tags($copy['message']) : preg_split('/(?<=[.!?])\s+/', strip_tags($copy['message']), 2)[0], 180) }}@else{{ $copy['message'] }}@endif</p>
                         <div class="flex items-center gap-4 mt-2">
                             <span class="text-xs text-gray-400">{{ auth()->user()->role === 'moderator' ? $notification->created_at->copy()->timezone('Asia/Manila')->format('M j, Y g:i A').' PHT' : $notification->created_at->diffForHumans() }}</span>
                             <span class="text-[10px] uppercase font-bold tracking-wide

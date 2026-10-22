@@ -74,6 +74,7 @@ class ChatApp {
         }
         this.remainingSeconds = state.remaining_seconds;
         this.statusReceivedAt = performance.now();
+        window.dispatchEvent(new CustomEvent('compass-session-state', {detail: state}));
         this.updateSessionTimer();
     }
 
@@ -86,6 +87,7 @@ class ChatApp {
         }
         const remaining = Math.max(0, Math.ceil(this.remainingSeconds - (performance.now() - this.statusReceivedAt) / 1000));
         if (timer) timer.textContent = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')} remaining`;
+        if (timer) timer.classList?.toggle('session-ending-soon', remaining > 0 && remaining <= 300);
         if (remaining === 0) {
             this.deadlineReached = true;
             this.setInputDisabled(true);

@@ -6,7 +6,9 @@ use App\Models\Helper;
 use App\Models\Notification;
 use App\Models\Session;
 use App\Models\User;
+use App\Models\VoiceCall;
 use App\Services\SupportAudit;
+use App\Services\VoiceCallService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -34,6 +36,25 @@ class CheckHelperNoResponse extends Command
                     if (! $session->isActive() || $session->no_response_escalated_at) {
                         return;
                     }
+                    // A live audio conversation is a response even when nobody types.
+                    $connected = VoiceCall::where('session_id', $session->id)->where('status', 'connected')
+                        ->whereNotNull('connected_at')->get();
+                    if ($connected->contains(fn ($call) => ! app(VoiceCallService::class)->stale($call))) {
+                        return;
+                    }
+
+                    $lastResponse = $session->last_helper_message_at ?? $session->start_time;
+                    $lastAudio = VoiceCall::where('session_id', $session->id)->whereNotNull('connected_at')
+                        ->orderByRaw('COALESCE(ended_at, connected_at) DESC')->first();
+                    $audioAt = $lastAudio?->ended_at ?? $lastAudio?->connected_at;
+                    if ($audioAt && $audioAt->gt($lastResponse)) {
+                        $lastResponse = $audioAt;
+                    }
+                    // Give a completed call the same response window as a message.
+                    if ($lastResponse->gt(now()->subMinutes(5))) {
+                        return;
+                    }
+                    $minutes = max(5, (int) $lastResponse->diffInMinutes(now()));
 
                     $session->update(['no_response_escalated_at' => now()]);
 
@@ -44,7 +65,7 @@ class CheckHelperNoResponse extends Command
                         Notification::create([
                             'user_account_id' => $userId,
                             'title' => 'Helper not responding',
-                            'message' => 'The helper for session #' . $session->id . ' has not responded for five minutes. Follow up directly.',
+                            'message' => 'Session #' . $session->id . ': no Helper response for ' . $minutes . ' minutes when detected. Open the session for current status.',
                             'notification_type' => 'session',
                             'type_icon' => 'fa-comment-slash',
                             'link' => '/adviser/sessions/' . $session->id,
@@ -55,7 +76,7 @@ class CheckHelperNoResponse extends Command
                         Notification::create([
                             'user_account_id' => $moderatorUserId,
                             'title' => 'Helper not responding',
-                            'message' => 'Session #' . $session->id . ' has had no helper response for five minutes and may need reassignment.',
+                            'message' => 'Session #' . $session->id . ': no Helper response for ' . $minutes . ' minutes when detected. Review the current connection before reassigning.',
                             'notification_type' => 'session',
                             'type_icon' => 'fa-comment-slash',
                             'link' => '/moderator/queue',

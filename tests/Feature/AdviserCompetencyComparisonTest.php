@@ -86,8 +86,8 @@ class AdviserCompetencyComparisonTest extends TestCase
         $this->assertNull(collect($data['rows']->items())->firstWhere('helper.id', $empty->id)['score']);
         $this->get(route('adviser.dashboard', ['period' => 'today']))->assertOk()
             ->assertSee('Training review suggested')->assertSee('Based on 1 evaluation')
-            ->assertSee('4.60/5')->assertSee('Not evaluated')->assertSee('View details')
-            ->assertSee('width:92%', false)->assertDontSee('PrivateSeeker');
+            ->assertSee('4.60/5')->assertSee('Not evaluated')->assertSee('View evaluation')
+            ->assertSee('width="478.4"', false)->assertDontSee('PrivateSeeker');
     }
 
     public function test_legacy_incomplete_future_and_out_of_period_records_are_separate_from_comparable_scores(): void

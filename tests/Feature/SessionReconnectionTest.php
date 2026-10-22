@@ -198,4 +198,22 @@ class SessionReconnectionTest extends TestCase
         app(SessionReconnectionService::class)->detect();
         $this->assertSame('closed',$i->fresh()->status);
     }
+
+    public function test_prolonged_absence_notices_are_once_per_incident_and_stop_after_reconnection(): void
+    {
+        $this->session->forceFill(['start_time'=>now()->subMinutes(20),'helper_heartbeat_at'=>now()->subMinutes(11)])->save();
+        $incident=$this->incident();
+        app(SessionReconnectionService::class)->detect();
+        $this->actingAs($this->seekerUser)->getJson(route('reconnections.state',$this->session))->assertOk()->assertJsonPath('show_absence_notice',true)->assertJsonPath('absent_minutes',11);
+        $this->postJson(route('session.notices.claim',$this->session),['event'=>'helper_disconnected'])->assertOk()->assertJsonPath('show',true);
+        $this->postJson(route('session.notices.claim',$this->session),['event'=>'helper_disconnected'])->assertOk()->assertJsonPath('show',false);
+        $this->travel(5)->minutes();
+        app(SessionReconnectionService::class)->detect();
+        app(SessionReconnectionService::class)->detect();
+        $this->assertSame(1,\App\Models\AuditLog::where('target_type',$incident->getTable())->where('target_id',$incident->id)->where('action','connection_follow_up_15')->count());
+        $this->actingAs($this->helperUser)->postJson(route('reconnections.heartbeat',$this->session))->assertSuccessful();
+        $this->assertSame('reconnected',$incident->fresh()->status);
+        $this->actingAs($this->seekerUser)->postJson(route('session.notices.claim',$this->session),['event'=>'helper_disconnected'])->assertOk()->assertJsonPath('show',false);
+    }
+
 }

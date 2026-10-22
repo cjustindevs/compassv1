@@ -214,10 +214,14 @@ class HelperWorkflowSecurityTest extends TestCase
 
         $this->post(route('helper.session.notes.store', $session->id), $this->summary())
             ->assertSessionHasNoErrors()
-            ->assertSessionHas('success');
+            ->assertSessionHas('completion_notice.title','Documentation submitted.');
 
         $this->assertSame('Peer support discussion.', $session->report()->firstOrFail()->session_summary);
         $this->assertSame('submitted', $session->fresh()->documentation_status);
+        $page = $this->get(route('helper.cases'))->assertOk();
+        $this->assertSame(1, substr_count($page->getContent(), 'id="completionNotice"'));
+        $page->assertSee('Documentation submitted.');
+        $this->get(route('helper.cases'))->assertOk()->assertDontSee('id="completionNotice"', false);
     }
 
     public function test_approved_results_and_follow_up_plan_are_validated(): void

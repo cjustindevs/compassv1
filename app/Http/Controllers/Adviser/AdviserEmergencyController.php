@@ -22,18 +22,28 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class AdviserEmergencyController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $adviser = app(AdviserScope::class)->actor();
-        $baseQuery = EmergencyAlert::with(['session', 'session.seeker', 'session.helper', 'adviser', 'referral'])
-            ->visibleForAdviser($adviser->id)
-            ->latest('triggered_at')->latest('id');
+        $filters = $request->validate(['tab'=>'nullable|in:active,resolved','q'=>'nullable|string|max:100']);
+        $tab = $filters['tab'] ?? 'active';
+        $search = trim($filters['q'] ?? '');
+        $baseQuery = EmergencyAlert::with(['session.seeker', 'session.helper.adviser', 'adviser', 'referral'])
+            ->visibleForAdviser($adviser->id);
+        $activeCount = (clone $baseQuery)->whereNotIn('status',['resolved','closed'])->count();
+        $resolvedCount = (clone $baseQuery)->where('status','resolved')->count();
+        $totalEmergencies = (clone $baseQuery)->count();
+        if ($search !== '') $baseQuery->where(function ($q) use ($search) {
+            if (ctype_digit(ltrim($search,'#'))) $q->orWhere('id',(int)ltrim($search,'#'));
+            $term = '%'.mb_strtolower($search).'%';
+            $q->orWhereHas('session.seeker',fn ($s) => $s->whereRaw('LOWER(generated_alias) LIKE ?',[$term]))
+                ->orWhereHas('session.helper',fn ($h) => $h->whereRaw('LOWER(first_name) LIKE ?',[$term])->orWhereRaw('LOWER(last_name) LIKE ?',[$term]));
+        });
 
-        $openAlerts = (clone $baseQuery)->whereNotIn('status', ['resolved', 'closed'])->paginate(15, ['*'], 'open_page')->withQueryString();
-        $resolvedAlerts = (clone $baseQuery)->where('status', 'resolved')->paginate(15, ['*'], 'resolved_page')->withQueryString();
-        $totalEmergencies = $baseQuery->count();
+        $openAlerts = (clone $baseQuery)->whereNotIn('status', ['resolved', 'closed'])->latest('triggered_at')->latest('id')->paginate(10, ['*'], 'open_page')->withQueryString();
+        $resolvedAlerts = (clone $baseQuery)->where('status', 'resolved')->orderByRaw('CASE WHEN resolved_at IS NULL THEN 1 ELSE 0 END')->latest('resolved_at')->latest('id')->paginate(10, ['*'], 'resolved_page')->withQueryString();
 
-        return view('adviser.emergencies', compact('openAlerts', 'resolvedAlerts', 'totalEmergencies'));
+        return view('adviser.emergencies', compact('openAlerts', 'resolvedAlerts', 'totalEmergencies','activeCount','resolvedCount','tab','search'));
     }
 
     public function show(int $id): View
@@ -51,7 +61,19 @@ class AdviserEmergencyController extends Controller
 
         SupportAudit::record('emergency_documentation_viewed', $alert, ['purpose' => 'emergency_review']);
 
-        return view('adviser.emergency-detail', compact('alert', 'professionals'));
+        $coordinators = app(\App\Services\EmergencyCoordinator::class)->candidates()->where('id', '!=', $alert->adviser_id ?? 0)
+            ->orderBy('first_name')->orderBy('last_name')->get();
+        return view('adviser.emergency-detail', compact('alert', 'professionals', 'coordinators'));
+    }
+
+    public function transferCoordinator(Request $request, int $id): RedirectResponse
+    {
+        $data = $request->validate(['adviser_id' => 'required|integer|exists:advisers,id',
+            'expected_adviser_id' => 'present|nullable|integer', 'handoff_reason' => 'required|string|min:10|max:1000']);
+        abort_unless(mb_strlen(trim($data['handoff_reason'])) >= 10, 422);
+        app(\App\Services\EmergencyCoordinator::class)->transfer(EmergencyAlert::findOrFail($id), (int) $data['adviser_id'],
+            isset($data['expected_adviser_id']) ? (int) $data['expected_adviser_id'] : null, trim($data['handoff_reason']));
+        return redirect()->route('adviser.emergencies.show', $id)->with('success', 'Emergency coordinator updated. The new coordinator was notified.');
     }
 
     public function resolve(Request $request, int $id): RedirectResponse

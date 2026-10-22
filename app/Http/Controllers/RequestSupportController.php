@@ -148,24 +148,20 @@ class RequestSupportController extends Controller
             return redirect()->route('request.screening');
         }
 
-        if ((!$session->isActive() && $session->permitsEmergencySupport()) || in_array($session->workflow_state, ['adviser_review_required', 'emergency_escalated'])
-            || ($session->isActive() && (! $session->helper_accepted_at || ! $session->helper))) {
-            // Display only the assigned reviewer's name, never contact/account details.
-            if ($session->workflow_state === 'adviser_review_required') {
-                $session->load('reviewAdviser:id,first_name,last_name');
-            }
-            $followUp = $session->workflow_state === 'adviser_review_required'
-                ? $session->screeningResponses()->oldest('id')->first() : null;
-
-            return view('request.status', ['session' => $session, 'followUp' => $followUp, 'events' => DB::table('request_status_events')->where('session_id', $session->id)->orderByDesc('id')->get()]);
-        }
+        // Review and matching are separate statuses in the same queue workspace.
+        // A review flag must not select a different-looking waiting page.
+        $session->load(['reviewAdviser:id,first_name,last_name', 'helper.adviser:id,first_name,last_name']);
+        $staffAlert = $session->supportEmergencyAlert
+            ?? $session->emergencyAlerts()->with('adviser:id,first_name,last_name')->latest('id')->first();
+        $matchingAllowed = $session->permitsPeerMatching();
 
         $resources = SelfHelpResource::published()->orderByDesc('is_featured')->orderByDesc('views_count')->limit(3)->get()->map(fn ($r) => [
             'link' => route('selfhelp.show', $r->id), 'title' => $r->title, 'description' => $r->description,
             'icon' => ($r->icon ?: 'fa-book-open'), 'duration' => SeekerRequestPresentation::duration($r->duration),
         ]);
 
-        $availableHelperCount = app(HelperMatchingService::class)->countEligibleHelpers($session->risk_level ?? 'low');
+        $availableHelperCount = $matchingAllowed
+            ? app(HelperMatchingService::class)->countEligibleHelpers($session->matchingRiskLevel()) : 0;
         $matchingReason = null;
         if (! app(ConsentService::class)->isFull($request->user()->helpSeeker)) {
             $matchingReason = 'Review the current consent documents in Privacy and consent to continue matching.';
@@ -185,6 +181,8 @@ class RequestSupportController extends Controller
             'availableHelperCount' => $availableHelperCount,
             'matchingReason' => $matchingReason,
             'currentQueueRequest' => $session->queue,
+            'staffAlert' => $staffAlert,
+            'matchingAllowed' => $matchingAllowed,
         ]);
     }
 

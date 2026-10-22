@@ -53,7 +53,7 @@ class SeekerRequestPresentation
                 'session_active'=>'Your helper started the session. Open your active request to join chat.',
                 'session_ready'=>'Your helper accepted and is preparing. Chat opens when they start the session.',
                 'helper_pending_acceptance'=>'A helper has been invited and has not yet accepted.',
-                'adviser_review_required'=>'Your screening needs Adviser review before ordinary peer support can continue.',
+                'adviser_review_required'=>$session->permitsPeerMatching() ? 'Staff review continues alongside Helper matching.' : 'Your screening needs Adviser review before ordinary peer support can continue.',
                 'session_preferences_required','concern_required'=>'Finish the remaining request steps before entering the matching queue.',
                 default=>$session->permitsEmergencySupport() ? 'Emergency coordination and temporary peer support are tracked separately. Open your active request for both statuses.' : 'Your request is saved. Matching follows the existing priority and eligibility rules.',
             },

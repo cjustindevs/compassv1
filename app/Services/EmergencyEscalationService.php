@@ -95,28 +95,9 @@ class EmergencyEscalationService
 
     private function sendEmergencyNotifications(HelpSeeker $seeker, Session $session, EmergencyAlert $alert, bool $directLink = false): void
     {
-        $eligible = fn ($q) => $q->where('role', 'adviser')->where('is_active', true);
-        $adviser = Adviser::whereHas('user', $eligible)->find($session->review_adviser_id);
-        $adviser ??= Adviser::whereHas('user', $eligible)->find($session->helper?->adviser_id);
-        $adviser ??= Adviser::whereHas('user', $eligible)->oldest('id')->first();
-        if ($adviser) {
-            $session->update(['review_adviser_id' => $adviser->id]);
-            $alert->forceFill([
-                'adviser_id' => $adviser->id,
-                'adviser_notified' => true,
-                'adviser_notified_at' => now(),
-            ])->save();
-        }
-
         app(EmergencyStaffNotifications::class)->deliver($alert, $directLink);
-
-        SupportAudit::record('emergency_notification_attempted', $alert, ['channel' => 'in_app', 'result' => $adviser ? 'delivered' : 'no_active_adviser']);
-        $alert->forceFill([
-            'notification_sent' => (bool) $adviser,
-            'notification_result' => $adviser ? 'in_app_delivered' : 'no_active_adviser',
-            'notification_sent_at' => $adviser ? now() : null,
-            'status' => $adviser ? 'notified' : 'pending',
-        ])->save();
+        $alert->refresh();
+        SupportAudit::record('emergency_notification_attempted', $alert, ['channel' => 'in_app', 'result' => $alert->notification_result]);
     }
 
     private function flagEmergencyCase(Session $session, HelpSeeker $seeker, array $context): void

@@ -124,13 +124,14 @@ class NotificationController extends Controller
         $delivery = app(NotificationPopupDelivery::class);
         $state = new EmergencyNoticeState;
         $staff = in_array($request->user()->role, ['moderator', 'adviser', 'professional'], true);
-        $present = fn ($notice) => ['id' => $notice->id, 'title' => $notice->title, 'message' => $notice->message,
+        $emergencyCopy = app(\App\Services\EmergencyNotificationPresentation::class);
+        $present = fn ($notice) => array_merge($emergencyCopy->present($notice, $request->user()), ['id' => $notice->id,
             'type' => $notice->notification_type, 'link' => $notice->link, 'read' => $notice->is_read,
             'popup_key' => $delivery->key($notice, $request->user()),
             'present_url' => route('notifications.present', $notice->id, false),
             'important' => in_array($notice->notification_type, ['referral', 'emergency'], true)
                 || ($notice->notification_type === 'assignment' && ! in_array($notice->title, ['Helper ready for duty', 'Duty scheduled', 'Duty updated', 'Duty cancelled'], true)),
-            'urgent' => $staff && $notice->notification_type === 'emergency' ? $state->key($notice, $request->user()) !== null : null];
+            'urgent' => $staff && $notice->notification_type === 'emergency' ? $delivery->actionable($notice, $request->user()) : null]);
         $cursor = (int) (clone $owned)->max('id');
         $fresh = (clone $owned)->unread()->whereNull('popup_presented_at')
             ->where('created_at', '>=', now()->subMinutes(NotificationPopupDelivery::FRESH_MINUTES))
@@ -151,7 +152,7 @@ class NotificationController extends Controller
 
         if ($staff) {
             $workflow['active_emergency_notice_ids'] = (clone $owned)->where('notification_type', 'emergency')->get()
-                ->filter(fn ($notice) => $state->key($notice, $request->user()) !== null)->pluck('id')->values();
+                ->filter(fn ($notice) => $delivery->actionable($notice, $request->user()))->pluck('id')->values();
         }
 
         // Actionable unread work must survive an old browser cursor or an interrupted page load.

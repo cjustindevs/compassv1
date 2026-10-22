@@ -12,6 +12,40 @@ class VoiceCallController extends Controller
 {
     public function __construct(private VoiceCallService $calls) {}
 
+    public function consent(Request $request, Session $session)
+    {
+        \Illuminate\Support\Facades\Gate::authorize('participate',$session);
+        abort_unless($request->user()->role === 'seeker' && $request->user()->is_active,403);
+        $request->validate(['voice_participation'=>'required|accepted']);
+        DB::transaction(function () use ($request,$session) {
+            $case = Session::lockForUpdate()->findOrFail($session->id);
+            \Illuminate\Support\Facades\Gate::authorize('participate',$case);
+            app(\App\Services\SessionDurationService::class)->expire($case);
+            abort_unless($case->isActive() && $case->helper_accepted_at && $case->start_time,409);
+            abort_unless(app(\App\Services\ConsentService::class)->isFull($case->seeker),409,'Current support consent is required.');
+            if (!$this->calls->hasConsent($case)) app(\App\Services\ConsentService::class)->decide($request->user(),'voice_participation','accepted',$case->id);
+        });
+        return response()->json(['message'=>'Voice enabled. You can start or accept a call.']);
+    }
+
+    public function requestConsent(Request $request, Session $session)
+    {
+        \Illuminate\Support\Facades\Gate::authorize('participate',$session);
+        abort_unless($request->user()->role === 'helper' && $request->user()->is_active,403);
+        DB::transaction(function () use ($session) {
+            $case = Session::lockForUpdate()->findOrFail($session->id);
+            \Illuminate\Support\Facades\Gate::authorize('participate',$case);
+            app(\App\Services\SessionDurationService::class)->expire($case);
+            abort_unless($case->isActive() && $case->helper_accepted_at && $case->start_time,409);
+            if (\App\Models\AuditLog::where('target_type',$case->getTable())->where('target_id',$case->id)->where('action','voice_consent_requested')->exists()) return;
+            \App\Services\SupportAudit::record('voice_consent_requested',$case);
+            \App\Models\Notification::create(['user_account_id'=>$case->seeker->user_account_id,'title'=>'Your Helper requested a voice call',
+                'message'=>'Open the call controls in your current chat to enable voice, or continue with messages.',
+                'notification_type'=>'session','link'=>'/session/chat','popup_event_key'=>'voice-consent:'.$case->id]);
+        });
+        return response()->json(['message'=>'Voice request sent. The Seeker can enable calls from this chat.']);
+    }
+
     public function state(Request $request, Session $session)
     {
         $data = $request->validate(['call_id'=>'nullable|uuid','after_signal_id'=>'nullable|integer|min:0']);

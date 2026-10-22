@@ -199,6 +199,15 @@ export class VoiceCallClient {
             const data = await this.request('state', null, this.pc && this.call ? '?call_id='+encodeURIComponent(this.call.id)+'&after_signal_id='+this.signalCursor : '');
             if (this.ended || this.busy || generation !== this.generation) return;
             this.available = data.available;
+            const consentButton = this.root.querySelector('[data-voice-consent]');
+            if (consentButton) consentButton.hidden = !data.voice_consent_required;
+            const presentationKey = data.call && ['ringing','connecting','connected'].includes(data.call.status) ? `call:${data.call.id}`
+                : (data.voice_requested && data.voice_consent_required && this.config.role === 'seeker' ? 'consent-request' : null);
+            if (this.root.dataset?.chat === 'true' && presentationKey && this.presentedPanelKey !== presentationKey) {
+                this.presentedPanelKey = presentationKey;
+                this.root.hidden = false;
+                this.env.document.querySelector('[data-voice-toggle]')?.setAttribute('aria-expanded','true');
+            }
             this.httpReady = data.signaling_available === true;
             this.serverState = 'Connected';
             if (data.session.ended) {
@@ -222,7 +231,7 @@ export class VoiceCallClient {
             this.signalCursor = Math.max(this.signalCursor, data.signal_cursor || 0);
             if (!next || !['ringing','connecting','connected'].includes(next.status)) {
                 this.stopMedia();
-                if (!this.available) this.message('Voice is unavailable. Continue using text chat.', 'unavailable');
+                if (!this.available) this.message(data.voice_consent_required ? 'Voice consent is needed. You can continue using messages.' : 'Voice is unavailable. Continue using text chat.', 'unavailable');
                 else if (this.callFailure) this.message(this.callFailure, 'failed');
                 else if (next?.status === 'declined') this.message('Call declined. Text chat remains open.', 'ended');
                 else if (next?.status === 'failed') this.message('Call could not connect. Retry or use text chat.', 'failed');

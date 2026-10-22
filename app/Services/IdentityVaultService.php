@@ -14,7 +14,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 /** The only application gateway to identity data. Never serialize a vault row. */
 class IdentityVaultService
 {
-    public const FIELDS = ['real_name', 'phone_number', 'email', 'address', 'emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relationship', 'student_id', 'department', 'year_level'];
+    public const FIELDS = ['real_name', 'phone_number', 'email', 'address', 'emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relationship', 'student_id', 'department', 'year_level', 'age', 'gender'];
 
     public function isAvailable(): bool
     {
@@ -150,7 +150,7 @@ class IdentityVaultService
             // Each submission gets a new version; previous releases cannot authorize the replacement.
             $values = [];
             foreach (self::FIELDS as $field) {
-                $values[$field] = isset($data[$field]) && $data[$field] !== '' ? $this->cipher()->encryptString($data[$field]) : null;
+                $values[$field] = isset($data[$field]) && $data[$field] !== '' ? $this->cipher()->encryptString((string)$data[$field]) : null;
             }
             $db->table('idv_identities')->updateOrInsert(['pseudo_id' => $seeker->pseudo_id], $values + [
                 'seeker_alias' => $seeker->generated_alias, 'referral_id' => $referral->id,

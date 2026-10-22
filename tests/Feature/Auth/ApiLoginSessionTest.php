@@ -105,6 +105,7 @@ class ApiLoginSessionTest extends TestCase
 
     public function test_api_requests_refresh_activity_without_creating_duplicate_sessions(): void
     {
+        $this->freezeTime();
         $user = $this->user();
         $token = $this->login();
         DB::table('sessions')->where('user_id', $user->id)->update(['last_activity' => now()->subMinutes(4)->timestamp]);

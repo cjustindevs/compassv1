@@ -19,6 +19,25 @@ function initialize() {
             root.querySelector('[data-voice-status]').textContent = 'Reload this page in Safari or Chrome. Your messages remain available.';
             return;
         }
+        const toggle = document.querySelector('[data-voice-toggle]');
+        toggle?.addEventListener?.('click', () => { root.hidden = !root.hidden; toggle.setAttribute('aria-expanded',String(!root.hidden)); });
+        const consent = root.querySelector('[data-voice-consent]'), consentDialog = root.querySelector('[data-voice-consent-dialog]');
+        consent?.addEventListener?.('click', async () => {
+            if (config.role === 'seeker') { if (!consentDialog.open) consentDialog.showModal(); return; }
+            consent.disabled = true;
+            try { const result = await client.request('requestConsent', {}); client.message(result.message); }
+            catch (error) { client.message(error.message, 'unavailable'); }
+            finally { consent.disabled = false; }
+        });
+        root.querySelector('[data-voice-consent-cancel]')?.addEventListener?.('click', () => consentDialog.close());
+        root.querySelector('[data-voice-consent-save]')?.addEventListener?.('click', async event => {
+            const error = root.querySelector('[data-voice-consent-error]');
+            if (!root.querySelector('[data-voice-consent-check]').checked) { error.textContent = 'Confirm voice consent to enable calls.'; return; }
+            event.target.disabled = true; error.textContent = '';
+            try { await client.request('consent', {voice_participation:true}); consentDialog.close(); client.poll(); }
+            catch (issue) { error.textContent = issue.message; }
+            finally { event.target.disabled = false; }
+        });
         if (!config.socket.key) { client.connect(null); return; }
         try {
             const pusher = new Pusher(config.socket.key,{cluster:'mt1',wsHost:config.socket.host || window.location.hostname,

@@ -397,6 +397,7 @@
 
         <!-- ─── MATCHING CARD ─── -->
         <div class="form-card">
+            @include('request.partials.queue-review')
 
             <!-- Live reassignment state (filled in real time by seeker-notifications.js) -->
             <div id="matchingLiveState" class="hidden"></div>
@@ -404,7 +405,18 @@
             <!-- ============================================ -->
             <!-- SESSION ACTIVE (helper accepted)             -->
             <!-- ============================================ -->
-            @if($session->isActive())
+            @if($session->isActive() && (!$session->helper_accepted_at || !$session->helper))
+                <div class="text-center py-4">
+                    <h2 class="text-xl font-bold text-gray-800">Confirming your Helper connection</h2>
+                    <p class="text-gray-500 mt-2">
+                        @if(!$session->helper_accepted_at)
+                            This older request has no recorded helper acceptance. Please contact your support team.
+                        @else
+                            The helper connection for this request cannot be confirmed. Please contact your support team.
+                        @endif
+                    </p>
+                </div>
+            @elseif($session->isActive())
                 <div class="text-center py-4">
                     <h2 class="text-2xl font-bold text-gray-800">Your chat is ready</h2>
                     <p class="text-gray-500 mt-2">A helper accepted your request. Your session is now active.</p>
@@ -427,7 +439,7 @@
                     <h2 class="text-xl font-bold text-gray-800">Your helper is preparing</h2>
                     <p class="text-gray-500 mt-2">Your request has been accepted. Chat opens when your helper starts the session.</p>
                     <p class="text-sm text-gray-500 mt-3">Request {{ $session->reference_number }} &middot; {{ $availableHelper?->public_alias ?? 'Peer Helper' }}</p>
-                    <p class="text-xs text-gray-400 mt-2">This page checks again every 15 seconds. You can close it and return later.</p>
+
                     <a class="btn-outline mt-4" href="{{ route('seeker.requests.show',$session) }}">View request details</a>
                     @include('request.partials.resources')
                 </div>
@@ -438,13 +450,8 @@
                         A helper has been notified about your request. Please wait while they review it.
                     </p>
 
-                    @if($session->scheduled_start)
-                        <div class="mt-4 p-3 bg-blue-50 rounded-xl border border-blue-200 max-w-md mx-auto">
-                            <p class="text-sm text-blue-700">
-                                Your session is scheduled for
-                                <span class="font-semibold">{{ $session->scheduled_start->setTimezone(config('app.schedule_timezone'))->format('M d, h:i A') }}</span>
-                            </p>
-                        </div>
+                    @if($session->scheduled_start && $session->scheduled_start->isFuture())
+                        <p class="text-sm text-gray-600 mt-3">Scheduled: {{ $session->scheduled_start->copy()->timezone('Asia/Manila')->format('M d, h:i A') }}</p>
                     @endif
 
                     @if($availableHelper)
@@ -473,9 +480,7 @@
                     <p class="text-sm text-gray-400 mt-4">
                          Request {{ $session->reference_number }} · Submitted {{ ($session->submitted_at ?? $session->created_date ?? $session->created_at)?->diffForHumans() }}
                     </p>
-                    <p class="text-sm text-gray-400 mt-1">
-                        You can close this page and check back later — your request is saved.
-                    </p>
+
 
                     <!-- Resources while waiting -->
                     @include('request.partials.resources')
@@ -497,9 +502,16 @@
             <!-- ============================================ -->
             <!-- IN QUEUE (no helper available yet)            -->
             <!-- ============================================ -->
+            @elseif(!$matchingAllowed)
+                <div id="noHelperSection" class="text-center py-4" data-matching-blocked>
+                    <h2 class="text-xl font-bold text-gray-800">Staff review in progress</h2>
+                    <p class="text-gray-500 mt-2">Your request is saved. Matching becomes available when the required review is recorded.</p>
+                    <p class="text-sm text-gray-500 mt-3">Request {{ $session->reference_number }}</p>
+                    @include('request.partials.resources')
+                </div>
             @else
                 <div id="noHelperSection" class="text-center py-4">
-                    <h2 class="text-xl font-bold text-gray-800">Waiting for an available helper</h2>
+                    <h2 class="text-xl font-bold text-gray-800" data-queue-heading>Waiting for an available helper</h2>
                     <p class="text-gray-500 mt-2 max-w-md mx-auto">
                         Your request is saved in the matching queue. We will update its status when a helper accepts.
                     </p>
@@ -509,7 +521,7 @@
                         <p class="mt-1 text-gray-600">{{ \App\Services\SeekerRequestPresentation::waitLabel($session) }}</p>
                         @if($currentQueueRequest?->request_status === 'waiting' && $currentQueueRequest->queue_position)
                             <p class="mt-1 text-gray-600">
-                                Queue position: #{{ $currentQueueRequest->queue_position }}<br><span class="text-xs text-gray-500">Position follows priority and request time; it may change. A wait-time estimate is not available.</span>
+                                Queue position: #<span data-queue-position>{{ $currentQueueRequest->queue_position }}</span>
                             </p>
                         @endif
                         @if($availableHelperCount > 0)
@@ -522,7 +534,7 @@
                                  {{ $matchingReason }}
                             </p>
                         @endif
-                        <p class="text-gray-400 mt-1">You can close this page. Your request is saved and you can come back anytime.</p>
+
                     </div>
 
 <p class="text-xs text-gray-400 mt-2">
