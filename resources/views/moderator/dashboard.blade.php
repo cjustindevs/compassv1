@@ -149,6 +149,12 @@
         .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 99; }
         .sidebar-overlay.active { display: block; }
 
+        .moderator-dashboard-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:24px;width:100%}
+        .moderator-dashboard-title{display:flex;align-items:center;gap:16px;min-width:0}
+        .moderator-dashboard-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-inline-start:auto;flex-wrap:wrap}
+        .compass-ui .moderator-dashboard-header .moderator-dashboard-actions .btn-outline{white-space:nowrap}
+        #dashboard-analytics .analytics-toolbar{justify-content:flex-end}
+        #dashboard-analytics .analytics-period-form{justify-content:flex-end;margin-inline-start:auto;max-width:100%}
 
         @media (max-width: 768px) {
             .main-content { margin-left: 0; padding: 16px 16px 100px; }
@@ -172,8 +178,8 @@
 
     <main class="main-content">
 
-        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <div class="flex items-center gap-4">
+        <div class="moderator-dashboard-header">
+            <div class="moderator-dashboard-title">
                 <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
                     <x-ui-icon name="menu"  />
                 </button>
@@ -182,7 +188,7 @@
                     <p class="text-sm text-gray-500 hidden sm:block">Overview of the peer support program</p>
                 </div>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="moderator-dashboard-actions">
                 <span class="text-xs text-gray-400 hidden sm:inline">{{ now()->format('M d, Y') }}</span>
                 <a href="{{ route('moderator.emergency') }}" class="btn-outline">
                     <x-ui-icon name="warning"  /> Emergency

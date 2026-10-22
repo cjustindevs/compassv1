@@ -332,9 +332,12 @@
             .chat-header .back-btn { font-size: 16px; }
         }
 
-        .chat-session-controls{display:flex;justify-content:flex-end;padding:8px 16px;background:#fff;border-top:1px solid #e5e7eb;flex-shrink:0}
-        .chat-session-end .end-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:8px 16px;border:1px solid #b91c1c;border-radius:8px;background:#b91c1c;color:#fff;font-size:13px;font-weight:600;cursor:pointer}
-        @media(max-width:640px){.chat-session-controls{padding:8px 14px}.chat-session-end{width:100%}.chat-session-end .end-btn{width:100%}}
+        .chat-header-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-inline-start:auto;flex-shrink:0;max-width:100%}
+        .chat-header-actions .session-timer{white-space:nowrap}
+        .chat-session-end{margin:0;flex-shrink:0}
+        .chat-header .chat-session-end .end-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:8px 12px;border:1px solid #b91c1c;border-radius:8px;background:#b91c1c;color:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+        .chat-header .chat-session-end .end-btn:hover{background:#991b1b}
+        @media(max-width:640px){.compass-ui .chat-wrapper .chat-header{flex-wrap:wrap;gap:8px 12px;padding:max(12px,env(safe-area-inset-top)) 14px 12px}.chat-header .back-btn span{display:none}.chat-header-actions{flex-basis:100%}.chat-header .chat-session-end .end-btn{min-height:44px}}
     </style>
 
     @vite(['resources/js/app.js', 'resources/js/chat.js'])
@@ -362,9 +365,18 @@
                     <div class="status"><span class="dot"></span> {{ $session->session_type === 'voice' ? 'Session active' : 'Online' }}</div>
                 </div>
             </div>
-            <span class="session-timer" id="sessionTimer" data-started-at="{{ optional($session->start_time)->timestamp }}">00:00</span>
-            <div data-notification-slot></div>
-
+            <div class="chat-header-actions">
+                <span class="session-timer" id="sessionTimer" data-started-at="{{ optional($session->start_time)->timestamp }}">00:00</span>
+                <div data-notification-slot></div>
+                <form class="chat-session-end" method="POST" action="{{ route('session.end', ['session_id'=>$session->id]) }}"
+                      data-confirm="End session?"
+                      data-confirm-message="This will end the session for both you and the helper."
+                      data-confirm-text="End session"
+                      data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
+                    @csrf
+                    <button type="submit" class="end-btn"><x-ui-icon name="phone-off" /> End session</button>
+                </form>
+            </div>
         </div>
 
         <x-voice-call :session="$session" />
@@ -401,14 +413,6 @@
             </div>
         </div>
 
-<div class="chat-session-controls"><form class="chat-session-end" method="POST" action="{{ route('session.end', ['session_id'=>$session->id]) }}"
-                  data-confirm="End session?"
-                  data-confirm-message="This will end the session for both you and the helper."
-                  data-confirm-text="End session"
-                  data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
-                @csrf
-                <button type="submit" class="end-btn"><x-ui-icon name="phone-off"  /> End session</button>
-            </form></div>
         <!-- Input -->
         <div class="chat-input">
             <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off" autofocus>

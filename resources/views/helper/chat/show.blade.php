@@ -291,9 +291,13 @@
             .chat-messages .message { max-width: 90%; }
         }
 
-        .chat-session-controls{display:flex;justify-content:flex-end;padding:8px 16px;background:#fff;border-top:1px solid #e5e7eb;flex-shrink:0}
-        .chat-session-end .end-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:8px 16px;border:1px solid #b91c1c;border-radius:8px;background:#b91c1c;color:#fff;font-size:13px;font-weight:600;cursor:pointer}
-        @media(max-width:640px){.chat-session-controls{padding:8px 14px}.chat-session-end{width:100%}.chat-session-end .end-btn{width:100%}}
+        .room-header{flex-wrap:wrap}
+        .room-header .session-badges{margin-inline-start:auto;justify-content:flex-end;flex-wrap:wrap;max-width:100%}
+        .room-header .session-timer{white-space:nowrap}
+        .chat-session-end{margin:0;flex-shrink:0}
+        .room-header .chat-session-end .end-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:8px 12px;border:1px solid #b91c1c;border-radius:8px;background:#b91c1c;color:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+        .room-header .chat-session-end .end-btn:hover{background:#991b1b}
+        @media(max-width:768px){.room-header .session-badges{flex-basis:100%}.room-header .chat-session-end .end-btn{min-height:44px}}
     </style>
 @include('session.referral-prompt')
 @endsection
@@ -330,7 +334,14 @@
                 @endif
                 @if($session->session_status !== 'completed')
                     <button type="button" class="action-btn emergency-btn" id="emergencyBtn" @disabled(!$session->canReportEmergency()) title="A participant message or connected voice call is required"><x-ui-icon name="warning"  /> Emergency</button>
-
+                    <form class="chat-session-end" method="POST" action="{{ route('helper.session.end', ['id' => $session->id]) }}"
+                          data-confirm="End session?"
+                          data-confirm-message="This will end the session for both you and the seeker."
+                          data-confirm-text="End session"
+                          data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
+                        @csrf
+                        <button type="submit" class="end-btn"><x-ui-icon name="stop-circle" /> End session</button>
+                    </form>
                 @endif
             </div>
         </div>
@@ -352,16 +363,6 @@
                 </div>
             </div>
 
-@if($session->session_status !== 'completed')
-<div class="chat-session-controls"><form class="chat-session-end" method="POST" action="{{ route('helper.session.end', ['id' => $session->id]) }}"
-                          data-confirm="End session?"
-                          data-confirm-message="This will end the session for both you and the seeker."
-                          data-confirm-text="End session"
-                          data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
-                        @csrf
-                        <button type="submit" class="end-btn"><x-ui-icon name="stop-circle"  /> End session</button>
-                    </form></div>
-@endif
             <!-- Input -->
             <div class="chat-input-row">
                 <input type="text" id="messageInput" class="form-control" placeholder="Type a message..." autocomplete="off">

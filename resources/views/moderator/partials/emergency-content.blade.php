@@ -17,10 +17,10 @@
 </section>
 <div class="mo-grid mo-emergency-grid">
 <section class="mo-card"><header class="mo-heading"><h2>{{ $tab === 'completed' ? 'Completed Emergency Cases' : 'Active Emergency Cases' }}</h2><div class="mo-actions"><a class="mo-button {{ $tab === 'active' ? '' : 'secondary' }}" href="{{ route('moderator.emergency', ['tab'=>'active']) }}">Active ({{ $stats['open'] }})</a><a class="mo-button {{ $tab === 'completed' ? '' : 'secondary' }}" href="{{ route('moderator.emergency', ['tab'=>'completed']) }}">Completed</a></div></header>
-<div class="mo-table-wrap"><table class="mo-table"><thead><tr><th>Case / Alias</th><th>Detected by</th><th>Risk</th><th>Status</th><th>Onset (Philippine Time)</th><th>Actions</th></tr></thead><tbody>
+<div class="mo-table-wrap"><table class="mo-table mo-emergency-cases"><thead><tr><th>Case / Alias</th><th>Detected by</th><th>Risk</th><th>Status</th><th>Onset (Philippine Time)</th><th>Actions</th></tr></thead><tbody>
 @forelse($openIncidents as $case)
 <tr>
-    <td><strong>{{ $case->source==='incident_reports' ? 'Incident':'Emergency' }} #{{ $case->id }}</strong><br>{{ $case->seeker_alias ?? 'Anonymous' }}<small class="mo-event-outcome">Helper: {{ trim($case->helper_first_name.' '.$case->helper_last_name) ?: 'Unassigned' }}<br>Primary Adviser: {{ trim(($case->primary_adviser_first_name ?? '').' '.($case->primary_adviser_last_name ?? '')) ?: 'Unassigned' }}<br>Emergency coordinator: {{ trim($case->adviser_first_name.' '.$case->adviser_last_name) ?: 'Unassigned' }}</small></td>
+    <td><strong>{{ $case->source==='incident_reports' ? 'Incident':'Emergency' }} #{{ $case->id }}</strong><br>{{ $case->seeker_alias ?? 'Anonymous' }}</td>
     <td>{{ $case->detected_by==='seeker' ? 'Seeker':ucwords(str_replace('_',' ',$case->detected_by)) }}</td>
     <td><span class="mo-badge {{ in_array($case->risk_level,['emergency','high'])?'danger':'warning' }}">{{ ucfirst($case->risk_level) }}</span></td>
     <td><span class="mo-badge {{ $case->acknowledged_at?'information':'warning' }}">{{ app(\App\Services\ModeratorEmergencyCases::class)->statusLabel($case) }}</span></td>
