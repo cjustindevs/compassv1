@@ -512,10 +512,6 @@
             @else
                 <div id="noHelperSection" class="text-center py-4">
                     <h2 class="text-xl font-bold text-gray-800" data-queue-heading>Waiting for an available helper</h2>
-                    <p class="text-gray-500 mt-2 max-w-md mx-auto">
-                        Your request is saved in the matching queue. We will update its status when a helper accepts.
-                    </p>
-
                     <div class="mt-4 text-sm text-gray-500">
                         <p> Request {{ $session->reference_number }} · Submitted {{ ($session->submitted_at ?? $session->created_date ?? $session->created_at)?->diffForHumans() }}</p>
                         <p class="mt-1 text-gray-600">{{ \App\Services\SeekerRequestPresentation::waitLabel($session) }}</p>
@@ -537,9 +533,6 @@
 
                     </div>
 
-<p class="text-xs text-gray-400 mt-2">
-                         This page checks again automatically every 15 seconds.
-                     </p>
 
                     <!-- ============================================ -->
                     <!-- RESOURCES WHILE WAITING                     -->

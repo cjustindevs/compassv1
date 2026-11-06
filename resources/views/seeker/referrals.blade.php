@@ -56,8 +56,6 @@
                 <span class="text-xs text-gray-400 hidden sm:inline">{{ now('Asia/Manila')->format('M d, Y') }}</span>
             </div>
         </div>
-
-            <p class="referrals-intro">Review your approved recommendations here. You choose whether to proceed. Contact details and identity disclosure are a separate step.</p>
             @if(session('success'))<div role="status" class="referral-flash">{{ session('success') }}</div>@endif
             @if($errors->any())<div role="alert" class="referral-flash">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
 
