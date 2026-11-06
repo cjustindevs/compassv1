@@ -162,7 +162,6 @@
                 @endif
 
                 <div class="screening-review-launcher">
-                    <p>View the saved answers, then choose a review action.</p>
                     <button type="button" class="av-button av-button-primary" data-screening-toggle
                         aria-controls="screening-workspace-{{ $session->id }}" aria-expanded="true" hidden>
                         <span data-review-toggle-label>Close review</span><x-ui-icon name="chevron-down" />

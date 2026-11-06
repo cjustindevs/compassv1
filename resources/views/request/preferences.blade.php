@@ -361,7 +361,6 @@
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-800">Request Peer Support</h1>
                     <p class="text-sm text-gray-500 hidden sm:block">
-                        <span class="text-green-600">Step 2 of 3</span> · Session Preferences
                     </p>
                 </div>
             </div>
