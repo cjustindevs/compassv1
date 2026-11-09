@@ -98,6 +98,7 @@
                 <span class="label">Pending</span>
             </div>
         </div>
+        <button type="button" class="sidebar-install-btn" data-pwa-install hidden>Install app</button>
         <form method="POST" action="{{ route('logout') }}"
               data-confirm="Log out?"
               data-confirm-message="You will be signed out of your COMPASS account."

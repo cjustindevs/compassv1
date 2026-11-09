@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html class="compass-ui" lang="en">
 <head>
     @include('layouts.partials.pwa-meta')
@@ -24,7 +24,7 @@
         ::-webkit-scrollbar-track { background: var(--gray-100); }
         ::-webkit-scrollbar-thumb { background: var(--green-500); border-radius: 4px; }
 
-        .main-content { margin-left: 260px; padding: 24px 32px 80px; min-height: 100vh; }
+        .main-content { margin-left: var(--sidebar-w, 264px); padding: 24px 32px 80px; min-height: 100vh; }
 
         .filter-btn {
             padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600;

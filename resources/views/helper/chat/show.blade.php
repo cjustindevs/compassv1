@@ -177,7 +177,7 @@
         .modal-box .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gray-600); margin-top: 10px; cursor: pointer; }
 
         /* ─── Messages ─── */
-        .chat-window { height: calc(100vh - 330px); min-height: 380px; }
+        .chat-window { height: calc(100dvh - 330px); min-height: 380px; }
 
         .empty-chat {
             flex: 1;
@@ -280,7 +280,7 @@
         .typing-indicator .label { font-size: 12px; color: var(--gray-500); }
 
         @media (max-width: 768px) {
-            .chat-window { height: calc(100vh - 260px); min-height: 320px; }
+            .chat-window { height: calc(100dvh - 260px); min-height: 320px; }
             .chat-messages .message { max-width: 85%; padding: 8px 12px; }
             .chat-messages .message .text { font-size: 13px; }
             .room-header { padding: 12px 14px; }

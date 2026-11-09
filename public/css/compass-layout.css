@@ -1,0 +1,124 @@
+/* COMPASS layout & layering. Loaded last by partials.ui-assets.
+   One stacking scale for every overlay, one toast stack, and shared page-header spacing.
+   Presentation only: no workflow, permission or data behavior lives here. */
+:root {
+    --z-raised: 2;
+    --z-sticky: 40;
+    --z-sidebar-overlay: 99;
+    --z-sidebar: 100;
+    --z-dropdown: 120;
+    --z-overlay: 200;
+    --z-modal: 1000;
+    --z-confirm: 1100;
+    --z-toast: 1200;
+    --z-system: 1300;
+    --z-skip: 1400;
+    --compass-toast-top: calc(16px + env(safe-area-inset-top, 0px));
+}
+
+/* ── Layer assignments (override legacy ad-hoc values) ─────────────── */
+.compass-ui .sidebar-overlay { z-index: var(--z-sidebar-overlay); }
+.compass-ui .sidebar { z-index: var(--z-sidebar); }
+.compass-ui .compass-notices { z-index: var(--z-dropdown); }
+.compass-ui .compass-notice-dropdown { z-index: var(--z-dropdown); }
+.compass-ui .modal-overlay { z-index: var(--z-modal); }
+.compass-ui #confirmationModal { z-index: var(--z-confirm); }
+.compass-ui .ui-skip-link { z-index: var(--z-skip); }
+
+/* Badges, tooltips and dropdowns inside the rail were clipped by paint containment. */
+.compass-ui .sidebar { contain: layout; }
+
+/* ── Single toast stack (top-right, below the safe area) ───────────── */
+.compass-toast-stack {
+    position: fixed; top: var(--compass-toast-top); right: 20px; z-index: var(--z-toast);
+    display: grid; gap: 8px; width: min(360px, calc(100vw - 32px)); pointer-events: none;
+}
+.compass-toast-stack > * { pointer-events: auto; }
+.compass-toast-stack .compass-notice-toasts { position: static; width: auto; top: auto; right: auto; }
+.compass-toast-stack .compass-notice-toasts:empty { display: none; }
+.compass-toast {
+    position: relative; display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 40px 12px 14px; border: 1px solid var(--compass-border, #e5e7eb);
+    border-left: 4px solid var(--compass-green, #04a052); border-radius: 12px;
+    background: #fff; color: var(--compass-text, #1f2937); box-shadow: 0 8px 24px rgb(22 59 45 / 14%);
+    font: 500 13px/1.5 var(--compass-font, Inter, sans-serif); overflow-wrap: anywhere;
+    animation: compass-toast-in .18s ease-out;
+}
+.compass-toast[data-type="error"] { border-left-color: var(--compass-danger, #dc2626); }
+.compass-toast[data-type="warning"] { border-left-color: #d97706; }
+.compass-toast[data-type="info"] { border-left-color: #2563eb; }
+.compass-toast-close {
+    position: absolute; top: 6px; right: 6px; display: grid; place-items: center;
+    width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent;
+    color: var(--compass-muted, #6b7280); font-size: 18px; line-height: 1; cursor: pointer;
+}
+.compass-toast-close:hover { background: var(--compass-green-soft, #eaf8f0); }
+/* Legacy page flash alerts that were fixed to a corner join the stack instead. */
+.compass-toast-stack .flash-alert { position: static !important; inset: auto !important; margin: 0 !important; width: auto !important; max-width: none !important; }
+@keyframes compass-toast-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@media (max-width: 600px) {
+    .compass-toast-stack { right: 12px; left: 12px; width: auto; }
+}
+
+/* ── System banners ────────────────────────────────────────────────── */
+.compass-offline-banner {
+    position: sticky; top: 0; z-index: var(--z-system);
+    padding: 8px 16px; background: #fef2f2; border-bottom: 1px solid #fecaca;
+    color: #b91c1c; font: 600 13px/1.5 var(--compass-font, Inter, sans-serif); text-align: center;
+}
+.compass-offline-banner[hidden] { display: none; }
+.compass-install-banner {
+    position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: var(--z-system);
+    transform: translateX(-50%); display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    width: min(520px, calc(100vw - 24px)); padding: 14px 16px; border: 1px solid var(--compass-border, #e5e7eb);
+    border-radius: 14px; background: #fff; box-shadow: 0 12px 36px rgb(22 59 45 / 16%);
+    font-family: var(--compass-font, Inter, sans-serif);
+}
+.compass-install-banner p { margin: 0; font-size: 13px; color: var(--compass-muted, #6b7280); }
+.compass-install-banner strong { display: block; font-size: 14px; color: var(--compass-text, #1f2937); }
+.compass-install-banner .compass-install-text { flex: 1 1 200px; min-width: 0; }
+.compass-install-banner .compass-install-actions { display: flex; gap: 8px; }
+.compass-install-banner button {
+    min-height: 40px; padding: 8px 16px; border-radius: 10px; font: 600 13px/1 var(--compass-font, Inter, sans-serif); cursor: pointer;
+    border: 1px solid var(--compass-border, #e5e7eb); background: #fff; color: var(--compass-green-dark, #027039);
+}
+.compass-install-banner button.is-primary { background: var(--compass-green, #04a052); border-color: var(--compass-green, #04a052); color: #fff; }
+
+/* Sidebar "Install app" (visible only when the browser can install COMPASS). */
+.compass-ui .sidebar-install-btn {
+    display: flex; align-items: center; justify-content: center; width: 100%; min-height: 38px; margin: 0 0 8px;
+    border: 1px dashed #bfe3cf; border-radius: 10px; background: var(--compass-green-soft, #eaf8f0);
+    color: var(--compass-green-dark, #027039); font: 600 13px/1.2 var(--compass-font, Inter, sans-serif); cursor: pointer;
+}
+.compass-ui .sidebar-install-btn[hidden] { display: none; }
+.compass-ui .sidebar.collapsed .sidebar-install-btn { display: none; }
+
+/* ── Page top bars: title left, actions right, never colliding ─────── */
+.compass-ui .main-content > :is(.flex.justify-between, .top-bar, .page-header):first-of-type,
+.compass-ui .main-content > :is(.flex.justify-between, .top-bar, .page-header):first-child,
+.compass-ui .workspace-content > :is(.flex.justify-between, .page-header):first-child {
+    flex-wrap: wrap; column-gap: 16px; row-gap: 12px;
+}
+.compass-ui .main-content > .flex.justify-between:first-of-type > :first-child { min-width: 0; }
+.compass-ui .main-content > .flex.justify-between:first-of-type > :last-child:not(:first-child) { margin-left: auto; }
+.compass-ui .main-content > .flex.justify-between > div > .compass-notices.is-header-action { margin-left: 0; }
+
+/* layouts.app: the mobile app bar holds the hamburger + bell. On desktop it is a slim,
+   transparent action row instead of a sticky white bar with only a bell in it. */
+@media (min-width: 769px) {
+    .compass-ui .mobile-appbar {
+        position: static; justify-content: flex-end; padding: 16px 28px 0;
+        background: transparent; border-bottom: 0; z-index: auto;
+    }
+    .compass-ui .mobile-appbar + .workspace-content { padding-top: 4px; }
+}
+
+/* Tablet widths (769–1150px) keep the 264px rail, so two-column page grids would leave a
+   ~400px main column. Stack them until there is room for both columns. */
+@media (min-width: 769px) and (max-width: 1150px) {
+    .compass-ui :is(.mo-grid, .dashboard-bottom-grid) { grid-template-columns: minmax(0, 1fr); }
+    .compass-ui .concern-management .cm-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Tables: wrap long words at word boundaries, not between every letter. */
+.compass-ui :is(td, th) { overflow-wrap: break-word; word-break: normal; }

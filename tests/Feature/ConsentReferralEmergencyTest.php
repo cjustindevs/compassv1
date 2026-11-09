@@ -328,7 +328,7 @@ class ConsentReferralEmergencyTest extends TestCase
         app(ConsentService::class)->decide($seeker, 'identity_disclosure', 'declined', $session->id, $referral->id, 'referral');
         $this->getJson(route('session.referral-prompt', $session))->assertOk()->assertJsonPath('consent.decision', 'accepted');
         $this->withSession(['info' => 'Your referral status has changed.'])->get(route('seeker.referrals'))
-            ->assertOk()->assertSee('workflowNotice')->assertSee('Your referral status has changed.');
+            ->assertOk()->assertSee('data-compass-toast', false)->assertSee('Your referral status has changed.');
     }
 
     public function test_seeker_decline_closes_referral_and_blocks_submission(): void

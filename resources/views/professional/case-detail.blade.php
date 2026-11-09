@@ -29,7 +29,7 @@
 
         body { background: #F8FBF9; }
 
-        .main-content { margin-left: 260px; padding: 24px 32px 80px; min-height: 100vh; }
+        .main-content { margin-left: var(--sidebar-w, 264px); padding: 24px 32px 80px; min-height: 100vh; }
 
         .card {
             background: white;

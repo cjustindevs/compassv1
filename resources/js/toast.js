@@ -16,6 +16,9 @@ const TOAST_COLORS = {
 
 function showToast(message, type = 'info', duration = 3500) {
     if (typeof message !== 'string' || !message.length) return;
+    // Prefer the shared top-right stack (public/js/compass-ui.js) so toasts never cover
+    // the chat composer, mobile navigation or other overlays.
+    if (window.CompassToast) return window.CompassToast.show(message, type, Math.max(duration, 5000));
 
     const color = TOAST_COLORS[type] || TOAST_COLORS.info;
 
@@ -23,7 +26,7 @@ function showToast(message, type = 'info', duration = 3500) {
     toast.setAttribute('role', 'status');
     toast.setAttribute('aria-live', 'polite');
     toast.className =
-        'fixed bottom-20 right-4 max-w-sm w-[calc(100%-2rem)] sm:w-sm z-[2000] ' +
+        'fixed top-4 right-4 max-w-sm w-[calc(100%-2rem)] sm:w-sm z-[1200] ' +
         'bg-white rounded-xl shadow-2xl border-l-4 ' + color + ' ' +
         'transform transition-all duration-300 translate-y-2 opacity-0';
 

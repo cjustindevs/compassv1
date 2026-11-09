@@ -24,7 +24,7 @@
         ::-webkit-scrollbar-track { background: var(--gray-100); }
         ::-webkit-scrollbar-thumb { background: var(--green-500); border-radius: 4px; }
 
-        .main-content { margin-left: 260px; padding: 24px 32px 80px; min-height: 100vh; }
+        .main-content { margin-left: var(--sidebar-w, 264px); padding: 24px 32px 80px; min-height: 100vh; }
 
         .card {
             background: white; border: 1px solid var(--gray-200); border-radius: 24px; padding: 28px;

@@ -14,7 +14,7 @@
         body { background: var(--bg-primary, #F8FBF9); }
 
         .main-content {
-            margin-left: 260px;
+            margin-left: var(--sidebar-w, 264px);
             padding: 24px 32px 80px;
             min-height: 100vh;
         }
@@ -151,8 +151,11 @@
             .queue-item .type-pill,
             .queue-item .wait-chip { grid-column: 2; justify-self: start; }
             .queue-actions { grid-column: 1 / -1; justify-content: stretch; }
-            .queue-actions form { flex: 1 1 100%; }
+            .queue-actions form { flex: 1 1 100%; flex-wrap: nowrap; }
             .assign-select { flex: 1 1 auto; width: 100%; min-width: 0; }
+        }
+        @media (max-width: 420px) {
+            .queue-actions form { flex-wrap: wrap; }
         }
     </style>
     @vite(['resources/css/app.css'])
@@ -260,8 +263,8 @@
         <!-- Assigned -->
         <div class="card">
             <div class="card-header">
-                <h3>Recently Matched</h3><a class="text-sm text-green-700" href="{{ route('moderator.reports',['tab'=>'operations']) }}">View All</a>
-                <span class="text-xs text-gray-400" id="assignedHeading">{{ $recentlyMatched->count() }} assigned</span>
+                <h3>Recently Matched <span class="text-xs font-medium text-gray-400" id="assignedHeading">{{ $recentlyMatched->count() }} assigned</span></h3>
+                <a class="text-sm font-semibold text-green-700" href="{{ route('moderator.reports',['tab'=>'operations']) }}">View all</a>
             </div>
             <div>
                 @forelse($recentlyMatched as $item)

@@ -25,7 +25,7 @@
         ::-webkit-scrollbar-track { background: var(--gray-100); }
         ::-webkit-scrollbar-thumb { background: var(--green-500); border-radius: 4px; }
 
-        .main-content { margin-left: 260px; padding: 24px 32px 80px; min-height: 100vh; }
+        .main-content { margin-left: var(--sidebar-w, 264px); padding: 24px 32px 80px; min-height: 100vh; }
 
         .settings-card {
             background: white; border-radius: 22px; border: 1px solid var(--gray-200);
@@ -68,7 +68,6 @@
                     <p class="text-sm text-gray-500 hidden sm:block">Manage your account, preferences, privacy, and appearance.</p>
                 </div>
             </div>
-            <span class="text-xs text-gray-400 hidden sm:inline">{{ now()->format('M d, Y') }}</span>
         </div>
 
         <!-- Settings tabs -->

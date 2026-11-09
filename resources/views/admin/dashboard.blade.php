@@ -32,7 +32,7 @@
                 <thead><tr><th scope="col">Activity</th><th scope="col">Administrator / actor</th><th scope="col">Date (Philippine Time)</th></tr></thead>
                 <tbody>
                     @forelse ($recentLogs as $log)
-                        <tr><td>{{ Str::headline($log->action) }}</td><td>{{ $log->actor?->name ?? 'System' }}</td><td><time datetime="{{ $log->created_at->toIso8601String() }}">{{ $log->created_at->timezone('Asia/Manila')->format('M d, Y g:i A') }}</time></td></tr>
+                        <tr><td>{{ Str::headline(strtolower($log->action)) }}</td><td>{{ $log->actor?->name ?? 'System' }}</td><td><time datetime="{{ $log->created_at->toIso8601String() }}">{{ $log->created_at->timezone('Asia/Manila')->format('M d, Y g:i A') }}</time></td></tr>
                     @empty
                         <tr><td colspan="3" class="admin-table-empty">No administrative events have been recorded yet.</td></tr>
                     @endforelse

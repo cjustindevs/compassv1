@@ -26,7 +26,7 @@
 @media(max-width:768px){.seeker-page{padding:20px 16px 100px}.seeker-card{padding:18px}.seeker-heading h1{font-size:21px}.seeker-heading time{display:none}}
 </style>
 <section class="seeker-page">
-<header class="seeker-heading"><div><h1>{{ $title }}</h1><p>{{ $step ?? 'Manage your support and preferences in one place.' }}</p></div><time class="text-xs text-gray-400">{{ now('Asia/Manila')->format('M d, Y') }}</time></header>
+<header class="seeker-heading"><div><h1>{{ $title }}</h1><p>{{ $step ?? 'Manage your support and preferences in one place.' }}</p></div></header>
 @if(session('success'))<div role="status" class="seeker-notice">{{ session('success') }}</div>@endif
 @if($errors->any())<div role="alert" class="seeker-notice">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
 <div class="seeker-card">{{ $slot }}</div>

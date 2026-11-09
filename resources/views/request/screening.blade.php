@@ -39,7 +39,7 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 260px;
+            width: var(--sidebar-w, 264px);
             height: 100vh;
             background: rgba(255,255,255,0.92);
             backdrop-filter: blur(20px);
@@ -170,7 +170,7 @@
         .sidebar .user-section .logout-btn :is(i, .compass-icon) { width: 20px; text-align: center; }
 
         .main-content {
-            margin-left: 260px;
+            margin-left: var(--sidebar-w, 264px);
             padding: 24px 40px 80px;
             min-height: 100vh;
         }
@@ -562,7 +562,6 @@
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <span class="text-xs text-gray-400 hidden sm:inline">{{ now('Asia/Manila')->format('M d, Y') }}</span>
             </div>
         </div>
 

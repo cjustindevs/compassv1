@@ -345,6 +345,7 @@
             <span>View Profile &amp; Settings</span>
         </a>
 
+        <button type="button" class="sidebar-install-btn" data-pwa-install hidden>Install app</button>
         <form class="sidebar-logout-form" method="POST" action="{{ route('logout') }}">
             @csrf
             <button class="sidebar-logout-button" type="submit">

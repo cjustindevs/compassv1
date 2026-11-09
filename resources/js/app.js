@@ -34,52 +34,36 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// ── PWA install prompt (landing page only) ──
+// ── PWA install prompt ──
+// The browser's install event is kept for the single landing-page banner (pwa.js) and for
+// any explicit "Install app" control marked [data-pwa-install] (e.g. in Settings).
 window.deferredPrompt = null;
 
-// The install banner/button is only relevant on the public landing page.
-// Hide it everywhere else so it never disrupts authenticated workflows.
-const isLandingPage = () => window.location.pathname === '/' || window.location.pathname === '/home';
-
-(function hideInstallOffLanding() {
-    if (isLandingPage()) return;
-    const installBtn = document.getElementById('installPwaBtn');
-    if (installBtn) installBtn.style.display = 'none';
-})();
+const syncInstallControls = () => {
+    document.querySelectorAll('[data-pwa-install]').forEach((control) => {
+        control.hidden = !window.deferredPrompt;
+    });
+};
 
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     window.deferredPrompt = e;
-    const installBtn = document.getElementById('installPwaBtn');
-    // Only surface the prompt on the landing page.
-    if (installBtn && isLandingPage()) {
-        installBtn.style.display = 'flex';
-    }
+    syncInstallControls();
 });
 
 document.addEventListener('click', (e) => {
-    if (!e.target.closest('#installPwaBtn') || !window.deferredPrompt) return;
+    if (!e.target.closest('[data-pwa-install]') || !window.deferredPrompt) return;
     window.deferredPrompt.prompt();
-    window.deferredPrompt.userChoice.then((choiceResult) => {
-        if (choiceResult.outcome === 'accepted') {
-            console.log('User accepted PWA install');
-        } else {
-            console.log('User dismissed PWA install');
-        }
+    window.deferredPrompt.userChoice.finally(() => {
         window.deferredPrompt = null;
-        const installBtn = document.getElementById('installPwaBtn');
-        if (installBtn) installBtn.style.display = 'none';
+        syncInstallControls();
     });
 });
 
-// ── App installed event ──
 window.addEventListener('appinstalled', () => {
-    console.log('COMPASS app installed successfully');
     window.deferredPrompt = null;
-    const installBtn = document.getElementById('installPwaBtn');
-    if (installBtn) {
-        installBtn.style.display = 'none';
-    }
+    syncInstallControls();
+    document.getElementById('installBanner')?.remove();
 });
 
 // ── Network status indicators ──
@@ -87,7 +71,9 @@ function setOfflineUI(offline) {
     document.body.classList.toggle('offline-mode', offline);
     const offlineBanner = document.getElementById('offlineBanner');
     if (offlineBanner) {
-        offlineBanner.style.display = offline ? 'block' : 'none';
+        // Sticky strip at the top of the page flow; never overlaps headers.
+        if (offline && offlineBanner !== document.body.firstElementChild) document.body.prepend(offlineBanner);
+        offlineBanner.hidden = !offline;
     }
 }
 

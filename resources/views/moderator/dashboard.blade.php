@@ -14,7 +14,7 @@
         body { background: var(--bg-primary, #F8FBF9); }
 
         .main-content {
-            margin-left: 260px;
+            margin-left: var(--sidebar-w, 264px);
             padding: 24px 32px 80px;
             min-height: 100vh;
         }
@@ -189,7 +189,6 @@
                 </div>
             </div>
             <div class="moderator-dashboard-actions">
-                <span class="text-xs text-gray-400 hidden sm:inline">{{ now()->format('M d, Y') }}</span>
                 <a href="{{ route('moderator.emergency') }}" class="btn-outline">
                     <x-ui-icon name="warning"  /> Emergency
                 </a>

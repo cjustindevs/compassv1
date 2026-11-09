@@ -41,44 +41,31 @@ window.offlineQueue = new OfflineQueue();
 
 // ── Custom install banner (first visit only) ──
 export function showInstallBanner() {
+    // Only offer installation when the browser actually supports it right now.
+    if (!window.deferredPrompt || document.getElementById('installBanner')) return;
     const banner = document.createElement('div');
     banner.id = 'installBanner';
-    banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#ffffff;box-shadow:0 -8px 40px rgba(0,0,0,0.12);border-top:4px solid #04A052;padding:16px;z-index:9997;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;';
+    banner.className = 'compass-install-banner';
+    banner.setAttribute('role', 'dialog');
+    banner.setAttribute('aria-label', 'Install COMPASS');
     banner.innerHTML = `
-        <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:48px;height:48px;border-radius:12px;background:#04A052;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px;flex-shrink:0;">C</div>
-            <div>
-                <p style="margin:0;font-weight:600;color:#163B2D;font-size:15px;">Install COMPASS</p>
-                <p style="margin:2px 0 0;font-size:13px;color:#6B7280;">Get the app for a better experience</p>
-            </div>
-        </div>
-        <div style="display:flex;gap:10px;align-items:center;">
-            <button type="button" id="installBannerBtn" style="padding:10px 24px;background:#04A052;color:#fff;border:none;border-radius:50px;font-weight:600;font-size:14px;cursor:pointer;transition:background 0.2s;">Install</button>
-            <button type="button" id="dismissBannerBtn" style="padding:10px 16px;background:none;color:#6B7280;border:none;font-size:14px;cursor:pointer;">Dismiss</button>
-        </div>
-    `;
+        <div class="compass-install-text"><strong>Install COMPASS</strong><p>Open it like an app from your home screen.</p></div>
+        <div class="compass-install-actions">
+            <button type="button" data-install-dismiss>Not now</button>
+            <button type="button" class="is-primary" data-install-accept>Install</button>
+        </div>`;
     document.body.appendChild(banner);
 
-    document.getElementById('installBannerBtn').addEventListener('click', () => {
-        if (window.deferredPrompt) {
-            window.deferredPrompt.prompt();
-            window.deferredPrompt.userChoice.then((choiceResult) => {
-                if (choiceResult.outcome === 'accepted') {
-                    console.log('User accepted PWA install');
-                } else {
-                    console.log('User dismissed PWA install');
-                }
-                window.deferredPrompt = null;
-                banner.remove();
-            });
-        } else {
-            banner.remove();
-        }
+    const close = () => banner.remove();
+    banner.querySelector('[data-install-accept]').addEventListener('click', () => {
+        const prompt = window.deferredPrompt;
+        if (!prompt) return close();
+        prompt.prompt();
+        prompt.userChoice.finally(() => { window.deferredPrompt = null; close(); });
     });
-
-    document.getElementById('dismissBannerBtn').addEventListener('click', () => {
-        banner.remove();
-        localStorage.setItem('pwaBannerDismissed', 'true');
+    banner.querySelector('[data-install-dismiss]').addEventListener('click', () => {
+        close();
+        try { localStorage.setItem('pwaBannerDismissed', 'true'); } catch (e) { /* storage optional */ }
     });
 }
 
@@ -93,9 +80,10 @@ const isStandalone =
 const isLandingPage =
     window.location.pathname === '/' || window.location.pathname === '/home';
 
-const bannerDismissed = localStorage.getItem('pwaBannerDismissed') === 'true';
+let bannerDismissed = false;
+try { bannerDismissed = localStorage.getItem('pwaBannerDismissed') === 'true'; } catch (e) { /* storage optional */ }
 
 if (!bannerDismissed && !isStandalone && isLandingPage) {
-    // Small delay so it does not pop in before the page settles.
-    setTimeout(showInstallBanner, 2500);
+    // Wait for the browser's install event, then let the page settle first.
+    window.addEventListener('beforeinstallprompt', () => setTimeout(showInstallBanner, 2500), { once: true });
 }

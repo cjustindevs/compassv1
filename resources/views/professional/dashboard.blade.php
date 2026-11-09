@@ -32,7 +32,7 @@
         body { background: #F8FBF9; }
 
         .main-content {
-            margin-left: 260px;
+            margin-left: var(--sidebar-w, 264px);
             padding: 24px 32px 80px;
             min-height: 100vh;
         }
@@ -245,7 +245,6 @@
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <span class="text-xs text-gray-400 hidden sm:inline">{{ now()->format('M d, Y') }}</span>
                 <a href="{{ route('professional.referrals') }}" class="btn-primary hidden sm:inline-flex">
                     <x-ui-icon name="clipboard"  /> View Referrals
                 </a>

@@ -4,8 +4,15 @@
         ->reject(fn ($key) => in_array($key, $inlineNotices ?? [], true))
         ->map(fn ($key) => session($key))->first(fn ($value) => is_string($value));
     $showErrors = $errors->any() && ! ($inlineErrors ?? false);
+    // Confirmations are non-blocking toasts; only errors need a modal acknowledgement.
+    $noticeType = collect(['error', 'success', 'info', 'status'])
+        ->reject(fn ($key) => in_array($key, $inlineNotices ?? [], true))
+        ->first(fn ($key) => is_string(session($key)));
+    $toastOnly = is_string($notice) && ! $showErrors && $noticeType !== 'error';
 @endphp
-@if(is_string($notice) || $showErrors)
+@if($toastOnly)
+<div hidden data-compass-toast data-type="{{ $noticeType === 'info' ? 'info' : 'success' }}" data-message="{{ $notice }}"></div>
+@elseif(is_string($notice) || $showErrors)
 <dialog id="workflowNotice" aria-labelledby="workflowNoticeTitle" style="position:fixed;inset:0;margin:auto;max-height:85dvh;overflow:auto;border:1px solid #e5e7eb;border-radius:16px;padding:24px;width:min(440px,calc(100vw - 32px));color:#163b2d;">
     <h2 id="workflowNoticeTitle" class="text-lg font-semibold mb-3">{{ $showErrors || session('error') ? 'Please review your request' : 'Status update' }}</h2>
     @if(is_string($notice))<p class="text-sm mb-4" role="status">{{ $notice }}</p>@endif

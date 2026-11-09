@@ -14,7 +14,7 @@
         body { background: var(--bg-primary, #F8FBF9); }
 
         .main-content {
-            margin-left: 260px;
+            margin-left: var(--sidebar-w, 264px);
             padding: 24px 32px 80px;
             min-height: 100vh;
         }

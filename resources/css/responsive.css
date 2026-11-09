@@ -38,7 +38,7 @@ img { max-width: 100%; height: auto; }
 }
 .sidebar-toggle:hover { background: var(--green-50, #EAF8F0); }
 
-.sidebar.collapsed { width: 72px; }
+.sidebar.collapsed { width: var(--sidebar-w-collapsed, 76px); }
 /* Hide labels across every sidebar variant. Labels are plain text
    nodes, so we collapse font-size to 0 and restore it on icons. */
 .sidebar.collapsed .nav-label,
@@ -142,7 +142,6 @@ img { max-width: 100%; height: auto; }
     .grid-cols-2,
     .grid-cols-3 { grid-template-columns: 1fr; }
     .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
-    .flex-row { flex-direction: column; }
 }
 @media (max-width: 480px) {
     .grid-cols-4 { grid-template-columns: 1fr 1fr; }

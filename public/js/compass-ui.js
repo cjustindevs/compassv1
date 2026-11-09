@@ -1,4 +1,76 @@
 /* Presentation only. No matching/status/network logic belongs in this file. */
+
+/* One top-right toast stack shared by flash messages, legacy page alerts and live notices,
+   so toasts never cover composers, bottom navigation or each other. */
+(() => {
+    const stack = () => {
+        let el = document.getElementById('compassToastStack');
+        if (!el && document.body) {
+            el = document.createElement('div');
+            el.id = 'compassToastStack';
+            el.className = 'compass-toast-stack';
+            el.setAttribute('aria-live', 'polite');
+            document.body.append(el);
+        }
+        return el;
+    };
+    const textOf = (el) => (el.textContent || '').replace(/\s+/g, ' ').trim();
+    const duplicate = (text) => [...(stack()?.children || [])].some((child) => child.classList.contains('compass-toast') && child.dataset.text === text);
+    const show = (message, type = 'success', duration = 6000) => {
+        const text = String(message || '').trim();
+        const host = stack();
+        if (!text || !host || duplicate(text)) return null;
+        const toast = document.createElement('div');
+        toast.className = 'compass-toast';
+        toast.dataset.type = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'info';
+        toast.dataset.text = text;
+        toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+        const body = document.createElement('div');
+        body.textContent = text;
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.className = 'compass-toast-close';
+        close.setAttribute('aria-label', 'Dismiss');
+        close.textContent = '×';
+        close.addEventListener('click', () => toast.remove());
+        toast.append(body, close);
+        host.append(toast);
+        while (host.querySelectorAll(':scope > .compass-toast').length > 3) host.querySelector(':scope > .compass-toast').remove();
+        if (duration > 0 && type !== 'error') setTimeout(() => toast.remove(), duration);
+        return toast;
+    };
+    window.CompassToast = { show, stack };
+
+    const adopt = () => {
+        // Server-rendered status toasts from partials.workflow-notice.
+        document.querySelectorAll('[data-compass-toast]').forEach((el) => {
+            show(el.dataset.message || textOf(el), el.dataset.type || 'success');
+            el.remove();
+        });
+        // Legacy page alerts fixed to a screen corner (e.g. Professional pages).
+        document.querySelectorAll('.flash-alert').forEach((el) => {
+            if (el.closest('#compassToastStack') || getComputedStyle(el).position !== 'fixed') return;
+            const text = textOf(el);
+            if (!text || duplicate(text)) { el.remove(); return; }
+            el.classList.add('compass-toast');
+            el.dataset.text = text;
+            el.dataset.type = el.classList.contains('error') ? 'error' : el.classList.contains('info') ? 'info' : 'success';
+            stack()?.append(el);
+        });
+        // Live notification toasts share the same column.
+        const live = document.querySelector('body > .compass-notice-toasts');
+        if (live) stack()?.prepend(live);
+    };
+    const start = () => {
+        adopt();
+        new MutationObserver((records) => {
+            if (records.some((r) => [...r.addedNodes].some((n) => n.nodeType === 1 && (n.matches?.('.compass-notice-toasts, [data-compass-toast]'))))) adopt();
+        }).observe(document.body, { childList: true });
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+    else start();
+})();
+
 (() => {
     const prepare = () => {
         document.querySelectorAll('input[type="password"]').forEach(input=>{

@@ -118,6 +118,7 @@
         <a href="{{ route('profile.edit') }}" class="view-profile">
             <x-ui-icon name="edit"  /> View Profile &amp; Settings
         </a>
+        <button type="button" class="sidebar-install-btn" data-pwa-install hidden>Install app</button>
         <form method="POST" action="{{ route('logout') }}"
               data-confirm="Log out?"
               data-confirm-message="You will be signed out of your COMPASS account."

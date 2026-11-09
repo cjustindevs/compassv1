@@ -21,7 +21,13 @@
     else {
         // Only an existing page header can host a bell. Never insert siblings into a page's content grid or body.
         const header=document.querySelector('[data-page-header], .main-content > .top-bar, .main-content > .flex.items-center.justify-between, main > header');
-        if(header){root.className+=' is-header-action';header.append(root);}
+        if(header){
+            root.className+=' is-header-action';
+            // Join an existing right-hand action group so the bell sits beside the page actions.
+            const actions=header.children.length>1?header.lastElementChild:null;
+            if(actions&&actions.tagName==='DIV'&&!actions.querySelector('h1,h2')&&actions.querySelector('a,button'))actions.append(root);
+            else header.append(root);
+        }
     }
     const toasts=el('div');toasts.className='compass-notice-toasts';toasts.setAttribute('aria-live','polite');document.body.append(toasts);
     const close=()=>{inbox.hidden=true;bell.setAttribute('aria-expanded','false');};
