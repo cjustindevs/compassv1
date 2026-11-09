@@ -8,7 +8,7 @@
     <title>COMPASS â€“ Reports</title>
 
     @vite(['resources/js/app.js'])
-    @vite('resources/js/dashboard-analytics.js')
+    @vite('resources/js/compass-charts.js')
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 

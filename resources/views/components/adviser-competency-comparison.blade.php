@@ -6,20 +6,26 @@
 <label>Skill<select name="competency_skill">@foreach($comparison['options'] as $key=>$label)<option value="{{ $key }}" @selected($comparison['skill']===$key)>{{ $label }}</option>@endforeach</select></label>
 <label>Sort<select name="competency_sort">@foreach(['lowest'=>'Lowest score first','highest'=>'Highest score first','name'=>'Helper name'] as $key=>$label)<option value="{{ $key }}" @selected($comparison['sort']===$key)>{{ $label }}</option>@endforeach</select></label><button type="submit" class="ac-button">Apply</button>
 </form>
-@php($chartRows = $comparison['rows']->getCollection())
-@if($chartRows->isNotEmpty())
-<div class="ac-chart-scroll" tabindex="0" aria-label="{{ $comparison['options'][$comparison['skill']] }} comparison, scale zero to five">
-<svg class="ac-chart" viewBox="0 0 820 {{ 42+$chartRows->count()*38 }}" role="img" aria-labelledby="ac-chart-title"><title id="ac-chart-title">{{ $comparison['options'][$comparison['skill']] }} by Helper, out of five</title>
-@foreach(range(0,5) as $tick)<line x1="{{ 210+$tick*104 }}" x2="{{ 210+$tick*104 }}" y1="24" y2="{{ 30+$chartRows->count()*38 }}" stroke="#e5eee8"/><text x="{{ 210+$tick*104 }}" y="16" text-anchor="middle" fill="#68796e" font-size="11">{{ $tick }}</text>@endforeach
-@foreach($chartRows as $row)@php($y=47+$loop->index*38)
-<text x="0" y="{{ $y }}" fill="#344c3f" font-size="13">{{ \Illuminate\Support\Str::limit($row['helper']->full_name,26) }}</text>
-@if($row['score']!==null)<rect x="210" y="{{ $y-13 }}" width="{{ $row['score']*104 }}" height="18" rx="4" fill="{{ $row['needs_attention'] ? '#c58532' : '#168355' }}"><title>{{ number_format($row['score'],2) }}/5</title></rect>@endif
-<text x="800" y="{{ $y }}" text-anchor="end" fill="#173b2c" font-size="13" font-weight="600">{{ $row['score']===null ? '—' : number_format($row['score'],2) }}</text>
-@endforeach</svg></div>
+<?php $chartRows = $comparison['rows']->getCollection(); ?>
+@if($chartRows->contains(fn ($row) => $row['score'] !== null))
+@php
+    $skillLabel = $comparison['options'][$comparison['skill']];
+    $comparisonChart = [
+        'type' => 'bar', 'scale' => [0, 5], 'unit' => '',
+        'labels' => $chartRows->map(fn ($row) => \Illuminate\Support\Str::limit($row['helper']->full_name ?: 'Helper', 26))->values()->all(),
+        'samples' => $chartRows->map(fn ($row) => $row['count'])->values()->all(),
+        'datasets' => [[
+            'label' => $skillLabel.' (1–5)',
+            'data' => $chartRows->map(fn ($row) => $row['score'] === null ? null : round($row['score'], 2))->values()->all(),
+            'colors' => $chartRows->map(fn ($row) => $row['needs_attention'] ? '#c58532' : '#078749')->values()->all(),
+        ]],
+    ];
+@endphp
+<x-analytics-chart class="ac-chart-card" :title="$skillLabel.' by Helper'" description="Average score on a 1–5 scale. Amber bars mark a skill below 2.5." :chart="$comparisonChart" />
 @endif
 <div class="compact-table-wrap"><table class="compact-data-table"><thead><tr><th>Helper</th><th>Score (1–5)</th><th>Evaluations</th><th>Skill needing attention</th><th><span class="sr-only">Action</span></th></tr></thead><tbody>
 @forelse($comparison['rows'] as $row)
-@php($helper=$row['helper'])
+<?php $helper=$row['helper']; ?>
 <tr><td><a class="ac-helper-name" href="{{ route('adviser.helper.show',$helper->id) }}">{{ $helper->full_name ?: 'Helper' }}</a></td><td>{{ $row['score']===null ? '—' : number_format($row['score'],2) }}</td><td>{{ $row['count'] }}</td><td>{{ $row['needs_attention'] && $row['weakest'] ? $comparison['options'][$row['weakest']] : '—' }}</td><td>
 @if($row['count'])<section data-focus-panel data-focus-label="View evaluation" data-focus-title="{{ $helper->full_name }}">
 <p><strong>Based on {{ $row['count'] }} {{ \Illuminate\Support\Str::plural('evaluation',$row['count']) }}</strong> · {{ $row['latest']->copy()->timezone('Asia/Manila')->format('M d, Y') }}</p>

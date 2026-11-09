@@ -61,7 +61,7 @@ class AdviserCompetencyComparisonTest extends TestCase
         $this->assertSame('referral_accuracy', $row['weakest']);
         $this->assertSame(3.0, $row['scores']['referral_accuracy']);
         $dashboard = $this->get(route('adviser.dashboard', ['period'=>'today']))->assertOk();
-        $kpi = collect($dashboard->viewData('overview')['cards'])->firstWhere('label','Average competency score');
+        $kpi = collect($dashboard->viewData('overview')['cards'])->firstWhere('label','Average competency score (1–5)');
         $this->assertSame($row['overall'], $kpi['raw']);
         $this->assertSame($row['count'], $kpi['samples']);
 
@@ -86,8 +86,8 @@ class AdviserCompetencyComparisonTest extends TestCase
         $this->assertNull(collect($data['rows']->items())->firstWhere('helper.id', $empty->id)['score']);
         $this->get(route('adviser.dashboard', ['period' => 'today']))->assertOk()
             ->assertSee('Training review suggested')->assertSee('Based on 1 evaluation')
-            ->assertSee('4.60/5')->assertSee('Not evaluated')->assertSee('View evaluation')
-            ->assertSee('width="478.4"', false)->assertDontSee('PrivateSeeker');
+            ->assertSee('4.60')->assertDontSee('4.60/5')->assertSee('Not evaluated')->assertSee('View evaluation')
+            ->assertSee('data-chart-type="bar"', false)->assertSee('4.6', false)->assertDontSee('PrivateSeeker');
     }
 
     public function test_legacy_incomplete_future_and_out_of_period_records_are_separate_from_comparable_scores(): void

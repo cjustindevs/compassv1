@@ -78,7 +78,7 @@ class OctoberQaRevisionTest extends TestCase
         $this->assertSame('offline', $helper->fresh()->status);
         $this->assertSame('unavailable', $helper->fresh()->availability);
         $this->actingAs($hu)->get(route('helper.readiness'))->assertRedirect(route('helper.dashboard'))->assertSessionHas('warning');
-        $this->get(route('helper.dashboard'))->assertOk()->assertSee('readiness is not open yet');
+        $this->get(route('helper.dashboard'))->assertOk()->assertSee('Readiness isn’t open');
         $this->actingAs($mod)->post(route('moderator.schedules.store'), ['helper_id' => $helper->id, 'event_date' => '2026-10-14'])->assertSessionHasNoErrors();
         $this->assertTrue($shift->fresh()->is_active);
         $this->assertDatabaseCount('helper_schedules', 1);

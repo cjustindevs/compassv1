@@ -48,7 +48,7 @@ class ModeratorReferenceLayoutTest extends TestCase
         }
         $scheduled = $this->supportCase();
         $scheduled->update(['scheduled_start' => now()->addDay()]);
-        $this->get(route('moderator.reports'))->assertOk()->assertSee('Case Overview')->assertSee('Activity Log')->assertSee('mo-bars', false)->assertSee('mo-donut', false)
+        $this->get(route('moderator.reports'))->assertOk()->assertSee('Case Overview')->assertSee('Activity Log')->assertSee('data-analytics-chart', false)->assertSee('View exact values')
             ->assertViewHas('roleReport', fn ($r) => $r['summary']['Cases in period'] === 7 && $r['summary']['Pending requests'] === 1 && $r['summary']['Completed cases'] === 2 && array_sum($r['charts']['status']['values']) === 7 && $r['charts']['status']['values']['Scheduled'] === 1);
     }
 
@@ -136,7 +136,7 @@ class ModeratorReferenceLayoutTest extends TestCase
         EmergencyResource::create(['agency_name' => 'Published hotline', 'hotline' => '12345', 'description' => 'Public support', 'status' => 'active'])->forceFill(['visibility' => 'public'])->save();
         EmergencyResource::create(['agency_name' => 'Private hotline', 'hotline' => '54321', 'status' => 'active'])->forceFill(['visibility' => 'private'])->save();
         $this->get(route('moderator.emergency'))->assertOk()->assertSee('No active emergency cases')->assertSee('Published hotline')->assertDontSee('Private hotline')->assertViewHas('stats', fn ($r) => $r['average_response'] === 'No data');
-        $this->get(route('moderator.reports'))->assertOk()->assertSee('No records match the selected filters')->assertSee('No activity matches these filters');
+        $this->get(route('moderator.reports'))->assertOk()->assertSee('No data for this period')->assertSee('No activity matches these filters');
         $this->alert('acknowledged')->forceFill(['acknowledged_at' => now()->addHour()])->save();
         $this->alert('acknowledged')->forceFill(['acknowledged_at' => now()->subHour()])->save();
         $this->get(route('moderator.emergency'))->assertOk()->assertViewHas('stats', fn ($r) => $r['average_response'] === 'No data');

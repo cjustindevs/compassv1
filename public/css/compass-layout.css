@@ -13,7 +13,8 @@
     --z-toast: 1200;
     --z-system: 1300;
     --z-skip: 1400;
-    --compass-toast-top: calc(16px + env(safe-area-inset-top, 0px));
+    /* Below the page header row (bell, menu button) so toasts never cover controls. */
+    --compass-toast-top: calc(84px + env(safe-area-inset-top, 0px));
 }
 
 /* ── Layer assignments (override legacy ad-hoc values) ─────────────── */
@@ -116,9 +117,15 @@
 /* Tablet widths (769–1150px) keep the 264px rail, so two-column page grids would leave a
    ~400px main column. Stack them until there is room for both columns. */
 @media (min-width: 769px) and (max-width: 1150px) {
-    .compass-ui :is(.mo-grid, .dashboard-bottom-grid) { grid-template-columns: minmax(0, 1fr); }
+    .compass-ui :is(.mo-grid, .dashboard-bottom-grid, .av-page > .av-grid) { grid-template-columns: minmax(0, 1fr); }
     .compass-ui .concern-management .cm-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* Tables: wrap long words at word boundaries, not between every letter. */
 .compass-ui :is(td, th) { overflow-wrap: break-word; word-break: normal; }
+
+/* Wide comparison tables scroll inside their card instead of widening the page. */
+.compact-table-wrap { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* Absolutely positioned helpers inside a scroller (focus-panel triggers, sr-only text) must be
+   clipped by it; without a containing block they escape and widen the page. */
+:is(.compact-table-wrap, .ui-table-scroll, .table-container, .av-table-wrap, .analytics-table-scroll) { position: relative; }

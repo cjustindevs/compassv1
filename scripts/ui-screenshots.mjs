@@ -64,8 +64,8 @@ const audit = () => {
     }).filter((el, _, all) => !all.some((o) => o !== el && o.contains(el)));
     const problems = [];
     // An open modal is intentional; report it once instead of every control beneath it.
-    const modal = document.querySelector('dialog[open], [aria-modal="true"]:not([hidden])');
-    if (modal && visible(modal)) return [`modal-open: ${label(modal)}`];
+    const modal = [...document.querySelectorAll('dialog[open], [aria-modal="true"]:not([hidden])')].find(visible);
+    if (modal) return [`modal-open: ${label(modal)}`];
     const sidebar = (el) => el.matches('aside, nav, .sidebar, [class*="sidebar"]') || el.closest('aside, .sidebar');
     for (const [i, a] of layers.entries()) {
         for (const b of layers.slice(i + 1)) {
@@ -90,6 +90,7 @@ const audit = () => {
     if (document.documentElement.scrollWidth > innerWidth + 1) {
         const wide = [...document.querySelectorAll('body *')].filter((el) => visible(el) && el.getBoundingClientRect().right > innerWidth + 1 && !el.closest('[style*="overflow"], .table-container, .overflow-x-auto, [class*="table-wrap"], [class*="scroll"]'))
             .slice(0, 3).map(label);
+        if (!wide.length) wide.push(...[...document.querySelectorAll('body *')].filter((el) => visible(el) && el.getBoundingClientRect().right > innerWidth + 1).sort((a, b) => b.getBoundingClientRect().right - a.getBoundingClientRect().right).slice(0, 3).map((el) => label(el) + ' right=' + Math.round(el.getBoundingClientRect().right)));
         problems.push(`h-overflow: page ${document.documentElement.scrollWidth}px > ${innerWidth}px ${wide.length ? '(' + wide.join(', ') + ')' : ''}`);
     }
     return [...new Set(problems)].slice(0, 25);
@@ -124,6 +125,8 @@ for (const role of roles) {
                 status = -1;
             }
             await page.waitForTimeout(900);
+            // Charts lazy-load Chart.js; wait until every card has drawn or reported failure.
+            await page.waitForFunction(() => ![...document.querySelectorAll('[data-chart-state]')].some((s) => !s.hidden && s.textContent.startsWith('Loading')), null, { timeout: 6000 }).catch(() => {});
             const finalPath = new URL(page.url()).pathname.replace(/^\//, '') || 'home';
             const file = path.join(outDir, role, `${route.replace(/\//g, '_')}-${width}.png`);
             await mkdir(path.dirname(file), { recursive: true });

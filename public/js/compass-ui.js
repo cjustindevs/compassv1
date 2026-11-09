@@ -12,7 +12,17 @@
             el.setAttribute('aria-live', 'polite');
             document.body.append(el);
         }
+        if (el) place(el);
         return el;
+    };
+    // Sit just below the visible page header (bell, menu button), whose height varies by
+    // layout and wraps on phones; fall back to the CSS default.
+    const place = (el) => {
+        const headers = [...document.querySelectorAll('.mobile-appbar, .top-bar, .page-header, .main-content > header, .main-content > :first-child, main > header')]
+            .map((h) => h.getBoundingClientRect())
+            .filter((r) => r.height > 0 && r.top < 120 && r.bottom > 0 && r.bottom < innerHeight / 3);
+        const bottom = Math.max(0, ...headers.map((r) => r.bottom));
+        el.style.top = bottom ? `${Math.round(bottom + 8)}px` : '';
     };
     const textOf = (el) => (el.textContent || '').replace(/\s+/g, ' ').trim();
     const duplicate = (text) => [...(stack()?.children || [])].some((child) => child.classList.contains('compass-toast') && child.dataset.text === text);

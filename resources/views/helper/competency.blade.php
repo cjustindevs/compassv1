@@ -42,36 +42,11 @@
 @endforeach @else<div class="empty-state">Skill scores have not been recorded yet.</div>
 @endif</section>
 </div>
-<section class="card">
-<header class="card-header">
-<h3>Score Trend</h3>
-<span class="hf-muted">Latest six evaluations in the selected range</span>
-</header>
-@if($trend->isNotEmpty())
 @php
-$points=[];
-foreach($trend as $i=>$point) $points[]=[60+$i*(720/max($trend->count()-1,1)),220-min(5,max(0,$point['score']))/5*180];
-$curve=App\Support\SvgTrendPath::make($points);
+    $trendChart = ['type' => 'area', 'scale' => [0, 5], 'unit' => '', 'labels' => $trend->pluck('label')->values()->all(),
+        'datasets' => [['label' => 'Competency score (1–5)', 'data' => $trend->pluck('score')->map(fn ($v) => $v === null ? null : (float) $v)->values()->all()]]];
 @endphp
-<div class="table-container">
-<svg class="hf-chart" style="min-width:540px" viewBox="0 0 850 270" role="img" aria-label="Recorded competency scores out of five, by evaluation date">
-@foreach(range(0,5) as $tick)@php($y=220-$tick*36)
-<line x1="60" x2="780" y1="{{ $y }}" y2="{{ $y }}" stroke="#edf1ee"/>
-<text x="40" y="{{ $y+4 }}">{{ $tick }}</text>
-@endforeach
-<path d="{{ $curve }} L {{ $points[count($points)-1][0] }} 220 L {{ $points[0][0] }} 220 Z" fill="#009b50" fill-opacity=".09"/>
-<path d="{{ $curve }}" fill="none" stroke="#009b50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-@foreach($points as $i=>$point)
-<circle cx="{{ $point[0] }}" cy="{{ $point[1] }}" r="5" fill="#009b50">
-<title>{{ $trend[$i]['label'] }}: {{ $trend[$i]['score'] }}</title>
-</circle>
-<text x="{{ $point[0] }}" y="{{ $point[1]-14 }}" text-anchor="middle">{{ $trend[$i]['score'] }}</text>
-<text x="{{ $point[0] }}" y="248" text-anchor="middle">{{ $trend[$i]['label'] }}</text>
-@endforeach
-</svg>
-</div>
-@else<div class="empty-state">No evaluations were recorded in this date range.</div>
-@endif</section>
+<x-analytics-chart class="card" title="Score Trend" description="Latest six evaluations in the selected range, on a 1–5 scale." :chart="$trendChart" />
 <section class="card" id="evaluation-history">
 <header class="card-header">
 <h3>Recent Evaluations</h3>

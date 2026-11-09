@@ -1,5 +1,5 @@
 <x-admin.layout title="System Overview" :admin="$admin" :search-query="$searchQuery" :search-action="route('admin.users')" search-placeholder="Search user accounts...">
-    @vite('resources/js/dashboard-analytics.js')
+    @vite('resources/js/compass-charts.js')
     <header class="page-heading admin-section-heading">
         <div><h1>System Overview</h1><p>Account administration and recent platform activity.</p></div>
         <a class="admin-button admin-button-secondary" href="{{ route('admin.users') }}">Manage users</a>

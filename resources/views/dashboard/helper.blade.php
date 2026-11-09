@@ -48,7 +48,7 @@
 </details>
 @php
     $growthRows = $performance['evaluations']->filter(fn ($e) => $e->rubric_version === \App\Services\CompetencyRubric::VERSION);
-    $growthChart = ['title'=>'Competency growth trend','unit'=>'Rating / 5','values'=>$growthRows->groupBy(fn ($e) => $e->evaluation_date->timezone('Asia/Manila')->format('M Y'))->map(fn ($group) => round($group->avg('normalized_score'),2))->all(),'definition'=>'Average finalized evaluations per month on the current rubric, rated 1-5. Missing months have no evaluation; no performance is inferred. At least two evaluations are needed for growth.'];
+    $growthChart = ['title'=>'Competency growth trend','unit'=>'Scale 1–5','values'=>$growthRows->groupBy(fn ($e) => $e->evaluation_date->timezone('Asia/Manila')->format('M Y'))->map(fn ($group) => round($group->avg('normalized_score'),2))->all(),'definition'=>'Average finalized evaluations per month on the current rubric, rated 1-5. Missing months have no evaluation; no performance is inferred. At least two evaluations are needed for growth.'];
 @endphp
 @if($growthRows->count() >= 2)<x-dashboard-chart :chart="$growthChart" :smooth="true" />@else<section class="card" style="margin:14px 0"><h3>Competency growth</h3><p class="hf-muted">Insufficient history. At least two evaluations on the current rubric are required.</p></section>@endif
 <style>.helper-performance-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}.helper-performance-details dt{font-size:12px;color:#64748b}.helper-performance-details dd{font-size:14px;margin:4px 0}@media(max-width:560px){.helper-performance-details{grid-template-columns:1fr}}</style>
