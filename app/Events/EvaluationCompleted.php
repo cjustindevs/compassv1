@@ -44,7 +44,7 @@ class EvaluationCompleted implements ShouldBroadcastNow
             'overall_score' => $this->evaluation->overall_score,
             'competency_level' => $this->evaluation->competency_level ?? 'Reviewed',
             'period' => $this->evaluation->evaluation_period,
-            'message' => 'Your competency evaluation is ready. Score: ' . $this->evaluation->overall_score . '/5',
+            'message' => 'Your competency evaluation is ready. Score: ' . $this->evaluation->overall_score . ' (scale 1–5)',
             'link' => '/helper/competency',
         ];
     }

@@ -15,6 +15,15 @@ class EvaluationInstrument {
     public static function rules(): array {
         $rules=[]; foreach(self::OPTIONS as $key=>$values) $rules[$key]=['required',\Illuminate\Validation\Rule::in($values)]; return $rules;
     }
+    /**
+     * One answer on the 1–5 display scale, evenly spaced like scores() (first option = 5,
+     * last option = 1). Null when the answer is not one of the instrument's options.
+     */
+    public static function scale(string $key, ?string $answer): ?float {
+        $values = self::OPTIONS[$key] ?? null;
+        if (!$values || $answer === null || ($index = array_search($answer, $values, true)) === false) return null;
+        return round(5 - 4 * $index / (count($values) - 1), 2);
+    }
     public static function scores(array $answers): array {
         $scores=[]; foreach(self::OPTIONS as $key=>$values) $scores[$key]=(int)round(10 - 9 * array_search($answers[$key],$values,true)/(count($values)-1)); return $scores;
     }

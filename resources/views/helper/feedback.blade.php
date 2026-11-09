@@ -27,7 +27,7 @@
 <tr>
 <th>Date</th>
 <th>Session</th>
-<th>Rating</th>
+<th>Rating (1–5)</th>
 <th>Feedback</th>
 <th>Level</th>
 <th>Action</th>
@@ -38,7 +38,7 @@
 <tr>
 <td>{{ ($feedback->created_date ?? $feedback->created_at)?->copy()->timezone('Asia/Manila')->format('M d, Y') }}</td>
 <td>{{ $feedback->report?->session?->reference_number ?? 'Unrecorded' }}</td>
-<td>{{ $feedback->competency_rating!==null ? number_format($feedback->competency_rating > 5 ? $feedback->competency_rating/20 : $feedback->competency_rating,1).' / 5' : 'Not recorded' }}</td>
+<td>{{ $feedback->competency_rating!==null ? number_format($feedback->competency_rating > 5 ? $feedback->competency_rating/20 : $feedback->competency_rating,1) : 'Not recorded' }}</td>
 <td>{{ \Illuminate\Support\Str::limit($feedback->feedback_text ?: 'No written feedback',150) }}</td>
 <td>
 <span class="hf-status">{{ ucwords(str_replace('_',' ',$feedback->competency_level ?? 'Not recorded')) }}</span>
@@ -71,7 +71,7 @@
 <tr>
 <th>Date</th>
 <th>Session</th>
-<th>Rating</th>
+<th>Rating (1–5)</th>
 <th>Feedback</th>
 <th>Action</th>
 </tr>
@@ -81,7 +81,7 @@
 <tr>
 <td>{{ ($evaluation->submitted_at ?? $evaluation->created_at)?->copy()->timezone('Asia/Manila')->format('M d, Y') }}</td>
 <td>{{ $evaluation->session?->reference_number ?? 'Unrecorded' }}</td>
-<td>{{ $evaluation->overall_score!==null ? number_format($evaluation->overall_score,1).' / 10' : 'Not recorded' }}</td>
+<td>{{ $evaluation->overall_score!==null ? \App\Support\ScoreFormat::number(\App\Support\ScoreFormat::fromTen($evaluation->overall_score)) : 'Not recorded' }}</td>
 <td>{{ \Illuminate\Support\Str::limit($evaluation->comments ?: '—',150) }}</td>
 <td>
 @if(mb_strlen($evaluation->comments ?? '') > 150)

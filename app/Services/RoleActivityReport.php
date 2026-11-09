@@ -112,7 +112,7 @@ class RoleActivityReport
             $performancePeriod = new AnalyticsPeriod(\Carbon\CarbonImmutable::instance($start), \Carbon\CarbonImmutable::instance($end)->addMicrosecond());
             $performance = app(SessionPerformance::class)->summarize($performanceSessions->when($data['case_status'] ?? null, fn ($q, $v) => $q->where('session_status', $v))->get(), $helperIds, $performancePeriod);
             foreach (['response_minutes'=>['Average Helper Response Time',' min'], 'waiting_minutes'=>['Average waiting time',' min'],
-                'helpfulness_rate'=>['Positive helpfulness feedback','%'], 'competency'=>['Competency score','/5'], 'completion_rate'=>['Session completion rate','%'],
+                'helpfulness'=>['Helpfulness rating (1–5)',''], 'competency'=>['Competency score (1–5)',''], 'completion_rate'=>['Session completion rate','%'],
                 'duty_hours'=>['Scheduled duty hours',' hr'], 'documentation_rate'=>['Documentation completion rate','%']] as $key=>[$label,$unit]) {
                 $summary[$label] = SessionPerformance::display($performance['metrics'][$key], $unit);
             }

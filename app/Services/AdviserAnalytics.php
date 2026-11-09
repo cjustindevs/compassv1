@@ -9,6 +9,7 @@ class AdviserAnalytics {
         'referral_rate'=>'Completed sessions with a referral recommendation / completed sessions × 100.',
         'response_minutes'=>'Mean minutes from actual session start to first assigned Helper message or connected voice call. Pre-start, missing, negative and future intervals excluded; session start date selects the cohort.',
         'helpfulness_rate'=>'Helpful or Very Helpful answers / valid original helpfulness answers submitted in the period x100. Legacy composite scores excluded.',
+        'helpfulness'=>'Average of original helpfulness answers on a 1–5 scale (Very Helpful 5, Helpful 3.67, Neutral 2.33, Not Helpful 1). Legacy composite scores excluded.',
         'feedback_coverage'=>'Completed sessions in period with feedback submitted by the reporting cutoff / valid completed sessions x100.',
         'waiting_minutes'=>'Mean minutes from queue_requests.queued_at to counseling_sessions.start_time. Ongoing waits and missing timestamps are excluded.',
         'satisfaction'=>'Valid post-session scores submitted in the selected period, converted from the stored 1–10 experience scale to 1–5 using 1 + (score − 1) × 4/9.',

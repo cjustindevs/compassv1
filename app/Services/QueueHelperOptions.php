@@ -36,7 +36,7 @@ class QueueHelperOptions
                 continue;
             }
             $scoreKey = json_encode([$helper->id, $session->risk_level, $session->concern?->concern_name, $session->preferred_language]);
-            $eligible->push(['id'=>$helper->id, 'label'=>$helper->full_name.' | Ready | '.$helper->getRemainingCapacity().'/'.Helper::MAX_SESSIONS_PER_SHIFT.' remaining | '.$helper->competency_level.'/5',
+            $eligible->push(['id'=>$helper->id, 'label'=>$helper->full_name.' | Ready | '.$helper->getRemainingCapacity().'/'.Helper::MAX_SESSIONS_PER_SHIFT.' remaining | Level '.$helper->competency_level,
                 'score'=>$this->scores[$scoreKey] ??= $helper->calculateMatchingScore($session->matchingRiskLevel(), $session->concern?->concern_name, $session->preferred_language)]);
         }
         arsort($reasons);

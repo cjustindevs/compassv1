@@ -18,8 +18,8 @@
     $reportLink = route('helper.reports', $analyticsDates + ['period'=>request('period','monthly')]);
     $performanceCards = [
         ['label'=>'Completed sessions','value'=>$m['completed'],'detail'=>'Actual session end in selected period','link'=>$reportLink],
-        ['label'=>'Competency score','value'=>$metricValue('competency','/5'),'detail'=>'Finalized current-rubric evaluations','samples'=>$n['competency'],'link'=>route('helper.competency')],
-        ['label'=>'Positive helpfulness feedback','value'=>$metricValue('helpfulness_rate','%'),'detail'=>'Helpful / Very Helpful answers','samples'=>$n['helpfulness_rate'],'link'=>$reportLink],
+        ['label'=>'Competency score (1–5)','value'=>$metricValue('competency'),'detail'=>'Finalized current-rubric evaluations','samples'=>$n['competency'],'link'=>route('helper.competency')],
+        ['label'=>'Helpfulness rating (1–5)','value'=>$metricValue('helpfulness'),'detail'=>'Average of Seeker feedback answers','samples'=>$n['helpfulness'],'link'=>$reportLink],
         ['label'=>'Documentation completion','value'=>$metricValue('documentation_rate','%'),'detail'=>'Summary and reflection submitted','samples'=>$n['documentation_rate'],'link'=>route('helper.cases')],
     ];
 @endphp
@@ -41,7 +41,7 @@
 @foreach(['response_minutes'=>['Average Helper Response Time',' min'],'waiting_minutes'=>['Average waiting time',' min'],'duration_minutes'=>['Average session duration',' min'],'completion_rate'=>['Session completion rate','%'],'documentation_rate'=>['Documentation completion rate','%'],'duty_hours'=>['Scheduled duty hours',' hr']] as $key=>[$label,$unit])
 <div><dt>{{ $label }}</dt><dd>{{ $metricValue($key,$unit) }}@if(isset($n[$key])) | {{ $n[$key] }} records measured @endif</dd></div>
 @endforeach
-<div><dt>Competency growth</dt><dd>{{ $performance['growth'] === null ? 'Insufficient history' : ($performance['growth'] >= 0 ? '+' : '').$performance['growth'].' points / 5' }}</dd></div>
+<div><dt>Competency growth</dt><dd>{{ $performance['growth'] === null ? 'Insufficient history' : ($performance['growth'] >= 0 ? '+' : '').$performance['growth'].' points' }}</dd></div>
 </dl>
 <p class="hf-muted">Response time measures session start to your first message or connected voice call. Waiting time measures queue entry to session start. Helpfulness uses original categorical feedback; legacy composite ratings stay in history. Scheduled hours are planned coverage, not verified attendance. Documentation completion requires both summary and reflection; it is not an on-time rate. Historical metrics include archived sessions.</p>
 <a href="{{ $reportLink }}" class="link">View service report</a>

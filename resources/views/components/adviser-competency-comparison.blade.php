@@ -14,20 +14,20 @@
 @foreach($chartRows as $row)@php($y=47+$loop->index*38)
 <text x="0" y="{{ $y }}" fill="#344c3f" font-size="13">{{ \Illuminate\Support\Str::limit($row['helper']->full_name,26) }}</text>
 @if($row['score']!==null)<rect x="210" y="{{ $y-13 }}" width="{{ $row['score']*104 }}" height="18" rx="4" fill="{{ $row['needs_attention'] ? '#c58532' : '#168355' }}"><title>{{ number_format($row['score'],2) }}/5</title></rect>@endif
-<text x="800" y="{{ $y }}" text-anchor="end" fill="#173b2c" font-size="13" font-weight="600">{{ $row['score']===null ? '—' : number_format($row['score'],2).'/5' }}</text>
+<text x="800" y="{{ $y }}" text-anchor="end" fill="#173b2c" font-size="13" font-weight="600">{{ $row['score']===null ? '—' : number_format($row['score'],2) }}</text>
 @endforeach</svg></div>
 @endif
-<div class="compact-table-wrap"><table class="compact-data-table"><thead><tr><th>Helper</th><th>Score /5</th><th>Evaluations</th><th>Skill needing attention</th><th><span class="sr-only">Action</span></th></tr></thead><tbody>
+<div class="compact-table-wrap"><table class="compact-data-table"><thead><tr><th>Helper</th><th>Score (1–5)</th><th>Evaluations</th><th>Skill needing attention</th><th><span class="sr-only">Action</span></th></tr></thead><tbody>
 @forelse($comparison['rows'] as $row)
 @php($helper=$row['helper'])
 <tr><td><a class="ac-helper-name" href="{{ route('adviser.helper.show',$helper->id) }}">{{ $helper->full_name ?: 'Helper' }}</a></td><td>{{ $row['score']===null ? '—' : number_format($row['score'],2) }}</td><td>{{ $row['count'] }}</td><td>{{ $row['needs_attention'] && $row['weakest'] ? $comparison['options'][$row['weakest']] : '—' }}</td><td>
 @if($row['count'])<section data-focus-panel data-focus-label="View evaluation" data-focus-title="{{ $helper->full_name }}">
 <p><strong>Based on {{ $row['count'] }} {{ \Illuminate\Support\Str::plural('evaluation',$row['count']) }}</strong> · {{ $row['latest']->copy()->timezone('Asia/Manila')->format('M d, Y') }}</p>
 @if($row['count']===1)<p>One evaluation: limited evidence.</p>@endif
-@if($row['needs_attention'])<p>Training review suggested: at least one skill is below 2.5/5.</p>@endif
-<dl class="ac-skills">@foreach(\App\Services\CompetencyRubric::CRITERIA as $key=>[$label,$weight])<div><dt>{{ $label }}</dt><dd>{{ number_format($row['scores'][$key],2) }}/5</dd></div>@endforeach</dl>
-<p>Overall average: {{ number_format($row['overall'],2) }}/5</p>
-<ul class="ac-evaluations">@foreach($row['evidence']->take(5) as $evaluation)<li><span>{{ $evaluation->evaluation_date->copy()->timezone('Asia/Manila')->format('M d, Y') }} · {{ number_format($evaluation->overall_score,2) }}/5</span><a class="ac-link" href="{{ route('adviser.evaluate',$evaluation->report_id) }}">View evaluation #{{ $evaluation->id }}</a></li>@endforeach</ul>
+@if($row['needs_attention'])<p>Training review suggested: at least one skill is below 2.5.</p>@endif
+<dl class="ac-skills">@foreach(\App\Services\CompetencyRubric::CRITERIA as $key=>[$label,$weight])<div><dt>{{ $label }}</dt><dd>{{ number_format($row['scores'][$key],2) }}</dd></div>@endforeach</dl>
+<p>Overall average: {{ number_format($row['overall'],2) }} (scale 1–5)</p>
+<ul class="ac-evaluations">@foreach($row['evidence']->take(5) as $evaluation)<li><span>{{ $evaluation->evaluation_date->copy()->timezone('Asia/Manila')->format('M d, Y') }} · {{ number_format($evaluation->overall_score,2) }}</span><a class="ac-link" href="{{ route('adviser.evaluate',$evaluation->report_id) }}">View evaluation #{{ $evaluation->id }}</a></li>@endforeach</ul>
 <div class="ac-actions">@if($row['has_training'])<a class="ac-button ac-button-outline" href="{{ route('adviser.training',['helper_id'=>$helper->id]) }}">Review existing training for {{ $comparison['options'][$row['criterion']] }}</a>@elseif($row['criterion'] && $row['scores'][$row['criterion']]<2.5)<a class="ac-button ac-button-outline" href="{{ route('adviser.training',['helper_id'=>$helper->id,'evaluation_id'=>$row['training_evaluation']->id,'criterion'=>$row['criterion']]) }}">Recommend training: {{ $comparison['options'][$row['criterion']] }}</a>@endif<a class="ac-link" href="{{ route('adviser.helper.show',$helper->id) }}">View Helper history</a></div>
 </section>@else<span class="ac-muted">Not evaluated</span>@endif
 </td></tr>

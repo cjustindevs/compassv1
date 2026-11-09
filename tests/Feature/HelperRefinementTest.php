@@ -191,10 +191,10 @@ class HelperRefinementTest extends TestCase
         foreach (range(1, 11) as $i) {
             HelpSeekerEvaluation::create(['session_id' => $this->supportCase($helper)->id, 'overall_score' => 10, 'comments' => 'Felt supported '.$i, 'submitted_at' => now()]);
         }
-        $this->actingAs($helper->user)->get(route('helper.competency'))->assertOk()->assertSee('4.1')->assertSee('4.2 / 5')->assertSee('Not recorded')->assertSee('Score Trend')
+        $this->actingAs($helper->user)->get(route('helper.competency'))->assertOk()->assertSee('4.1')->assertSee('4.2')->assertDontSee('4.2 / 5')->assertSee('Not recorded')->assertSee('Score Trend')
             ->assertViewHas('history', fn ($p) => $p->total() === 1 && $p->first()->id === $evaluation->id);
         $this->get(route('helper.competency.view', $foreignEvaluation->id))->assertNotFound();
-        $this->get(route('helper.feedback'))->assertOk()->assertSee('Good listening')->assertSee('10.0 / 10')->assertDontSee('Foreign feedback')
+        $this->get(route('helper.feedback'))->assertOk()->assertSee('Good listening')->assertSee('Rating (1–5)')->assertSee('5.0')->assertDontSee('10.0 / 10')->assertDontSee('Foreign feedback')
             ->assertViewHas('seekerFeedback', fn ($p) => $p->total() === 11 && $p->count() === 10);
         $this->get(route('helper.feedback', ['seeker_page' => 2]))->assertViewHas('seekerFeedback', fn ($p) => $p->count() === 1)->assertViewHas('adviserFeedback', fn ($p) => $p->count() === 1);
         $this->get(route('helper.feedback', ['adviser_search' => 'missing', 'seeker_search' => 'Felt supported 11']))->assertViewHas('adviserFeedback', fn ($p) => $p->total() === 0)->assertViewHas('seekerFeedback', fn ($p) => $p->total() === 1);

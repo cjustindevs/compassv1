@@ -131,7 +131,7 @@ class AdviserCalendarController extends Controller
                     'title' => 'Evaluation: ' . ($evaluation->helper?->getFullNameAttribute() ?? 'Helper'),
                     'color' => '#3B82F6',
                     'time' => $evaluation->evaluation_date->format('H:i'),
-                    'detail' => 'Score ' . round((float) ($evaluation->overall_score ?? 0), 1) . ' / 5',
+                    'detail' => 'Score ' . round((float) ($evaluation->overall_score ?? 0), 1) . ' (scale 1–5)',
                 ];
             }
         }

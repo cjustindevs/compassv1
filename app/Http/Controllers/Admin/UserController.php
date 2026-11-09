@@ -255,7 +255,7 @@ class UserController extends Controller
     {
         $request->validate(['confirm_reset' => 'required|accepted']);
         if ($user->role === 'seeker') {
-            return back()->with('error', 'Seekers request password resets using their private verified recovery email. Admins cannot access that address.');
+            return back()->with('error', 'Seekers reset passwords through their private recovery email, which Admins cannot see.');
         }
         try {
             $result = Password::sendResetLink(['email' => $user->email]);

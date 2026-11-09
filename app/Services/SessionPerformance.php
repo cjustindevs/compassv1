@@ -74,13 +74,15 @@ class SessionPerformance
             'response_minutes' => self::average($response), 'waiting_minutes' => self::average($wait), 'duration_minutes' => self::average($duration),
             'satisfaction' => self::average($ratings->all()),
             'helpfulness_rate' => self::ratio($helpful->filter(fn ($r) => in_array($r->answers['helpfulness_score'], ['Helpful','Very Helpful'], true))->count(), $helpful->count()),
+            // Panel feedback: show helpfulness as a 1–5 scale average reflecting the actual answers.
+            'helpfulness' => self::average($helpful->map(fn ($r) => EvaluationInstrument::scale('helpfulness_score', $r->answers['helpfulness_score']))->filter(fn ($v) => $v !== null)->all()),
             'feedback_coverage' => self::ratio($completed->filter(fn ($s) => $feedbackByCutoff->contains('session_id', $s->id))->count(), $completed->count()), 'competency' => self::average($evaluations->pluck('normalized_score')->all()),
             'workload' => $served ? round($completed->count() / $served, 2) : null,
             'duty_hours' => $this->scheduledHours($helperIds, $period), 'documentation_pending' => $required->count() - $documented->count(),
             'documentation_rate' => self::ratio($documented->count(), $required->count()), 'emergency_rate' => self::ratio($emergencies, $activityRows->count()),
         ];
         $samples = ['response_minutes' => count($response), 'waiting_minutes' => count($wait), 'duration_minutes' => count($duration),
-            'satisfaction' => $ratings->count(), 'helpfulness_rate' => $helpful->count(), 'feedback_coverage' => $completed->count(), 'competency' => $evaluations->count(), 'completion_rate' => $started->count(),
+            'satisfaction' => $ratings->count(), 'helpfulness_rate' => $helpful->count(), 'helpfulness' => $helpful->count(), 'feedback_coverage' => $completed->count(), 'competency' => $evaluations->count(), 'completion_rate' => $started->count(),
             'referral_rate' => $completed->count(), 'referral_approval_rate' => $reviewed->count(), 'workload' => $served,
             'documentation_rate' => $required->count(), 'emergency_rate' => $activityRows->count()];
         $growth = $evaluations->where('rubric_version', CompetencyRubric::VERSION)->groupBy('helper_id')->filter(fn ($group) => $group->count() >= 2 && $group->pluck('evaluation_date')->unique()->count() >= 2)

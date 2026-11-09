@@ -4,7 +4,7 @@
         ? ['Total users', 'Active accounts', 'Available Helpers', 'Matching success rate']
         : (auth()->user()?->role === 'moderator'
             ? ['Waiting requests', 'Available Helpers', 'Active sessions', 'Active emergencies', 'Average waiting time', 'Successful Assignment Rate']
-            : ['Completed sessions', 'Average waiting time', 'Average Helper Response Time', 'Positive helpfulness feedback', 'Average competency score', 'Documentation completion rate']);
+            : ['Completed sessions', 'Average waiting time', 'Average Helper Response Time', 'Helpfulness rating (1–5)', 'Average competency score (1–5)', 'Documentation completion rate']);
     $primary = collect($overview['cards'])->filter(fn($c) => in_array($c['label'], $primaryLabels));
     $secondary = collect($overview['cards'])->reject(fn($c) => in_array($c['label'], $primaryLabels));
     $formatValue = function ($value) {

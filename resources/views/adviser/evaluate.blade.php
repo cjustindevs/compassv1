@@ -541,7 +541,7 @@
             const total = (al * 0.25) + (emp * 0.25) + (rp * 0.20) + (ep * 0.20) + (ra * 0.10);
 
             if (al > 0 && emp > 0 && rp > 0 && ep > 0 && ra > 0) {
-                document.getElementById('overallScore').textContent = total.toFixed(2) + ' / 5.00';
+                document.getElementById('overallScore').textContent = total.toFixed(2);
                 document.getElementById('competencyLevelDisplay').innerHTML = getLevelDisplay(total);
             } else {
                 document.getElementById('overallScore').textContent = '—';

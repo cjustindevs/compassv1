@@ -50,8 +50,8 @@ class DashboardOverview
             foreach ([
                 'Completed sessions' => ['completed', '', 'Valid started sessions completed/evaluated with end time in the selected period.'],
                 'Average Helper Response Time' => ['response_minutes', ' min', 'Session start to first assigned Helper message or connected voice call; by session start date.'],
-                'Positive helpfulness feedback' => ['helpfulness_rate', '%', 'Helpful or Very Helpful / valid original helpfulness answers submitted in the period.'],
-                'Average competency score' => ['competency', '/5', 'Finalized, evidenced current-rubric evaluations by evaluation date; same records as the comparison.'],
+                'Helpfulness rating (1–5)' => ['helpfulness', '', 'Average of Seeker helpfulness answers in the period: Very Helpful 5, Helpful 3.67, Neutral 2.33, Not Helpful 1.'],
+                'Average competency score (1–5)' => ['competency', '', 'Finalized, evidenced current-rubric evaluations by evaluation date; same records as the comparison.'],
                 'Average waiting time' => ['waiting_minutes', ' min', 'Queue entry to actual session start; ongoing waits excluded.'],
                 'Session completion rate' => ['completion_rate', '%', 'Completed started sessions / all started sessions in the same activity cohort.'],
                 'Referral rate' => ['referral_rate', '%', 'Completed sessions with a recommendation, counted once per session.'],

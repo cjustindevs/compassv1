@@ -145,7 +145,6 @@
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <span class="text-xs text-gray-400 hidden sm:inline">{{ now()->format('M d, Y') }}</span>
             </div>
         </div>
 
@@ -229,7 +228,7 @@
                                     <td><span class="status-badge {{ $row['status'] }}">{{ ucfirst($row['status']) }}</span></td>
                                     <td><span class="level-tag {{ strtolower($row['level']) }}">{{ $row['level'] }}</span></td>
                                     <td class="font-semibold text-gray-700">
-                                        {{ $row['competency_score'] > 0 ? $row['competency_score'] . ' / 5' : '—' }}
+                                        {{ $row['competency_score'] > 0 ? $row['competency_score'] : '—' }}
                                     </td>
                                     <td>
                                         <x-helper-capacity :helper="$helper" />

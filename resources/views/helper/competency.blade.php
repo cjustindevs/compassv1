@@ -12,7 +12,7 @@
 <section class="card hf-overall">
 <h3>Overall Competency Score</h3>
 @if($latest)
-<div class="hf-score-value">{{ number_format($latest->normalized_score,1) }}<small> / 5</small>
+<div class="hf-score-value">{{ number_format($latest->normalized_score,1) }}<small> on a 1–5 scale</small>
 </div>
 <span class="hf-status">{{ $latest->level_label }}</span>
 <p class="hf-muted">Current score from your latest recorded evaluation<br>{{ $latest->evaluation_date?->copy()->timezone('Asia/Manila')->format('M d, Y') }}<br>Evaluator: {{ $latest->adviser?->full_name ?? 'Adviser' }}</p>
@@ -35,7 +35,7 @@
     @if($latest->getAttribute($key.'_score')!==null)
     <progress value="{{ max(0,min(5,$displayScore)) }}" max="5" aria-label="{{ ucwords(str_replace('_',' ',$key)) }}: {{ $displayScore }} out of 5">
 </progress>
-    <strong>{{ number_format($displayScore,1) }} / 5</strong>
+    <strong>{{ number_format($displayScore,1) }}</strong>
     @else<span class="hf-muted">Not recorded</span>
 @endif
 </div>
@@ -63,7 +63,7 @@ $curve=App\Support\SvgTrendPath::make($points);
 <path d="{{ $curve }}" fill="none" stroke="#009b50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 @foreach($points as $i=>$point)
 <circle cx="{{ $point[0] }}" cy="{{ $point[1] }}" r="5" fill="#009b50">
-<title>{{ $trend[$i]['label'] }}: {{ $trend[$i]['score'] }} / 5</title>
+<title>{{ $trend[$i]['label'] }}: {{ $trend[$i]['score'] }}</title>
 </circle>
 <text x="{{ $point[0] }}" y="{{ $point[1]-14 }}" text-anchor="middle">{{ $trend[$i]['score'] }}</text>
 <text x="{{ $point[0] }}" y="248" text-anchor="middle">{{ $trend[$i]['label'] }}</text>
@@ -93,7 +93,7 @@ $curve=App\Support\SvgTrendPath::make($points);
 <tr>
 <td>{{ $record->evaluation_date?->copy()->timezone('Asia/Manila')->format('M d, Y') }}</td>
 <td>{{ $record->adviser?->full_name ?? 'Adviser' }}</td>
-<td>{{ number_format($record->normalized_score,1) }} / 5</td>
+<td>{{ number_format($record->normalized_score,1) }}</td>
 <td>
 <span class="hf-status">{{ $record->level_label }}</span>
 </td>

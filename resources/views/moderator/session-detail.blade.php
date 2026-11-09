@@ -14,7 +14,7 @@
         body { background: var(--bg-primary, #F8FBF9); }
 
         .main-content {
-            margin-left: 260px;
+            margin-left: var(--sidebar-w, 264px);
             max-width: 1000px;
             padding: 24px 32px 80px;
             min-height: 100vh;
@@ -249,8 +249,10 @@
 
                 @if($session->evaluation)
                     <div class="card">
-                        <h3 class="font-bold text-gray-800 mb-3">Seeker Rating</h3>
-                        <p class="text-3xl font-extrabold text-gray-800">{{ $session->evaluation->overall_score }}<span class="text-base text-gray-400">/5</span></p>
+                        <h3 class="font-bold text-gray-800 mb-1">Seeker rating</h3>
+                        <p class="text-xs text-gray-400 mb-2">Scale 1–5</p>
+                        <p class="text-3xl font-extrabold text-gray-800">{{ \App\Support\ScoreFormat::number(\App\Services\AdviserAnalytics::rating($session->evaluation->overall_score)) }}</p>
+                        @if(!empty($session->evaluation->answers['helpfulness_score']))<p class="text-sm text-gray-600 mt-1">Helpfulness: {{ $session->evaluation->answers['helpfulness_score'] }}</p>@endif
                         <p class="text-xs text-gray-400 mt-1">{{ $session->evaluation->comments ?: 'No comments' }}</p>
                     </div>
                 @endif

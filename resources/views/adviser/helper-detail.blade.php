@@ -240,7 +240,7 @@
                                 <p class="text-sm text-gray-500">Adviser: {{ $evaluation->adviser->first_name ?? 'Unknown' }}</p>
                             </div>
                             <div class="text-right">
-                                <p class="font-semibold text-gray-800">{{ $evaluation->overall_score === null || $evaluation->normalized_score < 1 || $evaluation->normalized_score > 5 ? 'Not evaluated' : round($evaluation->normalized_score, 2).' / 5.00' }}</p>
+                                <p class="font-semibold text-gray-800">{{ $evaluation->overall_score === null || $evaluation->normalized_score < 1 || $evaluation->normalized_score > 5 ? 'Not evaluated' : number_format($evaluation->normalized_score, 2) }}</p>
                                 <span class="competency-level {{ strtolower($evaluation->competency_level ?? 'Beginner') }}">
                                     {{ $evaluation->competency_level ?? 'Beginner' }}
                                 </span>
@@ -248,7 +248,7 @@
                         </div>
                         <details class="border border-gray-200 rounded-xl p-3"><summary>Evaluation criteria and weights</summary><table class="w-full text-sm"><thead><tr><th class="text-left">Criterion</th><th>Weight</th><th>Recorded rating</th></tr></thead><tbody>
                             @foreach(\App\Services\CompetencyRubric::CRITERIA as [$criterionLabel, $weight, $field])
-                            <tr><td>{{ $criterionLabel }}</td><td>{{ $weight }}%</td><td>{{ $evaluation->$field === null ? 'Not recorded' : ($evaluation->$field > 5 ? $evaluation->$field.' (legacy scale)' : $evaluation->$field.' / 5') }}</td></tr>
+                            <tr><td>{{ $criterionLabel }}</td><td>{{ $weight }}%</td><td>{{ $evaluation->$field === null ? 'Not recorded' : ($evaluation->$field > 5 ? $evaluation->$field.' (legacy scale)' : $evaluation->$field) }}</td></tr>
                             @endforeach
                         </tbody></table><p class="text-xs text-gray-500">Evaluated {{ ($evaluation->evaluation_date ?? $evaluation->created_at)->timezone('Asia/Manila')->format('M d, Y g:i A') }} PHT. Legacy criterion scales are shown as recorded.</p></details>
                     @endforeach

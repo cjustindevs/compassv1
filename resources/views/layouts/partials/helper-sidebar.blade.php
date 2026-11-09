@@ -73,14 +73,15 @@
                 <span class="label">Sessions</span>
             </div>
             <div class="stat">
-                <span class="value" id="compScore">{{ $competencyScore === null ? '—' : $competencyScore.'/5' }}</span>
-                <span class="label">Latest score /5</span>
+                <span class="value" id="compScore">{{ $competencyScore === null ? '—' : $competencyScore }}</span>
+                <span class="label">Latest score</span>
             </div>
             <div class="stat">
                 <span class="value" id="availStatus" role="status" aria-live="polite" style="color: {{ $availabilityStatus === 'available' ? 'var(--green-500)' : 'var(--yellow-500)' }};">{{ $availabilityLabel }}</span>
                 <span class="label">Status</span>
             </div>
         </div>
+        <button type="button" class="sidebar-install-btn" data-pwa-install hidden>Install app</button>
         <form method="POST" action="{{ route('logout') }}"
               data-confirm="Log out?"
               data-confirm-message="You will be signed out of your COMPASS account."

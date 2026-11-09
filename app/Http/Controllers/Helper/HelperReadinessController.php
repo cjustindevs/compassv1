@@ -34,7 +34,7 @@ class HelperReadinessController extends Controller
             ? 'You have an active session or an assignment awaiting action. Open Assigned Cases to respond before taking another readiness check.'
             : 'You have used '.$helper->currentAssignedSessionsCount().' / '.\App\Models\Helper::MAX_SESSIONS_PER_SHIFT.' sessions for this duty. You can complete another check during your next eligible duty.';
         if (! HelperSchedule::readinessDutyFor($helper->id)) {
-            return redirect()->route('helper.dashboard')->with('warning', 'You don’t have a scheduled duty today, or readiness is not open yet. Please contact your Moderator. Your upcoming duties are on your dashboard.');
+            return redirect()->route('helper.dashboard')->with('warning', 'Readiness isn’t open: no duty is scheduled now. See your dashboard or contact your Moderator.');
         }
 
         $latestCheck = ReadinessCheck::where('helper_id', $helper->id)

@@ -155,7 +155,7 @@ class AdviserEmergencyController extends Controller
             throw ValidationException::withMessages(['professional_id' => $exception->getMessage() ?: 'The referral is not ready for Professional assignment. Refresh its status and complete the pending steps.']);
         }
 
-        return back()->with('success', 'Emergency raised to the selected Professional. An urgent in-system notification was sent. Identity release remains a separate action.');
+        return back()->with('success', 'Emergency sent to the Professional. Identity release is a separate step.');
     }
 
     private function helperIds()
