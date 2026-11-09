@@ -18,20 +18,20 @@
     };
 @endphp
 <section class="cm-card er-professional-handoff" id="emergencyProfessionalHandoff" aria-labelledby="emergencyHandoffTitle">
-    <h2 id="emergencyHandoffTitle">Professional handoff</h2>
-
+    <div class="er-card-head"><h2 id="emergencyHandoffTitle" class="er-card-title">Professional handoff</h2>@if($alert->referral)<span class="er-chip {{ $linkedReferral->isOpen() ? 'is-open' : 'is-done' }}">Referral #{{ $alert->referral->id }} · {{ ucwords(str_replace('_',' ',$alert->referral->status)) }}</span>@endif</div>
+    @if($alert->referral && $linkedReferral->professional_id)
+        <dl class="er-facts er-facts-2">
+            <div><dt>Selected Professional</dt><dd>{{ $linkedReferral->professional?->full_name ?? 'Assigned Professional' }}</dd></div>
+            <div><dt>Professional response</dt><dd>{{ $linkedReferral->accepted_at ? 'Accepted the referral' : ($linkedReferral->professional_notified_at ? 'Notified, awaiting response' : 'Notification pending') }}</dd></div>
+        </dl>
+    @endif
     @if($handoffBlockReason)
-        <div class="cm-field"><label for="emergencyProfessionalUnavailable">Professional</label><select id="emergencyProfessionalUnavailable" disabled aria-describedby="professionalUnavailableReason"><option>{{ $linkedReferral?->professional?->full_name ?? 'Choose a Professional when the required steps are complete' }}</option></select><small id="professionalUnavailableReason" role="status">{{ $handoffBlockReason }}</small></div>
+        <p class="er-status" id="professionalUnavailableReason" role="status">{{ $handoffBlockReason }}</p>
     @endif
     @if($alert->referral)
-        <p><strong>Referral #{{ $alert->referral->id }}</strong> &middot; {{ ucwords(str_replace('_',' ',$alert->referral->status)) }}</p>
-        @if($linkedReferral->professional_id)
-            <p><strong>Selected Professional:</strong> {{ $linkedReferral->professional?->full_name ?? 'Assigned Professional' }}</p>
-            <p>{{ $linkedReferral->accepted_at ? 'Professional accepted the referral.' : ($linkedReferral->professional_notified_at ? 'Professional notified; awaiting response.' : 'Professional notification is pending.') }}</p>
-        @endif
         @if($linkedReferral->completionReviews()->exists())<p role="status"><strong>Professional completion report:</strong> {{ ucwords(str_replace('_',' ',$linkedReferral->completionReviews()->latest('id')->value('review_status'))) }}. Referral completion and emergency resolution are separate.</p>@endif
         @if($canReviewLinkedReferral)
-            <a class="cm-button cm-primary" href="{{ route('adviser.referral.show',$alert->referral->id) }}">Continue Professional referral</a>
+            @if($linkedReferral->isOpen())<a class="cm-button cm-primary" href="{{ route('adviser.referral.show',$alert->referral->id) }}">Continue Professional referral</a>@else<a class="cm-button" href="{{ route('adviser.referral.show',$alert->referral->id) }}">View referral</a>@endif
             @if(!$terminal && !$handoffBlockReason)
                     <h3>{{ $linkedReferral->professional_id ? 'Change Professional' : 'Raise to Professional' }}</h3>
                     <p class="cm-help">Select the Professional who will review this session's emergency referral. This does not add them to the live chat or automatically release personal details.</p>
@@ -65,5 +65,5 @@
     @endif
 </section>
 @foreach($alert->chatIncidents as $report)
-<section class="cm-card"><h2>During-chat report</h2><p class="cm-message">{{ $report->description }}</p>@if($report->immediate_action)<h3>Action recorded by Helper</h3><p class="cm-message">{{ $report->immediate_action }}</p>@endif</section>
+<section class="cm-card"><h2 class="er-card-title">During-chat report</h2><dl class="er-report"><div><dt>What the Helper reported</dt><dd class="cm-message">{{ $report->description }}</dd></div>@if($report->immediate_action)<div><dt>Action recorded by Helper</dt><dd class="cm-message">{{ $report->immediate_action }}</dd></div>@endif</dl></section>
 @endforeach

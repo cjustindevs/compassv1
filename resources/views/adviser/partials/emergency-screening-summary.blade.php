@@ -1,4 +1,4 @@
-<details data-focus-panel data-focus-label="Original screening" class="cm-card" aria-labelledby="emergencyScreeningTitle">
+<details class="cm-card er-collapsible" aria-labelledby="emergencyScreeningTitle">
     <summary id="emergencyScreeningTitle">Original pre-session screening</summary>
     <p class="cm-help">Read-only Seeker responses. Operational emergency priority does not replace the original classification.</p>
     @php($originalScreening = $alert->session?->screeningResponses->sortBy('id')->first())

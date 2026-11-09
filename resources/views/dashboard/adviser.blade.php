@@ -3,20 +3,7 @@
 @section('content')
 <div class="adviser-page-content av-page">
     <header><div><h1>Adviser dashboard</h1><p class="av-muted">Your supervised Helpers and authorized case updates.</p></div><a class="av-button" href="{{ route('adviser.reports', \App\Services\AnalyticsPeriod::fromRequest(request())->dates()) }}">View reports</a></header>
-    <x-dashboard-overview :overview="$overview" :show-recent="false" :show-definitions="false" :smooth-lines="true" />
-    <section class="av-panel">
-        <header class="av-heading"><div><h2>Supervised Helpers</h2><p class="av-muted">{{ $totalHelpers }} assigned to you. Availability uses the current matching eligibility rules.</p></div><a class="av-link" href="{{ route('adviser.helpers') }}">View all Helpers</a></header>
-        <div class="av-table-wrap" role="region" aria-label="Supervised Helpers" tabindex="0"><table class="av-table"><thead><tr><th>Helper</th><th>Availability</th><th>Readiness</th><th>Workload</th><th>Competency</th></tr></thead><tbody>
-        @forelse($helpers as $helper)
-            @php
-                $eligibility = app(\App\Services\HelperEligibilityService::class)->status($helper);
-            @endphp
-            <tr><td><a class="av-link" href="{{ route('adviser.helper.show', $helper->id) }}">{{ $helper->full_name ?: 'Name not recorded' }}</a></td><td><span class="av-badge {{ $eligibility['assignable'] ? '' : 'av-badge-muted' }}">{{ $eligibility['label'] }}</span></td><td>{{ ucwords(str_replace('_', ' ', $helper->getReadinessStatus())) }}</td><td><x-helper-capacity :helper="$helper" /></td><td>{{ ([1=>'Trainee',2=>'Beginner',3=>'Intermediate',4=>'Advanced',5=>'Expert'][$helper->competency_level] ?? 'Not assessed') }}</td></tr>
-        @empty<tr><td colspan="5" class="av-empty">No Helpers are currently assigned to you.</td></tr>
-        @endforelse
-        </tbody></table></div>
-        @if($totalHelpers > $helpers->count())<p class="av-muted mt-3">Showing {{ $helpers->count() }} Helpers. Open View all for the full list.</p>@endif
-    </section>
+    <x-dashboard-overview part="summary" :overview="$overview" :show-recent="false" :show-definitions="false" :smooth-lines="true" />
     <div class="av-grid">
         <section class="av-panel">
             <header class="av-heading"><h2>Session documentation</h2><a class="av-link" href="{{ route('adviser.evaluations') }}">View all reviews</a></header>
@@ -32,5 +19,19 @@
             <ul class="av-activity">@forelse($recentActivity as $activity)<li><p class="font-semibold">{{ $activity['message'] }}</p><p class="av-muted">{{ $activity['detail'] }}</p><time>{{ $activity['time'] }}</time></li>@empty<li class="av-empty">No recent supervision activity.</li>@endforelse</ul>
         </section>
     </div>
+    <section class="av-panel">
+        <header class="av-heading"><div><h2>Supervised Helpers</h2><p class="av-muted">{{ $totalHelpers }} assigned to you. Availability uses the current matching eligibility rules.</p></div><a class="av-link" href="{{ route('adviser.helpers') }}">View all Helpers</a></header>
+        <div class="av-table-wrap" role="region" aria-label="Supervised Helpers" tabindex="0"><table class="av-table"><thead><tr><th>Helper</th><th>Availability</th><th>Readiness</th><th>Workload</th><th>Competency</th></tr></thead><tbody>
+        @forelse($helpers as $helper)
+            @php
+                $eligibility = app(\App\Services\HelperEligibilityService::class)->status($helper);
+            @endphp
+            <tr><td><a class="av-link" href="{{ route('adviser.helper.show', $helper->id) }}">{{ $helper->full_name ?: 'Name not recorded' }}</a></td><td><span class="av-badge {{ $eligibility['assignable'] ? '' : 'av-badge-muted' }}">{{ $eligibility['label'] }}</span></td><td>{{ ucwords(str_replace('_', ' ', $helper->getReadinessStatus())) }}</td><td><x-helper-capacity :helper="$helper" /></td><td>{{ ([1=>'Trainee',2=>'Beginner',3=>'Intermediate',4=>'Advanced',5=>'Expert'][$helper->competency_level] ?? 'Not assessed') }}</td></tr>
+        @empty<tr><td colspan="5" class="av-empty">No Helpers are currently assigned to you.</td></tr>
+        @endforelse
+        </tbody></table></div>
+        @if($totalHelpers > $helpers->count())<p class="av-muted mt-3">Showing {{ $helpers->count() }} Helpers. Open View all for the full list.</p>@endif
+    </section>
+    <x-dashboard-overview part="analytics" :overview="$overview" :show-recent="false" :show-definitions="false" :smooth-lines="true" />
 </div>
 @endsection

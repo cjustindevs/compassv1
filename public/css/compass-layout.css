@@ -139,3 +139,27 @@
 
 /* List cards beside a taller neighbour keep their own height instead of stretching into empty space. */
 .hf-grid > section.card:has(> .hf-list) { align-self: start; }
+
+/* ── Adviser screening review cards: one tidy info grid instead of loose rows ── */
+.compass-ui .screening-reviews .screening-review-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 24px; margin: 0; }
+.compass-ui .screening-reviews .screening-review-meta dt { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #7a8b82; margin-bottom: 4px; }
+.compass-ui .screening-reviews .screening-review-meta dd { margin: 0; font-size: 14px; font-weight: 600; color: #26443a; }
+.compass-ui .screening-reviews .screening-review-meta dd small { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; color: #6b7b74; }
+.compass-ui .screening-reviews .screening-intake-answer { display: block; }
+.compass-ui .screening-reviews .screening-intake-answer strong { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; background: #f1f4f2; color: #354f41; }
+.compass-ui .screening-reviews .screening-intake-answer[data-safety-answer="yes"] strong { background: #fdecec; color: #a32626; }
+.compass-ui .screening-reviews .screening-intake-answer[data-safety-answer="no"] strong { background: #e7f6ee; color: #05683a; }
+.compass-ui .screening-reviews .screening-intake-answer[data-safety-answer="prefer_not_to_say"] strong { background: #fff4e0; color: #8a5300; }
+
+/* ── Dashboard "supporting metrics": a grid of small tiles inside one card ── */
+.co-overview .co-definitions { background: #fff; border: 1px solid #dfe9e3; border-radius: 14px; padding: 4px 18px; margin: 0 0 20px; }
+.co-overview .co-definitions > summary { padding: 12px 0; font-size: 14px; font-weight: 600; color: #087341; }
+.co-overview .co-definitions[open] > summary { border-bottom: 1px solid #edf2ef; margin-bottom: 4px; }
+.co-overview .co-secondary { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; padding: 12px 0 16px; }
+.co-overview .co-secondary > div { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 12px; border-radius: 10px; background: #f6faf7; font-size: 12px; min-width: 0; }
+.co-overview .co-secondary span { color: #5f7268; line-height: 1.35; }
+.co-overview .co-secondary strong { font-size: 18px; color: #163b2d; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.co-overview .co-secondary small { margin-top: 0; }
+
+/* Adviser dashboard: consistent space between the reordered sections. */
+.av-page > .av-grid { margin-block: 0 16px; }

@@ -108,30 +108,37 @@
                     </div>
                 </div>
 
-                @if($parallelIntake)<p class="text-sm text-green-800">Peer support: {{ \App\Services\SeekerRequestPresentation::status($session) }}. This review does not gate matching.</p>@endif
-                <dl class="screening-review-meta grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm bg-gray-50 rounded-xl p-4">
+                <dl class="screening-review-meta">
                     <div>
-                        <dt class="text-gray-400 text-xs uppercase tracking-wide">Concern</dt>
-                        <dd class="text-gray-700 mt-0.5 font-medium">{{ $session->concern?->concern_name ?? 'Not specified' }}</dd>
+                        <dt>Concern</dt>
+                        <dd>{{ $session->concern?->concern_name ?? 'Not specified' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-gray-400 text-xs uppercase tracking-wide">Assigned helper</dt>
-                        <dd class="text-gray-700 mt-0.5 font-medium">{{ $helperAlias }}</dd>
+                        <dt>Assigned Helper</dt>
+                        <dd>{{ $helperAlias }}</dd>
                     </div>
                     <div>
-                        <dt class="text-gray-400 text-xs uppercase tracking-wide">Current classification</dt>
-                        <dd class="mt-0.5">
+                        <dt>Current classification</dt>
+                        <dd>
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1 {{ $riskMeta['classes'] }}">
                                 <span class="h-1.5 w-1.5 rounded-full {{ $riskMeta['dot'] }}" aria-hidden="true"></span>
                                 {{ $riskMeta['label'] }}
                             </span>
                         </dd>
                     </div>
+                    @if($single)
+                    <div class="screening-intake-answer" data-safety-answer="{{ $answers->get('suicidal_thoughts') }}">
+                        <dt>Recorded safety answer</dt>
+                        <dd><strong>{{ match($answers->get('suicidal_thoughts')) { 'yes'=>'Yes', 'no'=>'No', 'prefer_not_to_say'=>'Prefer not to say', default=>'Not recorded' } }}</strong></dd>
+                    </div>
+                    @endif
+                    @if($parallelIntake)
+                    <div>
+                        <dt>Peer support</dt>
+                        <dd>{{ \App\Services\SeekerRequestPresentation::status($session) }}<small>This review does not gate matching.</small></dd>
+                    </div>
+                    @endif
                 </dl>
-
-                @if($single)
-                    <p class="screening-intake-answer" data-safety-answer="{{ $answers->get('suicidal_thoughts') }}"><span>Recorded safety answer</span><strong>{{ match($answers->get('suicidal_thoughts')) { 'yes'=>'Yes', 'no'=>'No', 'prefer_not_to_say'=>'Prefer not to say', default=>'Not recorded' } }}</strong></p>
-                @endif
 
                 @if($reassessment)
                     <div class="screening-review-note flex items-start gap-3 rounded-xl bg-amber-50 border border-amber-100 p-3 text-sm text-amber-800">

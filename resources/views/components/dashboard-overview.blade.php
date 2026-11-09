@@ -1,4 +1,5 @@
-@props(['overview', 'showRecent' => true, 'showDefinitions' => true, 'smoothLines' => false])
+@props(['overview', 'showRecent' => true, 'showDefinitions' => true, 'smoothLines' => false, 'part' => 'all'])
+{{-- part: 'all' (default), 'summary' (period, KPIs, task links, supporting metrics) or 'analytics' (comparison, charts, recent). --}}
 @php
     $primaryLabels = auth()->user()?->role === 'admin'
         ? ['Total users', 'Active accounts', 'Available Helpers', 'Matching success rate']
@@ -18,6 +19,7 @@
     $orderedCharts = collect($overview['charts'])->sortBy(fn($c) => str_contains(strtolower($c['title']), 'trend') ? 0 : 1);
 @endphp
 <section class="co-overview" aria-label="Dashboard summaries">
+    @if($part !== 'analytics')
     @if(in_array(auth()->user()?->role, ['adviser','moderator'], true))
         <x-analytics-period :action="route(auth()->user()->role.'.dashboard')" :dates="\App\Services\AnalyticsPeriod::fromRequest(request())->dates()" :filters="$overview['competency_comparison']['filters'] ?? []" />
     @endif
@@ -32,11 +34,14 @@
     @endif
     <details class="co-definitions" @if(auth()->user()?->role === 'moderator') open @endif><summary>Operational status and supporting metrics</summary><div class="co-secondary">@foreach($secondary as $card)<div><span title="{{ $card['definition'] }}">{{ $card['label'] }}</span><strong title="{{ $card['definition'] }}" @if(auth()->user()?->role === 'moderator' && $card['label'] === 'Active emergencies') id="statEmergency" @endif>{{ array_key_exists('raw',$card) ? \App\Services\SessionPerformance::number($card['raw'], $card['unit'] ?? '') : $formatValue($card['value']) }}</strong>@if(isset($card['samples']))<small>{{ $card['samples'] }} cases measured</small>@endif</div>@endforeach</div></details>
 
+    @endif
+    @if($part !== 'summary')
     @if($overview['competency_comparison'] ?? null)
         <x-adviser-competency-comparison :comparison="$overview['competency_comparison']" />
     @endif
     <div class="co-charts">@foreach($orderedCharts as $chart)<x-dashboard-chart :chart="$chart" :smooth="$smoothLines" />@endforeach</div>
     @if($showRecent)<article class="card dashboard-card co-recent"><header class="card-header"><h3>{{ auth()->user()?->role === 'moderator' ? 'Recent emergency activity' : 'Recent case activity' }}</h3></header><ul>@forelse($overview['recent'] as $item)<li><span>{{ $item['label'] }}</span><time>{{ $item['at'] }}</time></li>@empty<li>No recorded case activity yet.</li>@endforelse</ul></article>@endif
+    @endif
 </section>
 @once
 <link rel="stylesheet" href="{{ asset('css/dashboard-overview.css') }}?v={{ filemtime(public_path('css/dashboard-overview.css')) }}">
