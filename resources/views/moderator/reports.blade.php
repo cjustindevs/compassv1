@@ -1,7 +1,6 @@
 @extends('layouts.app')
 @section('title','Operations Reports - COMPASS')
 @section('content')
-<p style="margin:16px 24px"><a class="cm-button" href="{{ route('queue.performance', request()->only(['from','to','period'])) }}">Queue performance and assignment metrics</a></p>
 <link rel="stylesheet" href="{{ asset('css/moderator-operations.css') }}?v={{ filemtime(public_path('css/moderator-operations.css')) }}">
 @php
     $tab=request('tab') ?: 'operations'; $report=$roleReport;
@@ -10,7 +9,7 @@
     $activityTable=collect($report['tables'])->firstWhere('group','activity');
 @endphp
 <section class="mo-page">
-<header class="mo-heading"><div><h1>Reports</h1><p>View and analyze operational reports.</p></div><a class="mo-button secondary" href="{{ route('moderator.reports.export',request()->except(['cases_page','emergency_page','queue_page','activity_page'])) }}">Export filtered CSV</a></header>
+<header class="mo-heading"><div><h1>Reports</h1><p>View and analyze operational reports.</p></div><div class="mo-heading-actions"><a class="mo-button secondary" href="{{ route('queue.performance', request()->only(['from','to','period'])) }}">Queue performance</a><a class="mo-button secondary" href="{{ route('moderator.reports.export',request()->except(['cases_page','emergency_page','queue_page','activity_page'])) }}">Export filtered CSV</a></div></header>
 @if(session('success'))<p role="status" class="mo-card">{{ session('success') }}</p>
 @endif
 @if($errors->any())<div class="mo-card" role="alert">
@@ -46,13 +45,21 @@
 </details>
 <section class="mo-card">
     <h2>Case Overview</h2>
-    <nav class="mo-tabs" aria-label="Case overview">
-    @foreach(['status'=>'Status','categories'=>'Categories','emergencies'=>'Emergencies','referrals'=>'Referrals'] as $value=>$label)
-        <a href="{{ route('moderator.reports',array_merge(request()->except(['cases_page','queue_page','emergency_page','activity_page']),['overview'=>$value,'tab'=>$value==='emergencies'?'safety':'operations'])) }}" @if($overview===$value) aria-current="page" @endif>{{ $label }}</a>
+    <p class="mo-filter-note">Actual records in the selected Philippine Time date range. Each record is counted once.</p>
+    <div class="analytics-chart-grid report-chart-grid">
+    @foreach(['status','categories','emergencies','referrals'] as $key)
+        @if(isset($report['charts'][$key]))
+            @include('moderator.partials.distribution',['values'=>$report['charts'][$key]['values'],'chartTitle'=>$report['charts'][$key]['title']])
+        @endif
     @endforeach
-    </nav>
-    @include('moderator.partials.distribution',['values'=>$chart['values'],'chartTitle'=>$chart['title']])
-    <p class="mo-filter-note">{{ $chart['title'] }} | Actual records in the selected Philippine Time date range. Each record is counted once.</p>
+    </div>
+</section>
+<section class="mo-card">
+    <h2>Helpers and competency</h2>
+    <div class="analytics-chart-grid report-chart-grid">
+        <x-analytics-chart title="Current Helper workload" description="Active and assigned sessions per Helper right now; independent of the date filter." :chart="['type'=>'bar','labels'=>collect($workload)->pluck('helper')->all(),'datasets'=>[['label'=>'Open sessions','data'=>collect($workload)->pluck('count')->all()]]]" />
+        <x-analytics-chart title="Competency by skill" description="Average of current-rubric evaluations in the selected period, on a 1–5 scale." :chart="['type'=>'radar','scale'=>[1,5],'unit'=>'','labels'=>$radar['labels'],'datasets'=>[['label'=>'All Helpers (1–5)','data'=>$radar['values']]]]" />
+    </div>
 </section>
 <section class="mo-card mo-activity">
     <header class="mo-activity-heading">

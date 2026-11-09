@@ -98,7 +98,8 @@ class SystemCorrectionsTest extends TestCase {
  }
  public function test_adviser_reports_and_analytics_render_separately():void {
  $u=User::factory()->create(['role'=>'adviser','is_active'=>true]);\App\Models\Adviser::create(['user_account_id'=>$u->id,'first_name'=>'Test','last_name'=>'Adviser','email'=>$u->email]);
- $this->actingAs($u)->get(route('adviser.analytics'))->assertOk()->assertSee('Monthly session activity')->assertDontSee('<h2 class="font-semibold mb-3">Session records</h2>',false);
+ $this->actingAs($u)->get(route('adviser.analytics'))->assertRedirect(route('adviser.reports',['tab'=>'performance']));
+ $this->get(route('adviser.reports',['tab'=>'performance']))->assertOk()->assertSee('Monthly session activity')->assertDontSee('<h2 class="font-semibold mb-3">Session records</h2>',false);
  $this->get(route('adviser.reports'))->assertOk()->assertSee('Session records')->assertDontSee('Monthly session activity');
  }
 }

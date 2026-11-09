@@ -14,27 +14,10 @@ use Illuminate\Support\Facades\DB;
 
 class ModeratorAnalyticsController extends Controller
 {
+    /** The Analytics page was folded into Reports (charts, workload, skill radar); old links keep working. */
     public function index(Request $request)
     {
-        $request->validate(['from'=>'nullable|date_format:Y-m-d','to'=>'nullable|date_format:Y-m-d|after_or_equal:from']);
-        $from = $request->get('from') ?: now()->subMonths(6)->startOfMonth()->toDateString();
-        $to = $request->get('to') ?: now()->toDateString();
-
-        $metrics = $this->getMetrics($from, $to);
-        $riskDistribution = $this->getRiskDistribution($from, $to);
-        $competencyTrajectory = $this->getCompetencyTrajectory($from, $to);
-        $radar = $this->getSkillRadar($from,$to);
-        $workload = $this->getWorkloadDistribution();
-
-        return view('moderator.analytics', compact(
-            'metrics',
-            'riskDistribution',
-            'competencyTrajectory',
-            'radar',
-            'workload',
-            'from',
-            'to'
-        ));
+        return redirect()->route('moderator.reports', $request->only(['from', 'to', 'period']));
     }
 
     public function data(Request $request): JsonResponse
@@ -182,26 +165,23 @@ class ModeratorAnalyticsController extends Controller
         return compact('labels', 'values');
     }
 
-    private function getSkillRadar(string $from,string $to): array
+    public function getSkillRadar(string $from,string $to): array
     {
         $row = HelperCompetencyHistory::selectRaw('AVG(active_listening_score) as a, AVG(empathy_score) as b, AVG(respect_score) as c, AVG(ethical_practices_score) as d, AVG(referral_accuracy_score) as e')
             ->whereNotNull('overall_score')
+            // Only the current rubric is on the 1–5 scale; legacy rows used 0–100.
+            ->where('rubric_version', \App\Services\CompetencyRubric::VERSION)
             ->whereBetween('evaluation_date',$this->periodBounds($from,$to))
             ->first();
 
         return [
             'labels' => ['Active Listening', 'Empathy', 'Respect & Professionalism', 'Ethical Practices', 'Referral Accuracy'],
-            'values' => $row ? [
-                round((float) $row->a, 1),
-                round((float) $row->b, 1),
-                round((float) $row->c, 1),
-                round((float) $row->d, 1),
-                round((float) $row->e, 1),
-            ] : [0, 0, 0, 0, 0],
+            // A criterion with no recorded scores stays null (not plotted as zero).
+            'values' => array_map(fn ($v) => $v === null ? null : round((float) $v, 1), $row ? [$row->a, $row->b, $row->c, $row->d, $row->e] : [null, null, null, null, null]),
         ];
     }
 
-    private function getWorkloadDistribution(): array
+    public function getWorkloadDistribution(): array
     {
         $rows = Session::with('helper:id,id,first_name,last_name')
             ->whereIn('session_status', ['active', 'helper_assigned'])

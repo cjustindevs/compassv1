@@ -18,6 +18,11 @@
     </form>
     <p class="qp-muted">{{ $period->dates()['from'] }} to {{ $period->dates()['to'] }} · As of {{ $asOf->timezone('Asia/Manila')->format('M d, Y g:i:s A') }} PHT. {{ auth()->user()->role==='adviser' ? 'Your authorized supervision scope.' : 'System operational scope.' }}</p>
     <div class="qp-grid">@foreach($cards as $card)<section class="cm-card"><h2>{{ $card['label'] }}</h2><p class="qp-value">{{ $card['value'] }}</p><p class="qp-muted">{{ $card['sample'] }}</p></section>@endforeach</div>
+    <div class="analytics-chart-grid report-chart-grid">
+        <x-analytics-chart title="Waiting time trend" :description="$charts['wait_trend']['interval'].' average, queue entry to session start · in-hours sessions'" :chart="['type'=>'line','unit'=>' min','labels'=>$charts['wait_trend']['labels'],'samples'=>$charts['wait_trend']['samples'],'datasets'=>[['label'=>'Average wait','data'=>$charts['wait_trend']['values']]]]" />
+        <x-analytics-chart title="Sessions started by risk level" description="Same started-session cohort as the waiting-time measures." :chart="['type'=>'column','labels'=>array_keys($charts['risk']),'datasets'=>[['label'=>'Sessions','data'=>array_values($charts['risk'])]]]" />
+        <x-analytics-chart title="Successful assignment rate" :description="$charts['assignment']['successful'].' accepted of '.$charts['assignment']['processed'].' processed regular requests.'" :chart="['type'=>'gauge','unit'=>'%','labels'=>['Successful assignment'],'datasets'=>[['label'=>'Successful assignment rate','data'=>[$charts['assignment']['rate'] === null ? null : round($charts['assignment']['rate'], 1)]]],'caption'=>'assigned']" />
+    </div>
     <section class="cm-card"><h2>Evidence and separate reporting</h2>
         <p>After-hours / cut-off requests that started: {{ $quality['after_hours_started'] }}; average wait: {{ \App\Services\SessionPerformance::display($quality['after_hours_average'],' min') }}.</p>
         <p class="qp-muted">{{ $quality['missing_wait_evidence'] }} started sessions missing valid queue timestamps; {{ $quality['invalid_acknowledgments'] }} acknowledgments missing valid actor/time evidence; {{ $quality['legacy_processed_unknown'] }} queue entries without recorded processing history.</p>

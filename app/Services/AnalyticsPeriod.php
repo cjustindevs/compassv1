@@ -80,4 +80,32 @@ class AnalyticsPeriod
 
         return ['labels' => $labels, 'values' => $values, 'total' => array_sum($values), 'interval' => $daily ? 'Daily' : ($yearly ? 'Yearly' : 'Monthly')];
     }
+
+    /**
+     * Average of already-measured values per Asia/Manila bucket, using the same buckets as series().
+     * A bucket with no measurement is null (a gap), never zero.
+     *
+     * @param  iterable<array{0: \DateTimeInterface, 1: float|int}>  $points
+     */
+    public function averageSeries(iterable $points): array
+    {
+        $daily = $this->start->diffInDays($this->end) <= 62;
+        $yearly = $this->start->diffInYears($this->end) > 10;
+        $key = $daily ? 'Y-m-d' : ($yearly ? 'Y' : 'Y-m');
+        $sums = $counts = [];
+        foreach ($points as [$at, $value]) {
+            $bucket = CarbonImmutable::instance($at)->setTimezone('Asia/Manila')->format($key);
+            $sums[$bucket] = ($sums[$bucket] ?? 0) + $value;
+            $counts[$bucket] = ($counts[$bucket] ?? 0) + 1;
+        }
+        $labels = $values = $samples = [];
+        for ($date = $daily ? $this->start : ($yearly ? $this->start->startOfYear() : $this->start->startOfMonth()); $date->lt($this->end); $date = $daily ? $date->addDay() : ($yearly ? $date->addYear() : $date->addMonth())) {
+            $bucket = $date->format($key);
+            $labels[] = $date->format($daily ? 'M j, Y' : ($yearly ? 'Y' : 'M Y'));
+            $values[] = isset($counts[$bucket]) ? round($sums[$bucket] / $counts[$bucket], 1) : null;
+            $samples[] = $counts[$bucket] ?? 0;
+        }
+
+        return ['labels' => $labels, 'values' => $values, 'samples' => $samples, 'interval' => $daily ? 'Daily' : ($yearly ? 'Yearly' : 'Monthly')];
+    }
 }

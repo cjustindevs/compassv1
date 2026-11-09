@@ -1,9 +1,8 @@
 @extends('layouts.app')
 @section('title', 'Reports - COMPASS')
 @section('content')
-<p style="margin:16px 24px"><a class="cm-button" href="{{ route('queue.performance') }}">Queue performance and assignment metrics</a></p>
 <div class="adviser-page-content av-page">
-<header><div><h1>Reports</h1><p class="av-muted">Authorized supervision records. {{ $filters['start']->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') }} to {{ $filters['end']->copy()->subMicrosecond()->timezone('Asia/Manila')->format('M d, Y g:i A') }} (Philippine Time).</p></div><div class="av-actions"><a class="av-button" href="{{ route('adviser.reports.export', array_merge(request()->except(['page','cases_page']),['format'=>'csv'])) }}">Export case CSV</a><a class="av-button" href="{{ route('adviser.reports.export', array_merge(request()->except(['page','cases_page']),['format'=>'pdf'])) }}">Export case PDF</a></div></header>
+<header><div><h1>Reports</h1><p class="av-muted">Authorized supervision records. {{ $filters['start']->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') }} to {{ $filters['end']->copy()->subMicrosecond()->timezone('Asia/Manila')->format('M d, Y g:i A') }} (Philippine Time).</p></div><div class="av-actions"><a class="av-button" href="{{ route('queue.performance', request()->only(['from','to','period'])) }}">Queue performance</a><a class="av-button" href="{{ route('adviser.reports.export', array_merge(request()->except(['page','cases_page']),['format'=>'csv'])) }}">Export case CSV</a><a class="av-button" href="{{ route('adviser.reports.export', array_merge(request()->except(['page','cases_page']),['format'=>'pdf'])) }}">Export case PDF</a></div></header>
 @if(session('success'))<p class="av-note" role="status">{{ session('success') }}</p>@endif
 @if($errors->any())<p role="alert" class="av-note">{{ $errors->first() }}</p>@endif
 <nav class="av-tabs" aria-label="Report groups">
@@ -32,17 +31,27 @@
 </form>
 @if($tab==='cases')
 <dl class="av-stats">@foreach(['Cases in period','Completed cases','Active sessions','Pending requests'] as $label)<div><dt>{{ $label }}</dt><dd>{{ $roleReport['summary'][$label] }}</dd></div>@endforeach</dl>
+<x-report-charts :groups="collect($roleReport['groups'])->only(['Cases by status','Case categories','Case outcome trend'])->all()" heading="Case outcomes and categories" caption="Selected period · Philippine Time" />
 <section class="av-panel"><header class="av-heading"><div><h2>Session records</h2><p class="av-muted">{{ $sessions->total() }} records. Archiving preserves history and never reopens or closes a case.</p></div></header>
 <div class="av-table-wrap" role="region" aria-label="Session records" tabindex="0"><table class="av-table"><thead><tr><th>Reference</th><th>Helper</th><th>Concern</th><th>Status</th><th>Activity date</th><th>Actions</th></tr></thead><tbody>
 @forelse($sessions as $session)<tr><td>{{ $session->reference_number }}</td><td>{{ $session->helper?->full_name ?? 'Unassigned' }}</td><td>{{ $session->concern?->concern_name ?? 'Not recorded' }}</td><td><span class="av-badge">{{ ucwords(str_replace('_',' ',$session->session_status)) }}</span>@if($session->archived_at)<p class="av-muted">Archived</p>@endif</td><td>{{ ($session->end_time ?? $session->start_time ?? $session->submitted_at ?? $session->created_date ?? $session->created_at)?->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') }}</td><td><div class="av-actions"><a class="av-link" href="{{ route('adviser.session.show',$session->id) }}">View documentation</a>@include('adviser.partials.archive-action',['record'=>$session])</div></td></tr>
 @empty<tr><td colspan="6" class="av-empty">No records match these filters.</td></tr>@endforelse
 </tbody></table></div><div class="av-pagination">{{ $sessions->links() }}</div></section>
-<details class="av-panel"><summary class="font-semibold cursor-pointer">Case outcomes and categories</summary><div class="av-grid mt-4">@foreach(['Cases by status','Case categories','Case outcome trend'] as $title)<section><h2>{{ $title }}</h2><table class="av-table"><tbody>@forelse($roleReport['groups'][$title] as $label=>$count)<tr><td>{{ ucwords(str_replace('_',' ',$label)) }}</td><td>{{ $count }}</td></tr>@empty<tr><td class="av-empty">No recorded data.</td></tr>@endforelse</tbody></table></section>@endforeach</div></details>
 @elseif($tab==='performance')
 <section class="av-panel"><header class="av-heading"><h2>Service performance</h2></header><p class="av-muted">Actual supervised service records in the selected period. Scheduled duty is planned coverage, not attendance.</p><div class="av-table-wrap mt-4"><table class="av-table"><thead><tr><th>Measure</th><th>Recorded result</th></tr></thead><tbody>
 @foreach(['total'=>['Session records',''],'completed'=>['Completed sessions',''],'completion_rate'=>['Completion rate','%'],'referral_rate'=>['Referral rate','%'],'response_minutes'=>['Helper first response',' min'],'waiting_minutes'=>['Queue waiting time',' min'],'duration_minutes'=>['Completed session duration',' min'],'helpfulness'=>['Helpfulness rating (1–5)',''],'referral_approval_rate'=>['Referral approval rate','%'],'duty_hours'=>['Scheduled duty coverage',' h'],'competency'=>['Average competency (1–5)',''],'workload'=>['Completed sessions per serving Helper',''],'documentation_rate'=>['Documentation completion rate','%'],'documentation_pending'=>['Pending documentation',''],'emergency_rate'=>['Emergency escalation rate','%']] as $key=>$label)<tr><td>{{ $label[0] }}</td><td>{{ \App\Services\SessionPerformance::number($metrics[$key], $label[1]) }}@if(isset($samples[$key]))<small class="av-muted"> | {{ $samples[$key] }} records measured</small>@endif</td></tr>@endforeach
 </tbody></table></div></section>
-<section class="av-panel"><h2>Competency in the selected period</h2><p class="av-muted">{{ ucwords(str_replace('_',' ', $filters['competency_metric'])) }} from recorded evaluations, on the 1-5 scale.</p><div class="av-table-wrap mt-4"><table class="av-table"><thead><tr><th>Month</th><th>Average score (1–5)</th></tr></thead><tbody>@forelse($competency as $row)<tr><td>{{ $row['month'] }}</td><td>{{ $row['score'] }}</td></tr>@empty<tr><td colspan="2" class="av-empty">No evaluations match these filters.</td></tr>@endforelse</tbody></table></div></section>
+@php
+    $monthLabel = fn ($m) => \Carbon\Carbon::createFromFormat('Y-m', $m)->format('M Y');
+    $activityChart = ['type' => 'column', 'labels' => collect($trends)->pluck('month')->map($monthLabel)->values()->all(),
+        'datasets' => [['label' => 'Session records', 'data' => collect($trends)->pluck('sessions')->values()->all()], ['label' => 'Completed', 'data' => collect($trends)->pluck('completed')->values()->all()]]];
+    $competencyChart = ['type' => 'line', 'scale' => [1, 5], 'unit' => '', 'labels' => collect($competency)->pluck('month')->map($monthLabel)->values()->all(),
+        'datasets' => [['label' => 'Average score (1–5)', 'data' => collect($competency)->pluck('score')->map(fn ($v) => $v === null ? null : (float) $v)->values()->all()]]];
+@endphp
+<div class="analytics-chart-grid report-chart-grid">
+<x-analytics-chart title="Monthly session activity" description="Supervised session records and completions per month · Philippine Time" :chart="$activityChart" />
+<x-analytics-chart title="Competency in the selected period" :description="ucwords(str_replace('_',' ', $filters['competency_metric'])).' from recorded evaluations, monthly average on a 1–5 scale.'" :chart="$competencyChart" />
+</div>
 <details class="av-panel"><summary class="font-semibold cursor-pointer">Calculation definitions</summary>@foreach($definitions as $label=>$definition)<p class="av-muted mt-3"><strong>{{ ucwords(str_replace('_',' ',$label)) }}:</strong> {{ $definition }}</p>@endforeach</details>
 @else
 @php
@@ -50,6 +59,7 @@
     $summaryLabels = $tab==='safety' ? ['Emergencies','Resolved emergencies','Unresolved emergencies','Emergency resolution time'] : [];
 @endphp
 @if($summaryLabels)<dl class="av-stats">@foreach($summaryLabels as $label)<div><dt>{{ $label }}</dt><dd>{{ $roleReport['summary'][$label] }}</dd></div>@endforeach</dl>@endif
+@if($tab==='safety')<x-report-charts :groups="collect($roleReport['groups'])->only(['Emergency status','Emergency priority'])->all()" heading="Emergency overview" />@endif
 <section class="av-panel"><header class="av-heading"><h2>{{ $tab==='safety' ? 'Emergency case activity' : 'Your recorded actions' }}</h2></header>
 @if($tab==='activity')<p class="av-muted mb-4">Your auditable Adviser actions, including archive and restore events. Case and emergency records are available in their report groups.</p>@endif
 <div class="av-table-wrap" role="region" aria-label="{{ $reportTable['title'] }}" tabindex="0"><table class="av-table"><thead><tr>@foreach($reportTable['columns'] as $column)<th>{{ $column }}</th>@endforeach</tr></thead><tbody>

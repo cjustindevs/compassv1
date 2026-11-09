@@ -37,14 +37,14 @@ class QueuePerformance
         $validIds = (clone $queues)->pluck('id');
         $queueRows = (clone $queues)->get()->keyBy('id');
         $started = (clone $sessions)->whereIn('queue_request_id', $validIds)->where('start_time','>=',$start)->where('start_time','<',$period->end->utc())->where('start_time','<=',$asOf)->get();
-        $waits = []; $outsideWaits = []; $invalidWaits = 0;
+        $waits = []; $waitPoints = []; $outsideWaits = []; $invalidWaits = 0;
         foreach ($started as $session) {
             $queue = $queueRows[$session->queue_request_id];
             $entry = $queue->queued_at;
             if (!$entry || $entry->gt($session->start_time)) { $invalidWaits++; continue; }
             $minutes = $entry->diffInSeconds($session->start_time) / 60;
             if ($this->outsideHours($entry)) $outsideWaits[] = $minutes;
-            else $waits[] = $minutes;
+            else { $waits[] = $minutes; $waitPoints[] = [$session->start_time, $minutes]; }
         }
         $processed = (clone $queues)->where('first_processed_at','>=',$start)->where('first_processed_at','<',$period->end->utc())->where('first_processed_at','<=',$asOf)->get();
         $attempts = DB::table('queue_assignment_attempts')->whereIn('queue_request_id', $processed->pluck('id'))->where('offered_at','<=',$asOf)->orderBy('id')->get()->groupBy('queue_request_id');
@@ -111,7 +111,16 @@ class QueuePerformance
         $quality = ['after_hours_started'=>count($outsideWaits), 'after_hours_average'=>SessionPerformance::average($outsideWaits),
             'missing_wait_evidence'=>$invalidWaits, 'invalid_acknowledgments'=>$invalidAcknowledgments,
             'legacy_processed_unknown'=>(clone $queues)->whereNull('first_processed_at')->whereBetween('request_date',[$start,$end])->count()];
-        return compact('cards','quality','asOf','period','filters');
+        // Chart aggregates (read-only): the same started-session cohort as the waiting-time cards.
+        $risk = $started->groupBy(fn ($s) => $s->risk_level ?: 'unrecorded')->map->count();
+        $charts = [
+            'wait_trend' => $period->averageSeries($waitPoints),
+            'risk' => collect(['low', 'moderate', 'high', 'emergency', 'unrecorded'])
+                ->mapWithKeys(fn ($level) => [ucfirst($level) => (int) ($risk[$level] ?? 0)])
+                ->filter(fn ($count, $label) => $label !== 'Unrecorded' || $count > 0)->all(),
+            'assignment' => ['rate' => $raw[3], 'successful' => $successful, 'processed' => $regular->count()],
+        ];
+        return compact('cards','quality','asOf','period','filters','charts');
     }
 
     private function outsideHours($at): bool

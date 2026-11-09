@@ -129,3 +129,10 @@
 /* Absolutely positioned helpers inside a scroller (focus-panel triggers, sr-only text) must be
    clipped by it; without a containing block they escape and widen the page. */
 :is(.compact-table-wrap, .ui-table-scroll, .table-container, .av-table-wrap, .analytics-table-scroll) { position: relative; }
+.report-chart-grid { margin: 16px 0 20px; }
+.mo-heading-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Laravel's Tailwind paginator renders a phone and a desktop variant; layouts without Tailwind
+   utilities (admin) showed both. Keep one per breakpoint. */
+@media (min-width: 640px) { nav[role="navigation"] > .sm\:hidden { display: none; } }
+@media (max-width: 639.98px) { nav[role="navigation"] > .hidden.sm\:flex-1 { display: none; } }

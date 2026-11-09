@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { chartConfig, formatValue, semanticColor, PALETTE, STATUS } from '../../resources/js/compass-chart-options.mjs';
 
 test('trends keep missing points as gaps and use monotone curves with the COMPASS palette', () => {
-    const values = [1, 0, null, 9];
-    const config = chartConfig({ type: 'line', labels: ['A', 'B', 'C', 'D'], datasets: [{ label: 'Completed', data: values }] });
+    const values = [1, 0, null, 9, 2, 3, 4, 5, 6, 7];
+    const config = chartConfig({ type: 'line', labels: 'ABCDEFGHIJ'.split(''), datasets: [{ label: 'Completed', data: values }] });
     const dataset = config.data.datasets[0];
     assert.deepEqual(dataset.data, values);
     assert.equal(dataset.cubicInterpolationMode, 'monotone');
@@ -46,7 +46,7 @@ test('donuts and gauges draw a centered total or value', () => {
 });
 
 test('reduced motion disables animation, dark mode switches palette, multi-series keep legends', () => {
-    const config = chartConfig({ type: 'line', labels: ['Day'], datasets: [{ label: 'Received', data: [4] }, { label: 'Completed', data: [2] }] }, { dark: true }, true);
+    const config = chartConfig({ type: 'line', labels: ['Mon', 'Tue'], datasets: [{ label: 'Received', data: [4, 3] }, { label: 'Completed', data: [2, 1] }] }, { dark: true }, true);
     assert.equal(config.options.animation, false);
     assert.equal(config.options.plugins.legend.display, true);
     assert.equal(config.data.datasets[1].borderColor, PALETTE.dark[1]);
@@ -65,4 +65,24 @@ test('non-status labels beside status colors never take the brand green', async 
     const { semanticColors } = await import('../../resources/js/compass-chart-options.mjs');
     assert.deepEqual(semanticColors(['Active', 'Resolved', 'Peer team']), [PALETTE.light[1], STATUS.good, PALETTE.light[2]]);
     assert.deepEqual(semanticColors(['Academic', 'Family']), [PALETTE.light[0], PALETTE.light[1]]);
+});
+
+test('category bars stay one hue; only status labels are recolored', () => {
+    const config = chartConfig({ type: 'bar', labels: ['Academic Stress', 'Unrecorded', 'Family'], datasets: [{ label: 'Cases', data: [9, 1, 2] }] });
+    assert.deepEqual(config.data.datasets[0].backgroundColor, [PALETTE.light[1], STATUS.neutral, PALETTE.light[1]]);
+    assert.equal(semanticColor('Awaiting acknowledgment'), STATUS.warning);
+});
+
+test('short series are drawn with straight segments', () => {
+    const config = chartConfig({ type: 'line', labels: ['Aug', 'Sep', 'Oct'], datasets: [{ label: 'Received', data: [0, 1, 0] }] });
+    assert.equal(config.data.datasets[0].cubicInterpolationMode, 'default');
+    assert.equal(config.data.datasets[0].tension, 0);
+});
+
+test('a single measured period becomes a column and shared status colors are split', () => {
+    const one = chartConfig({ type: 'line', scale: [1, 5], labels: ['Sep 2026'], datasets: [{ label: 'Score', data: [5] }] });
+    assert.equal(one.type, 'bar');
+    assert.equal(one.options.indexAxis, 'x');
+    const donut = chartConfig({ type: 'donut', labels: ['Evaluated', 'Completed'], datasets: [{ label: 'Cases', data: [8, 2] }] });
+    assert.notEqual(donut.data.datasets[0].backgroundColor[0], donut.data.datasets[0].backgroundColor[1]);
 });

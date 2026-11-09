@@ -88,7 +88,6 @@ class ModuleSmokeTest extends TestCase
             'moderator.sessions',
             'moderator.manage',
             'moderator.emergency',
-            'moderator.analytics',
             'moderator.reports',
             'moderator.notifications',
             'moderator.settings',

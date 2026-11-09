@@ -216,9 +216,10 @@ class OctoberQaRevisionTest extends TestCase
         HelperCompetencyHistory::create(['helper_id' => $helper->id, 'adviser_id' => $au->adviser->id, 'evaluation_date' => '2026-10-14 01:00:00', 'overall_score' => 4.6]);
         HelperCompetencyHistory::create(['helper_id' => $helper->id, 'adviser_id' => $au->adviser->id, 'evaluation_date' => '2026-11-01 01:00:00', 'overall_score' => 1]);
         $this->assertSame(4.1, $a->normalized_score);
-        $this->actingAs($mod)->get(route('moderator.analytics', ['from' => '2026-10-01', 'to' => '2026-10-14']))->assertOk()
-            ->assertViewHas('metrics', fn ($m) => $m['competency_growth'] === 0.5)
-            ->assertViewHas('competencyTrajectory', fn ($t) => $t['values'] === [4.4]);
+        $this->actingAs($mod)->get(route('moderator.analytics', ['from' => '2026-10-01', 'to' => '2026-10-14']))->assertRedirect();
+        $this->getJson(route('moderator.analytics.data', ['from' => '2026-10-01', 'to' => '2026-10-14']))->assertOk()
+            ->assertJsonPath('metrics.competency_growth', 0.5)
+            ->assertJsonPath('competency_trajectory.values', [4.4]);
         $this->actingAs($au)->get(route('adviser.helpers'))->assertOk()->assertDontSee('82 / 5');
     }
 }

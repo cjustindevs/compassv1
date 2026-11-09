@@ -20,10 +20,9 @@ class AdviserReportController extends Controller {
         $data['sessions']=$data['roleReport']['tables'][0]['records'];
         return view('adviser.reports',$data);
     }
-    public function analytics(Request $request, AdviserAnalytics $analytics) {
-        $filters=$analytics->filters($request);$data=$analytics->report($filters);
-        $data['categories']=ConcernCategory::orderBy('concern_name')->get();
-        return view('adviser.analytics',$data);
+    /** The Analytics page was folded into Reports (Performance tab); old links keep working. */
+    public function analytics(Request $request) {
+        return redirect()->route('adviser.reports', $request->only(['from','to','period','helper_id','concern_id','competency_metric']) + ['tab' => 'performance']);
     }
     public function export(Request $request, AdviserAnalytics $analytics) {
         $filters=$analytics->filters($request); $data=$analytics->report($filters);

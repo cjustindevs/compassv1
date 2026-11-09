@@ -19,7 +19,7 @@ export const STATUS = { good: '#0ca30c', warning: '#fab219', serious: '#ec835a',
 // Entity -> semantic color, so a risk or outcome keeps its color whatever else is in the chart.
 const SEMANTIC = [
     [/^(low|resolved|completed|evaluated|accepted|successful|matched|ready|yes|helpful|very helpful)\b/i, STATUS.good],
-    [/^(moderate|medium|pending|waiting|in progress|scheduled|assigned|somewhat)/i, STATUS.warning],
+    [/^(moderate|medium|pending|waiting|awaiting|in progress|scheduled|assigned|under review|somewhat)/i, STATUS.warning],
     [/^(high|escalated|declined|returned|no.?show)/i, STATUS.serious],
     [/^(emergency|critical|crisis|imminent|failed|rejected)/i, STATUS.critical],
     [/^(cancelled|archived|unrecorded|other|not helpful|unknown)/i, STATUS.neutral],
@@ -31,12 +31,19 @@ export function semanticColor(label) {
 }
 
 // Status labels keep their semantic color; the remaining labels take categorical slots in order,
-// skipping the brand green so an unrelated category never reads as a "good" status.
+// skipping the brand green so an unrelated category never reads as a "good" status. When two labels
+// share a status color (e.g. Completed and Evaluated), the later one takes the next categorical slot
+// so adjacent slices stay distinguishable.
 export function semanticColors(labels, palette = PALETTE.light) {
     const mixed = labels.some((label) => semanticColor(label));
     const pool = mixed ? palette.slice(1) : palette;
+    const used = new Set();
     let next = 0;
-    return labels.map((label) => semanticColor(label) || pool[next++ % pool.length]);
+    return labels.map((label) => {
+        const semantic = semanticColor(label);
+        if (semantic && !used.has(semantic)) { used.add(semantic); return semantic; }
+        return pool[next++ % pool.length];
+    });
 }
 
 export function formatValue(value, unit = '', decimals = null) {
@@ -85,7 +92,9 @@ export function chartConfig(spec, theme = {}, reducedMotion = false) {
     const muted = theme.muted || (theme.dark ? '#a9b8ae' : '#64748b');
     const grid = theme.grid || (theme.dark ? '#2b3a31' : '#e8eeeb');
     const surface = theme.surface || (theme.dark ? '#14201a' : '#ffffff');
-    const type = spec.type || 'line';
+    // A "trend" with a single measured period is not a line: draw it as a column.
+    const measuredPeriods = (spec.labels || []).filter((_, i) => (spec.datasets || []).some((d) => d.data[i] != null)).length;
+    const type = ['line', 'area'].includes(spec.type || 'line') && measuredPeriods < 2 ? 'column' : (spec.type || 'line');
     const unit = spec.unit || '';
     const scale = Array.isArray(spec.scale) ? spec.scale : null;
     const labels = spec.labels || [];
@@ -135,7 +144,7 @@ export function chartConfig(spec, theme = {}, reducedMotion = false) {
                 data: { labels: [datasets[0].label, 'Remaining'], datasets: [{ data: [value, max - value], backgroundColor: [colorFor(0), grid], borderWidth: 0, borderRadius: 6 }] },
                 options: {
                     responsive: true, maintainAspectRatio: false, animation, circumference: 180, rotation: -90, cutout: '74%',
-                    layout: { padding: { top: 6, bottom: 4 } },
+                    layout: { padding: { top: 6, bottom: 26 } },
                     plugins: { legend: { display: false }, tooltip: { ...tooltip, filter: (item) => item.dataIndex === 0 }, compassCenter: { text: formatValue(datasets[0].data[0], unit), caption: spec.caption || '', ink, muted, gauge: true } },
                 },
                 plugins: [centerLabel],
@@ -191,11 +200,11 @@ export function chartConfig(spec, theme = {}, reducedMotion = false) {
             datasets: datasets.map((dataset, index) => {
                 const color = dataset.color || colorFor(index);
                 const perBar = categorical && single && labels.some((label) => semanticColor(label));
-                const barColors = Array.isArray(dataset.colors) ? dataset.colors : (perBar ? semanticColors(labels, palette) : color);
+                const barColors = Array.isArray(dataset.colors) ? dataset.colors : (perBar ? labels.map((label) => semanticColor(label) || palette[1]) : color);
                 return lineLike
                     ? {
                         ...dataset, borderColor: color, backgroundColor: alpha(color, single ? 0.12 : 0.06), borderWidth: 2,
-                        fill: single || type === 'area' ? 'origin' : false, cubicInterpolationMode: 'monotone', spanGaps: false,
+                        fill: single || type === 'area' ? 'origin' : false, cubicInterpolationMode: labels.length <= 8 ? 'default' : 'monotone', tension: labels.length <= 8 ? 0 : 0.4, spanGaps: false,
                         pointRadius: labels.length > 31 ? 0 : 3, pointHoverRadius: 5, pointHitRadius: 14,
                         pointBackgroundColor: surface, pointBorderColor: color, pointBorderWidth: 2,
                     }

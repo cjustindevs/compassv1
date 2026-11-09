@@ -226,7 +226,7 @@
                 <div><dt>Total Referrals Received</dt><dd>{{ number_format($analytics['received']['total']) }}</dd><small>Notification date; legacy creation fallback</small></div>
                 <div><dt>Completed Referrals</dt><dd>{{ number_format($analytics['completed']['total']) }}</dd><small>Adviser confirmation date; may have been received earlier</small></div>
                 <div><dt>Closed Referrals</dt><dd>{{ number_format($analytics['closed']) }}</dd><small>Closed status and recorded closure date</small></div>
-                <div><dt>Average Acceptance Time</dt><dd>{{ $analytics['response_hours'] === null ? 'No data' : $analytics['response_hours'].' h' }}</dd><small>{{ $analytics['response_samples'] }} valid acceptances in period</small></div>
+                <div><dt>Average Acceptance Time</dt><dd>{{ $analytics['response_hours'] === null ? 'No data' : ($analytics['response_hours'] < 1 ? round($analytics['response_hours'] * 60, 1).' min' : round($analytics['response_hours'], 1).' h') }}</dd><small>{{ $analytics['response_samples'] }} valid acceptances in period</small></div>
             </dl>
             <details class="analytics-definitions"><summary>Calculations and data coverage</summary>
                 <p>Received uses professional notification dates. {{ $analytics['legacy_received'] }} records in this period use legacy creation dates because no notification timestamp exists. Completion uses the recorded Adviser confirmation time. {{ $analytics['legacy_completions_without_confirmation'] }} legacy finished records have no confirmation evidence and are excluded from confirmed totals. Closed-only records remain separate.</p>
@@ -234,6 +234,15 @@
                 <p>Acceptance time measures professional notification to recorded acceptance; missing, negative, and future intervals are excluded. {{ $analytics['missing_completion_dates'] }} historical finished records lack usable completion dates and are excluded from completion totals. Archived cases remain in authorized history.</p>
                 <p>Charts and Reports use the same sources. CSV includes all matching table records and the same filters. Printing includes only the current page; use CSV for the full filtered dataset.</p>
             </details>
+            @php
+                $outcomes = collect($analytics['outcomes'])->mapWithKeys(fn ($count, $outcome) => [ucwords(str_replace('_', ' ', $outcome ?: 'unrecorded')) => (int) $count])->sortDesc();
+            @endphp
+            <div class="analytics-chart-grid report-chart-grid">
+                <x-analytics-chart title="Referrals received and completed" :description="$analytics['received']['interval'].' counts · Philippine Time'" :chart="['type'=>'line','labels'=>$analytics['received']['labels'],'datasets'=>[['label'=>'Received','data'=>$analytics['received']['values']],['label'=>'Completed','data'=>$analytics['completed']['values']]]]" />
+                <x-analytics-chart title="Acceptance rate" :description="$analytics['accepted'].' of '.$analytics['received']['total'].' referrals received in this period were accepted.'" :chart="['type'=>'gauge','unit'=>'%','labels'=>['Acceptance rate'],'datasets'=>[['label'=>'Acceptance rate','data'=>[$analytics['acceptance_rate']]]],'caption'=>'accepted']" />
+                <x-analytics-chart title="Referral status" description="Current status of referrals received in this period." :chart="['type'=>'bar','labels'=>$analytics['statuses']['labels'],'datasets'=>[['label'=>'Referrals','data'=>$analytics['statuses']['values']]]]" />
+                <x-analytics-chart title="Completed referral outcomes" description="Recorded outcome of referrals completed in this period." :chart="['type'=>'donut','labels'=>$outcomes->keys()->all(),'datasets'=>[['label'=>'Referrals','data'=>$outcomes->values()->all()]]]" />
+            </div>
             <div class="card analytics-report-table">
                 <div class="card-header"><h3>Referral records</h3><span class="text-sm text-gray-500">{{ number_format($records->total()) }} matching records</span></div>
                 <p class="analytics-period-caption">Date basis: {{ ucfirst($filters['activity']) }} · Status: {{ isset($filters['status']) && $filters['status'] ? Str::headline($filters['status']) : 'All authorized statuses' }}</p>

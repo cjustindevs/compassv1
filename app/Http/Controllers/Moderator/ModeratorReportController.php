@@ -13,7 +13,15 @@ class ModeratorReportController extends Controller
     {
         abort_unless($request->user()?->role === 'moderator', 403);
 
-        return view('moderator.reports', ['roleReport' => $reports->report($request)]);
+        $report = $reports->report($request);
+        $analytics = app(ModeratorAnalyticsController::class);
+
+        return view('moderator.reports', [
+            'roleReport' => $report,
+            // Folded in from the retired Analytics page: current Helper workload and per-skill averages.
+            'workload' => $analytics->getWorkloadDistribution(),
+            'radar' => $analytics->getSkillRadar($report['from'], $report['to']),
+        ]);
     }
 
     public function export(Request $request, RoleActivityReport $reports)

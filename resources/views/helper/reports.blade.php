@@ -33,6 +33,7 @@
 <small>Selected date range</small>
 </article>
 @endforeach</div>
+<x-report-charts :groups="$roleReport['groups']" heading="Case overview" caption="Selected date range · Philippine Time" />
 <details class="card hf-secondary"><summary>Performance metrics and calculation notes</summary>
 <dl>@foreach(['Average Helper Response Time','Average waiting time','Helpfulness rating (1–5)','Competency score (1–5)','Session completion rate','Scheduled duty hours','Documentation completion rate','Pending documentation'] as $label)<div style="margin:10px 0"><dt>{{ $label }}</dt><dd>{{ $roleReport['summary'][$label] ?? 'No data' }}</dd></div>@endforeach</dl>
 <p class="hf-muted">Same definitions as your dashboard. Response is submission to your first actual message. Scheduled hours are planned coverage, not attendance. Documentation requires both summary and reflection; this is not an on-time rate. Scores use a 1–5 scale. The selected cohort includes archived history.</p>

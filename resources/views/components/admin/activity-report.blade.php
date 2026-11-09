@@ -84,6 +84,14 @@
                     @if($selectedSection === 'cases')<p class="admin-report-scope-note">Measures describe the filtered case records. Timings use valid recorded timestamps only.</p>@endif
                 @endif
 
+                <x-report-charts heading="Overview" :groups="collect($report['groups'])->only(match ($selectedSection) {
+                    'cases' => ['Cases by status', 'Case categories', 'Case outcome trend'],
+                    'emergencies' => ['Emergency status', 'Emergency priority'],
+                    'queue' => ['Referral coordination status'],
+                    'actions' => ['System activity trend'],
+                    'registrations' => ['Registration trend', 'Users by role'],
+                    default => [],
+                })->all()" />
                 <div class="admin-table-scroll" tabindex="0" role="region" aria-label="{{ $table['title'] }}">
                     <table><thead><tr>@foreach($table['columns'] as $column)<th scope="col">{{ $column }}</th>@endforeach</tr></thead><tbody>
                         @forelse($table['records'] as $record)

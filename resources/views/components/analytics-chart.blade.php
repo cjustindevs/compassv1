@@ -19,7 +19,7 @@
         return $text.($unit === '%' ? '%' : $unit);
     };
     $firstColumn = in_array($type, ['line', 'area', 'stacked'], true) ? 'Period' : 'Category';
-    $height = match ($type) { 'gauge' => 150, 'donut' => 220, 'radar' => 280, 'bar' => max(160, min(420, 36 * count($chart['labels']) + 40)), default => 240 };
+    $height = match ($type) { 'gauge' => 200, 'donut' => 220, 'radar' => 280, 'bar' => max(160, min(420, 36 * count($chart['labels']) + 40)), default => 240 };
 @endphp
 <section {{ $attributes->merge(['class' => 'analytics-chart-card']) }} data-analytics-chart data-chart-type="{{ $type }}" aria-labelledby="{{ $id }}-title">
     <header class="analytics-card-heading">
