@@ -19,6 +19,9 @@
 /storage/*.key
 /storage/pail
 /vendor
+/.ui-preview
+/test-results
+/playwright-report
 Homestead.json
 Homestead.yaml
 Thumbs.db

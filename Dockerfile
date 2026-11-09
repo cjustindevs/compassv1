@@ -11,6 +11,9 @@ FROM node:22-alpine AS frontend
 
 WORKDIR /app
 
+# Playwright is a dev-only screenshot tool; never download browsers in the image build.
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
 COPY package.json package-lock.json ./
 
 RUN npm ci --no-audit --no-fund
