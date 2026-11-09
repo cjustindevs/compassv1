@@ -136,3 +136,6 @@
    utilities (admin) showed both. Keep one per breakpoint. */
 @media (min-width: 640px) { nav[role="navigation"] > .sm\:hidden { display: none; } }
 @media (max-width: 639.98px) { nav[role="navigation"] > .hidden.sm\:flex-1 { display: none; } }
+
+/* List cards beside a taller neighbour keep their own height instead of stretching into empty space. */
+.hf-grid > section.card:has(> .hf-list) { align-self: start; }

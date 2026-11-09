@@ -24,8 +24,11 @@
     ];
 @endphp
 <x-performance-cards :cards="$performanceCards" />
-<div style="display:flex;align-items:center;flex-wrap:wrap;gap:16px;margin:12px 0"><x-helper-capacity :helper="$helper" /><p class="hf-muted">Pending documentation: <strong>{{ $helper->sessions()->whereNotNull('start_time')->whereNotNull('end_time')->where('end_time','<=',now())->where('documentation_status', '!=', 'submitted')->whereIn('session_status',['completed','evaluated','cancelled','no_show'])->count() }}</strong></p></div>
-<p class="hf-muted"><strong>Upcoming Session:</strong> @if($upcomingSession){{ $upcomingSession->scheduled_start->copy()->timezone('Asia/Manila')->format('M d, g:i A') }} PHT | {{ $upcomingSession->reference_number }}@else No upcoming sessions. @endif</p>
+<section class="card hf-glance" aria-label="Workload">
+<div><span class="hf-glance-label">Capacity</span><x-helper-capacity :helper="$helper" /></div>
+<div><span class="hf-glance-label">Pending documentation</span><strong>{{ $helper->sessions()->whereNotNull('start_time')->whereNotNull('end_time')->where('end_time','<=',now())->where('documentation_status', '!=', 'submitted')->whereIn('session_status',['completed','evaluated','cancelled','no_show'])->count() }}</strong></div>
+<div><span class="hf-glance-label">Upcoming Session</span>@if($upcomingSession)<strong>{{ $upcomingSession->scheduled_start->copy()->timezone('Asia/Manila')->format('M d, g:i A') }} PHT</strong><small>{{ $upcomingSession->reference_number }}</small>@else<strong>None scheduled</strong>@endif</div>
+</section>
 @if(count($emergencyCases))
 <section class="card">
 <header class="card-header">
@@ -51,7 +54,7 @@
     $growthChart = ['title'=>'Competency growth trend','unit'=>'Scale 1–5','values'=>$growthRows->groupBy(fn ($e) => $e->evaluation_date->timezone('Asia/Manila')->format('M Y'))->map(fn ($group) => round($group->avg('normalized_score'),2))->all(),'definition'=>'Average finalized evaluations per month on the current rubric, rated 1-5. Missing months have no evaluation; no performance is inferred. At least two evaluations are needed for growth.'];
 @endphp
 @if($growthRows->count() >= 2)<x-dashboard-chart :chart="$growthChart" :smooth="true" />@else<section class="card" style="margin:14px 0"><h3>Competency growth</h3><p class="hf-muted">Insufficient history. At least two evaluations on the current rubric are required.</p></section>@endif
-<style>.helper-performance-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}.helper-performance-details dt{font-size:12px;color:#64748b}.helper-performance-details dd{font-size:14px;margin:4px 0}@media(max-width:560px){.helper-performance-details{grid-template-columns:1fr}}</style>
+<style>.hf-glance{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 24px;margin:14px 0}.hf-glance>div{display:grid;gap:4px;align-content:start;min-width:0}.hf-glance-label{font-size:12px;color:#64748b}.hf-glance strong{font-size:16px;color:#163b2d}.hf-glance small{font-size:12px;color:#64748b}@media(max-width:700px){.hf-glance{grid-template-columns:1fr}}.helper-performance-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}.helper-performance-details dt{font-size:12px;color:#64748b}.helper-performance-details dd{font-size:14px;margin:4px 0}@media(max-width:560px){.helper-performance-details{grid-template-columns:1fr}}</style>
 <link rel="stylesheet" href="{{ asset('css/dashboard-overview.css') }}">
 
 <div class="hf-grid" style="margin-bottom:20px">
@@ -107,15 +110,6 @@
 </li>
 @empty<li class="hf-muted">No session documentation is waiting for you.</li>
 @endforelse</ul>
-</section>
-<section class="card">
-<header class="card-header">
-<h3>Quick Actions</h3>
-</header>
-<div class="hf-actions">
-@foreach($quickActions as $action)
-<a class="btn btn-secondary btn-sm" href="{{ route($action['route'],$action['params']) }}">{{ $action['label']==='Session Notes' ? 'Session documentation' : $action['label'] }}</a>
-@endforeach</div>
 </section>
 </div>
     <section class="card">
