@@ -30,7 +30,9 @@ RUN npm run build
 # STAGE 2: PHP and Nginx runtime
 # ============================================================
 
-FROM php:8.3-fpm-bookworm
+# Pinned to a patched release (PHP2Shell: CVE-2026-109618 / CVE-2026-109619).
+# Bump deliberately when newer 8.3.x security releases ship.
+FROM php:8.3.36-fpm-bookworm
 
 ENV PORT=10000 \
     APP_ENV=production \
@@ -103,6 +105,7 @@ RUN printf '%s\n' \
     'max_execution_time = 120' \
     'display_errors = Off' \
     'log_errors = On' \
+    'session.upload_progress.enabled = 0' \
     > /usr/local/etc/php/conf.d/zz-compass.ini
 
 RUN printf '%s\n' \
