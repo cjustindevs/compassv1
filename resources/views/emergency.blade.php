@@ -14,7 +14,7 @@
         --card-bg: #ffffff; --page-bg: #F8FBF9;
     }
 
-    .emg-page { max-width: 1280px; margin: 0 auto; padding: 20px 24px 64px; min-width: 0; }
+    .emg-page { max-width: none; margin: 0; padding: 20px 24px 64px; min-width: 0; }
     .emg-support-grid, .emg-next-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
 
     /* ── Page header ── */

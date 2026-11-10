@@ -96,6 +96,10 @@
         .category-pill:hover { border-color: var(--green-500); color: var(--green-700); }
         .category-pill.active { background: var(--green-50); border-color: var(--green-500); color: var(--green-700); }
 
+        .adviser-resource-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+        .resource-history { border-top: 1px solid #edf2ef; padding-top: 8px; font-size: 12px; }
+        .resource-history > summary { cursor: pointer; color: #087341; font-weight: 600; }
+        .resource-history .review-history > h3 { display: none; }
         .resource-card {
             background: white; border: 1px solid var(--gray-200); border-radius: 18px;
             padding: 20px; transition: all 0.2s; display: flex; flex-direction: column; gap: 10px;
@@ -197,7 +201,7 @@
 
         <!-- Resource Grid -->
         @if($resources->isNotEmpty())
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="adviser-resource-grid">
                 @foreach($resources as $resource)
                     <div class="resource-card">
                         <div class="flex items-start justify-between gap-3">
@@ -215,7 +219,7 @@
                             @endif
                         </div>
 
-                        <p class="text-xs text-gray-500">{{ ucfirst($resource->visibility) }} | {{ $resource->archived_at ? 'Archived' : (($resource->review_date && $resource->review_date < now('Asia/Manila')->toDateString()) ? 'Review overdue' : 'Current') }}</p><x-supervision-history :record="$resource" />
+                        <p class="text-xs text-gray-500">{{ ucfirst($resource->visibility) }} | {{ $resource->archived_at ? 'Archived' : (($resource->review_date && $resource->review_date < now('Asia/Manila')->toDateString()) ? 'Review overdue' : 'Current') }}</p>
                         <h3 class="font-bold text-gray-800 leading-snug">{{ $resource->title }}</h3>
                         <p class="text-sm text-gray-500 leading-relaxed line-clamp-2">{{ $resource->description }}</p>
 
@@ -224,9 +228,9 @@
                                 <span> {{ $resource->duration }}</span>
                             @endif
                             <span class="capitalize"> {{ $resource->difficulty_label }}</span>
-                            <span> {{ number_format($resource->views_count) }}</span>
+                            <span>{{ number_format($resource->views_count) }} views</span>
                             @if($resource->saved_count > 0)
-                                <span> {{ $resource->saved_count }}</span>
+                                <span>{{ $resource->saved_count }} saved</span>
                             @endif
                         </div>
 
@@ -255,6 +259,7 @@
                                 <button type="submit" class="btn-outline" style="color:var(--red-500);border-color:#FECACA;"><x-ui-icon name="trash"  /> Archive</button>
                             </form>
                         </div>
+                        <details class="resource-history"><summary>Update history</summary><x-supervision-history :record="$resource" /></details>
                     </div>
                 @endforeach
             </div>

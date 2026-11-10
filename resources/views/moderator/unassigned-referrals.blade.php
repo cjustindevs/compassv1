@@ -72,12 +72,18 @@
         @media (max-width: 768px) {
             .main-content { margin-left: 0; }
         }
+            .hamburger { display: none; background: none; border: none; color: #374151; cursor: pointer; padding: 4px; margin-bottom: 12px; }
+        @media (max-width: 768px) { .hamburger { display: block; } }
     </style>
     @vite(['resources/css/app.css'])
     @include('partials.ui-assets')
 </head>
 <body>
-    <div class="main-content">
+    @if(auth()->user()?->role === 'moderator')
+    @include('layouts.partials.moderator-sidebar')
+    @endif
+    <div class="main-content" @if(auth()->user()?->role !== 'moderator') style="margin-left:0" @endif>
+        @if(auth()->user()?->role === 'moderator')<button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar"><x-ui-icon name="menu" /></button>@endif
         <div class="card">
             <div class="card-header">
                 <h3>Referrals Awaiting Adviser Assignment</h3>

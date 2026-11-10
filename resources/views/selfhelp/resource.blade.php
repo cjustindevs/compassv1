@@ -20,7 +20,7 @@
         .menu-btn::before { content: ''; width: 16px; height: 2px; border-radius: 2px; background: currentColor; box-shadow: 0 5px 0 currentColor, 0 -5px 0 currentColor; }
         @media (max-width: 768px) { .menu-btn { display: inline-flex; } }
 
-        .rs-wrap { max-width: 1240px; display: grid; gap: 16px; }
+        .rs-wrap { max-width: none; display: grid; gap: 16px; }
         .rs-body { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
         .rs-side { display: grid; gap: 16px; position: sticky; top: calc(12px + env(safe-area-inset-top, 0px)); }
         .rs-side .player { position: static; box-shadow: none; }

@@ -38,4 +38,12 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontFlash(\App\Services\IdentityVaultService::FIELDS);
+        // A Seeker who opens a request step before accepting consent is sent to the step that asks
+        // for it, instead of an error page. API and form submissions still receive the 409.
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, \Illuminate\Http\Request $request) {
+            if ($e->getStatusCode() === 409 && $request->isMethod('GET') && ! $request->expectsJson()
+                && str_contains($e->getMessage(), 'accept the current consent documents')) {
+                return redirect()->route('request.screening')->with('status', 'Please review and accept the Terms and Privacy first to continue your request.');
+            }
+        });
     })->create();

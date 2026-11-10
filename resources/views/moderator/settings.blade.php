@@ -15,7 +15,6 @@
 
         .main-content {
             margin-left: var(--sidebar-w, 264px);
-            max-width: 900px;
             padding: 24px 32px 80px;
             min-height: 100vh;
         }

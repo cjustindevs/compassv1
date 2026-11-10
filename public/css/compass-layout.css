@@ -163,3 +163,10 @@
 
 /* Adviser dashboard: consistent space between the reordered sections. */
 .av-page > .av-grid { margin-block: 0 16px; }
+
+/* Wide screens: dashboard charts sit three per row, and a lone donut never stretches across the page. */
+@media (min-width: 1500px) {
+    .co-overview .co-charts { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); }
+    .co-overview .co-charts > .co-chart:last-child:nth-child(odd) { grid-column: auto; }
+}
+.co-overview .co-charts > .co-chart[data-chart-type="donut"]:last-child:nth-child(odd) { grid-column: auto; }

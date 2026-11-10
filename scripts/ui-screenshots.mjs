@@ -93,6 +93,18 @@ const audit = () => {
         if (!wide.length) wide.push(...[...document.querySelectorAll('body *')].filter((el) => visible(el) && el.getBoundingClientRect().right > innerWidth + 1).sort((a, b) => b.getBoundingClientRect().right - a.getBoundingClientRect().right).slice(0, 3).map((el) => label(el) + ' right=' + Math.round(el.getBoundingClientRect().right)));
         problems.push(`h-overflow: page ${document.documentElement.scrollWidth}px > ${innerWidth}px ${wide.length ? '(' + wide.join(', ') + ')' : ''}`);
     }
+    // Desktop only: content that uses well under the space beside the sidebar reads as "not compact".
+    if (innerWidth >= 1600) {
+        const rail = document.querySelector('aside#sidebar, .sidebar, .admin-sidebar');
+        const railRight = rail && visible(rail) ? rail.getBoundingClientRect().right : 0;
+        const available = innerWidth - railRight - 48;
+        const host = document.querySelector('main, .main-content, .workspace-content');
+        if (host) {
+            const blocks = [...host.querySelectorAll(':scope > *, :scope > * > *')].filter((el) => visible(el) && el.getBoundingClientRect().height > 40);
+            const widest = Math.max(0, ...blocks.map((el) => el.getBoundingClientRect().width));
+            if (widest && widest < available * 0.8) problems.push(`narrow: content ${Math.round(widest)}px of ${Math.round(available)}px available`);
+        }
+    }
     return [...new Set(problems)].slice(0, 25);
 };
 

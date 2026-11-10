@@ -125,6 +125,7 @@
         .kind, .badge-featured, .chip { font-size: 10.5px; padding: 2px 8px; }
         .meta { gap: 4px; margin-top: 2px; }
         .sh-topic-note { font-size: 13px; padding: 10px 14px; }
+        @media (min-width: 1200px) { .sh-filters { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 20px; } .sh-filters > div:first-child { grid-column: 1 / -1; } }
     </style>
 <link rel="stylesheet" href="{{ asset('css/selfhelp-mobile.css') }}?v={{ filemtime(public_path('css/selfhelp-mobile.css')) }}">
     @vite(['resources/css/app.css'])
@@ -154,8 +155,8 @@
 
             @if($search !== '')
                 <p class="sh-block-sub" role="status">Results for <strong>&ldquo;{{ $search }}&rdquo;</strong> · {{ $all->count() }} {{ $all->count() === 1 ? 'resource' : 'resources' }} found</p>
-            @else
-                {{-- Your progress and saved items, side by side --}}
+            @elseif($continueProgress->count() > 0 || $savedResources->count() > 0)
+                {{-- Your progress and saved items, side by side (hidden until there is something to show) --}}
                 <div class="sh-mine">
                     <section class="sh-panel" aria-labelledby="continueTitle">
                         <div><h2 class="sh-block-title" id="continueTitle">Continue where you left off</h2><p class="sh-block-sub">Your step progress is saved as you go.</p></div>
@@ -206,7 +207,7 @@
                     </div>
                 @endif
                 @if($categories->count() > 0)
-                    <nav class="sh-chips" aria-label="Browse by format">
+                    <nav class="sh-chips sh-chips-inline" aria-label="Browse by format">
                         <span class="sh-chips-label">Format</span>
                         @foreach($categories as $cat)
                             <a class="sh-chip" href="{{ route('selfhelp.category', $cat['slug']) }}">{{ $cat['label'] }} <small>{{ $cat['count'] }}</small></a>

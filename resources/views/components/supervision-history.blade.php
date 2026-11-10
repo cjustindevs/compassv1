@@ -6,8 +6,11 @@
 @endphp
 <section class="review-history">
 <h3>Update history</h3>
+@if($versions->isEmpty())
+<p class="review-history-empty" style="margin:4px 0 0;font-size:12px;color:#6b7b74">No updates recorded.</p>
+@else
 <div class="compact-table-wrap"><table class="compact-data-table"><thead><tr><th>Date</th><th>Recorded by</th><th>Change</th><th><span class="sr-only">Details</span></th></tr></thead><tbody>
-@forelse($versions as $version)
+@foreach($versions as $version)
 @php
     $snapshot = json_decode($version->snapshot,true) ?? [];
     $previousVersion = $versions->first(fn ($entry) => $entry->version < $version->version);
@@ -18,6 +21,7 @@
 <dl>@foreach($snapshot as $field=>$value)@if(in_array($field,$fields,true))<div><dt>{{ ucwords(str_replace('_',' ',$field)) }}</dt><dd>@if(array_key_exists($field,$previous) && $previous[$field] !== $value)<span>Before: {{ is_scalar($previous[$field]) ? $previous[$field] : '—' }}</span><br>@endif<span>{{ array_key_exists($field,$previous) ? 'After: ' : '' }}{{ is_scalar($value) ? $value : '—' }}</span></dd></div>@endif
 @endforeach</dl>
 </section></td></tr>
-@empty<tr><td colspan="4">No updates recorded.</td></tr>@endforelse
+@endforeach
 </tbody></table></div>
+@endif
 </section>
