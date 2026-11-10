@@ -166,6 +166,9 @@
             </div>
         </div>
 
+        <!-- How evaluation works -->
+        <x-evaluation-steps :current="3" />
+
         <!-- Pending Evaluations -->
         <div class="card mb-6">
             <div class="card-header">
@@ -194,6 +197,7 @@
                                     <span class="text-yellow-600 font-medium ml-2"> Referral Recommended</span>
                                 @endif
                             </div>
+                            <x-evaluation-steps :current="3" compact />
                         </div>
                         <div class="actions">
                             <a href="{{ route('adviser.evaluate', $report->id) }}" class="btn-primary">

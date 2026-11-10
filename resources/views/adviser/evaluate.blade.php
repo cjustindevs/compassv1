@@ -161,6 +161,8 @@
             <x-ui-icon name="arrow-left"  /> Back to Evaluations
         </a>
 
+        <x-evaluation-steps :current="$existingFeedback ? 4 : 3" />
+
         <div class="form-card">
 
             <!-- Header -->

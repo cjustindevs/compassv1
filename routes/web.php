@@ -406,6 +406,8 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
 
     // Helper Management
     Route::get('/helpers', [AdviserHelperController::class, 'index'])->name('helpers');
+    Route::get('/helpers/create', [\App\Http\Controllers\Adviser\AdviserHelperAccountController::class, 'create'])->name('helpers.create');
+    Route::post('/helpers', [\App\Http\Controllers\Adviser\AdviserHelperAccountController::class, 'store'])->middleware('throttle:10,1')->name('helpers.store');
     Route::get('/helpers/export', [AdviserHelperController::class, 'export'])->name('helpers.export');
     Route::post('/helpers/reassign', [AdviserHelperController::class, 'reassignHelpers'])->name('helpers.reassign');
     Route::get('/helpers/availability', [AdviserHelperController::class, 'availability'])->name('helpers.availability');

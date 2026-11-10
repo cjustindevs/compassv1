@@ -119,6 +119,10 @@ class UserController extends Controller
                 }
                 app(StaffMailService::class)->enqueue($user, 'account-created-'.$user->id, 'COMPASS - Account created',
                     'Your '.$role.' account has been created. '.($user->is_active ? 'You can sign in to COMPASS.' : 'Your account is pending activation by an administrator.'));
+                // QA: the new user is notified in the app too, not only by email.
+                Notification::create(['user_account_id' => $user->id, 'notification_type' => 'system', 'title' => 'Welcome to COMPASS',
+                    'message' => 'Your '.$role.' account was created by the administrator.'.($user->role === 'helper' ? ' An Adviser will be assigned to verify you before you can take sessions.' : ''),
+                    'link' => '/dashboard']);
                 if ($user->role === 'helper') {
                     foreach (User::where('role', 'moderator')->where('is_active', true)->get() as $moderator) {
                         Notification::create(['user_account_id' => $moderator->id, 'title' => 'New Helper needs assignment', 'message' => 'A new Helper account needs an Adviser assignment.', 'notification_type' => 'assignment', 'link' => '/moderator/manage']);

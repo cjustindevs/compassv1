@@ -129,6 +129,11 @@
             .helper-table { min-width: 720px; }
             .table-wrap { overflow-x: auto; }
         }
+            .add-helper-btn { display: inline-flex; align-items: center; padding: 8px 14px; border-radius: 10px; background: #078749; color: #fff; font-weight: 600; font-size: 13px; text-decoration: none; margin-right: 8px; }
+        .elig-tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 99px; }
+        .elig-tag.ok { background: #e7f6ee; color: #05683a; }
+        .elig-tag.blocked { background: #fff4e0; color: #8a5300; }
+        .elig-why { display: block; font-size: 11.5px; color: #6b7b74; margin-top: 3px; max-width: 28ch; }
     </style>
 @endpush
 
@@ -185,6 +190,7 @@
                         </a>
                     @endforeach
                 </div>
+                <a href="{{ route('adviser.helpers.create') }}" class="btn-primary add-helper-btn">+ Add Helper</a>
                 <a href="{{ route('adviser.helpers.export', ['status' => $statusFilter]) }}" class="btn-outline">
                     <x-ui-icon name="file-spreadsheet"  /> Export CSV
                 </a>
@@ -207,6 +213,7 @@
                                 <th>Level</th>
                                 <th>Score</th>
                                 <th>Duty / capacity</th>
+                                <th>Can take sessions</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -232,6 +239,11 @@
                                     </td>
                                     <td>
                                         <x-helper-capacity :helper="$helper" />
+                                    </td>
+                                    @php $blockers = app(\App\Services\HelperEligibilityService::class)->reasons($helper); @endphp
+                                    <td>
+                                        @if($blockers === [])<span class="elig-tag ok">Eligible</span>
+                                        @else<span class="elig-tag blocked" title="{{ implode(' ', $blockers) }}">{{ count($blockers) }} {{ \Illuminate\Support\Str::plural('blocker', count($blockers)) }}</span><small class="elig-why">{{ $blockers[0] }}</small>@endif
                                     </td>
                                     <td>
                                         <a href="{{ route('adviser.helper.show', ['id' => $helper->id]) }}" class="btn-outline">
