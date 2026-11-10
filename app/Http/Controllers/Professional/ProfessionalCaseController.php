@@ -83,7 +83,44 @@ class ProfessionalCaseController extends Controller
             ->orderByDesc('follow_up_date')
             ->value('follow_up_date');
 
-        return view('professional.case-detail', compact('case', 'notes', 'nextFollowUp'));
+        // QA: one connected history per Seeker. Every referral this Professional has with the same
+        // Seeker (follow-ups included) is shown as one timeline instead of separate files.
+        $history = $this->seekerHistory($case, $professional->id);
+
+        return view('professional.case-detail', compact('case', 'notes', 'nextFollowUp', 'history'));
+    }
+
+    /**
+     * Referrals for the same Seeker assigned to this Professional, and a merged timeline of their
+     * key events and intervention notes (newest first). Uses the same authorization scope as show().
+     *
+     * @return array{referrals: \Illuminate\Support\Collection, events: \Illuminate\Support\Collection}
+     */
+    private function seekerHistory(Referral $case, int $professionalId): array
+    {
+        $seekerId = $case->session?->seeker_id;
+        $referrals = $seekerId === null ? collect([$case]) : Referral::with(['session.concern'])
+            ->professionalAuthorized()->where('professional_id', $professionalId)
+            ->whereIn('status', array_merge(Referral::ACTIVE_STATUSES, Referral::COMPLETED_STATUSES))
+            ->whereHas('session', fn ($q) => $q->where('seeker_id', $seekerId))
+            ->orderBy('referral_date')->orderBy('id')->get();
+        $notes = ProfessionalNote::whereIn('referral_id', $referrals->pluck('id'))->get();
+        $events = collect();
+        foreach ($referrals as $index => $referral) {
+            $label = 'Referral #'.$referral->id.($index > 0 ? ' (follow-up '.$index.')' : '');
+            if ($referral->referral_date) $events->push(['at' => $referral->referral_date, 'referral' => $label, 'title' => 'Referral received', 'detail' => $referral->session?->concern?->concern_name]);
+            if ($referral->accepted_at) $events->push(['at' => $referral->accepted_at, 'referral' => $label, 'title' => 'Accepted', 'detail' => null]);
+            if ($referral->completed_at) $events->push(['at' => $referral->completed_at, 'referral' => $label, 'title' => 'Completed', 'detail' => null]);
+            if ($referral->closed_date && $referral->status === Referral::STATUS_CLOSED) $events->push(['at' => $referral->closed_date, 'referral' => $label, 'title' => 'Closed', 'detail' => null]);
+        }
+        foreach ($notes as $note) {
+            $index = $referrals->search(fn ($r) => $r->id === $note->referral_id);
+            $label = 'Referral #'.$note->referral_id.($index > 0 ? ' (follow-up '.$index.')' : '');
+            $events->push(['at' => $note->created_at, 'referral' => $label, 'title' => ucwords(str_replace('_', ' ', $note->intervention_type)).' note',
+                'detail' => \Illuminate\Support\Str::limit((string) $note->notes, 180).($note->follow_up_date ? ' · Follow-up '.\Illuminate\Support\Carbon::parse($note->follow_up_date)->format('M d, Y') : '')]);
+        }
+
+        return ['referrals' => $referrals, 'events' => $events->filter(fn ($e) => $e['at'])->sortByDesc('at')->values()];
     }
 
     public function updateStatus(Request $request, $id)

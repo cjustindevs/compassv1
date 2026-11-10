@@ -258,4 +258,41 @@ class Referral extends Model
     {
         return in_array($this->status, [self::STATUS_COMPLETED, self::STATUS_CLOSED], true);
     }
+
+    /**
+     * QA: the Seeker must be notified when a referral is withdrawn. Every path that closes a
+     * referral (Seeker withdrawing consent, staff closing it) goes through this hook, so the
+     * Seeker always hears about it. Declines already notify the Seeker in ReferralManagementService.
+     */
+    protected static function booted(): void
+    {
+        static::updated(function (Referral $referral) {
+            if (! $referral->wasChanged('status') || $referral->status !== self::STATUS_CLOSED) {
+                return;
+            }
+            $seekerUserId = $referral->session?->seeker?->user_account_id;
+            $withdrawnBySeeker = $referral->help_seeker_consent === false
+                && str_contains(strtolower((string) $referral->closure_notes), 'withdrew');
+            if ($seekerUserId) {
+                Notification::create([
+                    'user_account_id' => $seekerUserId,
+                    'notification_type' => 'referral',
+                    'title' => $withdrawnBySeeker ? 'Referral withdrawn' : 'Referral closed',
+                    'message' => $withdrawnBySeeker
+                        ? 'You withdrew referral #'.$referral->id.'. It is now closed and no further professional action will be taken. Peer support, self-help and crisis hotlines are still available.'
+                        : 'Referral #'.$referral->id.' was closed by the care team. Open My referrals to see the outcome.',
+                    'link' => '/seeker/referrals',
+                ]);
+            }
+            if ($withdrawnBySeeker && $referral->professional?->user_account_id) {
+                Notification::create([
+                    'user_account_id' => $referral->professional->user_account_id,
+                    'notification_type' => 'referral',
+                    'title' => 'Referral withdrawn by the Seeker',
+                    'message' => 'The Seeker withdrew consent for referral #'.$referral->id.'. Stop further action on this case.',
+                    'link' => '/professional/referrals',
+                ]);
+            }
+        });
+    }
 }

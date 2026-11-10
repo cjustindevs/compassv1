@@ -15,6 +15,7 @@
         .referrals-intro{font-size:14px;line-height:1.6;color:#64748b;margin:0 0 18px;max-width:760px}
         .referral-card{background:#fff;border:1px solid #dfe8e2;border-radius:14px;padding:20px;margin-bottom:16px;min-width:0}
         .referral-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}.referral-heading h2{font-size:18px;font-weight:700;margin:0 0 4px}.referral-meta{font-size:12px;color:#64748b;margin:0}
+        .referral-wait{margin-top:10px;background:#f2f8ff;border:1px solid #c9ddf5;border-radius:10px;padding:10px 12px}.referral-wait strong{color:#1c4f8a;font-size:14px}.referral-wait p{margin:4px 0 0;font-size:13px;color:#33506e;line-height:1.5}
         .status-badge{display:inline-flex;align-items:center;white-space:nowrap;font-size:12px;font-weight:600;border-radius:20px;background:#eaf8f0;color:#027039;padding:5px 10px}.status-badge.muted{background:#f1f5f3;color:#52645a}
         .referral-overview{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,1fr);gap:20px;align-items:start}.referral-overview>*{min-width:0}
         .referral-card h3{font-size:14px;font-weight:700;margin:0 0 8px}.referral-card p{font-size:14px;line-height:1.6;overflow-wrap:anywhere}.referral-summary{white-space:pre-wrap;margin:0 0 16px;color:#475569}
@@ -68,7 +69,7 @@
                 @endphp
                 <article class="referral-card" aria-labelledby="referral-title-{{ $referral->id }}">
                     <header class="referral-heading">
-                        <div><h2 id="referral-title-{{ $referral->id }}">Referral #{{ $referral->id }}</h2><p class="referral-meta">{{ $referral->referral_date?->timezone('Asia/Manila')->format('M d, Y g:i A') }} PHT</p></div>
+                        <div><h2 id="referral-title-{{ $referral->id }}">Referral #{{ $referral->id }}</h2><p class="referral-meta">{{ $referral->referral_date?->timezone('Asia/Manila')->format('M d, Y g:i A') }} PHT</p>@if($referral->professional_id && ($earlier = $referrals->where('professional_id', $referral->professional_id)->where('id', '<', $referral->id)->sortBy('id')->first()))<p class="referral-meta">Follow-up to Referral #{{ $earlier->id }} with the same Professional. They can see your earlier history with them.</p>@endif</div>
                         <span class="status-badge {{ $canDecide ? '' : 'muted' }}">{{ $canDecide ? 'Your decision needed' : $statusLabel }}</span>
                     </header>
                     <div class="{{ $canDecide ? 'referral-overview' : '' }}">
@@ -102,6 +103,19 @@
                                     <p>Complete identity-disclosure consent to view your professional coordination details.</p>
                                 @else
                                     <p><strong>Professional assignment pending.</strong> After your identity details are saved, your Adviser assigns a Professional for review.</p>
+                                @endif
+                                {{-- QA: tell the Seeker to wait for the Professional, and what to do meanwhile. --}}
+                                @php
+                                    $waitNote = match ($referral->status) {
+                                        \App\Models\Referral::STATUS_PENDING_PROFESSIONAL => ['Please wait for the Professional', 'Your referral was sent to a Professional. They will review it and accept as soon as they can. You will get a notification when they respond. You do not need to do anything else right now.'],
+                                        \App\Models\Referral::STATUS_NO_PROFESSIONAL_AVAILABLE => ['Finding another Professional', 'No Professional was available yet. Your Adviser is arranging another one, and you will be notified.'],
+                                        \App\Models\Referral::STATUS_ACCEPTED, \App\Models\Referral::STATUS_IN_PROGRESS => ['Your Professional accepted', 'Your Professional will contact you using the details you shared to arrange your session. Watch your notifications.'],
+                                        default => null,
+                                    };
+                                @endphp
+                                @if($waitNote)
+                                    <div class="referral-wait" role="status"><strong>{{ $waitNote[0] }}</strong><p>{{ $waitNote[1] }} Meanwhile, you can keep talking to a peer Helper or use the self-help tools.</p></div>
+                                    <x-emergency-callout compact />
                                 @endif
                             </div>
                         @endif

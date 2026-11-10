@@ -247,6 +247,18 @@
             .info-row .value { text-align: left; }
             .modal-box { padding: 24px 20px; }
         }
+        .case-history-refs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+        .case-history-ref { display: grid; gap: 2px; padding: 8px 12px; border: 1px solid var(--gray-200, #e5e7eb); border-radius: 10px; text-decoration: none; color: inherit; font-size: 13px; }
+        .case-history-ref.is-current { border-color: #04a052; background: #eaf8f0; }
+        .case-history-ref span { font-size: 11px; font-weight: 700; color: #027039; }
+        .case-history-ref small { color: #6b7280; font-size: 12px; }
+        .case-history-timeline { list-style: none; margin: 0; padding: 0 0 0 14px; border-left: 2px solid #dcf5e0; display: grid; gap: 12px; }
+        .case-history-timeline li { position: relative; display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 4px 14px; font-size: 13px; }
+        .case-history-timeline li::before { content: ""; position: absolute; left: -20px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #04a052; }
+        .case-history-timeline time { color: #6b7280; font-size: 12px; }
+        .case-history-timeline p { margin: 2px 0 0; color: #4b5563; }
+        .case-history-tag { font-size: 11px; font-weight: 600; color: #027039; background: #eaf8f0; border-radius: 99px; padding: 1px 8px; }
+        @media (max-width: 640px) { .case-history-timeline li { grid-template-columns: 1fr; } }
     </style>
     @vite(['resources/css/app.css'])
     <link rel="stylesheet" href="{{ asset('css/professional-referral.css') }}?v={{ filemtime(public_path('css/professional-referral.css')) }}">
@@ -350,6 +362,34 @@
                     </p>
                 </div>
             </div>
+
+            <!-- Case history with this Seeker (all referrals and follow-ups in one timeline) -->
+            @if(isset($history))
+            <div class="card mb-6" id="seeker-case-history">
+                <div class="card-header">
+                    <h3>Case history with this Seeker</h3>
+                    <span class="text-sm text-gray-500">{{ $history['referrals']->count() }} {{ \Illuminate\Support\Str::plural('referral', $history['referrals']->count()) }} · one record per Seeker</span>
+                </div>
+                <div class="case-history-refs">
+                    @foreach($history['referrals'] as $i => $ref)
+                        <a href="{{ route('professional.cases.show', $ref->case_reference) }}" class="case-history-ref {{ $ref->id === $case->id ? 'is-current' : '' }}" @if($ref->id === $case->id) aria-current="page" @endif>
+                            <strong>Referral #{{ $ref->id }}</strong>@if($i > 0) <span>Follow-up {{ $i }}</span>@endif
+                            <small>{{ $ref->referral_date?->timezone('Asia/Manila')->format('M d, Y') }} · {{ ucwords(str_replace('_', ' ', $ref->status)) }}</small>
+                        </a>
+                    @endforeach
+                </div>
+                <ol class="case-history-timeline">
+                    @forelse($history['events'] as $event)
+                        <li>
+                            <time>{{ \Illuminate\Support\Carbon::parse($event['at'])->timezone('Asia/Manila')->format('M d, Y g:i A') }}</time>
+                            <div><strong>{{ $event['title'] }}</strong> <span class="case-history-tag">{{ $event['referral'] }}</span>@if($event['detail'])<p>{{ $event['detail'] }}</p>@endif</div>
+                        </li>
+                    @empty
+                        <li><div>No recorded events yet.</div></li>
+                    @endforelse
+                </ol>
+            </div>
+            @endif
 
             <!-- Intervention History -->
             <div class="lg:col-span-2 space-y-6">

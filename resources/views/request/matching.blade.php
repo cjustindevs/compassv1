@@ -566,7 +566,7 @@
 
             <div>
                 <p class="text-sm font-medium text-red-700">Need immediate help?</p>
-                <p class="text-xs text-red-600">COMPASS is not an emergency service. For urgent support, open the emergency page or call your local emergency number.</p>
+                <p class="text-xs text-red-600">COMPASS is not an emergency service. If you are in danger, dial <a href="tel:911" class="font-bold underline">911</a> or call the NCMH crisis line <a href="tel:1553" class="font-bold underline">1553</a> (free, 24/7), or open the emergency page.</p>
             </div>
             <a href="{{ route('emergency') }}" class="px-6 py-2 bg-red-500 text-white text-sm font-semibold rounded-full hover:bg-red-600 transition ml-auto">Emergency support</a>
         </div>

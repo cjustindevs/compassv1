@@ -740,6 +740,7 @@
                 </div>
             @endif
 
+            <x-emergency-callout />
             <!-- MOOD CHECK-IN -->
             <div class="mood-section mb-6">
                 <span class="mood-heading" id="moodHeading">Daily check-in</span>
