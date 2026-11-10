@@ -20,7 +20,19 @@
         .menu-btn::before { content: ''; width: 16px; height: 2px; border-radius: 2px; background: currentColor; box-shadow: 0 5px 0 currentColor, 0 -5px 0 currentColor; }
         @media (max-width: 768px) { .menu-btn { display: inline-flex; } }
 
-        .rs-wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 20px; }
+        .rs-wrap { max-width: 1240px; display: grid; gap: 16px; }
+        .rs-body { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+        .rs-side { display: grid; gap: 16px; position: sticky; top: calc(12px + env(safe-area-inset-top, 0px)); }
+        .rs-side .player { position: static; box-shadow: none; }
+        .rs-side .breathe { padding: 18px; }
+        .rs-side .breathe-stage { width: 160px; height: 160px; }
+        .hero-card { display: grid; grid-template-columns: 220px minmax(0, 1fr); }
+        .hero-card .sh-art { height: 100% !important; min-height: 140px; }
+        .hero-body { padding: 18px 22px !important; gap: 8px !important; }
+        .hero-card h1 { font-size: 24px !important; }
+        .content-card { padding: 24px 28px !important; }
+        @media (max-width: 1100px) { .rs-body { grid-template-columns: 1fr; } .rs-side { position: static; order: -1; } }
+        @media (max-width: 640px) { .hero-card { grid-template-columns: 1fr; } .hero-card .sh-art { height: 120px !important; min-height: 0; } }
         .rs-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
         .back-link { display: inline-flex; align-items: center; background: #fff; border: 1px solid var(--gray-200); border-radius: 12px; color: var(--gray-600); font-size: 13px; font-weight: 600; padding: 9px 14px; text-decoration: none; }
         .back-link:hover { border-color: var(--green-400); color: var(--green-700); }
@@ -151,7 +163,7 @@
                     <p class="lede">{{ $resource->description }}</p>
                     <div class="chips">
                         <a href="{{ route('selfhelp.category', $resource->category) }}" class="chip green">{{ $categoryLabel }}</a>
-                        @if($resource->duration)<span class="chip">{{ $resource->duration }}</span>@endif
+                        @if($resource->duration && strtoupper($resource->duration) !== 'N/A')<span class="chip">{{ $resource->duration }}</span>@endif
                         <span class="chip">{{ $resource->difficulty_label }}</span>
                         <span class="chip">{{ count($steps) }} {{ count($steps) === 1 ? 'step' : 'steps' }}</span>
                         @if($completed)<span class="chip green">Completed</span>@endif
@@ -159,36 +171,10 @@
                 </div>
             </article>
 
-            {{-- Progress follows the steps you actually open; it is saved automatically. --}}
-            <section class="player" aria-label="Your progress and audio">
-                <div class="player-row">
-                    <p class="player-status" id="resourceActivityState" role="status">
-                        @if($completed)<strong>{{ $isArticle ? 'Read' : 'Completed' }}</strong> · all {{ count($steps) }} steps
-                        @else<strong>Step <span data-step-now>1</span> of {{ count($steps) }}</strong> · <span data-step-percent>{{ $savedPercent }}</span>% done
-                        @endif
-                    </p>
-                    <div class="player-tools">
-                        <button type="button" class="btn btn-outline" data-listen aria-pressed="false" hidden>Listen</button>
-                        <button type="button" class="btn btn-outline" data-calm-sound aria-pressed="false" hidden>Calm sound</button>
-                    </div>
-                </div>
-                <div class="progress-track" role="progressbar" aria-label="Progress through this resource" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $completed ? 100 : $savedPercent }}" data-progress-bar><div class="fill" style="width: {{ $completed ? 100 : $savedPercent }}%"></div></div>
-                @if(count($steps) > 1)
-                    <div class="step-dots" aria-label="Jump to a step" hidden data-step-dots>
-                        @foreach($steps as $i => $step)<button type="button" class="step-dot" data-goto-step="{{ $i }}" aria-label="Step {{ $i + 1 }}: {{ $step['title'] }}"></button>@endforeach
-                    </div>
-                @endif
-            </section>
 
-            @if($sectionKey === 'breathing')
-                <section class="breathe" aria-labelledby="breatheTitle" data-breathe>
-                    <h2 id="breatheTitle">Breathe with the circle</h2>
-                    <div class="breathe-stage"><div class="breathe-ring" data-breathe-ring></div><div><div class="breathe-label" data-breathe-label aria-live="polite">Ready</div><div class="breathe-count" data-breathe-count>In 4 · Hold 4 · Out 6</div></div></div>
-                    <button type="button" class="btn btn-primary" data-breathe-toggle>Start breathing</button>
-                    <p>Follow the circle: breathe in as it grows, hold, then breathe out slowly as it shrinks. Stop whenever you like.</p>
-                </section>
-            @endif
 
+            <div class="rs-body">
+                <div class="rs-main">
             <section class="content-card" id="resourceSteps" aria-label="Resource steps">
                 @foreach($steps as $i => $step)
                     <section class="sh-step" data-step="{{ $i }}" aria-labelledby="step-title-{{ $i }}">
@@ -210,6 +196,38 @@
                     <button type="button" class="btn btn-primary" id="completeBtn" onclick="markComplete()" @disabled($completed)><span id="completeLabel">{{ $completed ? 'Completed' : ($isArticle ? 'Mark as read' : 'Mark complete') }}</span></button>
                 </div>
             </section>
+                </div>
+                <aside class="rs-side">
+            {{-- Progress follows the steps you actually open; it is saved automatically. --}}
+            <section class="player" aria-label="Your progress and audio">
+                <div class="player-row">
+                    <p class="player-status" id="resourceActivityState" role="status">
+                        @if($completed)<strong>{{ $isArticle ? 'Read' : 'Completed' }}</strong> · all {{ count($steps) }} steps
+                        @else<strong>Step <span data-step-now>1</span> of {{ count($steps) }}</strong> · <span data-step-percent>{{ $savedPercent }}</span>% done
+                        @endif
+                    </p>
+                    <div class="player-tools">
+                        <button type="button" class="btn btn-outline" data-listen aria-pressed="false" hidden>Listen</button>
+                        <button type="button" class="btn btn-outline" data-calm-sound aria-pressed="false" hidden>Calm sound</button>
+                    </div>
+                </div>
+                <div class="progress-track" role="progressbar" aria-label="Progress through this resource" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $completed ? 100 : $savedPercent }}" data-progress-bar><div class="fill" style="width: {{ $completed ? 100 : $savedPercent }}%"></div></div>
+                @if(count($steps) > 1)
+                    <div class="step-dots" aria-label="Jump to a step" hidden data-step-dots>
+                        @foreach($steps as $i => $step)<button type="button" class="step-dot" data-goto-step="{{ $i }}" aria-label="Step {{ $i + 1 }}: {{ $step['title'] }}"></button>@endforeach
+                    </div>
+                @endif
+            </section>
+            @if($sectionKey === 'breathing')
+                <section class="breathe" aria-labelledby="breatheTitle" data-breathe>
+                    <h2 id="breatheTitle">Breathe with the circle</h2>
+                    <div class="breathe-stage"><div class="breathe-ring" data-breathe-ring></div><div><div class="breathe-label" data-breathe-label aria-live="polite">Ready</div><div class="breathe-count" data-breathe-count>In 4 · Hold 4 · Out 6</div></div></div>
+                    <button type="button" class="btn btn-primary" data-breathe-toggle>Start breathing</button>
+                    <p>Follow the circle: breathe in as it grows, hold, then breathe out slowly as it shrinks. Stop whenever you like.</p>
+                </section>
+            @endif
+                </aside>
+            </div>
 
             @if($related->count() > 0)
                 <section>
@@ -218,7 +236,7 @@
                         @foreach($related as $item)
                             <a href="{{ route('selfhelp.show', $item->id) }}" class="related-card">
                                 <x-selfhelp-art :topic="app(\App\Http\Controllers\SelfHelpController::class)->sectionKeyFor($item)" size="thumb" />
-                                <div><h3>{{ $item->title }}</h3><p class="meta">{{ \App\Http\Controllers\SelfHelpController::CATEGORIES[$item->category]['label'] ?? \Illuminate\Support\Str::headline($item->category) }}@if($item->duration) · {{ $item->duration }}@endif</p></div>
+                                <div><h3>{{ $item->title }}</h3><p class="meta">{{ \App\Http\Controllers\SelfHelpController::CATEGORIES[$item->category]['label'] ?? \Illuminate\Support\Str::headline($item->category) }}@if($item->duration && strtoupper($item->duration) !== 'N/A') · {{ $item->duration }}@endif</p></div>
                             </a>
                         @endforeach
                     </div>

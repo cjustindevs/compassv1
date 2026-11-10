@@ -100,6 +100,31 @@
         @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
         @media (max-width: 1024px) { .main-content { padding: 20px 24px 80px; } .sh-mine { grid-template-columns: 1fr; } }
         @media (max-width: 768px) { .main-content { margin-left: 0; padding: 16px 16px 100px; } .sh-search { flex-basis: 100%; } }
+        /* Compact pass: use the full width and fit more resources per screen. */
+        .sh-wrap { max-width: none; gap: 20px; }
+        .sh-head h1 { font-size: 22px; }
+        .sh-head p { font-size: 13px; }
+        .sh-panel { padding: 14px 16px; gap: 8px; border-radius: 14px; }
+        .sh-block-title { font-size: 15px; }
+        .sh-continue { gap: 8px; }
+        .sh-continue a { grid-template-columns: 40px minmax(0, 1fr); gap: 10px; padding: 6px; margin: -6px; }
+        .sh-continue .sh-art { width: 40px; height: 40px; border-radius: 10px; }
+        .sh-continue strong { font-size: 13px; }
+        .sh-bar { height: 5px; margin-top: 4px; }
+        .sh-saved a { padding: 6px 0; font-size: 13px; }
+        .sh-filters { gap: 8px; }
+        .sh-chips { gap: 6px; }
+        .sh-chip { font-size: 12px; padding: 5px 11px; }
+        .sh-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+        .resource-card { border-radius: 14px; }
+        .resource-card .sh-art { height: 64px; }
+        .resource-card .body { padding: 10px 12px 12px; gap: 4px; }
+        .resource-card h3 { font-size: 14px; }
+        .resource-card .summary { font-size: 12.5px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .topic-label { font-size: 10px; }
+        .kind, .badge-featured, .chip { font-size: 10.5px; padding: 2px 8px; }
+        .meta { gap: 4px; margin-top: 2px; }
+        .sh-topic-note { font-size: 13px; padding: 10px 14px; }
     </style>
 <link rel="stylesheet" href="{{ asset('css/selfhelp-mobile.css') }}?v={{ filemtime(public_path('css/selfhelp-mobile.css')) }}">
     @vite(['resources/css/app.css'])
@@ -143,7 +168,7 @@
                                         <x-selfhelp-art :topic="app(\App\Http\Controllers\SelfHelpController::class)->sectionKeyFor($r)" size="thumb" />
                                         <div>
                                             <strong>{{ $r->title }}</strong>
-                                            <span>{{ $pct > 0 ? $pct.'% done' : 'Opened, not started' }}@if($r->duration) · {{ $r->duration }}@endif</span>
+                                            <span>{{ $pct > 0 ? $pct.'% done' : 'Opened, not started' }}@if($r->duration && strtoupper($r->duration) !== 'N/A') · {{ $r->duration }}@endif</span>
                                             <div class="sh-bar" role="progressbar" aria-label="{{ $r->title }} progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $pct }}"><i style="width:{{ max($pct, 2) }}%"></i></div>
                                         </div>
                                     </a>
@@ -158,7 +183,7 @@
                         @if($savedResources->count() > 0)
                             <div class="sh-saved">
                                 @foreach($savedResources as $resource)
-                                    <a href="{{ route('selfhelp.show', $resource->id) }}"><span>{{ \Illuminate\Support\Str::limit($resource->title, 44) }}</span><small>{{ $resource->duration ?: ($categoryLabels[$resource->category] ?? ucfirst($resource->category)) }}</small></a>
+                                    <a href="{{ route('selfhelp.show', $resource->id) }}"><span>{{ \Illuminate\Support\Str::limit($resource->title, 44) }}</span><small>{{ ($resource->duration && strtoupper($resource->duration) !== 'N/A') ? $resource->duration : ($categoryLabels[$resource->category] ?? ucfirst($resource->category)) }}</small></a>
                                 @endforeach
                             </div>
                         @else

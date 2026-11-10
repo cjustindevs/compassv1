@@ -218,9 +218,13 @@ class SelfHelpController extends Controller
     /**
      * Resource detail page with save / progress / complete actions
      */
-    public function show(Request $request, int $id): View
+    public function show(Request $request, int $id): View|RedirectResponse
     {
-        $resource = SelfHelpResource::published()->findOrFail($id);
+        $resource = SelfHelpResource::published()->find($id);
+        if (! $resource) {
+            // Old links and saved bookmarks can point at a retired resource; return to the library instead of a bare 404.
+            return redirect()->route('selfhelp')->with('success', 'That resource is no longer available. Here is the full library.');
+        }
 
         $resource->increment('views_count');
 

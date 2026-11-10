@@ -145,6 +145,12 @@
         .emg-urgent-actions > a { width: 100%; }
         .emg-panel { padding: 16px; }
     }
+    /* Compact pass: shorter hotline cards so more lines fit on one screen. */
+    .emg-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 10px; }
+    .emg-card { padding: 12px 14px; }
+    .emg-card h3 { font-size: 14px; }
+    .emg-card p { margin: 4px 0 10px; font-size: 12.5px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .emg-call { min-height: 38px; padding: 7px 12px; font-size: 13px; }
 </style>
 @endpush
 
