@@ -36,7 +36,7 @@ const accounts = {
 
 const pages = {
     admin: ['admin/dashboard', 'admin/users', 'admin/roles-permissions', 'admin/audit-logs', 'admin/reports', 'admin/system-health', 'admin/backup-restore', 'admin/settings'],
-    adviser: ['adviser/dashboard', 'adviser/screenings', 'adviser/evaluations', 'adviser/helpers', 'adviser/referrals', 'adviser/emergencies', 'adviser/calendar', 'adviser/schedule', 'adviser/reports', 'adviser/resources', 'adviser/training', 'adviser/transcripts', 'adviser/notifications', 'adviser/settings', 'queue-performance', 'concerns/manage'],
+    adviser: ['adviser/dashboard', 'adviser/screenings', 'adviser/evaluations', 'adviser/helpers', 'adviser/helpers/create', 'adviser/live', 'adviser/referrals', 'adviser/emergencies', 'adviser/calendar', 'adviser/schedule', 'adviser/reports', 'adviser/resources', 'adviser/training', 'adviser/transcripts', 'adviser/notifications', 'adviser/settings', 'queue-performance', 'concerns/manage'],
     helper: ['helper/dashboard', 'helper/readiness', 'helper/cases', 'helper/sessions', 'helper/chat', 'helper/calendar', 'helper/competency', 'helper/reports', 'helper/resources', 'helper/self-help', 'helper/notifications', 'helper/profile', 'helper/settings'],
     seeker: ['seeker/dashboard', 'request/screening', 'request/preferences', 'request/matching', 'seeker/requests', 'seeker/referrals', 'session/history', 'selfhelp', 'emergency', 'notifications', 'settings', 'seeker/privacy'],
     moderator: ['moderator/dashboard', 'moderator/queue', 'moderator/sessions', 'moderator/emergency', 'moderator/schedules', 'moderator/manage', 'moderator/reports', 'moderator/referrals/unassigned', 'moderator/reconnections', 'moderator/notifications', 'moderator/settings', 'queue-performance'],

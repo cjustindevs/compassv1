@@ -211,4 +211,18 @@ class HelperChatController extends Controller
 
         return redirect()->route('helper.session.chat', ['id' => $session->id]);
     }
+
+    /** Private coach notes from the supervising Adviser for this session (QA: live supervision). */
+    public function coachNotes(int $id): \Illuminate\Http\JsonResponse
+    {
+        abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
+        $helper = Auth::user()->helper;
+        $session = Session::where('helper_id', $helper?->id)->findOrFail($id);
+        $after = (int) request()->query('after', 0);
+        $notes = \App\Models\SessionCoachNote::with('adviser')->where('session_id', $session->id)->where('helper_id', $helper->id)
+            ->where('id', '>', $after)->orderBy('id')->get();
+        \App\Models\SessionCoachNote::whereIn('id', $notes->whereNull('read_at')->pluck('id'))->update(['read_at' => now()]);
+
+        return response()->json(['notes' => $notes->map->toFeed()->values()]);
+    }
 }

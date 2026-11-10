@@ -3,10 +3,10 @@
 @section('content')
 <div class="adviser-page-content hc-page">
     <a class="hc-back" href="{{ route('adviser.helpers') }}">&larr; Back to Manage Helpers</a>
-    <header class="hc-head">
+    <div class="hc-head">
         <h1>Add a Helper</h1>
         <p>Create an account for a student who will be supervised by you. Record the proof that makes them eligible before the account is created.</p>
-    </header>
+    </div>
 
     @if($errors->any())
         <div class="hc-errors" role="alert"><strong>Please fix the following:</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>

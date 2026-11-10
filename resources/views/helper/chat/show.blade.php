@@ -346,6 +346,13 @@
             </div>
         </div>
 
+        {{-- Private notes from the supervising Adviser (never shown to the Seeker). --}}
+        @if($session->session_status === 'active')
+        <section class="coach-panel" data-coach-notes="{{ route('helper.chat.coach-notes', $session->id) }}" aria-labelledby="coachPanelTitle" hidden>
+            <header><h3 id="coachPanelTitle">Coach notes from your Adviser</h3><span>Only you can see these</span></header>
+            <ul data-coach-list aria-live="polite"></ul>
+        </section>
+        @endif
         <x-voice-call :session="$session" />
         <!-- Messages -->
         <div class="chat-window">
@@ -374,5 +381,40 @@
 
     <!-- ═══════════════ REFERRAL MODAL ═══════════════ -->
     @include('partials.helper-session-actions')
+
+    <style>
+        .coach-panel { margin: 0 16px 10px; background: #f2f8ff; border: 1px solid #c9ddf5; border-left: 4px solid #2a78d6; border-radius: 12px; padding: 10px 14px; }
+        .coach-panel header { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+        .coach-panel h3 { margin: 0; font-size: 14px; font-weight: 700; color: #1c4f8a; }
+        .coach-panel header span { font-size: 11.5px; color: #4d6a8a; }
+        .coach-panel ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; max-height: 140px; overflow-y: auto; }
+        .coach-panel li { font-size: 13px; color: #22405f; line-height: 1.45; }
+        .coach-panel li small { color: #4d6a8a; margin-right: 6px; }
+    </style>
+    <script>
+    (() => {
+        const panel = document.querySelector('[data-coach-notes]');
+        if (!panel) return;
+        const list = panel.querySelector('[data-coach-list]');
+        let after = 0;
+        async function poll() {
+            if (document.hidden) return;
+            try {
+                const res = await fetch(panel.dataset.coachNotes + '?after=' + after, { headers: { Accept: 'application/json' }, credentials: 'same-origin', cache: 'no-store' });
+                if (!res.ok) return;
+                const { notes } = await res.json();
+                notes.forEach((n) => {
+                    const li = document.createElement('li');
+                    const time = document.createElement('small'); time.textContent = n.time;
+                    li.append(time, document.createTextNode(n.note));
+                    list.append(li); after = Math.max(after, n.id);
+                });
+                if (notes.length) { panel.hidden = false; list.scrollTop = list.scrollHeight; }
+            } catch (_) { /* try again on the next tick */ }
+        }
+        poll();
+        setInterval(poll, 6000);
+    })();
+    </script>
 
 @endsection

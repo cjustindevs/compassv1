@@ -30,7 +30,8 @@
         <nav class="co-task-links" aria-label="Live support actions">
         @foreach(['Screening reviews pending'=>'adviser.screenings','Referral reviews pending'=>'adviser.referrals','Evaluations pending'=>'adviser.evaluations','Escalated cases'=>'adviser.emergencies','Helpers at capacity'=>'adviser.schedule'] as $label=>$target)
         <a href="{{ route($target) }}"><strong>{{ collect($overview['cards'])->firstWhere('label',$label)['value'] ?? 0 }}</strong> {{ $label === 'Escalated cases' ? 'Live emergencies' : $label }}</a>
-        @endforeach</nav>
+        @endforeach
+        <a href="{{ route('adviser.live.index') }}"><strong>{{ auth()->user()->adviser ? \App\Models\Session::where('session_status','active')->where('session_type','chat')->where('is_test_record',false)->whereHas('helper', fn ($q) => $q->where('adviser_id', auth()->user()->adviser->id))->count() : 0 }}</strong> Live sessions to watch</a></nav>
     @endif
     <details class="co-definitions" @if(auth()->user()?->role === 'moderator') open @endif><summary>Operational status and supporting metrics</summary><div class="co-secondary">@foreach($secondary as $card)<div><span title="{{ $card['definition'] }}">{{ $card['label'] }}</span><strong title="{{ $card['definition'] }}" @if(auth()->user()?->role === 'moderator' && $card['label'] === 'Active emergencies') id="statEmergency" @endif>{{ array_key_exists('raw',$card) ? \App\Services\SessionPerformance::number($card['raw'], $card['unit'] ?? '') : $formatValue($card['value']) }}</strong>@if(isset($card['samples']))<small>{{ $card['samples'] }} cases measured</small>@endif</div>@endforeach</div></details>
 

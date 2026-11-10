@@ -35,6 +35,10 @@
         <a href="{{ route('adviser.helpers') }}" class="nav-item {{ request()->routeIs('adviser.helpers*', 'adviser.helper*') ? 'active' : '' }}">
             <x-ui-icon name="users"  /><span class="nav-text">Manage Helpers</span>
         </a>
+        @php($liveCount = auth()->user()?->adviser ? \App\Models\Session::where('session_status', 'active')->where('session_type', 'chat')->where('is_test_record', false)->whereHas('helper', fn ($q) => $q->where('adviser_id', auth()->user()->adviser->id))->count() : 0)
+        <a href="{{ route('adviser.live.index') }}" class="nav-item {{ request()->routeIs('adviser.live.*') ? 'active' : '' }}" title="Live sessions">
+            <x-ui-icon name="eye"  /><span class="nav-text">Live sessions</span>@if($liveCount)<span class="nav-badge">{{ $liveCount }}</span>@endif
+        </a>
         <a href="{{ route('adviser.referrals') }}" class="nav-item {{ request()->routeIs('adviser.referrals*', 'adviser.referral*') ? 'active' : '' }}">
             <x-ui-icon name="arrow-right"  /><span class="nav-text">Referral Queue</span>
             @if($referralBadge > 0)

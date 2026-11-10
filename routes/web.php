@@ -347,6 +347,7 @@ Route::middleware(['auth', 'role:helper', 'ensure.helper.profile', 'ensure.helpe
     // Chat index (shows active chats / redirects to active session)
     Route::get('/chat', [HelperChatController::class, 'index'])->name('chat');
     Route::get('/chat/{id}', [HelperChatController::class, 'show'])->name('chat.show');
+    Route::get('/chat/{id}/coach-notes', [HelperChatController::class, 'coachNotes'])->whereNumber('id')->name('chat.coach-notes');
 });
 
 // Helper routes that must be reachable regardless of readiness: the readiness
@@ -406,6 +407,10 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
 
     // Helper Management
     Route::get('/helpers', [AdviserHelperController::class, 'index'])->name('helpers');
+    Route::get('/live', [\App\Http\Controllers\Adviser\AdviserLiveSessionController::class, 'index'])->name('live.index');
+    Route::get('/live/{id}', [\App\Http\Controllers\Adviser\AdviserLiveSessionController::class, 'show'])->whereNumber('id')->name('live.show');
+    Route::get('/live/{id}/feed', [\App\Http\Controllers\Adviser\AdviserLiveSessionController::class, 'feed'])->whereNumber('id')->name('live.feed');
+    Route::post('/live/{id}/notes', [\App\Http\Controllers\Adviser\AdviserLiveSessionController::class, 'storeNote'])->whereNumber('id')->middleware('throttle:30,1')->name('live.notes');
     Route::get('/helpers/create', [\App\Http\Controllers\Adviser\AdviserHelperAccountController::class, 'create'])->name('helpers.create');
     Route::post('/helpers', [\App\Http\Controllers\Adviser\AdviserHelperAccountController::class, 'store'])->middleware('throttle:10,1')->name('helpers.store');
     Route::get('/helpers/export', [AdviserHelperController::class, 'export'])->name('helpers.export');
