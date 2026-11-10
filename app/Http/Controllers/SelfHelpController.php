@@ -193,7 +193,7 @@ class SelfHelpController extends Controller
     /**
      * Resolve the section a resource belongs to, or `more` when nothing matches.
      */
-    protected function sectionKeyFor(SelfHelpResource $resource): string
+    public function sectionKeyFor(SelfHelpResource $resource): string
     {
         $haystack = Str::lower(implode(' ', array_filter([
             $resource->title,
@@ -250,7 +250,10 @@ class SelfHelpController extends Controller
             ->take(3)
             ->get();
 
-        return view('selfhelp.resource', compact('resource', 'isSaved', 'progress', 'related'));
+        $sectionKey = $this->sectionKeyFor($resource);
+        $sectionLabel = static::SECTIONS[$sectionKey]['label'];
+
+        return view('selfhelp.resource', compact('resource', 'isSaved', 'progress', 'related', 'sectionKey', 'sectionLabel'));
     }
 
     /**
@@ -334,14 +337,15 @@ class SelfHelpController extends Controller
 
         $resource = SelfHelpResource::published()->findOrFail($id);
 
-        $progress = UserResourceProgress::updateOrCreate(
-            ['user_id' => Auth::id(), 'resource_id' => $resource->id],
-            [
-                'progress_percentage' => $validated['percentage'],
-                'last_accessed' => now(),
-                'completed_at' => $validated['percentage'] >= 100 ? now() : null,
-            ]
-        );
+        // Step progress only moves forward: revisiting an earlier step never lowers the saved
+        // percentage or clears a completion the Seeker already recorded.
+        $progress = UserResourceProgress::firstOrNew(['user_id' => Auth::id(), 'resource_id' => $resource->id]);
+        $percentage = max((int) $progress->progress_percentage, (int) $validated['percentage']);
+        $progress->fill([
+            'progress_percentage' => $percentage,
+            'last_accessed' => now(),
+            'completed_at' => $progress->completed_at ?? ($percentage >= 100 ? now() : null),
+        ])->save();
 
         if (request()->expectsJson()) {
             return response()->json([

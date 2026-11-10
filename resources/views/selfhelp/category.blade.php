@@ -92,6 +92,9 @@
         .meta .chip.saved { background: var(--green-50); color: var(--green-700); font-weight: 600; }
         .meta .chip.tag { color: var(--gray-400); }
 
+        .resource-card { overflow: hidden; }
+        .resource-card .card-art { display: block; width: calc(100% + 40px); max-width: none; height: 88px; margin: -20px -20px 14px; }
+        @media (max-width: 768px) { .resource-card .card-art { width: calc(100% + 36px); margin: -18px -18px 12px; } }
         .empty-state { background: white; border: 1px dashed var(--gray-300); border-radius: 20px; padding: 40px 24px; text-align: center; }
 
         .btn-primary {
@@ -157,6 +160,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 @foreach($resources as $resource)
                     <a href="{{ route('selfhelp.show', $resource->id) }}" class="resource-card">
+                        <x-selfhelp-art :topic="app(\App\Http\Controllers\SelfHelpController::class)->sectionKeyFor($resource)" class="card-art" />
                         <span class="kind">{{ $meta['label'] }}</span>
                         <h2>{{ $resource->title }}</h2>
                         <p class="summary">{{ \Illuminate\Support\Str::limit($resource->description, 100) }}</p>
