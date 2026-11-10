@@ -11,6 +11,7 @@
 <button class="btn btn-secondary">Apply</button>
 <a class="btn btn-secondary" href="{{ route('helper.feedback') }}">Reset</a>
 </form>
+@if(auth()->user()?->helper)<x-rating-explainer :helper="auth()->user()->helper" />@endif
 <section class="card">
 <header class="card-header">
 <h3>Adviser Feedback</h3>
@@ -81,7 +82,7 @@
 <tr>
 <td>{{ ($evaluation->submitted_at ?? $evaluation->created_at)?->copy()->timezone('Asia/Manila')->format('M d, Y') }}</td>
 <td>{{ $evaluation->session?->reference_number ?? 'Unrecorded' }}</td>
-<td>{{ $evaluation->overall_score!==null ? \App\Support\ScoreFormat::number(\App\Support\ScoreFormat::fromTen($evaluation->overall_score)) : 'Not recorded' }}</td>
+<td>@if($evaluation->overall_score!==null)<strong>{{ \App\Support\ScoreFormat::number(\App\Support\ScoreFormat::fromTen($evaluation->overall_score)) }}</strong>@else Not recorded @endif @php($helpfulAnswer = $evaluation->answers['helpfulness_score'] ?? null)@if($helpfulAnswer)<small style="display:block;color:#64746b">Said: {{ $helpfulAnswer }} ({{ \App\Support\ScoreFormat::number(\App\Services\EvaluationInstrument::scale('helpfulness_score', $helpfulAnswer)) }})</small>@endif</td>
 <td>{{ \Illuminate\Support\Str::limit($evaluation->comments ?: '—',150) }}</td>
 <td>
 @if(mb_strlen($evaluation->comments ?? '') > 150)

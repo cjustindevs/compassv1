@@ -205,6 +205,12 @@
             .rc-actions { flex-direction: column-reverse; align-items: stretch; }
             .rc-actions .btn { width: 100%; }
         }
+        .rc-step { border: 1px solid var(--gray-200); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; background: #fff; }
+        .rc-step-head { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px; }
+        .rc-step-num { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--green-50, #eaf8f0); color: var(--green-700, #027039); font-weight: 800; font-size: 14px; }
+        .rc-step-head h3 { margin: 0; font-size: 15px; font-weight: 700; color: var(--gray-800); }
+        .rc-step-head p { margin: 2px 0 0; font-size: 12.5px; color: var(--gray-500); }
+        .rc-pass-rule { font-size: 13px; line-height: 1.55; color: var(--gray-600, #4b5563); background: var(--green-50, #eaf8f0); border: 1px solid var(--green-200, #a8e0b0); border-radius: 12px; padding: 10px 14px; margin: 4px 0 12px; }
     </style>
 @endsection
 
@@ -269,7 +275,22 @@
                 <fieldset @disabled(($cooldownUntil ?? false) || ($capacityBlocked ?? false)) style="border:0;padding:0;margin:0;min-width:0">
 
                 <input type="hidden" name="readiness_form_version" value="{{ \App\Services\HelperReadinessService::GROUPED_VERSION }}">
-                <div class="rc-fields">
+                <section class="rc-step" aria-labelledby="rc-step-1">
+                    <header class="rc-step-head"><span class="rc-step-num" aria-hidden="true">1</span><div><h3 id="rc-step-1">Take a breath</h3><p>Do the short breathing exercise first (about 40 seconds).</p></div></header>
+                    <div class="rc-fields">
+                    <div class="rc-field rc-breathing">
+                        <div><p class="rc-label"><x-ui-icon name="wind" class="text-teal-600" /> Breathing exercise <span class="req">*</span></p>
+                            <div class="breath-steps"><span>Inhale 4s / Hold 4s / Exhale 4s / 3 rounds</span></div>
+                        </div>
+                        <div class="breath-cta"><button type="button" class="btn btn-secondary btn-sm" id="openExerciseBtn"><x-ui-icon name="play" class="mr-1" /> Start exercise</button><span class="status-tag" id="breathStatusTag">Completed</span></div>
+                        <input type="hidden" name="exercise_completed" id="exercise_completed" value="{{ old('exercise_completed','') }}">
+                        @error('exercise_completed')<p class="error-text">{{ $message }}</p>@enderror
+                    </div>
+                    </div>
+                </section>
+                <section class="rc-step" aria-labelledby="rc-step-2">
+                    <header class="rc-step-head"><span class="rc-step-num" aria-hidden="true">2</span><div><h3 id="rc-step-2">Check in with yourself</h3><p>Answer honestly. These answers are only used to decide if you can take a session now.</p></div></header>
+                    <div class="rc-fields">
                     <div class="rc-field rc-skills">
                         <fieldset aria-describedby="listener-skills-reminder">
                             <legend class="rc-label"><x-ui-icon name="check-circle" class="text-green-600" /> Prepared to use these listening skills? <span class="req">*</span></legend>
@@ -281,14 +302,6 @@
                             </div>
                             @error('listener_skills_ready')<p class="error-text">{{ $message }}</p>@enderror
                         </fieldset>
-                    </div>
-                    <div class="rc-field rc-breathing">
-                        <div><p class="rc-label"><x-ui-icon name="wind" class="text-teal-600" /> Breathing exercise <span class="req">*</span></p>
-                            <div class="breath-steps"><span>Inhale 4s / Hold 4s / Exhale 4s / 3 rounds</span></div>
-                        </div>
-                        <div class="breath-cta"><button type="button" class="btn btn-secondary btn-sm" id="openExerciseBtn"><x-ui-icon name="play" class="mr-1" /> Start exercise</button><span class="status-tag" id="breathStatusTag">Completed</span></div>
-                        <input type="hidden" name="exercise_completed" id="exercise_completed" value="{{ old('exercise_completed','') }}">
-                        @error('exercise_completed')<p class="error-text">{{ $message }}</p>@enderror
                     </div>
                     <div class="rc-field">
                         <fieldset>
@@ -323,6 +336,11 @@
                             @error('stress_level')<p class="error-text">{{ $message }}</p>@enderror
                         </fieldset>
                     </div>
+                    </div>
+                </section>
+                <section class="rc-step" aria-labelledby="rc-step-3">
+                    <header class="rc-step-head"><span class="rc-step-num" aria-hidden="true">3</span><div><h3 id="rc-step-3">Set your availability</h3><p>Choose whether you want new sessions after this check.</p></div></header>
+                    <div class="rc-fields">
                     <div class="rc-field">
                         <fieldset>
                             <legend class="rc-label"><x-ui-icon name="toggle" class="text-green-600" /> Availability preference <span class="req">*</span></legend>
@@ -334,7 +352,9 @@
                             @error('availability_status')<p class="error-text">{{ $message }}</p>@enderror
                         </fieldset>
                     </div>
-                </div>
+                    </div>
+                </section>
+                <p class="rc-pass-rule"><strong>You'll be marked Ready when:</strong> the breathing exercise is done, you confirm your listening skills, you're emotionally ready and willing to listen, your stress is Low or Moderate, and you choose Available. Ready lasts until the end of your duty window; you can check in again after 30 minutes.</p>
                 <p class="rc-self-care">Not feeling ready is okay. You can still submit this check; a failed readiness condition keeps you unavailable for new sessions.</p>
 
                 {{-- Actions --}}

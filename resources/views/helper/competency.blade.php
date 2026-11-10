@@ -33,7 +33,7 @@
 <div class="hf-skill">
     <span>{{ ucwords(str_replace('_',' ',$key)) }}</span>
     @if($latest->getAttribute($key.'_score')!==null)
-    <progress value="{{ max(0,min(5,$displayScore)) }}" max="5" aria-label="{{ ucwords(str_replace('_',' ',$key)) }}: {{ $displayScore }} out of 5">
+    <progress value="{{ max(0,min(5,$displayScore)) }}" max="5" aria-label="{{ ucwords(str_replace('_',' ',$key)) }}: {{ $displayScore }} on a 1–5 scale">
 </progress>
     <strong>{{ number_format($displayScore,1) }}</strong>
     @else<span class="hf-muted">Not recorded</span>
@@ -47,6 +47,7 @@
         'datasets' => [['label' => 'Competency score (1–5)', 'data' => $trend->pluck('score')->map(fn ($v) => $v === null ? null : (float) $v)->values()->all()]]];
 @endphp
 <x-analytics-chart class="card" title="Score Trend" description="Latest six evaluations in the selected range, on a 1–5 scale." :chart="$trendChart" />
+@if(auth()->user()?->helper)<x-rating-explainer id="how-ratings-work" :helper="auth()->user()->helper" />@endif
 <section class="card" id="evaluation-history">
 <header class="card-header">
 <h3>Recent Evaluations</h3>

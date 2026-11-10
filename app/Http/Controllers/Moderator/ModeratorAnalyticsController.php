@@ -51,7 +51,7 @@ class ModeratorAnalyticsController extends Controller
             ['Metric', 'Value'],
             ['Sessions completed', $metrics['sessions_completed']],
             ['Avg session length (min)', $metrics['avg_length']],
-            ['Avg rating (/5)', $metrics['avg_rating']],
+            ['Avg rating (1–5)', $metrics['avg_rating']],
             ['Avg competency growth (pts)', $metrics['competency_growth']],
             ['Active helpers', $metrics['active_helpers']],
             [],

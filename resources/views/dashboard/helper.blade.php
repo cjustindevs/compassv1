@@ -24,11 +24,13 @@
     ];
 @endphp
 <x-performance-cards :cards="$performanceCards" />
+<p class="hf-muted" style="margin:6px 0 0"><a class="link" href="{{ route('helper.competency') }}#how-ratings-work">How do ratings work?</a> See where your Seeker and Adviser ratings come from and how they are used.</p>
 <section class="card hf-glance" aria-label="Workload">
 <div><span class="hf-glance-label">Capacity</span><x-helper-capacity :helper="$helper" /></div>
 <div><span class="hf-glance-label">Pending documentation</span><strong>{{ $helper->sessions()->whereNotNull('start_time')->whereNotNull('end_time')->where('end_time','<=',now())->where('documentation_status', '!=', 'submitted')->whereIn('session_status',['completed','evaluated','cancelled','no_show'])->count() }}</strong></div>
 <div><span class="hf-glance-label">Upcoming Session</span>@if($upcomingSession)<strong>{{ $upcomingSession->scheduled_start->copy()->timezone('Asia/Manila')->format('M d, g:i A') }} PHT</strong><small>{{ $upcomingSession->reference_number }}</small>@else<strong>None scheduled</strong>@endif</div>
 </section>
+@if($helper)<x-eligibility-check :helper="$helper" />@endif
 @if(count($emergencyCases))
 <section class="card">
 <header class="card-header">
