@@ -83,7 +83,7 @@
         height: 52px;
         border-radius: 14px;
         object-fit: cover;
-        box-shadow: 0 4px 16px rgba(4, 160, 82, .2);
+        box-shadow: var(--shadow-1);
         flex-shrink: 0;
         display: none;
     }
@@ -139,7 +139,7 @@
 
     .admin-sidebar .nav-section {
         padding: 16px 14px 6px;
-        font-size: 10px;
+        font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: .12em;
@@ -216,7 +216,7 @@
         background: linear-gradient(135deg, #30b650, var(--admin-green-dark));
         color: #fff;
         font-weight: 700;
-        font-size: 15px;
+        font-size: 14px;
         text-transform: uppercase;
         overflow: hidden;
     }

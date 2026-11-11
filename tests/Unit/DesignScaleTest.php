@@ -18,7 +18,7 @@ class DesignScaleTest extends TestCase
 {
     private const TYPE_SCALE = [11, 12, 13, 14, 16, 18, 20, 24, 28];
 
-    private const CLEAN_AREAS = ['shared'];
+    private const CLEAN_AREAS = ['shared', 'admin'];
 
     public static function areas(): array
     {
@@ -100,12 +100,14 @@ class DesignScaleTest extends TestCase
             preg_match_all('/box-shadow:([^;"}]*)/', $line, $shadows);
             foreach ($shadows[1] as $shadow) {
                 foreach (preg_split('/,(?![^(]*\))/', $shadow) as $part) {
-                    if (! preg_match('/rgba?\(\s*(\d+)[ ,]+(\d+)[ ,]+(\d+)/', $part, $rgb)) {
+                    // A brand/accent variable used as a shadow color is a glow too.
+                    $accentVar = (bool) preg_match('/var\(--[a-z-]*(accent|green|ring)[a-z-]*\)/', $part);
+                    if (! $accentVar && ! preg_match('/rgba?\(\s*(\d+)[ ,]+(\d+)[ ,]+(\d+)/', $part, $rgb)) {
                         continue;
                     }
-                    $lengths = preg_match_all('/(?<![\w#.-])(-?[0-9.]+)(?:px)?(?![\w%])/', preg_replace('/rgba?\([^)]*\)/', '', $part), $m) ? $m[1] : [];
+                    $lengths = preg_match_all('/(?<![\w#.-])(-?[0-9.]+)(?:px)?(?![\w%])/', preg_replace('/(rgba?|var)\([^)]*\)/', '', $part), $m) ? $m[1] : [];
                     $blur = (float) ($lengths[2] ?? 0);
-                    $spread = max($rgb[1], $rgb[2], $rgb[3]) - min($rgb[1], $rgb[2], $rgb[3]);
+                    $spread = $accentVar ? 255 : max($rgb[1], $rgb[2], $rgb[3]) - min($rgb[1], $rgb[2], $rgb[3]);
                     if ($blur >= 10 && $spread > 60) {
                         $found[] = "{$where} glow shadow".trim($shadow);
                         break;
@@ -141,12 +143,14 @@ class DesignScaleTest extends TestCase
             '.d { box-shadow: 0 8px 24px rgb(22 59 45 / 12%); font-size: .875rem; }',
             '.e { font-size: 40px; } /* scale-exempt */',
             '<p class="text-[10px] text-[12px] text-sm text-3xl">',
+            '.g { box-shadow: 0 8px 20px var(--admin-accent-ring); } .h { box-shadow: 0 0 0 3px var(--admin-accent-ring); }',
         ]));
 
         $found = self::violations($tmp);
         unlink($tmp);
 
-        $this->assertCount(4, $found);
+        $this->assertCount(5, $found);
+        $this->assertStringContainsString(':7 glow', $found[4]);
         $this->assertStringContainsString(':1 off-scale', $found[0]);
         $this->assertStringContainsString(':3 glow', $found[1]);
         $this->assertStringContainsString(':6 off-scale text-[10px]', $found[2]);
