@@ -149,4 +149,24 @@ class ModeratorPilotPagesTest extends TestCase
         }
         $this->assertSame(3, substr_count($html, 'ui-save-bar"'));
     }
+
+    public function test_emergency_page_and_poll_fragment_have_balanced_markup(): void
+    {
+        $this->actingAs($this->moderator());
+        $html = $this->get(route('moderator.emergency'))->assertOk()->getContent();
+        $fragment = $this->getJson(route('moderator.emergency', ['tab' => 'active']), ['Accept' => 'application/json']);
+        foreach ([$html, (string) ($fragment->json('html') ?? '')] as $markup) {
+            $this->assertSame(substr_count($markup, '<div'), substr_count($markup, '</div>'));
+            $this->assertSame(substr_count($markup, '<section'), substr_count($markup, '</section>'));
+        }
+    }
+
+    public function test_settings_save_bar_is_visible_after_validation_error_and_not_js_gated_by_default(): void
+    {
+        $this->actingAs($this->moderator());
+        $this->assertStringNotContainsString('ui-save-bar is-visible', $this->get(route('moderator.settings'))->getContent());
+        $html = $this->from(route('moderator.settings'))->followingRedirects()->put(route('moderator.settings.profile'), ['name' => '', 'email' => 'bad'])->getContent();
+        $this->assertStringContainsString('ui-save-bar is-visible', $html);
+        $this->assertStringNotContainsString('.ui-save-bar { display: none', file_get_contents(public_path('css/compass-components.css')));
+    }
 }

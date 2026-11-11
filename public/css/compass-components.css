@@ -133,8 +133,8 @@ a.ui-page:focus-visible { outline: none; box-shadow: var(--ring); }
 @media (max-width: 768px) { .ui-attention-count { font-size: var(--text-4xl); } .ui-attention-item { padding: var(--space-4); } }
 
 /* Sticky save bar (settings forms): hidden until a field in the form changes. */
-.ui-save-bar { display: none; position: sticky; bottom: 0; z-index: 40; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-4); padding: var(--space-3) var(--space-4); background: #fff; border: 1px solid var(--compass-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-1); }
-.ui-save-bar.is-visible { display: flex; }
+.ui-save-bar { display: flex; position: sticky; bottom: 0; z-index: 40; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-4); padding: var(--space-3) var(--space-4); background: #fff; border: 1px solid var(--compass-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-1); }
+.js-save-bar .ui-save-bar:not(.is-visible) { display: none; }
 .ui-save-bar-text { margin: 0; font-size: var(--text-sm); color: var(--compass-muted); }
 @media (max-width: 768px) { .ui-save-bar { bottom: 76px; } }
 @media (max-width: 480px) { .ui-save-bar { flex-direction: column; align-items: stretch; } }

@@ -9,6 +9,7 @@
     .mo-emergency-grid > .ui-card { margin-bottom: 0; }
     .mo-emergency-cases .ui-badge, .mo-emergency-cases .btn { white-space: nowrap; }
     @media (max-width: 1499px) { .mo-emergency-grid { grid-template-columns: minmax(0, 1fr); } .mo-emergency-grid > .ui-card { margin-bottom: 24px; } }
+    @media (max-width: 768px) { .mo-page .mo-emergency-cases { min-width: 0; } .mo-emergency-cases td:first-child, .mo-emergency-cases td:nth-child(4) { min-width: 0; } .mo-emergency-cases td:nth-child(5) { white-space: normal; } }
     .mo-workflow .mo-filter-note { margin-top: 16px; }
 </style>
 @endpush

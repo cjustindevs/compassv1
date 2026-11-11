@@ -54,6 +54,7 @@
                 });
             });
 
+            document.documentElement.classList.add('js-save-bar');
             // Reveal each form's sticky save bar once one of its fields changes.
             document.querySelectorAll('form[data-settings-form]').forEach(function (form) {
                 const bar = form.querySelector('[data-save-bar]');
@@ -108,7 +109,7 @@
                         <input type="text" name="assigned_shift" class="form-input" value="{{ old('assigned_shift', $moderator->assigned_shift) }}" placeholder="e.g. Morning Shift">
                     </div>
                 </div>
-                <div class="ui-save-bar" data-save-bar><p class="ui-save-bar-text">You have unsaved changes.</p><button type="submit" class="btn-primary"><x-ui-icon name="save" class="mr-1" /> Save Profile</button></div>
+                <div class="ui-save-bar{{ $errors->any() ? ' is-visible' : '' }}" data-save-bar><p class="ui-save-bar-text">You have unsaved changes.</p><button type="submit" class="btn-primary"><x-ui-icon name="save" class="mr-1" /> Save Profile</button></div>
             </form>
     </x-ui.card>
 
@@ -132,7 +133,7 @@
                         <input type="password" name="new_password_confirmation" class="form-input" required>
                     </div>
                 </div>
-                <div class="ui-save-bar" data-save-bar><p class="ui-save-bar-text">You have unsaved changes.</p><button type="submit" class="btn-primary"><x-ui-icon name="key" class="mr-1" /> Update Password</button></div>
+                <div class="ui-save-bar{{ $errors->any() ? ' is-visible' : '' }}" data-save-bar><p class="ui-save-bar-text">You have unsaved changes.</p><button type="submit" class="btn-primary"><x-ui-icon name="key" class="mr-1" /> Update Password</button></div>
             </form>
     </x-ui.card>
 
@@ -166,7 +167,7 @@
                         </div>
                     @endforeach
                 </div>
-                <div class="ui-save-bar" data-save-bar><p class="ui-save-bar-text">You have unsaved changes.</p><button type="submit" class="btn-primary"><x-ui-icon name="save" class="mr-1" /> Save Preferences</button></div>
+                <div class="ui-save-bar{{ $errors->any() ? ' is-visible' : '' }}" data-save-bar><p class="ui-save-bar-text">You have unsaved changes.</p><button type="submit" class="btn-primary"><x-ui-icon name="save" class="mr-1" /> Save Preferences</button></div>
             </form>
     </x-ui.card>
 @endsection

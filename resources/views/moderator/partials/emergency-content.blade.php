@@ -6,7 +6,6 @@
     <x-ui.kpi label="Avg Response Time" :value="$stats['average_response']" title="Detection to first recorded acknowledgment, for acknowledgments in the last 30 days. Missing or invalid timestamps are excluded." />
     <x-ui.kpi label="Resolved (30d)" :value="$stats['resolved_30d']" tone="green" />
 </x-ui.kpi-grid>
-</div>
 <x-ui.card title="Emergency Workflow" subtitle="Current open stages | Closed in the last 30 days" class="mo-workflow">
     <ol class="mo-workflow-stages" aria-label="Recorded emergency workflow stages">
     @foreach($workflow as $stage=>$count)
