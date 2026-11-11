@@ -77,4 +77,28 @@ class ModeratorPilotPagesTest extends TestCase
             ->assertSee(route('moderator.manage.unassign'), false)->assertSee(route('moderator.manage.assign'), false)
             ->assertSee('data-helper-assignment', false)->assertSee('data-stat="unassigned_helpers"', false);
     }
+
+    public function test_reports_header_filters_chips_and_kpis(): void
+    {
+        $this->actingAs($this->moderator())->get(route('moderator.reports', ['priority' => 'high']))->assertOk()
+            ->assertSee('data-page-header', false)->assertSee('Queue Performance')->assertSee('Export Filtered CSV')
+            ->assertSee('Priority: high')->assertSee('ui-filter-bar', false)
+            ->assertSee('ui-kpi--red', false)->assertSee('ui-kpi--amber', false)->assertSee('ui-kpi--green', false)
+            ->assertSee('ui-table--stack', false)->assertSee('id="report-range"', false);
+    }
+
+    public function test_helper_workload_keeps_hooks_on_moderator_and_adviser_schedule(): void
+    {
+        $adviser = User::factory()->create(['role' => 'adviser', 'is_active' => true]);
+        \App\Models\Adviser::create(['user_account_id' => $adviser->id, 'first_name' => 'Ada', 'last_name' => 'Adviser', 'email' => $adviser->email]);
+
+        foreach ([[$this->moderator(), 'moderator.schedules'], [$adviser, 'adviser.schedule']] as [$user, $route]) {
+            $this->actingAs($user)->get(route($route))->assertOk()
+                ->assertSee('id="helperWorkload"', false)->assertSee('data-helper-workload', false)
+                ->assertSee('data-workload-filter', false)->assertSee('data-workload-body', false)
+                ->assertSee('data-workload-pages', false)->assertSee('data-workload-summary', false)
+                ->assertSee('name="workload_search"', false)->assertSee('name="workload_status"', false)
+                ->assertSee('Showing')->assertSee('ui-table--stack', false)->assertSee('ui-filter-bar', false);
+        }
+    }
 }

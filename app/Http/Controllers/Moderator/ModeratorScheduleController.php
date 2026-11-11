@@ -86,7 +86,7 @@ class ModeratorScheduleController extends Controller
     public function workload(Request $request): JsonResponse
     {
         $page = app(\App\Services\HelperWorkload::class)->page($request);
-        return response()->json(['helpers'=>$page->items(), 'pagination'=>(string) $page->links(), 'total'=>$page->total(),
+        return response()->json(['helpers'=>$page->items(), 'pagination'=>(string) $page->links('vendor.pagination.compass', ['noun' => 'helpers']), 'total'=>$page->total(),
             'summary'=>'Showing '.($page->firstItem() ?? 0).'–'.($page->lastItem() ?? 0).' of '.$page->total().' Helpers'])
             ->header('Cache-Control', 'private, no-store');
     }

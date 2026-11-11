@@ -14,7 +14,8 @@
             const body = root.querySelector('[data-workload-body]'); body.replaceChildren();
             for (const helper of data.helpers) {
                 const row = element('tr', ''); row.dataset.helperId = helper.id;
-                for (const value of [helper.name,helper.status,`${helper.used} / ${helper.limit}`,`${helper.assignments ? 'Assigned / reserved' : 'None'} (${helper.assignments} / 1)`,helper.remaining]) row.append(element('td',value));
+                const labels = ['Helper','Current status','Sessions in duty','Current assignment','Remaining'];
+                [helper.name,helper.status,`${helper.used} / ${helper.limit}`,`${helper.assignments ? 'Assigned / reserved' : 'None'} (${helper.assignments} / 1)`,helper.remaining].forEach((value, index) => { const cell = element('td', value); cell.dataset.label = labels[index]; row.append(cell); });
                 row.children[1].title = helper.reason || ''; body.append(row);
             }
             if (!data.helpers.length) { const row=element('tr',''),cell=element('td','No Helpers match these filters.'); cell.colSpan=5;row.append(cell);body.append(row); }
