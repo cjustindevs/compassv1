@@ -1,269 +1,130 @@
-<!DOCTYPE html>
-<html class="compass-ui" lang="en">
-<head>
-    @include('layouts.partials.pwa-meta')
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+@extends('layouts.app')
+
+@section('title', 'COMPASS – Monitoring '.$session->reference_number)
+
+@push('styles')
     <meta name="user-id" content="{{ auth()->id() }}">
-    <title>COMPASS – Monitoring {{ $session->reference_number }}</title>
-
-    @vite(['resources/js/app.js', 'resources/js/moderator-notifications.js'])
+    @vite(['resources/js/moderator-notifications.js'])
     <style>
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg-primary, #F8FBF9); }
-
-        .main-content {
-            margin-left: var(--sidebar-w, 264px);
-            max-width: 1000px;
-            padding: 24px 32px 80px;
-            min-height: 100vh;
-        }
-
-        .card {
-            background: var(--bg-card, white);
-            border-radius: 20px;
-            padding: 24px;
-            border: 1px solid var(--border-color, #E5E7EB);
-            box-shadow: var(--card-shadow, 0 4px 20px rgba(0,0,0,0.01));
-        }
-
-        .risk-badge {
-            padding: 3px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .risk-badge.low { background: #DCFCE7; color: #166534; }
-        .risk-badge.moderate { background: #FEF3C7; color: #92400E; }
-        .risk-badge.high { background: #FEE2E2; color: #991B1B; }
-        .risk-badge.emergency { background: #FEE2E2; color: #991B1B; animation: pulse-risk 1.5s infinite; }
-        @keyframes pulse-risk { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
-
-        .status-pill { font-size: 12px; font-weight: 600; padding: 3px 12px; border-radius: 20px; }
-        .status-pill.active { background: #DBEAFE; color: #1D4ED8; }
-        .status-pill.assigned { background: #FEF3C7; color: #92400E; }
-        .status-pill.ended { background: #DCFCE7; color: #166534; }
-
-        .info-chip {
-            background: var(--bg-hover, #F9FAFB);
-            border: 1px solid #F3F4F6;
-            border-radius: 14px;
-            padding: 12px 16px;
-        }
-        .info-chip .label { font-size: 11px; color: var(--text-muted, #9CA3AF); text-transform: uppercase; letter-spacing: 0.04em; }
-        .info-chip .value { font-size: 14px; font-weight: 600; color: var(--text-primary, #1F2937); margin-top: 2px; }
-
-        .msg-bubble {
-            padding: 10px 14px;
-            border-radius: 14px;
-            font-size: 13px;
-            max-width: 80%;
-            line-height: 1.5;
-        }
+        .detail-card { margin-bottom: 24px; }
+        .detail-flash { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
+        .detail-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin: 0; }
+        .detail-summary dt { font-size: 13px; color: var(--compass-muted, #6B7280); margin-bottom: 4px; }
+        .detail-summary dd { margin: 0; font-size: 15px; font-weight: 600; color: var(--compass-text, #1F2937); overflow-wrap: anywhere; }
+        .detail-columns { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+        .detail-columns > .ui-card, .detail-side > .ui-card { margin-bottom: 0; }
+        .detail-side { display: grid; gap: 24px; }
+        @media (min-width: 1024px) { .detail-columns { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); } }
+        .detail-info { display: grid; gap: 12px; margin: 0; font-size: 15px; }
+        .detail-info > div { display: flex; justify-content: space-between; gap: 12px; }
+        .detail-info dt { color: var(--compass-muted, #6B7280); }
+        .detail-info dd { margin: 0; font-weight: 600; color: var(--compass-text, #1F2937); text-align: right; overflow-wrap: anywhere; }
+        .msg-list { display: grid; gap: 12px; max-height: 384px; overflow-y: auto; }
+        .msg-row { display: flex; }
+        .msg-row.helper { justify-content: flex-end; }
+        .msg-bubble { padding: 10px 14px; border-radius: 14px; font-size: 15px; max-width: 80%; line-height: 1.5; overflow-wrap: anywhere; }
         .msg-bubble.seeker { background: #EAF8F0; color: #065F46; }
-        .msg-bubble.helper { background: var(--border-light, #F3F4F6); color: var(--text-primary, #374151); }
-
-        .flash-success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
-
-        .hamburger { display: none; background: none; border: none; font-size: 24px; color: var(--text-primary, #374151); cursor: pointer; padding: 4px; }
-        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 99; }
-        .sidebar-overlay.active { display: block; }
-
-
-        @media (max-width: 1024px) { .main-content { padding: 20px 24px 80px; } }
-        @media (max-width: 768px) {
-            .main-content { margin-left: 0; padding: 16px 16px 100px; }
-            .hamburger { display: block; }
-            .card { padding: 16px; }
-        }
+        .msg-bubble.helper { background: #F3F4F6; color: #374151; }
+        .msg-bubble .msg-who { display: block; font-size: 12px; margin-bottom: 2px; color: var(--compass-muted, #6B7280); }
+        .detail-note { font-size: 13px; color: var(--compass-muted, #6B7280); margin: 0 0 12px; }
+        .incident + .incident { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--compass-divider, #F3F4F6); }
+        .incident p { margin: 4px 0 0; font-size: 14px; color: var(--compass-muted, #6B7280); }
+        .incident .incident-title { font-size: 15px; font-weight: 600; color: var(--compass-text, #1F2937); }
+        .score-value { font-size: 28px; font-weight: 800; color: var(--compass-text, #1F2937); margin: 0; }
     </style>
-    @vite(['resources/css/app.css'])
-    @include('partials.ui-assets')
-</head>
-<body class="compass-compact">
+@endpush
 
-    @include('layouts.partials.moderator-sidebar')
+@section('content')
+    @php
+        $riskTone = fn ($level) => match ($level) { 'emergency' => 'red', 'high' => 'orange', 'moderate' => 'amber', default => 'green' };
+        $risk = $session->risk_level ?? 'low';
+        $started = $session->start_time ?? $session->created_date;
+    @endphp
 
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <x-ui.page-header :title="'Monitoring '.$session->reference_number" description="Live session monitor"
+        :back-href="route('moderator.sessions')" back-label="Back to Active Sessions" />
 
-    <main class="main-content">
+    @if(session('success'))
+        <div class="detail-flash">{{ session('success') }}</div>
+    @endif
 
-        <div class="flex items-center gap-4 mb-6">
-            <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
-                <x-ui-icon name="menu"  />
-            </button>
-            <div>
-                <h1 class="text-xl md:text-2xl font-bold text-gray-800">Monitoring {{ $session->reference_number }}</h1>
-                <p class="text-sm text-gray-500 hidden sm:block">Live session monitor</p>
-            </div>
-        </div>
+    <x-ui.card class="detail-card" :title="$session->seeker?->generated_alias ?? 'Anonymous'" :subtitle="$session->concern?->concern_name ?? 'General Concern'">
+        <x-slot:actions>
+            <x-ui.badge :tone="$riskTone($risk)">{{ ucfirst($risk) }} risk</x-ui.badge>
+            <x-ui.badge :tone="$session->session_status === 'active' ? 'blue' : ($session->session_status === 'completed' || $session->session_status === 'evaluated' ? 'green' : 'amber')">{{ $session->status_label }}</x-ui.badge>
+        </x-slot:actions>
+        <dl class="detail-summary">
+            <div><dt>Status</dt><dd>{{ $session->status_label }}</dd></div>
+            <div><dt>Risk</dt><dd>{{ ucfirst($risk) }}</dd></div>
+            <div><dt>Helper</dt><dd>{{ $session->helper?->full_name ?? 'Unassigned' }}</dd></div>
+            <div><dt>Seeker alias</dt><dd>{{ $session->seeker?->generated_alias ?? 'Anonymous' }}</dd></div>
+            <div><dt>Mode</dt><dd>{{ $session->mode_label }}</dd></div>
+            <div><dt>Elapsed</dt><dd>{{ $session->elapsed_label }}</dd></div>
+            <div><dt>Started</dt><dd>{{ $started?->format('M d, h:i A') ?? '—' }}</dd></div>
+            <div><dt>Ended</dt><dd>{{ $session->end_time?->format('M d, h:i A') ?? '—' }}</dd></div>
+        </dl>
+    </x-ui.card>
 
-        @if(session('success'))
-            <div class="flash-success"> {{ session('success') }}</div>
-        @endif
-
-        <!-- Back Link -->
-        <a href="{{ route('moderator.sessions') }}" class="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6 text-sm font-medium">
-            <x-ui-icon name="arrow-left"  /> Back to Active Sessions
-        </a>
-
-        <!-- Header -->
-        <div class="card mb-6">
-            <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-gray-200">
-                <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xl font-bold">
-                        {{ $session->seeker?->generated_alias ? substr($session->seeker->generated_alias, 0, 2) : 'AN' }}
-                    </div>
-                    <div>
-                        <h2 class="text-xl font-bold text-gray-800">{{ $session->seeker?->generated_alias ?? 'Anonymous' }}</h2>
-                        <p class="text-sm text-gray-500">
-                            {{ $session->concern?->concern_name ?? 'General Concern' }}
-                        </p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="risk-badge {{ $session->risk_level ?? 'low' }}">{{ ucfirst($session->risk_level ?? 'Low') }} risk</span>
-                    <span class="status-pill {{ $session->session_status === 'active' ? 'active' : 'assigned' }}">
-                        {{ $session->status_label }}
-                    </span>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-                <div class="info-chip">
-                    <p class="label">Helper</p>
-                    <p class="value">{{ $session->helper?->full_name ?? 'Unassigned' }}</p>
-                </div>
-                <div class="info-chip">
-                    <p class="label">Mode</p>
-                    <p class="value capitalize">{{ $session->mode_label }}</p>
-                </div>
-                <div class="info-chip">
-                    <p class="label">Elapsed</p>
-                    <p class="value">{{ $session->elapsed_label }}</p>
-                </div>
-                <div class="info-chip">
-                    <p class="label">Started</p>
-                    <p class="value">{{ $session->start_time?->format('h:i A') ?? $session->created_date?->format('h:i A') }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Conversation Preview -->
-            <div class="card lg:col-span-2">
-                <div class="flex flex-wrap items-baseline justify-between gap-2 mb-4">
-                    <h3 class="font-bold text-gray-800">Recent Messages <span class="text-xs font-normal text-gray-400">({{ $session->messages->count() }} shown)</span></h3>
-                    <p class="text-xs text-gray-400">Confidential support conversation. Moderator views are logged.</p>
-                </div>
-                <div class="space-y-3 max-h-96 overflow-y-auto">
-                    @forelse($session->messages as $message)
-                        <div class="flex {{ $message->is_helper ? 'justify-end' : 'justify-start' }}">
-                            <div class="msg-bubble {{ $message->is_helper ? 'helper' : 'seeker' }}">
-                                <p class="text-[11px] mb-1 {{ $message->is_helper ? 'text-gray-400' : 'text-emerald-700' }}">
-                                    {{ $message->is_helper ? ($session->helper?->full_name ?? 'Helper') : ($session->seeker?->generated_alias ?? 'Seeker') }}
-                                </p>
-                                {{ $message->message_text }}
-                            </div>
-                        </div>
-                    @empty
-                        <div class="text-center py-10 text-gray-400">
-                            <p>No messages yet</p>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-
-            <!-- Side Panel -->
-            <div class="space-y-6">
-                <div class="card">
-                    <h3 class="font-bold text-gray-800 mb-4">Session Info</h3>
-                    <dl class="space-y-3 text-sm">
-                        <div class="flex justify-between">
-                            <dt class="text-gray-400">Session ID</dt>
-                            <dd class="font-semibold text-gray-700">{{ $session->reference_number }}</dd>
-                        </div>
-                        <div class="flex justify-between">
-                            <dt class="text-gray-400">Type</dt>
-                            <dd class="font-semibold text-gray-700 capitalize">{{ $session->session_type }}</dd>
-                        </div>
-                        <div class="flex justify-between">
-                            <dt class="text-gray-400">Voice Consent</dt>
-                            <dd class="font-semibold text-gray-700">{{ $session->voice_recording_consent ? 'Granted' : 'Not required' }}</dd>
-                        </div>
-                        <div class="flex justify-between">
-                            <dt class="text-gray-400">Scheduled</dt>
-                            <dd class="font-semibold text-gray-700">{{ $session->scheduled_start?->format('M d, h:i A') ?? '—' }}</dd>
-                        </div>
-                        <div class="flex justify-between">
-                            <dt class="text-gray-400">Duration</dt>
-                            <dd class="font-semibold text-gray-700">{{ $session->duration ? $session->duration . ' min' : '—' }}</dd>
-                        </div>
-                    </dl>
-                </div>
-
-                <div class="card">
-                    <h3 class="font-bold text-gray-800 mb-4">Helper</h3>
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-semibold text-sm">
-                            {{ substr($session->helper?->first_name ?? '?', 0, 1) }}{{ substr($session->helper?->last_name ?? '?', 0, 1) }}
-                        </div>
-                        <div>
-                            <p class="font-semibold text-gray-800 text-sm">{{ $session->helper?->full_name ?? 'Unassigned' }}</p>
-                            <p class="text-xs text-gray-400">
-                                Competency: {{ $session->helper?->latestCompetency?->competency_level ?? '—' }}
-                            </p>
+    <div class="detail-columns">
+        <x-ui.card title="Recent Messages" :subtitle="'('.$session->messages->count().' shown)'">
+            <p class="detail-note">Confidential support conversation. Moderator views are logged.</p>
+            <div class="msg-list">
+                @forelse($session->messages as $message)
+                    <div class="msg-row {{ $message->is_helper ? 'helper' : 'seeker' }}">
+                        <div class="msg-bubble {{ $message->is_helper ? 'helper' : 'seeker' }}">
+                            <span class="msg-who">{{ $message->is_helper ? ($session->helper?->full_name ?? 'Helper') : ($session->seeker?->generated_alias ?? 'Seeker') }}</span>
+                            {{ $message->message_text }}
                         </div>
                     </div>
+                @empty
+                    <x-ui.empty title="No messages yet" />
+                @endforelse
+            </div>
+        </x-ui.card>
+
+        <div class="detail-side">
+            <x-ui.card title="Session Info">
+                <dl class="detail-info">
+                    <div><dt>Session ID</dt><dd>{{ $session->reference_number }}</dd></div>
+                    <div><dt>Type</dt><dd class="capitalize">{{ $session->session_type }}</dd></div>
+                    <div><dt>Voice Consent</dt><dd>{{ $session->voice_recording_consent ? 'Granted' : 'Not required' }}</dd></div>
+                    <div><dt>Scheduled</dt><dd>{{ $session->scheduled_start?->format('M d, h:i A') ?? '—' }}</dd></div>
+                    <div><dt>Duration</dt><dd>{{ $session->duration ? $session->duration . ' min' : '—' }}</dd></div>
+                </dl>
+            </x-ui.card>
+
+            <x-ui.card title="Helper">
+                <x-ui.list-row :initials="strtoupper(substr($session->helper?->first_name ?? '?', 0, 1).substr($session->helper?->last_name ?? '?', 0, 1))"
+                    :title="$session->helper?->full_name ?? 'Unassigned'"
+                    :subtitle="'Competency: '.($session->helper?->latestCompetency?->competency_level ?? '—')">
                     @if($session->helper)
-                        <div class="flex items-center gap-2 text-xs">
-                            <span class="w-2 h-2 rounded-full {{ $session->helper->status === 'available' ? 'bg-emerald-500' : 'bg-amber-500' }}"></span>
-                            <span class="text-gray-500">{{ ucfirst($session->helper->status) }}</span>
-                        </div>
+                        <x-slot:badge><x-ui.badge :tone="$session->helper->status === 'available' ? 'green' : 'amber'">{{ ucfirst($session->helper->status) }}</x-ui.badge></x-slot:badge>
                     @endif
-                </div>
+                </x-ui.list-row>
+            </x-ui.card>
 
-                @if($session->incidents->isNotEmpty())
-                    <div class="card border-red-200">
-                        <h3 class="font-bold text-red-700 mb-4"> Incidents on this session</h3>
-                        @foreach($session->incidents as $incident)
-                            <div class="mb-3 pb-3 border-b border-red-50 last:border-0 last:mb-0 last:pb-0">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="risk-badge {{ $incident->risk_level }}">{{ ucfirst($incident->risk_level) }}</span>
-                                    <span class="text-xs text-gray-400">{{ $incident->created_at?->diffForHumans() }}</span>
-                                </div>
-                                <p class="text-sm font-semibold text-gray-800">{{ $incident->incident_category }}</p>
-                                <p class="text-xs text-gray-500 mt-1">{{ $incident->description }}</p>
-                                <p class="text-xs mt-2">
-                                    <span class="text-gray-400">Status:</span>
-                                    <span class="font-semibold text-gray-600 capitalize">{{ str_replace('_', ' ', $incident->status) }}</span>
-                                </p>
-                            </div>
-                        @endforeach
-                        <a href="{{ route('moderator.emergency') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-red-600 hover:underline mt-2">
-                            <x-ui-icon name="warning"  /> Go to Emergency Workspace
-                        </a>
-                    </div>
-                @endif
+            @if($session->incidents->isNotEmpty())
+                <x-ui.card title="Incidents on this session">
+                    @foreach($session->incidents as $incident)
+                        <div class="incident">
+                            <x-ui.badge :tone="$riskTone($incident->risk_level)">{{ ucfirst($incident->risk_level) }}</x-ui.badge>
+                            <span class="detail-note">{{ $incident->created_at?->diffForHumans() }}</span>
+                            <p class="incident-title">{{ $incident->incident_category }}</p>
+                            <p>{{ $incident->description }}</p>
+                            <p>Status: <strong class="capitalize">{{ str_replace('_', ' ', $incident->status) }}</strong></p>
+                        </div>
+                    @endforeach
+                    <p style="margin-top:12px"><a href="{{ route('moderator.emergency') }}" class="text-red-700 font-semibold"><x-ui-icon name="warning" /> Go to Emergency Workspace</a></p>
+                </x-ui.card>
+            @endif
 
-                @if($session->evaluation)
-                    <div class="card">
-                        <h3 class="font-bold text-gray-800 mb-1">Seeker rating</h3>
-                        <p class="text-xs text-gray-400 mb-2">Scale 1–5</p>
-                        <p class="text-[28px] font-extrabold text-gray-800">{{ \App\Support\ScoreFormat::number(\App\Services\AdviserAnalytics::rating($session->evaluation->overall_score)) }}</p>
-                        @if(!empty($session->evaluation->answers['helpfulness_score']))<p class="text-sm text-gray-600 mt-1">Helpfulness: {{ $session->evaluation->answers['helpfulness_score'] }}</p>@endif
-                        <p class="text-xs text-gray-400 mt-1">{{ $session->evaluation->comments ?: 'No comments' }}</p>
-                    </div>
-                @endif
-            </div>
+            @if($session->evaluation)
+                <x-ui.card title="Seeker rating" subtitle="Scale 1–5">
+                    <p class="score-value">{{ \App\Support\ScoreFormat::number(\App\Services\AdviserAnalytics::rating($session->evaluation->overall_score)) }}</p>
+                    @if(!empty($session->evaluation->answers['helpfulness_score']))<p class="detail-note" style="margin-top:8px">Helpfulness: {{ $session->evaluation->answers['helpfulness_score'] }}</p>@endif
+                    <p class="detail-note" style="margin-top:8px">{{ $session->evaluation->comments ?: 'No comments' }}</p>
+                </x-ui.card>
+            @endif
         </div>
-
-    </main>
-
-    <!-- Bottom Navigation -->
-
-    @include('layouts.partials.pwa-banner')
-
-</body>
-</html>
+    </div>
+@endsection

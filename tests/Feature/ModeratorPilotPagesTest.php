@@ -101,4 +101,34 @@ class ModeratorPilotPagesTest extends TestCase
                 ->assertSee('Showing')->assertSee('ui-table--stack', false)->assertSee('ui-filter-bar', false);
         }
     }
+
+    public function test_queue_and_sessions_use_shared_table(): void
+    {
+        $this->actingAs($this->moderator());
+        $user = User::factory()->create(['role' => 'seeker', 'is_active' => true]);
+        $seeker = HelpSeeker::create(['user_account_id' => $user->id, 'generated_alias' => 'Alias'.$user->id]);
+        QueueRequest::create(['seeker_id' => $seeker->id, 'request_status' => 'waiting', 'priority_level' => 'high', 'request_date' => now()]);
+        \App\Models\Session::create(['seeker_id' => $seeker->id, 'session_type' => 'chat', 'session_status' => 'active', 'risk_level' => 'low', 'created_date' => now()]);
+
+        $this->get(route('moderator.queue'))->assertOk()->assertSee('data-page-header', false)->assertSee('ui-table--stack', false)
+            ->assertSee('id="statWaiting"', false)->assertSee('data-queue-helper-options', false)->assertSee('P2 · High');
+        $this->get(route('moderator.sessions'))->assertOk()->assertSee('data-page-header', false)->assertSee('ui-table--stack', false)
+            ->assertSee('id="sessionList"', false)->assertSee('ui-kpi', false);
+    }
+
+    public function test_session_detail_has_back_link_and_summary(): void
+    {
+        $this->actingAs($this->moderator());
+        $user = User::factory()->create(['role' => 'seeker', 'is_active' => true]);
+        $seeker = HelpSeeker::create(['user_account_id' => $user->id, 'generated_alias' => 'Alias'.$user->id]);
+        $session = \App\Models\Session::create(['seeker_id' => $seeker->id, 'session_type' => 'chat', 'session_status' => 'active', 'risk_level' => 'high', 'created_date' => now()]);
+        $session->load(['seeker', 'helper', 'concern', 'messages', 'incidents', 'evaluation']);
+
+        $html = view('moderator.session-detail', ['session' => $session, 'errors' => new \Illuminate\Support\ViewErrorBag])->render();
+        $this->assertStringContainsString('ui-back-link', $html);
+        $this->assertStringContainsString('Back to Active Sessions', $html);
+        $this->assertStringContainsString(route('moderator.sessions'), $html);
+        $this->assertStringContainsString('Alias'.$user->id, $html);
+        $this->assertStringContainsString('data-page-header', $html);
+    }
 }

@@ -1,310 +1,31 @@
-<!DOCTYPE html>
-<html class="compass-ui" lang="en">
-<head>
-    @include('layouts.partials.pwa-meta')
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+@extends('layouts.app')
+
+@section('title', 'COMPASS – Active Sessions')
+
+@push('styles')
     <meta name="user-id" content="{{ auth()->id() }}">
-    <title>COMPASS – Active Sessions</title>
-
-    @vite(['resources/js/app.js', 'resources/js/moderator-notifications.js'])
+    @vite(['resources/js/moderator-notifications.js'])
     <style>
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg-primary, #F8FBF9); }
-
-        .main-content {
-            margin-left: var(--sidebar-w, 264px);
-            padding: 24px 32px 80px;
-            min-height: 100vh;
-        }
-
-        .stat-card {
-            background: var(--bg-card, white);
-            border-radius: 16px;
-            padding: 18px 22px;
-            border: 1px solid var(--border-color, #E5E7EB);
-            transition: all 0.3s ease;
-        }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.04)); }
-        .stat-number { font-size: 24px; font-weight: 800; color: var(--text-primary, #1F2937); }
-        .stat-label { font-size: 12px; color: var(--text-secondary, #6B7280); }
-
-        .card {
-            background: var(--bg-card, white);
-            border-radius: 20px;
-            padding: 24px;
-            border: 1px solid var(--border-color, #E5E7EB);
-            box-shadow: var(--card-shadow, 0 4px 20px rgba(0,0,0,0.01));
-        }
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-        .card-header h3 { font-weight: 700; font-size: 16px; color: var(--text-primary, #1F2937); }
-
-        .session-row {
-            display: grid;
-            grid-template-columns: 90px 1fr 1.2fr 90px 90px 80px 110px 30px;
-            align-items: center;
-            gap: 10px;
-            padding: 13px 16px;
-            border-bottom: 1px solid var(--border-light, #F3F4F6);
-            cursor: pointer;
-            transition: background 0.2s;
-            font-size: 13px;
-        }
-        .session-row:hover { background: var(--bg-hover, #F9FAFB); }
-        .session-row:last-child { border-bottom: none; }
-        .session-row.risk-high { background: #FFF7F7; border-left: 3px solid #DC2626; }
-        .session-row.risk-emergency { background: #FEF2F2; border-left: 3px solid #DC2626; animation: pulse-row 2s infinite; }
-        @keyframes pulse-row { 0%,100% { background: #FEF2F2; } 50% { background: #FEE2E2; } }
-
-        .session-table-head {
-            display: grid;
-            grid-template-columns: 90px 1fr 1.2fr 90px 90px 80px 110px 30px;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 16px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: var(--text-muted, #9CA3AF);
-            border-bottom: 1px solid #E5E7EB;
-        }
-
-        .risk-badge {
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            text-align: center;
-        }
-        .risk-badge.low { background: #DCFCE7; color: #166534; }
-        .risk-badge.moderate { background: #FEF3C7; color: #92400E; }
-        .risk-badge.high { background: #FEE2E2; color: #991B1B; }
-        .risk-badge.emergency { background: #FEE2E2; color: #991B1B; animation: pulse-risk 1.5s infinite; }
-        @keyframes pulse-risk { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
-
-        .mode-pill { font-size: 11px; color: var(--text-secondary, #6B7280); background: var(--border-light, #F3F4F6); padding: 3px 10px; border-radius: 20px; text-align: center; }
-        .status-pill { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; text-align: center; }
-        .status-pill.active { background: #DBEAFE; color: #1D4ED8; }
-        .status-pill.assigned { background: #FEF3C7; color: #92400E; }
-
-        .activity-item {
-            display: flex;
-            gap: 12px;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border-light, #F3F4F6);
-        }
-        .activity-item:last-child { border-bottom: none; }
-        .activity-item .icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            font-size: 13px;
-        }
-        .activity-item .icon.emergency { background: #FEE2E2; color: #DC2626; }
-        .activity-item .icon.assignment { background: #DBEAFE; color: #1D4ED8; }
-        .activity-item .icon.session { background: #DCFCE7; color: #166534; }
-        .activity-item .content .message { font-weight: 500; font-size: 13px; color: var(--text-primary, #1F2937); }
-        .activity-item .content .time { font-size: 11px; color: var(--text-muted, #9CA3AF); }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #04A052, #038A45);
-            color: white;
-            padding: 8px 18px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 13px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-primary:hover { background: #027039; }
-        .btn-outline {
-            background: var(--bg-card, white);
-            color: #DC2626;
-            padding: 8px 18px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 13px;
-            border: 1.5px solid #FECACA;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-outline:hover { background: #FEF2F2; }
-
-        .hamburger { display: none; background: none; border: none; font-size: 24px; color: var(--text-primary, #374151); cursor: pointer; padding: 4px; }
-        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 99; }
-        .sidebar-overlay.active { display: block; }
-
-
-        @media (max-width: 1024px) {
-            .session-table-head, .session-row {
-                grid-template-columns: 90px 1fr 110px 90px 30px;
-            }
-            .session-table-head .hide-md, .session-row .hide-md { display: none; }
-        }
-        @media (max-width: 768px) {
-            .main-content { margin-left: 0; padding: 16px 16px 100px; }
-            .hamburger { display: block; }
-            .session-table-head { display: none; }
-            .session-row {
-                grid-template-columns: 1fr;
-                gap: 6px;
-                padding: 14px 16px;
-            }
-        }
+        .sessions-card + .sessions-card { margin-top: 24px; }
+        .session-ref { font-weight: 600; color: var(--compass-text, #1F2937); }
+        .activity-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--compass-divider, #F3F4F6); }
+        .activity-item:last-child { border-bottom: 0; }
+        .activity-item .icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; background: #F3F4F6; color: #374151; }
+        .activity-item .icon.emergency { background: #FEF2F2; color: #B91C1C; }
+        .activity-item .icon.assignment { background: #EFF6FF; color: #1D4ED8; }
+        .activity-item .icon.session { background: #F0FDF4; color: #15803D; }
+        .activity-item .message { font-size: 15px; font-weight: 500; color: var(--compass-text, #1F2937); }
+        .activity-item .time { font-size: 13px; color: var(--compass-muted, #6B7280); }
+        .page-action-link { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
     </style>
-    @vite(['resources/css/app.css'])
-    @include('partials.ui-assets')
-</head>
-<body class="compass-compact">
+@endpush
 
-    @include('layouts.partials.moderator-sidebar')
-
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <main class="main-content">
-
-        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
-                    <x-ui-icon name="menu"  />
-                </button>
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-gray-800">Active Sessions</h1>
-                    <p class="text-sm text-gray-500 hidden sm:block">Live monitoring of all ongoing peer support sessions</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-3">
-                <a href="{{ route('moderator.queue') }}" class="btn-outline">
-                    <x-ui-icon name="hourglass"  /> Review Queue
-                </a>
-                <a href="{{ route('moderator.emergency') }}" class="btn-primary">
-                    <x-ui-icon name="warning"  /> Emergency
-                </a>
-            </div>
-        </div>
-
-        <!-- Stats -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-            <div class="stat-card">
-                <div class="stat-label">Ongoing</div>
-                <div class="stat-number text-blue-600" id="statOngoing">{{ $stats['ongoing'] }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Chat</div>
-                <div class="stat-number text-gray-800" id="statChat">{{ $stats['chat'] }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Voice</div>
-                <div class="stat-number text-gray-800" id="statVoice">{{ $stats['voice'] }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Emergency Flagged</div>
-                <div class="stat-number text-red-600" id="statEmergency">{{ $stats['emergency_flagged'] }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Referrals Pending</div>
-                <div class="stat-number text-amber-600">{{ $stats['referrals_pending'] }}</div>
-            </div>
-        </div>
-
-        <!-- Live Sessions Table -->
-        <div class="card mb-6 overflow-x-auto">
-            <div class="card-header">
-                <h3>Live Sessions</h3>
-                <span class="text-xs text-gray-400">Click a row for the monitoring drawer</span>
-            </div>
-            <div class="min-w-[760px]">
-                <div class="session-table-head">
-                    <span>Session ID</span>
-                    <span>Alias</span>
-                    <span>Helper</span>
-                    <span>Risk</span>
-                    <span>Duration</span>
-                    <span>Mode</span>
-                    <span>Status</span>
-                    <span></span>
-                </div>
-                <div id="sessionList">
-                    @forelse($sessions as $session)
-                        <div class="session-row risk-{{ $session->risk_level ?? 'low' }}" data-id="{{ $session->id }}">
-                            <span class="font-semibold text-gray-800">{{ $session->reference_number }}</span>
-                            <span class="text-gray-600 truncate">{{ $session->seeker?->generated_alias ?? 'Anonymous' }}</span>
-                            <span class="text-gray-600 truncate">
-                                {{ $session->helper?->full_name ?? 'Unassigned' }}
-                            </span>
-                            <span class="risk-badge {{ $session->risk_level ?? 'low' }}">{{ ucfirst($session->risk_level ?? 'Low') }}</span>
-                            <span class="text-gray-500">{{ $session->elapsed_label }}</span>
-                            <span class="mode-pill">
-                                {{ $session->mode_label }}
-                            </span>
-                            <span class="status-pill {{ $session->session_status === 'active' ? 'active' : 'assigned' }}">
-                                {{ $session->session_status === 'active' ? 'Active' : 'Awaiting Start' }}
-                            </span>
-
-                        </div>
-                    @empty
-                        <div class="text-center py-10 text-gray-400">
-                            <p>No active sessions right now</p>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Live Activity Feed -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Live Activity</h3>
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                </div>
-                <div>
-                    @forelse($recentActivity as $activity)
-                        <div class="activity-item">
-                            <div class="icon {{ $activity['type'] }}">
-                                <x-ui-icon :value="$activity['icon']" />
-                            </div>
-                            <div class="content">
-                                <div class="message">{{ $activity['message'] }}</div>
-                                <div class="time">{{ $activity['time'] }}</div>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="text-center py-8 text-gray-400">
-                            <p>No recent activity</p>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-
-        </div>
-
-    </main>
-
-    <!-- Bottom Navigation -->
-
+@push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const setStat = (key, value) => {
+                document.querySelectorAll('[data-stat="' + key + '"] .ui-kpi-value').forEach((el) => { el.textContent = value; });
+            };
 
             setInterval(function () {
                 fetch('/moderator/sessions/stats', {
@@ -312,10 +33,10 @@
                 })
                     .then((response) => response.json())
                     .then((data) => {
-                        document.getElementById('statOngoing').textContent = data.ongoing;
-                        document.getElementById('statChat').textContent = data.chat;
-                        document.getElementById('statVoice').textContent = data.voice;
-                        document.getElementById('statEmergency').textContent = data.emergency_flagged;
+                        setStat('ongoing', data.ongoing);
+                        setStat('chat', data.chat);
+                        setStat('voice', data.voice);
+                        setStat('emergency_flagged', data.emergency_flagged);
 
                         const sb = document.getElementById('sessionBadge');
                         if (sb) { sb.textContent = data.ongoing; sb.style.display = data.ongoing > 0 ? 'inline-block' : 'none'; }
@@ -325,8 +46,66 @@
             }, 30000);
         });
     </script>
+@endpush
 
-    @include('layouts.partials.pwa-banner')
+@section('content')
+    @php
+        $riskTone = fn ($level) => match ($level) { 'emergency' => 'red', 'high' => 'orange', 'moderate' => 'amber', default => 'green' };
+    @endphp
 
-</body>
-</html>
+    <x-ui.page-header title="Active Sessions" description="Live monitoring of all ongoing peer support sessions">
+        <x-slot:actions>
+            <a href="{{ route('moderator.queue') }}" class="btn-secondary page-action-link"><x-ui-icon name="hourglass" /> Review Queue</a>
+            <a href="{{ route('moderator.emergency') }}" class="btn-primary page-action-link"><x-ui-icon name="warning" /> Emergency</a>
+        </x-slot:actions>
+    </x-ui.page-header>
+
+    <x-ui.kpi-grid>
+        <x-ui.kpi label="Ongoing" :value="$stats['ongoing']" tone="blue" data-stat="ongoing" />
+        <x-ui.kpi label="Chat" :value="$stats['chat']" data-stat="chat" />
+        <x-ui.kpi label="Voice" :value="$stats['voice']" data-stat="voice" />
+        <x-ui.kpi label="Emergency Flagged" :value="$stats['emergency_flagged']" tone="red" data-stat="emergency_flagged" />
+        <x-ui.kpi label="Referrals Pending" :value="$stats['referrals_pending']" tone="amber" data-stat="referrals_pending" />
+    </x-ui.kpi-grid>
+
+    <x-ui.card class="sessions-card" title="Live Sessions">
+        <div id="sessionList">
+            @if($sessions->isEmpty())
+                <x-ui.empty title="No active sessions right now" />
+            @else
+                <x-ui.table :stack="true">
+                    <thead><tr><th>Session ID</th><th>Alias</th><th>Helper</th><th>Risk</th><th>Duration</th><th>Mode</th><th>Status</th></tr></thead>
+                    <tbody>
+                    @foreach($sessions as $session)
+                        <tr data-id="{{ $session->id }}">
+                            <td data-label="Session ID"><span class="session-ref">{{ $session->reference_number }}</span></td>
+                            <td data-label="Alias">{{ $session->seeker?->generated_alias ?? 'Anonymous' }}</td>
+                            <td data-label="Helper">{{ $session->helper?->full_name ?? 'Unassigned' }}</td>
+                            <td data-label="Risk"><x-ui.badge :tone="$riskTone($session->risk_level ?? 'low')">{{ ucfirst($session->risk_level ?? 'Low') }}</x-ui.badge></td>
+                            <td data-label="Duration">{{ $session->elapsed_label }}</td>
+                            <td data-label="Mode">{{ $session->mode_label }}</td>
+                            <td data-label="Status"><x-ui.badge :tone="$session->session_status === 'active' ? 'blue' : 'amber'">{{ $session->session_status === 'active' ? 'Active' : 'Awaiting Start' }}</x-ui.badge></td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </x-ui.table>
+            @endif
+        </div>
+    </x-ui.card>
+
+    <x-ui.card class="sessions-card" title="Live Activity">
+        @forelse($recentActivity as $activity)
+            <div class="activity-item">
+                <div class="icon {{ $activity['type'] }}">
+                    <x-ui-icon :value="$activity['icon']" />
+                </div>
+                <div>
+                    <div class="message">{{ $activity['message'] }}</div>
+                    <div class="time">{{ $activity['time'] }}</div>
+                </div>
+            </div>
+        @empty
+            <x-ui.empty title="No recent activity" />
+        @endforelse
+    </x-ui.card>
+@endsection

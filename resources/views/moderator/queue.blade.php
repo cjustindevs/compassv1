@@ -1,333 +1,36 @@
-<!DOCTYPE html>
-<html class="compass-ui" lang="en">
-<head>
-    @include('layouts.partials.pwa-meta')
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+@extends('layouts.app')
+
+@section('title', 'COMPASS – Incoming Queue')
+
+@push('styles')
     <meta name="user-id" content="{{ auth()->id() }}">
-    <title>COMPASS – Incoming Queue</title>
-
-    @vite(['resources/js/app.js', 'resources/js/moderator-notifications.js'])
+    @vite(['resources/js/moderator-notifications.js'])
     <style>
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg-primary, #F8FBF9); }
-
-        .main-content {
-            margin-left: var(--sidebar-w, 264px);
-            padding: 24px 32px 80px;
-            min-height: 100vh;
-        }
-
-        .stat-card {
-            background: var(--bg-card, white);
-            border-radius: 16px;
-            padding: 18px 22px;
-            border: 1px solid var(--border-color, #E5E7EB);
-            transition: all 0.3s ease;
-        }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.04)); }
-        .stat-number { font-size: 24px; font-weight: 800; color: var(--text-primary, #1F2937); }
-        .stat-label { font-size: 12px; color: var(--text-secondary, #6B7280); }
-
-        .card {
-            background: var(--bg-card, white);
-            border-radius: 20px;
-            padding: 24px;
-            border: 1px solid var(--border-color, #E5E7EB);
-            box-shadow: 0 4px 20px var(--shadow-color, rgba(0,0,0,0.01));
-        }
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-        .card-header h3 { font-weight: 700; font-size: 16px; color: var(--text-primary, #1F2937); }
-
-        .queue-item {
-            display: grid;
-            grid-template-columns: auto minmax(0, 1fr) auto auto auto;
-            align-items: center;
-            gap: 10px 16px;
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--border-color, #F3F4F6);
-            transition: background 0.2s;
-        }
-        .queue-item:hover { background: var(--hover-bg, #F9FAFB); }
-        .queue-item:last-child { border-bottom: none; }
-
-        /* Grouped assignment controls. */
-        .queue-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-        .queue-actions form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .queue-actions :is(.assign-form,.reassign-form){display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;width:min(100%,480px)}
-        .queue-actions :is(.assign-form,.reassign-form) .assign-select{min-width:0;width:100%}
-        .queue-actions [data-helper-reason]{grid-column:1/-1;grid-row:2;color:#64748b}
-        .queue-actions button:disabled{opacity:.55;cursor:not-allowed}
-        .btn-danger { color: #DC2626; }
-        .btn-danger:hover { border-color: #DC2626; color: #DC2626; }
-        .alias { font-weight: 600; color: var(--text-primary, #1F2937); overflow-wrap: anywhere; }
-
-        .priority-badge {
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-        .priority-badge.emergency { background: #FEE2E2; color: #DC2626; animation: pulse-risk 1.5s infinite; }
-        .priority-badge.high { background: #FEE2E2; color: #991B1B; }
-        .priority-badge.moderate { background: #FEF3C7; color: #92400E; }
-        .priority-badge.low { background: #DCFCE7; color: #166534; }
-        @keyframes pulse-risk { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
-
-        .type-pill { font-size: 11px; color: #6B7280; background: #F3F4F6; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
-        .wait-chip {
-            font-size: 12px;
-            font-weight: 600;
-            padding: 3px 10px;
-            border-radius: 20px;
-            white-space: nowrap;
-        }
-        .wait-chip.ok { background: #F0FDF4; color: #059669; }
-        .wait-chip.warn { background: #FFFBEB; color: #D97706; }
-        .wait-chip.alert { background: #FEF2F2; color: #DC2626; }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #04A052, #038A45);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 12px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-primary:hover { background: #027039; }
-        .btn-outline {
-            background: white;
-            color: #6B7280;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 12px;
-            border: 1.5px solid #E5E7EB;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-outline:hover { border-color: #04A052; color: #04A052; }
-
-        .assign-select {
-            padding: 8px 12px;
-            border-radius: 12px;
-            border: 1.5px solid var(--border-color, #E5E7EB);
-            font-size: 13px;
-            outline: none;
-            background: var(--bg-input, white);
-            color: var(--text-primary, #1F2937);
-            min-width: 170px;
-        }
-        .assign-select:focus { border-color: #04A052; box-shadow: 0 0 0 3px rgba(4,160,82,0.08); }
-
-        .flash-success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
-        .flash-error { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
-
-        .hamburger { display: none; background: none; border: none; font-size: 24px; color: #374151; cursor: pointer; padding: 4px; }
-        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 99; }
-        .sidebar-overlay.active { display: block; }
-
-
-        @media (max-width: 768px) {
-            .main-content { margin-left: 0; padding: 16px 16px 100px; }
-            .hamburger { display: block; }
-            .queue-item { grid-template-columns: auto minmax(0, 1fr); }
-            .queue-item .type-pill,
-            .queue-item .wait-chip { grid-column: 2; justify-self: start; }
-            .queue-actions { grid-column: 1 / -1; justify-content: stretch; }
-            .queue-actions form { flex: 1 1 100%; flex-wrap: nowrap; }
-            .assign-select { flex: 1 1 auto; width: 100%; min-width: 0; }
-        }
-        @media (max-width: 420px) {
-            .queue-actions form { flex-wrap: wrap; }
-        }
+        .queue-flash { border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
+        .queue-flash.success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; }
+        .queue-flash.error { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
+        .queue-stats { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 32px; font-size: 15px; color: var(--compass-muted, #6B7280); }
+        .queue-stats strong { font-size: 24px; font-weight: 800; color: var(--compass-text, #1F2937); margin-left: 6px; }
+        .queue-stats .queue-note { font-size: 14px; }
+        .queue-targets { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; font-size: 14px; color: var(--compass-muted, #6B7280); }
+        .queue-targets span { display: inline-flex; align-items: center; gap: 8px; }
+        .queue-count { font-size: 14px; color: var(--compass-muted, #6B7280); font-weight: 500; }
+        .queue-alias { font-weight: 600; color: var(--compass-text, #1F2937); overflow-wrap: anywhere; }
+        .ui-table td small { display: block; font-size: 13px; color: var(--compass-muted, #6B7280); }
+        .queue-actions-cell { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; }
+        .queue-actions-cell form { margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .assign-select { min-height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--compass-border, #E5E7EB); font-size: 15px; background: var(--bg-card, #fff); color: var(--compass-text, #1F2937); min-width: 170px; max-width: 100%; }
+        .assign-select:focus { outline: 2px solid var(--compass-green, #04A052); outline-offset: 1px; }
+        .assign-form, .reassign-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+        .assign-form .assign-select, .reassign-form .assign-select { width: 100%; }
+        [data-helper-reason] { display: block; max-width: 340px; white-space: normal; font-size: 13px; color: var(--compass-muted, #6B7280); }
+        button:disabled { opacity: .55; cursor: not-allowed; }
+        .queue-card + .queue-card { margin-top: 24px; }
+        @media (max-width: 768px) { .queue-actions-cell { justify-content: flex-start; } .assign-select { width: 100%; min-width: 0; } }
     </style>
-    @vite(['resources/css/app.css'])
-    @include('partials.ui-assets')
-</head>
-<body class="compass-compact">
+@endpush
 
-    @include('layouts.partials.moderator-sidebar')
-
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <main class="main-content">
-
-        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
-                    <x-ui-icon name="menu"  />
-                </button>
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-gray-800">Incoming Queue</h1>
-                    <p class="text-sm text-gray-500 hidden sm:block">Assign helpers to waiting help seekers</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2 text-xs text-gray-400">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
-                Auto-refreshes every 30 seconds
-            </div>
-        </div>
-
-        @if(session('success'))
-            <div class="flash-success"> {{ session('success') }}</div>
-        @endif
-        @if(session('error'))
-            <div class="flash-error"> {{ session('error') }}</div>
-        @endif
-
-        <div class="flex flex-wrap gap-6 mb-5 border-b border-gray-200 pb-4">
-            <span>Waiting <strong id="statWaiting">{{ $stats['waiting'] }}</strong></span>
-            <span>Assigned <strong id="statAssigned">{{ $stats['assigned'] }}</strong></span>
-            <span>Oldest wait <strong data-metric="oldest_wait">{{ $stats['oldest_wait'] }}</strong></span>
-            <span class="text-sm text-gray-500">Unmatched requests expire after 24 hours; history is retained.</span>
-        </div>
-        <!-- Priority service targets (P1–P4) -->
-        <div class="bg-white rounded-2xl border border-gray-100 p-4 mb-6">
-            <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
-                <span class="font-semibold text-gray-700 uppercase tracking-wider text-[11px]">Service targets by priority class</span>
-                @foreach(['P1'=>'Emergency','P2'=>'High','P3'=>'Moderate','P4'=>'Low'] as $class=>$label)
-                    <span class="inline-flex items-center gap-1.5">
-                        <span class="px-2 py-0.5 rounded-full font-bold text-white {{ $class==='P1'?'bg-red-600':($class==='P2'?'bg-orange-500':($class==='P3'?'bg-amber-500':'bg-gray-400')) }}">{{ $class }}</span>
-                        {{ $label }} · target ≤ {{ ['P1'=>1,'P2'=>3,'P3'=>10,'P4'=>20][$class] }} min
-                    </span>
-                @endforeach
-            </div>
-        </div>
-
-        <!-- Waiting Seekers -->
-        <div class="card mb-6">
-            <div class="card-header">
-                <h3>Waiting Seekers</h3>
-                <span class="text-xs text-gray-400" id="waitingHeading">{{ $queueItems->total() }} waiting</span>
-            </div>
-            <div>
-                @forelse($queueItems->where('request_status', 'waiting') as $item)
-                    <div class="queue-item fade-in" data-queue-row="{{ $item->id }}">
-                        <span class="px-2.5 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap {{ $item->priority_level==='emergency'?'bg-red-600':($item->priority_level==='high'?'bg-orange-500':($item->priority_level==='moderate'?'bg-amber-500':'bg-gray-400')) }}"
-                              title="Priority class {{ \App\Models\QueueRequest::priorityClass($item->priority_level) }}">
-                            {{ \App\Models\QueueRequest::priorityClass($item->priority_level) }} · {{ ucfirst($item->priority_level) }}
-                        </span>
-                        <div class="min-w-0">
-                            <p class="alias text-sm">{{ $item->seeker?->generated_alias ?? 'Anonymous' }}</p>
-                            <p class="text-xs text-gray-500 truncate">{{ $item->concern_name }}</p>
-                        </div>
-                        <span class="type-pill hidden md:inline-flex items-center">
-                            {{ ucfirst($item->preferred_session_type) }}
-                        </span>
-                        <span class="wait-chip {{ $item->wait_minutes >= 30 ? 'alert' : ($item->wait_minutes >= 15 ? 'warn' : 'ok') }}">
-                            {{ $item->wait_minutes }} min
-                        </span>
-                        <div class="queue-actions">
-                            <button type="button" class="btn-outline" data-dialog-open="assign-{{ $item->id }}">Assign Helper</button><dialog class="workflow-dialog" id="assign-{{ $item->id }}" aria-labelledby="title-assign-{{ $item->id }}"><header class="workflow-dialog__header"><div><h2 id="title-assign-{{ $item->id }}">Assign Helper</h2><p>Queue #{{ $item->id }} &middot; {{ $item->seeker?->generated_alias }}</p></div><button type="button" data-dialog-close aria-label="Close assignment">&times;</button></header><form method="POST" action="{{ route('moderator.queue.assign') }}" class="assign-form" data-queue-id="{{ $item->id }}"><div class="workflow-dialog__body">
-                                @csrf
-                                <input type="hidden" name="queue_id" value="{{ $item->id }}">
-                                <label class="sr-only" for="helper-{{ $item->id }}">Eligible helper for queue request {{ $item->id }}</label>
-                                <select id="helper-{{ $item->id }}" name="helper_id" class="assign-select" required>
-                                    <option value="">Select helper…</option>
-                                    @foreach($item->helper_choices['helpers'] as $choice)
-                                        <option value="{{ $choice['id'] }}">{{ $choice['label'] }}</option>
-                                    @endforeach
-                                </select>
-                                <small data-helper-reason style="display:block;max-width:340px;white-space:normal;font-size:11px">{{ $item->helper_choices['reason'] }}</small>
-
-                            @include('partials.helper-unavailable', ['choices'=>$item->helper_choices])</div><footer class="workflow-dialog__footer"><button type="button" class="btn-outline" data-dialog-close>Cancel</button><button type="submit" class="btn-primary whitespace-nowrap" @disabled(empty($item->helper_choices['helpers']))>
-                                    <x-ui-icon name="user-check"  /> Assign
-                                </button></footer></form></dialog>
-                        </div>
-                    </div>
-                @empty
-                    <div class="text-center py-10 text-gray-400">
-                        <p>No seekers waiting. Queue is clear!</p>
-                    </div>
-                @endforelse
-            </div>
-        </div>
-
-        <!-- Assigned -->
-        <div class="card">
-            <div class="card-header">
-                <h3>Recently Matched <span class="text-xs font-medium text-gray-400" id="assignedHeading">{{ $recentlyMatched->count() }} assigned</span></h3>
-                <a class="text-sm font-semibold text-green-700" href="{{ route('moderator.reports',['tab'=>'operations']) }}">View all</a>
-            </div>
-            <div>
-                @forelse($recentlyMatched as $item)
-                    <div class="queue-item fade-in" data-queue-row="{{ $item->id }}">
-                        <span class="px-2.5 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap {{ $item->priority_level==='emergency'?'bg-red-600':($item->priority_level==='high'?'bg-orange-500':($item->priority_level==='moderate'?'bg-amber-500':'bg-gray-400')) }}"
-                              title="Priority class {{ \App\Models\QueueRequest::priorityClass($item->priority_level) }}">
-                            {{ \App\Models\QueueRequest::priorityClass($item->priority_level) }} · {{ ucfirst($item->priority_level) }}
-                        </span>
-                        <div class="min-w-0">
-                            <p class="alias text-sm">{{ $item->seeker?->generated_alias ?? 'Anonymous' }}</p>
-                            <p class="text-xs text-gray-500 truncate">
-                                Matched {{ $item->matched_date?->diffForHumans() }} with
-                                <span class="font-semibold text-emerald-600">{{ $item->assignedHelper?->full_name ?? '—' }}</span>
-                            </p>
-                        </div>
-                        <span class="type-pill hidden md:inline-flex items-center">
-                            {{ ucfirst($item->preferred_session_type) }}
-                        </span>
-                        <span class="wait-chip ok">
-                            {{ $item->scheduled_date ? $item->scheduled_date->copy()->setTimezone(config('app.schedule_timezone'))->format('M d, h:i A') : 'Awaiting acceptance' }}
-                        </span>
-                        <div class="queue-actions">
-                            <form method="POST" action="{{ route('moderator.queue.schedule') }}">
-                                @csrf
-                                <label class="sr-only" for="scheduled_at-{{ $item->id }}">Appointment time for queue request {{ $item->id }}</label>
-                                <input type="datetime-local" id="scheduled_at-{{ $item->id }}" name="scheduled_at" class="assign-select"
-                                       value="{{ $item->scheduled_date?->copy()->setTimezone(config('app.schedule_timezone'))->format('Y-m-d\TH:i') }}"
-                                       title="Set the appointment time for this already-assigned session ({{ config('app.schedule_timezone') }}).">
-                                <input type="hidden" name="queue_id" value="{{ $item->id }}">
-                                <button type="submit" class="btn-outline whitespace-nowrap">
-                                    <x-ui-icon name="calendar"  /> Schedule
-                                </button>
-                            </form>
-                            <button type="button" class="btn-outline" data-dialog-open="reassign-{{ $item->id }}">Reassign Helper</button><dialog class="workflow-dialog" id="reassign-{{ $item->id }}" aria-labelledby="title-reassign-{{ $item->id }}"><header class="workflow-dialog__header"><div><h2 id="title-reassign-{{ $item->id }}">Reassign Helper</h2><p>Queue #{{ $item->id }} &middot; {{ $item->seeker?->generated_alias }}</p></div><button type="button" data-dialog-close aria-label="Close assignment">&times;</button></header><form method="POST" action="{{ route('moderator.queue.reassign') }}" class="reassign-form" data-queue-id="{{ $item->id }}"><div class="workflow-dialog__body">
-                                @csrf
-                                <input type="hidden" name="queue_id" value="{{ $item->id }}">
-                                <label class="sr-only" for="reassign-{{ $item->id }}">Replacement helper for queue request {{ $item->id }}</label>
-                                <select id="reassign-{{ $item->id }}" name="helper_id" class="assign-select">
-                                    <option value="">Select helper…</option>
-                                    @foreach($item->helper_choices['helpers'] as $choice)
-                                        <option value="{{ $choice['id'] }}">{{ $choice['label'] }}</option>
-                                    @endforeach
-                                </select>
-                                <small data-helper-reason style="display:block;max-width:340px;white-space:normal;font-size:11px">{{ $item->helper_choices['reason'] }}</small>
-
-                            @include('partials.helper-unavailable', ['choices'=>$item->helper_choices])</div><footer class="workflow-dialog__footer"><button type="button" class="btn-outline" data-dialog-close>Cancel</button><button type="submit" class="btn-outline whitespace-nowrap" @disabled(empty($item->helper_choices['helpers']))>
-                                    <x-ui-icon name="refresh"  /> Reassign
-                                </button></footer></form></dialog>
-                        </div>
-                    </div>
-                @empty
-                    <div class="text-center py-8 text-gray-400">
-                        <p>No recent matches</p>
-                    </div>
-                @endforelse
-            </div>
-        </div>
-
-        <div class="mt-4">{{ $queueItems->links() }}</div>
-    </main>
-
-    <!-- Bottom Navigation -->
-
+@push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
 
@@ -445,11 +148,152 @@
         });
     </script>
 
-    @include('components.confirmation-modal')
+    <span hidden data-queue-helper-options="{{ route('moderator.queue.helper-options') }}"></span>
+    <script src="{{ asset('js/queue-helper-options.js') }}?v={{ filemtime(public_path('js/queue-helper-options.js')) }}" defer></script>
+@endpush
 
-    @include('layouts.partials.pwa-banner')
+@section('content')
+    @php
+        $priorityTone = fn ($level) => match ($level) { 'emergency' => 'red', 'high' => 'orange', 'moderate' => 'amber', default => 'neutral' };
+        $priorityText = fn ($level) => \App\Models\QueueRequest::priorityClass($level).' · '.ucfirst($level);
+    @endphp
 
-<span hidden data-queue-helper-options="{{ route('moderator.queue.helper-options') }}"></span>
-<script src="{{ asset('js/queue-helper-options.js') }}?v={{ filemtime(public_path('js/queue-helper-options.js')) }}" defer></script>
-</body>
-</html>
+    <x-ui.page-header title="Incoming Queue" description="Assign helpers to waiting help seekers. Figures refresh every 30 seconds." />
+
+    @if(session('success'))
+        <div class="queue-flash success">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="queue-flash error">{{ session('error') }}</div>
+    @endif
+
+    <x-ui.card class="queue-card">
+        <div class="queue-stats">
+            <span>Waiting <strong id="statWaiting">{{ $stats['waiting'] }}</strong></span>
+            <span>Assigned <strong id="statAssigned">{{ $stats['assigned'] }}</strong></span>
+            <span>Oldest wait <strong data-metric="oldest_wait">{{ $stats['oldest_wait'] }}</strong></span>
+            <span class="queue-note">Unmatched requests expire after 24 hours; history is retained.</span>
+        </div>
+    </x-ui.card>
+
+    <x-ui.card class="queue-card" title="Service targets by priority class">
+        <div class="queue-targets">
+            @foreach(['P1'=>['Emergency','red'],'P2'=>['High','orange'],'P3'=>['Moderate','amber'],'P4'=>['Low','neutral']] as $class=>[$label,$tone])
+                <span><x-ui.badge :tone="$tone">{{ $class }}</x-ui.badge> {{ $label }} · target ≤ {{ ['P1'=>1,'P2'=>3,'P3'=>10,'P4'=>20][$class] }} min</span>
+            @endforeach
+        </div>
+    </x-ui.card>
+
+    <x-ui.card class="queue-card" title="Waiting Seekers">
+        <x-slot:actions><span class="queue-count" id="waitingHeading">{{ $queueItems->total() }} waiting</span></x-slot:actions>
+        @php $waiting = $queueItems->where('request_status', 'waiting'); @endphp
+        @if($waiting->isEmpty())
+            <x-ui.empty title="No seekers waiting. Queue is clear!" />
+        @else
+            <x-ui.table :stack="true">
+                <thead><tr><th>Priority</th><th>Seeker</th><th>Type</th><th>Waiting</th><th>Actions</th></tr></thead>
+                <tbody>
+                @foreach($waiting as $item)
+                    <tr data-queue-row="{{ $item->id }}">
+                        <td data-label="Priority"><x-ui.badge :tone="$priorityTone($item->priority_level)" title="Priority class {{ \App\Models\QueueRequest::priorityClass($item->priority_level) }}">{{ $priorityText($item->priority_level) }}</x-ui.badge></td>
+                        <td data-label="Seeker">
+                            <span class="queue-alias">{{ $item->seeker?->generated_alias ?? 'Anonymous' }}</span>
+                            <small>{{ $item->concern_name }}</small>
+                        </td>
+                        <td data-label="Type">{{ ucfirst($item->preferred_session_type) }}</td>
+                        <td data-label="Waiting"><x-ui.badge :tone="$item->wait_minutes >= 30 ? 'red' : ($item->wait_minutes >= 15 ? 'amber' : 'green')">{{ $item->wait_minutes }} min</x-ui.badge></td>
+                        <td data-label="Actions" class="ui-actions">
+                            <button type="button" class="btn-secondary" data-dialog-open="assign-{{ $item->id }}">Assign Helper</button>
+                            <dialog class="workflow-dialog" id="assign-{{ $item->id }}" aria-labelledby="title-assign-{{ $item->id }}">
+                                <header class="workflow-dialog__header"><div><h2 id="title-assign-{{ $item->id }}">Assign Helper</h2><p>Queue #{{ $item->id }} &middot; {{ $item->seeker?->generated_alias }}</p></div><button type="button" data-dialog-close aria-label="Close assignment">&times;</button></header>
+                                <form method="POST" action="{{ route('moderator.queue.assign') }}" class="assign-form" data-queue-id="{{ $item->id }}">
+                                    <div class="workflow-dialog__body">
+                                        @csrf
+                                        <input type="hidden" name="queue_id" value="{{ $item->id }}">
+                                        <label class="sr-only" for="helper-{{ $item->id }}">Eligible helper for queue request {{ $item->id }}</label>
+                                        <select id="helper-{{ $item->id }}" name="helper_id" class="assign-select" required>
+                                            <option value="">Select helper…</option>
+                                            @foreach($item->helper_choices['helpers'] as $choice)
+                                                <option value="{{ $choice['id'] }}">{{ $choice['label'] }}</option>
+                                            @endforeach
+                                        </select>
+                                        <small data-helper-reason>{{ $item->helper_choices['reason'] }}</small>
+                                        @include('partials.helper-unavailable', ['choices'=>$item->helper_choices])
+                                    </div>
+                                    <footer class="workflow-dialog__footer"><button type="button" class="btn-secondary" data-dialog-close>Cancel</button><button type="submit" class="btn-primary whitespace-nowrap" @disabled(empty($item->helper_choices['helpers']))>
+                                        <x-ui-icon name="user-check" /> Assign
+                                    </button></footer>
+                                </form>
+                            </dialog>
+                        </td>
+                    </tr>
+                @endforeach
+                </tbody>
+            </x-ui.table>
+        @endif
+    </x-ui.card>
+
+    <x-ui.card class="queue-card" title="Recently Matched">
+        <x-slot:actions>
+            <span class="queue-count" id="assignedHeading">{{ $recentlyMatched->count() }} assigned</span>
+            <a class="text-green-700 font-semibold" href="{{ route('moderator.reports',['tab'=>'operations']) }}">View all</a>
+        </x-slot:actions>
+        @if($recentlyMatched->isEmpty())
+            <x-ui.empty title="No recent matches" />
+        @else
+            <x-ui.table :stack="true">
+                <thead><tr><th>Priority</th><th>Seeker</th><th>Type</th><th>Appointment</th><th>Actions</th></tr></thead>
+                <tbody>
+                @foreach($recentlyMatched as $item)
+                    <tr data-queue-row="{{ $item->id }}">
+                        <td data-label="Priority"><x-ui.badge :tone="$priorityTone($item->priority_level)" title="Priority class {{ \App\Models\QueueRequest::priorityClass($item->priority_level) }}">{{ $priorityText($item->priority_level) }}</x-ui.badge></td>
+                        <td data-label="Seeker">
+                            <span class="queue-alias">{{ $item->seeker?->generated_alias ?? 'Anonymous' }}</span>
+                            <small>Matched {{ $item->matched_date?->diffForHumans() }} with <strong>{{ $item->assignedHelper?->full_name ?? '—' }}</strong></small>
+                        </td>
+                        <td data-label="Type">{{ ucfirst($item->preferred_session_type) }}</td>
+                        <td data-label="Appointment"><x-ui.badge tone="green">{{ $item->scheduled_date ? $item->scheduled_date->copy()->setTimezone(config('app.schedule_timezone'))->format('M d, h:i A') : 'Awaiting acceptance' }}</x-ui.badge></td>
+                        <td data-label="Actions" class="ui-actions">
+                            <form method="POST" action="{{ route('moderator.queue.schedule') }}">
+                                @csrf
+                                <label class="sr-only" for="scheduled_at-{{ $item->id }}">Appointment time for queue request {{ $item->id }}</label>
+                                <input type="datetime-local" id="scheduled_at-{{ $item->id }}" name="scheduled_at" class="assign-select"
+                                       value="{{ $item->scheduled_date?->copy()->setTimezone(config('app.schedule_timezone'))->format('Y-m-d\TH:i') }}"
+                                       title="Set the appointment time for this already-assigned session ({{ config('app.schedule_timezone') }}).">
+                                <input type="hidden" name="queue_id" value="{{ $item->id }}">
+                                <button type="submit" class="btn-secondary whitespace-nowrap">
+                                    <x-ui-icon name="calendar" /> Schedule
+                                </button>
+                            </form>
+                            <button type="button" class="btn-secondary" data-dialog-open="reassign-{{ $item->id }}">Reassign Helper</button>
+                            <dialog class="workflow-dialog" id="reassign-{{ $item->id }}" aria-labelledby="title-reassign-{{ $item->id }}">
+                                <header class="workflow-dialog__header"><div><h2 id="title-reassign-{{ $item->id }}">Reassign Helper</h2><p>Queue #{{ $item->id }} &middot; {{ $item->seeker?->generated_alias }}</p></div><button type="button" data-dialog-close aria-label="Close assignment">&times;</button></header>
+                                <form method="POST" action="{{ route('moderator.queue.reassign') }}" class="reassign-form" data-queue-id="{{ $item->id }}">
+                                    <div class="workflow-dialog__body">
+                                        @csrf
+                                        <input type="hidden" name="queue_id" value="{{ $item->id }}">
+                                        <label class="sr-only" for="reassign-{{ $item->id }}">Replacement helper for queue request {{ $item->id }}</label>
+                                        <select id="reassign-{{ $item->id }}" name="helper_id" class="assign-select">
+                                            <option value="">Select helper…</option>
+                                            @foreach($item->helper_choices['helpers'] as $choice)
+                                                <option value="{{ $choice['id'] }}">{{ $choice['label'] }}</option>
+                                            @endforeach
+                                        </select>
+                                        <small data-helper-reason>{{ $item->helper_choices['reason'] }}</small>
+                                        @include('partials.helper-unavailable', ['choices'=>$item->helper_choices])
+                                    </div>
+                                    <footer class="workflow-dialog__footer"><button type="button" class="btn-secondary" data-dialog-close>Cancel</button><button type="submit" class="btn-secondary whitespace-nowrap" @disabled(empty($item->helper_choices['helpers']))>
+                                        <x-ui-icon name="refresh" /> Reassign
+                                    </button></footer>
+                                </form>
+                            </dialog>
+                        </td>
+                    </tr>
+                @endforeach
+                </tbody>
+            </x-ui.table>
+        @endif
+    </x-ui.card>
+
+    <div class="mt-4">{{ $queueItems->links() }}</div>
+@endsection
