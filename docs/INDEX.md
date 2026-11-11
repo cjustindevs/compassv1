@@ -45,6 +45,7 @@ the relevant validation checklist and current code when verifying behavior.
 
 ## UI, reports, and audits
 
+- [COMPASS design system (DESIGN.md)](../DESIGN.md): tokens, components, content rules, do's and don'ts
 - [UI standardization plan](UI_STANDARDIZATION_PLAN.md)
 - [Responsive layout and consent updates](RESPONSIVE_CONSENT_UPDATES.md)
 - [UI and reports update](SCOPED_UI_REPORTS_UPDATE.md)
