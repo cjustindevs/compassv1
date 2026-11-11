@@ -49,8 +49,9 @@ class DesignTokensTest extends TestCase
     public function test_type_scale_matches_design_md(): void
     {
         $css = file_get_contents($this->root().'/public/css/compass-ui.css');
-        $expected = ['--text-2xs' => 11, '--text-xs' => 12, '--text-sm' => 13, '--text-base' => 14, '--text-md' => 16,
-            '--text-lg' => 18, '--text-xl' => 20, '--text-2xl' => 24, '--text-3xl' => 28];
+        $expected = ['--text-2xs' => 11, '--text-xs' => 12, '--text-sm' => 13, '--text-caption' => 14, '--text-base' => 15,
+            '--text-md' => 16, '--text-lg' => 18, '--text-xl' => 20, '--text-2xl' => 24, '--text-3xl' => 28,
+            '--text-4xl' => 32, '--text-kpi' => 40];
 
         foreach ($expected as $token => $px) {
             $this->assertMatchesRegularExpression('/'.preg_quote($token, '/').':\s*'.$px.'px;/', $css, "{$token} should be {$px}px.");

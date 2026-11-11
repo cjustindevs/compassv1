@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase;
  */
 class DesignScaleTest extends TestCase
 {
-    private const TYPE_SCALE = [11, 12, 13, 14, 16, 18, 20, 24, 28];
+    private const TYPE_SCALE = [11, 12, 13, 14, 15, 16, 18, 20, 24, 28, 32, 40];
 
     private const CLEAN_AREAS = ['shared', 'admin', 'moderator', 'adviser', 'helper', 'professional', 'seeker'];
 
@@ -143,7 +143,7 @@ class DesignScaleTest extends TestCase
     {
         $tmp = tempnam(sys_get_temp_dir(), 'scale').'.css';
         file_put_contents($tmp, implode("\n", [
-            '.a { font-size: 15px; }',
+            '.a { font-size: 17px; }',
             '.b { font-size: 14px; box-shadow: 0 0 0 3px rgba(4,160,82,.15); }',
             '.c { box-shadow: 0 8px 28px rgba(4,160,82,0.3); }',
             '.d { box-shadow: 0 8px 24px rgb(22 59 45 / 12%); font-size: .875rem; }',

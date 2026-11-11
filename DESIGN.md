@@ -65,22 +65,25 @@ color, whatever else is in the chart.
 
 ## 3. Typography
 
-Inter at 14px is the base. Use only these sizes:
+Inter at 15px is the base. Use only these sizes:
 
 | Token | Size | Use |
 |---|---|---|
 | `--text-2xs` | 11px | Uppercase overlines, chart ticks, timestamps |
-| `--text-xs` | 12px | Badges, captions, helper text, table meta |
-| `--text-sm` | 13px | Secondary text, table cells, notification bodies, labels |
-| `--text-base` | 14px | Body text, buttons, inputs |
-| `--text-md` | 16px | Card titles (h3), lead text, phone inputs (stops iOS zoom) |
-| `--text-lg` | 18px | Section titles (h2), modal titles |
-| `--text-xl` | 20px | Page title on phones |
-| `--text-2xl` | 24px | Page title (h1) on desktop |
-| `--text-3xl` | 28px | KPI and stat numbers |
+| `--text-xs` | 12px | Badges, helper text, table meta |
+| `--text-sm` | 13px | Captions, notification bodies, labels |
+| `--text-caption` | 14px | Captions, table cells, secondary text |
+| `--text-base` | 15px | Body text, buttons, inputs |
+| `--text-md` | 16px | Lead text, phone inputs (stops iOS zoom) |
+| `--text-lg` | 18px | Card and section titles (h3), modal titles |
+| `--text-xl` | 20px | Section titles (h2) |
+| `--text-2xl` | 24px | Page title (h1) on phones |
+| `--text-3xl` | 28px | Page title (h1) on desktop |
+| `--text-4xl` | 32px | KPI and stat numbers on phones |
+| `--text-kpi` | 40px | KPI and stat numbers |
 
-- **Weights:** 400 for body, 500 for emphasis, 600 for labels, buttons and titles, 700 for page
-  titles and numbers.
+- **Weights:** 400 for body, 500 for emphasis, 600 for labels, buttons and titles, 700 for h2 and h3,
+  800 for page titles and KPI numbers.
 - **Line height:** 1.5 for text, 1.25–1.4 for headings and numbers.
 - Tailwind's `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl` and `text-2xl` match the scale.
   Avoid `text-3xl` and larger outside the landing page.
@@ -97,7 +100,7 @@ All spacing is on a **4px base**. Use only these steps:
 | `--space-2` | 8px | Gap between chips, buttons in a toolbar |
 | `--space-3` | 12px | Gap inside a card row, label-to-control |
 | `--space-4` | 16px | Grid gaps, card padding on phones, toast stack offset |
-| `--space-5` | 20px | Card padding (`--compass-space`) |
+| `--space-5` | 20px | Grid gaps (`--compass-space`) |
 | `--space-6` | 24px | Page gutter (`--compass-page-padding`), gap between sections |
 | `--space-8` | 32px | Large section breaks, empty-state padding |
 | `--space-10` | 40px | Page bottom padding |
@@ -131,8 +134,8 @@ Shadows are rare and soft. There are three levels, and borders do most of the wo
 ## 6. Components
 
 **Buttons**
-- Height is 42px on desktop and 44px on touch screens or ≤768px (`--compass-control-height`).
-- Padding is 10px × 16px, radius is `--radius-md`, text is 14px at weight 600, and the icon gap is 8px.
+- Height is 44px everywhere (`--control-h`, also `--compass-control-height`).
+- Padding is 10px × 20px, radius is `--radius-pill`, text is 15px at weight 600, and the icon gap is 8px.
 - Variants:
   - Primary: solid green, white text.
   - Secondary/outline: white, green-dark text, hairline border.
@@ -143,12 +146,12 @@ Shadows are rare and soft. There are three levels, and borders do most of the wo
 
 **Cards and panels**
 - `.card`, `.av-panel`, `.mo-card`, `.ui-panel`, `.hf-card`: white, hairline border,
-  `--radius-lg`, `--shadow-1`, and 20px padding (16px on phones).
+  `--radius-lg`, `--shadow-1`, and 24px padding (`--card-pad`; 16px on phones).
 - Never nest a bordered card inside another bordered card. Use a divider or a soft
   `--compass-green-soft` or gray-50 block instead.
 
 **KPI and stat tiles**
-- A label (12–13px, muted), a number (`--text-3xl` or 24px in compact grids, weight 700,
+- A label (12–13px, muted), a number (`--text-kpi` 40px, `--text-4xl` 32px at ≤768px, weight 800,
   tabular) and an optional sample count or caption (12px).
 
 **Chips and badges**
@@ -156,7 +159,7 @@ Shadows are rare and soft. There are three levels, and borders do most of the wo
   counters and filters.
 
 **Tables**
-- 13px cells, 12px × 14px padding, gray-50 header with 600 weight and gray-600 text,
+- 14px cells, 14px × 16px padding, rows at least 52px (`--row-h`), gray-50 header with 600 weight and gray-600 text,
   `--compass-divider` row lines.
 - Wide tables scroll inside their card (`.ui-table-scroll`), never the page.
 
@@ -243,7 +246,7 @@ Shadows are rare and soft. There are three levels, and borders do most of the wo
 | 1151–1499px | Full two-column page grids. |
 | 769–1150px | The rail stays. Two-column page grids (`.mo-grid`, side columns) stack. |
 | ≤768px | The rail becomes a drawer behind the menu button. Controls are 44px and inputs 16px. The gutter is 20px. |
-| ≤480px | The gutter is 16px, the h1 is 20px, form rows stack and the table cell padding is 10px × 12px. |
+| ≤480px | The gutter is 16px, the h1 is 24px, form rows stack and the table cell padding is 10px × 12px. |
 
 - Chat and voice windows fill `100dvh` with the composer pinned.
 - Pages never scroll sideways. Only tables and chip rows scroll inside their container.
@@ -255,7 +258,7 @@ Shadows are rare and soft. There are three levels, and borders do most of the wo
 When asking an AI agent (or a new teammate) to build or change a COMPASS screen, include:
 
 > Follow `DESIGN.md`. Use the tokens in `public/css/compass-ui.css`: spacing `--space-*` (4px base),
-> type `--text-*` (11/12/13/14/16/18/20/24/28 only), radius `--radius-*`, shadows `--shadow-1..3`,
+> type `--text-*` (11/12/13/14/15/16/18/20/24/28/32/40 only), radius `--radius-*`, shadows `--shadow-1..3`,
 > layers `--z-*`. Cards are white with a 1px `--compass-border` hairline, 14px radius and
 > `--shadow-1`. Buttons are 42px (44px on touch), and there is one green primary per area. Scores
 > are plain numbers on a 1–5 scale, with the range stated once in the label. Charts use
