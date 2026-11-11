@@ -1,4 +1,4 @@
-{{-- Variables provided by SidebarComposer: $evalBadge, $screeningBadge, $referralBadge, $notifBadge,
+{{-- Variables provided by SidebarComposer: $evalBadge, $screeningBadge, $referralBadge, $notifBadge, $emergencyCount,
      $totalHelpers, $activeSessions, $pendingReviews, $avatarText, $displayName --}}
 
 @include('layouts.partials.sidebar-critical')
@@ -17,7 +17,7 @@
 
     <nav class="sidebar-nav">
         <div class="nav-section">Evaluation</div>
-        <a href="{{ route('adviser.dashboard') }}" class="nav-item {{ request()->routeIs('adviser.dashboard') ? 'active' : '' }}">
+        <a href="{{ route('adviser.dashboard') }}" class="nav-item {{ request()->routeIs('adviser.dashboard') ? 'active' : '' }}" title="Dashboard">
             <x-ui-icon name="dashboard"  /><span class="nav-text">Dashboard</span>
         </a>
         <a href="{{ route('adviser.screenings') }}" data-adviser-badge="pendingReviewsBadge" class="nav-item {{ request()->routeIs('adviser.screenings*') ? 'active' : '' }}" title="Screening Reviews">
@@ -26,56 +26,56 @@
                 <span class="nav-badge" id="pendingReviewsBadge">{{ $screeningBadge }}</span>
             @endif
         </a>
-        <a href="{{ route('adviser.evaluations') }}" class="nav-item {{ request()->routeIs('adviser.evaluations*', 'adviser.evaluate*') ? 'active' : '' }}">
+        <a href="{{ route('adviser.evaluations') }}" class="nav-item {{ request()->routeIs('adviser.evaluations*', 'adviser.evaluate*') ? 'active' : '' }}" title="Pending Evaluations">
             <x-ui-icon name="clipboard"  /><span class="nav-text">Pending Evaluations</span>
             @if($evalBadge > 0)
                 <span class="nav-badge" id="evalBadge">{{ $evalBadge }}</span>
             @endif
         </a>
-        <a href="{{ route('adviser.helpers') }}" class="nav-item {{ request()->routeIs('adviser.helpers*', 'adviser.helper*') ? 'active' : '' }}">
+        <a href="{{ route('adviser.helpers') }}" class="nav-item {{ request()->routeIs('adviser.helpers*', 'adviser.helper*') ? 'active' : '' }}" title="Manage Helpers">
             <x-ui-icon name="users"  /><span class="nav-text">Manage Helpers</span>
         </a>
         @php($liveCount = auth()->user()?->adviser ? \App\Models\Session::where('session_status', 'active')->where('session_type', 'chat')->where('is_test_record', false)->whereHas('helper', fn ($q) => $q->where('adviser_id', auth()->user()->adviser->id))->count() : 0)
-        <a href="{{ route('adviser.live.index') }}" class="nav-item {{ request()->routeIs('adviser.live.*') ? 'active' : '' }}" title="Live sessions">
-            <x-ui-icon name="eye"  /><span class="nav-text">Live sessions</span>@if($liveCount)<span class="nav-badge">{{ $liveCount }}</span>@endif
+        <a href="{{ route('adviser.live.index') }}" class="nav-item {{ request()->routeIs('adviser.live.*') ? 'active' : '' }}" title="Live Sessions">
+            <x-ui-icon name="eye"  /><span class="nav-text">Live Sessions</span>@if($liveCount)<span class="nav-badge">{{ $liveCount }}</span>@endif
         </a>
-        <a href="{{ route('adviser.referrals') }}" class="nav-item {{ request()->routeIs('adviser.referrals*', 'adviser.referral*') ? 'active' : '' }}">
+        <a href="{{ route('adviser.referrals') }}" class="nav-item {{ request()->routeIs('adviser.referrals*', 'adviser.referral*') ? 'active' : '' }}" title="Referral Queue">
             <x-ui-icon name="arrow-right"  /><span class="nav-text">Referral Queue</span>
             @if($referralBadge > 0)
                 <span class="nav-badge" id="referralBadge">{{ $referralBadge }}</span>
             @endif
         </a>
-        <a href="{{ route('adviser.emergencies') }}" class="nav-item {{ request()->routeIs('adviser.emergencies*') ? 'active' : '' }}">
+        <a href="{{ route('adviser.emergencies') }}" class="nav-item {{ request()->routeIs('adviser.emergencies*') ? 'active' : '' }}" title="Emergencies">
             <x-ui-icon name="warning"  /><span class="nav-text">Emergencies</span>
-            <span class="nav-badge" id="emergencyBadge" hidden>0</span>
+            <span class="nav-badge danger" id="emergencyBadge" @if(!$emergencyCount) hidden style="display:none" @endif>{{ $emergencyCount }}</span>
         </a>
 
         <div class="nav-section">Records</div>
-        <a href="{{ route('adviser.reports') }}" class="nav-item {{ request()->routeIs('adviser.reports*') ? 'active' : '' }}">
+        <a href="{{ route('adviser.reports') }}" class="nav-item {{ request()->routeIs('adviser.reports*') ? 'active' : '' }}" title="Reports">
             <x-ui-icon name="bar-chart"  /><span class="nav-text">Reports</span>
         </a>
-        <a href="{{ route('adviser.calendar') }}" class="nav-item {{ request()->routeIs('adviser.calendar*') ? 'active' : '' }}">
+        <a href="{{ route('adviser.calendar') }}" class="nav-item {{ request()->routeIs('adviser.calendar*') ? 'active' : '' }}" title="Calendar">
             <x-ui-icon name="calendar"  /><span class="nav-text">Calendar</span>
         </a>
-        <a href="{{ route('adviser.schedule') }}" class="nav-item {{ request()->routeIs('adviser.schedule*') ? 'active' : '' }}">
+        <a href="{{ route('adviser.schedule') }}" class="nav-item {{ request()->routeIs('adviser.schedule*') ? 'active' : '' }}" title="Helper Schedules">
             <x-ui-icon name="clock"  /><span class="nav-text">Helper Schedules</span>
         </a>
-        <a href="{{ route('adviser.transcripts') }}" class="nav-item {{ request()->routeIs('adviser.transcripts*', 'adviser.transcript*') ? 'active' : '' }}">
+        <a href="{{ route('adviser.transcripts') }}" class="nav-item {{ request()->routeIs('adviser.transcripts*', 'adviser.transcript*') ? 'active' : '' }}" title="Transcripts">
             <x-ui-icon name="file-text"  /><span class="nav-text">Transcripts</span>
         </a>
-        <a href="{{ route('adviser.resources') }}" class="nav-item {{ request()->routeIs('adviser.resources*') ? 'active' : '' }}">
+        <a href="{{ route('adviser.resources') }}" class="nav-item {{ request()->routeIs('adviser.resources*') ? 'active' : '' }}" title="Resources">
             <x-ui-icon name="book-open"  /><span class="nav-text">Resources</span>
         </a>
-<a href="{{ route('concerns.manage') }}" class="nav-item {{ request()->routeIs('concerns.*') ? 'active' : '' }}"><x-ui-icon name="list"  /><span class="nav-text">Areas of concern</span></a>
+<a href="{{ route('concerns.manage') }}" class="nav-item {{ request()->routeIs('concerns.*') ? 'active' : '' }}" title="Areas of Concern"><x-ui-icon name="list"  /><span class="nav-text">Areas of Concern</span></a>
 
         <div class="nav-section">Account</div>
-        <a href="{{ route('adviser.notifications') }}" data-adviser-badge="notifBadge" class="nav-item {{ request()->routeIs('adviser.notifications*') ? 'active' : '' }}">
+        <a href="{{ route('adviser.notifications') }}" data-adviser-badge="notifBadge" class="nav-item {{ request()->routeIs('adviser.notifications*') ? 'active' : '' }}" title="Notifications">
             <x-ui-icon name="bell"  /><span class="nav-text">Notifications</span>
             @if($notifBadge > 0)
                 <span class="nav-badge" id="notifBadge">{{ $notifBadge }}</span>
             @endif
         </a>
-        <a href="{{ route('adviser.settings') }}" class="nav-item {{ request()->routeIs('adviser.settings*') ? 'active' : '' }}">
+        <a href="{{ route('adviser.settings') }}" class="nav-item {{ request()->routeIs('adviser.settings*') ? 'active' : '' }}" title="Settings">
             <x-ui-icon name="settings"  /><span class="nav-text">Settings</span>
         </a>
     </nav>

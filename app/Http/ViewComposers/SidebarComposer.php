@@ -123,6 +123,8 @@ class SidebarComposer
 
             $notifBadge = $user->unreadNotifications()->count();
 
+            $emergencyCount = $adviserId ? \App\Models\EmergencyAlert::activeForAdviser($adviserId)->count() : 0;
+
             $totalHelpers = $adviserHelperIds->count();
 
             $activeSessions = Session::whereIn('helper_id', $adviserHelperIds)
@@ -138,7 +140,7 @@ class SidebarComposer
             $displayName = $adviserProfile?->full_name ?? $user->name;
 
             return compact(
-                'evalBadge', 'screeningBadge', 'referralBadge', 'notifBadge', 'totalHelpers',
+                'evalBadge', 'screeningBadge', 'referralBadge', 'notifBadge', 'emergencyCount', 'totalHelpers',
                 'activeSessions', 'pendingReviews', 'avatarText', 'displayName'
             );
         })();

@@ -98,6 +98,11 @@ class EmergencyAlert extends Model
             ->orWhere(fn ($open) => $open->whereNotIn('status', ['resolved', 'closed'])->whereNull('archived_at')));
     }
 
+    public function scopeActiveForAdviser(Builder $query, int $adviserId): Builder
+    {
+        return $query->visibleForAdviser($adviserId)->whereNotIn('status', ['resolved', 'closed']);
+    }
+
     public function scopePending(Builder $query): Builder
     {
         return $query->where('status', 'pending');
