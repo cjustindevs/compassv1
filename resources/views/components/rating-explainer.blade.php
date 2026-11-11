@@ -50,18 +50,18 @@
 @once
 <style>
 .rating-explainer { background: #fff; border: 1px solid #dfe9e3; border-radius: 14px; padding: 16px 18px; display: grid; gap: 12px; margin: 14px 0; }
-.rating-explainer header h3 { margin: 0; font-size: 15px; font-weight: 700; color: #163b2d; }
-.rating-explainer header p { margin: 2px 0 0; font-size: 12.5px; color: #64746b; }
+.rating-explainer header h3 { margin: 0; font-size: 14px; font-weight: 700; color: #163b2d; }
+.rating-explainer header p { margin: 2px 0 0; font-size: 13px; color: #64746b; }
 .re-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: stretch; }
 .re-item { display: grid; gap: 2px; align-content: start; background: #f6faf7; border-radius: 10px; padding: 10px 12px; }
-.re-item strong { font-size: 22px; color: #163b2d; font-variant-numeric: tabular-nums; }
+.re-item strong { font-size: 20px; color: #163b2d; font-variant-numeric: tabular-nums; }
 .re-item small { font-size: 12px; color: #64746b; line-height: 1.45; }
 .re-total { background: #eaf8f0; }
 .re-label { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #087341; }
 .re-op { align-self: center; font-size: 20px; font-weight: 700; color: #94a39a; }
 .re-uses { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 20px; margin: 0; }
 .re-uses dt { font-size: 12px; font-weight: 700; color: #163b2d; }
-.re-uses dd { margin: 2px 0 0; font-size: 12.5px; color: #4b5b52; line-height: 1.5; }
+.re-uses dd { margin: 2px 0 0; font-size: 13px; color: #4b5b52; line-height: 1.5; }
 @media (max-width: 860px) { .re-grid { grid-template-columns: 1fr; } .re-op { display: none; } .re-uses { grid-template-columns: 1fr; } }
 </style>
 @endonce

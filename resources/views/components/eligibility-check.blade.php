@@ -43,7 +43,7 @@
 <style>
 .eligibility-check { background: #fff; border: 1px solid #dfe9e3; border-radius: 14px; padding: 14px 16px; display: grid; gap: 10px; margin: 14px 0; }
 .eligibility-check header { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
-.eligibility-check h3 { margin: 0; font-size: 15px; font-weight: 700; color: #163b2d; }
+.eligibility-check h3 { margin: 0; font-size: 14px; font-weight: 700; color: #163b2d; }
 .ec-badge { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; }
 .ec-badge.is-ok { background: #e7f6ee; color: #05683a; }
 .ec-badge.is-blocked { background: #fff4e0; color: #8a5300; }

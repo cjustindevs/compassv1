@@ -7,7 +7,7 @@
     display:none!important
 }
 .hf-page h2,.hf-page h3 {
-    font-size:17px;
+    font-size:16px;
     font-weight:700
 }
 .hf-page .card {
@@ -241,13 +241,13 @@
     margin-bottom:24px
 }
 .hf-score-value {
-    font-size:56px;
+    font-size:28px;
     line-height:1.2;
     color:#009b50;
     font-weight:800
 }
 .hf-score-value small {
-    font-size:22px;
+    font-size:20px;
     color:#738078
 }
 .hf-overall .hf-status {
@@ -373,7 +373,7 @@
     padding:4px 6px;
     margin-top:5px;
     border-radius:4px;
-    font-size:10px;
+    font-size:11px;
     line-height:1.4;
     overflow-wrap:anywhere;
     text-decoration:none
@@ -497,7 +497,7 @@
         grid-column:1/-1
     }
     .hf-score-value {
-        font-size:48px
+        font-size:28px
     }
     .hf-page .hf-form-grid {
         grid-template-columns:1fr!important

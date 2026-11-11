@@ -8,10 +8,10 @@
     <style>
         .selfcare-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
         .selfcare-card { background: #fff; border: 1px solid var(--gray-200); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; text-decoration: none; color: inherit; transition: border-color .2s ease, box-shadow .2s ease; }
-        .selfcare-card:hover { border-color: var(--green-300, #6dcb80); box-shadow: 0 8px 22px rgba(4,160,82,.10); }
+        .selfcare-card:hover { border-color: var(--green-300, #6dcb80); box-shadow: none; }
         .selfcare-card .sh-art { display: block; width: 100%; height: 72px; }
         .selfcare-card .body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
-        .selfcare-card h3 { font-size: 15px; font-weight: 700; color: var(--gray-800); }
+        .selfcare-card h3 { font-size: 14px; font-weight: 700; color: var(--gray-800); }
         .selfcare-card p { font-size: 13px; color: var(--gray-500); line-height: 1.5; flex: 1; }
         .selfcare-card .action { align-self: flex-start; font-size: 13px; font-weight: 600; color: var(--green-700, #027039); }
         .selfcare-card.is-urgent .action { color: #b42318; }

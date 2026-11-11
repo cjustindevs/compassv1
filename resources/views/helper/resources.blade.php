@@ -22,7 +22,7 @@
         @forelse($resources as $resource)
             <div class="card" style="display:flex;flex-direction:column;">
                 <div style="margin-bottom:12px;">
-                    <div class="font-semibold text-gray-800" style="font-size:15px;">{{ $resource['title'] }}</div>
+                    <div class="font-semibold text-gray-800" style="font-size:14px;">{{ $resource['title'] }}</div>
                     <div style="display:flex;gap:6px;margin-top:2px;flex-wrap:wrap;">
                         <span class="pill">{{ $resource['category'] }}</span>
                         @if($resource['featured'])

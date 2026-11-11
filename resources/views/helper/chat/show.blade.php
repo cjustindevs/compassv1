@@ -45,14 +45,14 @@
             justify-content: center;
             color: white;
             font-weight: 700;
-            font-size: 17px;
+            font-size: 16px;
             text-transform: uppercase;
             flex-shrink: 0;
         }
         .room-header .peer-info .meta { min-width: 0; }
         .room-header .peer-info .name {
             font-weight: 600;
-            font-size: 15px;
+            font-size: 14px;
             color: var(--gray-800);
             white-space: nowrap;
             overflow: hidden;
@@ -222,7 +222,7 @@
         .chat-messages .message.seeker .sender-name { color: var(--gray-500); }
         .chat-messages .message .text { font-size: 14px; line-height: 1.5; word-break: break-word; }
         .chat-messages .message .time {
-            font-size: 10px;
+            font-size: 11px;
             opacity: 0.65;
             display: block;
             text-align: right;
@@ -284,7 +284,7 @@
             .chat-messages .message { max-width: 85%; padding: 8px 12px; }
             .chat-messages .message .text { font-size: 13px; }
             .room-header { padding: 12px 14px; }
-            .room-header .peer-info .avatar { width: 34px; height: 34px; font-size: 15px; }
+            .room-header .peer-info .avatar { width: 34px; height: 34px; font-size: 14px; }
             .room-header .peer-info .name { font-size: 14px; }
         }
         @media (max-width: 480px) {
@@ -386,7 +386,7 @@
         .coach-panel { margin: 0 16px 10px; background: #f2f8ff; border: 1px solid #c9ddf5; border-left: 4px solid #2a78d6; border-radius: 12px; padding: 10px 14px; }
         .coach-panel header { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; }
         .coach-panel h3 { margin: 0; font-size: 14px; font-weight: 700; color: #1c4f8a; }
-        .coach-panel header span { font-size: 11.5px; color: #4d6a8a; }
+        .coach-panel header span { font-size: 12px; color: #4d6a8a; }
         .coach-panel ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; max-height: 140px; overflow-y: auto; }
         .coach-panel li { font-size: 13px; color: #22405f; line-height: 1.45; }
         .coach-panel li small { color: #4d6a8a; margin-right: 6px; }

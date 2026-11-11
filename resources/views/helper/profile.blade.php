@@ -23,19 +23,19 @@
                 <div class="grid grid-cols-2 gap-3 text-center">
                     <div>
                         <div class="text-2xl font-bold text-gray-800">{{ $totalSessions }}</div>
-                        <div class="text-[10px] text-gray-400 uppercase">Total Sessions</div>
+                        <div class="text-[11px] text-gray-400 uppercase">Total Sessions</div>
                     </div>
                     <div>
                         <div class="text-2xl font-bold text-gray-800">{{ $completedSessions }}</div>
-                        <div class="text-[10px] text-gray-400 uppercase">Completed</div>
+                        <div class="text-[11px] text-gray-400 uppercase">Completed</div>
                     </div>
                     <div>
                         <div class="text-2xl font-bold text-gray-800">{{ $reportsCount }}</div>
-                        <div class="text-[10px] text-gray-400 uppercase">Docs</div>
+                        <div class="text-[11px] text-gray-400 uppercase">Docs</div>
                     </div>
                     <div>
                         <div class="text-2xl font-bold text-green-600">{{ $competencyScore !== null ? $competencyScore.'%' : 'Not evaluated' }}</div>
-                        <div class="text-[10px] text-gray-400 uppercase">Competency</div>
+                        <div class="text-[11px] text-gray-400 uppercase">Competency</div>
                     </div>
                 </div>
 

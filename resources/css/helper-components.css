@@ -162,7 +162,7 @@
 .btn-primary:hover {
     background: var(--green-600, #038A45);
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(4, 160, 82, 0.25);
+    box-shadow: none;
 }
 .btn-secondary {
     background: white;
@@ -359,13 +359,13 @@ textarea.form-control { min-height: 100px; resize: vertical; }
     width: 96px; height: 96px; border-radius: 50%;
     background: linear-gradient(135deg, #38C172, #038A45);
     display: flex; align-items: center; justify-content: center;
-    color: white; font-size: 40px; font-weight: 700; margin: 0 auto;
-    box-shadow: 0 8px 30px rgba(4, 160, 82, 0.3);
+    color: white; font-size: 28px; font-weight: 700; margin: 0 auto;
+    box-shadow: var(--shadow-2);
 }
-.call-timer { font-size: 34px; font-weight: 800; color: var(--gray-800, #163B2D); }
+.call-timer { font-size: 28px; font-weight: 800; color: var(--gray-800, #163B2D); }
 .call-actions { display: flex; gap: 16px; justify-content: center; margin-top: 24px; }
 .call-btn {
-    width: 60px; height: 60px; border-radius: 50%; border: none; font-size: 22px;
+    width: 60px; height: 60px; border-radius: 50%; border: none; font-size: 20px;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
     transition: all 0.2s ease;
 }
@@ -386,7 +386,7 @@ textarea.form-control { min-height: 100px; resize: vertical; }
 .calendar-cell.today { border-color: var(--green-500, #04A052); box-shadow: 0 0 0 2px rgba(4, 160, 82, 0.15); }
 .calendar-cell.today .day-num { color: var(--green-500, #04A052); }
 .calendar-event {
-    margin-top: 6px; padding: 3px 6px; border-radius: 6px; font-size: 10px; font-weight: 600;
+    margin-top: 6px; padding: 3px 6px; border-radius: 6px; font-size: 11px; font-weight: 600;
     color: var(--green-700, #027039); background: var(--green-50, #EAF8F0);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     text-decoration: none; display: block;
@@ -398,7 +398,9 @@ textarea.form-control { min-height: 100px; resize: vertical; }
 
 /* ─────────── Misc ─────────── */
 .empty-state { text-align: center; padding: 48px 16px; color: var(--gray-400, #9CA3AF); }
-.empty-state :is(i, .compass-icon) { font-size: 40px; margin-bottom: 12px; display: block; opacity: 0.5; }
+.empty-state > :is(i, .compass-icon) { font-size: 28px; margin-bottom: 12px; display: block; opacity: 0.5; }
+/* Small row actions in tables stay on one line instead of growing tall on phones. */
+.compass-ui td .btn.btn-sm { white-space: nowrap; }
 .empty-state h3 { font-size: 16px; font-weight: 700; color: var(--gray-800, #163B2D); margin-bottom: 6px; }
 .empty-state p { font-size: 14px; }
 
@@ -445,7 +447,7 @@ textarea.form-control { min-height: 100px; resize: vertical; }
     width: 72px; height: 72px; border-radius: 50%;
     background: linear-gradient(135deg, #38C172, #038A45);
     color: white; display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 26px; text-transform: uppercase; flex-shrink: 0;
+    font-weight: 700; font-size: 24px; text-transform: uppercase; flex-shrink: 0;
 }
 .divider { border: none; border-top: 1px solid var(--gray-100, #F3F4F6); margin: 16px 0; }
 .pill { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--green-50, #EAF8F0); color: var(--green-700, #027039); }
@@ -460,7 +462,7 @@ textarea.form-control { min-height: 100px; resize: vertical; }
     width: 36px; height: 36px; border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
     background: var(--green-50, #EAF8F0); color: var(--green-700, #027039);
-    flex-shrink: 0; font-size: 15px;
+    flex-shrink: 0; font-size: 14px;
 }
 .progress-bar { height: 8px; border-radius: 20px; background: var(--gray-100, #F3F4F6); overflow: hidden; }
 .progress-bar > span { display: block; height: 100%; border-radius: 20px; background: linear-gradient(90deg, #38C172, var(--green-500, #04A052)); }
@@ -471,7 +473,7 @@ textarea.form-control { min-height: 100px; resize: vertical; }
 }
 @media (max-width: 768px) {
     .top-bar .greeting h1 { font-size: 20px; }
-    .stat-card .stat-number { font-size: 22px; }
+    .stat-card .stat-number { font-size: 20px; }
     .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
     .active-session-card { flex-direction: column; text-align: center; }
     .emergency-alert { flex-direction: column; text-align: center; }

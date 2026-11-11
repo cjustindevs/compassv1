@@ -98,7 +98,7 @@
             padding: 4px 10px; border-radius: 999px;
             background: var(--gray-50); border: 1px solid var(--gray-200); color: var(--gray-600);
         }
-        .breath-steps .step :is(i, .compass-icon) { color: var(--green-600); font-size: 10px; }
+        .breath-steps .step :is(i, .compass-icon) { color: var(--green-600); font-size: 11px; }
         .breath-cta { display: flex; align-items: center; gap: 12px; }
         .breath-cta .status-tag { font-size: 12px; font-weight: 600; color: var(--green-700); display: none; }
         .breathing-done { background: var(--green-500) !important; color: white !important; }
@@ -173,7 +173,7 @@
             width: 130px; height: 130px; border-radius: 50%;
             background: linear-gradient(135deg, #EAF8F0, #D0F0D8);
             margin: 16px auto; display: flex; align-items: center; justify-content: center;
-            font-size: 36px; color: var(--green-700);
+            font-size: 28px; color: var(--green-700);
             transition: transform 1s ease, background 0.5s ease, border-color 0.5s ease;
             border: 4px solid #04A052;
         }
@@ -208,8 +208,8 @@
         .rc-step { border: 1px solid var(--gray-200); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; background: #fff; }
         .rc-step-head { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px; }
         .rc-step-num { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--green-50, #eaf8f0); color: var(--green-700, #027039); font-weight: 800; font-size: 14px; }
-        .rc-step-head h3 { margin: 0; font-size: 15px; font-weight: 700; color: var(--gray-800); }
-        .rc-step-head p { margin: 2px 0 0; font-size: 12.5px; color: var(--gray-500); }
+        .rc-step-head h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--gray-800); }
+        .rc-step-head p { margin: 2px 0 0; font-size: 13px; color: var(--gray-500); }
         .rc-pass-rule { font-size: 13px; line-height: 1.55; color: var(--gray-600, #4b5563); background: var(--green-50, #eaf8f0); border: 1px solid var(--green-200, #a8e0b0); border-radius: 12px; padding: 10px 14px; margin: 4px 0 12px; }
     </style>
 @endsection
@@ -389,7 +389,7 @@
         <div class="rc-exercise-dialog" role="dialog" aria-modal="true" aria-labelledby="breathing-title">
             <button type="button" class="modal-close" id="closeExerciseBtn" aria-label="Close"><x-ui-icon name="close"  /></button>
             <div style="text-align:center;">
-                <h3 id="breathing-title" style="font-size:17px;font-weight:800;color:var(--gray-800);margin-bottom:4px;">Breathing Exercise</h3>
+                <h3 id="breathing-title" style="font-size:16px;font-weight:800;color:var(--gray-800);margin-bottom:4px;">Breathing Exercise</h3>
                 <p style="font-size:12px;color:var(--gray-500);margin-bottom:8px;">3 rounds of inhale – hold – exhale</p>
 
                 <div class="breath-circle" id="breath-circle"></div>

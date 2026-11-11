@@ -30,8 +30,8 @@
 .eval-steps li.is-current .es-num { background: #04a052; color: #fff; }
 .eval-steps.is-compact { margin: 8px 0 0; gap: 4px; }
 .eval-steps.is-compact li { padding: 4px 8px; border-radius: 99px; align-items: center; }
-.eval-steps.is-compact .es-num { width: 18px; height: 18px; font-size: 10px; }
-.eval-steps.is-compact strong { font-size: 11.5px; font-weight: 600; }
+.eval-steps.is-compact .es-num { width: 18px; height: 18px; font-size: 11px; }
+.eval-steps.is-compact strong { font-size: 12px; font-weight: 600; }
 @media (max-width: 860px) { .eval-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>
 @endonce

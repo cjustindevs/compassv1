@@ -28,7 +28,7 @@
             margin-bottom: 14px;
         }
         .onboarding-card .intro h2 {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 800;
             color: var(--gray-800);
             margin-bottom: 6px;
