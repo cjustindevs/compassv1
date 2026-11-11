@@ -167,7 +167,7 @@
         }
         @keyframes modalSlide { from { transform: scale(0.95) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
         @media (max-width: 768px) {
-            .stat-number { font-size: 22px; }
+            .stat-number { font-size: 20px; }
             .grid-cols-3 { grid-template-columns: 1fr; }
             .referral-item { flex-direction: column; align-items: flex-start; gap: 10px; }
             .referral-item .actions { width: 100%; }

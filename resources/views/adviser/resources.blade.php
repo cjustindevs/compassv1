@@ -104,13 +104,13 @@
             background: white; border: 1px solid var(--gray-200); border-radius: 18px;
             padding: 20px; transition: all 0.2s; display: flex; flex-direction: column; gap: 10px;
         }
-        .resource-card:hover { border-color: var(--green-500); box-shadow: 0 8px 24px rgba(4,160,82,0.08); transform: translateY(-2px); }
+        .resource-card:hover { border-color: var(--green-500); box-shadow: none; transform: translateY(-2px); }
         .resource-card .icon-box {
             width: 48px; height: 48px; border-radius: 14px; background: var(--green-50);
-            display: flex; align-items: center; justify-content: center; font-size: 22px;
+            display: flex; align-items: center; justify-content: center; font-size: 20px;
         }
-        .category-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--green-700); }
-        .unpublished-tag { font-size: 10px; font-weight: 700; background: var(--gray-100); color: var(--gray-500); padding: 2px 8px; border-radius: 10px; }
+        .category-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--green-700); }
+        .unpublished-tag { font-size: 11px; font-weight: 700; background: var(--gray-100); color: var(--gray-500); padding: 2px 8px; border-radius: 10px; }
 
         .form-input {
             width: 100%; padding: 10px 14px; border: 1px solid var(--gray-200);

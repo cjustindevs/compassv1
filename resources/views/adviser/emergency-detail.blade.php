@@ -148,7 +148,7 @@
 .er-status{margin:0 0 12px;padding:10px 12px;border-radius:8px;background:#f4f7f5;color:#40564b;font-size:13px}
 .er-report{display:grid;gap:12px;margin:0}.er-report dt{font-size:12px;color:#6b7b74;margin-bottom:4px}.er-report dd{margin:0}
 .er-empty{background:#f7faf8;border-radius:10px;padding:14px;color:#6b7b74;font-size:13px}
-.er-collapsible>summary,.er-page details.cm-card>summary{cursor:pointer;font-weight:700;font-size:15px;color:#163b2d}
+.er-collapsible>summary,.er-page details.cm-card>summary{cursor:pointer;font-weight:700;font-size:14px;color:#163b2d}
 .er-page details[open]>summary{margin-bottom:12px}
 .er-professional-handoff{border-top:3px solid #049b50;scroll-margin-top:20px}.er-professional-handoff button:disabled{opacity:.6;cursor:not-allowed}
 .er-page .cm-message{line-height:1.5}.er-page textarea{min-height:76px}.er-page .cm-field :is(select,textarea){max-width:100%}.er-page .cm-button{min-height:40px}.er-page .cm-field{margin-bottom:10px}.er-page .cm-help{margin:6px 0 12px}

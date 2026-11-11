@@ -34,16 +34,16 @@
             padding: 12px 28px;
             border-radius: 50px;
             border: none;
-            box-shadow: 0 4px 20px rgba(4,160,82,0.2);
+            box-shadow: none;
             transition: all 0.3s ease;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 14px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
             text-decoration: none;
         }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(4,160,82,0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: none; }
 
         .btn-outline {
             background: transparent;
@@ -54,7 +54,7 @@
             border: 1.5px solid #e5e7eb;
             transition: all 0.3s ease;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 14px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -69,7 +69,7 @@
             border-radius: 50px;
             border: none;
             font-weight: 600;
-            font-size: 15px;
+            font-size: 14px;
             cursor: pointer;
             transition: all 0.3s ease;
             display: inline-flex;
@@ -88,7 +88,7 @@
         .adviser-page-content .btn-primary { background:#049b50; border-radius:10px; padding:10px 18px; box-shadow:none; font-size:14px; }
         .adviser-page-content .btn-primary:hover { transform:none; background:#037d41; }
         .coordination-grid > div { background:#f5f9f7; border:1px solid #e5eee8; padding:10px 12px; border-radius:10px; }
-        .coordination-grid strong { display:block; margin-top:5px; color:#173e2c; font-size:15px; }
+        .coordination-grid strong { display:block; margin-top:5px; color:#173e2c; font-size:14px; }
         .referral-release summary { cursor:pointer; font-weight:600; color:#173e2c; padding:2px 0; }
         .referral-release .release-intro { font-size:13px; color:#64748b; margin:12px 0 18px; }
         .identity-field-grid label { border:1px solid #e2e8e5; border-radius:9px; padding:10px; font-size:13px; }

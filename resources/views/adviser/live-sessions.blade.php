@@ -43,7 +43,7 @@
 .ls-risk-high, .ls-risk-emergency { background: #fdecec; color: #a32626; }
 .ls-risk-moderate { background: #fff8e1; color: #7a5a00; }
 .ls-card h2 { margin: 4px 0 0; font-size: 16px; font-weight: 700; color: #163b2d; }
-.ls-meta { margin: 0; font-size: 12.5px; color: #64746b; }
+.ls-meta { margin: 0; font-size: 13px; color: #64746b; }
 .ls-watch { margin-top: 6px; justify-self: start; background: #078749; color: #fff; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 700; text-decoration: none; }
 @media (max-width: 700px) { .ls-page { padding: 16px; } }
 </style>

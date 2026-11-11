@@ -98,11 +98,11 @@
         .cal-cell.today .day-num { background: var(--green-500); color: white; }
         .cal-cell .event-chip {
             display: flex; align-items: center; gap: 4px;
-            font-size: 10px; font-weight: 600; color: white;
+            font-size: 11px; font-weight: 600; color: white;
             border-radius: 6px; padding: 2px 6px; margin-top: 3px;
             overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
         }
-        .cal-cell .more { font-size: 10px; color: var(--gray-400); padding: 2px 6px; }
+        .cal-cell .more { font-size: 11px; color: var(--gray-400); padding: 2px 6px; }
 
         .legend-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 
@@ -125,8 +125,9 @@
             .cal-cell { min-height: 70px; }
             .cal-cell .event-chip { display: none; }
             .cal-cell .more { display: none; }
-            .cal-day-head { font-size: 10px; }
+            .cal-day-head { font-size: 11px; }
         }
+        .compass-ui #openEventModal { white-space: nowrap; }
     </style>
 @endpush
 

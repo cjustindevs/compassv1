@@ -54,7 +54,7 @@
 .hc-errors ul { margin: 6px 0 0 18px; }
 .hc-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(260px, .8fr); gap: 14px; align-items: start; }
 .hc-card { background: #fff; border: 1px solid #dfe9e3; border-radius: 14px; padding: 16px 18px; display: grid; gap: 12px; }
-.hc-card h2 { margin: 0; font-size: 15px; font-weight: 700; color: #163b2d; display: flex; gap: 8px; align-items: center; }
+.hc-card h2 { margin: 0; font-size: 14px; font-weight: 700; color: #163b2d; display: flex; gap: 8px; align-items: center; }
 .hc-num { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: #eaf8f0; color: #027039; font-size: 12px; font-weight: 800; }
 .hc-sub, .hc-note { margin: 0; font-size: 13px; color: #64746b; }
 .hc-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -65,7 +65,7 @@
 .hc-check input { margin-top: 3px; width: 16px; height: 16px; accent-color: #078749; }
 .hc-check strong { display: block; color: #163b2d; }
 .hc-after ol { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 13px; color: #40564b; }
-.hc-after p { margin: 0; font-size: 12.5px; color: #64746b; }
+.hc-after p { margin: 0; font-size: 13px; color: #64746b; }
 .hc-submit { min-height: 44px; border: 0; border-radius: 10px; background: #078749; color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; }
 .hc-submit:hover { background: #05683a; }
 @media (max-width: 1150px) { .hc-grid { grid-template-columns: 1fr 1fr; } .hc-after { grid-column: 1 / -1; } }

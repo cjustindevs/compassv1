@@ -65,15 +65,15 @@
             padding: 14px 36px;
             border-radius: 50px;
             border: none;
-            box-shadow: 0 4px 20px rgba(4,160,82,0.2);
+            box-shadow: none;
             transition: all 0.3s ease;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 14px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
         }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(4,160,82,0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: none; }
 
         .btn-outline {
             background: transparent;
@@ -84,7 +84,7 @@
             border: 1.5px solid #e5e7eb;
             transition: all 0.3s ease;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 14px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -378,7 +378,7 @@
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <span class="text-sm text-gray-500">Overall Competency Score</span>
-                                <div class="text-3xl font-bold text-gray-800" id="overallScore">—</div>
+                                <div class="text-[28px] font-bold text-gray-800" id="overallScore">—</div>
                             </div>
                             <div>
                                 <span class="text-sm text-gray-500">Competency Level</span>

@@ -133,7 +133,8 @@
         .elig-tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 99px; }
         .elig-tag.ok { background: #e7f6ee; color: #05683a; }
         .elig-tag.blocked { background: #fff4e0; color: #8a5300; }
-        .elig-why { display: block; font-size: 11.5px; color: #6b7b74; margin-top: 3px; max-width: 28ch; }
+        .elig-why { display: block; font-size: 12px; color: #6b7b74; margin-top: 3px; max-width: 28ch; }
+        .compass-ui .helper-table td .btn-outline { white-space: nowrap; }
     </style>
 @endpush
 

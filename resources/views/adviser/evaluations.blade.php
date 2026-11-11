@@ -116,7 +116,7 @@
         .btn-outline:hover { background: var(--gray-50); border-color: var(--gray-300); }
 
         @media (max-width: 768px) {
-            .stat-number { font-size: 22px; }
+            .stat-number { font-size: 20px; }
             .grid-cols-3 { grid-template-columns: 1fr; }
             .eval-item { flex-direction: column; align-items: flex-start; gap: 10px; }
             .eval-item .actions { width: 100%; }

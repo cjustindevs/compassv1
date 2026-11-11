@@ -37,7 +37,7 @@
 .lw-page { padding: 20px 28px 32px; display: grid; gap: 12px; }
 .lw-back { font-size: 13px; font-weight: 600; color: #047a3e; text-decoration: none; }
 .lw-head { display: flex; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; align-items: flex-end; }
-.lw-head h1 { margin: 0; font-size: 22px; font-weight: 800; color: #163b2d; }
+.lw-head h1 { margin: 0; font-size: 24px; font-weight: 800; color: #163b2d; }
 .lw-with { font-weight: 500; color: #64746b; font-size: 16px; }
 .lw-head p { margin: 4px 0 0; font-size: 13px; color: #64746b; }
 .lw-live { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: #fff; background: #d03b3b; border-radius: 99px; padding: 2px 9px; margin-right: 6px; }
@@ -45,7 +45,7 @@
 .lw-privacy { max-width: 46ch; font-size: 12px !important; background: #f6faf7; border: 1px solid #dfe9e3; border-radius: 10px; padding: 8px 12px; }
 .lw-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
 .lw-card { background: #fff; border: 1px solid #dfe9e3; border-radius: 14px; padding: 14px 16px; display: grid; gap: 10px; }
-.lw-card h2 { margin: 0; font-size: 15px; font-weight: 700; color: #163b2d; }
+.lw-card h2 { margin: 0; font-size: 14px; font-weight: 700; color: #163b2d; }
 .lw-card h3 { margin: 6px 0 0; font-size: 13px; font-weight: 700; color: #163b2d; }
 .lw-messages { height: min(62vh, 640px); overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 4px; background: #f8fbf9; border-radius: 10px; }
 .lw-msg { max-width: 75%; padding: 8px 12px; border-radius: 12px; font-size: 14px; line-height: 1.45; }
@@ -54,7 +54,7 @@
 .lw-msg.from-helper { align-self: flex-end; background: #078749; color: #fff; }
 .lw-empty { color: #64746b; font-size: 13px; margin: auto; text-align: center; }
 .lw-coach { position: sticky; top: calc(12px + env(safe-area-inset-top, 0px)); }
-.lw-sub { margin: 0; font-size: 12.5px; color: #64746b; }
+.lw-sub { margin: 0; font-size: 13px; color: #64746b; }
 .lw-coach form { display: grid; gap: 8px; }
 .lw-coach textarea { border: 1px solid #cbd5cf; border-radius: 10px; padding: 9px 11px; font: inherit; resize: vertical; }
 .lw-coach button { min-height: 40px; border: 0; border-radius: 10px; background: #078749; color: #fff; font-weight: 700; cursor: pointer; }
