@@ -36,11 +36,25 @@ const accounts = {
 
 const pages = {
     admin: ['admin/dashboard', 'admin/users', 'admin/roles-permissions', 'admin/audit-logs', 'admin/reports', 'admin/system-health', 'admin/backup-restore', 'admin/settings'],
-    adviser: ['adviser/dashboard', 'adviser/screenings', 'adviser/evaluations', 'adviser/helpers', 'adviser/helpers/create', 'adviser/live', 'adviser/referrals', 'adviser/emergencies', 'adviser/calendar', 'adviser/schedule', 'adviser/reports', 'adviser/resources', 'adviser/training', 'adviser/transcripts', 'adviser/notifications', 'adviser/settings', 'queue-performance', 'concerns/manage'],
+    adviser: ['adviser/dashboard', 'adviser/screenings', 'adviser/evaluations', 'adviser/helpers', 'adviser/helpers/create', 'adviser/live', 'adviser/referrals', 'adviser/emergencies', 'adviser/calendar', 'adviser/schedule', 'adviser/reports', 'adviser/resources', 'adviser/training', 'adviser/resources?section=emergency', 'adviser/transcripts', 'adviser/notifications', 'adviser/settings', 'queue-performance', 'concerns/manage'],
     helper: ['helper/dashboard', 'helper/readiness', 'helper/cases', 'helper/sessions', 'helper/chat', 'helper/calendar', 'helper/competency', 'helper/reports', 'helper/resources', 'helper/self-help', 'helper/notifications', 'helper/profile', 'helper/settings'],
     seeker: ['seeker/dashboard', 'request/screening', 'request/preferences', 'request/matching', 'seeker/requests', 'seeker/referrals', 'session/history', 'selfhelp', 'emergency', 'notifications', 'settings', 'seeker/privacy'],
     moderator: ['moderator/dashboard', 'moderator/queue', 'moderator/sessions', 'moderator/emergency', 'moderator/schedules', 'moderator/manage', 'moderator/reports', 'moderator/referrals/unassigned', 'moderator/reconnections', 'moderator/notifications', 'moderator/settings', 'queue-performance'],
     professional: ['professional/dashboard', 'professional/referrals', 'professional/cases', 'professional/reports', 'professional/profile', 'professional/settings'],
+};
+// Detail pages need a real id: label -> [list page, href regex]. After login the harness opens the
+// list page, takes the first matching link and screenshots it; no match logs "skip: <label> (no data)".
+// adviser/transcripts/* is a POST flow, so it is not covered.
+const discover = {
+    adviser: {
+        'adviser/evaluate/*': ['adviser/evaluations', /\/adviser\/evaluate\/\d+(?:[?#]|$)/],
+        'adviser/helper/*': ['adviser/helpers', /\/adviser\/helper\/\d+(?:[?#]|$)/],
+        'adviser/referral/*': ['adviser/referrals', /\/adviser\/referral\/\d+(?:[?#]|$)/],
+        'adviser/emergencies/*': ['adviser/emergencies', /\/adviser\/emergencies\/\d+(?:[?#]|$)/],
+        'adviser/live/*': ['adviser/live', /\/adviser\/live\/\d+(?:[?#]|$)/],
+        'adviser/session/*': ['adviser/evaluations', /\/adviser\/session\/\d+(?:[?#]|$)/],
+        'adviser/screenings/*/conversation': ['adviser/screenings', /\/adviser\/screenings\/\d+\/conversation(?:[?#]|$)/],
+    },
 };
 const roles = arg('roles', Object.keys(accounts).join(',')).split(',');
 
@@ -155,7 +169,18 @@ for (const role of roles) {
         continue;
     }
     report[role] = {};
-    for (const route of pages[role].filter((p) => !pageFilter.length || pageFilter.some((f) => p.includes(f)))) {
+    const routes = [...pages[role]];
+    for (const [label, [listPage, re]] of Object.entries(discover[role] ?? {})) {
+        if (pageFilter.length && !pageFilter.some((f) => label.includes(f))) continue;
+        let href = null;
+        try {
+            await page.goto(`${base}/${listPage}`, { waitUntil: 'load', timeout: 30000 });
+            const hrefs = await page.$$eval('a[href]', (as) => as.map((a) => a.getAttribute('href')));
+            href = hrefs.map((h) => { try { const u = new URL(h, base); return u.pathname + u.search; } catch { return ''; } }).find((h) => re.test(h)) ?? null;
+        } catch {}
+        if (href) routes.push(href.replace(/^\//, '')); else console.log(`skip: ${label} (no data)`);
+    }
+    for (const route of routes.filter((p) => !pageFilter.length || pageFilter.some((f) => p.includes(f)))) {
         for (const width of widths) {
             await page.setViewportSize({ width, height: width < 600 ? 844 : 900 });
             let status = 0;
@@ -170,7 +195,7 @@ for (const role of roles) {
             // Charts lazy-load Chart.js; wait until every card has drawn or reported failure.
             await page.waitForFunction(() => ![...document.querySelectorAll('[data-chart-state]')].some((s) => !s.hidden && s.textContent.startsWith('Loading')), null, { timeout: 6000 }).catch(() => {});
             const finalPath = new URL(page.url()).pathname.replace(/^\//, '') || 'home';
-            const file = path.join(outDir, role, `${route.replace(/\//g, '_')}-${width}.png`);
+            const file = path.join(outDir, role, `${route.replace(/[\/?=&]/g, '_')}-${width}.png`);
             await mkdir(path.dirname(file), { recursive: true });
             await page.screenshot({ path: file, fullPage: true });
             const problems = await page.evaluate(audit).catch(() => ['audit failed']);
