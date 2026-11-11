@@ -41,7 +41,7 @@
         .avatar-lg {
             width: 96px; height: 96px; border-radius: 50%; background: rgba(255,255,255,0.18);
             border: 3px solid rgba(255,255,255,0.35); display: flex; align-items: center; justify-content: center;
-            font-size: 34px; font-weight: 800; flex-shrink: 0; overflow: hidden;
+            font-size: 28px; font-weight: 800; flex-shrink: 0; overflow: hidden;
         }
         .avatar-lg img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -49,12 +49,12 @@
             background: white; border: 1px solid var(--gray-200); border-radius: 20px;
             padding: 20px; display: flex; align-items: center; gap: 14px; transition: all 0.3s ease;
         }
-        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(4,160,82,0.08); border-color: var(--green-300); }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: none; border-color: var(--green-300); }
         .stat-card .icon {
             width: 48px; height: 48px; border-radius: 14px; background: var(--green-50);
             display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--green-600); flex-shrink: 0;
         }
-        .stat-card .value { font-weight: 800; font-size: 22px; color: var(--gray-800); line-height: 1.1; }
+        .stat-card .value { font-weight: 800; font-size: 20px; color: var(--gray-800); line-height: 1.1; }
         .stat-card .label { font-size: 12px; color: var(--gray-500); }
 
         .info-card {
@@ -70,18 +70,18 @@
             font-weight: 600; font-size: 14px; padding: 11px 22px; border-radius: 12px;
             border: none; cursor: pointer; transition: all 0.25s ease; text-decoration: none;
         }
-        .btn-primary { background: linear-gradient(135deg, var(--green-500), var(--green-600)); color: white; box-shadow: 0 4px 16px rgba(4,160,82,0.25); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(4,160,82,0.35); }
+        .btn-primary { background: linear-gradient(135deg, var(--green-500), var(--green-600)); color: white; box-shadow: none; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: none; }
         .btn-outline { background: white; border: 1px solid var(--gray-300); color: var(--gray-600); }
         .btn-outline:hover { border-color: var(--green-500); color: var(--green-700); }
 
         .flash-banner {
             background: var(--green-500); color: white; border-radius: 14px; padding: 12px 18px;
             font-size: 14px; font-weight: 500; display: none; align-items: center; gap: 10px;
-            box-shadow: 0 8px 28px rgba(4,160,82,0.3);
+            box-shadow: var(--shadow-2);
         }
         .flash-banner.show { display: flex; animation: slideDown 0.4s ease; }
-        .flash-banner.error { background: #DC2626; box-shadow: 0 8px 28px rgba(220,38,38,0.3); }
+        .flash-banner.error { background: #DC2626; box-shadow: var(--shadow-2); }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
         .stars { color: #F59E0B; font-size: 13px; letter-spacing: 2px; }
@@ -164,7 +164,7 @@
                     </div>
                 </div>
                 <div class="text-right">
-                    <div class="text-4xl font-extrabold">{{ $stats['streak_days'] }}</div>
+                    <div class="text-[28px] font-extrabold">{{ $stats['streak_days'] }}</div>
                     <p class="text-xs opacity-80">day streak </p>
                 </div>
             </div>

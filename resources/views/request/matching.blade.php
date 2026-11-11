@@ -78,7 +78,7 @@
             color: white;
             font-weight: 800;
             font-size: 20px;
-            box-shadow: 0 4px 16px rgba(4,160,82,0.2);
+            box-shadow: var(--shadow-1);
         }
         .sidebar .logo span {
             font-weight: 700;
@@ -114,7 +114,7 @@
             margin-left: auto;
             background: var(--green-500);
             color: white;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 700;
             padding: 2px 8px;
             border-radius: 20px;
@@ -259,7 +259,7 @@
         }
         .resource-card h4 {
             font-weight: 600;
-            font-size: 15px;
+            font-size: 14px;
             color: var(--gray-800);
         }
         .resource-card p {
@@ -283,17 +283,17 @@
             padding: 14px 36px;
             border-radius: 50px;
             border: none;
-            box-shadow: 0 4px 20px rgba(4,160,82,0.2);
+            box-shadow: none;
             transition: all 0.3s ease;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 14px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
         }
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(4,160,82,0.3);
+            box-shadow: none;
         }
 
         .btn-outline {
@@ -305,7 +305,7 @@
             border: 1.5px solid var(--gray-200);
             transition: all 0.3s ease;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 14px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -353,7 +353,7 @@
         }
         @media (max-width: 480px) {
             .form-card { padding: 16px 12px; }
-            .step-dot { width: 24px; height: 24px; font-size: 10px; }
+            .step-dot { width: 24px; height: 24px; font-size: 11px; }
             .resource-card { padding: 16px; }
         }
     </style>

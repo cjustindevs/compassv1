@@ -66,7 +66,7 @@
             color: white;
             font-weight: 800;
             font-size: 20px;
-            box-shadow: 0 4px 16px rgba(4,160,82,0.2);
+            box-shadow: var(--shadow-1);
         }
         .sidebar .logo span {
             font-weight: 700;

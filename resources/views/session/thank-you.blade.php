@@ -59,9 +59,9 @@
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 40px;
+            font-size: 28px;
             margin: 0 auto 28px;
-            box-shadow: 0 12px 32px rgba(4,160,82,0.35);
+            box-shadow: var(--shadow-2);
             animation: pop-in 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -72,7 +72,7 @@
         }
 
         h1 {
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 800;
             color: #163B2D;
             margin-bottom: 12px;
@@ -80,7 +80,7 @@
 
         p.subtitle {
             color: #6b7280;
-            font-size: 15px;
+            font-size: 14px;
             line-height: 1.7;
             margin-bottom: 8px;
         }
@@ -109,10 +109,10 @@
             padding: 14px 40px;
             border-radius: 50px;
             border: none;
-            box-shadow: 0 4px 20px rgba(4,160,82,0.25);
+            box-shadow: none;
             transition: all 0.3s ease;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 14px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -120,7 +120,7 @@
         }
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(4,160,82,0.35);
+            box-shadow: none;
         }
 
         .btn-ghost {
@@ -138,7 +138,7 @@
 
         @media (max-width: 480px) {
             .thank-you-card { padding: 40px 20px; border-radius: 20px; }
-            h1 { font-size: 22px; }
+            h1 { font-size: 24px; }
         }
     </style>
     @vite(['resources/css/app.css'])

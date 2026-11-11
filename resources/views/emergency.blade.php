@@ -27,7 +27,7 @@
     }
     .emg-title {
         margin: 8px 0 0;
-        font-size: 26px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2;
+        font-size: 24px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2;
         color: var(--gray-800);
     }
     .emg-lede { margin: 12px 0 0; font-size: 13px; line-height: 1.6; color: var(--gray-500); }
@@ -65,7 +65,7 @@
     .emg-section-title {
         display: flex; align-items: center; gap: 10px;
         margin: 20px 0 4px;
-        font-size: 17px; font-weight: 700; color: var(--gray-800);
+        font-size: 16px; font-weight: 700; color: var(--gray-800);
     }
     .emg-section-title :is(:is(i, .compass-icon), .compass-icon) { color: var(--red-500); font-size: 16px; }
     .emg-section-sub { margin: 0 0 12px; font-size: 13px; line-height: 1.6; color: var(--gray-500); }
@@ -82,9 +82,9 @@
     .emg-card-icon {
         width: 40px; height: 40px; flex: none;
         display: flex; align-items: center; justify-content: center;
-        border-radius: 12px; background: var(--red-50); color: var(--red-600); font-size: 17px;
+        border-radius: 12px; background: var(--red-50); color: var(--red-600); font-size: 16px;
     }
-    .emg-card h3 { margin: 0; font-size: 15px; font-weight: 700; color: var(--gray-800); line-height: 1.35; }
+    .emg-card h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--gray-800); line-height: 1.35; }
     .emg-card p { margin: 8px 0 12px; flex: 1; font-size: 13px; line-height: 1.6; color: var(--gray-500); }
     .emg-call {
         display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -100,8 +100,8 @@
         padding: 20px 16px;
         background: var(--card-bg); border: 1px dashed var(--gray-300); border-radius: 12px;
     }
-    .emg-empty :is(:is(i, .compass-icon), .compass-icon) { font-size: 26px; color: var(--gray-400); }
-    .emg-empty h3 { margin: 14px 0 6px; font-size: 15px; font-weight: 700; color: var(--gray-700); }
+    .emg-empty :is(:is(i, .compass-icon), .compass-icon) { font-size: 24px; color: var(--gray-400); }
+    .emg-empty h3 { margin: 14px 0 6px; font-size: 14px; font-weight: 700; color: var(--gray-700); }
     .emg-empty p { margin: 0; max-width: 46ch; font-size: 13px; line-height: 1.6; color: var(--gray-500); }
 
     /* ── Next steps / footer cards ── */
@@ -113,10 +113,10 @@
     .emg-panel-icon {
         width: 40px; height: 40px; flex: none;
         display: flex; align-items: center; justify-content: center;
-        border-radius: 12px; background: var(--green-50); color: var(--green-600); font-size: 17px;
+        border-radius: 12px; background: var(--green-50); color: var(--green-600); font-size: 16px;
     }
     .emg-panel-body { min-width: 0; }
-    .emg-panel h3 { margin: 0 0 4px; font-size: 15px; font-weight: 700; color: var(--gray-800); }
+    .emg-panel h3 { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: var(--gray-800); }
     .emg-panel p { margin: 0 0 10px; font-size: 13px; line-height: 1.6; color: var(--gray-500); }
     .emg-panel-link {
         display: inline-flex; align-items: center; gap: 6px;
@@ -130,7 +130,7 @@
         display: flex; align-items: flex-start; gap: 10px;
         margin-top: 16px; padding: 12px 16px;
         background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px;
-        font-size: 12.5px; line-height: 1.6; color: #92400E;
+        font-size: 13px; line-height: 1.6; color: #92400E;
     }
     .emg-disclaimer :is(:is(i, .compass-icon), .compass-icon) { margin-top: 2px; flex: none; }
 
@@ -149,7 +149,7 @@
     .emg-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 10px; }
     .emg-card { padding: 12px 14px; }
     .emg-card h3 { font-size: 14px; }
-    .emg-card p { margin: 4px 0 10px; font-size: 12.5px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .emg-card p { margin: 4px 0 10px; font-size: 13px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .emg-call { min-height: 38px; padding: 7px 12px; font-size: 13px; }
 </style>
 @endpush

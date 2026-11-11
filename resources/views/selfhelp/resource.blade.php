@@ -49,7 +49,7 @@
         .hero-card .sh-art { display: block; width: 100%; height: 150px; }
         .hero-body { padding: 22px 24px 24px; display: grid; gap: 10px; }
         .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--green-600); }
-        .hero-card h1 { font-size: 26px; font-weight: 800; color: var(--gray-800); line-height: 1.25; text-wrap: balance; }
+        .hero-card h1 { font-size: 24px; font-weight: 800; color: var(--gray-800); line-height: 1.25; text-wrap: balance; }
         .lede { color: var(--gray-500); line-height: 1.65; max-width: 65ch; }
         .chips { display: flex; flex-wrap: wrap; gap: 6px; }
         .chip { display: inline-flex; align-items: center; background: var(--gray-100); color: var(--gray-600); font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px; text-decoration: none; }
@@ -99,7 +99,7 @@
         .related-card h3 { font-weight: 700; font-size: 14px; color: var(--gray-800); line-height: 1.35; }
         .related-card .meta { font-size: 12px; color: var(--gray-400); margin-top: 4px; }
         .related-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
-        .section-heading { font-size: 17px; font-weight: 800; color: var(--gray-800); margin-bottom: 12px; }
+        .section-heading { font-size: 16px; font-weight: 800; color: var(--gray-800); margin-bottom: 12px; }
         .flash-banner { background: var(--green-50); border: 1px solid var(--green-200); color: var(--green-800); border-radius: 12px; padding: 12px 16px; font-size: 14px; display: flex; gap: 12px; align-items: center; }
         .flash-banner button { margin-left: auto; background: none; border: none; color: var(--green-700); font-weight: 600; text-decoration: underline; cursor: pointer; }
         .toast { position: fixed; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%) translateY(160%); background: var(--gray-800); color: #fff; padding: 12px 20px; border-radius: 12px; font-size: 14px; z-index: 300; transition: transform .3s ease; }
@@ -113,7 +113,7 @@
         :focus-visible { outline: 3px solid var(--green-500); outline-offset: 2px; border-radius: 6px; }
         @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
         @media (max-width: 1024px) { .main-content { padding: 20px 24px 80px; } }
-        @media (max-width: 768px) { .main-content { margin-left: 0; padding: 16px 16px 100px; } .content-card { padding: 20px; } .hero-body { padding: 18px; } .hero-card h1 { font-size: 22px; } .step-nav .btn, .finish .btn { width: 100%; } .step-nav .spacer { display: none; } }
+        @media (max-width: 768px) { .main-content { margin-left: 0; padding: 16px 16px 100px; } .content-card { padding: 20px; } .hero-body { padding: 18px; } .hero-card h1 { font-size: 24px; } .step-nav .btn, .finish .btn { width: 100%; } .step-nav .spacer { display: none; } }
     </style>
 <link rel="stylesheet" href="{{ asset('css/selfhelp-mobile.css') }}?v={{ filemtime(public_path('css/selfhelp-mobile.css')) }}">
     @vite(['resources/css/app.css'])

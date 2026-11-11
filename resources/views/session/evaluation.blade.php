@@ -71,7 +71,7 @@
             color: white;
             font-weight: 800;
             font-size: 20px;
-            box-shadow: 0 4px 16px rgba(4,160,82,0.2);
+            box-shadow: var(--shadow-1);
         }
         .sidebar .logo span {
             font-weight: 700;
@@ -220,17 +220,17 @@
             padding: 14px 36px;
             border-radius: 50px;
             border: none;
-            box-shadow: 0 4px 20px rgba(4,160,82,0.2);
+            box-shadow: none;
             transition: all 0.3s ease;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 14px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
         }
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(4,160,82,0.3);
+            box-shadow: none;
         }
         .btn-primary:disabled {
             opacity: 0.6;
@@ -247,7 +247,7 @@
             border: 1.5px solid var(--gray-200);
             transition: all 0.3s ease;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 14px;
             display: inline-flex;
             align-items: center;
             gap: 8px;
@@ -265,7 +265,7 @@
         }
         .star-rating input { display: none; }
         .star-rating label {
-            font-size: 32px;
+            font-size: 28px;
             color: var(--gray-300);
             cursor: pointer;
             transition: all 0.2s ease;

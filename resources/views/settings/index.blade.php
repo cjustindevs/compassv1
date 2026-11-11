@@ -32,13 +32,13 @@
             padding: 22px 24px; display: flex; align-items: center; gap: 16px;
             text-decoration: none; transition: all 0.3s ease;
         }
-        .settings-card:hover { transform: translateY(-4px); box-shadow: 0 12px 36px rgba(4,160,82,0.10); border-color: var(--green-300); }
+        .settings-card:hover { transform: translateY(-4px); box-shadow: none; border-color: var(--green-300); }
         .settings-card .icon {
             width: 50px; height: 50px; border-radius: 14px; background: var(--green-50);
-            display: flex; align-items: center; justify-content: center; font-size: 21px; color: var(--green-600);
+            display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--green-600);
             flex-shrink: 0;
         }
-        .settings-card h3 { font-weight: 700; font-size: 15px; color: var(--gray-800); }
+        .settings-card h3 { font-weight: 700; font-size: 14px; color: var(--gray-800); }
         .settings-card p { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
         .settings-card .chevron { margin-left: auto; color: var(--gray-300); font-size: 16px; transition: all 0.3s ease; }
         .settings-card:hover .chevron { color: var(--green-500); transform: translateX(4px); }

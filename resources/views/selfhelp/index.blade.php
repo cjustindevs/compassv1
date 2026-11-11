@@ -23,7 +23,7 @@
 
         .sh-wrap { max-width: 1180px; display: grid; gap: 28px; }
         .sh-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-        .sh-head h1 { font-size: 26px; font-weight: 800; color: var(--gray-800); }
+        .sh-head h1 { font-size: 24px; font-weight: 800; color: var(--gray-800); }
         .sh-head p { font-size: 14px; color: var(--gray-500); margin-top: 4px; }
         .sh-search { display: flex; gap: 8px; flex: 0 1 420px; min-width: 240px; }
         .search-box { display: flex; align-items: center; background: var(--card-bg); border: 1px solid var(--gray-200); border-radius: 12px; padding: 10px 14px; flex: 1; }
@@ -35,7 +35,7 @@
         .flash-banner { background: var(--green-50); border: 1px solid var(--green-200); color: var(--green-800); border-radius: 12px; padding: 12px 16px; font-size: 14px; display: flex; gap: 12px; align-items: center; }
         .flash-banner button { margin-left: auto; background: none; border: none; color: var(--green-700); font-weight: 600; text-decoration: underline; cursor: pointer; }
 
-        .sh-block-title { font-size: 17px; font-weight: 800; color: var(--gray-800); }
+        .sh-block-title { font-size: 16px; font-weight: 800; color: var(--gray-800); }
         .sh-block-sub { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
 
         /* Your progress */
@@ -73,7 +73,7 @@
         .section-count { font-size: 12px; font-weight: 600; color: var(--gray-400); }
         .sh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
         .resource-card { background: var(--card-bg); border: 1px solid var(--gray-200); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; text-decoration: none; transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
-        .resource-card:hover { border-color: var(--green-300); box-shadow: 0 10px 28px rgba(4,160,82,.10); transform: translateY(-2px); }
+        .resource-card:hover { border-color: var(--green-300); box-shadow: none; transform: translateY(-2px); }
         .resource-card .sh-art { display: block; width: 100%; height: 96px; }
         .resource-card .body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
         .card-top { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -81,7 +81,7 @@
         .kind { background: var(--green-50); color: var(--green-700); }
         .badge-featured { background: #fff4dc; color: #8a5a00; }
         .chip.saved { background: var(--green-50); color: var(--green-700); }
-        .resource-card h3 { font-size: 15px; font-weight: 700; color: var(--gray-800); line-height: 1.35; }
+        .resource-card h3 { font-size: 14px; font-weight: 700; color: var(--gray-800); line-height: 1.35; }
         .resource-card .summary { font-size: 13px; color: var(--gray-500); line-height: 1.55; flex: 1; }
         .meta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
         .meta .done { color: var(--green-700); background: var(--green-50); }
@@ -102,10 +102,10 @@
         @media (max-width: 768px) { .main-content { margin-left: 0; padding: 16px 16px 100px; } .sh-search { flex-basis: 100%; } }
         /* Compact pass: use the full width and fit more resources per screen. */
         .sh-wrap { max-width: none; gap: 20px; }
-        .sh-head h1 { font-size: 22px; }
+        .sh-head h1 { font-size: 24px; }
         .sh-head p { font-size: 13px; }
         .sh-panel { padding: 14px 16px; gap: 8px; border-radius: 14px; }
-        .sh-block-title { font-size: 15px; }
+        .sh-block-title { font-size: 14px; }
         .sh-continue { gap: 8px; }
         .sh-continue a { grid-template-columns: 40px minmax(0, 1fr); gap: 10px; padding: 6px; margin: -6px; }
         .sh-continue .sh-art { width: 40px; height: 40px; border-radius: 10px; }
@@ -120,9 +120,9 @@
         .resource-card .sh-art { height: 64px; }
         .resource-card .body { padding: 10px 12px 12px; gap: 4px; }
         .resource-card h3 { font-size: 14px; }
-        .resource-card .summary { font-size: 12.5px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .topic-label { font-size: 10px; }
-        .kind, .badge-featured, .chip { font-size: 10.5px; padding: 2px 8px; }
+        .resource-card .summary { font-size: 13px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .topic-label { font-size: 11px; }
+        .kind, .badge-featured, .chip { font-size: 11px; padding: 2px 8px; }
         .meta { gap: 4px; margin-top: 2px; }
         .sh-topic-note { font-size: 13px; padding: 10px 14px; }
         @media (min-width: 1200px) { .sh-filters { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 20px; } .sh-filters > div:first-child { grid-column: 1 / -1; } }

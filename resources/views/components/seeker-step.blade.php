@@ -23,7 +23,7 @@
 .seeker-notice {padding:16px;background:#eaf8f0;border:1px solid #d4eee0;border-radius:12px;margin-bottom:24px;}
 .seeker-record {padding:20px;border:1px solid #e5e7eb;border-radius:14px;margin-top:16px;}
 .seeker-actions {display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
-@media(max-width:768px){.seeker-page{padding:20px 16px 100px}.seeker-card{padding:18px}.seeker-heading h1{font-size:21px}.seeker-heading time{display:none}}
+@media(max-width:768px){.seeker-page{padding:20px 16px 100px}.seeker-card{padding:18px}.seeker-heading h1{font-size:20px}.seeker-heading time{display:none}}
 </style>
 <section class="seeker-page">
 <header class="seeker-heading"><div><h1>{{ $title }}</h1><p>{{ $step ?? 'Manage your support and preferences in one place.' }}</p></div></header>

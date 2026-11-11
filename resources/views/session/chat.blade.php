@@ -61,7 +61,7 @@
         .chat-header .helper-info .meta { min-width: 0; }
         .chat-header .helper-info .name {
             font-weight: 600;
-            font-size: 15px;
+            font-size: 14px;
             color: #1f2937;
             white-space: nowrap;
             overflow: hidden;
@@ -146,7 +146,7 @@
         .chat-messages .message.helper .sender-name { color: #6b7280; }
         .chat-messages .message .text { font-size: 14px; line-height: 1.5; word-break: break-word; }
         .chat-messages .message .time {
-            font-size: 10px;
+            font-size: 11px;
             opacity: 0.65;
             display: block;
             text-align: right;
@@ -214,7 +214,7 @@
             padding: 40px;
             text-align: center;
         }
-        .empty-chat .icon { font-size: 56px; margin-bottom: 14px; opacity: 0.5; }
+        .empty-chat .icon { font-size: 28px; margin-bottom: 14px; opacity: 0.5; }
         .empty-chat h3 { font-size: 18px; font-weight: 700; color: #1f2937; margin-bottom: 6px; }
         .empty-chat p { font-size: 14px; max-width: 320px; line-height: 1.5; }
 
@@ -275,7 +275,7 @@
             padding: 16px 18px;
             box-shadow: 0 4px 16px rgba(0,0,0,0.04);
         }
-        .checkin-card h4 { font-size: 15px; font-weight: 700; color: #163b2d; margin-bottom: 4px; }
+        .checkin-card h4 { font-size: 14px; font-weight: 700; color: #163b2d; margin-bottom: 4px; }
         .checkin-card > p { font-size: 12px; color: #6b7280; margin-bottom: 12px; }
         .checkin-options { display: flex; flex-wrap: wrap; gap: 8px; }
         .checkin-options label {
@@ -317,7 +317,7 @@
         /* ─── Responsive ─── */
         @media (max-width: 640px) {
             .chat-header { padding: max(12px, env(safe-area-inset-top)) 14px 12px; }
-            .chat-header .helper-info .avatar { width: 34px; height: 34px; font-size: 15px; }
+            .chat-header .helper-info .avatar { width: 34px; height: 34px; font-size: 14px; }
             .chat-header .helper-info .name { font-size: 14px; }
             .chat-header .session-timer { display: inline; }
             .chat-messages { padding: 14px 14px; }

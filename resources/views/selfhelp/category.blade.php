@@ -68,7 +68,7 @@
             display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
             text-transform: uppercase; color: var(--green-600); margin-bottom: 6px;
         }
-        .page-header h1 { font-weight: 800; font-size: 22px; color: var(--gray-800); line-height: 1.3; }
+        .page-header h1 { font-weight: 800; font-size: 24px; color: var(--gray-800); line-height: 1.3; }
         .page-header .meta { font-size: 13px; color: var(--gray-500); margin-top: 8px; }
 
         .resource-card {
@@ -76,11 +76,11 @@
             padding: 20px; display: flex; flex-direction: column; text-decoration: none; height: 100%;
             transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
         }
-        .resource-card:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(4,160,82,0.10); border-color: var(--green-300); }
+        .resource-card:hover { transform: translateY(-3px); box-shadow: none; border-color: var(--green-300); }
         .resource-card:focus-visible { outline: 3px solid var(--green-500); outline-offset: 2px; }
 
         .kind {
-            align-self: flex-start; font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+            align-self: flex-start; font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
             text-transform: uppercase; color: var(--green-700); background: var(--green-50);
             border: 1px solid var(--green-100); padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
         }

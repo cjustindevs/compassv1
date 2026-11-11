@@ -84,7 +84,7 @@
             border-radius: 16px;
             margin-bottom: 14px;
         }
-        .consent-record h3 { font-size: 15px; font-weight: 600; color: var(--gray-800); margin-bottom: 4px; }
+        .consent-record h3 { font-size: 14px; font-weight: 600; color: var(--gray-800); margin-bottom: 4px; }
         .consent-record p { font-size: 13px; color: var(--gray-500); }
 
         .status-badge {

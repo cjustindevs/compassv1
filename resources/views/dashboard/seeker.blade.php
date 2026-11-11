@@ -88,7 +88,7 @@
             color: white;
             font-weight: 800;
             font-size: 20px;
-            box-shadow: 0 4px 16px rgba(4, 160, 82, 0.25);
+            box-shadow: var(--shadow-1);
         }
         .sidebar .logo span {
             font-weight: 700;
@@ -125,7 +125,7 @@
             margin-left: auto;
             background: var(--green-500);
             color: white;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 700;
             padding: 2px 8px;
             border-radius: 20px;
@@ -215,7 +215,7 @@
 
         .hero-title {
             font-family: var(--compass-font);
-            font-size: 2.5rem;
+            font-size: 28px;
             font-weight: 700;
             color: var(--green-800);
             line-height: 1.2;
@@ -255,7 +255,7 @@
         }
         .product-card:hover {
             transform: translateY(-6px);
-            box-shadow: 0 20px 60px rgba(4, 160, 82, 0.08);
+            box-shadow: none;
             border-color: var(--green-300);
         }
         .product-card:hover::after { opacity: 1; }
@@ -267,7 +267,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 26px;
+            font-size: 24px;
             color: var(--green-500);
             margin-bottom: 16px;
             transition: all 0.3s ease;
@@ -345,7 +345,7 @@
             transition: border-color 0.25s ease, background 0.25s ease,
                         box-shadow 0.25s ease, transform 0.25s ease;
             font-weight: 600;
-            font-size: 15px;
+            font-size: 14px;
             color: var(--gray-700);
         }
         .mood-btn .mood-caption {
@@ -357,13 +357,13 @@
             border-color: var(--green-400);
             background: var(--green-50);
             transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(4, 160, 82, 0.08);
+            box-shadow: none;
         }
         .mood-btn.active {
             border-color: var(--green-500);
             background: var(--green-50);
             color: var(--green-700);
-            box-shadow: 0 4px 16px rgba(4, 160, 82, 0.12);
+            box-shadow: none;
         }
         .mood-btn.active .mood-caption { color: var(--green-600); }
         .mood-btn:focus-visible {
@@ -401,7 +401,7 @@
         }
         .quote-card .quote-mark {
             font-family: var(--compass-font);
-            font-size: 3.5rem;
+            font-size: 28px;
             color: var(--green-300);
             opacity: 0.3;
             line-height: 0.8;
@@ -410,7 +410,7 @@
             left: 16px;
         }
         .quote-card p {
-            font-size: 1.05rem;
+            font-size: 16px;
             color: var(--gray-700);
             font-style: italic;
             padding-left: 32px;
@@ -420,7 +420,7 @@
             font-style: normal;
             font-weight: 600;
             color: var(--green-600);
-            font-size: 0.9rem;
+            font-size: 14px;
             display: block;
             margin-top: 8px;
             padding-left: 32px;
@@ -560,14 +560,14 @@
             padding: 12px 28px;
             border-radius: 14px;
             border: none;
-            box-shadow: 0 4px 20px rgba(4, 160, 82, 0.25);
+            box-shadow: none;
             transition: all 0.3s ease;
             cursor: pointer;
             font-size: 14px;
         }
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(4, 160, 82, 0.35);
+            box-shadow: none;
         }
         .btn-outline {
             background: transparent;
@@ -589,30 +589,30 @@
         /* ─── Responsive ─── */
         @media (max-width: 1024px) {
             .main-content { padding: 20px 24px 80px; }
-            .hero-title { font-size: 2rem; }
+            .hero-title { font-size: 28px; }
         }
         @media (max-width: 768px) {
             .sidebar { width: 280px; padding: 16px; }
             .main-content { margin-left: 0; padding: 16px 16px 100px; }
             .hamburger { display: block; }
             .hero-section { padding: 28px 20px; }
-            .hero-title { font-size: 1.6rem; }
-            .hero-sub { font-size: 0.9rem; }
+            .hero-title { font-size: 24px; }
+            .hero-sub { font-size: 14px; }
             .mood-section { padding: 16px 18px; }
             .mood-options { grid-template-columns: 1fr; }
             .mood-btn { padding: 12px 14px; font-size: 14px; }
             .quote-card { padding: 20px; }
-            .quote-card p { font-size: 0.95rem; padding-left: 20px; }
+            .quote-card p { font-size: 14px; padding-left: 20px; }
             .grid-cols-3 { grid-template-columns: 1fr; }
             .grid-cols-2 { grid-template-columns: 1fr; }
             .product-card { padding: 20px; }
-            .stat-number { font-size: 22px; }
+            .stat-number { font-size: 20px; }
             .stat-card { padding: 16px; }
             .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
             .table-container table { min-width: 500px; }
         }
         @media (max-width: 480px) {
-            .hero-title { font-size: 1.3rem; }
+            .hero-title { font-size: 20px; }
             .hero-section { padding: 20px 16px; }
             .grid-cols-4 { grid-template-columns: 1fr 1fr; gap: 10px; }
             .stat-number { font-size: 20px; }

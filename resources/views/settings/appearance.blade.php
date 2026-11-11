@@ -34,10 +34,10 @@
             text-decoration: none; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 7px;
         }
         .tab-link:hover { border-color: var(--green-300); color: var(--green-700); }
-        .tab-link.active { background: var(--green-500); border-color: var(--green-500); color: white; box-shadow: 0 4px 14px rgba(4,160,82,0.25); }
+        .tab-link.active { background: var(--green-500); border-color: var(--green-500); color: white; box-shadow: none; }
 
         .card { background: white; border: 1px solid var(--gray-200); border-radius: 24px; padding: 28px; margin-bottom: 20px; }
-        .card h2 { font-weight: 800; font-size: 17px; color: var(--gray-800); }
+        .card h2 { font-weight: 800; font-size: 16px; color: var(--gray-800); }
         .card .sub { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
 
         .toggle-row {
@@ -64,7 +64,7 @@
             cursor: pointer; transition: all 0.25s ease; text-align: center; background: white;
         }
         .font-option:hover { border-color: var(--green-300); }
-        .font-option.selected { border-color: var(--green-500); background: var(--green-50); box-shadow: 0 4px 16px rgba(4,160,82,0.15); }
+        .font-option.selected { border-color: var(--green-500); background: var(--green-50); box-shadow: none; }
         .font-option .sample { font-weight: 600; color: var(--gray-800); }
         .font-option .size-name { font-size: 11px; color: var(--gray-500); margin-top: 4px; }
         .font-option.small .sample { font-size: 14px; }
@@ -76,8 +76,8 @@
             font-weight: 600; font-size: 14px; padding: 11px 22px; border-radius: 12px;
             border: none; cursor: pointer; transition: all 0.25s ease; text-decoration: none;
         }
-        .btn-primary { background: linear-gradient(135deg, var(--green-500), var(--green-600)); color: white; box-shadow: 0 4px 16px rgba(4,160,82,0.25); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(4,160,82,0.35); }
+        .btn-primary { background: linear-gradient(135deg, var(--green-500), var(--green-600)); color: white; box-shadow: none; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: none; }
         .btn-outline { background: white; border: 1px solid var(--gray-300); color: var(--gray-600); }
         .btn-outline:hover { border-color: var(--green-500); color: var(--green-700); }
 
@@ -85,7 +85,7 @@
             border-radius: 14px; padding: 12px 18px; font-size: 14px; font-weight: 500;
             display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
         }
-        .flash.success { background: var(--green-500); color: white; box-shadow: 0 8px 28px rgba(4,160,82,0.3); }
+        .flash.success { background: var(--green-500); color: white; box-shadow: var(--shadow-2); }
         .flash.error { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
 
         @media (max-width: 1024px) { .main-content { padding: 20px 24px 80px; } }

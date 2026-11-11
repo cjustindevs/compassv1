@@ -10,18 +10,18 @@
 <style>
 .emergency-wait {margin-top:20px;min-width:0}
 .emergency-wait .ew-heading {display:flex;justify-content:space-between;align-items:start;gap:20px;flex-wrap:wrap;margin-bottom:20px}
-.emergency-wait .ew-heading h2 {font-size:22px;line-height:1.35;margin:8px 0}
+.emergency-wait .ew-heading h2 {font-size:20px;line-height:1.35;margin:8px 0}
 .emergency-wait .ew-heading p {margin:0;max-width:560px}
 .emergency-wait .ew-time {padding:14px 18px;background:#f8faf9;border:1px solid #e2e8e5;border-radius:12px;min-width:180px}
 .emergency-wait .ew-time span {display:block;font-size:12px;color:#64748b}
 .emergency-wait .ew-time strong {display:block;font-size:24px;line-height:1.4;color:#163b2d;font-variant-numeric:tabular-nums}
 .emergency-wait .ew-grid {display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .emergency-wait .ew-panel {padding:20px;border:1px solid #e2e8e5;border-radius:14px;min-width:0}
-.emergency-wait .ew-panel h3 {font-size:15px;font-weight:600;margin:0 0 8px}
+.emergency-wait .ew-panel h3 {font-size:14px;font-weight:600;margin:0 0 8px}
 .emergency-wait .ew-panel p {margin:0 0 12px}
 .emergency-wait .ew-status {display:inline-flex;font-size:12px;font-weight:600;color:#027039;background:#eaf8f0;border-radius:20px;padding:5px 10px;margin-bottom:12px}
 .emergency-wait .ew-resources {margin-top:16px;background:#fffbeb;border:1px solid #fde6ab;border-radius:14px;padding:20px;display:flex;justify-content:space-between;gap:20px;align-items:center}
-.emergency-wait .ew-resources h3 {font-size:15px;font-weight:600;margin:0 0 8px;color:#78350f}
+.emergency-wait .ew-resources h3 {font-size:14px;font-weight:600;margin:0 0 8px;color:#78350f}
 .emergency-wait .ew-resources p {margin:0;max-width:680px;color:#785438}
 .emergency-wait a {flex-shrink:0}
 @media(max-width:768px){.emergency-wait .ew-grid{grid-template-columns:1fr}.emergency-wait .ew-resources{align-items:stretch;flex-direction:column}.emergency-wait .ew-panel,.emergency-wait .ew-resources{padding:16px}}

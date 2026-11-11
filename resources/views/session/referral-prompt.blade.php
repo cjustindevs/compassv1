@@ -30,7 +30,7 @@
         display: inline-flex; align-items: center; gap: 6px; margin: 0 0 6px;
         font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #027039;
     }
-    #referralConsentDialog h2 { margin: 0; font-size: 19px; font-weight: 700; line-height: 1.3; }
+    #referralConsentDialog h2 { margin: 0; font-size: 18px; font-weight: 700; line-height: 1.3; }
     #referralConsentDialog .rv-modal__body { padding: 18px 22px 20px; max-height: 56dvh; overflow-y: auto; }
     #referralConsentText { margin: 0 0 14px; font-size: 14px; line-height: 1.65; color: #374151; }
     #referralConsentTerms {
