@@ -102,7 +102,7 @@
 }
 .compass-ui:not(.compass-ui-admin) h2 { font-family: var(--compass-font); font-size: 18px; line-height: 1.35; letter-spacing: -.015em; }
 .compass-ui:not(.compass-ui-admin) :is(h3, .section-title, .card-header h3) { font-family: var(--compass-font); font-size: 16px; line-height: 1.4; font-weight: 650; }
-.compass-ui:not(.compass-ui-admin) .hero-title { font-family: var(--compass-font); font-size: clamp(28px, 3vw, 40px); line-height: 1.25; }
+.compass-ui:not(.compass-ui-admin) .hero-title { font-family: var(--compass-font); font-size: 28px; line-height: 1.25; }
 .compass-ui :is(.page-subtitle, .section-subtitle, .hf-muted, .av-muted, .mo-muted) { color: var(--compass-muted); line-height: 1.5; }
 .compass-ui:not(.compass-ui-admin) :is(.card, .stat-card, .av-panel, .mo-card, .resource-card, .ui-panel) {
     min-width: 0; border: 1px solid var(--compass-border); border-radius: var(--compass-radius);

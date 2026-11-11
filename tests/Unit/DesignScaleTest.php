@@ -89,6 +89,12 @@ class DesignScaleTest extends TestCase
                     $found[] = "{$where} off-scale {$raw}";
                 }
             }
+            // Fluid sizes drift between scale steps; only the landing page may use them.
+            if (! $landing && preg_match_all('/font-size:\s*(clamp|min|max|calc)\(/', $line, $fluid)) {
+                foreach ($fluid[0] as $raw) {
+                    $found[] = "{$where} off-scale fluid {$raw}";
+                }
+            }
             // Tailwind: arbitrary sizes off the scale, and display sizes outside the landing page.
             preg_match_all('/(?<![\w-])text-\[([0-9.]+)px\]|(?<![\w-])text-([3-9]xl)\b/', $line, $tw, PREG_SET_ORDER);
             foreach ($tw as $hit) {
@@ -144,13 +150,15 @@ class DesignScaleTest extends TestCase
             '.e { font-size: 40px; } /* scale-exempt */',
             '<p class="text-[10px] text-[12px] text-sm text-3xl">',
             '.g { box-shadow: 0 8px 20px var(--admin-accent-ring); } .h { box-shadow: 0 0 0 3px var(--admin-accent-ring); }',
+            '.i { font-size: clamp(24px, 2vw, 31px); }',
         ]));
 
         $found = self::violations($tmp);
         unlink($tmp);
 
-        $this->assertCount(5, $found);
+        $this->assertCount(6, $found);
         $this->assertStringContainsString(':7 glow', $found[4]);
+        $this->assertStringContainsString(':8 off-scale fluid', $found[5]);
         $this->assertStringContainsString(':1 off-scale', $found[0]);
         $this->assertStringContainsString(':3 glow', $found[1]);
         $this->assertStringContainsString(':6 off-scale text-[10px]', $found[2]);

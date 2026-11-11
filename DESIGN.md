@@ -85,7 +85,7 @@ Inter at 14px is the base. Use only these sizes:
 - Tailwind's `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl` and `text-2xl` match the scale.
   Avoid `text-3xl` and larger outside the landing page.
 - Use `font-variant-numeric: tabular-nums` for numbers in tables and KPI tiles.
-- The landing hero is the only place that may use display sizes (`clamp(28px, 3vw, 40px)`).
+- The landing page (`landing-page.css`) is the only place that may use display or fluid (`clamp()`) sizes.
 
 ## 4. Spacing
 
