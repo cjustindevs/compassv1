@@ -212,7 +212,7 @@
         @media (max-width: 768px) {
             .main-content { margin-left: 0; padding: 16px 16px 100px; }
             .hamburger { display: block; }
-            .stat-number { font-size: 22px; }
+            .stat-number { font-size: 20px; }
             .referral-item { flex-direction: column; align-items: flex-start; gap: 10px; }
         }
         @media (max-width: 480px) {

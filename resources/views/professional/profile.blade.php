@@ -65,7 +65,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 800;
             flex-shrink: 0;
         }

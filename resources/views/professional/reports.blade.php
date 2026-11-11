@@ -165,7 +165,7 @@
         @media (max-width: 768px) {
             .main-content { margin-left: 0; padding: 16px 16px 100px; }
             .hamburger { display: block; }
-            .stat-number { font-size: 22px; }
+            .stat-number { font-size: 20px; }
             .report-table thead { display: none; }
             .report-table, .report-table tbody, .report-table tr, .report-table td { display: block; width: 100%; }
             .report-table tbody tr { border: 1px solid var(--gray-100); border-radius: 12px; margin-bottom: 10px; }
@@ -175,6 +175,7 @@
             .stat-number { font-size: 18px; }
             .card { padding: 16px; }
         }
+        .compass-ui .main-content .pr-report-actions :is(.btn-outline, .btn-primary) { white-space: nowrap; }
     </style>
     @vite(['resources/css/app.css'])
     @include('partials.ui-assets')
@@ -200,7 +201,7 @@
                     </p>
                 </div>
             </div>
-            <div class="flex gap-2 no-print">
+            <div class="flex gap-2 no-print pr-report-actions">
                 <a href="{{ route('professional.reports.export', $dates + $filters) }}" class="btn-outline">
                     <x-ui-icon name="file-spreadsheet" class="mr-1" /> Export CSV
                 </a>

@@ -188,7 +188,7 @@
             }
             .case-table tbody td::before {
                 content: attr(data-label);
-                font-size: 10px;
+                font-size: 11px;
                 font-weight: 700;
                 text-transform: uppercase;
                 letter-spacing: 0.05em;
