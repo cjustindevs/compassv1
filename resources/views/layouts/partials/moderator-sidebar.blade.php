@@ -15,47 +15,49 @@
     </div>
 
     <nav class="sidebar-nav">
-        <div class="nav-section">Operations</div>
-        <a href="{{ route('moderator.dashboard') }}" class="nav-item {{ request()->routeIs('moderator.dashboard') ? 'active' : '' }}">
+        <div class="nav-section">Work now</div>
+        <a href="{{ route('moderator.dashboard') }}" class="nav-item {{ request()->routeIs('moderator.dashboard') ? 'active' : '' }}" title="Dashboard">
             <x-ui-icon name="dashboard"  /><span class="nav-text">Dashboard</span>
         </a>
-        <a href="{{ route('moderator.queue') }}" class="nav-item {{ request()->routeIs('moderator.queue*') ? 'active' : '' }}">
+        <a href="{{ route('moderator.queue') }}" class="nav-item {{ request()->routeIs('moderator.queue*') ? 'active' : '' }}" title="Incoming Queue">
             <x-ui-icon name="hourglass"  /><span class="nav-text">Incoming Queue</span>
             @if($queueCount > 0)
                 <span class="nav-badge" id="queueBadge">{{ $queueCount }}</span>
             @endif
         </a>
-        <a href="{{ route('moderator.sessions') }}" class="nav-item {{ request()->routeIs('moderator.sessions*') ? 'active' : '' }}">
+        <a href="{{ route('moderator.sessions') }}" class="nav-item {{ request()->routeIs('moderator.sessions*') ? 'active' : '' }}" title="Active Sessions">
             <x-ui-icon name="message"  /><span class="nav-text">Active Sessions</span>
             @if($sessionCount > 0)
                 <span class="nav-badge" id="sessionBadge">{{ $sessionCount }}</span>
             @endif
         </a>
-        <a href="{{ route('moderator.reconnections') }}" class="nav-item {{ request()->routeIs('moderator.reconnections') ? 'active' : '' }}" title="Connection review"><x-ui-icon name="plug"  /><span class="nav-text">Connection review</span></a>
-        <a href="{{ route('moderator.manage') }}" class="nav-item {{ request()->routeIs('moderator.manage*') ? 'active' : '' }}">
-            <x-ui-icon name="users"  /><span class="nav-text">Manage</span>
-        </a>
-        <a href="{{ route('moderator.schedules') }}" class="nav-item {{ request()->routeIs('moderator.schedules*') ? 'active' : '' }}">
-            <x-ui-icon name="calendar"  /><span class="nav-text">Schedules</span>
-        </a>
-        <a href="{{ route('moderator.emergency') }}" class="nav-item {{ request()->routeIs('moderator.emergency*') ? 'active' : '' }}">
+        <a href="{{ route('moderator.reconnections') }}" class="nav-item {{ request()->routeIs('moderator.reconnections') ? 'active' : '' }}" title="Reconnection requests"><x-ui-icon name="plug"  /><span class="nav-text">Reconnection requests</span></a>
+        <a href="{{ route('moderator.emergency') }}" class="nav-item {{ request()->routeIs('moderator.emergency*') ? 'active' : '' }}" title="Emergency Alerts">
             <x-ui-icon name="warning"  /><span class="nav-text">Emergency Alerts</span>
             <span class="nav-badge danger" id="emergencyBadge" @if(!$emergencyCount) hidden style="display:none" @endif>{{ $emergencyCount }}</span>
         </a>
 
+        <div class="nav-section">People</div>
+        <a href="{{ route('moderator.manage') }}" class="nav-item {{ request()->routeIs('moderator.manage*') ? 'active' : '' }}" title="Manage">
+            <x-ui-icon name="users"  /><span class="nav-text">Manage</span>
+        </a>
+        <a href="{{ route('moderator.schedules') }}" class="nav-item {{ request()->routeIs('moderator.schedules*') ? 'active' : '' }}" title="Schedules">
+            <x-ui-icon name="calendar"  /><span class="nav-text">Schedules</span>
+        </a>
+
         <div class="nav-section">Records</div>
-        <a href="{{ route('moderator.reports') }}" class="nav-item {{ request()->routeIs('moderator.reports*') ? 'active' : '' }}">
+        <a href="{{ route('moderator.reports') }}" class="nav-item {{ request()->routeIs('moderator.reports*') ? 'active' : '' }}" title="Reports">
             <x-ui-icon name="file-text"  /><span class="nav-text">Reports</span>
         </a>
 
         <div class="nav-section">Account</div>
-        <a href="{{ route('moderator.notifications') }}" class="nav-item {{ request()->routeIs('moderator.notifications*') ? 'active' : '' }}">
+        <a href="{{ route('moderator.notifications') }}" class="nav-item {{ request()->routeIs('moderator.notifications*') ? 'active' : '' }}" title="Notifications">
             <x-ui-icon name="bell"  /><span class="nav-text">Notifications</span>
             @if($notifBadge > 0)
                 <span class="nav-badge" id="notifBadge">{{ $notifBadge }}</span>
             @endif
         </a>
-        <a href="{{ route('moderator.settings') }}" class="nav-item {{ request()->routeIs('moderator.settings*') ? 'active' : '' }}">
+        <a href="{{ route('moderator.settings') }}" class="nav-item {{ request()->routeIs('moderator.settings*') ? 'active' : '' }}" title="Settings">
             <x-ui-icon name="settings"  /><span class="nav-text">Settings</span>
         </a>
     </nav>

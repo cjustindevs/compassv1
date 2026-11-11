@@ -96,3 +96,23 @@ a.ui-page:focus-visible { outline: none; box-shadow: var(--ring); }
 .ui-page--gap { border-color: transparent; background: transparent; }
 .ui-page svg { width: 18px; height: 18px; }
 @media (max-width: 480px) { .ui-pagination { justify-content: center; } }
+
+/* Moderator navigation: emergency strip and phone bottom bar */
+.ui-emergency-strip { display: flex; align-items: center; gap: var(--space-3); padding: 12px 28px; background: #fef2f2; color: #b91c1c; border-bottom: 1px solid #fecaca; font-size: var(--text-base); font-weight: 600; }
+.ui-emergency-strip svg { width: 20px; height: 20px; flex-shrink: 0; }
+.ui-emergency-strip-text { flex: 1; min-width: 0; }
+.ui-emergency-strip-link { display: inline-flex; align-items: center; min-height: var(--control-h); padding: 0 var(--space-4); border-radius: var(--radius-pill); background: #b91c1c; color: #fff; font-size: var(--text-base); font-weight: 700; text-decoration: none; }
+.ui-emergency-strip-link:focus-visible { outline: none; box-shadow: var(--ring); }
+@media (max-width: 768px) { .ui-emergency-strip { padding: 10px 16px; } }
+
+.ui-bottom-nav { display: none; }
+@media (max-width: 768px) {
+    .ui-bottom-nav { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-sticky); background: #fff; border-top: 1px solid var(--compass-border); box-shadow: var(--shadow-2); padding-bottom: env(safe-area-inset-bottom, 0px); }
+    body.compass-compact { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+}
+.ui-bottom-nav-item { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 64px; padding: 6px 4px; border: 0; background: transparent; color: var(--compass-muted); font: inherit; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; }
+.ui-bottom-nav-item svg { width: 22px; height: 22px; }
+.ui-bottom-nav-item.is-active { color: var(--compass-green-dark); }
+.ui-bottom-nav-item:focus-visible { outline: none; box-shadow: inset var(--ring); }
+.ui-bottom-nav-badge { position: absolute; top: 6px; left: calc(50% + 8px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--compass-green); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+.ui-bottom-nav-badge--danger { background: var(--compass-danger); }

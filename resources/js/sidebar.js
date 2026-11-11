@@ -112,6 +112,10 @@ class SidebarController {
             this.hamburger.addEventListener('click', () => this.toggleMobile());
         }
 
+        document.querySelectorAll('[data-open-sidebar]').forEach((btn) => {
+            btn.addEventListener('click', () => this.toggleMobile());
+        });
+
         if (this.overlay) {
             this.overlay.addEventListener('click', () => this.closeMobile());
         }

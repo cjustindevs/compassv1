@@ -81,6 +81,8 @@
                 </div>
             @endauth
 
+            @include('partials.emergency-strip')
+
             <!-- Page Content -->
             <main class="workspace-content">
                 @hasSection('content')
@@ -93,6 +95,7 @@
         @include('components.confirmation-modal')
         @include('partials.workflow-notice')
         @include('layouts.partials.pwa-banner')
+        @include('layouts.partials.bottom-nav')
         @stack('scripts')
     </body>
 </html>
