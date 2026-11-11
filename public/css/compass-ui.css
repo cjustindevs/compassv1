@@ -11,12 +11,45 @@
     --compass-text: #1f2937;
     --compass-muted: #6b7280;
     --compass-danger: #dc2626;
-    --compass-radius: 14px;
-    --compass-control-radius: 10px;
+    --compass-divider: #eef1ef;
+
+    /* Scales documented in DESIGN.md. Use these instead of raw values. */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+
+    --text-2xs: 11px;
+    --text-xs: 12px;
+    --text-sm: 13px;
+    --text-base: 14px;
+    --text-md: 16px;
+    --text-lg: 18px;
+    --text-xl: 20px;
+    --text-2xl: 24px;
+    --text-3xl: 28px;
+
+    --radius-xs: 6px;
+    --radius-sm: 8px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-pill: 999px;
+
+    --shadow-1: 0 1px 3px rgb(0 0 0 / 3%);
+    --shadow-2: 0 8px 24px rgb(22 59 45 / 12%);
+    --shadow-3: 0 18px 50px rgb(22 59 45 / 16%);
+    --ring: 0 0 0 3px rgb(4 160 82 / 15%);
+
+    --compass-radius: var(--radius-lg);
+    --compass-control-radius: var(--radius-md);
     --compass-control-height: 42px;
-    --compass-page-padding: 24px;
-    --compass-space: 20px;
-    --compass-shadow: 0 1px 3px rgb(0 0 0 / 3%);
+    --compass-page-padding: var(--space-6);
+    --compass-space: var(--space-5);
+    --compass-shadow: var(--shadow-1);
     --compact-control-height: var(--compass-control-height);
 }
 .compass-ui { font-family: var(--compass-font); -webkit-text-size-adjust: 100%; }
