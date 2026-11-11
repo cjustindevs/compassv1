@@ -9,7 +9,7 @@ use Tests\TestCase;
 
 class UiComponentsTest extends TestCase
 {
-    public function test_page_header_renders_title_actions_and_single_bell_slot(): void
+    public function test_page_header_renders_title_and_actions_and_leaves_the_bell_in_the_top_bar(): void
     {
         $html = Blade::render('<x-ui.page-header title="Reports" description="All reports"><x-slot:actions><a href="/x" id="act">Export</a></x-slot:actions></x-ui.page-header>');
 
@@ -17,7 +17,7 @@ class UiComponentsTest extends TestCase
         $this->assertStringContainsString('<h1', $html);
         $this->assertStringContainsString('Reports', $html);
         $this->assertStringContainsString('<a href="/x" id="act">Export</a>', $html);
-        $this->assertSame(1, substr_count($html, 'data-page-slot'));
+        $this->assertStringNotContainsString('data-notification-slot', $html);
     }
 
     public function test_kpi_puts_label_above_value_and_applies_tone(): void

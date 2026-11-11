@@ -5,7 +5,6 @@
 .ui-page-desc { margin: var(--space-1) 0 0; font-size: var(--text-base); color: var(--compass-muted); }
 .ui-back-link { display: inline-block; margin-bottom: var(--space-2); font-size: var(--text-caption); font-weight: 600; color: var(--compass-green-dark); text-decoration: none; }
 .ui-page-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-3); margin-left: auto; }
-.ui-page-actions > [data-page-slot] { display: inline-flex; align-items: center; }
 @media (max-width: 480px) { .ui-page-header h1 { font-size: var(--text-2xl); } .ui-page-actions { width: 100%; justify-content: flex-start; } }
 
 .ui-card { background: #fff; border: 1px solid var(--compass-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-1); padding: var(--card-pad); margin-bottom: var(--space-6); }
@@ -108,9 +107,9 @@ a.ui-page:focus-visible { outline: none; box-shadow: var(--ring); }
 .ui-bottom-nav { display: none; }
 @media (max-width: 768px) {
     .ui-bottom-nav { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-sticky); background: #fff; border-top: 1px solid var(--compass-border); box-shadow: var(--shadow-2); padding-bottom: env(safe-area-inset-bottom, 0px); }
-    body.compass-compact { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+    body.compass-compact { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 }
-.ui-bottom-nav-item { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 64px; padding: 6px 4px; border: 0; background: transparent; color: var(--compass-muted); font: inherit; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; }
+.ui-bottom-nav-item { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 56px; padding: 4px; border: 0; background: transparent; color: var(--compass-muted); font: inherit; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; }
 .ui-bottom-nav-item svg { width: 22px; height: 22px; }
 .ui-bottom-nav-item.is-active { color: var(--compass-green-dark); }
 .ui-bottom-nav-item:focus-visible { outline: none; box-shadow: inset var(--ring); }
@@ -136,5 +135,45 @@ a.ui-page:focus-visible { outline: none; box-shadow: var(--ring); }
 .ui-save-bar { display: flex; position: sticky; bottom: 0; z-index: 40; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-4); padding: var(--space-3) var(--space-4); background: #fff; border: 1px solid var(--compass-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-1); }
 .js-save-bar .ui-save-bar:not(.is-visible) { display: none; }
 .ui-save-bar-text { margin: 0; font-size: var(--text-sm); color: var(--compass-muted); }
-@media (max-width: 768px) { .ui-save-bar { bottom: 76px; } }
+@media (max-width: 768px) { .ui-save-bar { bottom: 64px; } }
 @media (max-width: 480px) { .ui-save-bar { flex-direction: column; align-items: stretch; } }
+
+/* Compact phone layout (user review, Nov 12): same look as desktop, but denser so pages
+   stay short. Two KPIs per row, label and value side by side in stacked tables. */
+@media (max-width: 768px) {
+  .ui-page-header { gap: var(--space-3); margin-bottom: var(--space-4); }
+  .ui-page-desc { font-size: var(--text-caption); }
+  .ui-page-actions { gap: var(--space-2); }
+  .ui-card { margin-bottom: var(--space-4); }
+  .ui-card-head { margin-bottom: var(--space-3); }
+  .ui-card-title { font-size: var(--text-lg); }
+  .ui-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin-bottom: var(--space-4); }
+  .ui-kpi { padding: var(--space-3); gap: var(--space-1); }
+  .ui-kpi-label { font-size: var(--text-sm); }
+  .ui-kpi-value { font-size: var(--text-3xl); }
+  .ui-attention { margin-bottom: var(--space-4); }
+  .ui-attention-title { font-size: var(--text-lg); }
+  .ui-attention-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+  .ui-attention-item { min-height: 0; gap: var(--space-2); padding: var(--space-3); }
+  .ui-attention-count { font-size: var(--text-3xl); }
+  .ui-attention-label { font-size: var(--text-caption); }
+  .ui-list-row { gap: var(--space-3); padding: var(--space-2) 0; }
+  .ui-avatar { flex-basis: 36px; width: 36px; height: 36px; font-size: var(--text-sm); }
+  .ui-list-side { gap: var(--space-2); }
+  .compass-ui .ui-table.ui-table--stack tr { gap: 6px; padding: var(--space-3); margin-bottom: var(--space-2); }
+  .compass-ui .ui-table.ui-table--stack td[data-label] { display: grid; grid-template-columns: minmax(88px, 36%) minmax(0, 1fr); column-gap: var(--space-3); align-items: baseline; }
+  .compass-ui .ui-table.ui-table--stack td[data-label]::before { grid-column: 1; grid-row: 1 / span 12; margin: 0; font-size: var(--text-xs); }
+  .compass-ui .ui-table.ui-table--stack td[data-label] > * { grid-column: 2; justify-self: start; max-width: 100%; }
+  .compass-ui .ui-table.ui-table--stack td:first-child { display: block; font-weight: 700; }
+  .compass-ui .ui-table.ui-table--stack td:first-child::before { display: none; }
+  .compass-ui .ui-table.ui-table--stack td.ui-actions { display: flex; }
+  .compass-ui .ui-table.ui-table--stack td.ui-actions::before { display: none; }
+}
+@media (max-width: 380px) { .ui-attention-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 480px) {
+  .compass-ui .ui-filter-bar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2) var(--space-3); }
+  .compass-ui .ui-filter-bar > *, .compass-ui .ui-filter-bar .ui-field { width: auto; min-width: 0; }
+  .compass-ui .ui-filter-bar > :is(.ui-filter-buttons, :first-child), .compass-ui .ui-filter-bar > .ui-field:has([data-control="date"], [data-control="search"]) { grid-column: 1 / -1; }
+  .compass-ui .ui-field label { font-size: var(--text-sm); }
+  .compass-ui:not(.compass-ui-admin) .ui-page-actions > :is(a, button) { min-height: 40px; padding-left: 14px; padding-right: 14px; font-size: var(--text-caption); }
+}

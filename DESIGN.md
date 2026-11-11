@@ -151,7 +151,7 @@ Shadows are rare and soft. There are three levels, and borders do most of the wo
   `--compass-green-soft` or gray-50 block instead.
 
 **KPI and stat tiles**
-- A label (12–13px, muted), a number (`--text-kpi` 40px, `--text-4xl` 32px at ≤768px, weight 800,
+- A label (12–13px, muted), a number (`--text-kpi` 40px, `--text-3xl` 28px at ≤768px with two KPIs per row, weight 800,
   tabular) and an optional sample count or caption (12px).
 
 **Chips and badges**

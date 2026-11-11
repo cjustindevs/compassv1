@@ -21,7 +21,8 @@ class ModeratorPilotPagesTest extends TestCase
     {
         $response = $this->actingAs($this->moderator())->get(route('moderator.dashboard'))->assertOk()
             ->assertSee('data-page-header', false)->assertSee('co-kpis', false);
-        $this->assertSame(1, substr_count($response->getContent(), 'data-page-slot'));
+        $this->assertSame(0, substr_count($response->getContent(), 'data-page-slot'));
+        $this->assertSame(1, substr_count($response->getContent(), 'data-notification-slot'));
     }
 
     public function test_attention_strip_lists_only_waiting_work(): void

@@ -19,6 +19,10 @@
         .dashboard-flash.success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; }
         .dashboard-flash.error { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
         #dashboard-analytics { margin-bottom: 24px; }
+        @media (max-width: 768px) {
+            #dashboard-analytics .co-secondary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+            #dashboard-analytics .co-secondary > div { min-width: 0; }
+        }
         #dashboard-analytics .co-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
         #dashboard-analytics .co-overview .co-kpi { align-items: center; text-align: center; border: 1px solid transparent; border-radius: 14px; background: #f3f4f6; padding: 20px 16px; }
         #dashboard-analytics .co-kpi h3 { order: 0; font-size: 14px; font-weight: 600; color: #1F2937; }

@@ -9,8 +9,8 @@
             <p class="ui-page-desc">{{ $description }}</p>
         @endif
     </div>
-    <div class="ui-page-actions">
-        @isset($actions){{ $actions }}@endisset
-        <div data-notification-slot data-page-slot></div>
-    </div>
+    @isset($actions)
+        <div class="ui-page-actions">{{ $actions }}</div>
+    @endisset
+    {{-- The bell stays in the top bar (layouts.app), top-right on every page. --}}
 </header>
