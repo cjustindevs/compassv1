@@ -113,23 +113,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 toggle('emergencyBadge', data.emergency_open);
             })
             .catch(() => {});
-
-        if (document.getElementById('statOngoing')) {
-            fetch('/moderator/sessions/stats', { headers: { 'Accept': 'application/json' } })
-                .then((r) => r.json())
-                .then((data) => {
-                    const set = (id, val) => {
-                        const el = document.getElementById(id);
-                        if (el && val !== undefined) el.textContent = val;
-                    };
-                    set('statOngoing', data.ongoing);
-                    set('statChat', data.chat);
-                    set('statVoice', data.voice);
-                    set('statEmergency', data.emergency_flagged);
-                    set('liveCount', data.ongoing);
-                })
-                .catch(() => {});
-        }
     }
 
     function showToast(title, message, link, linkLabel) {

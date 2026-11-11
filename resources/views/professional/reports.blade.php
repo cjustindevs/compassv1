@@ -176,6 +176,7 @@
             .card { padding: 16px; }
         }
         .compass-ui .main-content .pr-report-actions :is(.btn-outline, .btn-primary) { white-space: nowrap; }
+        .compass-ui .main-content .pr-report-actions { flex-wrap: wrap; max-width: 100%; }
     </style>
     @vite(['resources/css/app.css'])
     @include('partials.ui-assets')

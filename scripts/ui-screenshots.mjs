@@ -106,7 +106,7 @@ const audit = () => {
         }
     }
     // DESIGN.md rules, checked on what actually renders (Tailwind, inline styles and CSS alike).
-    const typeScale = [11, 12, 13, 14, 16, 18, 20, 24, 28];
+    const typeScale = [11, 12, 13, 14, 15, 16, 18, 20, 24, 28, 32, 40];
     const offScale = new Map();
     for (const el of document.querySelectorAll('body *')) {
         if (!visible(el) || el.closest('svg, canvas, .sr-only, [aria-hidden="true"]')) continue;

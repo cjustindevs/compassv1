@@ -24,7 +24,7 @@
         .assign-form, .reassign-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
         .assign-form .assign-select, .reassign-form .assign-select { width: 100%; }
         [data-helper-reason] { display: block; max-width: 340px; white-space: normal; font-size: 13px; color: var(--compass-muted, #6B7280); }
-        button:disabled { opacity: .55; cursor: not-allowed; }
+        .queue-card button:disabled { opacity: .55; cursor: not-allowed; }
         .queue-card + .queue-card { margin-top: 24px; }
         @media (max-width: 768px) { .queue-actions-cell { justify-content: flex-start; } .assign-select { width: 100%; min-width: 0; } }
     </style>

@@ -23,6 +23,16 @@ class AppServiceProvider extends ServiceProvider
     {
         \Illuminate\Validation\Rules\Password::defaults(fn () => \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->numbers()->symbols());
         $this->registerViewComposers();
+        // The per-request sidebar memo must not outlive a change to the data it summarises.
+        foreach ([\App\Models\Helper::class, \App\Models\Session::class] as $model) {
+            $model::saved(function () {
+                foreach (array_keys(request()->attributes->all()) as $key) {
+                    if (str_starts_with((string) $key, 'sidebar_composer_data_')) {
+                        request()->attributes->remove($key);
+                    }
+                }
+            });
+        }
         foreach (['state'=>60,'credentials'=>10,'start'=>6,'action'=>60,'signal'=>120] as $action => $limit) {
             \Illuminate\Support\Facades\RateLimiter::for('voice-'.$action, fn (\Illuminate\Http\Request $request) =>
                 \Illuminate\Cache\RateLimiting\Limit::perMinute($limit)->by('voice:'.$action.':'.($request->user()?->id ?? $request->ip())));
