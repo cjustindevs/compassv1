@@ -41,12 +41,6 @@
         /* Your progress */
         .sh-mine { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; }
         .sh-panel { background: var(--card-bg); border: 1px solid var(--gray-200); border-radius: 16px; padding: 18px; display: grid; gap: 12px; align-content: start; }
-        .sh-continue { display: grid; gap: 10px; }
-        .sh-continue a { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 12px; align-items: center; text-decoration: none; padding: 8px; margin: -8px; border-radius: 12px; }
-        .sh-continue a:hover { background: var(--page-bg); }
-        .sh-continue .sh-art { width: 56px; height: 56px; border-radius: 12px; }
-        .sh-continue strong { display: block; font-size: 14px; color: var(--gray-800); }
-        .sh-continue span { font-size: 12px; color: var(--gray-500); }
         .sh-bar { height: 6px; background: var(--gray-100); border-radius: 99px; overflow: hidden; margin-top: 6px; }
         .sh-bar > i { display: block; height: 100%; background: var(--green-500); border-radius: 99px; }
         .sh-saved { display: grid; gap: 2px; }
@@ -106,24 +100,47 @@
         .sh-head p { font-size: 13px; }
         .sh-panel { padding: 14px 16px; gap: 8px; border-radius: 14px; }
         .sh-block-title { font-size: 14px; }
-        .sh-continue { gap: 8px; }
-        .sh-continue a { grid-template-columns: 40px minmax(0, 1fr); gap: 10px; padding: 6px; margin: -6px; }
-        .sh-continue .sh-art { width: 40px; height: 40px; border-radius: 10px; }
-        .sh-continue strong { font-size: 13px; }
-        .sh-bar { height: 5px; margin-top: 4px; }
         .sh-saved a { padding: 6px 0; font-size: 13px; }
         .sh-filters { gap: 8px; }
         .sh-chips { gap: 6px; }
         .sh-chip { font-size: 12px; padding: 5px 11px; }
-        .sh-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
-        .resource-card { border-radius: 14px; }
-        .resource-card .sh-art { height: 64px; }
-        .resource-card .body { padding: 10px 12px 12px; gap: 4px; }
-        .resource-card h3 { font-size: 14px; }
-        .resource-card .summary { font-size: 13px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .topic-label { font-size: 11px; }
-        .kind, .badge-featured, .chip { font-size: 11px; padding: 2px 8px; }
         .meta { gap: 4px; margin-top: 2px; }
+
+        /* Continue where you left off: one roomy row per resource with a clear bar, % and Continue button. */
+        .sh-block-title { font-size: 20px; font-weight: 700; }
+        .sh-block-sub { font-size: 14px; }
+        .sh-continue { list-style: none; display: grid; gap: 10px; }
+        .sh-continue-row { display: grid; grid-template-columns: 56px minmax(0, 1.3fr) minmax(150px, 1fr) auto; gap: 16px; align-items: center; padding: 12px 14px; border: 1px solid var(--gray-200); border-radius: 14px; background: var(--card-bg); }
+        .sh-continue-row .sh-art { width: 56px; height: 56px; border-radius: 12px; }
+        .sh-continue-info { min-width: 0; }
+        .sh-continue-info strong { display: block; font-size: 16px; font-weight: 700; color: var(--gray-800); line-height: 1.35; }
+        .sh-continue-info span { display: block; font-size: 13px; color: var(--gray-500); margin-top: 2px; }
+        .sh-progress { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .sh-progress .sh-bar { flex: 1; height: 10px; margin: 0; background: var(--gray-200); }
+        .sh-progress .sh-bar > i { background: var(--green-600); }
+        .sh-pct { font-size: 15px; font-weight: 700; color: var(--gray-800); white-space: nowrap; min-width: 4ch; text-align: right; }
+        .sh-continue-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--green-200); background: var(--green-50); color: var(--green-700); font-size: 15px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+        .sh-continue-btn:hover { background: var(--green-100); border-color: var(--green-400); }
+        @media (max-width: 640px) {
+            .sh-continue-row { grid-template-columns: 48px minmax(0, 1fr); gap: 10px 12px; }
+            .sh-continue-row .sh-art { width: 48px; height: 48px; }
+            .sh-progress, .sh-continue-btn { grid-column: 1 / -1; }
+        }
+
+        /* Resource cards: at most 4 per row so titles and descriptions have room to read. */
+        .sh-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+        @media (max-width: 1280px) { .sh-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        @media (max-width: 1024px) { .sh-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; } }
+        @media (max-width: 600px) { .sh-grid { grid-template-columns: minmax(0, 1fr); } }
+        .resource-card { border-radius: 16px; }
+        .resource-card .sh-art { height: 88px; }
+        .resource-card .body { padding: 16px 18px 18px; gap: 8px; }
+        .resource-card .topic-label { font-size: 12px; }
+        .resource-card h3 { font-size: 18px; line-height: 1.3; }
+        .resource-card .summary { font-size: 15px; line-height: 1.55; color: var(--gray-600); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .resource-card .meta { gap: 6px; margin-top: 4px; }
+        .kind, .badge-featured, .chip { font-size: 13px; padding: 4px 10px; }
         .sh-topic-note { font-size: 13px; padding: 10px 14px; }
         @media (min-width: 1200px) { .sh-filters { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 20px; } .sh-filters > div:first-child { grid-column: 1 / -1; } }
     </style>
@@ -161,20 +178,24 @@
                     <section class="sh-panel" aria-labelledby="continueTitle">
                         <div><h2 class="sh-block-title" id="continueTitle">Continue where you left off</h2><p class="sh-block-sub">Your step progress is saved as you go.</p></div>
                         @if($continueProgress->count() > 0)
-                            <div class="sh-continue">
+                            <ul class="sh-continue">
                                 @foreach($continueProgress as $entry)
                                     @php($r = $entry->resource)
                                     @php($pct = (int) $entry->progress_percentage)
-                                    <a href="{{ route('selfhelp.show', $r->id) }}">
+                                    <li class="sh-continue-row">
                                         <x-selfhelp-art :topic="app(\App\Http\Controllers\SelfHelpController::class)->sectionKeyFor($r)" size="thumb" />
-                                        <div>
+                                        <div class="sh-continue-info">
                                             <strong>{{ $r->title }}</strong>
-                                            <span>{{ $pct > 0 ? $pct.'% done' : 'Opened, not started' }}@if($r->duration && strtoupper($r->duration) !== 'N/A') · {{ $r->duration }}@endif</span>
-                                            <div class="sh-bar" role="progressbar" aria-label="{{ $r->title }} progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $pct }}"><i style="width:{{ max($pct, 2) }}%"></i></div>
+                                            <span>{{ $categoryLabels[$r->category] ?? ucfirst($r->category) }}@if($r->duration && strtoupper($r->duration) !== 'N/A') · {{ $r->duration }}@endif</span>
                                         </div>
-                                    </a>
+                                        <div class="sh-progress">
+                                            <div class="sh-bar" role="progressbar" aria-label="{{ $r->title }} progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $pct }}"><i style="width:{{ max($pct, 2) }}%"></i></div>
+                                            <span class="sh-pct">{{ $pct > 0 ? $pct.'%' : 'Not started' }}</span>
+                                        </div>
+                                        <a href="{{ route('selfhelp.show', $r->id) }}" class="sh-continue-btn" aria-label="Continue {{ $r->title }}"><x-ui-icon name="play" size="16" /> Continue</a>
+                                    </li>
                                 @endforeach
-                            </div>
+                            </ul>
                         @else
                             <p class="sh-empty">Nothing in progress. Pick any resource below to start.</p>
                         @endif
@@ -229,7 +250,7 @@
                                 <div class="body">
                                     <span class="topic-label">{{ $section['label'] }}</span>
                                     <h3>{{ $resource->title }}</h3>
-                                    <p class="summary">{{ \Illuminate\Support\Str::limit($resource->description, 100) }}</p>
+                                    <p class="summary">{{ \Illuminate\Support\Str::limit($resource->description, 140) }}</p>
                                     <div class="meta">
                                         <span class="kind">{{ $categoryLabels[$resource->category] ?? ucfirst($resource->category) }}</span>
                                         @if($resource->duration && strtoupper($resource->duration) !== 'N/A')<span class="chip">{{ $resource->duration }}</span>@endif
