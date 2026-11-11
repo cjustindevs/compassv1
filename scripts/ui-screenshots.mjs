@@ -105,7 +105,37 @@ const audit = () => {
             if (widest && widest < available * 0.8) problems.push(`narrow: content ${Math.round(widest)}px of ${Math.round(available)}px available`);
         }
     }
-    return [...new Set(problems)].slice(0, 25);
+    // DESIGN.md rules, checked on what actually renders (Tailwind, inline styles and CSS alike).
+    const typeScale = [11, 12, 13, 14, 16, 18, 20, 24, 28];
+    const offScale = new Map();
+    for (const el of document.querySelectorAll('body *')) {
+        if (!visible(el) || el.closest('svg, canvas, .sr-only, [aria-hidden="true"]')) continue;
+        if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
+        const size = Math.round(parseFloat(getComputedStyle(el).fontSize) * 2) / 2;
+        if (typeScale.includes(size)) continue;
+        if (!offScale.has(size)) offScale.set(size, { count: 0, sample: label(el) });
+        offScale.get(size).count++;
+    }
+    for (const [size, { count, sample }] of offScale) problems.push(`design-font: ${size}px x${count} (e.g. ${sample})`);
+    const buttons = [...document.querySelectorAll('.btn, .btn-primary, .btn-outline, .btn-secondary, .btn-danger, .ui-button, .av-button, .mo-button')].filter(visible);
+    for (const el of buttons) {
+        const h = Math.round(el.getBoundingClientRect().height);
+        if (h < 34 || h > 48) problems.push(`design-button: ${h}px ${label(el)}`);
+    }
+    for (const el of document.querySelectorAll('body *')) {
+        const shadow = getComputedStyle(el).boxShadow;
+        if (!shadow || shadow === 'none' || !visible(el)) continue;
+        // Colored shadow with a real blur (a glow), as opposed to a neutral lift or a focus ring.
+        for (const part of shadow.split(/,(?![^(]*\))/)) {
+            const rgb = part.match(/rgba?\((\d+), (\d+), (\d+)/);
+            const nums = part.replace(/rgba?\([^)]*\)/, '').match(/-?[\d.]+px/g) || [];
+            const blur = parseFloat(nums[2] || '0');
+            if (!rgb || blur < 10) continue;
+            const [r, g, b] = rgb.slice(1).map(Number);
+            if (Math.max(r, g, b) - Math.min(r, g, b) > 60) { problems.push(`design-glow: ${label(el)}`); break; }
+        }
+    }
+    return [...new Set(problems)].slice(0, 40);
 };
 
 const browser = await chromium.launch();
