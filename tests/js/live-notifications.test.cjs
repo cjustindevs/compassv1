@@ -2,7 +2,7 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const vm=require('node:vm');
 const fs=require('node:fs');
-function notices(storage=new Map(),interval=5000,important=null,voice=false,headerSlot=true){
+function notices(storage=new Map(),interval=5000,important=null,voice=false,headerSlot=true,pageSlot=false){
     class Node{
         constructor(tag){this.tag=tag;this.children=[];this.attributes={};this.handlers={};this.hidden=false;this.textContent='';}
         append(...children){children.forEach(child=>{child.parent=this;this.children.push(child);});}
@@ -15,17 +15,17 @@ function notices(storage=new Map(),interval=5000,important=null,voice=false,head
         focus(){}
     }
     const body=new Node('body'),requests=[],intervals=[],timings=[],handlers={};let dialog=false;
-    const slot=new Node('div');if(headerSlot)body.append(slot);
+    const slot=new Node('div'),page=new Node('div');if(headerSlot)body.append(slot);
     let data={count:1,cursor:12,recent:[{id:12,title:'Assigned case',message:'Open the case',link:'/helper/cases',type:'assignment'}],fresh:[{id:12,title:'<img onerror=bad()>',message:'Safe message',link:'//evil.test',type:'assignment'}]};
     const context={document:{body,hidden:false,getElementById:()=>null,createElement:tag=>new Node(tag),createElementNS:(ns,tag)=>new Node(tag),
-        querySelector:selector=>selector==='meta[name="compass-notices"]'?{content:JSON.stringify({user:5,feed:'/notifications/feed',interval,center:'/notifications'})}:selector==='[data-notification-slot]'&&headerSlot?slot:selector==='dialog[open]'&&dialog?{}:selector==='[data-voice-room]'&&voice?{}:null,
+        querySelector:selector=>selector==='meta[name="compass-notices"]'?{content:JSON.stringify({user:5,feed:'/notifications/feed',interval,center:'/notifications'})}:selector==='[data-page-slot]'&&pageSlot?page:selector==='[data-notification-slot]'&&headerSlot?slot:selector==='dialog[open]'&&dialog?{}:selector==='[data-voice-room]'&&voice?{}:null,
         querySelectorAll:()=>[],addEventListener:(name,handler)=>{handlers[name]=handler;}},window:{addEventListener(){},CompassImportantNotices:important},navigator:{onLine:true},
         sessionStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value)},setTimeout(){},setInterval:(callback,ms)=>{intervals.push(callback);timings.push(ms);},
         fetch:async(url,options)=>{requests.push({url,options});return{ok:true,json:async()=>data};},console};
     vm.runInNewContext(fs.readFileSync('public/js/live-notifications.js','utf8'),context);
     // Expose the same root to existing assertions while preserving its real parent placement.
     if(headerSlot)body.children[0]=slot.children[0];
-    return {body,root:slot.children[0],requests,storage,timings,initialize:()=>vm.runInNewContext(fs.readFileSync('public/js/live-notifications.js','utf8'),context),poll:()=>intervals[0](),dialog:value=>{dialog=value;},setData:value=>{data=value;},flush:()=>new Promise(resolve=>setImmediate(resolve))};
+    return {page,slot,body,root:slot.children[0],requests,storage,timings,initialize:()=>vm.runInNewContext(fs.readFileSync('public/js/live-notifications.js','utf8'),context),poll:()=>intervals[0](),dialog:value=>{dialog=value;},setData:value=>{data=value;},flush:()=>new Promise(resolve=>setImmediate(resolve))};
 }
 
 test('centered pages without a header slot never receive a notification sibling in body',async()=>{
@@ -104,4 +104,10 @@ test('loading shared notifications twice creates only one bell and one poller',a
     const room=notices();await room.flush();room.initialize();
     assert.equal(room.body.children.length,2);
     assert.equal(room.timings.length,1);
+});
+
+test('bell mounts in the page header slot when the layout also has a slot',async()=>{
+    const r=notices(new Map(),5000,null,false,true,true);await r.flush();
+    assert.equal(r.page.children.length,1);
+    assert.equal(r.slot.children.length,0);
 });

@@ -16,7 +16,7 @@
     const inbox=el('section');inbox.id='compass-notice-inbox';inbox.className='compass-notice-dropdown';inbox.hidden=true;inbox.setAttribute('aria-label','Recent notifications');
     const workLink=el('a');workLink.className='compass-notice-pending';workLink.href=config.center;workLink.hidden=true;
     root.append(bell,inbox);
-    const slot=document.querySelector('[data-notification-slot]');
+    const slot=document.querySelector('[data-page-slot]')||document.querySelector('[data-notification-slot]');
     if(slot)slot.append(root);
     else {
         // Only an existing page header can host a bell. Never insert siblings into a page's content grid or body.
