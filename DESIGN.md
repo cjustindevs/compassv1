@@ -85,7 +85,7 @@ Inter at 15px is the base. Use only these sizes:
 - **Weights:** 400 for body, 500 for emphasis, 600 for labels, buttons and titles, 700 for h2 and h3,
   800 for page titles and KPI numbers.
 - **Line height:** 1.5 for text, 1.25–1.4 for headings and numbers.
-- Tailwind's `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl` and `text-2xl` match the scale.
+- Tailwind's `text-xs` (12), `text-sm` (14), `text-base` (16), `text-lg` (18), `text-xl` (20) and `text-2xl` (24) are all on the scale.
   Avoid `text-3xl` and larger outside the landing page.
 - Use `font-variant-numeric: tabular-nums` for numbers in tables and KPI tiles.
 - The landing page (`landing-page.css`) is the only place that may use display or fluid (`clamp()`) sizes.
@@ -106,7 +106,7 @@ All spacing is on a **4px base**. Use only these steps:
 | `--space-10` | 40px | Page bottom padding |
 
 Odd values (6, 10, 14, 18, 22px) are only allowed **inside** a component to hit an exact control
-height, such as 10px vertical button padding for a 42px button. Never use them between components.
+height, such as 10px vertical button padding for a 44px button. Never use them between components.
 
 ## 5. Radius and elevation
 
@@ -141,7 +141,7 @@ Shadows are rare and soft. There are three levels, and borders do most of the wo
   - Secondary/outline: white, green-dark text, hairline border.
   - Danger: red-50 background, red text, red-200 border.
 - Icon-only buttons are at least 36px (44px on touch).
-- Row actions inside dense tables may be 36px with 12–13px text.
+- Row actions inside dense tables may be 36px with 13–14px text.
 - Use one primary button per area. Other actions are secondary.
 
 **Cards and panels**
@@ -246,7 +246,7 @@ Shadows are rare and soft. There are three levels, and borders do most of the wo
 | 1151–1499px | Full two-column page grids. |
 | 769–1150px | The rail stays. Two-column page grids (`.mo-grid`, side columns) stack. |
 | ≤768px | The rail becomes a drawer behind the menu button. Controls are 44px and inputs 16px. The gutter is 20px. |
-| ≤480px | The gutter is 16px, the h1 is 24px, form rows stack and the table cell padding is 10px × 12px. |
+| ≤480px | The gutter is 16px, the h1 is 24px, form rows stack and the table cell padding is 12px. |
 
 - Chat and voice windows fill `100dvh` with the composer pinned.
 - Pages never scroll sideways. Only tables and chip rows scroll inside their container.
@@ -259,8 +259,8 @@ When asking an AI agent (or a new teammate) to build or change a COMPASS screen,
 
 > Follow `DESIGN.md`. Use the tokens in `public/css/compass-ui.css`: spacing `--space-*` (4px base),
 > type `--text-*` (11/12/13/14/15/16/18/20/24/28/32/40 only), radius `--radius-*`, shadows `--shadow-1..3`,
-> layers `--z-*`. Cards are white with a 1px `--compass-border` hairline, 14px radius and
-> `--shadow-1`. Buttons are 42px (44px on touch), and there is one green primary per area. Scores
+> layers `--z-*`. Cards are white with a 1px `--compass-border` hairline, `--radius-lg` radius and
+> `--shadow-1`. Buttons are 44px pills (15px text), and there is one green primary per area. Scores
 > are plain numbers on a 1–5 scale, with the range stated once in the label. Charts use
 > `<x-analytics-chart>`. Do not change workflows, permissions or data.
 

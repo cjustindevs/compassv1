@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Source-level guard for the DESIGN.md rules that are easy to break by hand:
- *  - font sizes must be on the type scale (11/12/13/14/16/18/20/24/28px)
+ *  - font sizes must be on the type scale (11/12/13/14/15/16/18/20/24/28/32/40px)
  *  - no colored "glow" shadows (a colored box-shadow with a real blur)
  *
  * Each area is listed in CLEAN_AREAS once its stylesheets and views follow the rules.
