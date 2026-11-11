@@ -197,6 +197,7 @@
             }
             .case-table tbody td .open-btn { margin-left: auto; }
         }
+        .compass-ui .main-content .case-table .open-btn { white-space: nowrap; }
         @media (max-width: 480px) {
             .card { padding: 16px; }
         }

@@ -124,10 +124,10 @@
         }
         .mini-select:focus { border-color: var(--green-500); }
 
+        .table-wrap { max-width: 100%; overflow-x: auto; }
         .flash-success { background: var(--green-50); color: var(--green-700); border: 1px solid var(--green-100); border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
         @media (max-width: 768px) {
             .helper-table { min-width: 720px; }
-            .table-wrap { overflow-x: auto; }
         }
             .add-helper-btn { display: inline-flex; align-items: center; padding: 8px 14px; border-radius: 10px; background: #078749; color: #fff; font-weight: 600; font-size: 13px; text-decoration: none; margin-right: 8px; }
         .elig-tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 99px; }
