@@ -131,4 +131,22 @@ class ModeratorPilotPagesTest extends TestCase
         $this->assertStringContainsString('Alias'.$user->id, $html);
         $this->assertStringContainsString('data-page-header', $html);
     }
+
+    public function test_remaining_moderator_pages_use_page_header(): void
+    {
+        $this->actingAs($this->moderator());
+        foreach (['moderator.emergency', 'moderator.schedules', 'moderator.referrals.unassigned', 'moderator.reconnections', 'moderator.notifications', 'moderator.settings', 'queue.performance'] as $name) {
+            $html = $this->get(route($name))->assertOk()->getContent();
+            $this->assertSame(1, substr_count($html, 'data-page-header'), "{$name} should render exactly one shared page header");
+        }
+    }
+
+    public function test_settings_forms_have_save_bar(): void
+    {
+        $html = $this->actingAs($this->moderator())->get(route('moderator.settings'))->assertOk()->getContent();
+        foreach (['moderator.settings.profile', 'moderator.settings.password', 'moderator.settings.notifications'] as $name) {
+            $this->assertMatchesRegularExpression('#<form[^>]+action="'.preg_quote(route($name), '#').'"(?:(?!</form>).)*?ui-save-bar#s', $html, $name);
+        }
+        $this->assertSame(3, substr_count($html, 'ui-save-bar"'));
+    }
 }

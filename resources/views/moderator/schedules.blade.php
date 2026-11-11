@@ -3,8 +3,11 @@
 @section('content')
 @php($scheduleRoute = auth()->user()->role === 'adviser' ? 'adviser.schedule' : 'moderator.schedules')
 <link rel="stylesheet" href="{{ asset('css/duty-scheduling.css') }}?v={{ filemtime(public_path('css/duty-scheduling.css')) }}">
+<style>.duty-page{background:transparent;min-height:0}.duty-date-form{display:flex;gap:8px;align-items:center}.duty-date-form input{min-height:44px}</style>
 <div class="duty-page">
-<header class="duty-header"><div><h1>Schedule Management</h1><p>Plan Helper duty and monitor support sessions. All times are Philippine Time.</p></div><form method="GET"><input type="hidden" name="tab" value="{{ request('tab','duties') }}"><label class="sr-only" for="viewDate">View date</label><input id="viewDate" type="date" name="date" value="{{ $date }}"><button class="duty-button">View</button></form></header>
+<x-ui.page-header title="Schedule Management" description="Plan Helper duty and monitor support sessions. All times are Philippine Time.">
+<x-slot:actions><form method="GET" class="duty-date-form"><input type="hidden" name="tab" value="{{ request('tab','duties') }}"><label class="sr-only" for="viewDate">View date</label><input id="viewDate" type="date" name="date" value="{{ $date }}"><button class="duty-button">View</button></form></x-slot:actions>
+</x-ui.page-header>
 @if(session('success'))<p class="duty-feedback" role="status">{{ session('success') }}</p>@endif @if($errors->any())<div class="duty-errors" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
 <nav class="duty-tabs" aria-label="Scheduling views">@foreach(['duties'=>'Duty Scheduling','sessions'=>'Support Sessions'] as $tab=>$label)<a class="{{ request('tab','duties')===$tab?'is-active':'' }}" href="{{ route($scheduleRoute,['date'=>$date,'tab'=>$tab]) }}">{{ $label }}</a>@endforeach</nav>
 @if(request('tab')!=='sessions')<div class="duty-grid"><section class="duty-card"><h2>{{ $edit?'Edit duty occurrence':'Schedule Helper Duty' }}</h2><p>Readiness is completed after duty is scheduled.</p><form method="POST" action="{{ route($scheduleRoute === 'adviser.schedule' ? 'adviser.schedule.update' : 'moderator.schedules.store') }}" id="dutyForm">@csrf @if($edit)<input type="hidden" name="shift_id" value="{{ $edit->id }}"><input type="hidden" name="expected_updated_at" value="{{ $edit->updated_at->toISOString() }}">@endif

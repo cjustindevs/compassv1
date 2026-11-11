@@ -1,150 +1,59 @@
-<!DOCTYPE html>
-<html class="compass-ui" lang="en">
-<head>
-    @include('layouts.partials.pwa-meta')
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+@extends('layouts.app')
+
+@section('title', 'COMPASS – Notifications')
+
+@push('styles')
     <meta name="user-id" content="{{ auth()->id() }}">
-    <title>COMPASS – Notifications</title>
-
-    @vite(['resources/js/app.js', 'resources/js/moderator-notifications.js'])
+    @vite(['resources/js/moderator-notifications.js'])
     <style>
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg-primary, #F8FBF9); }
-
-        .main-content {
-            margin-left: var(--sidebar-w, 264px);
-            max-width: 900px;
-            padding: 24px 32px 80px;
-            min-height: 100vh;
-        }
-
-        .card {
-            background: var(--bg-card, white);
-            border-radius: 20px;
-            padding: 24px;
-            border: 1px solid var(--border-color, #E5E7EB);
-            box-shadow: var(--card-shadow, 0 4px 20px rgba(0,0,0,0.01));
-        }
-
-        .notif-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 14px;
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--border-light, #F3F4F6);
-            transition: background 0.2s;
-        }
+        .notif-item { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; border-bottom: 1px solid var(--compass-divider, #F3F4F6); }
         .notif-item:last-child { border-bottom: none; }
-        .notif-item:hover { background: var(--bg-hover, #F9FAFB); }
         .notif-item.unread { background: #F0FDF4; }
-        .notif-item.unread:hover { background: #EAF8F0; }
         .notif-item .content { flex: 1; min-width: 0; }
-        .notif-item .content .title { font-weight: 600; font-size: 14px; color: var(--text-primary, #1F2937); }
-        .notif-item .content .msg { font-size: 13px; color: var(--text-secondary, #6B7280); margin-top: 2px; }
-        .notif-item .content .time { font-size: 11px; color: var(--text-muted, #9CA3AF); margin-top: 4px; }
+        .notif-item .content .title { font-weight: 600; font-size: 15px; color: var(--compass-text, #1F2937); margin: 0; }
+        .notif-item .content .msg { font-size: 14px; color: var(--compass-muted, #6B7280); margin: 2px 0 0; }
+        .notif-item .content .time { font-size: 13px; color: var(--compass-muted, #6B7280); margin: 4px 0 0; }
         .notif-item .actions { display: flex; gap: 6px; }
         .dot { width: 8px; height: 8px; border-radius: 50%; background: #04A052; flex-shrink: 0; margin-top: 6px; }
-
-        .filter-pill {
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary, #6B7280);
-            background: var(--bg-card, white);
-            border: 1.5px solid var(--border-color, #E5E7EB);
-            text-decoration: none;
-            transition: all 0.2s;
-            display: inline-block;
-        }
-        .filter-pill:hover { border-color: #04A052; color: #04A052; }
-        .filter-pill.active { background: #EAF8F0; border-color: #04A052; color: #027039; }
-
-        .btn-ghost {
-            background: var(--bg-card, white);
-            color: var(--text-secondary, #6B7280);
-            padding: 6px 12px;
-            border-radius: 16px;
-            font-weight: 600;
-            font-size: 11px;
-            border: 1.5px solid var(--border-color, #E5E7EB);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+        .notif-flash { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
+        .filter-pill { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--compass-muted, #6B7280); background: var(--bg-card, #fff); border: 1px solid var(--compass-border, #E5E7EB); text-decoration: none; }
+        .filter-pill:hover { border-color: var(--compass-green, #04A052); color: var(--compass-green, #04A052); }
+        .filter-pill.active { background: #EAF8F0; border-color: var(--compass-green, #04A052); color: #027039; }
+        .btn-ghost { background: var(--bg-card, #fff); color: var(--compass-muted, #6B7280); padding: 0 14px; min-height: 40px; border-radius: 999px; font-weight: 600; font-size: 13px; border: 1px solid var(--compass-border, #E5E7EB); cursor: pointer; }
         .btn-ghost:hover { border-color: #DC2626; color: #DC2626; }
-        .btn-primary {
-            background: linear-gradient(135deg, #04A052, #038A45);
-            color: white;
-            padding: 8px 18px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 13px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-primary:hover { background: #027039; }
+        .notification-page .ui-notification-list { padding: 0; }
+        .notification-page .ui-notification-toolbar { align-items: center; }
+        .notification-group{border-bottom:1px solid #e5ede8;padding:14px 0}.notification-group summary{cursor:pointer;font-size:14px;font-weight:600}.moderator-emergency-notification{border-left:3px solid #c34242;padding-left:14px!important}.moderator-emergency-notification .title{color:#982e2e!important}.notif-item .content{min-width:0;overflow-wrap:anywhere}.notif-item .actions{flex-wrap:wrap}.notif-item .actions .btn-ghost{font-size:12px;min-height:40px;padding:8px 10px;width:auto}
+        @media(max-width:480px){.notif-item{flex-wrap:wrap}.notif-item .actions{width:100%}.notif-item .content{flex:1 1 210px}}
+    </style>
+@endpush
 
-        .flash-success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
+@section('content')
+<div class="notification-page">
+    <x-ui.page-header title="Notifications" :description="$unreadCount.' unread'">
+        <x-slot:actions>
+            <form method="POST" action="{{ route('moderator.notifications.read-all') }}">
+                @csrf
+                <button type="submit" class="btn-primary"><x-ui-icon name="check-circle" class="mr-1" /> Mark all as read</button>
+            </form>
+        </x-slot:actions>
+    </x-ui.page-header>
 
-        .hamburger { display: none; background: none; border: none; font-size: 24px; color: var(--text-primary, #374151); cursor: pointer; padding: 4px; }
-        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 99; }
-        .sidebar-overlay.active { display: block; }
+    @if(session('success'))
+        <div class="notif-flash" role="status"> {{ session('success') }}</div>
+    @endif
 
+    <div class="flex flex-wrap items-center gap-2 mb-6 ui-notification-toolbar">
+        <a href="{{ route('moderator.notifications') }}" class="filter-pill {{ ! $typeFilter ? 'active' : '' }}">All</a>
+        @foreach($types as $type)
+            <a href="{{ route('moderator.notifications', ['type' => $type]) }}"
+               class="filter-pill {{ $typeFilter === $type ? 'active' : '' }}">
+                {{ ucfirst($type) }}
+            </a>
+        @endforeach
+    </div>
 
-        @media (max-width: 1024px) { .main-content { padding: 20px 24px 80px; } }
-        @media (max-width: 768px) {
-            .main-content { margin-left: 0; padding: 16px 16px 100px; }
-            .hamburger { display: block; }
-            .card { padding: 16px; }
-        }
-    .notification-group{border-bottom:1px solid #e5ede8;padding:14px 0}.notification-group summary{cursor:pointer;font-size:14px;font-weight:600}.moderator-emergency-notification{border-left:3px solid #c34242;padding-left:14px!important}.moderator-emergency-notification .title{color:#982e2e!important}.notif-item .content{min-width:0;overflow-wrap:anywhere}.notif-item .actions{flex-wrap:wrap}.notif-item .actions .btn-ghost{font-size:12px;min-height:40px;padding:8px 10px;width:auto}
-@media(max-width:480px){.notif-item{flex-wrap:wrap}.notif-item .actions{width:100%}.notif-item .content{flex:1 1 210px}}
-</style>
-    @vite(['resources/css/app.css'])
-    @include('partials.ui-assets')
-</head>
-<body class="compass-compact notification-page">
-
-    @include('layouts.partials.moderator-sidebar')
-
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <main class="main-content">
-
-        <div class="flex items-center gap-4 mb-6">
-            <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
-                <x-ui-icon name="menu"  />
-            </button>
-            <div>
-                <h1 class="text-xl md:text-2xl font-bold text-gray-800">Notifications</h1>
-                <p class="text-sm text-gray-500 hidden sm:block">{{ $unreadCount }} unread</p>
-            </div>
-        </div>
-
-        @if(session('success'))
-            <div class="flash-success"> {{ session('success') }}</div>
-        @endif
-
-        <div class="flex flex-wrap items-center gap-2 mb-6 ui-notification-toolbar">
-            <a href="{{ route('moderator.notifications') }}" class="filter-pill {{ ! $typeFilter ? 'active' : '' }}">All</a>
-            @foreach($types as $type)
-                <a href="{{ route('moderator.notifications', ['type' => $type]) }}"
-                   class="filter-pill {{ $typeFilter === $type ? 'active' : '' }}">
-                    {{ ucfirst($type) }}
-                </a>
-            @endforeach
-            <div class="ml-auto">
-                <form method="POST" action="{{ route('moderator.notifications.read-all') }}">
-                    @csrf
-                    <button type="submit" class="btn-primary"><x-ui-icon name="check-circle" class="mr-1" /> Mark all as read</button>
-                </form>
-            </div>
-        </div>
-
-        <div class="card ui-notification-list">
+    <div class="ui-card ui-notification-list">
             @php
                 // Group only identical non-emergency events in one five-minute window.
                 // Distinct destinations and read states remain separate; every child retains its own action.
@@ -178,19 +87,10 @@
                 @endforeach
                 @if($updates->count()>1)</details>@endif
             @empty
-                <div class="text-center py-12 text-gray-400">
-                    <p>No notifications</p>
-                </div>
+                <x-ui.empty title="No notifications" text="New updates will appear here." />
             @endforelse
-        </div>
+    </div>
 
-        <div class="mt-6">{{ $notifications->links() }}</div>
-
-    </main>
-
-    <!-- Bottom Navigation -->
-
-    @include('layouts.partials.pwa-banner')
-
-</body>
-</html>
+    <div class="mt-6">{{ $notifications->links() }}</div>
+</div>
+@endsection

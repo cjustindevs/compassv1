@@ -2,9 +2,11 @@
 @section('title','Queue Performance - COMPASS')
 @section('content')
 @include('partials.management-ui-styles')
-<style>.qp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px}.qp-grid .cm-card{margin:0}.qp-value{font-size:24px;font-weight:700;margin:10px 0}.qp-filters{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.qp-filters label{display:grid;gap:6px}.qp-filters input,.qp-filters select{padding:10px;border:1px solid #d4e2d9;border-radius:8px}.qp-filters details{flex-basis:100%}.qp-definitions{line-height:1.7}.qp-definitions dt{font-weight:600;margin-top:10px}.qp-definitions dd{margin:0}.qp-muted{font-size:13px;color:#63766a}</style>
+<style>.cm-page{padding:0!important}.qp-muted{margin:0 0 16px}.qp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px}.qp-grid .cm-card{margin:0}.qp-value{font-size:24px;font-weight:700;margin:10px 0}.qp-filters{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.qp-filters label{display:grid;gap:6px}.qp-filters input,.qp-filters select{padding:10px;border:1px solid #d4e2d9;border-radius:8px}.qp-filters details{flex-basis:100%}.qp-definitions{line-height:1.7}.qp-definitions dt{font-weight:600;margin-top:10px}.qp-definitions dd{margin:0}.qp-muted{font-size:13px;color:#63766a}</style>
 <div class="cm-page">
-    <header class="cm-header"><div><h1>Queue Performance</h1><p>Recorded waits, accepted assignments, verified duty time and emergency acknowledgment.</p></div><a class="cm-button" href="{{ route(auth()->user()->role.'.reports') }}">Back to reports</a></header>
+    <x-ui.page-header title="Queue Performance" description="Recorded waits, accepted assignments, verified duty time and emergency acknowledgment.">
+        <x-slot:actions><a class="btn btn-outline" href="{{ route(auth()->user()->role.'.reports') }}">Back to reports</a></x-slot:actions>
+    </x-ui.page-header>
     @if($errors->any())<div role="alert">{{ $errors->first() }}</div>@endif
     <form class="cm-card qp-filters" method="GET">
         <label>Period<select name="period" onchange="if(this.value!=='custom'){this.form.elements.from.value='';this.form.elements.to.value='';}">@foreach(['today'=>'Today','weekly'=>'Last 7 days','monthly'=>'Last 30 days','semester'=>'Semester','custom'=>'Custom dates'] as $value=>$label)<option value="{{ $value }}" @selected(request('period','monthly')===$value)>{{ $label }}</option>@endforeach</select></label>
@@ -17,7 +19,7 @@
         </div></details>
     </form>
     <p class="qp-muted">{{ $period->dates()['from'] }} to {{ $period->dates()['to'] }} · As of {{ $asOf->timezone('Asia/Manila')->format('M d, Y g:i:s A') }} PHT. {{ auth()->user()->role==='adviser' ? 'Your authorized supervision scope.' : 'System operational scope.' }}</p>
-    <div class="qp-grid">@foreach($cards as $card)<section class="cm-card"><h2>{{ $card['label'] }}</h2><p class="qp-value">{{ $card['value'] }}</p><p class="qp-muted">{{ $card['sample'] }}</p></section>@endforeach</div>
+    <x-ui.kpi-grid>@foreach($cards as $card)<x-ui.kpi :label="$card['label']" :value="$card['value']" :note="$card['sample']" />@endforeach</x-ui.kpi-grid>
     <div class="analytics-chart-grid report-chart-grid">
         <x-analytics-chart title="Waiting time trend" :description="$charts['wait_trend']['interval'].' average, queue entry to session start · in-hours sessions'" :chart="['type'=>'line','unit'=>' min','labels'=>$charts['wait_trend']['labels'],'samples'=>$charts['wait_trend']['samples'],'datasets'=>[['label'=>'Average wait','data'=>$charts['wait_trend']['values']]]]" />
         <x-analytics-chart title="Sessions started by risk level" description="Same started-session cohort as the waiting-time measures." :chart="['type'=>'column','labels'=>array_keys($charts['risk']),'datasets'=>[['label'=>'Sessions','data'=>array_values($charts['risk'])]]]" />

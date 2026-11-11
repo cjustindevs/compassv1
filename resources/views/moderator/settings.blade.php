@@ -1,168 +1,90 @@
-<!DOCTYPE html>
-<html class="compass-ui" lang="en">
-<head>
-    @include('layouts.partials.pwa-meta')
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+@extends('layouts.app')
+
+@section('title', 'COMPASS – Settings')
+
+@push('styles')
     <meta name="user-id" content="{{ auth()->id() }}">
-    <title>COMPASS – Settings</title>
-
-    @vite(['resources/js/app.js', 'resources/js/moderator-notifications.js'])
+    @vite(['resources/js/moderator-notifications.js'])
     <style>
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg-primary, #F8FBF9); }
-
-        .main-content {
-            margin-left: var(--sidebar-w, 264px);
-            padding: 24px 32px 80px;
-            min-height: 100vh;
-        }
-
-        .card {
-            background: var(--bg-card, white);
-            border-radius: 20px;
-            padding: 24px;
-            border: 1px solid var(--border-color, #E5E7EB);
-            box-shadow: var(--card-shadow, 0 4px 20px rgba(0,0,0,0.01));
-        }
-        .card h3 { font-weight: 700; font-size: 16px; color: var(--text-primary, #1F2937); margin-bottom: 16px; }
-
-        .tab {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary, #6B7280);
-            background: var(--bg-card, white);
-            border: 1.5px solid var(--border-color, #E5E7EB);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .tab.active { background: #EAF8F0; border-color: #04A052; color: #027039; }
-
-        .form-label { display: block; font-weight: 600; font-size: 13px; color: var(--text-primary, #374151); margin-bottom: 6px; }
-        .form-input {
-            width: 100%;
-            padding: 10px 14px;
-            border-radius: 12px;
-            border: 1.5px solid var(--border-color, #E5E7EB);
-            outline: none;
-            font-size: 14px;
-            background: var(--bg-card, white);
-        }
-        .form-input:focus { border-color: #04A052; box-shadow: 0 0 0 3px rgba(4,160,82,0.08); }
+        .settings-flash { border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; }
+        .settings-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+        .tab { min-height: 44px; padding: 0 20px; border-radius: 999px; font-size: 15px; font-weight: 600; color: var(--compass-muted, #6B7280); background: var(--bg-card, #fff); border: 1px solid var(--compass-border, #E5E7EB); cursor: pointer; }
+        .tab.active { background: #EAF8F0; border-color: var(--compass-green, #04A052); color: #027039; }
+        .settings-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 16px; }
+        @media (min-width: 769px) { .settings-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .form-label { display: block; font-weight: 600; font-size: 14px; color: var(--compass-text, #374151); margin-bottom: 6px; }
+        .form-input { width: 100%; min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--compass-border, #E5E7EB); font-size: 15px; background: var(--bg-card, #fff); }
+        .form-input:focus { outline: 2px solid var(--compass-green, #04A052); outline-offset: 1px; }
         .form-input.error { border-color: #DC2626; }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #04A052, #038A45);
-            color: white;
-            padding: 10px 22px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 13px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-primary:hover { background: #027039; }
-
+        .error-text { font-size: 13px; color: #DC2626; margin-top: 4px; }
         .toggle { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
         .toggle input { opacity: 0; width: 0; height: 0; }
-        .toggle .slider {
-            position: absolute;
-            cursor: pointer;
-            inset: 0;
-            background: var(--border-color, #E5E7EB);
-            border-radius: 24px;
-            transition: 0.3s;
-        }
-        .toggle .slider:before {
-            content: "";
-            position: absolute;
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background: var(--text-inverse, white);
-            border-radius: 50%;
-            transition: 0.3s;
-            box-shadow: 0 1px 3px var(--shadow-color, rgba(0,0,0,0.2));
-        }
-        .toggle input:checked + .slider { background: var(--btn-primary, #04A052); }
+        .toggle .slider { position: absolute; cursor: pointer; inset: 0; background: var(--compass-border, #E5E7EB); border-radius: 24px; transition: 0.3s; }
+        .toggle .slider:before { content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .toggle input:checked + .slider { background: var(--compass-green, #04A052); }
         .toggle input:checked + .slider:before { transform: translateX(20px); }
-
+        .toggle input:focus-visible + .slider { outline: 2px solid var(--compass-green, #04A052); outline-offset: 2px; }
+        .pref-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--compass-divider, #F3F4F6); }
+        .pref-row p { margin: 0; }
+        .pref-row .pref-label { font-size: 15px; font-weight: 600; color: var(--compass-text, #374151); }
+        .pref-row .pref-desc { font-size: 13px; color: var(--compass-muted, #6B7280); }
         .radio-group { display: flex; gap: 10px; }
-        .radio-option {
-            flex: 1;
-            border: 1.5px solid var(--border-color, #E5E7EB);
-            border-radius: 14px;
-            padding: 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary, #6B7280);
-        }
-        .radio-option:hover { border-color: #04A052; }
-        .radio-option.selected { border-color: #04A052; background: #EAF8F0; color: #027039; }
-
-        .flash-success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
-        .flash-error { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
-        .error-text { font-size: 12px; color: #DC2626; margin-top: 4px; }
-
-        .hamburger { display: none; background: none; border: none; font-size: 24px; color: var(--text-primary, #374151); cursor: pointer; padding: 4px; }
-        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 99; }
-        .sidebar-overlay.active { display: block; }
-
-
-        @media (max-width: 1024px) { .main-content { padding: 20px 24px 80px; } }
-        @media (max-width: 768px) {
-            .main-content { margin-left: 0; padding: 16px 16px 100px; }
-            .hamburger { display: block; }
-            .card { padding: 16px; }
-        }
+        .radio-option { flex: 1; border: 1px solid var(--compass-border, #E5E7EB); border-radius: 14px; padding: 12px; text-align: center; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--compass-muted, #6B7280); }
+        .radio-option.selected { border-color: var(--compass-green, #04A052); background: #EAF8F0; color: #027039; }
     </style>
-    @vite(['resources/css/app.css'])
-    @include('partials.ui-assets')
-</head>
-<body class="compass-compact">
+@endpush
 
-    @include('layouts.partials.moderator-sidebar')
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('#tabBar .tab').forEach(function (tab) {
+                tab.addEventListener('click', function () {
+                    document.querySelectorAll('#tabBar .tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+                    this.classList.add('active');
+                    document.getElementById('panel-' + this.dataset.tab).style.display = '';
+                });
+            });
 
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+            document.querySelectorAll('#fontSizeGroup .radio-option').forEach(function (option) {
+                option.addEventListener('click', function () {
+                    document.querySelectorAll('#fontSizeGroup .radio-option').forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                    document.getElementById('fontSizeInput').value = this.dataset.size;
+                });
+            });
 
-    <main class="main-content">
+            // Reveal each form's sticky save bar once one of its fields changes.
+            document.querySelectorAll('form[data-settings-form]').forEach(function (form) {
+                const bar = form.querySelector('[data-save-bar]');
+                if (!bar) return;
+                const reveal = () => bar.classList.add('is-visible');
+                form.addEventListener('input', reveal);
+                form.addEventListener('change', reveal);
+            });
+        });
+    </script>
+@endpush
 
-        <div class="flex items-center gap-4 mb-6">
-            <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
-                <x-ui-icon name="menu"  />
-            </button>
-            <div>
-                <h1 class="text-xl md:text-2xl font-bold text-gray-800">Settings</h1>
-                <p class="text-sm text-gray-500 hidden sm:block">Manage your account and preferences</p>
-            </div>
-        </div>
+@section('content')
+    <x-ui.page-header title="Settings" description="Manage your account and preferences" />
 
-        @if(session('success'))
-            <div class="flash-success"> {{ session('success') }}</div>
-        @endif
+    @if(session('success'))
+        <div class="settings-flash" role="status"> {{ session('success') }}</div>
+    @endif
 
-        <div class="flex flex-wrap gap-2 mb-6" id="tabBar">
-            <button type="button" class="tab active" data-tab="profile">Profile</button>
-            <button type="button" class="tab" data-tab="password">Password</button>
-            <button type="button" class="tab" data-tab="appearance">Appearance</button>
-            <button type="button" class="tab" data-tab="notifications">Notifications</button>
-        </div>
+    <div class="settings-tabs" id="tabBar">
+        <button type="button" class="tab active" data-tab="profile">Profile</button>
+        <button type="button" class="tab" data-tab="password">Password</button>
+        <button type="button" class="tab" data-tab="appearance">Appearance</button>
+        <button type="button" class="tab" data-tab="notifications">Notifications</button>
+    </div>
 
-        <!-- Profile -->
-        <div class="card mb-6 tab-panel" id="panel-profile">
-            <h3>Profile Information</h3>
-            <form method="POST" action="{{ route('moderator.settings.profile') }}">
+    <x-ui.card title="Profile Information" class="tab-panel" id="panel-profile">
+        <form method="POST" data-settings-form action="{{ route('moderator.settings.profile') }}">
                 @csrf
                 @method('PUT')
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="settings-grid two">
                     <div>
                         <label class="form-label">Display Name</label>
                         <input type="text" name="name" class="form-input {{ $errors->has('name') ? 'error' : '' }}" value="{{ old('name', $user->name) }}" required>
@@ -186,17 +108,15 @@
                         <input type="text" name="assigned_shift" class="form-input" value="{{ old('assigned_shift', $moderator->assigned_shift) }}" placeholder="e.g. Morning Shift">
                     </div>
                 </div>
-                <button type="submit" class="btn-primary"><x-ui-icon name="save" class="mr-1" /> Save Profile</button>
+                <div class="ui-save-bar" data-save-bar><p class="ui-save-bar-text">You have unsaved changes.</p><button type="submit" class="btn-primary"><x-ui-icon name="save" class="mr-1" /> Save Profile</button></div>
             </form>
-        </div>
+    </x-ui.card>
 
-        <!-- Password -->
-        <div class="card mb-6 tab-panel" id="panel-password" style="display: none;">
-            <h3>Change Password</h3>
-            <form method="POST" action="{{ route('moderator.settings.password') }}">
+    <x-ui.card title="Change Password" class="tab-panel" id="panel-password" style="display: none;">
+        <form method="POST" data-settings-form action="{{ route('moderator.settings.password') }}">
                 @csrf
                 @method('PUT')
-                <div class="grid grid-cols-1 gap-4 mb-4">
+                <div class="settings-grid">
                     <div>
                         <label class="form-label">Current Password</label>
                         <input type="password" name="current_password" class="form-input {{ $errors->has('current_password') ? 'error' : '' }}" required>
@@ -212,23 +132,19 @@
                         <input type="password" name="new_password_confirmation" class="form-input" required>
                     </div>
                 </div>
-                <button type="submit" class="btn-primary"><x-ui-icon name="key" class="mr-1" /> Update Password</button>
+                <div class="ui-save-bar" data-save-bar><p class="ui-save-bar-text">You have unsaved changes.</p><button type="submit" class="btn-primary"><x-ui-icon name="key" class="mr-1" /> Update Password</button></div>
             </form>
-        </div>
+    </x-ui.card>
 
-        <!-- Appearance -->
-        <div class="card mb-6 tab-panel" id="panel-appearance" style="display: none;">
-            <h3>Appearance</h3>
-            @include('partials.light-mode-notice')
-        </div>
+    <x-ui.card title="Appearance" class="tab-panel" id="panel-appearance" style="display: none;">
+        @include('partials.light-mode-notice')
+    </x-ui.card>
 
-        <!-- Notifications -->
-        <div class="card mb-6 tab-panel" id="panel-notifications" style="display: none;">
-            <h3>Notification Preferences</h3>
-            <form method="POST" action="{{ route('moderator.settings.notifications') }}">
+    <x-ui.card title="Notification Preferences" class="tab-panel" id="panel-notifications" style="display: none;">
+        <form method="POST" data-settings-form action="{{ route('moderator.settings.notifications') }}">
                 @csrf
                 @method('PUT')
-                <div class="space-y-5 mb-6">
+                <div>
                     @php
                         $prefs = [
                             'email_notifications' => ['Email Notifications', 'Receive updates via email'],
@@ -238,10 +154,10 @@
                         ];
                     @endphp
                     @foreach($prefs as $key => [$label, $desc])
-                        <div class="flex items-center justify-between">
+                        <div class="pref-row">
                             <div>
-                                <p class="font-semibold text-sm text-gray-700">{{ $label }}</p>
-                                <p class="text-xs text-gray-400">{{ $desc }}</p>
+                                <p class="pref-label">{{ $label }}</p>
+                                <p class="pref-desc">{{ $desc }}</p>
                             </div>
                             <label class="toggle">
                                 <input type="checkbox" name="{{ $key }}" value="1" {{ $user->$key ? 'checked' : '' }}>
@@ -250,39 +166,7 @@
                         </div>
                     @endforeach
                 </div>
-                <button type="submit" class="btn-primary"><x-ui-icon name="save" class="mr-1" /> Save Preferences</button>
+                <div class="ui-save-bar" data-save-bar><p class="ui-save-bar-text">You have unsaved changes.</p><button type="submit" class="btn-primary"><x-ui-icon name="save" class="mr-1" /> Save Preferences</button></div>
             </form>
-        </div>
-
-    </main>
-
-    <!-- Bottom Navigation -->
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-
-            // Tabs
-            document.querySelectorAll('#tabBar .tab').forEach(function (tab) {
-                tab.addEventListener('click', function () {
-                    document.querySelectorAll('#tabBar .tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
-                    this.classList.add('active');
-                    document.getElementById('panel-' + this.dataset.tab).style.display = '';
-                });
-            });
-
-            // Font size selector
-            document.querySelectorAll('#fontSizeGroup .radio-option').forEach(function (option) {
-                option.addEventListener('click', function () {
-                    document.querySelectorAll('#fontSizeGroup .radio-option').forEach(o => o.classList.remove('selected'));
-                    this.classList.add('selected');
-                    document.getElementById('fontSizeInput').value = this.dataset.size;
-                });
-            });
-        });
-    </script>
-
-    @include('layouts.partials.pwa-banner')
-
-</body>
-</html>
+    </x-ui.card>
+@endsection
