@@ -161,7 +161,7 @@
                     @forelse($session->messages as $message)
                         <div class="flex {{ $message->is_helper ? 'justify-end' : 'justify-start' }}">
                             <div class="msg-bubble {{ $message->is_helper ? 'helper' : 'seeker' }}">
-                                <p class="text-[10px] mb-1 {{ $message->is_helper ? 'text-gray-400' : 'text-emerald-700' }}">
+                                <p class="text-[11px] mb-1 {{ $message->is_helper ? 'text-gray-400' : 'text-emerald-700' }}">
                                     {{ $message->is_helper ? ($session->helper?->full_name ?? 'Helper') : ($session->seeker?->generated_alias ?? 'Seeker') }}
                                 </p>
                                 {{ $message->message_text }}
@@ -251,7 +251,7 @@
                     <div class="card">
                         <h3 class="font-bold text-gray-800 mb-1">Seeker rating</h3>
                         <p class="text-xs text-gray-400 mb-2">Scale 1–5</p>
-                        <p class="text-3xl font-extrabold text-gray-800">{{ \App\Support\ScoreFormat::number(\App\Services\AdviserAnalytics::rating($session->evaluation->overall_score)) }}</p>
+                        <p class="text-[28px] font-extrabold text-gray-800">{{ \App\Support\ScoreFormat::number(\App\Services\AdviserAnalytics::rating($session->evaluation->overall_score)) }}</p>
                         @if(!empty($session->evaluation->answers['helpfulness_score']))<p class="text-sm text-gray-600 mt-1">Helpfulness: {{ $session->evaluation->answers['helpfulness_score'] }}</p>@endif
                         <p class="text-xs text-gray-400 mt-1">{{ $session->evaluation->comments ?: 'No comments' }}</p>
                     </div>

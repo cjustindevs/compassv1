@@ -27,7 +27,7 @@
             transition: all 0.3s ease;
         }
         .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.04)); }
-        .stat-number { font-size: 26px; font-weight: 800; color: var(--text-primary, #1F2937); }
+        .stat-number { font-size: 24px; font-weight: 800; color: var(--text-primary, #1F2937); }
         .stat-label { font-size: 12px; color: var(--text-secondary, #6B7280); }
 
         .card {

@@ -64,7 +64,7 @@
             text-decoration: none;
             display: block;
         }
-        .adviser-card:hover { border-color: #04A052; box-shadow: 0 4px 16px rgba(4,160,82,0.08); }
+        .adviser-card:hover { border-color: #04A052; box-shadow: none; }
         .adviser-card.selected { border-color: #04A052; background: #F0FDF4; }
 
         .slot-bar { display: flex; gap: 4px; margin-top: 10px; }

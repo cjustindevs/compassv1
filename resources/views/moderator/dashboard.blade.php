@@ -159,7 +159,7 @@
         @media (max-width: 768px) {
             .main-content { margin-left: 0; padding: 16px 16px 100px; }
             .hamburger { display: block; }
-            .stat-number { font-size: 22px; }
+            .stat-number { font-size: 20px; }
             .session-item { flex-wrap: wrap; gap: 8px; }
         }
         @media (max-width: 480px) {

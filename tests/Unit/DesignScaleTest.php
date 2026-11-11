@@ -18,7 +18,7 @@ class DesignScaleTest extends TestCase
 {
     private const TYPE_SCALE = [11, 12, 13, 14, 16, 18, 20, 24, 28];
 
-    private const CLEAN_AREAS = ['shared', 'admin'];
+    private const CLEAN_AREAS = ['shared', 'admin', 'moderator'];
 
     public static function areas(): array
     {
