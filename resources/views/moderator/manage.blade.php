@@ -1,341 +1,52 @@
-<!DOCTYPE html>
-<html class="compass-ui" lang="en">
-<head>
-    @include('layouts.partials.pwa-meta')
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+@extends('layouts.app')
+
+@section('title', 'COMPASS – Manage Team')
+
+@push('styles')
     <meta name="user-id" content="{{ auth()->id() }}">
-    <title>COMPASS – Manage Team</title>
-
-    @vite(['resources/js/app.js', 'resources/js/moderator-notifications.js'])
+    @vite(['resources/js/moderator-notifications.js'])
     <style>
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg-primary, #F8FBF9); }
-
-        .main-content {
-            margin-left: var(--sidebar-w, 264px);
-            padding: 24px 32px 80px;
-            min-height: 100vh;
-        }
-
-        .card {
-            background: var(--bg-card, white);
-            border-radius: 20px;
-            padding: 24px;
-            border: 1px solid var(--border-color, #E5E7EB);
-            box-shadow: var(--card-shadow, 0 4px 20px rgba(0,0,0,0.01));
-        }
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-        .card-header h3 { font-weight: 700; font-size: 16px; color: var(--text-primary, #1F2937); }
-
-        .competency-pill { padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
-        .competency-pill.expert { background: #DCFCE7; color: #166534; }
-        .competency-pill.advanced { background: #DBEAFE; color: #1E40AF; }
-        .competency-pill.proficient { background: #FEF3C7; color: #92400E; }
-        .competency-pill.developing { background: #FEE2E2; color: #991B1B; }
-        .competency-pill.trainee { background: #E5E7EB; color: var(--text-secondary, #6B7280); }
-
-        .status-pill { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
-        .status-pill.available { background: #DCFCE7; color: #166534; }
-        .status-pill.busy { background: #FEF3C7; color: #92400E; }
-        .status-pill.offline { background: var(--border-light, #F3F4F6); color: var(--text-secondary, #6B7280); }
-
-        .helper-row {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border-light, #F3F4F6);
-        }
-        .helper-row:last-child { border-bottom: none; }
-
-        .adviser-card {
-            border: 1.5px solid var(--border-color, #E5E7EB);
-            border-radius: 16px;
-            padding: 16px;
-            transition: all 0.2s;
-            cursor: pointer;
-            text-decoration: none;
-            display: block;
-        }
-        .adviser-card:hover { border-color: #04A052; box-shadow: none; }
-        .adviser-card.selected { border-color: #04A052; background: #F0FDF4; }
-
-        .slot-bar { display: flex; gap: 4px; margin-top: 10px; }
+        .manage-flash { border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
+        .manage-flash.success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; }
+        .manage-flash.error { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
+        .manage-columns { display: grid; grid-template-columns: 1fr; gap: 0 24px; align-items: start; margin-bottom: 24px; }
+        .manage-columns > .ui-card { margin-bottom: 0; }
+        @media (min-width: 1024px) { .manage-columns { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); } }
+        .adviser-card { display: block; border: 1px solid var(--compass-border, #E5E7EB); border-radius: 16px; padding: 16px; margin-bottom: 12px; text-decoration: none; color: inherit; }
+        .adviser-card:hover, .adviser-card.selected { border-color: var(--compass-green, #04A052); }
+        .adviser-card.selected { background: var(--compass-green-soft, #F0FDF4); }
+        .adviser-card .ui-list-row { padding: 0; border-bottom: 0; }
+        .adviser-card .ui-list-row { flex-wrap: nowrap; } .adviser-card .ui-list-side { width: auto; }
+        .adviser-chevron { color: var(--compass-muted, #6B7280); flex-shrink: 0; }
+        .slot-bar { display: flex; gap: 4px; margin-top: 12px; }
         .slot { flex: 1; height: 6px; border-radius: 3px; background: #E5E7EB; }
-        .slot.filled { background: #04A052; }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #04A052, #038A45);
-            color: white;
-            padding: 7px 14px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 12px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-primary:hover { background: #027039; }
-        .btn-ghost {
-            background: var(--bg-card, white);
-            color: var(--text-secondary, #6B7280);
-            padding: 7px 14px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 12px;
-            border: 1.5px solid var(--border-color, #E5E7EB);
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-ghost:hover { border-color: #DC2626; color: #DC2626; }
-
-        .search-input {
-            width: 100%;
-            padding: 10px 16px 10px 40px;
-            border-radius: 14px;
-            border: 1.5px solid var(--border-color, #E5E7EB);
-            outline: none;
-            font-size: 14px;
-            background: var(--bg-card, white);
-        }
-        .search-input:focus { border-color: #04A052; box-shadow: 0 0 0 3px rgba(4,160,82,0.08); }
-
-        .flash-success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
-        .flash-error { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
-
-        .hamburger { display: none; background: none; border: none; font-size: 24px; color: var(--text-primary, #374151); cursor: pointer; padding: 4px; }
-        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 99; }
-        .sidebar-overlay.active { display: block; }
-
-
-        @media (max-width: 768px) {
-            .main-content { margin-left: 0; padding: 16px 16px 100px; }
-            .hamburger { display: block; }
-            .card { padding: 16px; }
-        }
+        .slot.filled { background: var(--compass-green, #04A052); }
+        .workspace-sub { font-size: 15px; color: var(--compass-muted, #6B7280); margin: 0 0 8px; }
+        .workspace-sub strong { color: var(--compass-text, #1F2937); }
+        .workspace-section { margin-top: 24px; }
+        .ui-empty-note { text-align: center; padding: 24px 0; font-size: 15px; color: var(--compass-muted, #6B7280); }
+        .btn-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 18px; border-radius: 999px; font-size: 15px; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .btn-pill-outline { background: var(--bg-card, #fff); color: var(--compass-text, #1F2937); border: 1px solid var(--compass-border, #E5E7EB); }
+        .btn-pill-outline:hover { border-color: #DC2626; color: #B91C1C; }
+        .btn-pill-primary { background: var(--compass-green, #04A052); color: #fff; border: 1px solid var(--compass-green, #04A052); }
+        .btn-pill-primary:hover:not(:disabled) { background: var(--compass-green-dark, #027039); }
+        .btn-pill:disabled { opacity: .5; cursor: not-allowed; }
+        .ui-list-actions form { margin: 0; }
+        .status-pill { display: inline-block; font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 999px; white-space: nowrap; }
+        .status-pill.available { background: #DCFCE7; color: #166534; }
+        .status-pill.offline { background: #F3F4F6; color: #4B5563; }
+        .helpers-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+        .helpers-tools a { font-size: 14px; color: var(--compass-muted, #6B7280); text-decoration: none; }
+        .helpers-tools a:hover { color: var(--compass-text, #1F2937); }
+        .helpers-tools input[type="text"] { min-height: 44px; width: 220px; max-width: 100%; border: 1px solid var(--compass-border, #E5E7EB); border-radius: 999px; padding: 0 16px; font-size: 15px; background: var(--bg-card, #fff); }
+        .helpers-tools input[type="text"]:focus { outline: 2px solid var(--compass-green, #04A052); outline-offset: 1px; }
+        .ui-table td small { display: block; font-size: 13px; color: var(--compass-muted, #6B7280); }
+        .assign-inline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .assign-inline select { min-height: 44px; border: 1px solid var(--compass-border, #E5E7EB); border-radius: 12px; padding: 0 12px; font-size: 15px; background: var(--bg-card, #fff); max-width: 100%; }
     </style>
-    @vite(['resources/css/app.css'])
-    @include('partials.ui-assets')
-<style>.helper-row{gap:12px;align-items:center}.helper-row>form{margin:0;flex-shrink:0}.helper-row .competency-pill{flex-shrink:0}.helper-row p{overflow-wrap:anywhere}@media(max-width:600px){.helper-row{flex-wrap:wrap}.helper-row>form{margin-left:auto}}</style>
-</head>
-<body class="compass-compact">
+@endpush
 
-    @include('layouts.partials.moderator-sidebar')
-
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <main class="main-content">
-
-        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <div class="flex items-center gap-4">
-                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
-                    <x-ui-icon name="menu"  />
-                </button>
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-gray-800">Manage Team</h1>
-                    <p class="text-sm text-gray-500 hidden sm:block">Helpers and adviser assignment workspace</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2 text-xs text-gray-400">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
-                Live counts
-            </div>
-        </div>
-
-        @if(session('success'))
-            <div class="flash-success"> {{ session('success') }}</div>
-        @endif
-        @if(session('error'))
-            <div class="flash-error"> {{ session('error') }}</div>
-        @endif
-
-        <!-- Stats -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="card py-4">
-                <p class="text-xs text-gray-400">Total Helpers</p>
-                <p class="text-2xl font-extrabold text-gray-800" id="statHelpers">{{ $manageStats['total_helpers'] }}</p>
-            </div>
-            <div class="card py-4">
-                <p class="text-xs text-gray-400">Unassigned Pool</p>
-                <p class="text-2xl font-extrabold text-amber-600" id="statUnassigned">{{ $manageStats['unassigned_helpers'] }}</p>
-            </div>
-            <div class="card py-4">
-                <p class="text-xs text-gray-400">Advisers</p>
-                <p class="text-2xl font-extrabold text-blue-600" id="statAdvisers">{{ $advisers->count() }}</p>
-            </div>
-            <div class="card py-4">
-                <p class="text-xs text-gray-400">Slots Used</p>
-                <p class="text-2xl font-extrabold text-emerald-600" id="statSlots">{{ $advisers->sum('assigned_helpers') }}</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Advisers -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Advisers</h3>
-                    <span class="text-xs text-gray-400">Capacity: {{ \App\Models\Helper::MAX_HELPERS_PER_ADVISER }} each</span>
-                </div>
-                <div class="space-y-3">
-                    @foreach($advisers as $adviser)
-                        <a href="{{ route('moderator.manage', array_merge(request()->except('workspace'), ['workspace' => $adviser->id])) }}"
-                           class="adviser-card {{ $selectedAdviser == $adviser->id ? 'selected' : '' }}">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-sm">
-                                    {{ substr($adviser->first_name, 0, 1) }}{{ substr($adviser->last_name, 0, 1) }}
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="font-semibold text-gray-800 text-sm truncate">{{ $adviser->full_name }}</p>
-                                    <p class="text-xs text-gray-400">
-                                        {{ $adviser->assigned_helpers }} assigned · {{ $adviser->remaining_slots }} slots left
-                                    </p>
-                                </div>
-                                <x-ui-icon name="chevron-right" class="text-gray-300 text-xs" />
-                            </div>
-                            <div class="slot-bar">
-                                @for($i = 0; $i < $adviser->capacity; $i++)
-                                    <div class="slot {{ $i < $adviser->assigned_helpers ? 'filled' : '' }}"></div>
-                                @endfor
-                            </div>
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-
-            <!-- Assignment Workspace -->
-            <div class="card lg:col-span-2">
-                @php
-                    $workspaceAdviser = $selectedAdviser
-                        ? $advisers->firstWhere('id', (int) $selectedAdviser)
-                        : $advisers->first();
-                @endphp
-                <div class="card-header">
-                    <h3>
-                        Assignment Workspace
-                        @if($workspaceAdviser)
-                            <span class="text-sm font-semibold text-[#04A052] ml-1">— {{ $workspaceAdviser->full_name }}</span>
-                        @endif
-                    </h3>
-                    @if($workspaceAdviser)
-                        <span class="text-xs text-gray-400">{{ $workspaceAdviser->remaining_slots }} of {{ $workspaceAdviser->capacity }} slots remaining</span>
-                    @endif
-                </div>
-
-                @if($workspaceAdviser)
-                    <p class="text-sm text-gray-500 mb-4">
-                        Helpers under <strong class="text-gray-700">{{ $workspaceAdviser->full_name }}</strong>
-                    </p>
-                    <div class="space-y-1 mb-6">
-                        @forelse($workspaceHelpers as $helper)
-                            <div class="helper-row">
-                                <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-semibold text-xs flex-shrink-0">
-                                    {{ substr($helper->first_name, 0, 1) }}{{ substr($helper->last_name, 0, 1) }}
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="font-semibold text-gray-800 text-sm">{{ $helper->full_name }}</p>
-                                    <p class="text-xs text-gray-400">{{ $helper->email }}</p>
-                                </div>
-                                <span class="competency-pill {{ $helper->latestCompetency?->competency_level ?? 'trainee' }}">
-                                    {{ ucfirst($helper->latestCompetency?->competency_level ?? 'trainee') }}
-                                </span>
-                                <form method="POST" data-helper-assignment action="{{ route('moderator.manage.unassign') }}">
-                                    @csrf
-                                    <input type="hidden" name="helper_id" value="{{ $helper->id }}">
-                                    <button type="submit" class="btn-ghost" title="Move to unassigned pool">
-                                        <x-ui-icon name="user-minus"  /> Unassign
-                                    </button>
-                                </form>
-                            </div>
-                        @empty
-                            <div class="text-center py-6 text-gray-400 text-sm">
-                                No helpers assigned to this adviser yet.
-                            </div>
-                        @endforelse
-                    </div>
-                    {{ $workspaceHelpers->links() }}
-
-                    <p class="text-sm text-gray-500 mb-3">Add helpers from the unassigned pool</p>
-                    <div class="space-y-1">
-                        @forelse($poolHelpers as $helper)
-                            <div class="helper-row">
-                                <div class="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 font-semibold text-xs flex-shrink-0">
-                                    {{ substr($helper->first_name, 0, 1) }}{{ substr($helper->last_name, 0, 1) }}
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="font-semibold text-gray-800 text-sm">{{ $helper->full_name }}</p>
-                                    <p class="text-xs text-gray-400">{{ $helper->email }}</p>
-                                </div>
-                                <span class="competency-pill {{ $helper->latestCompetency?->competency_level ?? 'trainee' }}">
-                                    {{ ucfirst($helper->latestCompetency?->competency_level ?? 'trainee') }}
-                                </span>
-                                <form method="POST" data-helper-assignment action="{{ route('moderator.manage.assign') }}">
-                                    @csrf
-                                    <input type="hidden" name="helper_id" value="{{ $helper->id }}">
-                                    <input type="hidden" name="adviser_id" value="{{ $workspaceAdviser->id }}">
-                                    <button type="submit" class="btn-primary" {{ $workspaceAdviser->remaining_slots <= 0 ? 'disabled style=opacity:.4;cursor:not-allowed' : '' }}>
-                                        <x-ui-icon name="user-plus"  /> Assign
-                                    </button>
-                                </form>
-                            </div>
-                        @empty
-                            <div class="text-center py-6 text-gray-400 text-sm">
-                                No helpers in the unassigned pool.
-                            </div>
-                        @endforelse
-                    </div>
-                    {{ $poolHelpers->links() }}
-                @else
-                    <div class="text-center py-10 text-gray-400">
-                        <p>Select an adviser to open the assignment workspace</p>
-                    </div>
-                @endif
-            </div>
-        </div>
-
-        <!-- All Helpers -->
-        <div class="card mt-6">
-            <div class="card-header">
-                <h3>All Helpers</h3>
-                <div class="flex items-center gap-3">
-                    <a href="{{ route('moderator.manage', request()->except(['adviser','page'])) }}" class="text-xs text-gray-400 hover:text-gray-600">All</a>
-                    <a href="{{ route('moderator.manage', array_merge(request()->except(['adviser','page']), ['adviser' => 'unassigned'])) }}" class="text-xs text-gray-400 hover:text-gray-600">Unassigned</a>
-                    <form method="GET" action="{{ route('moderator.manage') }}" class="relative">
-
-                        <input type="text" name="search" value="{{ $search }}" placeholder="Search name or ID..."
-                               class="search-input !pl-9 !py-2 !text-sm" style="width: 220px;">
-                        @if($adviserFilter) <input type="hidden" name="adviser" value="{{ $adviserFilter }}"> @endif
-                        @if($selectedAdviser) <input type="hidden" name="workspace" value="{{ $selectedAdviser }}"> @endif
-                    </form>
-                </div>
-            </div>
-            <div class="compact-table-wrap"><table class="compact-data-table"><thead><tr><th>Helper</th><th>Primary Adviser</th><th>Duty / readiness</th><th>Capacity</th><th>Status</th><th>Action</th></tr></thead><tbody>
-            @forelse($helpers as $helper)
-            <tr><td><strong>{{ $helper->full_name }}</strong><small>H-{{ str_pad($helper->id,3,'0',STR_PAD_LEFT) }}</small></td><td>{{ $helper->adviser?->full_name ?? 'Unassigned' }}</td>
-            <td>{{ \App\Models\HelperSchedule::coveringShiftFor($helper->id) ? 'On duty' : 'Off duty' }}<small>{{ $helper->getCurrentReadiness()?->assessment_result === 'ready' ? 'Ready' : 'Readiness required' }}</small></td>
-            <td><x-helper-capacity :helper="$helper" /></td><td><span class="status-pill {{ $helper->eligibility['assignable'] ? 'available' : 'offline' }}">{{ $helper->eligibility['label'] }}</span></td><td>
-            @if(!$helper->adviser)
-            <form method="POST" data-helper-assignment action="{{ route('moderator.manage.assign') }}" class="flex items-center gap-2">@csrf<input type="hidden" name="helper_id" value="{{ $helper->id }}"><label class="sr-only" for="assign-adviser-{{ $helper->id }}">Assign Adviser</label><select id="assign-adviser-{{ $helper->id }}" name="adviser_id" required><option value="">Select Adviser</option>@foreach($advisers as $adviser)<option value="{{ $adviser->id }}" @disabled($adviser->remaining_slots <= 0)>{{ $adviser->full_name }}</option>@endforeach</select><button type="submit" class="btn-primary">Assign</button></form>
-            @else — @endif</td></tr>
-            @empty<tr><td colspan="6">No helpers in this list</td></tr>@endforelse
-            </tbody></table></div>
-        </div>
-
-        <div class="mt-4">{{ $helpers->links() }}</div>
-    </main>
-
-    <!-- Bottom Navigation -->
-
+@push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('[data-helper-assignment]').forEach(form=>form.addEventListener('submit',event=>{
@@ -343,23 +54,160 @@
                 if(!form.checkValidity())return;form.dataset.submitting='true';form.querySelectorAll('button[type="submit"]').forEach(button=>{button.disabled=true;button.textContent='Saving...';});
             }));
 
+            const setStat = (key, value) => {
+                document.querySelectorAll('[data-stat="' + key + '"] .ui-kpi-value').forEach((el) => { el.textContent = value; });
+            };
             setInterval(function () {
                 fetch('/moderator/manage/stats', {
                     headers: { 'Accept': 'application/json' },
                 })
                     .then((response) => response.json())
                     .then((data) => {
-                        document.getElementById('statHelpers').textContent = data.total_helpers;
-                        document.getElementById('statUnassigned').textContent = data.unassigned_helpers;
-                        document.getElementById('statAdvisers').textContent = data.total_advisers;
-                        document.getElementById('statSlots').textContent = data.slots_taken;
+                        setStat('total_helpers', data.total_helpers);
+                        setStat('unassigned_helpers', data.unassigned_helpers);
+                        setStat('total_advisers', data.total_advisers);
+                        setStat('slots_taken', data.slots_taken);
                     })
                     .catch(() => {});
             }, 30000);
         });
     </script>
+@endpush
 
-    @include('layouts.partials.pwa-banner')
+@section('content')
+    @php
+        $levelTone = ['advanced' => 'blue', 'expert' => 'green', 'proficient' => 'amber'];
+        $initials = fn ($m) => strtoupper(substr($m->first_name, 0, 1).substr($m->last_name, 0, 1));
+        $workspaceAdviser = $selectedAdviser
+            ? $advisers->firstWhere('id', (int) $selectedAdviser)
+            : $advisers->first();
+    @endphp
 
-</body>
-</html>
+    <x-ui.page-header title="Manage Team" description="Helpers and adviser assignment workspace" />
+
+    @if(session('success'))
+        <div class="manage-flash success">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="manage-flash error">{{ session('error') }}</div>
+    @endif
+
+    <x-ui.kpi-grid>
+        <x-ui.kpi label="Total Helpers" :value="$manageStats['total_helpers']" tone="neutral" data-stat="total_helpers" />
+        <x-ui.kpi label="Helpers without an Adviser" :value="$manageStats['unassigned_helpers']" tone="amber" data-stat="unassigned_helpers" />
+        <x-ui.kpi label="Advisers" :value="$advisers->count()" tone="blue" data-stat="total_advisers" />
+        <x-ui.kpi label="Slots Used" :value="$advisers->sum('assigned_helpers')" tone="green" data-stat="slots_taken" />
+    </x-ui.kpi-grid>
+
+    <div class="manage-columns">
+        <x-ui.card title="Advisers">
+            <x-slot:actions>
+                <span class="ui-card-sub">Capacity: {{ \App\Models\Helper::MAX_HELPERS_PER_ADVISER }} each</span>
+            </x-slot:actions>
+            @foreach($advisers as $adviser)
+                <a href="{{ route('moderator.manage', array_merge(request()->except('workspace'), ['workspace' => $adviser->id])) }}"
+                   class="adviser-card {{ $workspaceAdviser && $workspaceAdviser->id == $adviser->id ? 'selected' : '' }}"
+                   @if($workspaceAdviser && $workspaceAdviser->id == $adviser->id) aria-current="true" @endif>
+                    <x-ui.list-row :initials="$initials($adviser)" :title="$adviser->full_name" :subtitle="$adviser->assigned_helpers.' assigned · '.$adviser->remaining_slots.' slots left'">
+                        <x-slot:actions>
+                            <x-ui-icon name="chevron-right" class="adviser-chevron" />
+                        </x-slot:actions>
+                    </x-ui.list-row>
+                    <div class="slot-bar" aria-hidden="true">
+                        @for($i = 0; $i < $adviser->capacity; $i++)
+                            <div class="slot {{ $i < $adviser->assigned_helpers ? 'filled' : '' }}"></div>
+                        @endfor
+                    </div>
+                </a>
+            @endforeach
+        </x-ui.card>
+
+        <x-ui.card title="Assignment Workspace">
+            @if($workspaceAdviser)
+                <x-slot:actions>
+                    <span class="ui-card-sub">{{ $workspaceAdviser->remaining_slots }} of {{ $workspaceAdviser->capacity }} slots remaining</span>
+                </x-slot:actions>
+
+                <p class="workspace-sub">Helpers under <strong>{{ $workspaceAdviser->full_name }}</strong></p>
+                @forelse($workspaceHelpers as $helper)
+                    @php $level = $helper->latestCompetency?->competency_level ?? 'trainee'; @endphp
+                    <x-ui.list-row :initials="$initials($helper)" :title="$helper->full_name" :subtitle="$helper->email">
+                        <x-slot:badge><x-ui.badge :tone="$levelTone[$level] ?? 'neutral'">{{ ucfirst($level) }}</x-ui.badge></x-slot:badge>
+                        <x-slot:actions>
+                            <form method="POST" data-helper-assignment action="{{ route('moderator.manage.unassign') }}">
+                                @csrf
+                                <input type="hidden" name="helper_id" value="{{ $helper->id }}">
+                                <button type="submit" class="btn-pill btn-pill-outline" title="Move to Helpers without an Adviser">
+                                    <x-ui-icon name="user-minus" /> Unassign
+                                </button>
+                            </form>
+                        </x-slot:actions>
+                    </x-ui.list-row>
+                @empty
+                    <p class="ui-empty-note">No helpers assigned to this adviser yet.</p>
+                @endforelse
+                {{ $workspaceHelpers->links('vendor.pagination.compass', ['noun' => 'helpers']) }}
+
+                <p class="workspace-sub workspace-section">Add Helpers without an Adviser</p>
+                @forelse($poolHelpers as $helper)
+                    @php $level = $helper->latestCompetency?->competency_level ?? 'trainee'; @endphp
+                    <x-ui.list-row :initials="$initials($helper)" :title="$helper->full_name" :subtitle="$helper->email">
+                        <x-slot:badge><x-ui.badge :tone="$levelTone[$level] ?? 'neutral'">{{ ucfirst($level) }}</x-ui.badge></x-slot:badge>
+                        <x-slot:actions>
+                            <form method="POST" data-helper-assignment action="{{ route('moderator.manage.assign') }}">
+                                @csrf
+                                <input type="hidden" name="helper_id" value="{{ $helper->id }}">
+                                <input type="hidden" name="adviser_id" value="{{ $workspaceAdviser->id }}">
+                                <button type="submit" class="btn-pill btn-pill-primary" {{ $workspaceAdviser->remaining_slots <= 0 ? 'disabled' : '' }}>
+                                    <x-ui-icon name="user-plus" /> Assign
+                                </button>
+                            </form>
+                        </x-slot:actions>
+                    </x-ui.list-row>
+                @empty
+                    <p class="ui-empty-note">No helpers without an Adviser.</p>
+                @endforelse
+                {{ $poolHelpers->links('vendor.pagination.compass', ['noun' => 'helpers']) }}
+            @else
+                <x-ui.empty title="Select an adviser to open the assignment workspace" />
+            @endif
+        </x-ui.card>
+    </div>
+
+    <x-ui.card title="All Helpers">
+        <x-slot:actions>
+            <div class="helpers-tools">
+                <a href="{{ route('moderator.manage', request()->except(['adviser','page'])) }}">All</a>
+                <a href="{{ route('moderator.manage', array_merge(request()->except(['adviser','page']), ['adviser' => 'unassigned'])) }}">Unassigned</a>
+                <form method="GET" action="{{ route('moderator.manage') }}">
+                    <input type="text" name="search" value="{{ $search }}" placeholder="Search name or ID..." aria-label="Search helpers by name or ID">
+                    @if($adviserFilter) <input type="hidden" name="adviser" value="{{ $adviserFilter }}"> @endif
+                    @if($selectedAdviser) <input type="hidden" name="workspace" value="{{ $selectedAdviser }}"> @endif
+                </form>
+            </div>
+        </x-slot:actions>
+
+        <x-ui.table :stack="true">
+            <thead><tr><th>Helper</th><th>Primary Adviser</th><th>Duty / readiness</th><th>Capacity</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+                @forelse($helpers as $helper)
+                    <tr>
+                        <td data-label="Helper"><strong>{{ $helper->full_name }}</strong><small>H-{{ str_pad($helper->id,3,'0',STR_PAD_LEFT) }}</small></td>
+                        <td data-label="Primary Adviser">{{ $helper->adviser?->full_name ?? 'Unassigned' }}</td>
+                        <td data-label="Duty / readiness">{{ \App\Models\HelperSchedule::coveringShiftFor($helper->id) ? 'On duty' : 'Off duty' }}<small>{{ $helper->getCurrentReadiness()?->assessment_result === 'ready' ? 'Ready' : 'Readiness required' }}</small></td>
+                        <td data-label="Capacity"><x-helper-capacity :helper="$helper" /></td>
+                        <td data-label="Status"><span class="status-pill {{ $helper->eligibility['assignable'] ? 'available' : 'offline' }}">{{ $helper->eligibility['label'] }}</span></td>
+                        <td data-label="Action" class="ui-actions">
+                            @if(!$helper->adviser)
+                                <form method="POST" data-helper-assignment action="{{ route('moderator.manage.assign') }}" class="assign-inline">@csrf<input type="hidden" name="helper_id" value="{{ $helper->id }}"><label class="sr-only" for="assign-adviser-{{ $helper->id }}">Assign Adviser</label><select id="assign-adviser-{{ $helper->id }}" name="adviser_id" required><option value="">Select Adviser</option>@foreach($advisers as $adviser)<option value="{{ $adviser->id }}" @disabled($adviser->remaining_slots <= 0)>{{ $adviser->full_name }}</option>@endforeach</select><button type="submit" class="btn-pill btn-pill-primary">Assign</button></form>
+                            @else — @endif
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="6">No helpers in this list</td></tr>
+                @endforelse
+            </tbody>
+        </x-ui.table>
+        {{ $helpers->links('vendor.pagination.compass', ['noun' => 'helpers']) }}
+    </x-ui.card>
+@endsection

@@ -61,4 +61,20 @@ class ModeratorPilotPagesTest extends TestCase
             $this->assertStringContainsString('id="'.$id.'"', $html);
         }
     }
+
+    public function test_manage_team_matches_reference_structure(): void
+    {
+        $au = User::factory()->create(['role' => 'adviser', 'is_active' => true]);
+        $adviser = \App\Models\Adviser::create(['user_account_id' => $au->id, 'first_name' => 'Ada', 'last_name' => 'Adviser', 'email' => $au->email]);
+        $user = User::factory()->create(['role' => 'helper', 'is_active' => true]);
+        \App\Models\Helper::create(['user_account_id' => $user->id, 'first_name' => 'Maya', 'last_name' => 'Cordero', 'email' => $user->email, 'adviser_id' => $adviser->id]);
+        $user2 = User::factory()->create(['role' => 'helper', 'is_active' => true]);
+        \App\Models\Helper::create(['user_account_id' => $user2->id, 'first_name' => 'Free', 'last_name' => 'Helper', 'email' => $user2->email]);
+
+        $this->actingAs($this->moderator())->get(route('moderator.manage'))->assertOk()
+            ->assertSee('Helpers without an Adviser')->assertDontSee('Unassigned Pool')
+            ->assertSee('ui-kpi--amber', false)->assertSee('ui-list-row', false)->assertSee('ui-table--stack', false)
+            ->assertSee(route('moderator.manage.unassign'), false)->assertSee(route('moderator.manage.assign'), false)
+            ->assertSee('data-helper-assignment', false)->assertSee('data-stat="unassigned_helpers"', false);
+    }
 }
