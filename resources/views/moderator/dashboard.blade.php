@@ -19,6 +19,15 @@
         .dashboard-flash.success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; }
         .dashboard-flash.error { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
         #dashboard-analytics { margin-bottom: 24px; }
+        #dashboard-analytics .co-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+        #dashboard-analytics .co-overview .co-kpi { align-items: center; text-align: center; border: 1px solid transparent; border-radius: 14px; background: #f3f4f6; padding: 20px 16px; }
+        #dashboard-analytics .co-kpi h3 { order: 0; font-size: 14px; font-weight: 600; color: #1F2937; }
+        #dashboard-analytics .co-kpi > strong { font-size: 40px; font-weight: 800; line-height: 1.1; color: #374151; }
+        #dashboard-analytics .co-kpi:has(#statQueue) { background: #fffbeb; } #dashboard-analytics .co-kpi:has(#statQueue) > strong { color: #b45309; }
+        #dashboard-analytics .co-kpi:has(#statSessions) { background: #eff6ff; } #dashboard-analytics .co-kpi:has(#statSessions) > strong { color: #1d4ed8; }
+        #dashboard-analytics .co-kpi:has(#statEmergency) { background: #fef2f2; } #dashboard-analytics .co-kpi:has(#statEmergency) > strong { color: #b91c1c; }
+        #dashboard-analytics .co-kpi:has(#statHelpers) { background: #f0fdf4; } #dashboard-analytics .co-kpi:has(#statHelpers) > strong { color: #15803d; }
+        @media (max-width: 768px) { #dashboard-analytics .co-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } #dashboard-analytics .co-kpi > strong { font-size: 32px; } }
         #dashboard-analytics .analytics-toolbar{justify-content:flex-end}
         #dashboard-analytics .analytics-period-form{justify-content:flex-end;margin-inline-start:auto;max-width:100%}
     </style>
@@ -44,13 +53,6 @@
         ['count' => $stats['emergency_count'], 'label' => $stats['emergency_count'] === 1 ? 'Emergency open' : 'Emergencies open', 'href' => route('moderator.emergency'), 'tone' => 'red'],
         ['count' => $stats['queue_waiting'], 'label' => 'Waiting in queue', 'href' => route('moderator.queue'), 'tone' => 'amber'],
     ]" />
-
-    <x-ui.kpi-grid>
-        <x-ui.kpi label="Active sessions" :value="$stats['active_sessions']" tone="blue" :href="route('moderator.sessions')" />
-        <x-ui.kpi label="Waiting in queue" :value="$stats['queue_waiting']" tone="amber" :note="$stats['unserved'].' waiting 30+ min'" :href="route('moderator.queue')" />
-        <x-ui.kpi label="Open emergencies" :value="$stats['emergency_count']" tone="red" :href="route('moderator.emergency')" />
-        <x-ui.kpi label="Helpers available" :value="$stats['available_helpers']" tone="green" :href="route('moderator.manage')" />
-    </x-ui.kpi-grid>
 
     <section id="dashboard-analytics" aria-label="Operations dashboard summaries">@include('moderator.partials.dashboard-analytics')</section>
 

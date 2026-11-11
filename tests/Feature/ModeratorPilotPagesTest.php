@@ -20,7 +20,7 @@ class ModeratorPilotPagesTest extends TestCase
     public function test_dashboard_uses_shared_shell_and_header(): void
     {
         $response = $this->actingAs($this->moderator())->get(route('moderator.dashboard'))->assertOk()
-            ->assertSee('data-page-header', false)->assertSee('ui-kpis', false);
+            ->assertSee('data-page-header', false)->assertSee('co-kpis', false);
         $this->assertSame(1, substr_count($response->getContent(), 'data-page-slot'));
     }
 
@@ -47,6 +47,18 @@ class ModeratorPilotPagesTest extends TestCase
 
         $html = $this->get(route('moderator.dashboard'))->assertOk()->getContent();
         $this->assertMatchesRegularExpression('/ui-attention-count">\s*1\s*<\/strong>\s*<span class="ui-attention-label">Waiting in queue/', $html);
-        $this->assertMatchesRegularExpression('/Waiting in queue<\/span>\s*<strong class="ui-kpi-value">1</', $html);
+        $this->assertMatchesRegularExpression('/Waiting requests<\/h3>\s*<strong\s+id="statQueue"\s*>\s*1\s*</', $html);
+    }
+
+    public function test_each_moderator_kpi_appears_once_and_stays_live(): void
+    {
+        $html = $this->actingAs($this->moderator())->get(route('moderator.dashboard'))->assertOk()->getContent();
+        foreach (['Waiting requests', 'Available Helpers', 'Active sessions', 'Active emergencies'] as $label) {
+            $this->assertSame(1, preg_match_all('/<h3[^>]*>'.preg_quote($label, '/').'<\/h3>/', $html), $label);
+        }
+        $this->assertStringNotContainsString('ui-kpi', $html);
+        foreach (['statQueue', 'statSessions', 'statHelpers', 'statEmergency'] as $id) {
+            $this->assertStringContainsString('id="'.$id.'"', $html);
+        }
     }
 }
