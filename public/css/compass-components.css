@@ -57,3 +57,41 @@ a.ui-kpi:hover { box-shadow: var(--shadow-2); }
 .ui-chip { display: inline-flex; align-items: center; gap: var(--space-1); min-height: 32px; padding: 0 var(--space-3); border-radius: var(--radius-pill); font-size: var(--text-sm); font-weight: 600; text-decoration: none; background: var(--compass-green-soft); color: var(--compass-green-dark); border: 1px solid var(--compass-border); }
 .ui-chip:hover { border-color: var(--compass-green); }
 .ui-chip-clear { font-size: var(--text-sm); font-weight: 600; color: var(--compass-muted); text-decoration: underline; }
+
+.ui-table { width: 100%; overflow-x: auto; }
+.ui-table table { width: 100%; border-collapse: collapse; font-size: var(--text-base); }
+.ui-table th { padding: var(--space-3) var(--space-4); text-align: left; font-size: var(--text-caption); font-weight: 700; color: var(--compass-muted); background: #f3f4f6; white-space: nowrap; }
+.ui-table td { padding: var(--space-3) var(--space-4); height: var(--row-h); border-bottom: 1px solid var(--compass-divider); font-size: var(--text-base); color: var(--compass-text); vertical-align: middle; }
+.ui-table td.ui-actions { display: table-cell; white-space: nowrap; text-align: right; }
+.ui-table td.ui-actions > * { margin-left: var(--space-2); }
+@media (max-width: 768px) {
+  .ui-table--stack { overflow-x: visible; }
+  .ui-table--stack table, .ui-table--stack tbody { display: block; }
+  .ui-table--stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .ui-table--stack tr { display: grid; grid-template-columns: 1fr; gap: var(--space-2); margin-bottom: var(--space-3); padding: var(--space-4); border: 1px solid var(--compass-border); border-radius: var(--radius-lg); background: #fff; }
+  .ui-table--stack td { display: block; height: auto; padding: 0; border: 0; }
+  .ui-table--stack td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 2px; font-size: var(--text-sm); font-weight: 600; color: var(--compass-muted); }
+  .ui-table--stack td.ui-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); grid-column: 1 / -1; text-align: left; white-space: normal; }
+  .ui-table--stack td.ui-actions > * { margin-left: 0; }
+}
+
+.ui-list-row { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3) 0; border-bottom: 1px solid var(--compass-divider); }
+.ui-avatar { flex: 0 0 44px; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--compass-green-soft); color: var(--compass-green-dark); font-size: var(--text-base); font-weight: 700; }
+.ui-list-main { flex: 1 1 auto; min-width: 0; }
+.ui-list-title { margin: 0; font-size: var(--text-base); font-weight: 700; color: var(--compass-text); }
+.ui-list-sub { margin: 2px 0 0; font-size: var(--text-caption); color: var(--compass-muted); }
+.ui-list-side { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-3); }
+.ui-list-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+@media (max-width: 480px) { .ui-list-row { flex-wrap: wrap; } .ui-list-side { width: 100%; justify-content: flex-start; } }
+
+.ui-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-4); }
+.ui-pagination-summary { margin: 0; font-size: var(--text-caption); color: var(--compass-muted); }
+.ui-pagination-pills { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.ui-page { display: inline-flex; align-items: center; justify-content: center; min-width: var(--control-h); height: var(--control-h); padding: 0 var(--space-3); border: 1px solid var(--compass-border); border-radius: var(--radius-pill); background: #fff; color: var(--compass-text); font-size: var(--text-base); font-weight: 600; text-decoration: none; }
+a.ui-page:hover { border-color: var(--compass-green); color: var(--compass-green-dark); }
+a.ui-page:focus-visible { outline: none; box-shadow: var(--ring); }
+.ui-page--active { background: var(--compass-green); border-color: var(--compass-green); color: #fff; }
+.ui-page--disabled { opacity: .45; }
+.ui-page--gap { border-color: transparent; background: transparent; }
+.ui-page svg { width: 18px; height: 18px; }
+@media (max-width: 480px) { .ui-pagination { justify-content: center; } }

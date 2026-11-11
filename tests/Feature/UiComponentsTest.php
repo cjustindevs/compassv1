@@ -57,4 +57,39 @@ class UiComponentsTest extends TestCase
         $this->assertStringContainsString('Nothing here', $html);
         $this->assertSame(1, substr_count($html, '<a '));
     }
+
+    public function test_table_stack_mode_marks_wrapper_for_phone_cards(): void
+    {
+        $html = Blade::render('<x-ui.table :stack="true"><thead><tr><th>Name</th></tr></thead><tbody><tr><td data-label="Name">Ana</td></tr></tbody></x-ui.table>');
+
+        $this->assertStringContainsString('ui-table--stack', $html);
+        $this->assertStringContainsString('<table', $html);
+        $this->assertStringContainsString('data-label="Name"', $html);
+
+        $plain = Blade::render('<x-ui.table><tbody><tr><td>x</td></tr></tbody></x-ui.table>');
+        $this->assertStringNotContainsString('ui-table--stack', $plain);
+    }
+
+    public function test_list_row_renders_avatar_title_and_actions(): void
+    {
+        $html = Blade::render('<x-ui.list-row initials="AB" title="Ana Bell" subtitle="Grade 7"><x-slot:badge>Active</x-slot:badge><x-slot:actions><a href="/v">View</a></x-slot:actions></x-ui.list-row>');
+
+        $this->assertStringContainsString('ui-list-row', $html);
+        $this->assertStringContainsString('AB', $html);
+        $this->assertStringContainsString('Ana Bell', $html);
+        $this->assertStringContainsString('Grade 7', $html);
+        $this->assertStringContainsString('<a href="/v">View</a>', $html);
+        $this->assertStringContainsString('Active', $html);
+    }
+
+    public function test_pagination_view_shows_range_and_pills(): void
+    {
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(range(1, 10), 19, 10, 1, ['path' => '/helpers']);
+        $html = $paginator->links('vendor.pagination.compass', ['noun' => 'helpers'])->toHtml();
+
+        $this->assertStringContainsString('Showing 1–10 of 19 helpers', $html);
+        $this->assertMatchesRegularExpression('/aria-current="page"[^>]*>\s*1\s*</', $html);
+        $this->assertStringContainsString('page=2', $html);
+        $this->assertStringContainsString('ui-pagination', $html);
+    }
 }
