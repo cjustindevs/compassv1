@@ -81,6 +81,7 @@ class AppServiceProvider extends ServiceProvider
             'partials.sidebar',
             'layouts.partials.bottom-nav',
             'partials.emergency-strip',
+            'moderator.dashboard',
         ], SidebarComposer::class);
     }
 }

@@ -116,3 +116,18 @@ a.ui-page:focus-visible { outline: none; box-shadow: var(--ring); }
 .ui-bottom-nav-item:focus-visible { outline: none; box-shadow: inset var(--ring); }
 .ui-bottom-nav-badge { position: absolute; top: 6px; left: calc(50% + 8px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--compass-green); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
 .ui-bottom-nav-badge--danger { background: var(--compass-danger); }
+
+/* Needs your attention strip */
+.ui-attention { margin-bottom: var(--space-6); }
+.ui-attention-title { margin: 0 0 var(--space-3); font-size: var(--text-xl); font-weight: 700; color: var(--compass-text); }
+.ui-attention-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-4); }
+.ui-attention-item { display: flex; align-items: center; gap: var(--space-4); min-height: 72px; padding: var(--space-4) var(--space-5); border-radius: var(--radius-lg); border: 1px solid var(--compass-border); background: #f3f4f6; color: #374151; text-decoration: none; }
+.ui-attention-item:hover, .ui-attention-item:focus-visible { box-shadow: var(--shadow-2); }
+.ui-attention-count { font-size: var(--text-kpi); font-weight: 800; line-height: 1; flex-shrink: 0; }
+.ui-attention-label { flex: 1; min-width: 0; font-size: var(--text-base); font-weight: 600; color: var(--compass-text); }
+.ui-attention-arrow { font-size: var(--text-xl); font-weight: 700; flex-shrink: 0; }
+.ui-attention-item--red { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.ui-attention-item--amber { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+.ui-attention-item--blue { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.ui-attention-item--green { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+@media (max-width: 768px) { .ui-attention-count { font-size: var(--text-4xl); } .ui-attention-item { padding: var(--space-4); } }

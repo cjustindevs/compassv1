@@ -1,241 +1,79 @@
-<!DOCTYPE html>
-<html class="compass-ui" lang="en">
-<head>
-    @include('layouts.partials.pwa-meta')
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+@extends('layouts.app')
+
+@section('title', 'COMPASS – Moderator Dashboard')
+
+@push('styles')
     <meta name="user-id" content="{{ auth()->id() }}">
-    <title>COMPASS – Moderator Dashboard</title>
-
-    @vite(['resources/js/app.js', 'resources/js/moderator-notifications.js'])
+    @vite(['resources/js/moderator-notifications.js'])
     <style>
-        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg-primary, #F8FBF9); }
-
-        .main-content {
-            margin-left: var(--sidebar-w, 264px);
-            padding: 24px 32px 80px;
-            min-height: 100vh;
-        }
-
-        .stat-card {
-            background: var(--bg-card, white);
-            border-radius: 16px;
-            padding: 20px 24px;
-            border: 1px solid var(--border-color, #E5E7EB);
-            transition: all 0.3s ease;
-        }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--shadow-color, rgba(0,0,0,0.04)); }
-        .stat-number { font-size: 28px; font-weight: 800; color: var(--text-primary, #1F2937); }
-        .stat-number.emergency { color: #DC2626; }
-        .stat-number.active { color: #2563EB; }
-        .stat-number.queue { color: #D97706; }
-        .stat-number.helper { color: #059669; }
-        .stat-label { font-size: 13px; color: var(--text-secondary, #6B7280); }
-
-        .card {
-            background: var(--bg-card, white);
-            border-radius: 20px;
-            padding: 24px;
-            border: 1px solid var(--border-color, #E5E7EB);
-            box-shadow: var(--card-shadow, 0 4px 20px rgba(0,0,0,0.01));
-        }
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-        .card-header h3 { font-weight: 700; font-size: 16px; color: var(--text-primary, #1F2937); }
-
-        .session-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-light, #F3F4F6);
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .session-item:hover { background: var(--bg-hover, #F9FAFB); }
-        .session-item:last-child { border-bottom: none; }
-
-        .risk-badge {
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            display: inline-block;
-        }
-        .risk-badge.low { background: #DCFCE7; color: #166534; }
-        .risk-badge.moderate { background: #FEF3C7; color: #92400E; }
-        .risk-badge.high { background: #FEE2E2; color: #991B1B; }
-        .risk-badge.emergency { background: #FEE2E2; color: #991B1B; animation: pulse-risk 1.5s infinite; }
-        @keyframes pulse-risk { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
-
-        .status-badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .status-badge.active { background: #DBEAFE; color: #1D4ED8; }
-        .status-badge.assigned { background: #FEF3C7; color: #92400E; }
-
-        .activity-item {
-            display: flex;
-            gap: 12px;
-            padding: 10px 0;
-            border-bottom: 1px solid #F3F4F6;
-        }
+        .activity-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--compass-border, #E5E7EB); text-decoration: none; }
         .activity-item:last-child { border-bottom: none; }
-        .activity-item .icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            font-size: 14px;
-        }
-        .activity-item .icon.emergency { background: #FEE2E2; color: #DC2626; }
-        .activity-item .icon.queue { background: #FEF3C7; color: #D97706; }
-        .activity-item .icon.feedback { background: #DCFCE7; color: #166534; }
-        .activity-item .icon.assignment { background: #DBEAFE; color: #1D4ED8; }
         .activity-item .content { flex: 1; min-width: 0; }
-        .activity-item .content .message { font-weight: 500; font-size: 14px; color: var(--text-primary, #1F2937); }
-        .activity-item .content .detail { font-size: 13px; color: var(--text-secondary, #6B7280); }
-        .activity-item .content .time { font-size: 11px; color: var(--text-muted, #9CA3AF); }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #04A052, #038A45);
-            color: white;
-            padding: 8px 18px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 13px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-primary:hover { background: #027039; transform: scale(1.02); }
-        .btn-outline {
-            background: var(--bg-card, white);
-            color: #DC2626;
-            padding: 8px 18px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 13px;
-            border: 1.5px solid #FECACA;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-outline:hover { background: var(--bg-hover, #FEF2F2); }
-
-        .flash-success { background: var(--bg-active, #EAF8F0); color: #027039; border: 1px solid var(--border-color, #D0F0D8); border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
-        .flash-error { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
-
-        .hamburger { display: none; background: none; border: none; font-size: 24px; color: var(--text-primary, #374151); cursor: pointer; padding: 4px; }
-        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 99; }
-        .sidebar-overlay.active { display: block; }
-
-        .moderator-dashboard-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:24px;width:100%}
-        .moderator-dashboard-title{display:flex;align-items:center;gap:16px;min-width:0}
-        .moderator-dashboard-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-inline-start:auto;flex-wrap:wrap}
-        .compass-ui .moderator-dashboard-header .moderator-dashboard-actions .btn-outline{white-space:nowrap}
+        .activity-item .content .message { font-weight: 600; font-size: 15px; color: var(--compass-text, #1F2937); }
+        .activity-item .content .detail { font-size: 14px; color: var(--compass-muted, #6B7280); overflow-wrap: anywhere; }
+        .activity-item .content .time { font-size: 13px; color: var(--compass-muted, #6B7280); }
+        .ui-empty-note { text-align: center; padding: 32px 0; font-size: 15px; color: var(--compass-muted, #6B7280); }
+        .dashboard-columns { display: grid; grid-template-columns: 1fr; gap: 0 24px; align-items: start; }
+        @media (min-width: 1024px) { .dashboard-columns { grid-template-columns: 1fr 1fr; } }
+        .dashboard-flash { border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
+        .dashboard-flash.success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; }
+        .dashboard-flash.error { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
+        #dashboard-analytics { margin-bottom: 24px; }
         #dashboard-analytics .analytics-toolbar{justify-content:flex-end}
         #dashboard-analytics .analytics-period-form{justify-content:flex-end;margin-inline-start:auto;max-width:100%}
-
-        @media (max-width: 768px) {
-            .main-content { margin-left: 0; padding: 16px 16px 100px; }
-            .hamburger { display: block; }
-            .stat-number { font-size: 20px; }
-            .session-item { flex-wrap: wrap; gap: 8px; }
-        }
-        @media (max-width: 480px) {
-            .stat-number { font-size: 18px; }
-            .card { padding: 16px; }
-        }
     </style>
-    @vite(['resources/css/app.css'])
-    @include('partials.ui-assets')
-</head>
-<body class="compass-compact">
+@endpush
 
-    @include('layouts.partials.moderator-sidebar')
+@section('content')
+    <x-ui.page-header title="Moderator Dashboard" description="Overview of the peer support program">
+        <x-slot:actions>
+            <a href="{{ route('moderator.emergency') }}" class="btn-outline-danger">
+                <x-ui-icon name="warning" /> Emergency
+            </a>
+        </x-slot:actions>
+    </x-ui.page-header>
 
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    @if(session('success'))
+        <div class="dashboard-flash success">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="dashboard-flash error">{{ session('error') }}</div>
+    @endif
 
-    <main class="main-content">
+    <x-ui.attention :items="[
+        ['count' => $emergencyCount ?? 0, 'label' => ($emergencyCount ?? 0) === 1 ? 'Emergency open' : 'Emergencies open', 'href' => route('moderator.emergency'), 'tone' => 'red'],
+        ['count' => $queueCount ?? 0, 'label' => 'Waiting in queue', 'href' => route('moderator.queue'), 'tone' => 'amber'],
+    ]" />
 
-        <div class="moderator-dashboard-header">
-            <div class="moderator-dashboard-title">
-                <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
-                    <x-ui-icon name="menu"  />
-                </button>
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-gray-800">Moderator Dashboard</h1>
-                    <p class="text-sm text-gray-500 hidden sm:block">Overview of the peer support program</p>
-                </div>
-            </div>
-            <div class="moderator-dashboard-actions">
-                <a href="{{ route('moderator.emergency') }}" class="btn-outline">
-                    <x-ui-icon name="warning"  /> Emergency
+    <x-ui.kpi-grid>
+        <x-ui.kpi label="Active sessions" :value="$stats['active_sessions']" tone="blue" :href="route('moderator.sessions')" />
+        <x-ui.kpi label="Waiting in queue" :value="$stats['queue_waiting']" tone="amber" :note="$stats['unserved'].' waiting 30+ min'" :href="route('moderator.queue')" />
+        <x-ui.kpi label="Open emergencies" :value="$stats['emergency_count']" tone="red" :href="route('moderator.emergency')" />
+        <x-ui.kpi label="Helpers available" :value="$stats['available_helpers']" tone="green" :href="route('moderator.manage')" />
+    </x-ui.kpi-grid>
+
+    <section id="dashboard-analytics" aria-label="Operations dashboard summaries">@include('moderator.partials.dashboard-analytics')</section>
+
+    <div class="dashboard-columns">
+        <x-ui.card title="Recent Activity">
+            <x-slot:actions>
+                <a href="{{ route('moderator.reports',['tab'=>'activity']) }}" class="text-sm text-green-700">View All</a>
+            </x-slot:actions>
+            @forelse($recentActivity as $activity)
+                <a href="{{ $activity['link'] }}" class="activity-item no-underline">
+                    <div class="content">
+                        <div class="message">{{ $activity['title'] }}</div>
+                        <div class="detail">{{ $activity['message'] }}</div>
+                        <div class="time">{{ $activity['time'] }}</div>
+                    </div>
                 </a>
-            </div>
-        </div>
+            @empty
+                <p class="ui-empty-note">No recent activity</p>
+            @endforelse
+        </x-ui.card>
 
-        @if(session('success'))
-            <div class="flash-success"> {{ session('success') }}</div>
-        @endif
-        @if(session('error'))
-            <div class="flash-error"> {{ session('error') }}</div>
-        @endif
-
-        <!-- High Risk Banner -->
-
-
-        <section id="dashboard-analytics" aria-label="Operations dashboard summaries">@include('moderator.partials.dashboard-analytics')</section>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Recent Activity -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Recent Activity</h3><a href="{{ route('moderator.reports',['tab'=>'activity']) }}" class="text-sm text-green-700">View All</a>
-                </div>
-                <div>
-                    @forelse($recentActivity as $activity)
-                        <a href="{{ $activity['link'] }}" class="activity-item no-underline">
-                            <div class="content">
-                                <div class="message">{{ $activity['title'] }}</div>
-                                <div class="detail">{{ $activity['message'] }}</div>
-                                <div class="time">{{ $activity['time'] }}</div>
-                            </div>
-                        </a>
-                    @empty
-                        <div class="text-center py-8 text-gray-400">
-                            <p>No recent activity</p>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="card">
-                <div class="card-header">
-                    <h3>Quick Actions</h3>
-                </div>
-                <div class="space-y-3">
+        <x-ui.card title="Quick Actions">
+            <div class="space-y-3">
                     <a href="{{ route('moderator.queue') }}" class="flex items-center gap-4 p-4 bg-amber-50 border border-amber-100 rounded-2xl hover:bg-amber-100 transition no-underline">
                         <div class="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
                             <x-ui-icon name="hourglass" class="text-amber-600 text-lg" />
@@ -276,18 +114,13 @@
                         </div>
                         <x-ui-icon name="chevron-right" class="text-gray-300" />
                     </a>
-                </div>
             </div>
-        </div>
-
-    </main>
-
-    <!-- Bottom Navigation -->
+        </x-ui.card>
+    </div>
 
     <meta id="moderatorEmergencyConfig" content="{{ json_encode(['kind' => 'dashboard', 'stats' => route('moderator.dashboard.stats', request()->only('period','from','to')), 'signature' => $overviewSignature]) }}">
+@endsection
+
+@push('scripts')
     <script src="{{ asset('js/moderator-emergency.js') }}?v={{ filemtime(public_path('js/moderator-emergency.js')) }}" defer></script>
-
-    @include('layouts.partials.pwa-banner')
-
-</body>
-</html>
+@endpush
