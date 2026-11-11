@@ -18,7 +18,7 @@
 .analytics-chart-card { min-width: 0; border: 1px solid var(--admin-border, #e5e7eb); border-radius: 12px; padding: 18px; background: var(--admin-card, #fff); }
 .analytics-card-heading { align-items: flex-start; }
 .analytics-card-heading > div { flex: 1 1 180px; min-width: 0; }
-.analytics-card-heading h3 { margin: 0; font-size: 15px; font-weight: 700; }
+.analytics-card-heading h3 { margin: 0; font-size: 14px; font-weight: 700; }
 .analytics-card-heading .analytics-button { min-height: 34px; padding: 5px 10px; font-size: 12px; }
 .analytics-chart-summary { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 12px 0; font-size: 13px; font-weight: 600; }
 .analytics-chart-frame { position: relative; height: 220px; min-width: 0; }

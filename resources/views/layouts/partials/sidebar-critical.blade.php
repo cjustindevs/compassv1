@@ -142,7 +142,7 @@
         .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 99; }
         .sidebar-overlay.active { display: block; }
         .main-content { margin-left: var(--sidebar-w); min-height: 100vh; }
-        .hamburger { display: none; background: none; border: none; font-size: 22px; color: #4B5563; cursor: pointer; padding: 4px; }
+        .hamburger { display: none; background: none; border: none; font-size: 20px; color: #4B5563; cursor: pointer; padding: 4px; }
         .sidebar-toggle { display: none; }
         .sidebar.collapsed,
         html.sidebar-collapsed-preload .sidebar { width: var(--sidebar-w-collapsed); }

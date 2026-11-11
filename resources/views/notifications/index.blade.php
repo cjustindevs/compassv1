@@ -32,7 +32,7 @@
             cursor: pointer; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
         }
         .filter-btn:hover { border-color: var(--green-300); color: var(--green-700); }
-        .filter-btn.active { background: var(--green-500); border-color: var(--green-500); color: white; box-shadow: 0 4px 14px rgba(4,160,82,0.25); }
+        .filter-btn.active { background: var(--green-500); border-color: var(--green-500); color: white; box-shadow: none; }
 
         .notif-card {
             background: white; border-radius: 20px; padding: 18px 22px;
@@ -64,7 +64,7 @@
         .flash-banner {
             background: var(--green-500); color: white; border-radius: 14px; padding: 12px 18px;
             font-size: 14px; font-weight: 500; display: none; align-items: center; gap: 10px;
-            box-shadow: 0 8px 28px rgba(4,160,82,0.3);
+            box-shadow: var(--shadow-2);
         }
         .flash-banner.show { display: flex; animation: slideDown 0.4s ease; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
@@ -138,7 +138,7 @@
                         <p class="text-sm text-gray-500 mt-1">@if(auth()->user()->role === 'moderator'){{ \Illuminate\Support\Str::limit($notification->notification_type === 'emergency' ? strip_tags($copy['message']) : preg_split('/(?<=[.!?])\s+/', strip_tags($copy['message']), 2)[0], 180) }}@else{{ $copy['message'] }}@endif</p>
                         <div class="flex items-center gap-4 mt-2">
                             <span class="text-xs text-gray-400">{{ auth()->user()->role === 'moderator' ? $notification->created_at->copy()->timezone('Asia/Manila')->format('M j, Y g:i A').' PHT' : $notification->created_at->diffForHumans() }}</span>
-                            <span class="text-[10px] uppercase font-bold tracking-wide
+                            <span class="text-[11px] uppercase font-bold tracking-wide
                                 {{ $notification->notification_type === 'session' ? 'text-blue-500' : ($notification->notification_type === 'reminder' ? 'text-amber-500' : ($notification->notification_type === 'update' ? 'text-purple-500' : 'text-[#04A052]')) }}">
                                 {{ $types[$notification->notification_type]['label'] ?? ucfirst($notification->notification_type ?? 'System') }}
                             </span>

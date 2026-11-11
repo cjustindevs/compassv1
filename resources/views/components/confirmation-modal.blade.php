@@ -112,7 +112,7 @@
     }
 
     #confirmationModal .modal-message {
-        font-size: 0.9375rem;
+        font-size: 14px;
         color: #4B5563;
         line-height: 1.5;
     }

@@ -2,7 +2,7 @@
 @section('title','Queue Performance - COMPASS')
 @section('content')
 @include('partials.management-ui-styles')
-<style>.qp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px}.qp-grid .cm-card{margin:0}.qp-value{font-size:27px;font-weight:700;margin:10px 0}.qp-filters{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.qp-filters label{display:grid;gap:6px}.qp-filters input,.qp-filters select{padding:10px;border:1px solid #d4e2d9;border-radius:8px}.qp-filters details{flex-basis:100%}.qp-definitions{line-height:1.7}.qp-definitions dt{font-weight:600;margin-top:10px}.qp-definitions dd{margin:0}.qp-muted{font-size:13px;color:#63766a}</style>
+<style>.qp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px}.qp-grid .cm-card{margin:0}.qp-value{font-size:24px;font-weight:700;margin:10px 0}.qp-filters{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.qp-filters label{display:grid;gap:6px}.qp-filters input,.qp-filters select{padding:10px;border:1px solid #d4e2d9;border-radius:8px}.qp-filters details{flex-basis:100%}.qp-definitions{line-height:1.7}.qp-definitions dt{font-weight:600;margin-top:10px}.qp-definitions dd{margin:0}.qp-muted{font-size:13px;color:#63766a}</style>
 <div class="cm-page">
     <header class="cm-header"><div><h1>Queue Performance</h1><p>Recorded waits, accepted assignments, verified duty time and emergency acknowledgment.</p></div><a class="cm-button" href="{{ route(auth()->user()->role.'.reports') }}">Back to reports</a></header>
     @if($errors->any())<div role="alert">{{ $errors->first() }}</div>@endif

@@ -50,7 +50,7 @@
 <style>
 .report-charts{margin:16px 0 20px;min-width:0}
 .report-charts-heading{display:flex;align-items:baseline;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;margin-bottom:12px}
-.report-charts-heading h2{margin:0;font-size:17px;font-weight:700;color:var(--compass-text,#163b2d)}
+.report-charts-heading h2{margin:0;font-size:16px;font-weight:700;color:var(--compass-text,#163b2d)}
 .report-charts-heading p{margin:0;font-size:13px;color:var(--compass-muted,#64748b)}
 @media (max-width:1150px){.report-charts .analytics-chart-grid{grid-template-columns:minmax(0,1fr)}}
 </style>

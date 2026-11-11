@@ -55,8 +55,8 @@
 .compass-ui .landing-page .landing-feature-grid article { padding: 30px; min-width: 0; min-height: 220px; border: 1px solid var(--landing-border); border-radius: 16px; background: white; }
 .compass-ui .landing-page .landing-feature-grid article:nth-child(3) { background: #f3f1eb; border-color: #e6e3d9; }
 .compass-ui .landing-page .landing-feature-grid article:nth-child(4) { background: #f1f0f6; border-color: #e4e1eb; }
-.compass-ui .landing-page .landing-feature-grid .landing-feature-label { color: var(--landing-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; margin: 0 0 22px; }
-.compass-ui .landing-page .landing-feature-grid h3 { font-size: 23px; font-weight: 600; letter-spacing: -.03em; line-height: 1.2; color: var(--landing-ink); }
+.compass-ui .landing-page .landing-feature-grid .landing-feature-label { color: var(--landing-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; margin: 0 0 22px; }
+.compass-ui .landing-page .landing-feature-grid h3 { font-size: 24px; font-weight: 600; letter-spacing: -.03em; line-height: 1.2; color: var(--landing-ink); }
 .compass-ui .landing-page .landing-feature-grid article > p:not(.landing-feature-label) { margin-top: 14px; font-size: 13px; line-height: 1.75; color: var(--landing-muted); }
 .compass-ui .landing-page .landing-feature-grid .landing-feature-highlight { position: relative; grid-row: span 2; overflow: hidden; background: #e8f2e7; border-color: #d5e4d3; padding-bottom: 144px; }
 .compass-ui .landing-page .landing-feature-highlight h3 { font-size: 34px; letter-spacing: -.04em; }
@@ -138,8 +138,8 @@
     .compass-ui .landing-page .landing-nav-actions { gap: 8px; }
     .compass-ui .landing-page .landing-nav .btn-primary { padding: 10px 12px; font-size: 12px; white-space: nowrap; }
     .compass-ui .landing-page .landing-title { font-size: clamp(36px, 9.8vw, 47px); overflow-wrap: break-word; }
-    .compass-ui .landing-page .landing-lead { font-size: 15px; }
-    .compass-ui .landing-page .landing-hero-copy .landing-eyebrow { font-size: 10px; gap: 8px 10px; }
+    .compass-ui .landing-page .landing-lead { font-size: 14px; }
+    .compass-ui .landing-page .landing-hero-copy .landing-eyebrow { font-size: 11px; gap: 8px 10px; }
     .compass-ui .landing-page .landing-hero-copy .landing-eyebrow span { padding-left: 10px; }
     .compass-ui .landing-page .landing-actions { flex-direction: column; }
     .compass-ui .landing-page .landing-reassurance-grid { grid-template-columns: minmax(0, 1fr); padding-block: 24px; gap: 18px; }

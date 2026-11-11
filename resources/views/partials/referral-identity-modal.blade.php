@@ -32,7 +32,7 @@
         display: inline-flex; align-items: center; gap: 6px; margin: 0 0 6px;
         font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #027039;
     }
-    #{{ $identityDialogId }} h2 { margin: 0; font-size: 19px; font-weight: 700; line-height: 1.3; }
+    #{{ $identityDialogId }} h2 { margin: 0; font-size: 18px; font-weight: 700; line-height: 1.3; }
     #{{ $identityDialogId }} .rv-modal__sub { margin: 5px 0 0; font-size: 13px; line-height: 1.6; color: #64748b; }
     #{{ $identityDialogId }} .rv-icon-btn {
         flex-shrink: 0; width: 34px; height: 34px; display: grid; place-items: center;
@@ -93,8 +93,8 @@
     #{{ $identityDialogId }} .rv-alert:empty { display: none; }
     #{{ $identityDialogId }} .rv-done { display: none; text-align: center; padding: 8px 0 4px; }
     #{{ $identityDialogId }} .rv-done[data-shown] { display: block; }
-    #{{ $identityDialogId }} .rv-done :is(i, .compass-icon) { font-size: 34px; color: #04a052; margin-bottom: 12px; }
-    #{{ $identityDialogId }} .rv-done h3 { margin: 0 0 6px; font-size: 17px; font-weight: 700; }
+    #{{ $identityDialogId }} .rv-done :is(i, .compass-icon) { font-size: 28px; color: #04a052; margin-bottom: 12px; }
+    #{{ $identityDialogId }} .rv-done h3 { margin: 0 0 6px; font-size: 16px; font-weight: 700; }
     #{{ $identityDialogId }} .rv-done p { margin: 0; font-size: 13px; line-height: 1.7; color: #64748b; }
     #{{ $identityDialogId }} .rv-modal__foot {
         display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;

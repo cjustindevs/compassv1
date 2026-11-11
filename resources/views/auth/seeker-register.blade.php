@@ -12,9 +12,9 @@
         .btn-primary {
             background: linear-gradient(135deg, #16A34A, #22C55E);
             transition: all 0.3s ease;
-            box-shadow: 0 4px 20px rgba(22, 163, 74, 0.3);
+            box-shadow: none;
         }
-        .btn-primary:hover { transform: scale(1.02); box-shadow: 0 8px 40px rgba(22, 163, 74, 0.4); }
+        .btn-primary:hover { transform: scale(1.02); box-shadow: none; }
         .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
         .btn-secondary {
             background: #F3F4F6;
@@ -74,7 +74,7 @@
             .modal-body { padding: 16px; }
             .step-content { min-height: 240px; }
             .consent-step-text { max-height: 250px; }
-            .consent-text { font-size: 12.5px; line-height: 1.6; }
+            .consent-text { font-size: 13px; line-height: 1.6; }
             .consent-scroll-indicator { margin: 12px -16px 0; }
             #step1Indicator, #step2Indicator, #step3Indicator, #step4Indicator {
                 width: 24px; height: 24px; font-size: 11px; border-width: 1.5px;

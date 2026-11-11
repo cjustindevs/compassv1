@@ -97,11 +97,11 @@
 }
 .compass-ui:not(.compass-ui-admin) .main-content:not(:has(> main)) { padding-inline: 32px; }
 .compass-ui:not(.compass-ui-admin) :is(h1, .page-title):not(.hero-title):not(.landing-title) {
-    font-family: var(--compass-font); font-size: 26px; line-height: 1.25;
+    font-family: var(--compass-font); font-size: 24px; line-height: 1.25;
     font-weight: 700; letter-spacing: -.025em; overflow-wrap: anywhere;
 }
 .compass-ui:not(.compass-ui-admin) h2 { font-family: var(--compass-font); font-size: 18px; line-height: 1.35; letter-spacing: -.015em; }
-.compass-ui:not(.compass-ui-admin) :is(h3, .section-title, .card-header h3) { font-family: var(--compass-font); font-size: 17px; line-height: 1.4; font-weight: 650; }
+.compass-ui:not(.compass-ui-admin) :is(h3, .section-title, .card-header h3) { font-family: var(--compass-font); font-size: 16px; line-height: 1.4; font-weight: 650; }
 .compass-ui:not(.compass-ui-admin) .hero-title { font-family: var(--compass-font); font-size: clamp(28px, 3vw, 40px); line-height: 1.25; }
 .compass-ui :is(.page-subtitle, .section-subtitle, .hf-muted, .av-muted, .mo-muted) { color: var(--compass-muted); line-height: 1.5; }
 .compass-ui:not(.compass-ui-admin) :is(.card, .stat-card, .av-panel, .mo-card, .resource-card, .ui-panel) {
@@ -195,7 +195,7 @@
 .compass-ui .sidebar .nav-item:hover { transform: none; }
 .compass-ui .sidebar .nav-item.active { color: var(--compass-green-dark); background: var(--compass-green-soft); }
 .compass-ui .sidebar .nav-text { min-width: 0; }
-.compass-ui .sidebar .nav-section { font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+.compass-ui .sidebar .nav-section { font-size: 11px; font-weight: 700; letter-spacing: .12em; }
 .compass-ui .sidebar .sidebar-nav { min-height: 0; overflow-y: auto; }
 .compass-ui .sidebar .sidebar-user { min-width: 0; }
 
@@ -307,7 +307,7 @@
 .compass-ui .reduced-motion *, .compass-ui.admin-reduced-motion * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 
 @media (max-width: 768px) {
-    :root { --compass-page-padding: 20px; --compass-space: 18px; --compass-control-height: 44px; }
+    :root { --compass-page-padding: 20px; --compass-space: 16px; --compass-control-height: 44px; }
     .compass-ui:not(.compass-ui-admin) :is(.form-row-compact, .form-row-3, .form-row-4) { grid-template-columns: minmax(0, 1fr); }
     .compass-ui:not(.compass-ui-admin) .main-content,
     .compass-ui:not(.compass-ui-admin) .sidebar.collapsed ~ .main-content { margin-left: 0; }
@@ -321,7 +321,7 @@
     :root { --compass-page-padding: 16px; --compass-space: 16px; }
     .compass-ui:not(.compass-ui-admin) :is(.adviser-page-content, .hf-page, .mo-page, .selfhelp-content, .request-flow-compact) { padding-inline: 16px; }
     .compass-ui:not(.compass-ui-admin) .main-content:not(:has(> main)):not(.chat-page) { padding-inline: 16px; }
-    .compass-ui:not(.compass-ui-admin) :is(h1, .page-title):not(.hero-title):not(.landing-title) { font-size: 23px; }
+    .compass-ui:not(.compass-ui-admin) :is(h1, .page-title):not(.hero-title):not(.landing-title) { font-size: 20px; }
     .compass-ui:not(.compass-ui-admin) :is(.card-header, .referral-item, .info-row) { flex-wrap: wrap; }
     .compass-ui:not(.compass-ui-admin) :is(.empty-state, .ui-empty-state) { padding: 24px 16px; }
     .compass-ui :is(.notif-actions, .notification-actions) { flex-shrink: 0; }
