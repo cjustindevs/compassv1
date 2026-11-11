@@ -41,8 +41,8 @@
     @endif
 
     <x-ui.attention :items="[
-        ['count' => $emergencyCount ?? 0, 'label' => ($emergencyCount ?? 0) === 1 ? 'Emergency open' : 'Emergencies open', 'href' => route('moderator.emergency'), 'tone' => 'red'],
-        ['count' => $queueCount ?? 0, 'label' => 'Waiting in queue', 'href' => route('moderator.queue'), 'tone' => 'amber'],
+        ['count' => $stats['emergency_count'], 'label' => $stats['emergency_count'] === 1 ? 'Emergency open' : 'Emergencies open', 'href' => route('moderator.emergency'), 'tone' => 'red'],
+        ['count' => $stats['queue_waiting'], 'label' => 'Waiting in queue', 'href' => route('moderator.queue'), 'tone' => 'amber'],
     ]" />
 
     <x-ui.kpi-grid>

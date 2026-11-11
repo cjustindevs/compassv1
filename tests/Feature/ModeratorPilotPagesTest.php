@@ -36,4 +36,17 @@ class ModeratorPilotPagesTest extends TestCase
         $this->get(route('moderator.dashboard'))->assertOk()->assertSee('Needs your attention')
             ->assertSee('Waiting in queue')->assertSee(route('moderator.queue'), false)->assertDontSee('Emergencies open')->assertDontSee('Emergency open');
     }
+
+    public function test_attention_queue_count_matches_the_kpi_and_ignores_test_records(): void
+    {
+        $this->actingAs($this->moderator());
+        $user = User::factory()->create(['role' => 'seeker', 'is_active' => true]);
+        $seeker = HelpSeeker::create(['user_account_id' => $user->id, 'generated_alias' => 'Alias'.$user->id]);
+        QueueRequest::create(['seeker_id' => $seeker->id, 'request_status' => 'waiting', 'priority_level' => 'low', 'request_date' => now()]);
+        QueueRequest::create(['seeker_id' => $seeker->id, 'request_status' => 'waiting', 'priority_level' => 'low', 'request_date' => now(), 'is_test_record' => true]);
+
+        $html = $this->get(route('moderator.dashboard'))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/ui-attention-count">\s*1\s*<\/strong>\s*<span class="ui-attention-label">Waiting in queue/', $html);
+        $this->assertMatchesRegularExpression('/Waiting in queue<\/span>\s*<strong class="ui-kpi-value">1</', $html);
+    }
 }
