@@ -81,7 +81,9 @@
                 </div>
             @endauth
 
-            @include('partials.emergency-strip')
+            @if(auth()->user()?->role === 'moderator')
+                @include('partials.emergency-strip')
+            @endif
 
             <!-- Page Content -->
             <main class="workspace-content">
@@ -95,7 +97,9 @@
         @include('components.confirmation-modal')
         @include('partials.workflow-notice')
         @include('layouts.partials.pwa-banner')
-        @include('layouts.partials.bottom-nav')
+        @if(auth()->user()?->role === 'moderator')
+            @include('layouts.partials.bottom-nav')
+        @endif
         @stack('scripts')
     </body>
 </html>

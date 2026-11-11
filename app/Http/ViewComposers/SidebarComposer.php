@@ -25,6 +25,14 @@ class SidebarComposer
 
         $role = $user->role;
 
+        $request = request();
+        $memoKey = 'sidebar_composer_data_'.$user->id.'_'.$role;
+        if ($request->attributes->has($memoKey)) {
+            $view->with($request->attributes->get($memoKey));
+
+            return;
+        }
+
         $data = match ($role) {
             'helper'             => $this->helperData($user),
             'adviser'            => $this->adviserData($user),
@@ -33,6 +41,7 @@ class SidebarComposer
             default              => $this->seekerData($user),
         };
 
+        $request->attributes->set($memoKey, $data);
         $view->with($data);
     }
 
