@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Connection review - COMPASS')
+@section('title', (auth()->user()->role === 'moderator' ? 'Reconnection requests' : 'Connection review') . ' - COMPASS')
 @section('content')
 @include('partials.referral-ui-styles')
 @php

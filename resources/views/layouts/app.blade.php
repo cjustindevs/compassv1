@@ -67,19 +67,22 @@
     <body class="compass-compact font-sans antialiased">
         @auth
             @php($roleSidebar = 'layouts.partials.' . auth()->user()->role . '-sidebar')
-            @includeIf($roleSidebar)
+            @php($hasSidebar = view()->exists($roleSidebar))
+            @if($hasSidebar)
+                @include($roleSidebar)
+            @endif
             <div class="sidebar-overlay" id="sidebarOverlay"></div>
         @endauth
 
-        <div class="min-h-screen bg-gray-100 {{ auth()->check() ? 'main-content' : '' }}">
-            @auth
+        <div class="min-h-screen bg-gray-100 {{ auth()->check() && ($hasSidebar ?? false) ? 'main-content' : '' }}">
+            @if(auth()->check() && ($hasSidebar ?? false))
                 <div class="mobile-appbar">
                     <button type="button" class="hamburger" id="hamburgerBtn" aria-label="Open sidebar">
                         <x-ui-icon name="menu"  />
                     </button>
                     <div data-notification-slot style="margin-left:auto"></div>
                 </div>
-            @endauth
+            @endif
 
             @if(auth()->user()?->role === 'moderator')
                 @include('partials.emergency-strip')

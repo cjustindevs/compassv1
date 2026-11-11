@@ -103,4 +103,15 @@ class UiComponentsTest extends TestCase
         $this->assertStringNotContainsString('rel="next"', $html);
         $this->assertStringContainsString('rel="prev"', $html);
     }
+
+    public function test_actions_cell_child_rules_exclude_dialogs(): void
+    {
+        $css = file_get_contents(public_path('css/compass-components.css'));
+
+        preg_match_all('/td\.ui-actions\s*>\s*([^{\s]+)\s*\{[^}]*margin-left/', $css, $m);
+        $this->assertNotEmpty($m[1]);
+        foreach ($m[1] as $selector) {
+            $this->assertStringContainsString(':not(dialog)', $selector);
+        }
+    }
 }

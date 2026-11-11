@@ -396,6 +396,27 @@ class ReferralDeliveryWorkflowTest extends TestCase
         $this->assertSame($adviser->id, $referral->fresh()->adviser_id);
     }
 
+    public function test_unassigned_referrals_shell_only_shows_sidebar_chrome_for_roles_with_a_sidebar(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
+        $html = $this->actingAs($admin)->get(route('moderator.referrals.unassigned'))->assertOk()->getContent();
+        $this->assertStringNotContainsString('main-content', $html);
+        $this->assertStringNotContainsString('hamburgerBtn', $html);
+
+        $moderator = User::factory()->create(['role' => 'moderator', 'is_active' => true]);
+        $html = $this->actingAs($moderator)->get(route('moderator.referrals.unassigned'))->assertOk()->getContent();
+        $this->assertStringContainsString('main-content', $html);
+        $this->assertStringContainsString('hamburgerBtn', $html);
+    }
+
+    public function test_unassigned_completion_row_uses_a_middot_separator(): void
+    {
+        $this->assertStringNotContainsString(
+            'Referral #{{ $completionAssignment->id }} ?',
+            file_get_contents(resource_path('views/moderator/unassigned-referrals.blade.php'))
+        );
+    }
+
     public function test_a_helper_cannot_assign_an_adviser_to_an_unassigned_referral(): void
     {
         Event::fake();

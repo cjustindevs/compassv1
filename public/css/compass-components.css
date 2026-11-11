@@ -63,7 +63,7 @@ a.ui-kpi:hover { box-shadow: var(--shadow-2); }
 .compass-ui .ui-table table th { padding: var(--space-3) var(--space-4); text-align: left; font-size: var(--text-caption); font-weight: 700; color: var(--compass-muted); background: #f3f4f6; white-space: nowrap; }
 .compass-ui .ui-table table td { padding: var(--space-3) var(--space-4); height: var(--row-h); border-bottom: 1px solid var(--compass-divider); font-size: var(--text-base); color: var(--compass-text); vertical-align: middle; }
 .compass-ui .ui-table table td.ui-actions { display: table-cell; white-space: nowrap; text-align: right; }
-.compass-ui .ui-table table td.ui-actions > * { margin-left: var(--space-2); max-width: 100%; }
+.compass-ui .ui-table table td.ui-actions > :not(dialog) { margin-left: var(--space-2); max-width: 100%; }
 @media (max-width: 768px) {
   .compass-ui .ui-table.ui-table--stack { overflow-x: visible; }
   .compass-ui .ui-table.ui-table--stack table, .compass-ui .ui-table.ui-table--stack tbody { display: block; }
@@ -72,7 +72,7 @@ a.ui-kpi:hover { box-shadow: var(--shadow-2); }
   .compass-ui .ui-table.ui-table--stack td { display: block; height: auto; padding: 0; border: 0; }
   .compass-ui .ui-table.ui-table--stack td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 2px; font-size: var(--text-sm); font-weight: 600; color: var(--compass-muted); }
   .compass-ui .ui-table.ui-table--stack td.ui-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); grid-column: 1 / -1; text-align: left; white-space: normal; }
-  .compass-ui .ui-table.ui-table--stack td.ui-actions > * { margin-left: 0; min-width: 0; max-width: 100%; }
+  .compass-ui .ui-table.ui-table--stack td.ui-actions > :not(dialog) { margin-left: 0; min-width: 0; max-width: 100%; }
   .compass-ui .ui-table.ui-table--stack td { min-width: 0; }
 }
 

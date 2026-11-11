@@ -95,7 +95,7 @@
 
     <x-ui.card title="Completion reports awaiting an active Adviser" subtitle="Assignment information only. Private reports remain with authorized clinical reviewers.">
         @forelse($completionAssignments as $completionAssignment)
-            <div class="ref-item"><p>Referral #{{ $completionAssignment->id }} ? {{ ucwords(str_replace('_',' ',$completionAssignment->status)) }}</p><form method="POST" action="{{ route('referrals.completion.assign',$completionAssignment) }}" class="ref-complete">@csrf<label>Completion reviewer<select name="adviser_id" required><option value="">Choose active Adviser</option>@foreach($advisers as $adviser)<option value="{{ $adviser->id }}">{{ $adviser->full_name }}</option>@endforeach</select></label><div><button class="btn-primary" type="submit">Assign completion reviewer</button></div></form></div>
+            <div class="ref-item"><p>Referral #{{ $completionAssignment->id }} &middot; {{ ucwords(str_replace('_',' ',$completionAssignment->status)) }}</p><form method="POST" action="{{ route('referrals.completion.assign',$completionAssignment) }}" class="ref-complete">@csrf<label>Completion reviewer<select name="adviser_id" required><option value="">Choose active Adviser</option>@foreach($advisers as $adviser)<option value="{{ $adviser->id }}">{{ $adviser->full_name }}</option>@endforeach</select></label><div><button class="btn-primary" type="submit">Assign completion reviewer</button></div></form></div>
         @empty
             <x-ui.empty title="No completion reports need reassignment." />
         @endforelse
