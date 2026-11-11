@@ -99,7 +99,33 @@ pages (Dashboard, Incoming Queue, Active Sessions, Connection review, Schedules,
 Notifications, Settings, Session detail, Unassigned referrals, Queue performance) get the same page
 pattern and components.
 
-### 6. Rollout order after the pilot is approved
+### 6. User-friendly improvements (all roles, existing data only)
+1. **"Needs your attention" strip** at the top of every dashboard: large cards for work waiting on
+   this user (e.g. open emergencies, queue waiting, evaluations due, referrals to review, sessions
+   starting soon). Each links to the page that already handles it. Hidden when nothing is waiting.
+   Uses counts the dashboards and sidebars already compute.
+2. **Always-visible emergency strip** (Moderator, Adviser): while an emergency is open, a red strip
+   under the header on every page shows the count and an Open link. Display only; alert,
+   notification and escalation behavior is unchanged.
+3. **Navigation:** sidebar groups by task (Work now / People / Records / Account) with waiting counts
+   on the links; the collapsed rail shows tooltips. On phones a bottom bar holds the role's four
+   most-used destinations plus "More" (opens the existing drawer). Same links, same routes.
+4. **Detail pages** (session, referral, case, emergency, helper): a "← Back to …" link and a summary
+   card (status, risk, people, times) above the long details.
+5. **Active filter chips** under the filter bar (e.g. "Last 30 days ×", "Status: Pending ×"); each
+   chip clears that one filter via the existing query parameters.
+6. **Tables become stacked cards on phones** (≤768px) with the row's actions inside the card,
+   instead of sideways scrolling. Desktop tables keep columns.
+7. **Forms:** long forms are split into titled sections; errors sit next to their field; a sticky
+   Save bar appears on long settings/evaluation forms while there are unsaved changes (submits the
+   same form).
+8. **Empty states with a next step:** one plain sentence and at most one useful action.
+9. **Plain labels:** confusing on-screen labels are reworded (route names, field names and
+   permissions unchanged). The full rename list is shown to the user for approval before it ships.
+   Examples: "Connection review" → "Reconnection requests", "Unassigned Pool" → "Helpers without an
+   Adviser".
+
+### 7. Rollout order after the pilot is approved
 Moderator → Adviser → Helper → Professional → Seeker → Admin (admin keeps its accent/dark options but
 uses the same scale and components). One commit per role, screenshots per role before moving on.
 
@@ -125,6 +151,9 @@ uses the same scale and components). One commit per role, screenshots per role b
 2. Moving standalone pages onto `layouts.app` as part of the redesign.
 3. Admin is converted last and keeps its accent/dark options.
 4. Settings → Appearance options stay as they are; "default theme" read as "no new themes".
+5. The section 6 additions (attention strip, emergency strip, phone bottom bar, filter chips,
+   phone card tables, sticky Save bar, plain labels), added after "improve it more".
+6. Bottom-bar destinations per role are picked from the most-used links in each sidebar.
 
 ## Left to the builder
 - Exact component APIs and CSS class names; how to map each page's existing markup into the slots.
