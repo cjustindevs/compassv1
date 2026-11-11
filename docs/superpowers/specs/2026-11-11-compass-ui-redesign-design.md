@@ -125,6 +125,35 @@ pattern and components.
    Examples: "Connection review" → "Reconnection requests", "Unassigned Pool" → "Helpers without an
    Adviser".
 
+### 6b. More references (shared Nov 12) for later roles
+Saved in `.superpowers/references/` (local, not committed) next to the Moderator ones.
+- **Seeker – Referrals and Appointments** (`ref-seeker-appointments.png`): one page with two tabs
+  (Referrals / Appointments); appointments as a table (date and time, professional, details,
+  location, status badge, row actions) with a green note strip under it.
+- **Seeker – Appointment details** (`ref-seeker-appointment-details.png`): a dialog with a status
+  badge, then titled sections (appointment, professional, schedule, location, purpose, notes from the
+  professional) and one Close button.
+- **Seeker – Identity disclosure consent** (`ref-seeker-identity-consent.png`): a dialog with a
+  three-step progress line (Adviser approval → Referral consent → Identity disclosure), the plain
+  privacy text, and a green "You have given consent" box with the consent date.
+- **Adviser – Pending Evaluations** (`ref-adviser-pending-evaluations.png`): three KPI cards with
+  icons, the 4-step evaluation process card, then an "Awaiting review" list. Each row shows the
+  alias, the helper, the date and session type, a risk badge, the concern, step progress, and
+  View Session / Evaluate actions. Rows have a risk-colored left edge, and a search, risk filter and
+  sort sit above the list.
+
+Rules for these references:
+- Only data and actions that already exist appear. Where the picture shows something COMPASS does
+  not have, the existing control takes its place, or the element is left out:
+  - "Cancel" becomes the existing "Request another schedule" / confirm responses.
+  - The "Available Time" chips show the one scheduled time.
+  - "View on Map", the 24-hour cancellation note and the row "⋮" menu are left out unless the user
+    asks for them.
+- The spelling stays "Adviser".
+- The project's identity-consent wording stays as it is.
+- The Adviser search, risk filter and sort are proposed as filtering of the rows already on the page,
+  with no server change. The user confirms this before the Adviser rollout.
+
 ### 7. Rollout order after the pilot is approved
 Moderator → Adviser → Helper → Professional → Seeker → Admin (admin keeps its accent/dark options but
 uses the same scale and components). One commit per role, screenshots per role before moving on.
