@@ -92,4 +92,15 @@ class UiComponentsTest extends TestCase
         $this->assertStringContainsString('page=2', $html);
         $this->assertStringContainsString('ui-pagination', $html);
     }
+
+    public function test_pagination_last_page_disables_next(): void
+    {
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(range(11, 19), 19, 10, 2, ['path' => '/helpers']);
+        $html = $paginator->links('vendor.pagination.compass', ['noun' => 'helpers'])->toHtml();
+
+        $this->assertStringContainsString('Showing 11–19 of 19 helpers', $html);
+        $this->assertMatchesRegularExpression('/aria-disabled="true"[^>]*aria-label="Next page"/', $html);
+        $this->assertStringNotContainsString('rel="next"', $html);
+        $this->assertStringContainsString('rel="prev"', $html);
+    }
 }
