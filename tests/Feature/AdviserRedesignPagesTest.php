@@ -174,4 +174,41 @@ class AdviserRedesignPagesTest extends TestCase
         $filtered = $this->actingAs($adviser->user)->get(route('adviser.evaluations', ['q' => 'x', 'risk' => 'high']))->getContent();
         $this->assertSame(2, substr_count($filtered, 'data-eval-row'));
     }
+
+    private function pendingScreening(\App\Models\Adviser $adviser): \App\Models\Session
+    {
+        $owner = \App\Models\User::factory()->create(['role' => 'seeker', 'is_active' => true]);
+        $seeker = \App\Models\HelpSeeker::create(['user_account_id' => $owner->id, 'generated_alias' => 'Alias'.$owner->id, 'age' => 20, 'gender' => 'prefer-not-to-say']);
+
+        return \App\Models\Session::create(['seeker_id' => $seeker->id, 'session_type' => 'chat', 'session_status' => 'pending_review',
+            'workflow_state' => 'adviser_review_required', 'requires_adviser_review' => true, 'risk_level' => null,
+            'review_adviser_id' => $adviser->id, 'created_date' => now()]);
+    }
+
+    public function test_screenings_page_header_filters_and_forms(): void
+    {
+        $adviser = $this->adviser();
+        $session = $this->pendingScreening($adviser);
+
+        $html = $this->actingAs($adviser->user)->get(route('adviser.screenings'))->assertOk()
+            ->assertSee(route('adviser.screenings.review', $session), false)->getContent();
+
+        $this->assertSame(1, substr_count($html, 'data-page-header'));
+        $this->assertSame(1, substr_count($html, '<h1'));
+        $this->assertSame(3, substr_count($html, 'data-filter="'));
+        $this->assertStringContainsString('ui-card', $html);
+    }
+
+    public function test_screening_conversation_has_back_link_and_summary(): void
+    {
+        $adviser = $this->adviser();
+        $session = $this->pendingScreening($adviser);
+        $session->update(['helper_id' => $this->helperFor($adviser)->id, 'session_status' => 'completed']);
+
+        $this->actingAs($adviser->user)
+            ->withSession(['adviser_transcript.'.$session->id => ['actor_id' => $adviser->user->id, 'purpose' => 'referral_review', 'expires_at' => now()->addMinutes(5)->timestamp]])
+            ->get(route('adviser.screenings.conversation', $session))
+            ->assertOk()->assertSee('ui-back-link', false)->assertSee('Back to Screening Reviews')
+            ->assertSee('data-page-header', false);
+    }
 }

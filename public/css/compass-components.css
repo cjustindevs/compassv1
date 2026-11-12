@@ -237,3 +237,18 @@ a.ui-page:focus-visible { outline: none; box-shadow: var(--ring); }
 .ui-eval-controls .ui-eval-search { flex: 1 1 280px; }
 .ui-eval-showing { margin: 0 0 var(--space-3); }
 .ui-eval-nomatch { padding: var(--space-4) 0; text-align: center; }
+
+/* Screening Reviews: active filter chip, conversation summary and message rows. */
+button.ui-chip { cursor: pointer; font-family: inherit; min-height: 36px; background: #fff; color: var(--compass-muted); }
+button.ui-chip.is-active { background: var(--compass-green-dark); border-color: var(--compass-green-dark); color: #fff; }
+.ui-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--space-3) var(--space-5); margin: 0; }
+.ui-summary dt { font-size: var(--text-xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--compass-muted); }
+.ui-summary dd { margin: 2px 0 0; font-size: var(--text-base); font-weight: 600; color: var(--compass-text); overflow-wrap: anywhere; }
+.ui-convo-row { display: flex; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: 1px solid var(--compass-divider); }
+.ui-convo-row:last-child { border-bottom: 0; }
+.ui-convo-avatar { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: var(--text-sm); font-weight: 600; background: #f3f4f6; color: #374151; }
+.ui-convo-row.is-helper .ui-convo-avatar { background: var(--compass-green-soft); color: var(--compass-green-dark); }
+.ui-convo-body { min-width: 0; }
+.ui-convo-meta { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: baseline; font-size: var(--text-sm); color: var(--compass-muted); }
+.ui-convo-meta strong { color: var(--compass-text); }
+.ui-convo-body p { margin: 2px 0 0; font-size: var(--text-base); white-space: pre-wrap; overflow-wrap: anywhere; }

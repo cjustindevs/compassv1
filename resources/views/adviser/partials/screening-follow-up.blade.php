@@ -7,7 +7,7 @@
             <input type="hidden" name="_review_session" value="{{ $session->id }}">
             <label class="block text-sm" for="intake-note-{{ $session->id }}">Review and next steps</label>
             <textarea id="intake-note-{{ $session->id }}" name="reason" required minlength="10" maxlength="1000" rows="3" class="block w-full rounded-lg border-gray-300">{{ $retry ? old('reason') : '' }}</textarea>
-            <button name="review_action" value="complete_intake" class="rounded-lg bg-green-600 text-white px-4 py-2 text-sm">Complete screening review</button>
+            <button name="review_action" value="complete_intake" class="btn-primary">Complete screening review</button>
         </form>
     </div>
     @endif
@@ -22,7 +22,7 @@
                 <label class="block text-sm font-medium" for="follow-up-note-{{ $session->id }}">Short note to the Seeker <span class="text-gray-500">(optional)</span></label>
                 <textarea id="follow-up-note-{{ $session->id }}" name="follow_up_note" rows="2" maxlength="300" class="block w-full rounded-lg border-gray-300" placeholder="Briefly explain why you are following up. Avoid private staff notes.">{{ $retry ? old('follow_up_note') : '' }}</textarea>
                 <p class="text-xs text-gray-500">The note is visible to the Seeker. They may still choose not to answer.</p>
-                <button type="submit" class="inline-flex rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white">Send follow-up</button>
+                <button type="submit" class="btn-primary">Send follow-up</button>
             </form>
         @else
             @if($screening->follow_up_note)<p class="screening-follow-up-note text-sm text-gray-600">Your note: {{ $screening->follow_up_note }}</p>@endif
@@ -44,7 +44,7 @@
                     <textarea id="follow-up-reason-{{ $session->id }}" name="reason" required minlength="10" maxlength="1000" rows="3" class="block w-full rounded-lg border-gray-300" placeholder="Explain your support decision based on the saved response.">{{ $retry ? old('reason') : '' }}</textarea>
                     <p class="text-xs text-gray-500">Approve only when appropriate under the existing protocol. Approval returns the Seeker to Preferences and matching; it does not start a session.</p>
                     <div class="screening-decision-actions flex justify-end">
-                        <button type="submit" name="review_action" value="approve" class="inline-flex rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white">Approve peer support</button>
+                        <button type="submit" name="review_action" value="approve" class="btn-primary">Approve peer support</button>
                     </div>
                 </form>
             @endif

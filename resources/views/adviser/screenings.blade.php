@@ -10,11 +10,11 @@
         'reassessment' => $sessions->filter(fn ($s) => (bool) $s->report?->reassessment_requested_at)->count(),
     ];
     $riskMap = [
-        'low' => ['label' => 'Low', 'classes' => 'bg-green-50 text-green-700 ring-green-200', 'dot' => 'bg-green-500', 'guidance' => 'Peer support can proceed under routine supervision and standard documentation.'],
-        'moderate' => ['label' => 'Moderate', 'classes' => 'bg-amber-50 text-amber-700 ring-amber-200', 'dot' => 'bg-amber-500', 'guidance' => 'Peer support can proceed with closer monitoring and scheduled review points.'],
-        'high' => ['label' => 'High', 'classes' => 'bg-orange-50 text-orange-700 ring-orange-200', 'dot' => 'bg-orange-500', 'guidance' => 'Adviser-led support with professional referral review recommended.'],
-        'emergency' => ['label' => 'Emergency', 'classes' => 'bg-red-50 text-red-700 ring-red-200', 'dot' => 'bg-red-500', 'guidance' => 'Immediate escalation to emergency services is required now.'],
-        'unclassified' => ['label' => 'Unclassified', 'classes' => 'bg-gray-100 text-gray-600 ring-gray-200', 'dot' => 'bg-gray-400', 'guidance' => 'No classification was assumed. Review the saved answer alongside peer matching.'],
+        'low' => ['label' => 'Low', 'tone' => 'green', 'guidance' => 'Peer support can proceed under routine supervision and standard documentation.'],
+        'moderate' => ['label' => 'Moderate', 'tone' => 'amber', 'guidance' => 'Peer support can proceed with closer monitoring and scheduled review points.'],
+        'high' => ['label' => 'High', 'tone' => 'orange', 'guidance' => 'Adviser-led support with professional referral review recommended.'],
+        'emergency' => ['label' => 'Emergency', 'tone' => 'red', 'guidance' => 'Immediate escalation to emergency services is required now.'],
+        'unclassified' => ['label' => 'Unclassified', 'tone' => 'neutral', 'guidance' => 'No classification was assumed. Review the saved answer alongside peer matching.'],
     ];
     $flagKeys = [
         'suicidal_thoughts', 'immediate_intent', 'current_suicide_plan', 'access_to_means',
@@ -29,15 +29,8 @@
     ];
 @endphp
 
-<div class="adviser-page-content adviser-compact-page screening-reviews space-y-5">
-    <header class="flex flex-wrap items-start justify-between gap-4">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-800">Screening Reviews</h1>
-            <p class="text-sm text-gray-500 mt-1">
-                Review pre-session answers and Helper requests for reassessment.
-            </p>
-        </div>
-    </header>
+<div class="adviser-page-content adviser-compact-page screening-reviews">
+    <x-ui.page-header title="Screening Reviews" description="Review pre-session answers and Helper requests for reassessment." />
 
     @if(session('success'))
         <div role="status" class="flex items-start gap-3 rounded-xl bg-green-50 border border-green-100 p-3 text-green-800">
@@ -60,10 +53,10 @@
         </div>
     @endif
 
-    <nav class="flex flex-wrap gap-2" aria-label="Filter screening reviews">
-        <button type="button" data-filter="all" class="px-3 py-1.5 rounded-full text-sm font-medium border bg-gray-900 text-white border-gray-900">All ({{ $counts['all'] }})</button>
-        <button type="button" data-filter="pre-session" class="px-3 py-1.5 rounded-full text-sm font-medium border bg-white text-gray-600 border-gray-300">Pre-session ({{ $counts['pre-session'] }})</button>
-        <button type="button" data-filter="reassessment" class="px-3 py-1.5 rounded-full text-sm font-medium border bg-white text-gray-600 border-gray-300">Helper reassessment ({{ $counts['reassessment'] }})</button>
+    <nav class="ui-chips" aria-label="Filter screening reviews">
+        <button type="button" data-filter="all" class="ui-chip is-active">All ({{ $counts['all'] }})</button>
+        <button type="button" data-filter="pre-session" class="ui-chip">Pre-session ({{ $counts['pre-session'] }})</button>
+        <button type="button" data-filter="reassessment" class="ui-chip">Helper reassessment ({{ $counts['reassessment'] }})</button>
     </nav>
 
     @forelse($sessions as $session)
@@ -83,30 +76,21 @@
             $retry = (string) old('_review_session') === (string) $session->id;
         @endphp
 
-        <section id="screening-{{ $session->id }}"
+        <x-ui.card :id="'screening-'.$session->id" :title="$session->reference_number"
+            :subtitle="'Seeker '.$alias.' · Screened '.$submitted"
             data-review-type="{{ $reassessment ? 'reassessment' : 'pre-session' }}"
             data-filter-target
-            class="screening-review-card bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-            <div class="screening-review-body p-5 space-y-5">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div class="flex items-start gap-3">
-                        <div>
-                            <h2 class="font-semibold text-gray-800 leading-tight">{{ $session->reference_number }}</h2>
-                            <p class="text-sm text-gray-500 mt-0.5">Seeker {{ $alias }} &middot; Screened {{ $submitted }}</p>
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="px-2.5 py-1 rounded-full text-xs font-medium {{ $reassessment ? 'bg-purple-50 text-purple-700 ring-1 ring-purple-200' : 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' }}">
-                            {{ $reassessment ? 'Helper reassessment' : ($followUpFlow && $screening->follow_up_requested_at ? ($screening->follow_up_answered_at ? 'Follow-up received' : 'Awaiting Seeker response') : 'Review needed') }}
-                        </span>
-                        @if(app(\App\Services\AdviserTranscriptAccess::class)->allowed($session))
-                            <a href="{{ route('adviser.screenings.conversation', $session) }}"
-                               class="inline-flex items-center gap-1.5 rounded-lg bg-white border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
-                                <x-ui-icon name="message"  /> View chat session
-                            </a>
-                        @endif
-                    </div>
-                </div>
+            class="screening-review-card">
+            <x-slot:actions>
+                <x-ui.badge :tone="$reassessment ? 'blue' : 'neutral'">{{ $reassessment ? 'Helper reassessment' : ($followUpFlow && $screening->follow_up_requested_at ? ($screening->follow_up_answered_at ? 'Follow-up received' : 'Awaiting Seeker response') : 'Review needed') }}</x-ui.badge>
+                <x-ui.badge :tone="$riskMeta['tone']">{{ $riskMeta['label'] }}</x-ui.badge>
+                @if(app(\App\Services\AdviserTranscriptAccess::class)->allowed($session))
+                    <a href="{{ route('adviser.screenings.conversation', $session) }}" class="btn-outline">
+                        <x-ui-icon name="message" /> View chat session
+                    </a>
+                @endif
+            </x-slot:actions>
+            <div class="screening-review-body space-y-5">
 
                 <dl class="screening-review-meta">
                     <div>
@@ -120,10 +104,7 @@
                     <div>
                         <dt>Current classification</dt>
                         <dd>
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ring-1 {{ $riskMeta['classes'] }}">
-                                <span class="h-1.5 w-1.5 rounded-full {{ $riskMeta['dot'] }}" aria-hidden="true"></span>
-                                {{ $riskMeta['label'] }}
-                            </span>
+                            <x-ui.badge :tone="$riskMeta['tone']">{{ $riskMeta['label'] }}</x-ui.badge>
                         </dd>
                     </div>
                     @if($single)
@@ -234,9 +215,9 @@
                             </label>
                             <p class="text-xs text-gray-500">Approve peer support only when appropriate under the existing protocol. Approval returns the Seeker to the request steps and matching; it does not start a chat automatically.</p>
                             <div class="screening-decision-actions flex flex-wrap justify-end gap-2">
-                                <button type="reset" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Reset</button>
-                                <button type="submit" name="review_action" value="record" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Record without approval</button>
-                                <button type="submit" name="review_action" value="approve" class="inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-2 text-sm font-semibold text-white hover:bg-green-700">
+                                <button type="reset" class="btn-outline">Reset</button>
+                                <button type="submit" name="review_action" value="record" class="btn-outline">Record without approval</button>
+                                <button type="submit" name="review_action" value="approve" class="btn-primary">
                                     <x-ui-icon name="check" /> Approve peer support
                                 </button>
                             </div>
@@ -252,17 +233,13 @@
                 </footer>
                     </div>
             </div>
-        </section>
+        </x-ui.card>
     @empty
-        <div data-filter-empty class="bg-white rounded-2xl border border-gray-200 p-10 text-center">
-            <p class="text-sm text-gray-500"><span>No screening reviews are assigned to you right now.</span></p>
-        </div>
+        <x-ui.empty data-filter-empty title="No screening reviews are assigned to you right now." />
     @endforelse
 
     @if($sessions->isNotEmpty())
-    <div data-filter-empty hidden class="bg-white rounded-2xl border border-gray-200 p-10 text-center">
-        <p class="text-sm text-gray-500"><span>Nothing matches this filter.</span></p>
-    </div>
+        <x-ui.empty data-filter-empty hidden title="Nothing matches this filter." />
     @endif
 </div>
 @endsection
@@ -289,8 +266,6 @@ document.addEventListener('DOMContentLoaded', function () {
             form.requestSubmit(submitter || undefined);
         });
     });
-    const activeClass = 'bg-gray-900 text-white border-gray-900';
-    const inactiveClass = 'bg-white text-gray-600 border-gray-300';
     document.querySelectorAll('[data-filter]').forEach(button => button.setAttribute('aria-pressed', button.dataset.filter === 'all' ? 'true' : 'false'));
 
     document.querySelectorAll('[data-filter]').forEach(function (button) {
@@ -300,8 +275,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('[data-filter]').forEach(function (btn) {
                 const isActive = btn.dataset.filter === filter;
                 btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-                btn.classList.remove.apply(btn.classList, (isActive ? inactiveClass : activeClass).split(' '));
-                btn.classList.add.apply(btn.classList, (isActive ? activeClass : inactiveClass).split(' '));
+                btn.classList.toggle('is-active', isActive);
             });
 
             let shown = 0;
