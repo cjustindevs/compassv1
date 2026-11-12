@@ -4,106 +4,23 @@
 
 @push('styles')
 <style>
-        .adviser-page-content { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-
-        :root {
-            --green-50: #EAF8F0;
-            --green-100: #D0F0D8;
-            --green-500: #04A052;
-            --green-600: #038A45;
-            --green-700: #027039;
-            --gray-50: #F9FAFB;
-            --gray-100: #F3F4F6;
-            --gray-200: #E5E7EB;
-            --gray-300: #D1D5DB;
-            --gray-400: #9CA3AF;
-            --gray-500: #6B7280;
-            --gray-600: #4B5563;
-            --gray-700: #374151;
-            --gray-800: #163B2D;
-            --red-500: #EF4444;
-            --yellow-500: #F59E0B;
-            --blue-500: #3B82F6;
-        }
-
-        body { background: #F8FBF9; }
-
-        .stat-card {
-            background: white;
-            border-radius: 16px;
-            padding: 20px 24px;
-            border: 1px solid var(--gray-200);
-        }
-        .stat-number { font-size: 28px; font-weight: 800; color: var(--gray-800); }
-        .stat-label { font-size: 13px; color: var(--gray-500); }
-
-        .card {
-            background: white;
-            border-radius: 20px;
-            padding: 24px;
-            border: 1px solid var(--gray-200);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.01);
-        }
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .card-header h3 { font-weight: 700; font-size: 16px; color: var(--gray-800); }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--green-500), var(--green-600));
-            color: white;
-            font-weight: 600;
-            padding: 8px 18px;
-            border-radius: 20px;
-            border: none;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .btn-primary:hover { background: var(--green-700); transform: scale(1.02); }
-
-        .btn-outline {
-            background: transparent;
-            color: var(--gray-600);
-            padding: 6px 14px;
-            border-radius: 16px;
-            border: 1px solid var(--gray-200);
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-outline:hover { background: var(--green-50); border-color: var(--green-500); color: var(--green-700); }
-
-        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); border: 1px solid var(--gray-200); border-radius: 16px; overflow: hidden; }
-        .cal-day-head { padding: 10px 8px; text-align: center; font-size: 12px; font-weight: 700; color: var(--gray-500); background: var(--gray-50); border-bottom: 1px solid var(--gray-200); }
-        .cal-cell { min-height: 110px; border-right: 1px solid var(--gray-100); border-bottom: 1px solid var(--gray-100); padding: 6px; cursor: pointer; transition: background 0.15s; background: white; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); border: 1px solid #E5E7EB; border-radius: 16px; overflow: hidden; }
+        .cal-day-head { padding: 10px 8px; text-align: center; font-size: 12px; font-weight: 700; color: #6B7280; background: #F9FAFB; border-bottom: 1px solid #E5E7EB; }
+        .cal-cell { min-height: 110px; border-right: 1px solid #F3F4F6; border-bottom: 1px solid #F3F4F6; padding: 6px; cursor: pointer; transition: background 0.15s; background: white; }
         .cal-cell:nth-child(7n) { border-right: none; }
-        .cal-cell:hover { background: var(--green-50); }
-        .cal-cell.other-month { background: var(--gray-50); color: var(--gray-400); }
-        .cal-cell .day-num { font-size: 12px; font-weight: 600; color: var(--gray-500); width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-        .cal-cell.today .day-num { background: var(--green-500); color: white; }
+        .cal-cell:hover { background: #EAF8F0; }
+        .cal-cell.other-month { background: #F9FAFB; color: #9CA3AF; }
+        .cal-cell .day-num { font-size: 12px; font-weight: 600; color: #6B7280; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+        .cal-cell.today .day-num { background: #04A052; color: white; }
         .cal-cell .event-chip {
             display: flex; align-items: center; gap: 4px;
             font-size: 11px; font-weight: 600; color: white;
             border-radius: 6px; padding: 2px 6px; margin-top: 3px;
             overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
         }
-        .cal-cell .more { font-size: 11px; color: var(--gray-400); padding: 2px 6px; }
-
+        .cal-cell .more { font-size: 11px; color: #9CA3AF; padding: 2px 6px; }
+        .cal-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+        .cal-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 12px; color: #6B7280; }
         .legend-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 
         .modal-backdrop {
@@ -114,80 +31,55 @@
         .modal-box { background: white; border-radius: 20px; padding: 24px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
 
         .form-input {
-            width: 100%; padding: 10px 14px; border: 1px solid var(--gray-200);
-            border-radius: 12px; font-size: 13px; outline: none; transition: border-color 0.15s;
+            width: 100%; padding: 10px 14px; border: 1px solid #E5E7EB;
+            border-radius: 12px; font-size: 14px; outline: none; transition: border-color 0.15s;
         }
-        .form-input:focus { border-color: var(--green-500); }
-        .form-label { font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; display: block; }
+        .form-input:focus { border-color: #04A052; }
+        .form-label { font-size: 12px; font-weight: 600; color: #4B5563; margin-bottom: 6px; display: block; }
 
-        .flash-success { background: var(--green-50); color: var(--green-700); border: 1px solid var(--green-100); border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
+        .flash-success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
         @media (max-width: 768px) {
             .cal-cell { min-height: 70px; }
             .cal-cell .event-chip { display: none; }
             .cal-cell .more { display: none; }
             .cal-day-head { font-size: 11px; }
         }
-        .compass-ui #openEventModal { white-space: nowrap; }
     </style>
 @endpush
 
 @section('content')
 <div class="adviser-page-content">
-        <!-- Top Bar -->
-        <div class="flex items-center justify-between mb-6">
-            <div class="flex items-center gap-4">
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-gray-800">Calendar</h1>
-                    <p class="text-sm text-gray-500 hidden sm:block">
-                        Sessions, evaluations, and team events
-                    </p>
-                </div>
-            </div>
-            <div class="flex items-center gap-3">
-            </div>
-        </div>
+        <x-ui.page-header title="Calendar" description="Sessions, evaluations, and team events">
+            <x-slot:actions>
+                <button type="button" class="btn-primary" id="openEventModal"><x-ui-icon name="plus" /> Add event</button>
+            </x-slot:actions>
+        </x-ui.page-header>
 
         @if(session('success'))
-            <div class="flash-success">
+            <div class="flash-success" role="status">
                  {{ session('success') }}
             </div>
         @endif
 
-        <!-- Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="stat-card">
-                <span class="stat-label">Sessions</span>
-                <div class="stat-number">{{ $sessions->count() }}</div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Evaluations</span>
-                <div class="stat-number">{{ $evaluations->count() }}</div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Events</span>
-                <div class="stat-number">{{ $customEvents->count() }}</div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Days With Activity</span>
-                <div class="stat-number">{{ count($eventsByDate) }}</div>
-            </div>
-        </div>
+        <x-ui.kpi-grid>
+            <x-ui.kpi label="Sessions" :value="$sessions->count()" tone="green" />
+            <x-ui.kpi label="Evaluations" :value="$evaluations->count()" tone="blue" />
+            <x-ui.kpi label="Events" :value="$customEvents->count()" tone="amber" />
+            <x-ui.kpi label="Days With Activity" :value="count($eventsByDate)" tone="neutral" />
+        </x-ui.kpi-grid>
 
-        <!-- Calendar Card -->
-        <div class="card">
-            <div class="card-header">
-                <div class="flex items-center gap-2">
-                    <a href="{{ route('adviser.calendar', ['month' => $prevMonth->month, 'year' => $prevMonth->year]) }}" class="btn-outline"><x-ui-icon name="chevron-left"  /></a>
-                    <a href="{{ route('adviser.calendar', ['month' => $nextMonth->month, 'year' => $nextMonth->year]) }}" class="btn-outline"><x-ui-icon name="chevron-right"  /></a>
-                    <a href="{{ route('adviser.calendar') }}" class="btn-outline"><x-ui-icon name="calendar"  /> Today</a>
+        <x-ui.card :title="now()->setDate($year, $month, 1)->format('F Y')">
+            <x-slot:actions>
+                <div class="cal-tools">
+                    <a href="{{ route('adviser.calendar', ['month' => $prevMonth->month, 'year' => $prevMonth->year]) }}" class="btn-secondary" aria-label="Previous month" title="Previous month"><x-ui-icon name="chevron-left" /></a>
+                    <a href="{{ route('adviser.calendar', ['month' => $nextMonth->month, 'year' => $nextMonth->year]) }}" class="btn-secondary" aria-label="Next month" title="Next month"><x-ui-icon name="chevron-right" /></a>
+                    <a href="{{ route('adviser.calendar') }}" class="btn-secondary"><x-ui-icon name="calendar" /> Today</a>
                 </div>
-                <h3 class="text-lg font-bold text-gray-800">{{ now()->setDate($year, $month, 1)->format('F Y') }}</h3>
-                <div class="flex items-center gap-3 text-xs text-gray-500">
-                    <span><span class="legend-dot" style="background:#04A052;"></span> Session</span>
-                    <span><span class="legend-dot" style="background:#3B82F6;"></span> Evaluation</span>
-                    <span><span class="legend-dot" style="background:#F59E0B;"></span> Event</span>
-                    <button class="btn-primary" id="openEventModal"><x-ui-icon name="plus"  /> Add Event</button>
-                </div>
+            </x-slot:actions>
+            <div class="cal-legend">
+                <span><span class="legend-dot" style="background:#04A052;"></span> Session</span>
+                <span><span class="legend-dot" style="background:#3B82F6;"></span> Evaluation</span>
+                <span><span class="legend-dot" style="background:#F59E0B;"></span> Event</span>
             </div>
 
             <div class="cal-grid" id="calGrid">
@@ -218,23 +110,23 @@
                     @endforeach
                 @endforeach
             </div>
-        </div>
+        </x-ui.card>
 
         <!-- Day Detail Panel -->
-        <div class="card mt-6" id="dayPanel" style="display:none;">
-            <div class="card-header">
-                <h3 id="dayPanelTitle">Events</h3>
-                <button class="btn-outline" id="closeDayPanel"><x-ui-icon name="close"  /> Close</button>
+        <x-ui.card id="dayPanel" class="mt-6" style="display:none;">
+            <div class="ui-card-head">
+                <h2 class="ui-card-title" id="dayPanelTitle">Events</h2>
+                <button type="button" class="btn-secondary" id="closeDayPanel"><x-ui-icon name="close" /> Close</button>
             </div>
             <div id="dayPanelList" style="display:flex;flex-direction:column;"></div>
-        </div>
+        </x-ui.card>
 
         <!-- Add Event Modal -->
         <div class="modal-backdrop" id="eventModal">
             <div class="modal-box">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-bold text-gray-800 text-lg">Add Calendar Event</h3>
-                    <button class="btn-outline" id="closeEventModal" aria-label="Close dialog" title="Close dialog"><x-ui-icon name="close"  /></button>
+                    <h2 class="ui-card-title">Add Calendar Event</h2>
+                    <button type="button" class="btn-secondary" id="closeEventModal" aria-label="Close dialog" title="Close dialog"><x-ui-icon name="close" /></button>
                 </div>
 
                 <form class="form-maximized" method="POST" action="{{ route('adviser.calendar.event.store') }}">
@@ -280,18 +172,11 @@
                             <span class="text-xs text-gray-400">Pick a highlight color for this event</span>
                         </div>
                     </div>
-                    <button type="submit" class="btn-primary w-full justify-center"><x-ui-icon name="save"  /> Save Event</button>
+                    <button type="submit" class="btn-primary w-full justify-center"><x-ui-icon name="save" /> Save Event</button>
                 </form>
             </div>
         </div>
-
-        <!-- Footer -->
-        <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-
-            Quality supervision leads to quality support.
-        </div>
 </div>
-    <!-- Bottom Navigation -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
 // ── Event Modal ──

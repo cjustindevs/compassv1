@@ -4,120 +4,36 @@
 
 @push('styles')
 <style>
-        .adviser-page-content { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-
-        :root {
-            --green-50: #EAF8F0;
-            --green-100: #D0F0D8;
-            --green-500: #04A052;
-            --green-600: #038A45;
-            --green-700: #027039;
-            --gray-50: #F9FAFB;
-            --gray-100: #F3F4F6;
-            --gray-200: #E5E7EB;
-            --gray-300: #D1D5DB;
-            --gray-400: #9CA3AF;
-            --gray-500: #6B7280;
-            --gray-600: #4B5563;
-            --gray-700: #374151;
-            --gray-800: #163B2D;
-            --red-500: #EF4444;
-            --yellow-500: #F59E0B;
-            --blue-500: #3B82F6;
-        }
-
-        body { background: #F8FBF9; }
-
-        .stat-card {
-            background: white;
-            border-radius: 16px;
-            padding: 20px 24px;
-            border: 1px solid var(--gray-200);
-        }
-        .stat-number { font-size: 28px; font-weight: 800; color: var(--gray-800); }
-        .stat-label { font-size: 13px; color: var(--gray-500); }
-
-        .card {
-            background: white;
-            border-radius: 20px;
-            padding: 24px;
-            border: 1px solid var(--gray-200);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.01);
-        }
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .card-header h3 { font-weight: 700; font-size: 16px; color: var(--gray-800); }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--green-500), var(--green-600));
-            color: white;
-            font-weight: 600;
-            padding: 8px 18px;
-            border-radius: 20px;
-            border: none;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .btn-primary:hover { background: var(--green-700); transform: scale(1.02); }
-
-        .btn-outline {
-            background: transparent;
-            color: var(--gray-600);
-            padding: 6px 14px;
-            border-radius: 16px;
-            border: 1px solid var(--gray-200);
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-outline:hover { background: var(--green-50); border-color: var(--green-500); color: var(--green-700); }
-
         .category-pill {
             padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
-            border: 1px solid var(--gray-200); background: white; color: var(--gray-500);
+            border: 1px solid #E5E7EB; background: white; color: #6B7280;
             text-decoration: none; transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px;
         }
-        .category-pill:hover { border-color: var(--green-500); color: var(--green-700); }
-        .category-pill.active { background: var(--green-50); border-color: var(--green-500); color: var(--green-700); }
+        .category-pill:hover { border-color: #04A052; color: #027039; }
+        .category-pill.active { background: #EAF8F0; border-color: #04A052; color: #027039; }
 
         .adviser-resource-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
         .resource-history { border-top: 1px solid #edf2ef; padding-top: 8px; font-size: 12px; }
         .resource-history > summary { cursor: pointer; color: #087341; font-weight: 600; }
         .resource-history .review-history > h3 { display: none; }
         .resource-card {
-            background: white; border: 1px solid var(--gray-200); border-radius: 18px;
+            background: white; border: 1px solid #E5E7EB; border-radius: 18px;
             padding: 20px; transition: all 0.2s; display: flex; flex-direction: column; gap: 10px;
         }
-        .resource-card:hover { border-color: var(--green-500); box-shadow: none; transform: translateY(-2px); }
+        .resource-card:hover { border-color: #04A052; box-shadow: none; transform: translateY(-2px); }
         .resource-card .icon-box {
-            width: 48px; height: 48px; border-radius: 14px; background: var(--green-50);
+            width: 48px; height: 48px; border-radius: 14px; background: #EAF8F0;
             display: flex; align-items: center; justify-content: center; font-size: 20px;
         }
-        .category-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--green-700); }
-        .unpublished-tag { font-size: 11px; font-weight: 700; background: var(--gray-100); color: var(--gray-500); padding: 2px 8px; border-radius: 10px; }
+        .category-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #027039; }
+        .unpublished-tag { font-size: 11px; font-weight: 700; background: #F3F4F6; color: #6B7280; padding: 2px 8px; border-radius: 10px; }
 
         .form-input {
-            width: 100%; padding: 10px 14px; border: 1px solid var(--gray-200);
-            border-radius: 12px; font-size: 13px; outline: none; transition: border-color 0.15s;
+            width: 100%; padding: 10px 14px; border: 1px solid #E5E7EB;
+            border-radius: 12px; font-size: 14px; outline: none; transition: border-color 0.15s;
         }
-        .form-input:focus { border-color: var(--green-500); }
-        .form-label { font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; display: block; }
+        .form-input:focus { border-color: #04A052; }
+        .form-label { font-size: 12px; font-weight: 600; color: #4B5563; margin-bottom: 6px; display: block; }
 
         .modal-backdrop {
             display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35);
@@ -126,77 +42,45 @@
         .modal-backdrop.active { display: flex; }
         .modal-box { background: white; border-radius: 20px; padding: 24px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
 
-        .flash-success { background: var(--green-50); color: var(--green-700); border: 1px solid var(--green-100); border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
+        .flash-success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
     </style>
 @endpush
 
 @section('content')
 <div class="adviser-page-content">
-        <!-- Top Bar -->
-        <div class="flex items-center justify-between mb-6">
-            <div class="flex items-center gap-4">
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-gray-800">Resources</h1>
-                    <p class="text-sm text-gray-500 hidden sm:block">
-                        Manage the self-help content library
-                    </p>
-                </div>
-            </div>
-            <div class="flex items-center gap-3">
-            </div>
-        </div>
+        <x-ui.page-header title="Resources" description="Manage the self-help content library">
+            <x-slot:actions>
+                <a class="btn-secondary" href="{{ route('adviser.resources',['section'=>'emergency']) }}">Manage emergency contacts</a>
+                <button type="button" class="btn-primary" id="openAddModal"><x-ui-icon name="plus" /> Add resource</button>
+            </x-slot:actions>
+        </x-ui.page-header>
 
         @if(session('success'))
-            <div class="flash-success"> {{ session('success') }}</div>
+            <div class="flash-success" role="status"> {{ session('success') }}</div>
         @endif
 
-        @if($errors->any())<div role="alert" class="rounded-xl bg-red-50 p-4 text-sm text-red-700 mb-4">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
-        <!-- Stats -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="stat-card">
-                <span class="stat-label">Total Resources</span>
-                <div class="stat-number">{{ $stats['total'] }}</div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Published</span>
-                <div class="stat-number">{{ $stats['published'] }}</div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Total Views</span>
-                <div class="stat-number">{{ number_format($stats['views']) }}</div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Featured</span>
-                <div class="stat-number">{{ $stats['featured'] }}</div>
-            </div>
-        </div>
+        @if($errors->any())<div role="alert" class="ui-notice">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
 
-        <div class="av-actions mb-5"><a class="av-button" href="{{ route('adviser.resources',['section'=>'emergency']) }}">Manage emergency contacts</a></div>
-        <!-- Toolbar -->
-        <div class="card mb-6">
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <form class="form-maximized flex items-center gap-2 flex-1 min-w-[220px]" method="GET" action="{{ route('adviser.resources') }}">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search resources..."
-                           class="form-input flex-1">
-                    <button type="submit" class="btn-outline" aria-label="Search" title="Search"><x-ui-icon name="search"  /></button>
-                    @if(request()->has('category'))
-                        <input type="hidden" name="category" value="{{ request('category') }}">
-                    @endif
-                </form>
-                <button class="btn-primary" id="openAddModal"><x-ui-icon name="plus"  /> Add Resource</button>
-            </div>
+        <x-ui.kpi-grid>
+            <x-ui.kpi label="Total Resources" :value="$stats['total']" tone="neutral" />
+            <x-ui.kpi label="Published" :value="$stats['published']" tone="green" />
+            <x-ui.kpi label="Total Views" :value="number_format($stats['views'])" tone="blue" />
+            <x-ui.kpi label="Featured" :value="$stats['featured']" tone="amber" />
+        </x-ui.kpi-grid>
 
-            <div class="flex items-center gap-2 mt-4 flex-wrap">
-                <a href="{{ route('adviser.resources') }}" class="category-pill {{ !request('category') || request('category') === 'all' ? 'active' : '' }}">
-                    <x-ui-icon name="dashboard"  /> All
+        <x-ui.filter-bar :action="route('adviser.resources')" aria-label="Resource filters">
+            @if(request()->filled('category'))<input type="hidden" name="category" value="{{ request('category') }}">@endif
+            <x-ui.field label="Search" for="resourceSearch"><input id="resourceSearch" type="text" name="search" data-control="search" value="{{ request('search') }}" placeholder="Search resources..."></x-ui.field>
+            <x-slot:buttons><button type="submit" class="btn-primary" aria-label="Search" title="Search"><x-ui-icon name="search" /> Search</button></x-slot:buttons>
+        </x-ui.filter-bar>
+        <div class="flex items-center gap-2 mb-5 flex-wrap">
+            <a href="{{ route('adviser.resources') }}" class="category-pill {{ !request('category') || request('category') === 'all' ? 'active' : '' }}">All</a>
+            @foreach($categories as $category)
+                <a href="{{ route('adviser.resources', ['category' => $category, 'search' => request('search')]) }}"
+                   class="category-pill {{ request('category') === $category ? 'active' : '' }}">
+                    {{ ucfirst($category) }}
                 </a>
-                @foreach($categories as $category)
-                    <a href="{{ route('adviser.resources', ['category' => $category, 'search' => request('search')]) }}"
-                       class="category-pill {{ request('category') === $category ? 'active' : '' }}">
-                        {{ ucfirst($category) }}
-                    </a>
-                @endforeach
-            </div>
+            @endforeach
         </div>
 
         <!-- Resource Grid -->
@@ -235,7 +119,7 @@
                         </div>
 
                         <div class="flex items-center gap-2 mt-1">
-                            <button class="btn-outline edit-resource"
+                            <button class="btn-secondary edit-resource" type="button"
                                     data-id="{{ $resource->id }}"
                                     data-title="{{ $resource->title }}"
                                     data-description="{{ $resource->description }}"
@@ -256,7 +140,7 @@
                                   data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn-outline" style="color:var(--red-500);border-color:#FECACA;"><x-ui-icon name="trash"  /> Archive</button>
+                                <button type="submit" class="btn-secondary" style="color:#EF4444;border-color:#FECACA;"><x-ui-icon name="trash"  /> Archive</button>
                             </form>
                         </div>
                         <details class="resource-history"><summary>Update history</summary><x-supervision-history :record="$resource" /></details>
@@ -265,15 +149,10 @@
             </div>
 
             <div class="mt-6">
-                {{ $resources->links() }}
+                {{ $resources->links('vendor.pagination.compass', ['noun' => 'resources']) }}
             </div>
         @else
-            <div class="card">
-                <div class="empty-state text-center py-12 text-gray-400">
-                    <p class="text-lg font-medium text-gray-600">No resources found</p>
-                    <p>Try a different search or add a new resource.</p>
-                </div>
-            </div>
+            <x-ui.empty title="No resources found" text="Try a different search or add a new resource." />
         @endif
 
         <!-- Footer -->
@@ -287,8 +166,8 @@
     <div class="modal-backdrop" id="resourceModal">
         <div class="modal-box">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="font-bold text-gray-800 text-lg" id="modalTitle">Add Resource</h3>
-                <button class="btn-outline" id="closeModal" aria-label="Close dialog" title="Close dialog"><x-ui-icon name="close"  /></button>
+                <h2 class="ui-card-title" id="modalTitle">Add Resource</h2>
+                <button type="button" class="btn-secondary" id="closeModal" aria-label="Close dialog" title="Close dialog"><x-ui-icon name="close"  /></button>
             </div>
 
             <form class="form-maximized" method="POST" action="{{ route('adviser.resources.store') }}" id="resourceForm">

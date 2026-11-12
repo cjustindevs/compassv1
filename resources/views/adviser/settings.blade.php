@@ -4,216 +4,148 @@
 
 @push('styles')
 <style>
-        .adviser-page-content { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-
-        :root {
-            --green-50: #EAF8F0;
-            --green-100: #D0F0D8;
-            --green-500: #04A052;
-            --green-600: #038A45;
-            --green-700: #027039;
-            --gray-50: #F9FAFB;
-            --gray-100: #F3F4F6;
-            --gray-200: #E5E7EB;
-            --gray-300: #D1D5DB;
-            --gray-400: #9CA3AF;
-            --gray-500: #6B7280;
-            --gray-600: #4B5563;
-            --gray-700: #374151;
-            --gray-800: #163B2D;
-            --red-500: #EF4444;
-            --yellow-500: #F59E0B;
-            --blue-500: #3B82F6;
-        }
-
-        body { background: #F8FBF9; }
-
-        .card {
-            background: white;
-            border-radius: 20px;
-            padding: 24px;
-            border: 1px solid var(--gray-200);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.01);
-        }
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .card-header h3 { font-weight: 700; font-size: 16px; color: var(--gray-800); }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--green-500), var(--green-600));
-            color: white;
-            font-weight: 600;
-            padding: 8px 18px;
-            border-radius: 20px;
-            border: none;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .btn-primary:hover { background: var(--green-700); transform: scale(1.02); }
-
-        .form-input {
-            width: 100%; padding: 10px 14px; border: 1px solid var(--gray-200);
-            border-radius: 12px; font-size: 13px; outline: none; transition: border-color 0.15s;
-        }
-        .form-input:focus { border-color: var(--green-500); }
-        .form-label { font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; display: block; }
-
-        .toggle-row {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 14px 0; border-bottom: 1px solid var(--gray-100); gap: 12px;
-        }
-        .toggle-row:last-child { border-bottom: none; }
-        .toggle-label { font-size: 13px; font-weight: 600; color: var(--gray-700); }
-        .toggle-desc { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
-
-        .switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .switch .slider {
-            position: absolute; cursor: pointer; inset: 0;
-            background: var(--gray-300); border-radius: 24px; transition: 0.2s;
-        }
-        .switch .slider::before {
-            content: ''; position: absolute; width: 18px; height: 18px;
-            border-radius: 50%; background: white; left: 3px; top: 3px; transition: 0.2s;
-        }
-        .switch input:checked + .slider { background: var(--green-500); }
-        .switch input:checked + .slider::before { transform: translateX(18px); }
-
-        .tab-btn { padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--gray-200); background: white; color: var(--gray-500); transition: all 0.2s; }
-        .tab-btn.active { background: var(--green-50); border-color: var(--green-500); color: var(--green-700); }
-
-        .flash-success { background: var(--green-50); color: var(--green-700); border: 1px solid var(--green-100); border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
-        .flash-error { background: #FEF2F2; color: var(--red-500); border: 1px solid #FECACA; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
-
+        .settings-flash { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
+        .settings-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+        .tab-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 20px; border-radius: 999px; font-size: 15px; font-weight: 600; cursor: pointer; border: 1px solid #E5E7EB; background: #fff; color: #6B7280; }
+        .tab-btn.active { background: #EAF8F0; border-color: #04A052; color: #027039; }
         .settings-section { display: none; }
         .settings-section.active { display: block; }
+        .settings-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+        @media (min-width: 769px) { .settings-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .form-label { display: block; font-weight: 600; font-size: 14px; color: #374151; margin-bottom: 6px; }
+        .form-input { width: 100%; min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid #E5E7EB; font-size: 15px; background: #fff; }
+        .form-input:focus { outline: 2px solid #04A052; outline-offset: 1px; }
+        .form-input.error { border-color: #DC2626; }
+        .error-text { font-size: 13px; color: #DC2626; margin-top: 4px; }
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid #F3F4F6; }
+        .toggle-row:last-of-type { border-bottom: none; }
+        .toggle-row p { margin: 0; }
+        .toggle-label { font-size: 15px; font-weight: 600; color: #374151; }
+        .toggle-desc { font-size: 13px; color: #6B7280; }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .switch .slider { position: absolute; cursor: pointer; inset: 0; background: #E5E7EB; border-radius: 24px; transition: 0.3s; }
+        .switch .slider::before { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #fff; left: 3px; bottom: 3px; transition: 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .switch input:checked + .slider { background: #04A052; }
+        .switch input:checked + .slider::before { transform: translateX(20px); }
+        .switch input:focus-visible + .slider { outline: 2px solid #04A052; outline-offset: 2px; }
     </style>
 @endpush
 
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.tab-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
+                this.classList.add('active');
+                document.querySelectorAll('.settings-section').forEach(function (s) { s.classList.remove('active'); });
+                document.getElementById('section-' + this.getAttribute('data-tab')).classList.add('active');
+            });
+        });
+
+        document.documentElement.classList.add('js-save-bar');
+        // Reveal each form's sticky save bar once one of its fields changes.
+        document.querySelectorAll('form[data-settings-form]').forEach(function (form) {
+            const bar = form.querySelector('[data-save-bar]');
+            if (!bar) return;
+            const reveal = function () { bar.classList.add('is-visible'); };
+            form.addEventListener('input', reveal);
+            form.addEventListener('change', reveal);
+        });
+    });
+</script>
+@endpush
+
 @section('content')
+@php
+    $activeTab = ($errors->has('current_password') || $errors->has('new_password')) ? 'password' : 'profile';
+@endphp
 <div class="adviser-page-content">
-        <!-- Top Bar -->
-        <div class="flex items-center justify-between mb-6">
-            <div class="flex items-center gap-4">
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-gray-800">Settings</h1>
-                    <p class="text-sm text-gray-500 hidden sm:block">
-                        Manage your profile, password, and preferences
-                    </p>
-                </div>
-            </div>
-            <div class="flex items-center gap-3">
-            </div>
-        </div>
+        <x-ui.page-header title="Settings" description="Manage your profile, password, and preferences" />
 
         @if(session('success'))
-            <div class="flash-success"> {{ session('success') }}</div>
+            <div class="settings-flash" role="status"> {{ session('success') }}</div>
         @endif
 
-        @if($errors->any())
-            <div class="flash-error">
-                 {{ $errors->first() }}
-            </div>
-        @endif
-
-        <!-- Tabs -->
-        <div class="flex items-center gap-2 mb-6 flex-wrap">
-            <button class="tab-btn active" data-tab="profile"><x-ui-icon name="user" class="mr-1" /> Profile</button>
-            <button class="tab-btn" data-tab="password"><x-ui-icon name="lock" class="mr-1" /> Password</button>
-            <button class="tab-btn" data-tab="appearance"><x-ui-icon name="palette" class="mr-1" /> Appearance</button>
-            <button class="tab-btn" data-tab="notifications"><x-ui-icon name="bell" class="mr-1" /> Notifications</button>
+        <div class="settings-tabs" id="tabBar">
+            <button type="button" class="tab-btn {{ $activeTab === 'profile' ? 'active' : '' }}" data-tab="profile"><x-ui-icon name="user" /> Profile</button>
+            <button type="button" class="tab-btn {{ $activeTab === 'password' ? 'active' : '' }}" data-tab="password"><x-ui-icon name="lock" /> Password</button>
+            <button type="button" class="tab-btn" data-tab="appearance"><x-ui-icon name="palette" /> Appearance</button>
+            <button type="button" class="tab-btn" data-tab="notifications"><x-ui-icon name="bell" /> Notifications</button>
         </div>
 
         <!-- Profile -->
-        <div class="settings-section active" id="section-profile">
-            <div class="card">
-                <div class="card-header">
-                    <h3>Profile Information</h3>
-                </div>
-                <form class="form-maximized" method="POST" action="{{ route('adviser.settings.profile') }}">
+        <div class="settings-section {{ $activeTab === 'profile' ? 'active' : '' }}" id="section-profile">
+            <x-ui.card title="Profile Information">
+                <form class="form-maximized" data-settings-form method="POST" action="{{ route('adviser.settings.profile') }}">
                     @csrf
                     @method('PUT')
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="settings-grid two">
                         <div>
-                            <label class="form-label">First Name</label>
-                            <input type="text" name="first_name" required class="form-input" value="{{ old('first_name', $adviser?->first_name ?? '') }}">
+                            <label class="form-label" for="settingsFirstName">First Name</label>
+                            <input id="settingsFirstName" type="text" name="first_name" required class="form-input {{ $errors->has('first_name') ? 'error' : '' }}" value="{{ old('first_name', $adviser?->first_name ?? '') }}">
+                            @error('first_name') <p class="error-text">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="form-label">Last Name</label>
-                            <input type="text" name="last_name" required class="form-input" value="{{ old('last_name', $adviser?->last_name ?? '') }}">
+                            <label class="form-label" for="settingsLastName">Last Name</label>
+                            <input id="settingsLastName" type="text" name="last_name" required class="form-input {{ $errors->has('last_name') ? 'error' : '' }}" value="{{ old('last_name', $adviser?->last_name ?? '') }}">
+                            @error('last_name') <p class="error-text">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="form-label" for="settingsName">Display Name</label>
+                            <input id="settingsName" type="text" name="name" required class="form-input {{ $errors->has('name') ? 'error' : '' }}" value="{{ old('name', $user->name) }}">
+                            @error('name') <p class="error-text">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="form-label" for="settingsEmail">Email</label>
+                            <input id="settingsEmail" type="email" name="email" required class="form-input {{ $errors->has('email') ? 'error' : '' }}" value="{{ old('email', $user->email) }}">
+                            @error('email') <p class="error-text">{{ $message }}</p> @enderror
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <div>
-                            <label class="form-label">Display Name</label>
-                            <input type="text" name="name" required class="form-input" value="{{ old('name', $user->name) }}">
-                        </div>
-                        <div>
-                            <label class="form-label">Email</label>
-                            <input type="email" name="email" required class="form-input" value="{{ old('email', $user->email) }}">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-primary"><x-ui-icon name="save"  /> Save Profile</button>
+                    <div class="ui-save-bar{{ $errors->any() ? ' is-visible' : '' }}" data-save-bar><p class="ui-save-bar-text">You have unsaved changes.</p><button type="submit" class="btn-primary"><x-ui-icon name="save" /> Save Profile</button></div>
                 </form>
-            </div>
+            </x-ui.card>
         </div>
 
         <!-- Password -->
-        <div class="settings-section" id="section-password">
-            <div class="card">
-                <div class="card-header">
-                    <h3>Change Password</h3>
-                </div>
-                <form class="form-maximized" method="POST" action="{{ route('adviser.settings.password') }}">
+        <div class="settings-section {{ $activeTab === 'password' ? 'active' : '' }}" id="section-password">
+            <x-ui.card title="Change Password">
+                <form class="form-maximized" data-settings-form method="POST" action="{{ route('adviser.settings.password') }}">
                     @csrf
                     @method('PUT')
-                    <div class="mb-4">
-                        <label class="form-label">Current Password</label>
-                        <input type="password" name="current_password" required class="form-input" autocomplete="current-password">
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <div>
-                            <label class="form-label">New Password</label>
-                            <input type="password" name="new_password" required minlength="8" class="form-input" autocomplete="new-password">
+                    <div class="settings-grid two">
+                        <div style="grid-column: 1 / -1;">
+                            <label class="form-label" for="settingsCurrentPassword">Current Password</label>
+                            <input id="settingsCurrentPassword" type="password" name="current_password" required class="form-input {{ $errors->has('current_password') ? 'error' : '' }}" autocomplete="current-password">
+                            @error('current_password') <p class="error-text">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="form-label">Confirm New Password</label>
-                            <input type="password" name="new_password_confirmation" required class="form-input" autocomplete="new-password">
+                            <label class="form-label" for="settingsNewPassword">New Password</label>
+                            <input id="settingsNewPassword" type="password" name="new_password" required minlength="8" class="form-input {{ $errors->has('new_password') ? 'error' : '' }}" autocomplete="new-password">
+                            @error('new_password') <p class="error-text">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="form-label" for="settingsConfirmPassword">Confirm New Password</label>
+                            <input id="settingsConfirmPassword" type="password" name="new_password_confirmation" required class="form-input" autocomplete="new-password">
                         </div>
                     </div>
-                    <button type="submit" class="btn-primary"><x-ui-icon name="key"  /> Update Password</button>
+                    <div class="ui-save-bar{{ $errors->any() ? ' is-visible' : '' }}" data-save-bar><p class="ui-save-bar-text">You have unsaved changes.</p><button type="submit" class="btn-primary"><x-ui-icon name="key" /> Update Password</button></div>
                 </form>
-            </div>
+            </x-ui.card>
         </div>
 
         <!-- Appearance -->
         <div class="settings-section" id="section-appearance">
-            <div class="card">
-                <div class="card-header">
-                    <h3>Appearance</h3>
-                </div>
+            <x-ui.card title="Appearance">
                 @include('partials.light-mode-notice')
-            </div>
+            </x-ui.card>
         </div>
 
         <!-- Notification Preferences -->
         <div class="settings-section" id="section-notifications">
-            <div class="card">
-                <div class="card-header">
-                    <h3>Notification Preferences</h3>
-                </div>
-                <form class="form-maximized" method="POST" action="{{ route('adviser.settings.notifications') }}">
+            <x-ui.card title="Notification Preferences">
+                <form class="form-maximized" data-settings-form method="POST" action="{{ route('adviser.settings.notifications') }}">
                     @csrf
                     @method('PUT')
 
@@ -229,45 +161,19 @@
                     @foreach($prefs as $field => [$label, $desc])
                         <div class="toggle-row">
                             <div>
-                                <div class="toggle-label">{{ $label }}</div>
-                                <div class="toggle-desc">{{ $desc }}</div>
+                                <p class="toggle-label">{{ $label }}</p>
+                                <p class="toggle-desc">{{ $desc }}</p>
                             </div>
                             <label class="switch">
-                                <input type="checkbox" name="{{ $field }}" value="1" {{ $user->{$field} ? 'checked' : '' }}>
+                                <input type="checkbox" name="{{ $field }}" value="1" aria-label="{{ $label }}" {{ $user->{$field} ? 'checked' : '' }}>
                                 <span class="slider"></span>
                             </label>
                         </div>
                     @endforeach
 
-                    <div class="mt-6">
-                        <button type="submit" class="btn-primary"><x-ui-icon name="bell"  /> Save Preferences</button>
-                    </div>
+                    <div class="ui-save-bar{{ $errors->any() ? ' is-visible' : '' }}" data-save-bar><p class="ui-save-bar-text">You have unsaved changes.</p><button type="submit" class="btn-primary"><x-ui-icon name="bell" /> Save Preferences</button></div>
                 </form>
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-
-            Quality supervision leads to quality support.
+            </x-ui.card>
         </div>
 </div>
-    <!-- Bottom Navigation -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-// ── Tab switching ──
-            document.querySelectorAll('.tab-btn').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    document.querySelectorAll('.tab-btn').forEach(function (b) {
-                        b.classList.remove('active');
-                    });
-                    this.classList.add('active');
-                    document.querySelectorAll('.settings-section').forEach(function (s) {
-                        s.classList.remove('active');
-                    });
-                    document.getElementById('section-' + this.getAttribute('data-tab')).classList.add('active');
-                });
-            });
-        });
-    </script>
 @endsection

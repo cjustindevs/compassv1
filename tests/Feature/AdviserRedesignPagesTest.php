@@ -373,4 +373,88 @@ class AdviserRedesignPagesTest extends TestCase
         $detail = $this->get(route('adviser.session.show', $report->session_id))->assertOk()->assertSee('ui-back-link', false)->getContent();
         $this->assertSame(1, substr_count($detail, '<h1'));
     }
+
+    public function test_reports_has_filter_bar_chips_and_kpis(): void
+    {
+        $adviser = $this->adviser();
+
+        $html = $this->actingAs($adviser->user)->get(route('adviser.reports', ['tab' => 'safety', 'priority' => 'high']))->assertOk()
+            ->assertSee('Priority: high')->assertSee('ui-filter-bar', false)->assertSee('ui-kpis', false)
+            ->getContent();
+
+        $this->assertSame(1, substr_count($html, '<h1'));
+        $this->assertSame(1, substr_count($html, 'data-page-header'));
+        $this->assertStringContainsString('name="priority"', $html);
+        $this->assertStringContainsString('tab=cases', $html);
+    }
+
+    public function test_calendar_resources_schedule_keep_hooks(): void
+    {
+        $adviser = $this->adviser();
+        $this->helperFor($adviser);
+
+        $calendar = $this->actingAs($adviser->user)->get(route('adviser.calendar'))->assertOk()
+            ->assertSee('id="calGrid"', false)->assertSee('id="openEventModal"', false)
+            ->assertSee('id="dayPanel"', false)->assertSee('id="eventModal"', false)->getContent();
+        $this->assertSame(1, substr_count($calendar, 'data-page-header'));
+        $this->assertSame(1, substr_count($calendar, '<h1'));
+
+        $resources = $this->get(route('adviser.resources'))->assertOk()
+            ->assertSee('id="openAddModal"', false)->assertSee('id="resourceForm"', false)->assertSee('id="categorySelect"', false)->getContent();
+        $this->assertSame(1, substr_count($resources, 'data-page-header'));
+        $this->assertSame(1, substr_count($resources, '<h1'));
+
+        // adviser.schedule is served by ModeratorScheduleController (moderator.schedules view); adviser/schedule.blade.php is unrouted.
+        $schedule = $this->get(route('adviser.schedule'))->assertOk()
+            ->assertSee('id="dutyForm"', false)
+            ->assertSee('data-helper-workload', false)->assertSee('data-workload-body', false)->getContent();
+        $this->assertSame(1, substr_count($schedule, 'data-page-header'));
+    }
+
+    public function test_settings_forms_have_save_bars_and_keep_actions(): void
+    {
+        $adviser = $this->adviser();
+
+        $html = $this->actingAs($adviser->user)->get(route('adviser.settings'))->assertOk()->getContent();
+
+        foreach (['profile', 'password', 'notifications'] as $form) {
+            $this->assertMatchesRegularExpression('#<form[^>]*action="'.preg_quote(route('adviser.settings.'.$form), '#').'"[^>]*>.*?data-save-bar.*?</form>#s', $html);
+        }
+        foreach (['profile', 'password', 'appearance', 'notifications'] as $tab) {
+            $this->assertStringContainsString('data-tab="'.$tab.'"', $html);
+            $this->assertStringContainsString('id="section-'.$tab.'"', $html);
+        }
+        $this->assertStringContainsString('ui-save-bar', $html);
+        $this->assertSame(1, substr_count($html, '<h1'));
+        $this->assertSame(1, substr_count($html, 'data-page-header'));
+    }
+
+    public function test_notifications_and_concerns_use_page_header(): void
+    {
+        $adviser = $this->adviser();
+
+        foreach ([route('adviser.notifications'), route('adviser.notifications', ['history' => 'archived']), route('concerns.manage')] as $url) {
+            $html = $this->actingAs($adviser->user)->get($url)->assertOk()->getContent();
+            $this->assertSame(1, substr_count($html, 'data-page-header'), $url);
+            $this->assertSame(1, substr_count($html, '<h1'), $url);
+        }
+
+        $admin = \App\Models\User::factory()->create(['role' => 'admin', 'is_active' => true]);
+        $html = $this->actingAs($admin)->get(route('concerns.manage'))->assertOk()
+            ->assertSee('id="addConcernTitle"', false)->assertSee('id="categoryStatus"', false)->getContent();
+        $this->assertSame(1, substr_count($html, 'data-page-header'));
+    }
+
+    public function test_training_still_renders_for_helper(): void
+    {
+        $adviser = $this->adviser();
+        $helper = $this->helperFor($adviser);
+
+        $html = $this->actingAs($helper->user)->get(route('helper.training'))->assertOk()->getContent();
+        $this->assertSame(1, substr_count($html, 'data-page-header'));
+        $this->assertSame(1, substr_count($html, '<h1'));
+
+        $html = $this->actingAs($adviser->user)->get(route('adviser.training'))->assertOk()->getContent();
+        $this->assertSame(1, substr_count($html, 'data-page-header'));
+    }
 }
