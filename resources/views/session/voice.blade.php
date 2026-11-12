@@ -8,7 +8,7 @@
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=0.9, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Voice support - COMPASS</title>
     @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/chat.js'])
