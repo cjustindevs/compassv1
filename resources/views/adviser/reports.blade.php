@@ -63,7 +63,7 @@
 </x-ui.kpi-grid>
 <x-report-charts :groups="collect($roleReport['groups'])->only(['Cases by status','Case categories','Case outcome trend'])->all()" heading="Case outcomes and categories" caption="Selected period · Philippine Time" />
 <x-ui.card title="Session records" :subtitle="$sessions->total().' records. Archiving preserves history and never reopens or closes a case.'">
-<x-ui.table :stack="true"><thead><tr><th>Reference</th><th>Helper</th><th>Concern</th><th>Status</th><th>Activity date</th><th>Actions</th></tr></thead><tbody>
+<x-ui.table :stack="true" class="ui-table--wide"><thead><tr><th>Reference</th><th>Helper</th><th>Concern</th><th>Status</th><th>Activity date</th><th>Actions</th></tr></thead><tbody>
 @forelse($sessions as $session)<tr><td data-label="Reference">{{ $session->reference_number }}</td><td data-label="Helper">{{ $session->helper?->full_name ?? 'Unassigned' }}</td><td data-label="Concern">{{ $session->concern?->concern_name ?? 'Not recorded' }}</td><td data-label="Status"><x-ui.badge>{{ ucwords(str_replace('_',' ',$session->session_status)) }}</x-ui.badge>@if($session->archived_at)<small>Archived</small>@endif</td><td data-label="Activity date">{{ ($session->end_time ?? $session->start_time ?? $session->submitted_at ?? $session->created_date ?? $session->created_at)?->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') }}</td><td data-label="Actions" class="ui-actions"><a class="btn-secondary" href="{{ route('adviser.session.show',$session->id) }}">View documentation</a>@include('adviser.partials.archive-action',['record'=>$session])</td></tr>
 @empty<tr><td colspan="6">No records match these filters.</td></tr>@endforelse
 </tbody></x-ui.table>
@@ -96,7 +96,7 @@
 @endforeach</x-ui.kpi-grid>@endif
 @if($tab==='safety')<x-report-charts :groups="collect($roleReport['groups'])->only(['Emergency status','Emergency priority'])->all()" heading="Emergency overview" />@endif
 <x-ui.card :title="$tab==='safety' ? 'Emergency case activity' : 'Your recorded actions'" :subtitle="$tab==='activity' ? 'Your auditable Adviser actions, including archive and restore events. Case and emergency records are available in their report groups.' : null">
-<x-ui.table :stack="true"><thead><tr>@foreach($reportTable['columns'] as $column)<th>{{ $column }}</th>@endforeach</tr></thead><tbody>
+<x-ui.table :stack="true" class="ui-table--wide"><thead><tr>@foreach($reportTable['columns'] as $column)<th>{{ $column }}</th>@endforeach</tr></thead><tbody>
 @forelse($reportTable['records'] as $record)
 @php
     $cells = call_user_func($reportTable['format'], $record);

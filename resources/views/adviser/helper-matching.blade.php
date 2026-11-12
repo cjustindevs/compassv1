@@ -34,7 +34,7 @@
     </x-ui.card>
 
     <x-ui.card title="Recent Matches">
-        <x-ui.table :stack="true">
+        <x-ui.table :stack="true" class="ui-table--wide">
             <thead><tr><th>Session</th><th>Seeker</th><th>Risk</th><th>Method</th><th>Score</th><th>Date</th></tr></thead>
             <tbody>
                 @forelse($recentMatches as $session)

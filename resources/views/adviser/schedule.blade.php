@@ -20,7 +20,7 @@
 </form>
 </x-ui.card>
 <x-ui.card :title="'Duty schedules for '.$date->format('M d, Y')" :subtitle="$dutySchedules->total().' duty records'" style="margin-top:24px">
-<x-ui.table :stack="true"><thead><tr><th>Helper / Date</th><th>Duty period</th><th>Schedule status</th><th>Current availability</th><th>Actions</th></tr></thead><tbody>
+<x-ui.table :stack="true" class="ui-table--wide"><thead><tr><th>Helper / Date</th><th>Duty period</th><th>Schedule status</th><th>Current availability</th><th>Actions</th></tr></thead><tbody>
 @forelse($dutySchedules as $shift)
 @php
     $status = !$shift->is_active ? 'Cancelled' : ($shift->isWithinShift() ? 'On duty now' : ($shift->window()[1]->lte(now()) ? 'Past duty' : 'Scheduled'));

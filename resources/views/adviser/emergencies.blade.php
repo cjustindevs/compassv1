@@ -26,7 +26,7 @@
             <a class="btn {{ $tab === 'resolved' ? 'btn-primary' : 'btn-outline' }}" href="{{ route('adviser.emergencies', ['tab'=>'resolved']) }}" @if($tab==='resolved') aria-current="page" @endif>Resolved <span>{{ $resolvedCount }}</span></a>
         </x-slot:actions>
         @if($alerts->count())
-        <x-ui.table :stack="true">
+        <x-ui.table :stack="true" class="ui-table--wide">
             <thead><tr><th>Case / Seeker</th><th>Helper</th><th>Primary Adviser</th><th>Emergency coordinator</th><th>{{ $tab==='resolved' ? 'Resolved on' : 'Detected' }}</th><th>Status</th><th><span class="sr-only">Action</span></th></tr></thead>
             <tbody>
             @foreach($alerts as $alert)

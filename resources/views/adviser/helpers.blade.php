@@ -54,7 +54,7 @@
 
     <x-ui.card :title="'Helpers ('.$helperData->count().')'">
         @if($helperData->isNotEmpty())
-            <x-ui.table :stack="true">
+            <x-ui.table :stack="true" class="ui-table--wide">
                 <thead>
                     <tr><th>Helper</th><th>Status</th><th>Level</th><th>Score</th><th>Duty / capacity</th><th>Can take sessions</th><th>Actions</th></tr>
                 </thead>

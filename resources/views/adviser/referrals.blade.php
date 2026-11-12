@@ -43,7 +43,7 @@
 
     <x-ui.card title="Referral Pipeline" :subtitle="$totalPending.' pending'">
         @if($pendingReferrals->isNotEmpty())
-            <x-ui.table :stack="true">
+            <x-ui.table :stack="true" class="ui-table--wide">
                 <thead>
                     <tr><th>Seeker</th><th>Priority</th><th>Status</th><th>Helper</th><th>Date</th><th>Reason</th><th></th></tr>
                 </thead>
@@ -84,7 +84,7 @@
 
     @if($approvedReferrals->isNotEmpty())
         <x-ui.card title="Approved Referrals" subtitle="Waiting for professional">
-            <x-ui.table :stack="true">
+            <x-ui.table :stack="true" class="ui-table--wide">
                 <thead>
                     <tr><th>Seeker</th><th>Status</th><th>Helper</th><th>Date</th><th>Professional</th><th></th></tr>
                 </thead>

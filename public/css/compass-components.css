@@ -275,9 +275,8 @@ button.ui-chip.is-active { background: var(--compass-green-dark); border-color: 
   .reports-tabs > .btn { flex: 0 0 auto; white-space: nowrap; min-height: 40px; padding: 0 16px; font-size: 14px; }
 }
 
-/* Tablet width with the sidebar open: scroll tables sideways instead of crushing columns */
+/* Wide Adviser tables (opt-in via ui-table--wide) at tablet width with the sidebar open: scroll sideways instead of crushing columns */
 @media (min-width: 769px) and (max-width: 1200px) {
-  .compass-ui .ui-table table { min-width: 900px; }
-  .compass-ui .ui-table table td.ui-actions .btn, .compass-ui .ui-table table td.ui-actions a, .compass-ui .ui-table table td.ui-actions button { white-space: nowrap; }
+  .compass-ui .ui-table.ui-table--wide table { min-width: 900px; }
+  .compass-ui .ui-table.ui-table--wide table .ui-badge, .compass-ui .ui-table.ui-table--wide table td.ui-actions .btn, .compass-ui .ui-table.ui-table--wide table td.ui-actions a, .compass-ui .ui-table.ui-table--wide table td.ui-actions button { white-space: nowrap; }
 }
-@media (min-width: 769px) and (max-width: 1200px) { .compass-ui .ui-table table .ui-badge { white-space: nowrap; } }

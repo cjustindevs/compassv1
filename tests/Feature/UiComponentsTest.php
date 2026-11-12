@@ -131,4 +131,12 @@ class UiComponentsTest extends TestCase
 
         $this->assertMatchesRegularExpression('/\.ui-empty\[hidden\]\s*\{\s*display:\s*none/', $css);
     }
+
+    public function test_shared_table_rules_never_force_a_min_width_without_the_opt_in_modifier(): void
+    {
+        $css = file_get_contents(public_path('css/compass-components.css'));
+
+        $this->assertDoesNotMatchRegularExpression('/\.ui-table\s+table\s*\{[^}]*min-width/', $css);
+        $this->assertDoesNotMatchRegularExpression('/\.ui-table(?!\.ui-table--wide)[^{,]*table\s*\{[^}]*min-width/', $css);
+    }
 }
