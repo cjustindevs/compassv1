@@ -1,4 +1,4 @@
-<!doctype html><html class="compass-ui" lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your Professional Support</title>@vite(['resources/css/app.css'])    @php($embeddedScreen = true)
+<!doctype html><html class="compass-ui" lang="en"><head><meta name="viewport" content="width=device-width, initial-scale=0.9"><title>Your Professional Support</title>@vite(['resources/css/app.css'])    @php($embeddedScreen = true)
 @include('partials.ui-assets')
 </head><body class="referral-ui" style="background:#f8fbf9;padding:20px;margin:0">
 @include('partials.referral-ui-styles')

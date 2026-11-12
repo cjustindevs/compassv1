@@ -3,7 +3,7 @@
 <head>
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=0.9">
     <meta name="description" content="COMPASS connects students with supervised peer support and self-help resources.">
     <title>COMPASS - Peer Support, Student Wellness</title>
     @vite(['resources/css/app.css'])
