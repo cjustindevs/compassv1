@@ -303,4 +303,38 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertMatchesRegularExpression('#<form[^>]*id="approveForm"[^>]*action="[^"]*/approve"#', $html);
         $this->assertStringContainsString('ui-card', $html);
     }
+
+    public function test_emergencies_list_uses_kpis_tabs_and_search(): void
+    {
+        $adviser = $this->adviser();
+        $this->activeEmergency($adviser);
+
+        $html = $this->actingAs($adviser->user)->get(route('adviser.emergencies', ['q' => 'Safe']))->assertOk()->getContent();
+
+        $this->assertStringContainsString('ui-kpi--red', $html);
+        $this->assertStringContainsString('id="emergencySearch"', $html);
+        $this->assertStringContainsString('ui-table--stack', $html);
+        $this->assertStringContainsString('ui-chip', $html);
+        $this->assertMatchesRegularExpression('#<a[^>]*href="[^"]*tab=active"[^>]*>\s*Active#', $html);
+        $this->assertSame(1, substr_count($html, '<h1'));
+        $this->assertSame(1, substr_count($html, 'data-page-header'));
+    }
+
+    public function test_emergency_detail_has_back_link_summary_and_keeps_forms(): void
+    {
+        $adviser = $this->adviser();
+        $alert = $this->activeEmergency($adviser);
+
+        $html = $this->actingAs($adviser->user)->get(route('adviser.emergencies.show', $alert->id))->assertOk()
+            ->assertSee('ui-back-link', false)->assertSee('Back to Emergencies')
+            ->assertSee('id="resolutionNotes"', false)->assertSee('id="handoffReason"', false)
+            ->assertSee('id="reviewAction"', false)->assertSee('id="coordinatorId"', false)
+            ->getContent();
+
+        $this->assertSame(1, substr_count($html, '<h1'));
+        $this->assertSame(1, substr_count($html, 'data-page-header'));
+        $this->assertStringContainsString(route('adviser.emergencies.resolve', $alert->id), $html);
+        $this->assertStringContainsString(route('adviser.emergencies.coordinator', $alert->id), $html);
+        $this->assertStringContainsString('data-focus-label="Resolve emergency"', $html);
+    }
 }
