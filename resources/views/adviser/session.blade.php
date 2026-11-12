@@ -1,44 +1,38 @@
 @extends('layouts.app')
 @section('title', 'Session documentation - COMPASS')
 @section('content')
-<div class="adviser-page-content space-y-5">
-    <header class="flex flex-wrap justify-between items-start gap-4">
-        <div>
-            <a href="{{ route('adviser.dashboard') }}" class="text-sm text-green-700"><x-ui-icon name="arrow-left" class="mr-1" />Back to dashboard</a>
-            <h1 class="text-2xl font-bold text-gray-800 mt-2">Session documentation</h1>
-            <p class="text-sm text-gray-500 mt-1">Review the Helper's submitted summary, reflection, and correction history.</p>
-        </div>
-        <span class="rounded-full bg-green-50 text-green-800 px-3 py-1 text-sm">{{ ucfirst($session->session_status) }}</span>
-    </header>
-    <section class="bg-white rounded-2xl border border-gray-200 p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-        <div><p class="text-gray-500">Session</p><p class="font-semibold">{{ $session->reference_number }}</p></div>
-        <div><p class="text-gray-500">Helper</p><p class="font-semibold">{{ $session->helper?->full_name ?? 'Unassigned' }}</p></div>
-        <div><p class="text-gray-500">Documentation</p><p class="font-semibold">{{ ucfirst($session->documentation_status ?? 'Pending') }}</p></div>
-    </section>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+<div class="adviser-page-content">
+    <x-ui.page-header title="Session documentation" description="Review the Helper's submitted summary, reflection, and correction history." :back-href="route('adviser.dashboard')" back-label="Back to Dashboard" />
+    <x-ui.card>
+        <dl class="ui-summary">
+            <div><dt>Session</dt><dd>{{ $session->reference_number }}</dd></div>
+            <div><dt>Helper</dt><dd>{{ $session->helper?->full_name ?? 'Unassigned' }}</dd></div>
+            <div><dt>Status</dt><dd><x-ui.badge tone="green">{{ ucfirst($session->session_status) }}</x-ui.badge></dd></div>
+            <div><dt>Documentation</dt><dd>{{ ucfirst($session->documentation_status ?? 'Pending') }}</dd></div>
+        </dl>
+    </x-ui.card>
+    <div class="ui-card-grid ui-card-grid--wide">
         @foreach(['Session summary' => 'session_summary', 'Helper reflection' => 'personal_reflection', 'Session result' => 'session_result', 'Follow-up plan' => 'follow_up_plan'] as $label => $field)
-            <section class="bg-white rounded-2xl border border-gray-200 p-5">
-                <h2 class="font-semibold text-gray-800 mb-3">{{ $label }}</h2>
-                <p class="text-sm text-gray-600 whitespace-pre-wrap break-words">{{ $session->report?->$field ?: 'Not submitted yet.' }}</p>
-            </section>
+            <x-ui.card :title="$label">
+                <p class="ui-prose">{{ $session->report?->$field ?: 'Not submitted yet.' }}</p>
+            </x-ui.card>
         @endforeach
     </div>
     @if($session->report && in_array($session->session_status, ['completed', 'evaluated']))
-        <a class="inline-flex bg-green-600 text-white rounded-xl px-4 py-2 font-semibold text-sm" href="{{ route('adviser.evaluate', $session->report->id) }}">Review competency evaluation</a>
+        <p class="ui-prose-actions"><a class="btn-primary" href="{{ route('adviser.evaluate', $session->report->id) }}">Review competency evaluation</a></p>
     @endif
-    <section class="bg-white rounded-2xl border border-gray-200 p-5">
-        <h2 class="font-semibold text-gray-800 mb-3">Previous documentation versions</h2>
+    <x-ui.card title="Previous documentation versions">
         @forelse($revisions as $revision)
-            <details class="border-t border-gray-100 py-3">
-                <summary class="cursor-pointer text-sm font-medium">{{ $revision->created_at }} | {{ $revision->reason }}</summary>
+            <details class="ui-prose-details">
+                <summary>{{ $revision->created_at }} | {{ $revision->reason }}</summary>
                 @php($snapshot = json_decode($revision->snapshot, true) ?? [])
-                <p class="text-sm text-gray-600 whitespace-pre-wrap mt-3">{{ $snapshot['session_summary'] ?? 'No summary in this version.' }}</p>
-                <p class="text-sm text-gray-600 whitespace-pre-wrap mt-3">{{ $snapshot['personal_reflection'] ?? 'No reflection in this version.' }}</p>
+                <p class="ui-prose">{{ $snapshot['session_summary'] ?? 'No summary in this version.' }}</p>
+                <p class="ui-prose">{{ $snapshot['personal_reflection'] ?? 'No reflection in this version.' }}</p>
             </details>
         @empty
-            <p class="text-sm text-gray-500">No corrections recorded.</p>
+            <p class="ui-card-sub">No corrections recorded.</p>
         @endforelse
-    </section>
-    <p class="text-sm text-gray-500">Conversation access is separate and requires a documented purpose and valid session consent. <a class="text-green-700 underline" href="{{ route('adviser.transcripts') }}">Review transcript access</a></p>
+    </x-ui.card>
+    <p class="ui-card-sub">Conversation access is separate and requires a documented purpose and valid session consent. <a class="ui-back-link" href="{{ route('adviser.transcripts') }}">Review transcript access</a></p>
 </div>
 @endsection

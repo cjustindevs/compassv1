@@ -337,4 +337,40 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertStringContainsString(route('adviser.emergencies.coordinator', $alert->id), $html);
         $this->assertStringContainsString('data-focus-label="Resolve emergency"', $html);
     }
+
+    public function test_live_sessions_page_and_watch_page(): void
+    {
+        $adviser = $this->adviser();
+        $helper = $this->helperFor($adviser);
+        $seekerUser = \App\Models\User::factory()->create(['role' => 'seeker']);
+        $seeker = \App\Models\HelpSeeker::create(['user_account_id' => $seekerUser->id, 'generated_alias' => 'QuietOwl'.$seekerUser->id, 'pseudo_id' => 'PS-T11-'.$seekerUser->id]);
+        $session = \App\Models\Session::create(['seeker_id' => $seeker->id, 'helper_id' => $helper->id, 'session_status' => 'active', 'session_type' => 'chat',
+            'start_time' => now()->subMinutes(5), 'helper_accepted_at' => now()->subMinutes(5), 'created_date' => now()]);
+
+        $list = $this->actingAs($adviser->user)->get(route('adviser.live.index'))->assertOk()->assertSee('Watch live')->getContent();
+        $this->assertSame(1, substr_count($list, 'data-page-header'));
+        $this->assertSame(1, substr_count($list, '<h1'));
+
+        $watch = $this->get(route('adviser.live.show', $session->id))->assertOk()
+            ->assertSee('ui-back-link', false)->assertSee('data-live-note-form', false)
+            ->assertSee('id="lwNote"', false)->assertSee('id="lwCoach"', false)->assertSee('id="lwTranscript"', false)
+            ->getContent();
+        $this->assertSame(1, substr_count($watch, 'data-page-header'));
+        $this->assertSame(1, substr_count($watch, '<h1'));
+        $this->assertStringContainsString(route('adviser.live.feed', $session->id), $watch);
+        $this->assertStringContainsString(route('adviser.live.notes', $session->id), $watch);
+    }
+
+    public function test_transcript_pages_have_header_and_back_link(): void
+    {
+        $adviser = $this->adviser();
+        $report = $this->documentedReport($adviser);
+
+        $list = $this->actingAs($adviser->user)->get(route('adviser.transcripts'))->assertOk()->getContent();
+        $this->assertSame(1, substr_count($list, 'data-page-header'));
+        $this->assertSame(1, substr_count($list, '<h1'));
+
+        $detail = $this->get(route('adviser.session.show', $report->session_id))->assertOk()->assertSee('ui-back-link', false)->getContent();
+        $this->assertSame(1, substr_count($detail, '<h1'));
+    }
 }

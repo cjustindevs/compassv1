@@ -2,30 +2,35 @@
 @section('title', 'Watching live session - COMPASS')
 @section('content')
 <div class="adviser-page-content lw-page" data-live-feed="{{ route('adviser.live.feed', $session->id) }}" data-live-notes="{{ route('adviser.live.notes', $session->id) }}">
-    <a class="lw-back" href="{{ route('adviser.live.index') }}">&larr; All live sessions</a>
-    <header class="lw-head">
-        <div>
-            <h1>{{ $session->helper?->full_name ?? 'Helper' }} <span class="lw-with">with {{ $session->seeker?->generated_alias ?? 'Seeker' }}</span></h1>
-            <p><span class="lw-live" data-live-badge>Live</span> {{ $session->concern?->concern_name ?? 'General concern' }} · {{ ucfirst($session->risk_level ?? 'low') }} risk · started {{ $session->start_time?->copy()->timezone('Asia/Manila')->format('g:i A') }} PHT</p>
-        </div>
-        <p class="lw-privacy">Read-only. The Seeker and Helper cannot see that you are watching; this view is recorded in the audit log under supervision consent.</p>
-    </header>
+    @php($risk = $session->risk_level ?? 'low')
+    <x-ui.page-header title="Live session" description="Read-only. The Seeker and Helper cannot see that you are watching; this view is recorded in the audit log under supervision consent." :back-href="route('adviser.live.index')" back-label="Back to Live sessions" />
+
+    <x-ui.card>
+        <dl class="ui-summary">
+            <div><dt>Status</dt><dd><x-ui.badge tone="red" class="lw-live" data-live-badge>Live</x-ui.badge></dd></div>
+            <div><dt>Helper</dt><dd>{{ $session->helper?->full_name ?? 'Helper' }}</dd></div>
+            <div><dt>Seeker</dt><dd>{{ $session->seeker?->generated_alias ?? 'Seeker' }}</dd></div>
+            <div><dt>Concern</dt><dd>{{ $session->concern?->concern_name ?? 'General concern' }}</dd></div>
+            <div><dt>Risk</dt><dd><x-ui.badge :tone="in_array($risk, ['high', 'emergency']) ? 'red' : ($risk === 'moderate' ? 'amber' : 'neutral')">{{ ucfirst($risk) }} risk</x-ui.badge></dd></div>
+            <div><dt>Started</dt><dd>{{ $session->start_time?->copy()->timezone('Asia/Manila')->format('g:i A') }} PHT</dd></div>
+        </dl>
+    </x-ui.card>
 
     <div class="lw-grid">
-        <section class="lw-card" aria-labelledby="lwTranscript">
-            <h2 id="lwTranscript">Conversation</h2>
+        <section class="ui-card" aria-labelledby="lwTranscript">
+            <h2 class="ui-card-title" id="lwTranscript">Conversation</h2>
             <div class="lw-messages" data-live-messages aria-live="polite">
                 <p class="lw-empty" data-live-empty>Loading messages…</p>
             </div>
         </section>
-        <aside class="lw-card lw-coach" aria-labelledby="lwCoach">
-            <h2 id="lwCoach">Coach the Helper privately</h2>
-            <p class="lw-sub">Only {{ $session->helper?->first_name ?? 'the Helper' }} sees these notes, in a panel beside their chat. Keep them short and practical.</p>
+        <aside class="ui-card lw-coach" aria-labelledby="lwCoach">
+            <h2 class="ui-card-title" id="lwCoach">Coach the Helper privately</h2>
+            <p class="ui-card-sub">Only {{ $session->helper?->first_name ?? 'the Helper' }} sees these notes, in a panel beside their chat. Keep them short and practical.</p>
             <form data-live-note-form>
                 @csrf
                 <label for="lwNote" class="sr-only">Coach note</label>
                 <textarea id="lwNote" name="note" rows="3" maxlength="600" required placeholder="For example: Reflect their feelings back before suggesting steps."></textarea>
-                <button type="submit">Send to Helper</button>
+                <button type="submit" class="btn-primary">Send to Helper</button>
                 <p class="lw-error" data-live-note-error role="alert" hidden></p>
             </form>
             <h3>Notes sent</h3>
@@ -34,37 +39,26 @@
     </div>
 </div>
 <style>
-.lw-page { padding: 20px 28px 32px; display: grid; gap: 12px; }
-.lw-back { font-size: 13px; font-weight: 600; color: #047a3e; text-decoration: none; }
-.lw-head { display: flex; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; align-items: flex-end; }
-.lw-head h1 { margin: 0; font-size: 24px; font-weight: 800; color: #163b2d; }
-.lw-with { font-weight: 500; color: #64746b; font-size: 16px; }
-.lw-head p { margin: 4px 0 0; font-size: 13px; color: #64746b; }
-.lw-live { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: #fff; background: #d03b3b; border-radius: 99px; padding: 2px 9px; margin-right: 6px; }
-.lw-live.is-ended { background: #94a39a; }
-.lw-privacy { max-width: 46ch; font-size: 12px !important; background: #f6faf7; border: 1px solid #dfe9e3; border-radius: 10px; padding: 8px 12px; }
-.lw-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
-.lw-card { background: #fff; border: 1px solid #dfe9e3; border-radius: 14px; padding: 14px 16px; display: grid; gap: 10px; }
-.lw-card h2 { margin: 0; font-size: 14px; font-weight: 700; color: #163b2d; }
-.lw-card h3 { margin: 6px 0 0; font-size: 13px; font-weight: 700; color: #163b2d; }
-.lw-messages { height: min(62vh, 640px); overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 4px; background: #f8fbf9; border-radius: 10px; }
-.lw-msg { max-width: 75%; padding: 8px 12px; border-radius: 12px; font-size: 14px; line-height: 1.45; }
+.lw-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+.lw-grid .ui-card { margin: 0; }
+.lw-live.is-ended { background: #F3F4F6; color: #4B5563; }
+.lw-messages { height: min(62vh, 640px); overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 8px; background: #F9FAFB; border-radius: 12px; }
+.lw-msg { max-width: 75%; padding: 8px 12px; border-radius: 12px; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
 .lw-msg small { display: block; font-size: 11px; opacity: .75; margin-bottom: 2px; }
-.lw-msg.from-seeker { align-self: flex-start; background: #fff; border: 1px solid #e2e8e4; color: #26443a; }
-.lw-msg.from-helper { align-self: flex-end; background: #078749; color: #fff; }
-.lw-empty { color: #64746b; font-size: 13px; margin: auto; text-align: center; }
+.lw-msg.from-seeker { align-self: flex-start; background: #fff; border: 1px solid #E5E7EB; color: #1F2937; }
+.lw-msg.from-helper { align-self: flex-end; background: #04A052; color: #fff; }
+.lw-empty { color: #6B7280; font-size: 13px; margin: auto; text-align: center; }
 .lw-coach { position: sticky; top: calc(12px + env(safe-area-inset-top, 0px)); }
-.lw-sub { margin: 0; font-size: 13px; color: #64746b; }
-.lw-coach form { display: grid; gap: 8px; }
-.lw-coach textarea { border: 1px solid #cbd5cf; border-radius: 10px; padding: 9px 11px; font: inherit; resize: vertical; }
-.lw-coach button { min-height: 40px; border: 0; border-radius: 10px; background: #078749; color: #fff; font-weight: 700; cursor: pointer; }
+.lw-coach form { display: grid; gap: 8px; margin: 12px 0; }
+.lw-coach textarea { border: 1px solid #D1D5DB; border-radius: 12px; padding: 10px 12px; font: inherit; font-size: 16px; resize: vertical; }
 .lw-coach button:disabled { opacity: .6; cursor: default; }
-.lw-error { margin: 0; font-size: 12px; color: #a32626; }
-.lw-notes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 280px; overflow-y: auto; }
-.lw-notes li { font-size: 13px; background: #f6faf7; border-radius: 10px; padding: 8px 10px; color: #26443a; }
-.lw-notes li small { display: block; font-size: 11px; color: #64746b; }
+.lw-coach h3 { margin: 0 0 8px; font-size: 15px; font-weight: 700; }
+.lw-error { margin: 0; font-size: 13px; color: #DC2626; }
+.lw-notes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 280px; overflow-y: auto; }
+.lw-notes li { font-size: 14px; background: #F9FAFB; border-radius: 12px; padding: 8px 12px; color: #1F2937; overflow-wrap: anywhere; }
+.lw-notes li small { display: block; font-size: 12px; color: #6B7280; }
 @media (max-width: 1000px) { .lw-grid { grid-template-columns: 1fr; } .lw-coach { position: static; } }
-@media (max-width: 700px) { .lw-page { padding: 16px; } .lw-msg { max-width: 90%; } }
+@media (max-width: 700px) { .lw-msg { max-width: 90%; } }
 </style>
 <script>
 (() => {
