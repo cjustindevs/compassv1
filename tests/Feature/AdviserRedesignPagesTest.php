@@ -457,4 +457,16 @@ class AdviserRedesignPagesTest extends TestCase
         $html = $this->actingAs($adviser->user)->get(route('adviser.training'))->assertOk()->getContent();
         $this->assertSame(1, substr_count($html, 'data-page-header'));
     }
+
+    public function test_transcript_badge_is_placed_in_the_summary_grid_and_card_grids_fit_320px(): void
+    {
+        $refine = file_get_contents(public_path('css/adviser-refinement.css'));
+        $this->assertStringContainsString('.at-record summary>.ui-badge{justify-self:start}', $refine);
+        $this->assertMatchesRegularExpression('/@media\(max-width:768px\)\{[^\n]*\.at-record summary>\.ui-badge\{grid-column:2;grid-row:1;justify-self:end\}/', $refine);
+
+        $components = file_get_contents(public_path('css/compass-components.css'));
+        $this->assertStringContainsString('minmax(min(260px, 100%), 1fr)', $components);
+        $this->assertStringContainsString('minmax(min(300px, 100%), 1fr)', $components);
+        $this->assertStringNotContainsString('minmax(300px, 1fr)', $components);
+    }
 }

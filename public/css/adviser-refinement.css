@@ -57,3 +57,5 @@
 .screening-follow-up button{min-height:44px;white-space:normal}
 
 @media(max-width:480px){.ui-notification-list .ui-avatar{display:none}.ui-notification-list .ui-list-row{gap:8px}}
+.at-record summary>.ui-badge{justify-self:start}
+@media(max-width:768px){.at-record summary>.ui-badge{grid-column:2;grid-row:1;justify-self:end}}
