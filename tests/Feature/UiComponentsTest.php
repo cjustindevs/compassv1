@@ -29,6 +29,16 @@ class UiComponentsTest extends TestCase
         $this->assertStringContainsString('ui-kpis', $html);
     }
 
+    public function test_kpi_icon_is_optional(): void
+    {
+        $plain = Blade::render('<x-ui.kpi label="Open" value="3" />');
+        $this->assertStringNotContainsString('ui-kpi-icon', $plain);
+
+        $html = Blade::render('<x-ui.kpi label="Open" value="3" icon="clipboard" />');
+        $this->assertStringContainsString('ui-kpi-icon', $html);
+        $this->assertLessThan(strpos($html, 'ui-kpi-value'), strpos($html, 'ui-kpi-label'));
+    }
+
     public function test_filter_chips_remove_one_filter_and_keep_the_rest(): void
     {
         $request = Request::create('/reports', 'GET', ['case_status' => 'waiting', 'priority' => 'high', 'tab' => 'safety']);

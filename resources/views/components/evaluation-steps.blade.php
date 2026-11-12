@@ -1,4 +1,4 @@
-@props(['current' => 3, 'compact' => false])
+@props(['current' => 3, 'compact' => false, 'variant' => null])
 {{-- QA: "paano ang sequence ng documentation completion / evaluate ng adviser". One shared sequence. --}}
 @php
     $steps = [
@@ -8,6 +8,21 @@
         ['Feedback shared', 'The Helper sees your feedback; their competency score updates.'],
     ];
 @endphp
+@if($variant === 'stepper' || $variant === 'dots')
+<ol {{ $attributes->merge(['class' => 'eval-steps-'.$variant]) }} aria-label="Evaluation sequence">
+    @foreach($steps as $i => [$title, $detail])
+        @php($n = $i + 1)
+        <li class="{{ $n < $current ? 'is-done' : ($n === $current ? 'is-current' : '') }}" @if($n === $current) aria-current="step" @endif>
+            <span class="es-dot">@if($n < $current)<x-ui-icon name="check" />@else{{ $n }}@endif</span>
+            @if($variant === 'stepper')
+                <span class="es-label"><strong>{{ $title }}</strong><small>{{ $detail }}</small></span>
+            @else
+                <span class="es-sr">{{ $title }}</span>
+            @endif
+        </li>
+    @endforeach
+</ol>
+@else
 <ol {{ $attributes->merge(['class' => 'eval-steps'.($compact ? ' is-compact' : '')]) }} aria-label="Evaluation sequence">
     @foreach($steps as $i => [$title, $detail])
         @php($n = $i + 1)
@@ -17,6 +32,7 @@
         </li>
     @endforeach
 </ol>
+@endif
 @once
 <style>
 .eval-steps { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }

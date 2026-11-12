@@ -2,262 +2,115 @@
 
 @section('title', 'COMPASS – Pending Evaluations')
 
-@push('styles')
-<style>
-        .adviser-page-content { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-
-        :root {
-            --green-50: #EAF8F0;
-            --green-500: #04A052;
-            --green-600: #038A45;
-            --green-700: #027039;
-            --gray-50: #F9FAFB;
-            --gray-100: #F3F4F6;
-            --gray-200: #E5E7EB;
-            --gray-300: #D1D5DB;
-            --gray-400: #9CA3AF;
-            --gray-500: #6B7280;
-            --gray-600: #4B5563;
-            --gray-700: #374151;
-            --gray-800: #163B2D;
-            --gray-900: #111827;
-            --red-500: #EF4444;
-            --yellow-500: #F59E0B;
-            --blue-500: #3B82F6;
-        }
-
-        body { background: #F8FBF9; }
-
-        .stat-card {
-            background: white;
-            border-radius: 16px;
-            padding: 20px 24px;
-            border: 1px solid var(--gray-200);
-            transition: all 0.3s ease;
-        }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.04); }
-        .stat-number { font-size: 28px; font-weight: 800; color: var(--gray-800); }
-        .stat-label { font-size: 13px; color: var(--gray-500); }
-
-        .card {
-            background: white;
-            border-radius: 20px;
-            padding: 24px;
-            border: 1px solid var(--gray-200);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.01);
-        }
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-        .card-header h3 { font-weight: 700; font-size: 16px; color: var(--gray-800); }
-
-        .eval-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--gray-100);
-            transition: background 0.2s;
-        }
-        .eval-item:hover { background: var(--gray-50); }
-        .eval-item:last-child { border-bottom: none; }
-        .eval-item .seeker-info .alias { font-weight: 600; color: var(--gray-800); }
-        .eval-item .seeker-info .details { font-size: 13px; color: var(--gray-500); }
-        .eval-item .seeker-info .concern { font-size: 12px; color: var(--gray-400); }
-        .eval-item .actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
-        .risk-badge {
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        .risk-badge.low { background: var(--green-100); color: var(--green-700); }
-        .risk-badge.moderate { background: #FEF3C7; color: #D97706; }
-        .risk-badge.high { background: #FEE2E2; color: #DC2626; }
-        .risk-badge.emergency { background: #FEE2E2; color: #DC2626; animation: pulse-risk 1.5s infinite; }
-        @keyframes pulse-risk { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--green-500), var(--green-600));
-            color: white;
-            font-weight: 600;
-            padding: 8px 18px;
-            border-radius: 20px;
-            border: none;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-primary:hover { background: var(--green-700); transform: scale(1.02); }
-
-        .btn-outline {
-            background: transparent;
-            color: var(--gray-600);
-            padding: 8px 18px;
-            border-radius: 20px;
-            border: 1px solid var(--gray-200);
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-outline:hover { background: var(--gray-50); border-color: var(--gray-300); }
-
-        @media (max-width: 768px) {
-            .stat-number { font-size: 20px; }
-            .grid-cols-3 { grid-template-columns: 1fr; }
-            .eval-item { flex-direction: column; align-items: flex-start; gap: 10px; }
-            .eval-item .actions { width: 100%; }
-            .eval-item .actions .btn-primary,
-            .eval-item .actions .btn-outline { width: 100%; justify-content: center; }
-        }
-        @media (max-width: 480px) {
-            .grid-cols-3 { grid-template-columns: 1fr; }
-            .stat-number { font-size: 18px; }
-            .card { padding: 16px; }
-        }
-    </style>
-@endpush
-
 @section('content')
 <div class="adviser-page-content">
-        <!-- Top Bar -->
-        <div class="flex items-center justify-between mb-6">
-            <div class="flex items-center gap-4">
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-gray-800">Pending Evaluations</h1>
-                    <p class="text-sm text-gray-500 hidden sm:block">
-                        Review session documentation and evaluate helper competency
-                    </p>
-                </div>
+    <x-ui.page-header title="Pending Evaluations" description="Review session documentation and evaluate helper competency." />
+
+    <x-ui.kpi-grid>
+        <x-ui.kpi label="Pending Reviews" :value="$totalPending" tone="green" icon="clipboard" note="Sessions awaiting review" />
+        <x-ui.kpi label="High Risk" :value="$highRiskPending" tone="red" icon="warning" note="Require immediate attention" />
+        <x-ui.kpi label="Total Feedback Given" :value="$feedbackCount" tone="green" icon="check-circle" note="Evaluations completed" />
+    </x-ui.kpi-grid>
+
+    <x-ui.card class="ui-eval-process">
+        <div class="ui-eval-process-body">
+            <div class="ui-eval-process-intro">
+                <h2 class="ui-card-title">Evaluation Process</h2>
+                <p class="ui-card-sub">A 4-step workflow for reviewing and evaluating helper sessions.</p>
             </div>
-            <div class="flex items-center gap-3">
-            </div>
+            <x-evaluation-steps :current="3" variant="stepper" />
         </div>
+    </x-ui.card>
 
-        <!-- Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="stat-card">
-                <span class="stat-label">Pending Reviews</span>
-                <div class="stat-number">{{ $totalPending }}</div>
-                <span class="text-xs text-gray-400">Sessions awaiting review</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">High Risk</span>
-                <div class="stat-number">{{ $highRiskPending }}</div>
-                <span class="text-xs text-gray-400">Require immediate attention</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Total Feedback Given</span>
-                <div class="stat-number">{{ $feedbackCount }}</div>
-                <span class="text-xs text-gray-400">Evaluations completed</span>
-            </div>
-        </div>
+    <x-ui.card title="Awaiting review" id="awaitingReview">
+        <x-slot:actions><x-ui.badge tone="green">{{ $totalPending }} sessions</x-ui.badge></x-slot:actions>
 
-        <!-- How evaluation works -->
-        <x-evaluation-steps :current="3" />
-
-        <!-- Pending Evaluations -->
-        <div class="card mb-6">
-            <div class="card-header">
-                <h3>Awaiting Review</h3>
-                <span class="text-sm text-gray-400">{{ $totalPending }} sessions</span>
-            </div>
-
-            @if($pendingReports->isNotEmpty())
-                @foreach($pendingReports as $report)
-                    <div class="eval-item">
-                        <div class="seeker-info flex-1">
-                            <div class="alias">
-                                {{ $report->session->seeker->generated_alias ?? 'Anonymous' }}
-                                <span class="risk-badge {{ $report->session->risk_level ?? 'low' }}">
-                                    {{ ucfirst($report->session->risk_level ?? 'Low') }}
-                                </span>
-                            </div>
-                            <div class="details">
-                                {{ $report->session->helper->first_name ?? 'Unknown' }} {{ $report->session->helper->last_name ?? '' }}
-                                · {{ $report->created_at->format('M d, Y') }}
-                                · {{ $report->session->session_type ?? 'Chat' }}
-                            </div>
-                            <div class="concern">
-                                Concern: {{ $report->session->concern->concern_name ?? 'General' }}
-                                @if($report->referral_recommended)
-                                    <span class="text-yellow-600 font-medium ml-2"> Referral Recommended</span>
-                                @endif
-                            </div>
-                            <x-evaluation-steps :current="3" compact />
-                        </div>
-                        <div class="actions">
-                            <a href="{{ route('adviser.evaluate', $report->id) }}" class="btn-primary">
-                                <x-ui-icon name="check" class="mr-1" /> Evaluate
-                            </a>
-                            <a href="{{ route('adviser.session.show', $report->session_id) }}" class="btn-outline">
-                                <x-ui-icon name="eye" class="mr-1" /> View Session
-                            </a>
-                        </div>
+        @if($pendingReports->isNotEmpty())
+            <div class="ui-eval-list">
+            @foreach($pendingReports as $report)
+                @php
+                    $risk = $report->session->risk_level ?? 'low';
+                    $riskTone = ['low' => 'green', 'moderate' => 'amber'][$risk] ?? 'red';
+                    $alias = $report->session->seeker->generated_alias ?? 'Anonymous';
+                @endphp
+                <div class="ui-eval-row ui-eval-row--{{ $risk }}" data-eval-row>
+                    <span class="ui-avatar" aria-hidden="true">{{ strtoupper(substr($alias, 0, 1)) }}</span>
+                    <div class="ui-eval-who">
+                        <p class="ui-list-title">{{ $alias }}</p>
+                        <p class="ui-list-sub">
+                            {{ $report->session->helper->first_name ?? 'Unknown' }} {{ $report->session->helper->last_name ?? '' }}
+                            · {{ $report->created_at->format('M d, Y') }}
+                            · {{ $report->session->session_type ?? 'Chat' }}
+                        </p>
                     </div>
-                @endforeach
-                {{ $pendingReports->links() }}
-            @else
-                <div class="text-center py-12 text-gray-400">
-                    <p class="text-lg font-medium text-gray-600">All caught up!</p>
-                    <p class="text-sm">No pending evaluations to review</p>
-                       @if(!empty($heldReports))
-                           <p class="text-sm mt-3 text-gray-500">
-                               {{ $heldReports }} {{ $heldReports === 1 ? 'report is' : 'reports are' }} withheld
-                               until the session is completed or evaluated.
-                           </p>
-                       @endif
-                       @if(!empty($undocumentedReports))
-                           <p class="text-sm mt-3 text-gray-500">
-                               {{ $undocumentedReports }} {{ $undocumentedReports === 1 ? 'report is' : 'reports are' }} awaiting
-                               session documentation from the Helper.
-                           </p>
-                       @endif
+                    <div class="ui-eval-risk">
+                        <x-ui.badge :tone="$riskTone">{{ ucfirst($risk) }} Risk</x-ui.badge>
+                        <p class="ui-list-sub">
+                            Concern: {{ $report->session->concern->concern_name ?? 'General' }}
+                            @if($report->referral_recommended)
+                                <span class="ui-eval-referral"> Referral Recommended</span>
+                            @endif
+                        </p>
+                    </div>
+                    <div class="ui-eval-progress">
+                        <x-evaluation-steps :current="3" variant="dots" />
+                        <p class="ui-list-sub">Awaiting your evaluation</p>
+                    </div>
+                    <div class="ui-eval-actions">
+                        <a href="{{ route('adviser.session.show', $report->session_id) }}" class="btn-outline">
+                            <x-ui-icon name="eye" /> View Session
+                        </a>
+                        <a href="{{ route('adviser.evaluate', $report->id) }}" class="btn-primary">
+                            <x-ui-icon name="check" /> Evaluate
+                        </a>
+                    </div>
                 </div>
-            @endif
-        </div>
+            @endforeach
+            </div>
+            {{ $pendingReports->links('vendor.pagination.compass', ['noun' => 'sessions']) }}
+        @else
+            <x-ui.empty title="All caught up!" text="No pending evaluations to review">
+                @if(!empty($heldReports))
+                    <p class="text-sm mt-3 text-gray-500">
+                        {{ $heldReports }} {{ $heldReports === 1 ? 'report is' : 'reports are' }} withheld
+                        until the session is completed or evaluated.
+                    </p>
+                @endif
+                @if(!empty($undocumentedReports))
+                    <p class="text-sm mt-3 text-gray-500">
+                        {{ $undocumentedReports }} {{ $undocumentedReports === 1 ? 'report is' : 'reports are' }} awaiting
+                        session documentation from the Helper.
+                    </p>
+                @endif
+            </x-ui.empty>
+        @endif
+    </x-ui.card>
 
         <div class="av-actions mb-4"><a class="av-button" href="{{ route('adviser.evaluations') }}">Recent reviews</a><a class="av-button" href="{{ route('adviser.evaluations',['history'=>'archived']) }}">Archived reviews</a></div>
         <!-- Recently Completed -->
         @if($completedReports->isNotEmpty())
-            <div class="card">
-                <div class="card-header">
-                    <h3>{{ request('history')==='archived' ? 'Archived reviews' : 'Recently Completed' }}</h3>
-                    <span class="text-sm text-gray-400">{{ $completedReports->total() }} reviews</span>
-                </div>
+            <x-ui.card :title="request('history')==='archived' ? 'Archived reviews' : 'Recently Completed'">
+                <x-slot:actions><span class="text-sm text-gray-400">{{ $completedReports->total() }} reviews</span></x-slot:actions>
                 @foreach($completedReports as $report)
-                    <div class="eval-item">
-                        <div class="seeker-info">
-                            <div class="alias text-gray-500">
+                    <div class="ui-list-row">
+                        <div class="ui-list-main">
+                            <p class="ui-list-title">
                                 {{ $report->session->seeker->generated_alias ?? 'Anonymous' }}
-                                <span class="text-xs text-green-600 font-medium ml-2"> Reviewed</span>
-                            </div>
-                            <div class="details text-gray-400">
+                                <x-ui.badge tone="green">Reviewed</x-ui.badge>
+                            </p>
+                            <p class="ui-list-sub">
                                 {{ $report->session->helper?->full_name ?: 'Unassigned' }}
                                 · {{ $report->updated_at->format('M d, Y') }}
-                            </div>
+                            </p>
                             @if($report->adviser_review_note)
-                                <div class="text-xs text-gray-500 mt-1">Completion reason: {{ $report->adviser_review_note }}</div>
+                                <p class="ui-list-sub">Completion reason: {{ $report->adviser_review_note }}</p>
                             @endif
                         </div>
                         <div class="av-actions"><span class="text-xs text-gray-400">{{ $report->updated_at->diffForHumans() }}</span>@include('adviser.partials.archive-action',['record'=>$report->session])</div>
                     </div>
                 @endforeach
                 {{ $completedReports->links() }}
-            </div>
+            </x-ui.card>
         @else
             <section class="av-panel av-empty">{{ request('history')==='archived' ? 'No completed reviews have been archived.' : 'No completed reviews to show.' }}</section>
         @endif

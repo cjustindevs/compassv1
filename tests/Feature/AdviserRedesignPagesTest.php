@@ -59,4 +59,60 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertSame('2', $strip[1]);
         $this->assertSame($badge[1], $strip[1]);
     }
+
+    public function test_pending_evaluations_matches_reference(): void
+    {
+        $adviser = $this->adviser();
+        $high = $this->documentedReport($adviser, 'completed', 'high');
+        $low = $this->documentedReport($adviser);
+
+        $this->actingAs($adviser->user)->get(route('adviser.evaluations'))
+            ->assertOk()
+            ->assertSee('ui-kpi--red', false)
+            ->assertSee('ui-kpi-icon', false)
+            ->assertSee('Evaluation Process')
+            ->assertSee('Awaiting review')
+            ->assertSee('2 sessions')
+            ->assertSee('ui-eval-row--high', false)
+            ->assertSee('Awaiting your evaluation')
+            ->assertSee(route('adviser.evaluate', $high->id), false)
+            ->assertSee(route('adviser.session.show', $low->session_id), false)
+            ->assertDontSee('⋮');
+
+        $html = $this->actingAs($adviser->user)->get(route('adviser.evaluations'))->getContent();
+        $this->assertSame(2, substr_count($html, 'data-eval-row'));
+        $this->assertSame(1, substr_count($html, '<h1'));
+    }
+
+    public function test_pending_evaluations_empty_state_keeps_held_and_undocumented_notes(): void
+    {
+        $adviser = $this->adviser();
+        $this->documentedReport($adviser, 'active');
+        $report = $this->documentedReport($adviser);
+        $report->update(['session_summary' => null, 'personal_reflection' => null]);
+
+        $this->actingAs($adviser->user)->get(route('adviser.evaluations'))
+            ->assertOk()
+            ->assertSee('All caught up!')
+            ->assertSee('withheld')
+            ->assertSee('until the session is completed or evaluated')
+            ->assertSee('awaiting')
+            ->assertSee('session documentation from the Helper')
+            ->assertDontSee('data-eval-row', false);
+    }
+
+    public function test_pending_evaluations_keeps_history_links_and_archive_action(): void
+    {
+        $adviser = $this->adviser();
+        $report = $this->documentedReport($adviser);
+        $report->update(['adviser_reviewed' => true]);
+
+        $this->actingAs($adviser->user)->get(route('adviser.evaluations'))
+            ->assertOk()
+            ->assertSee('Recent reviews')
+            ->assertSee('Archived reviews')
+            ->assertSee('history=archived', false)
+            ->assertSee('Recently Completed')
+            ->assertSee('Quality supervision leads to quality support.');
+    }
 }
