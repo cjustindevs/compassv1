@@ -259,4 +259,48 @@ class AdviserRedesignPagesTest extends TestCase
             ->assertSee('id="hcAccount"', false)->assertSee('id="hcProof"', false)->assertSee('id="hcAfter"', false)
             ->assertSee('ui-back-link', false);
     }
+
+    private function pendingReferral(\App\Models\Adviser $adviser, string $priority = 'emergency'): \App\Models\Referral
+    {
+        $helper = $this->helperFor($adviser);
+        $seekerUser = \App\Models\User::factory()->create(['role' => 'seeker', 'is_active' => true]);
+        $seeker = \App\Models\HelpSeeker::create(['user_account_id' => $seekerUser->id, 'generated_alias' => 'RefSeeker'.$seekerUser->id]);
+        $session = \App\Models\Session::create(['seeker_id' => $seeker->id, 'helper_id' => $helper->id, 'review_adviser_id' => $adviser->id, 'session_status' => 'active', 'session_type' => 'chat', 'start_time' => now(), 'created_date' => now()]);
+
+        return \App\Models\Referral::create(['session_id' => $session->id, 'helper_id' => $helper->id, 'adviser_id' => $adviser->id,
+            'status' => 'pending_adviser', 'priority_level' => $priority, 'referral_reason' => 'Needs follow-up.', 'referral_date' => now()]);
+    }
+
+    public function test_referral_queue_uses_shared_blocks_and_keeps_modals(): void
+    {
+        $adviser = $this->adviser();
+        $this->pendingReferral($adviser);
+
+        $html = $this->actingAs($adviser->user)->get(route('adviser.referrals'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('ui-kpi--red', $html);
+        $this->assertStringContainsString('ui-table--stack', $html);
+        $this->assertStringContainsString('id="approveModal"', $html);
+        $this->assertStringContainsString('id="approveForm"', $html);
+        $this->assertStringContainsString('id="rejectModal"', $html);
+        $this->assertStringContainsString('id="rejectForm"', $html);
+        $this->assertSame(1, substr_count($html, 'data-page-header'));
+        $this->assertSame(1, substr_count($html, '<h1'));
+    }
+
+    public function test_referral_detail_has_back_link_summary_and_forms(): void
+    {
+        $adviser = $this->adviser();
+        $referral = $this->pendingReferral($adviser, 'low');
+
+        $html = $this->actingAs($adviser->user)->get(route('adviser.referral.show', $referral->case_reference))->assertOk()
+            ->assertSee('ui-back-link', false)->assertSee('Back to Referral Queue')
+            ->assertSee('id="approveForm"', false)->assertSee('id="reviseForm"', false)
+            ->getContent();
+
+        $this->assertSame(1, substr_count($html, '<h1'));
+        $this->assertSame(1, substr_count($html, 'data-page-header'));
+        $this->assertMatchesRegularExpression('#<form[^>]*id="approveForm"[^>]*action="[^"]*/approve"#', $html);
+        $this->assertStringContainsString('ui-card', $html);
+    }
 }

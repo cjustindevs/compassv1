@@ -1,5 +1,5 @@
-<section class="card mb-4 referral-next-step" aria-labelledby="referralNextStepTitle">
-    <h2 id="referralNextStepTitle" class="font-semibold mb-2">Next step for Professional referral</h2>
+<x-ui.card class="referral-next-step" aria-labelledby="referralNextStepTitle">
+    <h2 id="referralNextStepTitle" class="ui-card-title" style="margin-bottom:8px">Next step for Professional referral</h2>
     @if(in_array($referral->status, ['completed','closed','declined'], true))
         <p>This referral is {{ str_replace('_',' ', $referral->status) }}. No further Professional assignment or identity release is available.</p>
     @elseif(!$referral->approved_at)
@@ -32,4 +32,4 @@
     @else
         <p role="status"><strong>Professional handoff recorded.</strong> Track the Professional response and appointment below. A linked emergency is resolved separately by its responsible reviewer.</p>
     @endif
-</section>
+</x-ui.card>
