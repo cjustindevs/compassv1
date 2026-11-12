@@ -47,6 +47,16 @@ class SeekerExperienceTest extends TestCase
         }
     }
 
+    public function test_seeker_sidebar_has_no_profile_tab_but_keeps_the_profile_link(): void
+    {
+        $html = $this->actingAs($this->seeker())->get(route('selfhelp'))->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('<span class="nav-text">Profile</span>', $html);
+        $this->assertStringContainsString('class="view-profile"', $html);
+        $this->assertStringContainsString(route('profile.edit'), $html);
+        $this->assertStringContainsString('<span class="nav-text">Settings</span>', $html);
+    }
+
     private function seeker(bool $consent = true): User
     {
         $user = User::factory()->create(['role' => 'seeker', 'is_active' => true]);

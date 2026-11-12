@@ -91,10 +91,6 @@
                 <span class="nav-badge" id="notificationBadge">{{ $badgeNotifications }}</span>
             @endif
         </a>
-        <a href="{{ route('profile.edit') }}"
-           class="nav-item {{ $anyActive(['profile*']) ? 'active' : '' }}">
-            <x-ui-icon name="user"  /><span class="nav-text">Profile</span>
-        </a>
         <a href="{{ route('settings') }}"
            class="nav-item {{ $anyActive(['settings*']) ? 'active' : '' }}">
             <x-ui-icon name="settings"  /><span class="nav-text">Settings</span>
