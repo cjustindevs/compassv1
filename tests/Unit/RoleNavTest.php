@@ -33,7 +33,7 @@ class RoleNavTest extends TestCase
             $this->assertSame([], RoleNav::bottomItems($role));
         }
         $this->assertNull(RoleNav::emergencyStrip('seeker'));
-        $this->assertSame(['route' => 'adviser.emergencies', 'hideOn' => 'adviser.emergencies*'], RoleNav::emergencyStrip('adviser'));
+        $this->assertSame(['route' => 'adviser.emergencies', 'hideOn' => ['adviser.emergencies*', 'adviser.emergency.*']], RoleNav::emergencyStrip('adviser'));
         $this->assertSame(['route' => 'moderator.emergency', 'hideOn' => 'moderator.emergency*'], RoleNav::emergencyStrip('moderator'));
     }
 }

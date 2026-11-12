@@ -304,6 +304,18 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertStringContainsString('ui-card', $html);
     }
 
+    public function test_original_wording_is_kept_on_redesigned_pages(): void
+    {
+        $adviser = $this->adviser();
+        $this->actingAs($adviser->user);
+
+        $this->get(route('adviser.reports'))->assertOk()->assertSee('Export case CSV')->assertSee('Export case PDF');
+        $this->get(route('adviser.helpers.create'))->assertOk()->assertSee('Proof of eligibility')->assertDontSee('Qualification evidence');
+        $this->get(route('adviser.helpers'))->assertOk()->assertSee('Advanced / Expert competency');
+        $this->get(route('adviser.emergencies'))->assertOk()->assertSee('>Search</button>', false)->assertDontSee('>Apply</button>', false);
+        $this->get(route('adviser.dashboard'))->assertOk()->assertDontSee('data-label="Action">', false);
+    }
+
     public function test_emergencies_list_uses_kpis_tabs_and_search(): void
     {
         $adviser = $this->adviser();

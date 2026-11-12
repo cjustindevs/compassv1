@@ -18,6 +18,7 @@
         <x-ui.field label="Search cases" for="emergencySearch">
             <input id="emergencySearch" name="q" value="{{ $search }}" maxlength="100" placeholder="Case, alias or Helper" data-control="search">
         </x-ui.field>
+        <x-slot:buttons><button type="submit" class="btn-primary">Search</button></x-slot:buttons>
     </x-ui.filter-bar>
     <x-ui.filter-chips :chips="$chips" :reset-href="route('adviser.emergencies', ['tab' => $tab])" />
     <x-ui.card :title="$tab === 'resolved' ? 'Resolved Cases' : 'Open Emergency Cases'">

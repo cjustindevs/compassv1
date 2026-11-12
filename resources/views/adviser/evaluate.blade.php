@@ -7,13 +7,6 @@
         .adviser-page-content { font-family: 'Inter', sans-serif; box-sizing: border-box; }
         body { background: #F8FBF9; }
 
-        .form-card {
-            background: white;
-            border-radius: 24px;
-            padding: 32px 36px;
-            border: 1px solid var(--gray-200);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.01);
-        }
 
         .form-label {
             display: block;
@@ -58,39 +51,6 @@
         .rating-btn:hover { border-color: #04A052; background: #EAF8F0; }
         .rating-btn.active { border-color: #04A052; background: #EAF8F0; color: #04A052; }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #04A052, #038A45);
-            color: white;
-            font-weight: 600;
-            padding: 14px 36px;
-            border-radius: 50px;
-            border: none;
-            box-shadow: none;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            font-size: 14px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: none; }
-
-        .btn-outline {
-            background: transparent;
-            color: #6b7280;
-            font-weight: 600;
-            padding: 14px 28px;
-            border-radius: 50px;
-            border: 1.5px solid #e5e7eb;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            font-size: 14px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-        }
-        .btn-outline:hover { background: #f3f4f6; }
 
         .score-display {
             background: #f8fbf9;
@@ -112,26 +72,13 @@
         .competency-level.needs-improvement { background: #fee2e2; color: #991b1b; }
         .competency-level.unsatisfactory { background: #fee2e2; color: #991b1b; }
 
-        .risk-badge {
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        .risk-badge.low { background: #dcfce7; color: #166534; }
-        .risk-badge.moderate { background: #fef3c7; color: #92400e; }
-        .risk-badge.high { background: #fee2e2; color: #991b1b; }
-        .risk-badge.emergency { background: #fee2e2; color: #991b1b; }
 
         @media (max-width: 768px) {
-            .form-card { padding: 20px 16px; border-radius: 16px; }
-            .btn-primary, .btn-outline { padding: 12px 24px; font-size: 14px; width: 100%; justify-content: center; }
             .rating-btn { width: 38px; height: 38px; font-size: 14px; }
         }
         .flash-success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
         .flash-error { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
         @media (max-width: 480px) {
-            .form-card { padding: 16px 12px; }
             .rating-btn { width: 34px; height: 34px; font-size: 13px; }
         }
     </style>

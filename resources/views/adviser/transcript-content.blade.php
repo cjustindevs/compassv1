@@ -7,7 +7,7 @@
     $lastDay = null;
 @endphp
 <div class="adviser-page-content at-page">
-    <x-ui.page-header :title="$session->reference_number.' transcript'" description="Temporary, audited access: this authorization lasts ten minutes and requires current supervision. Dates and message times below use Philippine Time." :back-href="route('adviser.transcripts')" back-label="Back to Transcripts" />
+    <x-ui.page-header :title="$session->reference_number.' transcript'" description="Temporary, audited access: this authorization lasts ten minutes and requires current supervision. Dates and message times below use Philippine Time." :back-href="route('adviser.transcripts')" back-label="Back to transcript access" />
     <x-ui.card>
         <dl class="ui-summary">
             <div><dt>Reference</dt><dd>{{ $session->reference_number }}</dd></div>
@@ -39,7 +39,7 @@
         </div>
         <footer class="at-reader-footer">
             <div><h2>{{ $session->transcript_verified ? 'Transcript already verified' : 'Finish transcript review' }}</h2><p class="ui-card-sub">Verification applies to this transcript. Competency evaluations remain separate.</p></div>
-            @if(!$session->transcript_verified)<form method="POST" action="{{ route('adviser.transcript.verify', $session->id) }}">@csrf<button type="submit" class="btn-primary">Verify transcript</button></form>@else<a class="btn-secondary" href="{{ route('adviser.transcripts') }}">Back to Transcripts</a>@endif
+            @if(!$session->transcript_verified)<form method="POST" action="{{ route('adviser.transcript.verify', $session->id) }}">@csrf<button type="submit" class="btn-primary">Verify transcript</button></form>@else<a class="btn-secondary" href="{{ route('adviser.transcripts') }}">Back to transcript access</a>@endif
         </footer>
     </x-ui.card>
 </div>

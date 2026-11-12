@@ -83,7 +83,6 @@
             class="screening-review-card">
             <x-slot:actions>
                 <x-ui.badge :tone="$reassessment ? 'blue' : 'neutral'">{{ $reassessment ? 'Helper reassessment' : ($followUpFlow && $screening->follow_up_requested_at ? ($screening->follow_up_answered_at ? 'Follow-up received' : 'Awaiting Seeker response') : 'Review needed') }}</x-ui.badge>
-                <x-ui.badge :tone="$riskMeta['tone']">{{ $riskMeta['label'] }}</x-ui.badge>
                 @if(app(\App\Services\AdviserTranscriptAccess::class)->allowed($session))
                     <a href="{{ route('adviser.screenings.conversation', $session) }}" class="btn-outline">
                         <x-ui-icon name="message" /> View chat session

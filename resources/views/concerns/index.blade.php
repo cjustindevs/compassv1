@@ -46,7 +46,7 @@
                                     <x-ui.field label="Status" for="concernStatus{{ $category->id }}"><select id="concernStatus{{ $category->id }}" name="is_active" data-control="select"><option value="1" @selected($category->is_active)>Active</option><option value="0" @selected(!$category->is_active)>Inactive</option></select></x-ui.field>
                                     <x-ui.field label="Description" for="concernDescription{{ $category->id }}"><textarea id="concernDescription{{ $category->id }}" name="description" maxlength="500" rows="2">{{ $category->description }}</textarea></x-ui.field>
                                 </div>
-                                <button class="btn-primary" type="submit">Save changes</button>
+                                <button class="btn-primary" type="submit" style="white-space:nowrap">Save changes</button>
                             </form>
                         </details>
                     </td>

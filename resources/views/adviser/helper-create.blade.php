@@ -39,7 +39,7 @@
                 <p class="hc-note">Supervising Adviser: <strong>{{ $adviser->full_name }}</strong> (you)</p>
             </x-ui.card>
 
-            <x-ui.card title="Qualification evidence" subtitle="Proof of eligibility: all three must be true. This is the same verification you would record on an existing Helper." id="hcProof">
+            <x-ui.card title="Proof of eligibility" subtitle="All three must be true. This is the same verification you would record on an existing Helper." id="hcProof">
                 <label class="hc-check"><input type="checkbox" name="currently_enrolled" value="1" @checked(old('currently_enrolled')) required> <span><strong>Currently enrolled</strong> I checked the student's current enrollment record.</span></label>
                 @error('currently_enrolled')<span class="hc-error" role="alert">{{ $message }}</span>@enderror
                 <label class="hc-check"><input type="checkbox" name="recognized_member" value="1" @checked(old('recognized_member')) required> <span><strong>Recognized peer-support member</strong> The student belongs to the recognized peer-support organization.</span></label>

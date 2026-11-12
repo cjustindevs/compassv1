@@ -23,8 +23,8 @@
 <x-ui.page-header title="Reports" :description="'Authorized supervision records. '.$filters['start']->copy()->timezone('Asia/Manila')->format('M d, Y g:i A').' to '.$filters['end']->copy()->subMicrosecond()->timezone('Asia/Manila')->format('M d, Y g:i A').' (Philippine Time).'">
     <x-slot:actions>
         <a class="btn-secondary" href="{{ route('queue.performance', request()->only(['from','to','period'])) }}">Queue performance</a>
-        <a class="btn-secondary" href="{{ route('adviser.reports.export', array_merge($exportQuery, ['format' => 'csv'])) }}"><x-ui-icon name="download" /> Export CSV</a>
-        <a class="btn-secondary" href="{{ route('adviser.reports.export', array_merge($exportQuery, ['format' => 'pdf'])) }}"><x-ui-icon name="download" /> Export PDF</a>
+        <a class="btn-secondary" href="{{ route('adviser.reports.export', array_merge($exportQuery, ['format' => 'csv'])) }}"><x-ui-icon name="download" /> Export case CSV</a>
+        <a class="btn-secondary" href="{{ route('adviser.reports.export', array_merge($exportQuery, ['format' => 'pdf'])) }}"><x-ui-icon name="download" /> Export case PDF</a>
     </x-slot:actions>
 </x-ui.page-header>
 @if(session('success'))<p class="ui-card" role="status">{{ session('success') }}</p>@endif

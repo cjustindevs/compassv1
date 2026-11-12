@@ -56,6 +56,16 @@ class AdviserNavigationTest extends TestCase
         $this->get(route('adviser.emergencies.show', $alert->id))->assertOk()->assertDontSee('ui-emergency-strip', false);
     }
 
+    public function test_no_emergency_strip_on_the_coordination_page(): void
+    {
+        $adviser = $this->adviser();
+        $this->actingAs($adviser->user);
+        $alert = $this->activeEmergency($adviser);
+
+        $this->get(route('adviser.emergency.coordinate', ['emergency_alerts', $alert->id]))->assertOk()
+            ->assertDontSee('ui-emergency-strip', false);
+    }
+
     public function test_other_roles_get_no_strip_or_bottom_nav(): void
     {
         $this->activeEmergency();

@@ -30,7 +30,7 @@
                         <td data-label="Case">{{ $report->session->reference_number }}<p class="av-muted">{{ $report->session->seeker?->generated_alias ?? 'Seeker' }}</p></td>
                         <td data-label="Helper">{{ $report->session->helper?->full_name ?? 'Unassigned' }}</td>
                         <td data-label="Submitted">{{ ($report->summary_submitted_at ?? $report->created_at)->copy()->timezone('Asia/Manila')->format('M d, Y') }}</td>
-                        <td data-label="Action"><a class="av-link" href="{{ route('adviser.evaluate', $report->id) }}">Evaluate</a></td>
+                        <td data-label="Action" class="ui-actions"><a class="av-link" href="{{ route('adviser.evaluate', $report->id) }}">Evaluate</a></td>
                     </tr>
                 @endforeach
                 </tbody>
