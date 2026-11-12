@@ -151,4 +151,27 @@ class AdviserRedesignPagesTest extends TestCase
             ->assertSee('ui-save-bar is-visible', false)
             ->assertSee('ui-field-error', false);
     }
+
+    public function test_pending_evaluations_has_client_side_controls_and_no_server_filter(): void
+    {
+        $adviser = $this->adviser();
+        $this->documentedReport($adviser, 'completed', 'high');
+        $this->documentedReport($adviser);
+
+        $html = $this->actingAs($adviser->user)->get(route('adviser.evaluations'))
+            ->assertOk()
+            ->assertSee('id="evalSearch"', false)
+            ->assertSee('id="evalRisk"', false)
+            ->assertSee('id="evalSort"', false)
+            ->assertSee('id="evalNoMatch"', false)
+            ->assertSee('eval-list-filter.js', false)
+            ->assertSee('data-risk="high"', false)
+            ->assertSee('data-time=', false)
+            ->assertSee('data-search=', false)
+            ->getContent();
+        $this->assertSame(2, substr_count($html, 'data-eval-row'));
+
+        $filtered = $this->actingAs($adviser->user)->get(route('adviser.evaluations', ['q' => 'x', 'risk' => 'high']))->getContent();
+        $this->assertSame(2, substr_count($filtered, 'data-eval-row'));
+    }
 }
