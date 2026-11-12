@@ -211,4 +211,52 @@ class AdviserRedesignPagesTest extends TestCase
             ->assertOk()->assertSee('ui-back-link', false)->assertSee('Back to Screening Reviews')
             ->assertSee('data-page-header', false);
     }
+
+    public function test_manage_helpers_uses_shared_blocks(): void
+    {
+        $adviser = $this->adviser();
+        $this->helperFor($adviser);
+
+        $html = $this->actingAs($adviser->user)->get(route('adviser.helpers'))->assertOk()
+            ->assertSee(route('adviser.helpers.create'), false)->assertSee('Add a Helper')
+            ->assertSee(route('adviser.helpers.export'), false)->getContent();
+        $this->assertStringContainsString('ui-kpis', $html);
+        $this->assertStringContainsString('ui-table--stack', $html);
+        $this->assertStringContainsString('data-label="Helper"', $html);
+        $this->assertSame(1, substr_count($html, 'data-page-header'));
+        $this->assertSame(1, substr_count($html, '<h1'));
+
+        $this->actingAs($adviser->user)->get(route('adviser.helpers', ['status' => 'offline']))->assertOk()
+            ->assertSee('ui-chip', false)->assertSee('Remove filter Status: offline');
+    }
+
+    public function test_helper_detail_and_matching_have_back_link_and_summary(): void
+    {
+        $adviser = $this->adviser();
+        $helper = $this->helperFor($adviser);
+
+        $detail = $this->actingAs($adviser->user)->get(route('adviser.helper.show', ['id' => $helper->id]))->assertOk()
+            ->assertSee('ui-back-link', false)->assertSee('Back to Manage Helpers')
+            ->assertSee(route('adviser.helpers.reassign'), false)->getContent();
+        $this->assertSame(1, substr_count($detail, 'data-page-header'));
+        $this->assertSame(1, substr_count($detail, '<h1'));
+        $this->assertStringContainsString('ui-card', $detail);
+
+        $match = $this->actingAs($adviser->user)->get(route('adviser.helper.matching', ['id' => $helper->id]))->assertOk()
+            ->assertSee('ui-back-link', false)->assertSee('Back to Manage Helpers')
+            ->assertSee(route('adviser.helper.competency.update', $helper->id), false)->getContent();
+        $this->assertSame(1, substr_count($match, '<h1'));
+        $this->assertStringContainsString('ui-table--stack', $match);
+    }
+
+    public function test_add_helper_form_keeps_ids_and_action(): void
+    {
+        $adviser = $this->adviser();
+
+        $this->actingAs($adviser->user)->get(route('adviser.helpers.create'))->assertOk()
+            ->assertSee(route('adviser.helpers.store'), false)
+            ->assertSee('id="hcEmail"', false)->assertSee('id="hcFirst"', false)->assertSee('id="hcEvidence"', false)
+            ->assertSee('id="hcAccount"', false)->assertSee('id="hcProof"', false)->assertSee('id="hcAfter"', false)
+            ->assertSee('ui-back-link', false);
+    }
 }

@@ -1,57 +1,65 @@
 @extends('layouts.app')
 
+@section('title', 'Helper Matching – COMPASS')
+
+@push('styles')
+<style>
+    .hm-form { display: grid; grid-template-columns: 1fr 2fr auto; gap: 12px; align-items: center; }
+    .hm-form input { min-height: 44px; border: 1px solid var(--compass-border, #E5E7EB); border-radius: 12px; padding: 0 12px; font-size: 15px; background: #fff; width: 100%; }
+    @media (max-width: 768px) { .hm-form { grid-template-columns: 1fr auto; } .hm-form input[name="remarks"] { grid-column: 1 / -1; grid-row: 2; } }
+    .hm-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .hm-empty { font-size: 15px; color: var(--compass-muted, #6B7280); }
+</style>
+@endpush
+
 @section('content')
-<div class="max-w-6xl mx-auto p-6 space-y-6">
-    <div class="bg-white rounded-xl shadow p-6">
-        <a href="{{ route('adviser.helpers') }}" class="text-sm text-gray-500 hover:text-gray-700">Back to helpers</a>
-        <h1 class="text-2xl font-bold mt-2">Matching Profile: {{ $helper->full_name ?: ($helper->user?->name ?? 'Name not recorded') }}</h1>
-        <p class="text-gray-600">Current display score: {{ number_format($matchingScore, 2) }}%</p>
-    </div>
+    <x-ui.page-header :title="'Matching Profile: '.($helper->full_name ?: ($helper->user?->name ?? 'Name not recorded'))"
+        :description="'Current display score: '.number_format($matchingScore, 2).'%'"
+        :back-href="route('adviser.helpers')" back-label="Back to Manage Helpers" />
 
-    <div class="grid md:grid-cols-3 gap-4">
+    <x-ui.kpi-grid>
+        <x-ui.kpi label="Display score" :value="number_format($matchingScore, 2).'%'" tone="green" />
         @foreach($matchingDetails as $label => $score)
-            <div class="bg-white rounded-xl shadow p-4">
-                <div class="text-sm text-gray-500">{{ ucwords(str_replace('_', ' ', $label)) }}</div>
-                <div class="text-xl font-bold">{{ is_numeric($score) ? number_format($score, 2) : $score }}</div>
-            </div>
+            <x-ui.kpi :label="ucwords(str_replace('_', ' ', $label))" :value="is_numeric($score) ? number_format($score, 2) : $score" tone="neutral" />
         @endforeach
-    </div>
+    </x-ui.kpi-grid>
 
-    <div class="bg-white rounded-xl shadow p-6">
-        <h2 class="font-semibold mb-3">Update Competency</h2>
-        <form class="form-maximized grid md:grid-cols-3 gap-3" method="POST" action="{{ route('adviser.helper.competency.update', $helper->id) }}">
+    <x-ui.card title="Update Competency">
+        <form class="hm-form" method="POST" action="{{ route('adviser.helper.competency.update', $helper->id) }}">
             @csrf
-            <input name="competency_score" type="number" step="0.01" min="1" max="5" value="{{ $helper->competency_score }}" class="border rounded px-3 py-2">
-            <input name="remarks" type="text" placeholder="Remarks" class="border rounded px-3 py-2 md:col-span-1">
-            <button class="bg-green-600 text-white rounded px-4 py-2">Save</button>
+            <input name="competency_score" type="number" step="0.01" min="1" max="5" value="{{ $helper->competency_score }}" aria-label="Competency score">
+            <input name="remarks" type="text" placeholder="Remarks" aria-label="Remarks">
+            <button class="btn-primary" type="submit">Save</button>
         </form>
-    </div>
+    </x-ui.card>
 
-    <div class="bg-white rounded-xl shadow p-6">
-        <h2 class="font-semibold mb-3">Recent Matches</h2>
-        <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
-                <thead><tr class="text-left text-gray-500"><th class="py-2">Session</th><th>Seeker</th><th>Risk</th><th>Method</th><th>Score</th><th>Date</th></tr></thead>
-                <tbody>
-                    @forelse($recentMatches as $session)
-                        <tr class="border-t"><td class="py-2">{{ $session->reference_number }}</td><td>{{ $session->seeker?->generated_alias }}</td><td>{{ ucfirst($session->risk_level) }}</td><td>{{ ucfirst($session->match_method ?? 'automatic') }}</td><td>{{ $session->matching_details['total_score'] ?? 'N/A' }}</td><td>{{ ($session->created_date ?? $session->created_at)?->format('M d, Y') }}</td></tr>
-                    @empty
-                        <tr><td colspan="6" class="py-4 text-gray-500">No matches yet.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <x-ui.card title="Recent Matches">
+        <x-ui.table :stack="true">
+            <thead><tr><th>Session</th><th>Seeker</th><th>Risk</th><th>Method</th><th>Score</th><th>Date</th></tr></thead>
+            <tbody>
+                @forelse($recentMatches as $session)
+                    <tr>
+                        <td data-label="Session">{{ $session->reference_number }}</td>
+                        <td data-label="Seeker">{{ $session->seeker?->generated_alias }}</td>
+                        <td data-label="Risk">{{ ucfirst($session->risk_level) }}</td>
+                        <td data-label="Method">{{ ucfirst($session->match_method ?? 'automatic') }}</td>
+                        <td data-label="Score">{{ $session->matching_details['total_score'] ?? 'N/A' }}</td>
+                        <td data-label="Date">{{ ($session->created_date ?? $session->created_at)?->format('M d, Y') }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="6">No matches yet.</td></tr>
+                @endforelse
+            </tbody>
+        </x-ui.table>
+    </x-ui.card>
 
-    <div class="bg-white rounded-xl shadow p-6">
-        <h2 class="font-semibold mb-3">Specialties</h2>
-        <div class="flex flex-wrap gap-2">
+    <x-ui.card title="Specialties">
+        <div class="hm-chips">
             @forelse($specialties as $specialty)
-                <span class="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm">{{ ucfirst($specialty->category) }} · L{{ $specialty->proficiency_level }}</span>
+                <x-ui.badge tone="green">{{ ucfirst($specialty->category) }} · L{{ $specialty->proficiency_level }}</x-ui.badge>
             @empty
-                <span class="text-gray-500">No specialties recorded.</span>
+                <span class="hm-empty">No specialties recorded.</span>
             @endforelse
         </div>
-    </div>
-</div>
+    </x-ui.card>
 @endsection

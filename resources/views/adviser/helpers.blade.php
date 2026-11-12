@@ -4,275 +4,93 @@
 
 @push('styles')
 <style>
-        .adviser-page-content { font-family: 'Inter', sans-serif; box-sizing: border-box; }
-
-        :root {
-            --green-50: #EAF8F0;
-            --green-100: #D0F0D8;
-            --green-500: #04A052;
-            --green-600: #038A45;
-            --green-700: #027039;
-            --gray-50: #F9FAFB;
-            --gray-100: #F3F4F6;
-            --gray-200: #E5E7EB;
-            --gray-300: #D1D5DB;
-            --gray-400: #9CA3AF;
-            --gray-500: #6B7280;
-            --gray-600: #4B5563;
-            --gray-700: #374151;
-            --gray-800: #163B2D;
-            --red-500: #EF4444;
-            --yellow-500: #F59E0B;
-            --blue-500: #3B82F6;
-        }
-
-        body { background: #F8FBF9; }
-
-        .stat-card {
-            background: white;
-            border-radius: 16px;
-            padding: 20px 24px;
-            border: 1px solid var(--gray-200);
-        }
-        .stat-number { font-size: 28px; font-weight: 800; color: var(--gray-800); }
-        .stat-label { font-size: 13px; color: var(--gray-500); }
-
-        .card {
-            background: white;
-            border-radius: 20px;
-            padding: 24px;
-            border: 1px solid var(--gray-200);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.01);
-        }
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .card-header h3 { font-weight: 700; font-size: 16px; color: var(--gray-800); }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--green-500), var(--green-600));
-            color: white;
-            font-weight: 600;
-            padding: 8px 18px;
-            border-radius: 20px;
-            border: none;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .btn-primary:hover { background: var(--green-700); transform: scale(1.02); }
-
-        .btn-outline {
-            background: transparent;
-            color: var(--gray-600);
-            padding: 6px 14px;
-            border-radius: 16px;
-            border: 1px solid var(--gray-200);
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-outline:hover { background: var(--green-50); border-color: var(--green-500); color: var(--green-700); }
-
-        .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-        .status-badge.online { background: #DCFCE7; color: #166534; }
-        .status-badge.available { background: #E0F2FE; color: #075985; }
-        .status-badge.offline { background: #FEF3C7; color: #92400E; }
-        .status-badge.inactive { background: #F3F4F6; color: #6B7280; }
-
-        .level-tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-        .level-tag.expert { background: #DCFCE7; color: #166534; }
-        .level-tag.advanced { background: #DBEAFE; color: #1E40AF; }
-        .level-tag.intermediate { background: #FEF3C7; color: #92400E; }
-        .level-tag.beginner { background: #FEE2E2; color: #991B1B; }
-        .level-tag.trainee { background: #F3F4F6; color: #6B7280; }
-
-        .filter-pill {
-            padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
-            border: 1px solid var(--gray-200); background: white; color: var(--gray-500);
-            text-decoration: none; transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px;
-        }
-        .filter-pill:hover { border-color: var(--green-500); color: var(--green-700); }
-        .filter-pill.active { background: var(--green-50); border-color: var(--green-500); color: var(--green-700); }
-
-        .helper-table { width: 100%; border-collapse: collapse; }
-        .helper-table th {
-            text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.04em; color: var(--gray-400); padding: 10px 12px; border-bottom: 1px solid var(--gray-200);
-        }
-        .helper-table td { padding: 14px 12px; border-bottom: 1px solid var(--gray-100); font-size: 13px; vertical-align: middle; }
-        .helper-table tr:last-child td { border-bottom: none; }
-        .helper-table tr:hover td { background: var(--gray-50); }
-
-        .mini-select {
-            padding: 6px 10px; border: 1px solid var(--gray-200); border-radius: 10px;
-            font-size: 12px; outline: none; background: white; color: var(--gray-700); max-width: 160px;
-        }
-        .mini-select:focus { border-color: var(--green-500); }
-
-        .table-wrap { max-width: 100%; overflow-x: auto; }
-        .flash-success { background: var(--green-50); color: var(--green-700); border: 1px solid var(--green-100); border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
-        @media (max-width: 768px) {
-            .helper-table { min-width: 720px; }
-        }
-            .add-helper-btn { display: inline-flex; align-items: center; padding: 8px 14px; border-radius: 10px; background: #078749; color: #fff; font-weight: 600; font-size: 13px; text-decoration: none; margin-right: 8px; }
-        .elig-tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 99px; }
-        .elig-tag.ok { background: #e7f6ee; color: #05683a; }
-        .elig-tag.blocked { background: #fff4e0; color: #8a5300; }
-        .elig-why { display: block; font-size: 12px; color: #6b7b74; margin-top: 3px; max-width: 28ch; }
-        .compass-ui .helper-table td .btn-outline { white-space: nowrap; }
-    </style>
+    .helpers-flash { border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; }
+    .helper-person { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .helper-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--compass-green, #04A052); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+    .helper-person strong, .helper-person small { display: block; }
+    .ui-table td small { display: block; font-size: 13px; color: var(--compass-muted, #6B7280); }
+    .elig-why { max-width: 28ch; }
+    .helpers-footer { margin-top: 24px; text-align: center; font-size: 14px; color: var(--compass-muted, #6B7280); }
+    .helpers-clear { font-size: 14px; color: var(--compass-muted, #6B7280); }
+</style>
 @endpush
 
 @section('content')
-<div class="adviser-page-content">
-        <!-- Top Bar -->
-        <div class="flex items-center justify-between mb-6">
-            <div class="flex items-center gap-4">
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-gray-800">Manage Helpers</h1>
-                    <p class="text-sm text-gray-500 hidden sm:block">
-                        Monitor performance, availability, and supervision
-                    </p>
-                </div>
-            </div>
-            <div class="flex items-center gap-3">
-            </div>
-        </div>
+    @php
+        $statusLabels = ['all' => 'All', 'online' => 'Online', 'available' => 'Available', 'offline' => 'Offline', 'inactive' => 'Inactive'];
+        $statusTone = ['online' => 'green', 'available' => 'blue', 'offline' => 'amber', 'inactive' => 'neutral'];
+        $levelTone = ['expert' => 'green', 'advanced' => 'blue', 'intermediate' => 'amber', 'beginner' => 'red', 'trainee' => 'neutral'];
+        $chips = $statusFilter !== 'all' ? \App\Support\FilterChips::from(request(), ['status' => 'Status']) : [];
+        $eligibility = app(\App\Services\HelperEligibilityService::class);
+    @endphp
 
-        @if(session('success'))
-            <div class="flash-success"> {{ session('success') }}</div>
-        @endif
+    <x-ui.page-header title="Manage Helpers" description="Monitor performance, availability, and supervision">
+        <x-slot:actions>
+            <a href="{{ route('adviser.helpers.create') }}" class="btn-primary"><x-ui-icon name="user-plus" /> Add a Helper</a>
+            <a href="{{ route('adviser.helpers.export', ['status' => $statusFilter]) }}" class="btn-secondary"><x-ui-icon name="file-spreadsheet" /> Export CSV</a>
+        </x-slot:actions>
+    </x-ui.page-header>
 
-        <!-- Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="stat-card">
-                <span class="stat-label">Total Helpers</span>
-                <div class="stat-number">{{ $totalHelpers }}</div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Available</span>
-                <div class="stat-number">{{ $availableHelpers }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Advanced / Expert competency</span>
+    @if(session('success'))
+        <div class="helpers-flash">{{ session('success') }}</div>
+    @endif
 
-                </div>
-                <div class="stat-number">{{ $highCompetency }}</div>
-            </div>
-        </div>
+    <x-ui.kpi-grid>
+        <x-ui.kpi label="Total Helpers" :value="$totalHelpers" tone="neutral" />
+        <x-ui.kpi label="Available" :value="$availableHelpers" tone="green" />
+        <x-ui.kpi label="Advanced / Expert" :value="$highCompetency" tone="blue" />
+    </x-ui.kpi-grid>
 
-        <!-- Toolbar -->
-        <div class="card mb-6">
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <div class="flex items-center gap-2 flex-wrap">
-                    @php
-                        $filters = ['all' => 'All', 'online' => 'Online', 'available' => 'Available', 'offline' => 'Offline', 'inactive' => 'Inactive'];
-                    @endphp
-                    @foreach($filters as $key => $label)
-                        <a href="{{ route('adviser.helpers', ['status' => $key]) }}"
-                           class="filter-pill {{ $statusFilter === $key ? 'active' : '' }}">
-                            {{ $label }}
-                        </a>
+    <x-ui.filter-bar :action="route('adviser.helpers')">
+        <x-ui.field label="Status" for="helperStatus">
+            <select id="helperStatus" name="status" data-control="select">
+                @foreach($statusLabels as $key => $label)
+                    <option value="{{ $key }}" @selected($statusFilter === $key)>{{ $label }}</option>
+                @endforeach
+            </select>
+        </x-ui.field>
+    </x-ui.filter-bar>
+    <x-ui.filter-chips :chips="$chips" :reset-href="route('adviser.helpers')" />
+
+    <x-ui.card :title="'Helpers ('.$helperData->count().')'">
+        @if($helperData->isNotEmpty())
+            <x-ui.table :stack="true">
+                <thead>
+                    <tr><th>Helper</th><th>Status</th><th>Level</th><th>Score</th><th>Duty / capacity</th><th>Can take sessions</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    @foreach($helperData as $row)
+                        @php $helper = $row['helper']; $blockers = $eligibility->reasons($helper); @endphp
+                        <tr>
+                            <td data-label="Helper">
+                                <div class="helper-person">
+                                    <span class="helper-avatar" aria-hidden="true">{{ $row['initials'] }}</span>
+                                    <span><strong>{{ $helper->getFullNameAttribute() }}</strong><small>{{ $helper->email }}</small></span>
+                                </div>
+                            </td>
+                            <td data-label="Status"><x-ui.badge :tone="$statusTone[$row['status']] ?? 'neutral'">{{ ucfirst($row['status']) }}</x-ui.badge></td>
+                            <td data-label="Level"><x-ui.badge :tone="$levelTone[strtolower($row['level'])] ?? 'neutral'">{{ $row['level'] }}</x-ui.badge></td>
+                            <td data-label="Score"><strong>{{ $row['competency_score'] > 0 ? $row['competency_score'] : '—' }}</strong></td>
+                            <td data-label="Duty / capacity"><x-helper-capacity :helper="$helper" /></td>
+                            <td data-label="Can take sessions">
+                                @if($blockers === [])
+                                    <x-ui.badge tone="green">Eligible</x-ui.badge>
+                                @else
+                                    <span title="{{ implode(' ', $blockers) }}"><x-ui.badge tone="amber">{{ count($blockers) }} {{ \Illuminate\Support\Str::plural('blocker', count($blockers)) }}</x-ui.badge></span>
+                                    <small class="elig-why">{{ $blockers[0] }}</small>
+                                @endif
+                            </td>
+                            <td data-label="Actions" class="ui-actions">
+                                <a href="{{ route('adviser.helper.show', ['id' => $helper->id]) }}" class="btn-secondary"><x-ui-icon name="eye" /> View</a>
+                            </td>
+                        </tr>
                     @endforeach
-                </div>
-                <a href="{{ route('adviser.helpers.create') }}" class="btn-primary add-helper-btn">+ Add Helper</a>
-                <a href="{{ route('adviser.helpers.export', ['status' => $statusFilter]) }}" class="btn-outline">
-                    <x-ui-icon name="file-spreadsheet"  /> Export CSV
-                </a>
-            </div>
-        </div>
+                </tbody>
+            </x-ui.table>
+        @else
+            <x-ui.empty title="No helpers found" text="Try a different status filter." />
+        @endif
+    </x-ui.card>
 
-        <!-- Helper List -->
-        <div class="card">
-            <div class="card-header">
-                <h3>Helpers ({{ $helperData->count() }})</h3>
-            </div>
-
-            @if($helperData->isNotEmpty())
-                <div class="table-wrap">
-                    <table class="helper-table">
-                        <thead>
-                            <tr>
-                                <th>Helper</th>
-                                <th>Status</th>
-                                <th>Level</th>
-                                <th>Score</th>
-                                <th>Duty / capacity</th>
-                                <th>Can take sessions</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($helperData as $row)
-                                @php $helper = $row['helper']; @endphp
-                                <tr>
-                                    <td>
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-9 h-9 rounded-full bg-[#04A052] text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-                                                {{ $row['initials'] }}
-                                            </div>
-                                            <div class="min-w-0">
-                                                <p class="font-semibold text-gray-800 truncate">{{ $helper->getFullNameAttribute() }}</p>
-                                                <p class="text-xs text-gray-400 truncate">{{ $helper->email }}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td><span class="status-badge {{ $row['status'] }}">{{ ucfirst($row['status']) }}</span></td>
-                                    <td><span class="level-tag {{ strtolower($row['level']) }}">{{ $row['level'] }}</span></td>
-                                    <td class="font-semibold text-gray-700">
-                                        {{ $row['competency_score'] > 0 ? $row['competency_score'] : '—' }}
-                                    </td>
-                                    <td>
-                                        <x-helper-capacity :helper="$helper" />
-                                    </td>
-                                    @php $blockers = app(\App\Services\HelperEligibilityService::class)->reasons($helper); @endphp
-                                    <td>
-                                        @if($blockers === [])<span class="elig-tag ok">Eligible</span>
-                                        @else<span class="elig-tag blocked" title="{{ implode(' ', $blockers) }}">{{ count($blockers) }} {{ \Illuminate\Support\Str::plural('blocker', count($blockers)) }}</span><small class="elig-why">{{ $blockers[0] }}</small>@endif
-                                    </td>
-                                    <td>
-                                        <a href="{{ route('adviser.helper.show', ['id' => $helper->id]) }}" class="btn-outline">
-                                            <x-ui-icon name="eye"  /> View
-                                        </a>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @else
-                <div class="text-center py-12 text-gray-400">
-                    <p class="text-lg font-medium text-gray-600">No helpers found</p>
-                    <p>Try a different status filter.</p>
-                </div>
-            @endif
-        </div>
-
-        <!-- Footer -->
-        <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-
-            Quality supervision leads to quality support.
-        </div>
-</div>
-    <!-- Bottom Navigation -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-});
-    </script>
+    <p class="helpers-footer">Quality supervision leads to quality support.</p>
 @endsection
