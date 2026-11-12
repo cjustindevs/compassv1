@@ -36,12 +36,11 @@ class ModeratorNavigationTest extends TestCase
             ->assertDontSee('Connection review')->assertSee('id="emergencyBadge"', false);
     }
 
-    public function test_bottom_nav_lists_moderator_destinations(): void
+    public function test_phones_use_the_sidebar_menu_not_a_bottom_bar(): void
     {
         $this->actingAs($this->moderator())->get(route('moderator.reports'))->assertOk()
-            ->assertSee('ui-bottom-nav', false)->assertSee(route('moderator.dashboard'), false)
-            ->assertSee(route('moderator.queue'), false)->assertSee(route('moderator.emergency'), false)
-            ->assertSee('data-open-sidebar', false);
+            ->assertDontSee('ui-bottom-nav', false)->assertDontSee('data-open-sidebar', false)
+            ->assertSee('id="hamburgerBtn"', false);
     }
 
     public function test_emergency_strip_only_when_emergencies_are_active(): void
@@ -73,7 +72,7 @@ class ModeratorNavigationTest extends TestCase
         $this->activeEmergency();
         DB::flushQueryLog();
         DB::enableQueryLog();
-        $this->get(route('moderator.reports'))->assertOk()->assertSee('ui-emergency-strip', false)->assertSee('ui-bottom-nav', false);
+        $this->get(route('moderator.reports'))->assertOk()->assertSee('ui-emergency-strip', false)->assertDontSee('ui-bottom-nav', false);
         $count = collect(DB::getQueryLog())->filter(fn ($q) => str_starts_with($q['query'], 'select count(*) as aggregate from (select * from (select e.id'))->count();
         // Sidebar, strip and bottom nav share one composer computation; the page's own report adds one more.
         // Without sharing this was 4.

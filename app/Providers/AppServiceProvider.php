@@ -89,7 +89,6 @@ class AppServiceProvider extends ServiceProvider
             'layouts.partials.moderator-sidebar',
             'layouts.partials.professional-sidebar',
             'partials.sidebar',
-            'layouts.partials.bottom-nav',
             'partials.emergency-strip',
             'dashboard.adviser',
         ], SidebarComposer::class);

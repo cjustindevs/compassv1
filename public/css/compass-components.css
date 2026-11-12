@@ -104,17 +104,6 @@ a.ui-page:focus-visible { outline: none; box-shadow: var(--ring); }
 .ui-emergency-strip-link:focus-visible { outline: none; box-shadow: var(--ring); }
 @media (max-width: 768px) { .ui-emergency-strip { padding: 10px 16px; } }
 
-.ui-bottom-nav { display: none; }
-@media (max-width: 768px) {
-    .ui-bottom-nav { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-sticky); background: #fff; border-top: 1px solid var(--compass-border); box-shadow: var(--shadow-2); padding-bottom: env(safe-area-inset-bottom, 0px); }
-    body.compass-compact { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
-}
-.ui-bottom-nav-item { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 56px; padding: 4px; border: 0; background: transparent; color: var(--compass-muted); font: inherit; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; }
-.ui-bottom-nav-item svg { width: 22px; height: 22px; }
-.ui-bottom-nav-item.is-active { color: var(--compass-green-dark); }
-.ui-bottom-nav-item:focus-visible { outline: none; box-shadow: inset var(--ring); }
-.ui-bottom-nav-badge { position: absolute; top: 6px; left: calc(50% + 8px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--compass-green); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
-.ui-bottom-nav-badge--danger { background: var(--compass-danger); }
 
 /* Needs your attention strip */
 .ui-attention { margin-bottom: var(--space-6); }
@@ -189,7 +178,7 @@ a.ui-page:focus-visible { outline: none; box-shadow: var(--ring); }
 .ui-save-bar { display: flex; position: sticky; bottom: 0; z-index: 40; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-4); padding: var(--space-3) var(--space-4); background: #fff; border: 1px solid var(--compass-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-1); }
 .js-save-bar .ui-save-bar:not(.is-visible) { display: none; }
 .ui-save-bar-text { margin: 0; font-size: var(--text-sm); color: var(--compass-muted); }
-@media (max-width: 768px) { .ui-save-bar { bottom: calc(64px + env(safe-area-inset-bottom, 0px)); } }
+@media (max-width: 768px) { .ui-save-bar { bottom: env(safe-area-inset-bottom, 0px); } }
 @media (max-width: 480px) { .ui-save-bar { flex-direction: column; align-items: stretch; } }
 
 /* Compact phone layout (user review, Nov 12): same look as desktop, but denser so pages

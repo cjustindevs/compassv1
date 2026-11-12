@@ -98,7 +98,6 @@
         @include('components.confirmation-modal')
         @include('partials.workflow-notice')
         @include('layouts.partials.pwa-banner')
-        @include('layouts.partials.bottom-nav')
         @stack('scripts')
     </body>
 </html>

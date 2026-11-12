@@ -28,17 +28,13 @@ class AdviserNavigationTest extends TestCase
         $response->assertSee(route('concerns.manage'), false);
     }
 
-    public function test_bottom_nav_lists_adviser_destinations(): void
+    public function test_phones_use_the_sidebar_menu_not_a_bottom_bar(): void
     {
         $adviser = $this->adviser();
         $this->actingAs($adviser->user)->get(route('adviser.reports'))->assertOk()
-            ->assertSee('ui-bottom-nav', false)
-            ->assertSee('href="'.route('adviser.dashboard').'" class="ui-bottom-nav-item', false)
-            ->assertSee('href="'.route('adviser.evaluations').'" class="ui-bottom-nav-item', false)
-            ->assertSee('href="'.route('adviser.referrals').'" class="ui-bottom-nav-item', false)
-            ->assertSee('href="'.route('adviser.emergencies').'" class="ui-bottom-nav-item', false)
-            ->assertSee('data-open-sidebar', false)
-            ->assertDontSee('moderator/queue', false);
+            ->assertDontSee('ui-bottom-nav', false)
+            ->assertDontSee('data-open-sidebar', false)
+            ->assertSee('id="hamburgerBtn"', false);
     }
 
     public function test_emergency_strip_for_adviser_matches_the_active_tab_count(): void
@@ -87,7 +83,7 @@ class AdviserNavigationTest extends TestCase
         $this->activeEmergency($adviser);
         DB::flushQueryLog();
         DB::enableQueryLog();
-        $this->get(route('adviser.reports'))->assertOk()->assertSee('ui-emergency-strip', false)->assertSee('ui-bottom-nav', false);
+        $this->get(route('adviser.reports'))->assertOk()->assertSee('ui-emergency-strip', false)->assertDontSee('ui-bottom-nav', false);
         $count = collect(DB::getQueryLog())->filter(fn ($q) => str_starts_with($q['query'], 'select count(*) as aggregate from "emergency_alerts"') && ! str_contains($q['query'], 'between'))->count();
         // The reports page adds its own windowed count; the composer's unwindowed active count must run once.
         $this->assertSame(1, $count);

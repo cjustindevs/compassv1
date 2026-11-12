@@ -112,13 +112,6 @@ class SidebarController {
             this.hamburger.addEventListener('click', () => this.toggleMobile());
         }
 
-        document.querySelectorAll('[data-open-sidebar]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                this.toggleMobile();
-                btn.setAttribute('aria-expanded', this.sidebar.classList.contains('open') ? 'true' : 'false');
-            });
-        });
-
         if (this.overlay) {
             this.overlay.addEventListener('click', () => this.closeMobile());
         }
