@@ -79,6 +79,7 @@
         @else
             <x-ui.empty title="No pending referrals" text="All referrals have been reviewed" />
         @endif
+        {{ $pendingReferrals->links('vendor.pagination.compass', ['noun' => 'referrals']) }}
     </x-ui.card>
 
     @if($approvedReferrals->isNotEmpty())
@@ -107,6 +108,7 @@
                     @endforeach
                 </tbody>
             </x-ui.table>
+            {{ $approvedReferrals->links('vendor.pagination.compass', ['noun' => 'referrals']) }}
         </x-ui.card>
     @endif
 
@@ -186,5 +188,5 @@
             });
         });
     </script>
-<div class="rq-pager">{{ $pendingReferrals->links('vendor.pagination.compass', ['noun' => 'referrals']) }}{{ $approvedReferrals->links('vendor.pagination.compass', ['noun' => 'referrals']) }}{{ $completedReferrals->links('vendor.pagination.compass', ['noun' => 'referrals']) }}</div>
+<div class="rq-pager">{{ $completedReferrals->links('vendor.pagination.compass', ['noun' => 'referrals']) }}</div>
 @endsection

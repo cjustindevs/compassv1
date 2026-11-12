@@ -2,6 +2,7 @@
 @section('title','Notifications - COMPASS')
 @section('content')
 @php
+    $inlineNotices = ['success'];
     $emergencyCopy = app(\App\Services\EmergencyNotificationPresentation::class);
     $resetHref = route('adviser.notifications', $history === 'archived' ? ['history' => 'archived'] : []);
     $chips = $typeFilter ? \App\Support\FilterChips::from(request(), ['type' => 'Type'], ['history']) : [];

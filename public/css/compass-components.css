@@ -267,3 +267,17 @@ button.ui-chip.is-active { background: var(--compass-green-dark); border-color: 
 .ui-prose-details summary { cursor: pointer; font-size: 14px; font-weight: 600; }
 .ui-prose-details .ui-prose { margin-top: 12px; }
 .ui-prose-actions { margin: 0 0 var(--space-6, 24px); }
+
+/* Reports tab links: one scrollable row on phones */
+@media (max-width: 480px) {
+  .reports-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .reports-tabs::-webkit-scrollbar { display: none; }
+  .reports-tabs > .btn { flex: 0 0 auto; white-space: nowrap; min-height: 40px; padding: 0 16px; font-size: 14px; }
+}
+
+/* Tablet width with the sidebar open: scroll tables sideways instead of crushing columns */
+@media (min-width: 769px) and (max-width: 1200px) {
+  .compass-ui .ui-table table { min-width: 900px; }
+  .compass-ui .ui-table table td.ui-actions .btn, .compass-ui .ui-table table td.ui-actions a, .compass-ui .ui-table table td.ui-actions button { white-space: nowrap; }
+}
+@media (min-width: 769px) and (max-width: 1200px) { .compass-ui .ui-table table .ui-badge { white-space: nowrap; } }
