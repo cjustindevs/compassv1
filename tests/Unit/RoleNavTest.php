@@ -22,7 +22,7 @@ class RoleNavTest extends TestCase
     {
         $items = RoleNav::bottomItems('adviser');
         $this->assertSame(['adviser.dashboard', 'adviser.evaluations', 'adviser.referrals', 'adviser.emergencies'], array_column($items, 'route'));
-        $this->assertSame(['Dashboard', 'Pending Evaluations', 'Referral Queue', 'Emergencies'], array_column($items, 'label'));
+        $this->assertSame(['Dashboard', 'Evaluations', 'Referrals', 'Emergencies'], array_column($items, 'label'));
         $this->assertSame([null, 'evalBadge', 'referralBadge', 'emergencyCount'], array_column($items, 'badge'));
         $this->assertSame('danger', $items[3]['tone']);
     }

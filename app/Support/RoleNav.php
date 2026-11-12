@@ -21,8 +21,8 @@ class RoleNav
             ],
             'adviser' => [
                 ['route' => 'adviser.dashboard', 'match' => 'adviser.dashboard', 'label' => 'Dashboard', 'icon' => 'dashboard', 'badge' => null, 'tone' => null],
-                ['route' => 'adviser.evaluations', 'match' => ['adviser.evaluations*', 'adviser.evaluate*'], 'label' => 'Pending Evaluations', 'icon' => 'clipboard', 'badge' => 'evalBadge', 'tone' => null],
-                ['route' => 'adviser.referrals', 'match' => ['adviser.referrals*', 'adviser.referral.*'], 'label' => 'Referral Queue', 'icon' => 'arrow-right', 'badge' => 'referralBadge', 'tone' => null],
+                ['route' => 'adviser.evaluations', 'match' => ['adviser.evaluations*', 'adviser.evaluate*'], 'label' => 'Evaluations', 'icon' => 'clipboard', 'badge' => 'evalBadge', 'tone' => null],
+                ['route' => 'adviser.referrals', 'match' => ['adviser.referrals*', 'adviser.referral.*'], 'label' => 'Referrals', 'icon' => 'arrow-right', 'badge' => 'referralBadge', 'tone' => null],
                 ['route' => 'adviser.emergencies', 'match' => 'adviser.emergencies*', 'label' => 'Emergencies', 'icon' => 'warning', 'badge' => 'emergencyCount', 'tone' => 'danger'],
             ],
             default => [],

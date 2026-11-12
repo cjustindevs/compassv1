@@ -173,8 +173,13 @@ a.ui-page:focus-visible { outline: none; box-shadow: var(--ring); }
 @media (max-width: 768px) {
   .ui-eval-row { grid-template-columns: 36px minmax(0, 1fr); gap: var(--space-3); padding: var(--space-3); }
   .ui-eval-risk, .ui-eval-progress, .ui-eval-actions { grid-column: 1 / -1; }
-  .ui-eval-actions { flex-direction: column; }
-  .ui-eval-actions > a { width: 100%; justify-content: center; }
+  .ui-eval-actions { flex-direction: row; }
+  .compass-ui:not(.compass-ui-admin) .ui-eval-actions > a { flex: 1 1 0; min-width: 0; justify-content: center; white-space: nowrap; padding-left: 12px; padding-right: 12px; font-size: var(--text-caption); }
+  .ui-eval-risk { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
+  .ui-eval-risk .ui-list-sub { margin: 0; }
+  .ui-eval-progress { flex-direction: row; align-items: center; gap: var(--space-2); }
+  .eval-steps-stepper small { display: none; }
+  .eval-steps-stepper li { padding: var(--space-2); }
   .eval-steps-stepper { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .eval-steps-stepper li::after { display: none; }
 }
