@@ -234,6 +234,7 @@ a.ui-page:focus-visible { outline: none; box-shadow: var(--ring); }
 
 /* Pending Evaluations: search, risk filter and sort (client-side) */
 .ui-eval-row[hidden], .ui-eval-nomatch[hidden] { display: none; }
+.ui-empty[hidden] { display: none; }
 .ui-eval-controls .ui-eval-search { flex: 1 1 280px; }
 .ui-eval-showing { margin: 0 0 var(--space-3); }
 .ui-eval-nomatch { padding: var(--space-4) 0; text-align: center; }

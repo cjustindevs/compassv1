@@ -124,4 +124,11 @@ class UiComponentsTest extends TestCase
             $this->assertStringContainsString(':not(dialog)', $selector);
         }
     }
+
+    public function test_empty_state_honours_the_hidden_attribute(): void
+    {
+        $css = file_get_contents(public_path('css/compass-components.css'));
+
+        $this->assertMatchesRegularExpression('/\.ui-empty\[hidden\]\s*\{\s*display:\s*none/', $css);
+    }
 }
