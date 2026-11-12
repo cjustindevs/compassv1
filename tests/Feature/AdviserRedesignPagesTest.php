@@ -115,4 +115,40 @@ class AdviserRedesignPagesTest extends TestCase
             ->assertSee('Recently Completed')
             ->assertSee('Quality supervision leads to quality support.');
     }
+
+    public function test_evaluate_form_has_sections_save_bar_and_unchanged_contract(): void
+    {
+        $adviser = $this->adviser();
+        $report = $this->documentedReport($adviser);
+
+        $response = $this->actingAs($adviser->user)->get(route('adviser.evaluate', $report->id))
+            ->assertOk()
+            ->assertSee('Back to Pending Evaluations')
+            ->assertSee('ui-save-bar', false)
+            ->assertSee('action="'.route('adviser.evaluate.store', $report->id).'"', false)
+            ->assertSee('id="evaluationDeclaration"', false)
+            ->assertSee('openConversation', false)
+            ->assertSee('Session record')
+            ->assertSee('Your evaluation');
+
+        foreach (['active_listening', 'empathy', 'ethical_practices', 'referral_accuracy', 'respect_professionalism'] as $name) {
+            $response->assertSee('data-target="'.$name.'"', false)->assertSee('name="'.$name.'"', false);
+        }
+        $this->assertSame(1, substr_count($response->getContent(), '<h1'));
+    }
+
+    public function test_evaluate_validation_errors_show_next_to_fields_and_open_the_save_bar(): void
+    {
+        $adviser = $this->adviser();
+        $report = $this->documentedReport($adviser);
+
+        $this->actingAs($adviser->user)->from(route('adviser.evaluate', $report->id))
+            ->post(route('adviser.evaluate.store', $report->id), [])
+            ->assertRedirect(route('adviser.evaluate', $report->id));
+
+        $this->actingAs($adviser->user)->get(route('adviser.evaluate', $report->id))
+            ->assertOk()
+            ->assertSee('ui-save-bar is-visible', false)
+            ->assertSee('ui-field-error', false);
+    }
 }
