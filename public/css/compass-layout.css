@@ -103,6 +103,13 @@
 .compass-ui .main-content > .flex.justify-between:first-of-type > :first-child { min-width: 0; }
 .compass-ui .main-content > .flex.justify-between:first-of-type > :last-child:not(:first-child) { margin-left: auto; }
 .compass-ui .main-content > .flex.justify-between > div > .compass-notices.is-header-action { margin-left: 0; }
+/* When the bell is the only thing on the right, keep it on the title row: the title shrinks
+   (and may wrap to two lines) instead of the bell dropping onto a line of its own on phones. */
+.compass-ui .main-content > :is(.flex.justify-between, .top-bar, .page-header):has(> .compass-notices.is-header-action) {
+    flex-wrap: nowrap;
+}
+.compass-ui .main-content > :is(.flex.justify-between, .top-bar, .page-header):has(> .compass-notices.is-header-action) > :first-child { flex: 1 1 auto; min-width: 0; }
+.compass-ui .main-content > :is(.flex.justify-between, .top-bar, .page-header):has(> .compass-notices.is-header-action) h1 { overflow-wrap: anywhere; }
 
 /* layouts.app: the mobile app bar holds the hamburger + bell. On desktop it is a slim,
    transparent action row instead of a sticky white bar with only a bell in it. */

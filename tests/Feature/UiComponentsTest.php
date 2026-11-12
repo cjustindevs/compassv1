@@ -132,6 +132,16 @@ class UiComponentsTest extends TestCase
         $this->assertMatchesRegularExpression('/\.ui-empty\[hidden\]\s*\{\s*display:\s*none/', $css);
     }
 
+    public function test_a_header_bell_stays_on_the_title_row_instead_of_wrapping_below(): void
+    {
+        $css = file_get_contents(public_path('css/compass-layout.css'));
+
+        // Page top bars may wrap so real action buttons never collide with the title...
+        $this->assertStringContainsString('flex-wrap: wrap; column-gap: 16px; row-gap: 12px;', $css);
+        // ...but when the bell is the only thing on the right, the row stays on one line.
+        $this->assertMatchesRegularExpression('/:has\(> \.compass-notices\.is-header-action\)\s*\{\s*flex-wrap: nowrap;/', $css);
+    }
+
     public function test_shared_table_rules_never_force_a_min_width_without_the_opt_in_modifier(): void
     {
         $css = file_get_contents(public_path('css/compass-components.css'));
