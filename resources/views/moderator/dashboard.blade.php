@@ -24,7 +24,7 @@
             #dashboard-analytics .co-secondary > div { min-width: 0; }
         }
         #dashboard-analytics .co-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-        #dashboard-analytics .co-overview .co-kpi { align-items: center; text-align: center; border: 1px solid transparent; border-radius: 14px; background: #f3f4f6; padding: 20px 16px; }
+        #dashboard-analytics .co-overview .co-kpi { align-items: center; text-align: center; border: 1px solid #bbf7d0; border-radius: 14px; background: #f3f4f6; padding: 20px 16px; }
         #dashboard-analytics .co-kpi h3 { order: 0; font-size: 14px; font-weight: 600; color: #1F2937; }
         #dashboard-analytics .co-kpi > strong { font-size: 40px; font-weight: 800; line-height: 1.1; color: #374151; }
         #dashboard-analytics .co-overview .co-kpi { background: #f0fdf4; } #dashboard-analytics .co-kpi > strong { color: #15803d; }

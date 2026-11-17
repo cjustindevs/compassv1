@@ -32,6 +32,18 @@ class UiComponentsTest extends TestCase
         $this->assertStringContainsString('ui-badge--neutral">Something Else<', $badge('something_else'));
     }
 
+    public function test_every_kpi_card_has_a_subtle_border_matching_its_tone(): void
+    {
+        $css = file_get_contents(public_path('css/compass-components.css'));
+
+        $this->assertStringNotContainsString('border: 1px solid transparent; text-align: center;', $css, 'KPI cards must not hide their border.');
+        $this->assertMatchesRegularExpression('/\.ui-kpi \{[^}]*border: 1px solid var\(--compass-border\)/', $css);
+        foreach (['green' => '#bbf7d0', 'amber' => '#fde68a', 'blue' => '#bfdbfe', 'red' => '#fecaca'] as $tone => $border) {
+            $this->assertStringContainsString(".ui-kpi--{$tone} { background: ", $css);
+            $this->assertMatchesRegularExpression('/\.ui-kpi--'.$tone.' \{[^}]*border-color: '.$border.'/', $css);
+        }
+    }
+
     public function test_kpi_puts_label_above_value_and_applies_tone(): void
     {
         $html = Blade::render('<x-ui.kpi-grid><x-ui.kpi label="Open cases" value="12" tone="red" /></x-ui.kpi-grid>');
