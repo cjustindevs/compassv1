@@ -510,3 +510,13 @@
     }
 
 }
+
+/* Session notes: "Skills applied" as selectable pill chips (the checkbox stays for the form). */
+.skill-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.skill-chip { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border: 1px solid #d6e2db; border-radius: 999px; background: #fff; color: #163b2d; font-size: 15px; font-weight: 600; cursor: pointer; user-select: none; }
+.skill-chip input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.skill-chips .skill-chip svg.skill-chip-check { display: none; width: 16px; height: 16px; }
+.skill-chip:hover { border-color: #04a052; }
+.skill-chip:has(input:focus-visible) { outline: 3px solid rgb(4 160 82 / 35%); outline-offset: 2px; }
+.skill-chip:has(input:checked) { background: #eaf8f0; border-color: #04a052; color: #027039; }
+.skill-chips .skill-chip:has(input:checked) svg.skill-chip-check { display: inline-block; }

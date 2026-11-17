@@ -87,13 +87,14 @@
                     </div>
 
                     <div class="form-group form-span-all">
-                        <label class="form-label">Skills applied</label>
-                        <div class="skills-grid-max">
+                        <label class="form-label" id="skillsAppliedLabel">Skills applied</label>
+                        <div class="skill-chips" role="group" aria-labelledby="skillsAppliedLabel">
                             @foreach($skills as $key => $label)
-                                <label class="checkbox-group border border-gray-200 rounded-xl p-3">
+                                <label class="skill-chip">
                                     <input type="checkbox" name="skills_applied[]" value="{{ $key }}"
                                         @if(in_array($key, old('skills_applied', $report?->skills ?? []))) checked @endif>
-                                    <span class="text-sm text-gray-700">{{ $label }}</span>
+                                    <x-ui-icon name="check" class="skill-chip-check" />
+                                    <span>{{ $label }}</span>
                                 </label>
                             @endforeach
                         </div>

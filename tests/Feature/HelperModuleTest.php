@@ -61,6 +61,20 @@ class HelperModuleTest extends TestCase
             ->assertOk()->assertSee('Session Documentation');
     }
 
+    public function test_skills_applied_are_tidy_selectable_chips_with_the_same_fields(): void
+    {
+        $session = Session::where('helper_id', $this->helperUser->helper->id)->firstOrFail();
+        $session->update(['session_status' => 'completed']);
+        $session->report()->delete();
+        $html = $this->actingAs($this->helperUser)->get(route('helper.session.notes', $session->id))->assertOk()->getContent();
+
+        $this->assertSame(5, substr_count($html, 'class="skill-chip"'));
+        $this->assertSame(5, substr_count($html, 'name="skills_applied[]"'));
+        $this->assertStringContainsString('value="active_listening"', $html);
+        $this->assertStringContainsString('class="skill-chips"', $html);
+        $this->assertStringNotContainsString('skills-grid-max', $html);
+    }
+
     public function test_waiting_queue_is_matched_without_seeker_navigation(): void
     {
         Event::fake([NewCaseAssigned::class]);
