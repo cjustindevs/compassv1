@@ -29,7 +29,7 @@ a.ui-kpi:hover { box-shadow: var(--shadow-2); }
 .ui-kpi--red .ui-kpi-value { color: #b91c1c; }
 @media (max-width: 768px) { .ui-kpi-value { font-size: var(--text-4xl); } }
 
-.ui-badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: var(--radius-pill); font-size: var(--text-sm); font-weight: 600; line-height: 1.5; background: #f3f4f6; color: #374151; }
+.ui-badge { display: inline-flex; align-items: center; white-space: nowrap; padding: 2px 10px; border-radius: var(--radius-pill); font-size: var(--text-sm); font-weight: 600; line-height: 1.5; background: #f3f4f6; color: #374151; }
 .ui-badge--green { background: #f0fdf4; color: #15803d; }
 .ui-badge--amber { background: #fffbeb; color: #b45309; }
 .ui-badge--orange { background: #fff7ed; color: #c2410c; }
@@ -300,3 +300,6 @@ summary.ui-icon-btn::-webkit-details-marker { display: none; }
 .ui-dropdown-menu > a:hover, .ui-dropdown-menu > a:focus-visible, .ui-dropdown-menu > button:hover { background: var(--compass-green-soft); color: var(--compass-green-dark); outline: none; }
 @media (max-width: 480px) { .ui-dropdown-menu { left: 0; right: auto; } }
 @media (prefers-reduced-motion: reduce) { .ui-dropdown-caret { transition: none; } }
+
+/* Shared tables: a word only breaks when it cannot fit on its own line (never mid-name). */
+.compass-ui .ui-table td { overflow-wrap: break-word; }

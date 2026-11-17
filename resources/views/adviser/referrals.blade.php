@@ -60,16 +60,12 @@
                             <td data-label="Date">{{ $referral->created_at->format('M d, Y') }}</td>
                             <td data-label="Reason" class="rq-reason">{{ \Illuminate\Support\Str::limit($referral->referral_reason, 60) }}</td>
                             <td class="ui-actions">
-                                <a href="{{ route('adviser.referral.show', $referral->case_reference) }}" class="btn-outline">
-                                    <x-ui-icon name="eye" class="mr-1" /> View
-                                </a>
+                                <x-ui.icon-button icon="eye" label="View referral" :href="route('adviser.referral.show', $referral->case_reference)" />
                                 @if(! $referral->reviewed_at && ! $referral->approved_at && ! $referral->professional_id && ! ($referral->clarification_requested_at && ! $referral->clarification_received_at))
                                 <button class="btn-primary" onclick="openApproveModal({{ $referral->id }})">
                                     <x-ui-icon name="check" class="mr-1" /> Approve
                                 </button>
-                                <button class="btn-danger" onclick="openRejectModal({{ $referral->id }})">
-                                    <x-ui-icon name="close" class="mr-1" /> Return for Revision
-                                </button>
+                                <x-ui.icon-button icon="undo" label="Return for revision" tone="danger" onclick="openRejectModal({{ $referral->id }})" />
                                 @endif
                             </td>
                         </tr>
@@ -100,9 +96,7 @@
                             <td data-label="Date">{{ $referral->created_at->format('M d, Y') }}</td>
                             <td data-label="Professional">{{ $referral->professional ? ($referral->professional->first_name ?? '') : '—' }}</td>
                             <td class="ui-actions">
-                                <a href="{{ route('adviser.referral.show', $referral->case_reference) }}" class="btn-outline">
-                                    <x-ui-icon name="eye" class="mr-1" /> View
-                                </a>
+                                <x-ui.icon-button icon="eye" label="View referral" :href="route('adviser.referral.show', $referral->case_reference)" />
                             </td>
                         </tr>
                     @endforeach

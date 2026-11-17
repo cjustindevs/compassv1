@@ -478,6 +478,19 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertStringNotContainsString('minmax(260px, 1fr)', $html);
     }
 
+    public function test_referral_rows_use_icon_actions_and_tables_do_not_split_words(): void
+    {
+        $html = file_get_contents(resource_path('views/adviser/referrals.blade.php'));
+        $this->assertStringContainsString('<x-ui.icon-button icon="eye" label="View referral"', $html);
+        $this->assertStringContainsString('label="Return for revision" tone="danger" onclick="openRejectModal({{ $referral->id }})"', $html);
+        $this->assertStringContainsString('onclick="openApproveModal({{ $referral->id }})"', $html);
+        $this->assertStringContainsString('> Approve', $html);
+
+        $css = file_get_contents(public_path('css/compass-components.css'));
+        $this->assertStringContainsString('.compass-ui .ui-table td { overflow-wrap: break-word; }', $css);
+        $this->assertMatchesRegularExpression('/\.ui-badge \{[^}]*white-space: nowrap;/', $css);
+    }
+
     public function test_adviser_kpi_cards_carry_an_icon(): void
     {
         $adviser = $this->adviser();
