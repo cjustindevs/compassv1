@@ -24,7 +24,7 @@ class AdviserDashboardController extends Controller
         $helperIds = Helper::where('adviser_id', $adviser->id)->pluck('id');
         $pendingEvaluations = SessionReport::pendingEvaluationForAdviser((int) $adviser->id)
             ->with(['session.seeker', 'session.helper', 'session.concern'])
-            ->latest()->latest('id')->limit(12)->get();
+            ->latest()->latest('id')->limit(5)->get();
         $helpers = Helper::whereIn('id', $helperIds)->with(['user', 'currentReadiness', 'schedule'])
             ->orderBy('first_name')->limit(20)->get();
 

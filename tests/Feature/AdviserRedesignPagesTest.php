@@ -457,6 +457,18 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertSame(1, substr_count($html, 'data-page-header'));
     }
 
+    public function test_dashboard_session_documentation_shows_the_five_most_recent(): void
+    {
+        $adviser = $this->adviser();
+        for ($i = 0; $i < 7; $i++) {
+            $this->documentedReport($adviser);
+        }
+
+        $this->actingAs($adviser->user)->get(route('adviser.dashboard'))->assertOk()
+            ->assertViewHas('pendingEvaluations', fn ($reports) => $reports->count() === 5)
+            ->assertSee('View all reviews');
+    }
+
     public function test_concern_without_description_shows_a_muted_dash(): void
     {
         $adviser = $this->adviser();
