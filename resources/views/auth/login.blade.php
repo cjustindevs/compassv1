@@ -36,7 +36,7 @@
                             <input type="checkbox" name="remember" class="rounded border-gray-300 text-green-600 focus:ring-green-500">
                             Remember me
                         </label>
-                        <a href="{{ route('password.request') }}" class="text-sm text-green-600 hover:underline">
+                        <a href="{{ route('password.request') }}" class="text-sm text-green-700 underline-offset-2 hover:underline">
                             Forgot password?
                         </a>
                     </div>
@@ -50,6 +50,6 @@
 @section('footer')
                 <p class="text-center text-sm text-gray-500">
                     Don't have an account?
-                    <a href="{{ route('register') }}" class="text-green-600 font-medium hover:underline">Get Started</a>
+                    <a href="{{ route('register') }}" class="text-green-700 font-medium underline underline-offset-2">Get Started</a>
                 </p>
 @endsection

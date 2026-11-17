@@ -32,6 +32,15 @@ class UiComponentsTest extends TestCase
         $this->assertStringContainsString('ui-badge--neutral">Something Else<', $badge('something_else'));
     }
 
+    public function test_sign_in_links_are_readable_and_not_marked_by_colour_alone(): void
+    {
+        $html = $this->get(route('login'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('href="'.route('password.request').'" class="text-sm text-green-700 underline-offset-2 hover:underline"', $html);
+        $this->assertStringContainsString('href="'.route('register').'" class="text-green-700 font-medium underline underline-offset-2"', $html);
+        $this->assertStringNotContainsString('text-green-600 font-medium hover:underline">Get Started', $html);
+    }
+
     public function test_every_kpi_card_has_a_subtle_border_matching_its_tone(): void
     {
         $css = file_get_contents(public_path('css/compass-components.css'));
