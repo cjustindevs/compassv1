@@ -17,6 +17,17 @@ class ModeratorPilotPagesTest extends TestCase
         return User::factory()->create(['role' => 'moderator', 'is_active' => true]);
     }
 
+    public function test_moderator_dashboard_has_no_operational_status_block_but_advisers_keep_it(): void
+    {
+        $this->actingAs($this->moderator())->get(route('moderator.dashboard'))->assertOk()
+            ->assertDontSee('Operational status and supporting metrics');
+
+        $adviserUser = User::factory()->create(['role' => 'adviser', 'is_active' => true]);
+        \App\Models\Adviser::create(['user_account_id' => $adviserUser->id, 'first_name' => 'Ana', 'last_name' => 'Reyes', 'email' => $adviserUser->email]);
+        $this->actingAs($adviserUser)->get(route('adviser.dashboard'))->assertOk()
+            ->assertSee('Operational status and supporting metrics');
+    }
+
     public function test_dashboard_uses_shared_shell_and_header(): void
     {
         $response = $this->actingAs($this->moderator())->get(route('moderator.dashboard'))->assertOk()
