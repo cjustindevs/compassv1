@@ -58,9 +58,10 @@
 </x-ui.filter-bar>
 <x-ui.filter-chips :chips="$chips" :reset-href="$resetHref" />
 </x-ui.card>
+@php $kpiIcons = ['Cases in period' => 'folder', 'Completed cases' => 'check-circle', 'Active sessions' => 'message', 'Pending requests' => 'hourglass', 'Emergencies' => 'warning', 'Resolved emergencies' => 'check-circle', 'Unresolved emergencies' => 'alert-circle', 'Emergency resolution time' => 'clock']; @endphp
 @if($tab==='cases')
 <x-ui.kpi-grid>
-@foreach(['Cases in period'=>'neutral','Completed cases'=>'green','Active sessions'=>'blue','Pending requests'=>'amber'] as $label=>$tone)<x-ui.kpi :label="$label" :value="$roleReport['summary'][$label]" :tone="$tone" />
+@foreach(['Cases in period'=>'neutral','Completed cases'=>'green','Active sessions'=>'blue','Pending requests'=>'amber'] as $label=>$tone)<x-ui.kpi :icon="$kpiIcons[$label] ?? 'activity'" :label="$label" :value="$roleReport['summary'][$label]" :tone="$tone" />
 @endforeach
 </x-ui.kpi-grid>
 <x-report-charts :groups="collect($roleReport['groups'])->only(['Cases by status','Case categories','Case outcome trend'])->all()" heading="Case outcomes and categories" caption="Selected period · Philippine Time" />
@@ -94,7 +95,7 @@
     $reportTable = collect($roleReport['tables'])->firstWhere('title', $tab==='safety' ? 'Emergency case activity' : 'Your recorded actions');
     $summaryLabels = $tab==='safety' ? ['Emergencies'=>'red','Resolved emergencies'=>'green','Unresolved emergencies'=>'amber','Emergency resolution time'=>'neutral'] : [];
 @endphp
-@if($summaryLabels)<x-ui.kpi-grid>@foreach($summaryLabels as $label=>$tone)<x-ui.kpi :label="$label" :value="$roleReport['summary'][$label]" :tone="$tone" />
+@if($summaryLabels)<x-ui.kpi-grid>@foreach($summaryLabels as $label=>$tone)<x-ui.kpi :icon="$kpiIcons[$label] ?? 'activity'" :label="$label" :value="$roleReport['summary'][$label]" :tone="$tone" />
 @endforeach</x-ui.kpi-grid>@endif
 @if($tab==='safety')<x-report-charts :groups="collect($roleReport['groups'])->only(['Emergency status','Emergency priority'])->all()" heading="Emergency overview" />@endif
 <x-ui.card :title="$tab==='safety' ? 'Emergency case activity' : 'Your recorded actions'" :subtitle="$tab==='activity' ? 'Your auditable Adviser actions, including archive and restore events. Case and emergency records are available in their report groups.' : null">

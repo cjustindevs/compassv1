@@ -9,9 +9,9 @@
     <x-ui.page-header title="Emergency Management" description="Review, coordinate and resolve emergency cases" />
     @if(session('success'))<p class="ew-feedback" role="status">{{ session('success') }}</p>@endif
     <x-ui.kpi-grid>
-        <x-ui.kpi label="Active Emergencies" :value="$activeCount" tone="red" />
-        <x-ui.kpi label="Resolved" :value="$resolvedCount" tone="green" />
-        <x-ui.kpi label="Total Emergencies" :value="$totalEmergencies" tone="neutral" />
+        <x-ui.kpi icon="warning" label="Active Emergencies" :value="$activeCount" tone="red" />
+        <x-ui.kpi icon="check-circle" label="Resolved" :value="$resolvedCount" tone="green" />
+        <x-ui.kpi icon="flag" label="Total Emergencies" :value="$totalEmergencies" tone="neutral" />
     </x-ui.kpi-grid>
     <x-ui.filter-bar :action="route('adviser.emergencies')">
         <input type="hidden" name="tab" value="{{ $tab }}">

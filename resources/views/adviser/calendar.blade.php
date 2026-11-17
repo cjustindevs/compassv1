@@ -62,10 +62,10 @@
         @endif
 
         <x-ui.kpi-grid>
-            <x-ui.kpi label="Sessions" :value="$sessions->count()" tone="green" />
-            <x-ui.kpi label="Evaluations" :value="$evaluations->count()" tone="blue" />
-            <x-ui.kpi label="Events" :value="$customEvents->count()" tone="amber" />
-            <x-ui.kpi label="Days With Activity" :value="count($eventsByDate)" tone="neutral" />
+            <x-ui.kpi icon="message" label="Sessions" :value="$sessions->count()" tone="green" />
+            <x-ui.kpi icon="clipboard" label="Evaluations" :value="$evaluations->count()" tone="blue" />
+            <x-ui.kpi icon="calendar" label="Events" :value="$customEvents->count()" tone="amber" />
+            <x-ui.kpi icon="activity" label="Days With Activity" :value="count($eventsByDate)" tone="neutral" />
         </x-ui.kpi-grid>
 
         <x-ui.card :title="now()->setDate($year, $month, 1)->format('F Y')">

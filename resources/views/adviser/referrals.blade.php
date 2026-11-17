@@ -36,9 +36,9 @@
     @endif
 
     <x-ui.kpi-grid>
-        <x-ui.kpi label="Pending Review" :value="$totalPending" tone="amber" note="Awaiting your decision" />
-        <x-ui.kpi label="Emergency Cases" :value="$emergencyCount" tone="red" note="Require immediate attention" />
-        <x-ui.kpi label="Approved" :value="$totalApproved" tone="green" note="Waiting for professional" />
+        <x-ui.kpi icon="hourglass" label="Pending Review" :value="$totalPending" tone="amber" note="Awaiting your decision" />
+        <x-ui.kpi icon="warning" label="Emergency Cases" :value="$emergencyCount" tone="red" note="Require immediate attention" />
+        <x-ui.kpi icon="check-circle" label="Approved" :value="$totalApproved" tone="green" note="Waiting for professional" />
     </x-ui.kpi-grid>
 
     <x-ui.card title="Referral Pipeline" :subtitle="$totalPending.' pending'">

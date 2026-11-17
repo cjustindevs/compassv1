@@ -478,6 +478,22 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertStringNotContainsString('minmax(260px, 1fr)', $html);
     }
 
+    public function test_adviser_kpi_cards_carry_an_icon(): void
+    {
+        $adviser = $this->adviser();
+        $this->actingAs($adviser->user);
+        $pages = [
+            route('adviser.reports'), route('adviser.reports', ['tab' => 'safety']), route('adviser.resources'),
+            route('adviser.helpers'), route('adviser.referrals'), route('adviser.emergencies'), route('adviser.calendar'),
+        ];
+        foreach ($pages as $url) {
+            $html = $this->get($url)->assertOk()->getContent();
+            $cards = substr_count($html, 'class="ui-kpi ');
+            $this->assertGreaterThan(0, $cards, $url);
+            $this->assertSame($cards, substr_count($html, 'class="ui-kpi-icon"'), $url.' has a KPI card without an icon');
+        }
+    }
+
     public function test_reports_exports_sit_in_one_export_dropdown(): void
     {
         $adviser = $this->adviser();

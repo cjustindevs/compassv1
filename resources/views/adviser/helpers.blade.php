@@ -36,9 +36,9 @@
     @endif
 
     <x-ui.kpi-grid>
-        <x-ui.kpi label="Total Helpers" :value="$totalHelpers" tone="neutral" />
-        <x-ui.kpi label="Available" :value="$availableHelpers" tone="green" />
-        <x-ui.kpi label="Advanced / Expert competency" :value="$highCompetency" tone="blue" />
+        <x-ui.kpi icon="users" label="Total Helpers" :value="$totalHelpers" tone="neutral" />
+        <x-ui.kpi icon="user-check" label="Available" :value="$availableHelpers" tone="green" />
+        <x-ui.kpi icon="star" label="Advanced / Expert competency" :value="$highCompetency" tone="blue" />
     </x-ui.kpi-grid>
 
     <x-ui.filter-bar :action="route('adviser.helpers')">

@@ -65,10 +65,10 @@
         @if($errors->any())<div role="alert" class="ui-notice">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
 
         <x-ui.kpi-grid>
-            <x-ui.kpi label="Total Resources" :value="$stats['total']" tone="neutral" />
-            <x-ui.kpi label="Published" :value="$stats['published']" tone="green" />
-            <x-ui.kpi label="Total Views" :value="number_format($stats['views'])" tone="blue" />
-            <x-ui.kpi label="Featured" :value="$stats['featured']" tone="amber" />
+            <x-ui.kpi icon="book-open" label="Total Resources" :value="$stats['total']" tone="neutral" />
+            <x-ui.kpi icon="globe" label="Published" :value="$stats['published']" tone="green" />
+            <x-ui.kpi icon="eye" label="Total Views" :value="number_format($stats['views'])" tone="blue" />
+            <x-ui.kpi icon="star" label="Featured" :value="$stats['featured']" tone="amber" />
         </x-ui.kpi-grid>
 
         <x-ui.filter-bar :action="route('adviser.resources')" aria-label="Resource filters">
