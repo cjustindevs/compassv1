@@ -581,6 +581,33 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertStringContainsString(route('adviser.session.show', $report->session_id), $reports);
     }
 
+    public function test_areas_of_concern_add_form_opens_in_a_dialog_and_rows_can_be_searched(): void
+    {
+        $adviser = $this->adviser();
+        \App\Models\ConcernCategory::create(['concern_name' => 'AAA Sleep', 'description' => 'Rest problems', 'is_active' => true]);
+        $html = $this->actingAs($adviser->user)->get(route('concerns.manage'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('data-dialog-open="addConcernDialog"', $html);
+        $this->assertMatchesRegularExpression('/<dialog id="addConcernDialog"[^>]*aria-labelledby="addConcernTitle"/', $html);
+        $dialog = substr($html, strpos($html, '<dialog id="addConcernDialog"'));
+        $dialog = substr($dialog, 0, strpos($dialog, '</dialog>'));
+        $this->assertStringContainsString('action="'.route('concerns.store').'"', $dialog);
+        $this->assertStringContainsString('id="newConcernName"', $dialog);
+        $this->assertStringContainsString('id="newConcernDescription"', $dialog);
+
+        $this->assertMatchesRegularExpression('/<input type="search" id="concernSearch"(?![^>]*\bname=)[^>]*>/', $html);
+        $this->assertStringContainsString('data-concern-search="aaa sleep rest problems"', $html);
+    }
+
+    public function test_concern_add_errors_reopen_the_dialog(): void
+    {
+        $adviser = $this->adviser();
+        $html = $this->actingAs($adviser->user)->from(route('concerns.manage'))
+            ->followingRedirects()->post(route('concerns.store'), ['concern_name' => '', 'is_active' => 1, 'concern_form' => 'add'])->getContent();
+
+        $this->assertMatchesRegularExpression('/<dialog id="addConcernDialog"[^>]*data-open-on-load/', $html);
+    }
+
     public function test_concern_without_description_shows_a_muted_dash(): void
     {
         $adviser = $this->adviser();
