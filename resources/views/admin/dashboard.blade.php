@@ -6,8 +6,7 @@
     </header>
         <x-analytics-period :action="route('admin.dashboard')" :dates="$analyticsDates" :report-url="route('admin.reports', $analyticsDates)" />
     <x-performance-cards :cards="$primaryStats" />
-    <p class="analytics-period-caption">Monitoring: {{ $technical['health'] }} | Backups: {{ $technical['backup'] }}. These integration states are not uptime or backup-success measurements.</p>
-    <p class="analytics-period-caption">Total Users: {{ $technical['total'] }} | Inactive accounts: {{ $technical['inactive'] }} | Recorded failed Admin logins: {{ $technical['failed_admin_logins'] }} in the selected period. Other failed logins are not fully audited and are not represented as zero. Historical uptime is not monitored.</p>
+    <p class="analytics-period-caption">Backups: {{ $technical['backup'] }} | Recorded failed Admin logins: {{ $technical['failed_admin_logins'] }} in the selected period. These are integration states, not uptime or backup-success measurements.</p>
     <section class="analytics-section" aria-labelledby="admin-analytics-heading">
         <div class="analytics-section-heading"><div><h2 id="admin-analytics-heading">Platform activity</h2><p>Account registrations, audit events and current account distribution.</p></div></div>
 

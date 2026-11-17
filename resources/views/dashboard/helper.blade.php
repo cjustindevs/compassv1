@@ -16,11 +16,11 @@
     $m = $performance['metrics']; $n = $performance['samples'];
     $metricValue = fn ($key, $unit = '') => \App\Services\SessionPerformance::number($m[$key], $unit);
     $reportLink = route('helper.reports', $analyticsDates + ['period'=>request('period','monthly')]);
+    // QA's three Helper cards. Helpfulness and documentation stay on Helper Reports and in the Workload row below.
     $performanceCards = [
-        ['label'=>'Completed sessions','value'=>$m['completed'],'detail'=>'Actual session end in selected period','link'=>$reportLink],
-        ['label'=>'Competency score (1–5)','value'=>$metricValue('competency'),'detail'=>'Finalized current-rubric evaluations','samples'=>$n['competency'],'link'=>route('helper.competency')],
-        ['label'=>'Helpfulness rating (1–5)','value'=>$metricValue('helpfulness'),'detail'=>'Average of Seeker feedback answers','samples'=>$n['helpfulness'],'link'=>$reportLink],
-        ['label'=>'Documentation completion','value'=>$metricValue('documentation_rate','%'),'detail'=>'Summary and reflection submitted','samples'=>$n['documentation_rate'],'link'=>route('helper.cases')],
+        ['label'=>'Completed sessions','value'=>$m['completed'],'detail'=>'Ended in the selected period','link'=>$reportLink,'icon'=>'check-circle'],
+        ['label'=>'Competency score (1–5)','value'=>$metricValue('competency'),'detail'=>'Finalized evaluations','samples'=>$n['competency'],'link'=>route('helper.competency'),'icon'=>'star'],
+        ['label'=>'Assigned sessions','value'=>$helper->sessions()->whereIn('session_status',['active','helper_assigned'])->count(),'detail'=>'Open now','link'=>route('helper.cases'),'icon'=>'clipboard'],
     ];
 @endphp
 <x-performance-cards :cards="$performanceCards" />

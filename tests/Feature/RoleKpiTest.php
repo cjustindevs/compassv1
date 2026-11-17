@@ -146,6 +146,64 @@ class RoleKpiTest extends TestCase
             ->assertDontSee('Average Helper Response Time')->assertDontSee('Average competency score');
     }
 
+    public function test_seeker_kpis_are_active_request_queue_position_and_completed_sessions_with_tasks_apart(): void
+    {
+        $helper = $this->helper();
+        $done = $this->supportCase($helper);
+        $user = $done->seeker->user;
+        $this->consentFixture($user);
+        $ahead = QueueRequest::create(['seeker_id'=>$done->seeker_id, 'request_status'=>'waiting', 'priority_level'=>'high', 'request_date'=>now()->subMinutes(30)]);
+        $mine = QueueRequest::create(['seeker_id'=>$done->seeker_id, 'request_status'=>'waiting', 'priority_level'=>'low', 'request_date'=>now()->subMinutes(5)]);
+        $pending = Session::create(['seeker_id'=>$done->seeker_id, 'queue_request_id'=>$mine->id, 'session_status'=>Session::STATUS_WAITING,
+            'submitted_at'=>now()->subMinutes(5), 'created_date'=>now()->subMinutes(5), 'risk_level'=>'low']);
+
+        $cards = collect(app(\App\Services\DashboardIndicators::class)->seeker($user, AnalyticsPeriod::fromRequest(Request::create('/', 'GET', ['period'=>'monthly']))));
+        $kpis = $cards->reject(fn ($c) => !empty($c['task']))->values();
+        $this->assertSame(['Active request', 'Queue position', 'Completed sessions'], $kpis->pluck('label')->all());
+        $this->assertSame($pending->status_label, $kpis[0]['value']);
+        $this->assertSame('#2', $kpis[1]['value']);
+        $this->assertSame(1.0, $kpis[2]['raw']);
+        $this->assertSame(['Feedback due', 'Referral decisions needed', 'Upcoming appointments'], $cards->filter(fn ($c) => !empty($c['task']))->pluck('label')->values()->all());
+
+        $html = $this->actingAs($user)->get(route('seeker.dashboard'))->assertOk()->getContent();
+        $this->assertStringContainsString('class="seeker-tasks"', $html);
+        $this->assertStringContainsString('1 Feedback due', strip_tags(preg_replace('/\s+/', ' ', $html)));
+        $this->assertStringNotContainsString('Referral decisions needed', $html, 'Tasks with nothing to do stay hidden.');
+        $ahead->delete();
+    }
+
+    public function test_seeker_without_a_request_sees_none_and_a_dash_for_queue_position(): void
+    {
+        $done = $this->supportCase($this->helper());
+        $cards = collect(app(\App\Services\DashboardIndicators::class)->seeker($done->seeker->user, AnalyticsPeriod::fromRequest(Request::create('/', 'GET'))))->keyBy('label');
+        $this->assertSame('None', $cards['Active request']['value']);
+        $this->assertSame('—', $cards['Queue position']['value']);
+    }
+
+    public function test_helper_kpis_are_completed_competency_and_assigned_sessions(): void
+    {
+        $helper = $this->helper();
+        $this->supportCase($helper);
+        $this->supportCase($helper, 'active');
+        $this->supportCase($helper, 'helper_assigned');
+        $html = $this->actingAs($helper->user)->get(route('helper.dashboard', ['period'=>'today']))->assertOk()->getContent();
+        preg_match('/<div class="performance-kpis"[\s\S]*?<\/div>/', $html, $kpis);
+        $text = trim(preg_replace('/\s+/', ' ', preg_replace('/<[^>]+>/', ' ', $kpis[0] ?? '')));
+        $this->assertMatchesRegularExpression('/^Completed sessions 1 .*Competency score \(1–5\) .*Assigned sessions 2\b/u', $text);
+        $this->assertStringNotContainsString('Helpfulness rating', $kpis[0] ?? '');
+        $this->assertStringNotContainsString('Documentation completion', $kpis[0] ?? '');
+    }
+
+    public function test_admin_kpis_are_total_active_inactive_accounts_and_system_status(): void
+    {
+        $admin = User::factory()->create(['role'=>'admin', 'is_active'=>true]);
+        User::factory()->create(['is_active'=>false]);
+        $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()
+            ->assertViewHas('primaryStats', fn ($stats) => collect($stats)->pluck('label')->all() === ['Total users', 'Active accounts', 'Inactive accounts', 'System status']
+                && $stats[0]['raw'] === 2.0 && $stats[1]['raw'] === 1.0 && $stats[2]['raw'] === 1.0 && $stats[3]['value'] === 'Not monitored')
+            ->assertSee('performance-kpi-icon', false);
+    }
+
     public function test_professional_completion_submission_is_not_counted_as_completed(): void
     {
         $helper = $this->helper();

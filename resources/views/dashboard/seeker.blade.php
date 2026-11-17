@@ -823,6 +823,13 @@
         <div id="tab-dashboard" class="tab-content">
 
             <x-performance-cards :cards="$seekerIndicators" />
+            @php $seekerTasks = collect($seekerIndicators)->filter(fn ($c) => !empty($c['task']) && ($c['raw'] ?? 0) > 0); @endphp
+            @if($seekerTasks->isNotEmpty())
+            <nav class="seeker-tasks" aria-label="Things to do">
+                @foreach($seekerTasks as $task)<a href="{{ $task['link'] }}"><strong>{{ $task['value'] }}</strong> {{ $task['label'] }}</a>@endforeach
+            </nav>
+            <style>.seeker-tasks{display:flex;flex-wrap:wrap;gap:8px;margin:-8px 0 20px}.seeker-tasks a{display:inline-flex;gap:6px;align-items:center;padding:6px 12px;border:1px solid #bbf7d0;border-radius:999px;background:#f0fdf4;color:#14532d;font-size:14px;text-decoration:none}.seeker-tasks a:hover{border-color:#04a052}.seeker-tasks a:focus-visible{outline:2px solid #087341;outline-offset:2px}</style>
+            @endif
 
             <!-- Recent Sessions -->
             <x-analytics-period :action="route('seeker.dashboard')" :dates="$analyticsDates" />

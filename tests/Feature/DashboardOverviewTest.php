@@ -123,7 +123,7 @@ class DashboardOverviewTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
         // The existing Administrator reference uses account KPIs; its detailed
         // role distribution remains in Reports rather than the Dashboard.
-        $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()->assertSee('Total Users')->assertSee('Enabled accounts');
+        $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()->assertSee('Total users')->assertSee('Inactive accounts');
     }
 
     public function test_overview_rejects_other_roles(): void

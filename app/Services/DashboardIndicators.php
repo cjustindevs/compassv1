@@ -12,19 +12,28 @@ class DashboardIndicators
             'detail'=>$detail, 'samples'=>$samples, 'link'=>$link, 'id'=>$id];
     }
 
+    /** A card whose value is a word (a status), not a number. */
+    public function textCard(string $label, string $value, string $detail, ?string $link = null): array
+    {
+        return ['label'=>$label, 'raw'=>null, 'unit'=>'', 'value'=>$value, 'detail'=>$detail, 'samples'=>null, 'link'=>$link, 'id'=>null];
+    }
+
+    /** QA's four Admin cards: Total users, Active accounts, Inactive accounts, System status. */
     public function admin(AnalyticsPeriod $period, array $technical): array
     {
-        $valid = Session::where('is_test_record', false)->whereNull('duplicate_of_id');
         return [
-            $this->card('Registered accounts', User::count(), 'Current registered accounts', link: route('admin.users')),
-            $this->card('Enabled accounts', User::where('is_active', true)->count(), 'Current enabled accounts; not online users', link: route('admin.users', ['status'=>'active'])),
-            $this->card('New registrations', $period->constrain(User::query(), 'created_at')->count(), 'Account creation date · selected period'),
-            $this->card('Support requests', $period->constrain(clone $valid, AdminDashboardAnalytics::SUBMISSION_DATE)->count(), 'Submitted/legacy creation date · selected period'),
-            $this->card('Completed sessions', $period->constrain((clone $valid)->whereIn('session_status', ['completed','evaluated'])->whereNotNull('start_time')->whereColumn('end_time','>=','start_time'), 'end_time')->count(), 'Actual session end · selected period'),
-            $this->card('Security events', $technical['security_events'], 'Recorded events · selected period', link: route('admin.audit-logs')),
+            $this->card('Total users', User::count(), 'Registered accounts, all roles', link: route('admin.users')) + ['icon'=>'users'],
+            $this->card('Active accounts', User::where('is_active', true)->count(), 'Enabled accounts; not online users', link: route('admin.users', ['status'=>'active'])) + ['icon'=>'user-check'],
+            $this->card('Inactive accounts', User::where('is_active', false)->count(), 'Disabled accounts', link: route('admin.users', ['status'=>'inactive'])) + ['icon'=>'user-minus'],
+            $this->textCard('System status', $technical['health'], 'From the monitoring integration; not an uptime measurement') + ['icon'=>'activity'],
         ];
     }
 
+    /**
+     * QA's three Seeker cards (Active request, Queue position, Completed sessions),
+     * then the things the Seeker may need to act on, marked 'task' so the view
+     * shows them as links only when there is something to do.
+     */
     public function seeker(User $user, AnalyticsPeriod $period): array
     {
         abort_unless($user->is_active && $user->role === 'seeker' && $user->helpSeeker, 403);
@@ -33,11 +42,16 @@ class DashboardIndicators
         $upcoming = ReferralAppointment::whereIn('referral_id', (clone $referrals)->where('help_seeker_consent', true)->whereNotIn('status', ['declined','closed','completed','cancelled'])->select('id'))
             ->where('status', 'scheduled')->where('seeker_response', 'confirmed')->where('starts_at', '>=', now())->count();
         $completed = (clone $sessions)->whereIn('session_status', ['completed','evaluated'])->whereNotNull('start_time')->whereColumn('end_time', '>=', 'start_time');
+        $current = (clone $sessions)->where('session_status', Session::STATUS_ACTIVE)->latest('start_time')->first()
+            ?? Session::pendingForSeeker($user->helpSeeker->id)->where('is_test_record', false)->whereNull('duplicate_of_id')->with('queue')->first();
+        $position = $current?->queue?->request_status === 'waiting' ? app(QueueManagementService::class)->position($current->queue) : null;
         return [
-            $this->card('Completed sessions', $period->constrain(clone $completed, 'end_time')->count(), 'Your sessions ending in selected period', link: route('session.history')),
-            $this->card('Upcoming appointments', $upcoming, 'Current confirmed appointments', link: route('seeker.referrals')),
-            $this->card('Referral decisions needed', (clone $referrals)->where('status', Referral::STATUS_PENDING_CONSENT)->count(), 'Current referrals awaiting your decision', link: route('seeker.referrals')),
-            $this->card('Feedback due', (clone $completed)->where('end_time', '<=', now())->whereDoesntHave('evaluation')->count(), 'All concluded sessions awaiting your feedback', link: route('session.history')),
+            $this->textCard('Active request', $current?->status_label ?? 'None', $current ? 'Your current support request' : 'You have no open request', $current ? route('seeker.requests.show', $current) : null) + ['icon'=>'message'],
+            $this->textCard('Queue position', $position ? '#'.$position : '—', $position ? 'Follows priority and request time; it may change' : 'Shown while your request is waiting') + ['icon'=>'hourglass'],
+            $this->card('Completed sessions', $period->constrain(clone $completed, 'end_time')->count(), 'Your sessions ending in selected period', link: route('session.history')) + ['icon'=>'check-circle'],
+            $this->card('Feedback due', (clone $completed)->where('end_time', '<=', now())->whereDoesntHave('evaluation')->count(), 'All concluded sessions awaiting your feedback', link: route('session.history')) + ['task'=>true],
+            $this->card('Referral decisions needed', (clone $referrals)->where('status', Referral::STATUS_PENDING_CONSENT)->count(), 'Current referrals awaiting your decision', link: route('seeker.referrals')) + ['task'=>true],
+            $this->card('Upcoming appointments', $upcoming, 'Current confirmed appointments', link: route('seeker.referrals')) + ['task'=>true],
         ];
     }
 
