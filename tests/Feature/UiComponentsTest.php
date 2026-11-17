@@ -68,6 +68,13 @@ class UiComponentsTest extends TestCase
         $this->assertStringContainsString('#archive', $submit);
     }
 
+    public function test_primary_buttons_use_the_darker_brand_green_for_readable_white_text(): void
+    {
+        $css = file_get_contents(public_path('css/compass-ui.css'));
+        $this->assertStringContainsString(":is(.btn-primary, .ui-button-primary) {\n    color: #fff; background: var(--compass-green-dark); border: 1px solid var(--compass-green-dark);", str_replace("\r\n", "\n", $css));
+        $this->assertStringContainsString(':is(.btn-primary, .ui-button-primary):hover:not(:disabled) { background: #01562b; border-color: #01562b;', $css);
+    }
+
     public function test_sign_in_links_are_readable_and_not_marked_by_colour_alone(): void
     {
         $html = $this->get(route('login'))->assertOk()->getContent();

@@ -133,9 +133,9 @@
 }
 .compass-ui:not(.compass-ui-admin) :is(.btn, .btn-primary, .btn-outline, .btn-secondary, .btn-danger, .btn-outline-danger, .av-button, .mo-button, .ui-button):not(.hidden):not([hidden]) { display: inline-flex; }
 .compass-ui:not(.compass-ui-admin) :is(.btn-primary, .ui-button-primary) {
-    color: #fff; background: var(--compass-green); border: 1px solid var(--compass-green);
+    color: #fff; background: var(--compass-green-dark); border: 1px solid var(--compass-green-dark);
 }
-.compass-ui:not(.compass-ui-admin) :is(.btn-primary, .ui-button-primary):hover:not(:disabled) { background: var(--compass-green-dark); border-color: var(--compass-green-dark); transform: none; }
+.compass-ui:not(.compass-ui-admin) :is(.btn-primary, .ui-button-primary):hover:not(:disabled) { background: #01562b; border-color: #01562b; transform: none; }
 .compass-ui:not(.compass-ui-admin) :is(.btn-secondary, .btn-outline, .ui-button-secondary, .av-button:not(.av-button-primary), .mo-button.secondary) {
     background: var(--compass-card); color: var(--compass-green-dark); border: 1px solid var(--compass-border);
 }
