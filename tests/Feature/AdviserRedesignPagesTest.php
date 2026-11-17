@@ -457,6 +457,19 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertSame(1, substr_count($html, 'data-page-header'));
     }
 
+    public function test_concern_without_description_shows_a_muted_dash(): void
+    {
+        $adviser = $this->adviser();
+        \App\Models\ConcernCategory::create(['concern_name' => 'Sleep', 'is_active' => true]);
+        \App\Models\ConcernCategory::create(['concern_name' => 'Exams', 'description' => 'Test anxiety', 'is_active' => true]);
+
+        $html = $this->actingAs($adviser->user)->get(route('concerns.manage'))->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('>No description<', $html);
+        $this->assertStringContainsString('class="ui-muted-dash" aria-label="No description">—</span>', $html);
+        $this->assertStringContainsString('Test anxiety', $html);
+    }
+
     public function test_training_still_renders_for_helper(): void
     {
         $adviser = $this->adviser();

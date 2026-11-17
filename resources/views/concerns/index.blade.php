@@ -36,7 +36,7 @@
             @foreach($categories as $category)
                 <tr>
                     <td data-label="Category"><strong>{{ $category->concern_name }}</strong></td>
-                    <td data-label="Description">{{ $category->description ? \Illuminate\Support\Str::limit($category->description, 100) : 'No description' }}</td>
+                    <td data-label="Description">@if($category->description){{ \Illuminate\Support\Str::limit($category->description, 100) }}@else<span class="ui-muted-dash" aria-label="No description">—</span>@endif</td>
                     <td data-label="Status"><x-ui.badge :tone="$category->is_active ? 'green' : 'neutral'">{{ $category->is_active ? 'Active' : 'Inactive' }}</x-ui.badge></td>
                     <td data-label="Edit" class="ui-actions concern-edit-cell">
                         <details class="concern-edit"><summary class="btn-secondary">Edit category</summary>
