@@ -303,3 +303,12 @@ summary.ui-icon-btn::-webkit-details-marker { display: none; }
 
 /* Shared tables: a word only breaks when it cannot fit on its own line (never mid-name). */
 .compass-ui .ui-table td { overflow-wrap: break-word; }
+
+/* Filter bar as an even grid: every field the same width, buttons on their own row end. */
+.ui-filter-bar--grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); align-items: end; }
+.ui-filter-bar--grid > .ui-field { min-width: 0; }
+.ui-filter-bar--grid > .ui-field[hidden] { display: none; }
+.ui-filter-bar--grid > .ui-filter-buttons { grid-column: 1 / -1; justify-content: flex-end; }
+
+/* Native date inputs already show a calendar button: do not add a second icon. */
+.ui-field input[type="date"][data-control="date"] { background-image: none; padding-right: var(--space-3); }

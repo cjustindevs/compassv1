@@ -35,11 +35,12 @@
 @foreach(['cases'=>'Sessions / Cases','performance'=>'Helper Performance','safety'=>'Emergency / Safety','activity'=>'Activity History'] as $key=>$label)<a class="btn {{ $tab===$key ? 'btn-primary' : 'btn-outline' }}" href="{{ route('adviser.reports', array_merge(request()->except(['page','cases_page','actions_page','emergency_page']),['tab'=>$key])) }}" @if($tab===$key) aria-current="page" @endif>{{ $label }}</a>@endforeach
 </nav>
 <x-ui.card>
-<x-ui.filter-bar aria-label="Report filters">
+<x-ui.filter-bar class="ui-filter-bar--grid" aria-label="Report filters" data-report-filters>
 <input type="hidden" name="tab" value="{{ $tab }}">
 <x-ui.field label="Period" for="rp-period"><select id="rp-period" name="period" data-control="select">@foreach(['today'=>'Today','weekly'=>'Last 7 days','monthly'=>'Last 30 days','semester'=>'Semester','all'=>'All time','custom'=>'Custom','quarterly'=>'Last 90 days','yearly'=>'Last year'] as $key=>$label)<option value="{{ $key }}" @selected(($filters['period'] ?? 'monthly')===$key) @disabled($key==='semester' && (!config('analytics.semester_start') || !config('analytics.semester_end')))>{{ $label }}</option>@endforeach</select></x-ui.field>
-<x-ui.field label="From (Philippine Time)" for="rp-from"><input id="rp-from" name="from" type="date" data-control="date" value="{{ request('from') ? \Illuminate\Support\Carbon::parse(request('from'),'Asia/Manila')->format('Y-m-d') : '' }}"></x-ui.field>
-<x-ui.field label="To (Philippine Time)" for="rp-to"><input id="rp-to" name="to" type="date" data-control="date" value="{{ request('to') ? \Illuminate\Support\Carbon::parse(request('to'),'Asia/Manila')->format('Y-m-d') : '' }}"></x-ui.field>
+@php $customRange = ($filters['period'] ?? 'monthly') === 'custom' || request('from') || request('to'); @endphp
+<x-ui.field label="From (Philippine Time)" for="rp-from" data-custom-range :hidden="! $customRange"><input id="rp-from" name="from" type="date" data-control="date" value="{{ request('from') ? \Illuminate\Support\Carbon::parse(request('from'),'Asia/Manila')->format('Y-m-d') : '' }}" @disabled(! $customRange)></x-ui.field>
+<x-ui.field label="To (Philippine Time)" for="rp-to" data-custom-range :hidden="! $customRange"><input id="rp-to" name="to" type="date" data-control="date" value="{{ request('to') ? \Illuminate\Support\Carbon::parse(request('to'),'Asia/Manila')->format('Y-m-d') : '' }}" @disabled(! $customRange)></x-ui.field>
 @if($tab!=='activity')
 <x-ui.field label="Helper" for="rp-helper"><select id="rp-helper" name="helper_id" data-control="select"><option value="">All supervised Helpers</option>@foreach($filterHelpers as $helper)<option value="{{ $helper->id }}" @selected(request('helper_id')==$helper->id)>{{ $helper->full_name ?: 'Name not recorded' }}</option>@endforeach</select></x-ui.field>
 <x-ui.field label="Concern" for="rp-concern"><select id="rp-concern" name="concern_id" data-control="select"><option value="">All concerns</option>@foreach($categories as $category)<option value="{{ $category->id }}" @selected(request('concern_id')==$category->id)>{{ $category->concern_name }}</option>@endforeach</select></x-ui.field>
@@ -56,6 +57,23 @@
 @endif
 <x-slot:buttons><button type="submit" class="btn-primary">Apply filters</button><a class="btn-secondary" href="{{ $resetHref }}">Reset</a></x-slot:buttons>
 </x-ui.filter-bar>
+@push('scripts')
+<script>
+(() => {
+    const form = document.querySelector('[data-report-filters]');
+    const period = form?.querySelector('#rp-period');
+    if (!period) return;
+    const sync = () => {
+        const custom = period.value === 'custom';
+        form.querySelectorAll('[data-custom-range]').forEach((field) => {
+            field.hidden = !custom;
+            field.querySelectorAll('input').forEach((input) => { input.disabled = !custom; });
+        });
+    };
+    period.addEventListener('change', sync);
+})();
+</script>
+@endpush
 <x-ui.filter-chips :chips="$chips" :reset-href="$resetHref" />
 </x-ui.card>
 @php $kpiIcons = ['Cases in period' => 'folder', 'Completed cases' => 'check-circle', 'Active sessions' => 'message', 'Pending requests' => 'hourglass', 'Emergencies' => 'warning', 'Resolved emergencies' => 'check-circle', 'Unresolved emergencies' => 'alert-circle', 'Emergency resolution time' => 'clock']; @endphp

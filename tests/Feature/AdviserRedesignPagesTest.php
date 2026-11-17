@@ -478,6 +478,24 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertStringNotContainsString('minmax(260px, 1fr)', $html);
     }
 
+    public function test_reports_filters_use_a_grid_and_show_dates_only_for_a_custom_range(): void
+    {
+        $adviser = $this->adviser();
+        $this->actingAs($adviser->user);
+
+        $monthly = $this->get(route('adviser.reports'))->assertOk()->getContent();
+        $this->assertStringContainsString('class="ui-filter-bar ui-filter-bar--grid"', $monthly);
+        $this->assertMatchesRegularExpression('/<div class="ui-field" data-custom-range="data-custom-range" hidden="hidden">\s*<label for="rp-from">/', $monthly);
+        $this->assertMatchesRegularExpression('/id="rp-from" name="from" type="date" data-control="date" value="" disabled>/', $monthly);
+
+        $custom = $this->get(route('adviser.reports', ['period' => 'custom', 'from' => '2026-10-01', 'to' => '2026-10-31']))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/<div class="ui-field" data-custom-range="data-custom-range">\s*<label for="rp-from">/', $custom);
+        $this->assertStringContainsString('name="from" type="date" data-control="date" value="2026-10-01"', $custom);
+
+        $datesOnly = $this->get(route('adviser.reports', ['from' => '2026-10-01', 'to' => '2026-10-31']))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/<div class="ui-field" data-custom-range="data-custom-range">\s*<label for="rp-from">/', $datesOnly, 'Applied dates are never hidden.');
+    }
+
     public function test_referral_rows_use_icon_actions_and_tables_do_not_split_words(): void
     {
         $html = file_get_contents(resource_path('views/adviser/referrals.blade.php'));
