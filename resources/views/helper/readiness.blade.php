@@ -53,8 +53,11 @@
         .rc-skills-reminder { font-size:12px; color:var(--gray-500); line-height:1.5; margin:0 0 8px; }
         .rc-skills > fieldset { height:100%; display:flex; flex-direction:column; }
         .rc-skills .rc-skills-reminder { flex:1; margin-bottom:10px; }
-        .rc-breathing { grid-column:2; display:flex; flex-direction:column; align-items:stretch; gap:0; }
+        /* Step 1 holds only the breathing exercise: it spans the step and is centred. */
+        .rc-breathing { grid-column:1 / -1; display:flex; flex-direction:column; align-items:center; text-align:center; gap:0; }
         .rc-breathing > div:first-child { flex:1; }
+        .rc-breathing .rc-label { justify-content:center; }
+        .rc-breathing .breath-cta { justify-content:center; }
         .rc-breathing .breath-steps { margin-bottom:10px; line-height:1.5; }
         .rc-breathing .breath-cta { min-height:52px; }
         .helper-readiness-page .rc-breathing .breath-cta .btn { min-height:52px; }
@@ -189,7 +192,6 @@
         @container (min-width: 1180px) {
             .rc-fields { grid-template-columns:repeat(4,minmax(0,1fr)); }
             .rc-skills { grid-column:1 / span 2; }
-            .rc-breathing { grid-column:3 / span 2; }
             .rc-field:not(.rc-skills) .seg label { min-height:64px; }
         }
         @container (max-width: 620px) {
