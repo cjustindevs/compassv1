@@ -20,6 +20,18 @@ class UiComponentsTest extends TestCase
         $this->assertStringNotContainsString('data-notification-slot', $html);
     }
 
+    public function test_status_badge_gives_each_session_status_its_own_colour(): void
+    {
+        $badge = fn (string $status) => Blade::render('<x-ui.status-badge :status="$s" />', ['s' => $status]);
+
+        $this->assertStringContainsString('ui-badge--green">Completed<', $badge('completed'));
+        $this->assertStringContainsString('ui-badge--blue">Evaluated<', $badge('evaluated'));
+        $this->assertStringContainsString('ui-badge--red">Cancelled<', $badge('cancelled'));
+        $this->assertStringContainsString('ui-badge--orange">No Show<', $badge('no_show'));
+        $this->assertStringContainsString('ui-badge--amber">Active<', $badge('active'));
+        $this->assertStringContainsString('ui-badge--neutral">Something Else<', $badge('something_else'));
+    }
+
     public function test_kpi_puts_label_above_value_and_applies_tone(): void
     {
         $html = Blade::render('<x-ui.kpi-grid><x-ui.kpi label="Open cases" value="12" tone="red" /></x-ui.kpi-grid>');
