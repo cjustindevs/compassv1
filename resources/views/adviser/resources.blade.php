@@ -12,7 +12,10 @@
         .category-pill:hover { border-color: #04A052; color: #027039; }
         .category-pill.active { background: #EAF8F0; border-color: #04A052; color: #027039; }
 
-        .adviser-resource-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+        .adviser-resource-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+        @media (max-width: 1280px) { .adviser-resource-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        @media (max-width: 1024px) { .adviser-resource-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 600px) { .adviser-resource-grid { grid-template-columns: minmax(0, 1fr); } }
         .resource-history { border-top: 1px solid #edf2ef; padding-top: 8px; font-size: 12px; }
         .resource-history > summary { cursor: pointer; color: #087341; font-weight: 600; }
         .resource-history .review-history > h3 { display: none; }

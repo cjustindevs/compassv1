@@ -469,6 +469,15 @@ class AdviserRedesignPagesTest extends TestCase
             ->assertSee('View all reviews');
     }
 
+    public function test_resources_grid_shows_at_most_four_cards_per_row(): void
+    {
+        $adviser = $this->adviser();
+        $html = $this->actingAs($adviser->user)->get(route('adviser.resources'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('.adviser-resource-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));', $html);
+        $this->assertStringNotContainsString('minmax(260px, 1fr)', $html);
+    }
+
     public function test_concern_without_description_shows_a_muted_dash(): void
     {
         $adviser = $this->adviser();
