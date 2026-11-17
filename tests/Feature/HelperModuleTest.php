@@ -61,6 +61,20 @@ class HelperModuleTest extends TestCase
             ->assertOk()->assertSee('Session Documentation');
     }
 
+    public function test_helper_dashboard_is_simpler_and_only_flags_blockers_in_one_collapsed_line(): void
+    {
+        $html = $this->actingAs($this->helperUser)->get(route('helper.dashboard'))->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('Service metrics and calculation notes', $html);
+        $blockers = app(\App\Services\HelperEligibilityService::class)->reasons($this->helperUser->helper->fresh());
+        if ($blockers === []) {
+            $this->assertStringNotContainsString('eligibilityTitle', $html);
+        } else {
+            $this->assertMatchesRegularExpression('/<details class="card hf-eligibility-note"><summary>You can.t take sessions right now/', $html);
+            $this->assertStringContainsString('eligibilityTitle', $html);
+        }
+    }
+
     public function test_skills_applied_are_tidy_selectable_chips_with_the_same_fields(): void
     {
         $session = Session::where('helper_id', $this->helperUser->helper->id)->firstOrFail();

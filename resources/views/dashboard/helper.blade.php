@@ -30,7 +30,9 @@
 <div><span class="hf-glance-label">Pending documentation</span><strong>{{ $helper->sessions()->whereNotNull('start_time')->whereNotNull('end_time')->where('end_time','<=',now())->where('documentation_status', '!=', 'submitted')->whereIn('session_status',['completed','evaluated','cancelled','no_show'])->count() }}</strong></div>
 <div><span class="hf-glance-label">Upcoming Session</span>@if($upcomingSession)<strong>{{ $upcomingSession->scheduled_start->copy()->timezone('Asia/Manila')->format('M d, g:i A') }} PHT</strong><small>{{ $upcomingSession->reference_number }}</small>@else<strong>None scheduled</strong>@endif</div>
 </section>
-@if($helper)<x-eligibility-check :helper="$helper" />@endif
+@if($helper)
+@php $helperBlockers = app(\App\Services\HelperEligibilityService::class)->reasons($helper); @endphp
+@if($helperBlockers !== [])<details class="card hf-eligibility-note"><summary>You can't take sessions right now ({{ count($helperBlockers) }} {{ \Illuminate\Support\Str::plural('reason', count($helperBlockers)) }}). See why</summary><x-eligibility-check :helper="$helper" /></details>@endif @endif
 @if(count($emergencyCases))
 <section class="card">
 <header class="card-header">
@@ -41,16 +43,6 @@
 <a href="{{ route('helper.cases.show',$emergencyCases[0]['id']) }}" class="btn btn-secondary btn-sm">Open assigned case</a>
 </section>
 @endif
-<details class="card hf-secondary" style="margin:14px 0"><summary>Service metrics and calculation notes</summary>
-<dl class="helper-performance-details">
-@foreach(['response_minutes'=>['Average Helper Response Time',' min'],'waiting_minutes'=>['Average waiting time',' min'],'duration_minutes'=>['Average session duration',' min'],'completion_rate'=>['Session completion rate','%'],'documentation_rate'=>['Documentation completion rate','%'],'duty_hours'=>['Scheduled duty hours',' hr']] as $key=>[$label,$unit])
-<div><dt>{{ $label }}</dt><dd>{{ $metricValue($key,$unit) }}@if(isset($n[$key])) | {{ $n[$key] }} records measured @endif</dd></div>
-@endforeach
-<div><dt>Competency growth</dt><dd>{{ $performance['growth'] === null ? 'Insufficient history' : ($performance['growth'] >= 0 ? '+' : '').$performance['growth'].' points' }}</dd></div>
-</dl>
-<p class="hf-muted">Response time measures session start to your first message or connected voice call. Waiting time measures queue entry to session start. Helpfulness uses original categorical feedback; legacy composite ratings stay in history. Scheduled hours are planned coverage, not verified attendance. Documentation completion requires both summary and reflection; it is not an on-time rate. Historical metrics include archived sessions.</p>
-<a href="{{ $reportLink }}" class="link">View service report</a>
-</details>
 @php
     $growthRows = $performance['evaluations']->filter(fn ($e) => $e->rubric_version === \App\Services\CompetencyRubric::VERSION);
     $growthChart = ['title'=>'Competency growth trend','unit'=>'Scale 1–5','values'=>$growthRows->groupBy(fn ($e) => $e->evaluation_date->timezone('Asia/Manila')->format('M Y'))->map(fn ($group) => round($group->avg('normalized_score'),2))->all(),'definition'=>'Average finalized evaluations per month on the current rubric, rated 1-5. Missing months have no evaluation; no performance is inferred. At least two evaluations are needed for growth.'];

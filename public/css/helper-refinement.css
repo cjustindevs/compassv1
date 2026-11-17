@@ -520,3 +520,8 @@
 .skill-chip:has(input:focus-visible) { outline: 3px solid rgb(4 160 82 / 35%); outline-offset: 2px; }
 .skill-chip:has(input:checked) { background: #eaf8f0; border-color: #04a052; color: #027039; }
 .skill-chips .skill-chip:has(input:checked) svg.skill-chip-check { display: inline-block; }
+
+/* Helper dashboard: the "why not eligible" checklist folds into one line. */
+.hf-eligibility-note { margin: 14px 0; }
+.hf-eligibility-note > summary { cursor: pointer; font-weight: 600; color: #b45309; }
+.hf-eligibility-note[open] > summary { margin-bottom: 12px; }
