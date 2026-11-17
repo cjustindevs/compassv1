@@ -27,10 +27,7 @@
         #dashboard-analytics .co-overview .co-kpi { align-items: center; text-align: center; border: 1px solid transparent; border-radius: 14px; background: #f3f4f6; padding: 20px 16px; }
         #dashboard-analytics .co-kpi h3 { order: 0; font-size: 14px; font-weight: 600; color: #1F2937; }
         #dashboard-analytics .co-kpi > strong { font-size: 40px; font-weight: 800; line-height: 1.1; color: #374151; }
-        #dashboard-analytics .co-kpi:has(#statQueue) { background: #fffbeb; } #dashboard-analytics .co-kpi:has(#statQueue) > strong { color: #b45309; }
-        #dashboard-analytics .co-kpi:has(#statSessions) { background: #eff6ff; } #dashboard-analytics .co-kpi:has(#statSessions) > strong { color: #1d4ed8; }
-        #dashboard-analytics .co-kpi:has(#statEmergency) { background: #fef2f2; } #dashboard-analytics .co-kpi:has(#statEmergency) > strong { color: #b91c1c; }
-        #dashboard-analytics .co-kpi:has(#statHelpers) { background: #f0fdf4; } #dashboard-analytics .co-kpi:has(#statHelpers) > strong { color: #15803d; }
+        #dashboard-analytics .co-overview .co-kpi { background: #f0fdf4; } #dashboard-analytics .co-kpi > strong { color: #15803d; }
         @media (max-width: 768px) { #dashboard-analytics .co-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } #dashboard-analytics .co-kpi > strong { font-size: 32px; } }
         #dashboard-analytics .analytics-toolbar{justify-content:flex-end}
         #dashboard-analytics .analytics-period-form{justify-content:flex-end;margin-inline-start:auto;max-width:100%}

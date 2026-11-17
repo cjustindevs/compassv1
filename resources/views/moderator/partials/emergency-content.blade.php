@@ -1,9 +1,9 @@
 <section class="mo-page" id="moderatorEmergencyContent">
 <p class="mo-filter-note mo-monitoring">Checks every 2 seconds &middot; Updated {{ now('Asia/Manila')->format('M d, Y g:i A') }} PHT</p>
 <x-ui.kpi-grid>
-    <x-ui.kpi label="Open Emergencies" :value="$stats['open']" tone="red" />
-    <x-ui.kpi label="Escalated Today" :value="$stats['escalated_today']" tone="blue" title="Recorded escalations or professional referrals dated today in Philippine Time." />
-    <x-ui.kpi label="Avg Response Time" :value="$stats['average_response']" title="Detection to first recorded acknowledgment, for acknowledgments in the last 30 days. Missing or invalid timestamps are excluded." />
+    <x-ui.kpi label="Open Emergencies" :value="$stats['open']" tone="green" />
+    <x-ui.kpi label="Escalated Today" :value="$stats['escalated_today']" tone="green" title="Recorded escalations or professional referrals dated today in Philippine Time." />
+    <x-ui.kpi tone="green" label="Avg Response Time" :value="$stats['average_response']" title="Detection to first recorded acknowledgment, for acknowledgments in the last 30 days. Missing or invalid timestamps are excluded." />
     <x-ui.kpi label="Resolved (30d)" :value="$stats['resolved_30d']" tone="green" />
 </x-ui.kpi-grid>
 <x-ui.card title="Emergency Workflow" subtitle="Current open stages | Closed in the last 30 days" class="mo-workflow">

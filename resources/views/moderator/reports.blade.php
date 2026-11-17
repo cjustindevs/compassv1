@@ -48,7 +48,7 @@
 <p class="mo-filter-note">Status filters apply to their own records; priority and dates apply to all charts and the Activity Log (maximum range 366 days; All time includes retained history).</p>
 </x-ui.card>
 <x-ui.kpi-grid>
-@foreach(['Cases in period'=>['Total Cases','green'],'Completed cases'=>['Completed','green'],'Pending requests'=>['Pending','amber'],'Emergencies'=>['Emergencies','red']] as $key=>[$label,$tone])<x-ui.kpi :label="$label" :value="$report['summary'][$key]" :tone="$tone" />
+@foreach(['Cases in period'=>['Total Cases','green'],'Completed cases'=>['Completed','green'],'Pending requests'=>['Pending','amber'],'Emergencies'=>['Emergencies','red']] as $key=>[$label,$tone])<x-ui.kpi :label="$label" :value="$report['summary'][$key]" tone="green" />
 @endforeach
 </x-ui.kpi-grid>
 <details class="ui-card reports-details"><summary>Waiting time and Helper workload</summary>

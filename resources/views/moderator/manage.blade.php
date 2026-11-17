@@ -93,9 +93,9 @@
     @endif
 
     <x-ui.kpi-grid>
-        <x-ui.kpi label="Total Helpers" :value="$manageStats['total_helpers']" tone="neutral" data-stat="total_helpers" />
-        <x-ui.kpi label="Helpers without an Adviser" :value="$manageStats['unassigned_helpers']" tone="amber" data-stat="unassigned_helpers" />
-        <x-ui.kpi label="Advisers" :value="$advisers->count()" tone="blue" data-stat="total_advisers" />
+        <x-ui.kpi label="Total Helpers" :value="$manageStats['total_helpers']" tone="green" data-stat="total_helpers" />
+        <x-ui.kpi label="Helpers without an Adviser" :value="$manageStats['unassigned_helpers']" tone="green" data-stat="unassigned_helpers" />
+        <x-ui.kpi label="Advisers" :value="$advisers->count()" tone="green" data-stat="total_advisers" />
         <x-ui.kpi label="Slots Used" :value="$advisers->sum('assigned_helpers')" tone="green" data-stat="slots_taken" />
     </x-ui.kpi-grid>
 

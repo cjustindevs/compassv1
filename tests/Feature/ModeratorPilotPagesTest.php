@@ -74,7 +74,7 @@ class ModeratorPilotPagesTest extends TestCase
 
         $this->actingAs($this->moderator())->get(route('moderator.manage'))->assertOk()
             ->assertSee('Helpers without an Adviser')->assertDontSee('Unassigned Pool')
-            ->assertSee('ui-kpi--amber', false)->assertSee('ui-list-row', false)->assertSee('ui-table--stack', false)
+            ->assertSee('ui-kpi--green', false)->assertDontSee('ui-kpi--amber', false)->assertSee('ui-list-row', false)->assertSee('ui-table--stack', false)
             ->assertSee(route('moderator.manage.unassign'), false)->assertSee(route('moderator.manage.assign'), false)
             ->assertSee('data-helper-assignment', false)->assertSee('data-stat="unassigned_helpers"', false);
     }
@@ -84,8 +84,24 @@ class ModeratorPilotPagesTest extends TestCase
         $this->actingAs($this->moderator())->get(route('moderator.reports', ['priority' => 'high']))->assertOk()
             ->assertSee('data-page-header', false)->assertSee('Queue Performance')->assertSee('Export Filtered CSV')
             ->assertSee('Priority: high')->assertSee('ui-filter-bar', false)
-            ->assertSee('ui-kpi--red', false)->assertSee('ui-kpi--amber', false)->assertSee('ui-kpi--green', false)
+            ->assertSee('ui-kpi--green', false)->assertDontSee('ui-kpi--red', false)->assertDontSee('ui-kpi--amber', false)
             ->assertSee('ui-table--stack', false)->assertSee('id="report-range"', false);
+    }
+
+    public function test_moderator_kpi_cards_are_all_green(): void
+    {
+        $this->actingAs($this->moderator());
+        foreach (['moderator.manage', 'moderator.reports', 'moderator.sessions', 'moderator.emergency'] as $route) {
+            $html = $this->get(route($route))->assertOk()->getContent();
+            $this->assertStringContainsString('ui-kpi--green', $html, $route);
+            foreach (['ui-kpi--amber', 'ui-kpi--red', 'ui-kpi--blue', 'ui-kpi--neutral'] as $other) {
+                $this->assertStringNotContainsString($other, $html, $route.' still has '.$other);
+            }
+        }
+        $dashboard = $this->get(route('moderator.dashboard'))->assertOk()->getContent();
+        foreach (['#fffbeb', '#eff6ff', '#fef2f2'] as $color) {
+            $this->assertStringNotContainsString($color, $dashboard, 'dashboard KPI still uses '.$color);
+        }
     }
 
     public function test_helper_workload_keeps_hooks_on_moderator_and_adviser_schedule(): void

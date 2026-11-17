@@ -61,11 +61,11 @@
     </x-ui.page-header>
 
     <x-ui.kpi-grid>
-        <x-ui.kpi label="Ongoing" :value="$stats['ongoing']" tone="blue" data-stat="ongoing" />
-        <x-ui.kpi label="Chat" :value="$stats['chat']" data-stat="chat" />
-        <x-ui.kpi label="Voice" :value="$stats['voice']" data-stat="voice" />
-        <x-ui.kpi label="Emergency Flagged" :value="$stats['emergency_flagged']" tone="red" data-stat="emergency_flagged" />
-        <x-ui.kpi label="Referrals Pending" :value="$stats['referrals_pending']" tone="amber" data-stat="referrals_pending" />
+        <x-ui.kpi label="Ongoing" :value="$stats['ongoing']" tone="green" data-stat="ongoing" />
+        <x-ui.kpi tone="green" label="Chat" :value="$stats['chat']" data-stat="chat" />
+        <x-ui.kpi tone="green" label="Voice" :value="$stats['voice']" data-stat="voice" />
+        <x-ui.kpi label="Emergency Flagged" :value="$stats['emergency_flagged']" tone="green" data-stat="emergency_flagged" />
+        <x-ui.kpi label="Referrals Pending" :value="$stats['referrals_pending']" tone="green" data-stat="referrals_pending" />
     </x-ui.kpi-grid>
 
     <x-ui.card class="sessions-card" title="Live Sessions">
