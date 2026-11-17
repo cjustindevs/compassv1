@@ -5,9 +5,6 @@
 @push('styles')
 <style>
         .settings-flash { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
-        .settings-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
-        .tab-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 20px; border-radius: 999px; font-size: 15px; font-weight: 600; cursor: pointer; border: 1px solid #E5E7EB; background: #fff; color: #6B7280; }
-        .tab-btn.active { background: #EAF8F0; border-color: #04A052; color: #027039; }
         .settings-section { display: none; }
         .settings-section.active { display: block; }
         .settings-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
@@ -68,11 +65,11 @@
             <div class="settings-flash" role="status"> {{ session('success') }}</div>
         @endif
 
-        <div class="settings-tabs" id="tabBar">
-            <button type="button" class="tab-btn {{ $activeTab === 'profile' ? 'active' : '' }}" data-tab="profile"><x-ui-icon name="user" /> Profile</button>
-            <button type="button" class="tab-btn {{ $activeTab === 'password' ? 'active' : '' }}" data-tab="password"><x-ui-icon name="lock" /> Password</button>
-            <button type="button" class="tab-btn" data-tab="appearance"><x-ui-icon name="palette" /> Appearance</button>
-            <button type="button" class="tab-btn" data-tab="notifications"><x-ui-icon name="bell" /> Notifications</button>
+        <div class="settings-tabs ui-tabs" id="tabBar">
+            <button type="button" class="tab-btn ui-tab {{ $activeTab === 'profile' ? 'active' : '' }}" data-tab="profile"><x-ui-icon name="user" /> Profile</button>
+            <button type="button" class="tab-btn ui-tab {{ $activeTab === 'password' ? 'active' : '' }}" data-tab="password"><x-ui-icon name="lock" /> Password</button>
+            <button type="button" class="tab-btn ui-tab" data-tab="appearance"><x-ui-icon name="palette" /> Appearance</button>
+            <button type="button" class="tab-btn ui-tab" data-tab="notifications"><x-ui-icon name="bell" /> Notifications</button>
         </div>
 
         <!-- Profile -->

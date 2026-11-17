@@ -23,8 +23,7 @@
     <x-ui.filter-chips :chips="$chips" :reset-href="route('adviser.emergencies', ['tab' => $tab])" />
     <x-ui.card :title="$tab === 'resolved' ? 'Resolved Cases' : 'Open Emergency Cases'">
         <x-slot:actions>
-            <a class="btn {{ $tab === 'active' ? 'btn-primary' : 'btn-outline' }}" href="{{ route('adviser.emergencies', ['tab'=>'active']) }}" @if($tab==='active') aria-current="page" @endif>Active <span>{{ $activeCount }}</span></a>
-            <a class="btn {{ $tab === 'resolved' ? 'btn-primary' : 'btn-outline' }}" href="{{ route('adviser.emergencies', ['tab'=>'resolved']) }}" @if($tab==='resolved') aria-current="page" @endif>Resolved <span>{{ $resolvedCount }}</span></a>
+            <x-ui.tabs label="Emergency views" :items="[['label' => 'Active', 'href' => route('adviser.emergencies', ['tab' => 'active']), 'active' => $tab === 'active', 'count' => $activeCount], ['label' => 'Resolved', 'href' => route('adviser.emergencies', ['tab' => 'resolved']), 'active' => $tab === 'resolved', 'count' => $resolvedCount]]" />
         </x-slot:actions>
         @if($alerts->count())
         <x-ui.table :stack="true" class="ui-table--wide">

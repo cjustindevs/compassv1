@@ -257,12 +257,6 @@ button.ui-chip.is-active { background: var(--compass-green-dark); border-color: 
 .ui-prose-details .ui-prose { margin-top: 12px; }
 .ui-prose-actions { margin: 0 0 var(--space-6, 24px); }
 
-/* Reports tab links: one scrollable row on phones */
-@media (max-width: 480px) {
-  .reports-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-  .reports-tabs::-webkit-scrollbar { display: none; }
-  .reports-tabs > .btn { flex: 0 0 auto; white-space: nowrap; min-height: 40px; padding: 0 16px; font-size: 14px; }
-}
 
 /* Wide Adviser tables (opt-in via ui-table--wide) at tablet width with the sidebar open: scroll sideways instead of crushing columns */
 @media (min-width: 769px) and (max-width: 1200px) {
@@ -312,3 +306,13 @@ summary.ui-icon-btn::-webkit-details-marker { display: none; }
 
 /* Native date inputs already show a calendar button: do not add a second icon. */
 .ui-field input[type="date"][data-control="date"] { background-image: none; padding-right: var(--space-3); }
+
+/* One tab bar style everywhere: an underline marks the current tab; scrolls sideways on phones. */
+.ui-tabs { display: flex; gap: var(--space-1); margin-bottom: var(--space-4); border-bottom: 1px solid var(--compass-border); overflow-x: auto; scrollbar-width: none; }
+.ui-tabs::-webkit-scrollbar { display: none; }
+.compass-ui .ui-tab { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin: 0 0 -1px; padding: 0 14px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: none; color: var(--compass-muted); font-size: var(--text-base); font-weight: 600; text-decoration: none; white-space: nowrap; cursor: pointer; }
+.compass-ui .ui-tab:hover { color: var(--compass-green-dark); }
+.compass-ui .ui-tab:focus-visible { outline: none; box-shadow: var(--ring); }
+.compass-ui .ui-tab:is(.is-active, .active) { border-bottom-color: var(--compass-green); color: var(--compass-green-dark); }
+.compass-ui .ui-tab > span { min-width: 22px; padding: 0 7px; border-radius: var(--radius-pill); background: #f3f4f6; color: var(--compass-text); font-size: var(--text-xs); line-height: 20px; text-align: center; }
+.compass-ui .ui-tab:is(.is-active, .active) > span { background: var(--compass-green-soft); color: var(--compass-green-dark); }

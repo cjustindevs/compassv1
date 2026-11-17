@@ -7,9 +7,6 @@
     @vite(['resources/js/moderator-notifications.js'])
     <style>
         .settings-flash { border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; }
-        .settings-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
-        .tab { min-height: 44px; padding: 0 20px; border-radius: 999px; font-size: 15px; font-weight: 600; color: var(--compass-muted, #6B7280); background: var(--bg-card, #fff); border: 1px solid var(--compass-border, #E5E7EB); cursor: pointer; }
-        .tab.active { background: #EAF8F0; border-color: var(--compass-green, #04A052); color: #027039; }
         .settings-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 16px; }
         @media (min-width: 769px) { .settings-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         .form-label { display: block; font-weight: 600; font-size: 14px; color: var(--compass-text, #374151); margin-bottom: 6px; }
@@ -74,11 +71,11 @@
         <div class="settings-flash" role="status"> {{ session('success') }}</div>
     @endif
 
-    <div class="settings-tabs" id="tabBar">
-        <button type="button" class="tab active" data-tab="profile">Profile</button>
-        <button type="button" class="tab" data-tab="password">Password</button>
-        <button type="button" class="tab" data-tab="appearance">Appearance</button>
-        <button type="button" class="tab" data-tab="notifications">Notifications</button>
+    <div class="settings-tabs ui-tabs" id="tabBar">
+        <button type="button" class="tab ui-tab active" data-tab="profile">Profile</button>
+        <button type="button" class="tab ui-tab" data-tab="password">Password</button>
+        <button type="button" class="tab ui-tab" data-tab="appearance">Appearance</button>
+        <button type="button" class="tab ui-tab" data-tab="notifications">Notifications</button>
     </div>
 
     <x-ui.card title="Profile Information" class="tab-panel" id="panel-profile">

@@ -31,9 +31,7 @@
 </x-ui.page-header>
 @if(session('success'))<p class="ui-card" role="status">{{ session('success') }}</p>@endif
 @if($errors->any())<p class="ui-card" role="alert">{{ $errors->first() }}</p>@endif
-<nav class="ui-badge-row reports-tabs" aria-label="Report groups" style="margin-bottom:16px">
-@foreach(['cases'=>'Sessions / Cases','performance'=>'Helper Performance','safety'=>'Emergency / Safety','activity'=>'Activity History'] as $key=>$label)<a class="btn {{ $tab===$key ? 'btn-primary' : 'btn-outline' }}" href="{{ route('adviser.reports', array_merge(request()->except(['page','cases_page','actions_page','emergency_page']),['tab'=>$key])) }}" @if($tab===$key) aria-current="page" @endif>{{ $label }}</a>@endforeach
-</nav>
+<x-ui.tabs class="reports-tabs" label="Report groups" :items="collect(['cases'=>'Sessions / Cases','performance'=>'Helper Performance','safety'=>'Emergency / Safety','activity'=>'Activity History'])->map(fn ($label, $key) => ['label' => $label, 'href' => route('adviser.reports', array_merge(request()->except(['page','cases_page','actions_page','emergency_page']), ['tab' => $key])), 'active' => $tab === $key])->values()->all()" />
 <x-ui.card>
 <x-ui.filter-bar class="ui-filter-bar--grid" aria-label="Report filters" data-report-filters>
 <input type="hidden" name="tab" value="{{ $tab }}">

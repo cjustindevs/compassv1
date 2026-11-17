@@ -32,6 +32,27 @@ class UiComponentsTest extends TestCase
         $this->assertStringContainsString('ui-badge--neutral">Something Else<', $badge('something_else'));
     }
 
+    public function test_tabs_mark_the_current_tab_and_show_counts(): void
+    {
+        $html = Blade::render('<x-ui.tabs label="Views" :items="$items" />', ['items' => [
+            ['label' => 'Active', 'href' => '/a', 'active' => true, 'count' => 3],
+            ['label' => 'Resolved', 'href' => '/r', 'active' => false],
+        ]]);
+
+        $this->assertStringContainsString('<nav class="ui-tabs" aria-label="Views">', $html);
+        $this->assertMatchesRegularExpression('#<a href="/a" class="ui-tab is-active"\s+aria-current="page"\s*>Active <span>3</span></a>#', $html);
+        $this->assertMatchesRegularExpression('#<a href="/r" class="ui-tab"\s*>Resolved</a>#', $html);
+    }
+
+    public function test_the_same_tab_bar_is_used_on_reports_emergencies_and_schedules(): void
+    {
+        foreach (['adviser/reports', 'adviser/emergencies', 'moderator/schedules', 'moderator/reports'] as $view) {
+            $source = file_get_contents(resource_path("views/{$view}.blade.php"));
+            $this->assertStringContainsString('<x-ui.tabs', $source, $view);
+        }
+        $this->assertStringNotContainsString('class="duty-tabs"', file_get_contents(resource_path('views/moderator/schedules.blade.php')));
+    }
+
     public function test_icon_button_has_a_name_a_tooltip_and_keeps_extra_attributes(): void
     {
         $link = Blade::render('<x-ui.icon-button icon="eye" label="View documentation" href="/x" />');

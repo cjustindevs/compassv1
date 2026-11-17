@@ -73,11 +73,7 @@
 </x-ui.card>
 <x-ui.card title="Activity Log" class="mo-activity">
     <x-slot:actions>
-        <nav class="mo-tabs mo-activity-tabs" aria-label="Activity type">
-        @foreach([''=>'All','cases'=>'Cases','emergencies'=>'Emergencies','queue'=>'Queue','actions'=>'Actions'] as $value=>$label)
-            <a href="{{ route('moderator.reports',array_merge(request()->except('activity_page'),['activity'=>$value])) }}" @if((request('activity') ?: '')===$value) aria-current="page" @endif>{{ $label }}</a>
-        @endforeach
-        </nav>
+        <x-ui.tabs class="mo-activity-tabs" label="Activity type" :items="collect([''=>'All','cases'=>'Cases','emergencies'=>'Emergencies','queue'=>'Queue','actions'=>'Actions'])->map(fn ($label, $value) => ['label' => $label, 'href' => route('moderator.reports', array_merge(request()->except('activity_page'), ['activity' => $value])), 'active' => (request('activity') ?: '') === $value])->values()->all()" />
         <form method="GET" class="mo-search">
             @foreach(request()->except(['search','activity_page']) as $key=>$value)
                 @if(is_scalar($value))<input type="hidden" name="{{ $key }}" value="{{ $value }}">
