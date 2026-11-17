@@ -72,3 +72,7 @@
     .request-progress b { width:24px; height:24px; }
     .request-draft-controls button { min-height:44px; }
 }
+
+/* Request step 2: note that an Adviser may review the chat or call. */
+.request-review-note { display:flex; gap:8px; align-items:flex-start; margin-top:12px; padding:10px 12px; border-radius:10px; background:#f0fdf4; color:#14532d; font-size:14px; line-height:1.5; max-width:760px; }
+.request-review-note .compass-icon { flex:none; margin-top:2px; }

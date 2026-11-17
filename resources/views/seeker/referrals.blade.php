@@ -13,6 +13,7 @@
         *{font-family:Inter,sans-serif;box-sizing:border-box}body{margin:0;background:#f8fbf9;color:#163b2d}
         .main-content{margin-left: var(--sidebar-w, 264px);padding:24px 32px 48px;min-height:100vh}.referrals-content{width:100%;max-width:none;margin:0}
         .referrals-intro{font-size:14px;line-height:1.6;color:#64748b;margin:0 0 18px;max-width:760px}
+        .referrals-wait-note{display:flex;gap:8px;align-items:flex-start;margin:-6px 0 18px;padding:10px 12px;border-radius:10px;background:#f0fdf4;color:#14532d;font-size:14px;line-height:1.5;max-width:760px}.referrals-wait-note .compass-icon{flex:none;margin-top:2px}
         .referral-card{background:#fff;border:1px solid #dfe8e2;border-radius:14px;padding:20px;margin-bottom:16px;min-width:0}
         .referral-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}.referral-heading h2{font-size:18px;font-weight:700;margin:0 0 4px}.referral-meta{font-size:12px;color:#64748b;margin:0}
         .referral-wait{margin-top:10px;background:#f2f8ff;border:1px solid #c9ddf5;border-radius:10px;padding:10px 12px}.referral-wait strong{color:#1c4f8a;font-size:14px}.referral-wait p{margin:4px 0 0;font-size:13px;color:#33506e;line-height:1.5}
@@ -58,6 +59,7 @@
         </div>
 
             <p class="referrals-intro">Review your approved recommendations here. You choose whether to proceed. Contact details and identity disclosure are a separate step.</p>
+            <p class="referrals-wait-note"><x-ui-icon name="clock" /> After you agree, please wait for the Professional to contact you. You will get a notification when they do.</p>
             @if(session('success'))<div role="status" class="referral-flash">{{ session('success') }}</div>@endif
             @if($errors->any())<div role="alert" class="referral-flash">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
 

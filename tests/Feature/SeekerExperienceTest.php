@@ -47,6 +47,16 @@ class SeekerExperienceTest extends TestCase
         }
     }
 
+    public function test_seeker_is_told_advisers_can_review_chats_and_calls_and_to_wait_for_the_professional(): void
+    {
+        $preferences = file_get_contents(resource_path('views/request/preferences.blade.php'));
+        $this->assertStringContainsString('class="request-review-note"', $preferences);
+        $this->assertStringContainsString('A COMPASS Adviser may review your chat or call with your Helper to keep support safe and of good quality.', $preferences);
+
+        $html = $this->actingAs($this->seeker())->get(route('seeker.referrals'))->assertOk()->getContent();
+        $this->assertStringContainsString('After you agree, please wait for the Professional to contact you. You will get a notification when they do.', $html);
+    }
+
     public function test_seeker_sidebar_has_no_profile_tab_but_keeps_the_profile_link(): void
     {
         $html = $this->actingAs($this->seeker())->get(route('selfhelp'))->assertOk()->getContent();

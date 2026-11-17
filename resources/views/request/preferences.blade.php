@@ -408,6 +408,7 @@
                     @error('support_mode')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
+                    <p class="request-review-note"><x-ui-icon name="info" /> A COMPASS Adviser may review your chat or call with your Helper to keep support safe and of good quality.</p>
                 </div>
 
                 <!-- ============================================ -->
