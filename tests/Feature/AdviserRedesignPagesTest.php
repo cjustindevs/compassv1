@@ -581,6 +581,23 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertStringContainsString(route('adviser.session.show', $report->session_id), $reports);
     }
 
+    public function test_resources_toolbar_badges_and_history_dialog(): void
+    {
+        $adviser = $this->adviser();
+        $res = \App\Models\SelfHelpResource::create(['title' => 'Read calmly', 'description' => 'A guide', 'category' => 'article', 'content' => 'Read slowly.', 'is_published' => false, 'is_featured' => true]);
+        $html = $this->actingAs($adviser->user)->get(route('adviser.resources', ['category' => 'article']))->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('/<select id="resourceCategory" name="category"/', $html);
+        $this->assertMatchesRegularExpression('/<option value="article"\s+selected>/', $html);
+        $this->assertStringNotContainsString('category-pill', $html);
+        $this->assertStringContainsString('ui-badge--neutral">Unpublished</span>', $html);
+        $this->assertStringContainsString('ui-badge--amber">Featured</span>', $html);
+        $this->assertStringContainsString('class="resource-card-foot"', $html);
+        $this->assertStringContainsString('data-dialog-open="history-'.$res->id.'"', $html);
+        $this->assertMatchesRegularExpression('/<dialog id="history-'.$res->id.'" class="workflow-dialog"/', $html);
+        $this->assertStringNotContainsString('<details class="resource-history">', $html);
+    }
+
     public function test_areas_of_concern_add_form_opens_in_a_dialog_and_rows_can_be_searched(): void
     {
         $adviser = $this->adviser();

@@ -4,20 +4,20 @@
 
 @push('styles')
 <style>
-        .category-pill {
-            padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
-            border: 1px solid #E5E7EB; background: white; color: #6B7280;
-            text-decoration: none; transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px;
-        }
-        .category-pill:hover { border-color: #04A052; color: #027039; }
-        .category-pill.active { background: #EAF8F0; border-color: #04A052; color: #027039; }
+        /* One toolbar: a wide search, the category dropdown, then Search. */
+        .ui-filter-bar.resource-toolbar { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; align-items: end; }
+        .ui-filter-bar.resource-toolbar > .ui-field { min-width: 0; }
+        @media (max-width: 600px) { .ui-filter-bar.resource-toolbar { grid-template-columns: minmax(0, 1fr); } }
+        /* Card details and actions sit at the bottom of every card so they line up across a row. */
+        .resource-card-foot { margin-top: auto; display: grid; gap: 10px; padding-top: 10px; border-top: 1px solid #edf2ef; }
+        .resource-badges { gap: 6px; }
+        .resource-card-foot .ui-icon-actions > form { display: inline-flex; width: auto; container-type: normal; }
 
         .adviser-resource-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
         @media (max-width: 1280px) { .adviser-resource-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
         @media (max-width: 1024px) { .adviser-resource-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 600px) { .adviser-resource-grid { grid-template-columns: minmax(0, 1fr); } }
-        .resource-history { border-top: 1px solid #edf2ef; padding-top: 8px; font-size: 12px; }
-        .resource-history > summary { cursor: pointer; color: #087341; font-weight: 600; }
+        .resource-history { font-size: 14px; }
         .resource-history .review-history > h3 { display: none; }
         .resource-card {
             background: white; border: 1px solid #E5E7EB; border-radius: 18px;
@@ -29,7 +29,6 @@
             display: flex; align-items: center; justify-content: center; font-size: 20px;
         }
         .category-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #027039; }
-        .unpublished-tag { font-size: 11px; font-weight: 700; background: #F3F4F6; color: #6B7280; padding: 2px 8px; border-radius: 10px; }
 
         .form-input {
             width: 100%; padding: 10px 14px; border: 1px solid #E5E7EB;
@@ -71,46 +70,37 @@
             <x-ui.kpi icon="star" label="Featured" :value="$stats['featured']" tone="amber" />
         </x-ui.kpi-grid>
 
-        <x-ui.filter-bar :action="route('adviser.resources')" aria-label="Resource filters">
-            @if(request()->filled('category'))<input type="hidden" name="category" value="{{ request('category') }}">@endif
-            <x-ui.field label="Search" for="resourceSearch"><input id="resourceSearch" type="text" name="search" data-control="search" value="{{ request('search') }}" placeholder="Search resources..."></x-ui.field>
-            <x-slot:buttons><button type="submit" class="btn-primary" aria-label="Search" title="Search"><x-ui-icon name="search" /> Search</button></x-slot:buttons>
+        <x-ui.filter-bar :action="route('adviser.resources')" class="resource-toolbar" aria-label="Resource filters">
+            <x-ui.field label="Search" for="resourceSearch" class="resource-toolbar-search"><input id="resourceSearch" type="text" name="search" data-control="search" value="{{ request('search') }}" placeholder="Search resources..."></x-ui.field>
+            <x-ui.field label="Category" for="resourceCategory"><select id="resourceCategory" name="category" data-control="select"><option value="all">All categories</option>@foreach($categories as $category)<option value="{{ $category }}" @selected(request('category') === $category)>{{ ucfirst($category) }}</option>@endforeach</select></x-ui.field>
+            <x-slot:buttons><button type="submit" class="btn-primary"><x-ui-icon name="search" /> Search</button></x-slot:buttons>
         </x-ui.filter-bar>
-        <div class="flex items-center gap-2 mb-5 flex-wrap">
-            <a href="{{ route('adviser.resources') }}" class="category-pill {{ !request('category') || request('category') === 'all' ? 'active' : '' }}">All</a>
-            @foreach($categories as $category)
-                <a href="{{ route('adviser.resources', ['category' => $category, 'search' => request('search')]) }}"
-                   class="category-pill {{ request('category') === $category ? 'active' : '' }}">
-                    {{ ucfirst($category) }}
-                </a>
-            @endforeach
-        </div>
 
         <!-- Resource Grid -->
         @if($resources->isNotEmpty())
             <div class="adviser-resource-grid">
                 @foreach($resources as $resource)
+                    @php($reviewOverdue = ! $resource->archived_at && $resource->review_date && $resource->review_date < now('Asia/Manila')->toDateString())
                     <div class="resource-card">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex items-center gap-3">
-
-                                <div>
-                                    <p class="category-tag">{{ $resource->category }}</p>
-                                    @if($resource->is_featured)
-                                        <span class="text-xs text-yellow-500"> Featured</span>
-                                    @endif
-                                </div>
-                            </div>
-                            @if(!$resource->is_published)
-                                <span class="unpublished-tag">Unpublished</span>
+                        <p class="category-tag">{{ $resource->category }}</p>
+                        <div class="ui-badge-row resource-badges">
+                            @if($resource->archived_at)
+                                <x-ui.badge tone="neutral">Archived</x-ui.badge>
+                            @elseif($resource->is_published)
+                                <x-ui.badge tone="green">Published</x-ui.badge>
+                            @else
+                                <x-ui.badge tone="neutral">Unpublished</x-ui.badge>
                             @endif
+                            @if($resource->is_featured)<x-ui.badge tone="amber">Featured</x-ui.badge>@endif
+                            @if($reviewOverdue)<x-ui.badge tone="red">Review overdue</x-ui.badge>@endif
                         </div>
 
-                        <p class="text-xs text-gray-500">{{ ucfirst($resource->visibility) }} | {{ $resource->archived_at ? 'Archived' : (($resource->review_date && $resource->review_date < now('Asia/Manila')->toDateString()) ? 'Review overdue' : 'Current') }}</p>
                         <h3 class="font-bold text-gray-800 leading-snug">{{ $resource->title }}</h3>
                         <p class="text-sm text-gray-500 leading-relaxed line-clamp-2">{{ $resource->description }}</p>
 
-                        <div class="flex items-center gap-3 text-xs text-gray-400">
+                        <div class="resource-card-foot">
+                        <div class="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
+                            <span>{{ ucfirst($resource->visibility) }}</span>
                             @if($resource->duration)
                                 <span> {{ $resource->duration }}</span>
                             @endif
@@ -145,8 +135,13 @@
                                 <x-ui.icon-button icon="archive" label="Archive resource" type="submit" tone="danger" />
                             </form>
                             @endunless
+                            <x-ui.icon-button icon="clock" label="Update history" data-dialog-open="history-{{ $resource->id }}" />
                         </div>
-                        <details class="resource-history"><summary>Update history</summary><x-supervision-history :record="$resource" /></details>
+                        </div>
+                        <dialog id="history-{{ $resource->id }}" class="workflow-dialog" aria-labelledby="history-title-{{ $resource->id }}">
+                            <header class="workflow-dialog__header"><div><h2 id="history-title-{{ $resource->id }}">Update history</h2><p>{{ $resource->title }}</p></div><button type="button" data-dialog-close aria-label="Close"><x-ui-icon name="close" /></button></header>
+                            <div class="workflow-dialog__body resource-history"><x-supervision-history :record="$resource" /></div>
+                        </dialog>
                     </div>
                 @endforeach
             </div>

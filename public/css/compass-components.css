@@ -268,7 +268,7 @@ button.ui-chip.is-active { background: var(--compass-green-dark); border-color: 
 .ui-muted-dash { color: var(--compass-muted); }
 
 /* Icon-only actions with a tooltip (View, Edit, Archive, Delete). Primary actions keep text labels. */
-.ui-icon-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 1px solid var(--compass-border); border-radius: var(--radius-md); background: #fff; color: var(--compass-green-dark); cursor: pointer; text-decoration: none; vertical-align: middle; }
+.ui-icon-btn { position: relative; flex: none; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 1px solid var(--compass-border); border-radius: var(--radius-md); background: #fff; color: var(--compass-green-dark); cursor: pointer; text-decoration: none; vertical-align: middle; }
 .ui-icon-btn .compass-icon { width: 18px; height: 18px; }
 .ui-icon-btn:hover { border-color: var(--compass-green); background: var(--compass-green-soft); }
 .ui-icon-btn:focus-visible { outline: none; box-shadow: var(--ring); }
