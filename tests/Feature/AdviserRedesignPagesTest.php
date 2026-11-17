@@ -87,6 +87,20 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertSame(1, substr_count($html, '<h1'));
     }
 
+    public function test_pending_evaluations_show_due_dates_and_overdue_after_three_days(): void
+    {
+        $adviser = $this->adviser();
+        $fresh = $this->documentedReport($adviser);
+        $old = $this->documentedReport($adviser);
+        $old->session->forceFill(['end_time' => now()->subDays(4)])->save();
+
+        $html = $this->actingAs($adviser->user)->get(route('adviser.evaluations'))->assertOk()->getContent();
+
+        $this->assertSame(3, config('app.evaluation_deadline_days'));
+        $this->assertSame(1, substr_count($html, 'ui-badge--red">Overdue</span>'));
+        $this->assertStringContainsString('Due '.$fresh->session->end_time->copy()->addDays(3)->timezone('Asia/Manila')->format('M d'), $html);
+    }
+
     public function test_pending_evaluations_empty_state_keeps_held_and_undocumented_notes(): void
     {
         $adviser = $this->adviser();

@@ -52,6 +52,9 @@ return [
 
     'enforce_duty_hours' => env('ENFORCE_DUTY_HOURS', false),
 
+    // Days an Adviser has to evaluate a documented session before it shows as Overdue.
+    'evaluation_deadline_days' => (int) env('EVALUATION_DEADLINE_DAYS', 3),
+
     /*
     |--------------------------------------------------------------------------
     | Application Branding

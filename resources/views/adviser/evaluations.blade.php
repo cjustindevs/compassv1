@@ -80,8 +80,16 @@
                             @endif
                         </p>
                     </div>
+                    @php
+                        $due = ($report->session->end_time ?? $report->created_at)->copy()->addDays(config('app.evaluation_deadline_days', 3));
+                    @endphp
                     <div class="ui-eval-progress">
-                        <x-ui.badge tone="amber">Awaiting evaluation</x-ui.badge>
+                        @if(now()->greaterThan($due))
+                            <x-ui.badge tone="red">Overdue</x-ui.badge>
+                        @else
+                            <x-ui.badge tone="amber">Awaiting evaluation</x-ui.badge>
+                        @endif
+                        <small class="ui-list-sub">Due {{ $due->copy()->timezone('Asia/Manila')->format('M d') }}</small>
                     </div>
                     <div class="ui-eval-actions">
                         <x-ui.icon-button icon="eye" label="View Session" :href="route('adviser.session.show', $report->session_id)" />
