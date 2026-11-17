@@ -9,7 +9,6 @@
     .helper-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--compass-green, #04A052); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
     .helper-person strong, .helper-person small { display: block; }
     .ui-table td small { display: block; font-size: 13px; color: var(--compass-muted, #6B7280); }
-    .elig-why { max-width: 28ch; }
     .helpers-footer { margin-top: 24px; text-align: center; font-size: 14px; color: var(--compass-muted, #6B7280); }
     .helpers-clear { font-size: 14px; color: var(--compass-muted, #6B7280); }
 </style>
@@ -21,7 +20,6 @@
         $statusTone = ['online' => 'green', 'available' => 'blue', 'offline' => 'amber', 'inactive' => 'neutral'];
         $levelTone = ['expert' => 'green', 'advanced' => 'blue', 'intermediate' => 'amber', 'beginner' => 'red', 'trainee' => 'neutral'];
         $chips = $statusFilter !== 'all' ? \App\Support\FilterChips::from(request(), ['status' => 'Status']) : [];
-        $eligibility = app(\App\Services\HelperEligibilityService::class);
     @endphp
 
     <x-ui.page-header title="Manage Helpers" description="Monitor performance, availability, and supervision">
@@ -56,11 +54,11 @@
         @if($helperData->isNotEmpty())
             <x-ui.table :stack="true" class="ui-table--wide">
                 <thead>
-                    <tr><th>Helper</th><th>Status</th><th>Level</th><th>Score</th><th>Duty / capacity</th><th>Can take sessions</th><th>Actions</th></tr>
+                    <tr><th>Helper</th><th>Status</th><th>Level</th><th>Score</th><th>Duty / capacity</th><th>Actions</th></tr>
                 </thead>
                 <tbody>
                     @foreach($helperData as $row)
-                        @php $helper = $row['helper']; $blockers = $eligibility->reasons($helper); @endphp
+                        @php $helper = $row['helper']; @endphp
                         <tr>
                             <td data-label="Helper">
                                 <div class="helper-person">
@@ -72,16 +70,8 @@
                             <td data-label="Level"><x-ui.badge :tone="$levelTone[strtolower($row['level'])] ?? 'neutral'">{{ $row['level'] }}</x-ui.badge></td>
                             <td data-label="Score"><strong>{{ $row['competency_score'] > 0 ? $row['competency_score'] : '—' }}</strong></td>
                             <td data-label="Duty / capacity"><x-helper-capacity :helper="$helper" /></td>
-                            <td data-label="Can take sessions">
-                                @if($blockers === [])
-                                    <x-ui.badge tone="green">Eligible</x-ui.badge>
-                                @else
-                                    <span title="{{ implode(' ', $blockers) }}"><x-ui.badge tone="amber">{{ count($blockers) }} {{ \Illuminate\Support\Str::plural('blocker', count($blockers)) }}</x-ui.badge></span>
-                                    <small class="elig-why">{{ $blockers[0] }}</small>
-                                @endif
-                            </td>
                             <td data-label="Actions" class="ui-actions">
-                                <a href="{{ route('adviser.helper.show', ['id' => $helper->id]) }}" class="btn-secondary"><x-ui-icon name="eye" /> View</a>
+                                <x-ui.icon-button icon="eye" label="View Helper" :href="route('adviser.helper.show', ['id' => $helper->id])" />
                             </td>
                         </tr>
                     @endforeach

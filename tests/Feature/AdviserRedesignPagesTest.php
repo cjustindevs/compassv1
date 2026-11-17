@@ -243,6 +243,20 @@ class AdviserRedesignPagesTest extends TestCase
             ->assertSee('data-page-header', false);
     }
 
+    public function test_manage_helpers_drops_the_can_take_sessions_column_and_detail_keeps_the_reasons(): void
+    {
+        $adviser = $this->adviser();
+        $helper = $this->helperFor($adviser);
+        $this->actingAs($adviser->user);
+
+        $list = $this->get(route('adviser.helpers'))->assertOk()->getContent();
+        $this->assertStringNotContainsString('Can take sessions', $list);
+        $this->assertStringNotContainsString('blocker', $list);
+        $this->assertStringContainsString('aria-label="View Helper"', $list);
+
+        $this->get(route('adviser.helper.show', ['id' => $helper->id]))->assertOk()->assertSee('Account active');
+    }
+
     public function test_manage_helpers_uses_shared_blocks(): void
     {
         $adviser = $this->adviser();
