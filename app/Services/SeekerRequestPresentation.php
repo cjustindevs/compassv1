@@ -19,7 +19,7 @@ class SeekerRequestPresentation
     {
         if ($session->expired_at) return 'Expired';
         return match ($session->session_status) {
-            'completed'=>'Completed', 'evaluated'=>'Completed · Feedback submitted',
+            'completed'=>'Completed', 'evaluated'=>'Completed',
             'cancelled'=>'Cancelled', 'no_show'=>'No-show', 'scheduled'=>'Scheduled',
             default=>self::STATES[$session->workflow_state] ?? 'Request in progress',
         };

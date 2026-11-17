@@ -388,6 +388,14 @@ class SeekerExperienceTest extends TestCase
         $this->assertSame('Duration not specified', SeekerRequestPresentation::duration('-5'));
     }
 
+    public function test_finished_sessions_show_completed_whether_or_not_feedback_was_given(): void
+    {
+        foreach (['completed', 'evaluated'] as $status) {
+            $this->assertSame('Completed', SeekerRequestPresentation::status(new Session(['session_status' => $status])));
+        }
+        $this->assertStringContainsString('feedback was recorded', SeekerRequestPresentation::explanation(new Session(['session_status' => 'evaluated'])));
+    }
+
     public function test_waiting_page_shows_three_public_resources_and_preserves_queue_on_refresh(): void
     {
         config(['app.enforce_duty_hours' => false]);
