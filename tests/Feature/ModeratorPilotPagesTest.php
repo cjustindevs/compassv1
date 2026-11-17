@@ -65,13 +65,34 @@ class ModeratorPilotPagesTest extends TestCase
     public function test_each_moderator_kpi_appears_once_and_stays_live(): void
     {
         $html = $this->actingAs($this->moderator())->get(route('moderator.dashboard'))->assertOk()->getContent();
-        foreach (['Waiting requests', 'Available Helpers', 'Active sessions', 'Active emergencies'] as $label) {
+        foreach (['Waiting requests', 'Available Helpers', 'Active sessions', 'Average waiting time', 'Priority requests', 'Pending assignments'] as $label) {
             $this->assertSame(1, preg_match_all('/<h3[^>]*>'.preg_quote($label, '/').'<\/h3>/', $html), $label);
         }
         $this->assertStringNotContainsString('ui-kpi', $html);
-        foreach (['statQueue', 'statSessions', 'statHelpers', 'statEmergency'] as $id) {
+        foreach (['statQueue', 'statSessions', 'statHelpers'] as $id) {
             $this->assertStringContainsString('id="'.$id.'"', $html);
         }
+    }
+
+    public function test_moderator_kpis_follow_qa_order_and_count_priority_and_pending_assignments(): void
+    {
+        $user = User::factory()->create(['role' => 'seeker', 'is_active' => true]);
+        $seeker = HelpSeeker::create(['user_account_id' => $user->id, 'generated_alias' => 'Alias'.$user->id]);
+        QueueRequest::create(['seeker_id' => $seeker->id, 'request_status' => 'waiting', 'priority_level' => 'high', 'request_date' => now()]);
+        QueueRequest::create(['seeker_id' => $seeker->id, 'request_status' => 'waiting', 'priority_level' => 'low', 'request_date' => now()]);
+        QueueRequest::create(['seeker_id' => $seeker->id, 'request_status' => 'waiting', 'priority_level' => 'emergency', 'request_date' => now(), 'is_test_record' => true]);
+        \App\Models\Session::create(['seeker_id' => $seeker->id, 'session_status' => 'helper_assigned', 'match_status' => 'awaiting_acceptance', 'created_date' => now(), 'risk_level' => 'low']);
+        \App\Models\Session::create(['seeker_id' => $seeker->id, 'session_status' => 'helper_assigned', 'helper_accepted_at' => now(), 'created_date' => now(), 'risk_level' => 'low']);
+
+        $html = $this->actingAs($this->moderator())->get(route('moderator.dashboard'))->assertOk()->getContent();
+        preg_match('/<div class="co-kpis">[\s\S]*?<\/div>/', $html, $kpis);
+        preg_match_all('/<h3[^>]*>([^<]+)<\/h3>\s*<strong[^>]*>\s*([^<]*?)\s*<\/strong>/', $kpis[0] ?? '', $cards, PREG_SET_ORDER);
+        $this->assertSame(['Waiting requests', 'Available Helpers', 'Active sessions', 'Average waiting time', 'Priority requests', 'Pending assignments'], array_column($cards, 1));
+        $values = array_combine(array_column($cards, 1), array_column($cards, 2));
+        $this->assertSame('2', $values['Waiting requests']);
+        $this->assertSame('1', $values['Priority requests']);
+        $this->assertSame('1', $values['Pending assignments']);
+        $this->assertStringContainsString('co-kpi-icon', $kpis[0]);
     }
 
     public function test_manage_team_matches_reference_structure(): void

@@ -4,7 +4,7 @@
     $primaryLabels = auth()->user()?->role === 'admin'
         ? ['Total users', 'Active accounts', 'Available Helpers', 'Matching success rate']
         : (auth()->user()?->role === 'moderator'
-            ? ['Waiting requests', 'Available Helpers', 'Active sessions', 'Active emergencies', 'Average waiting time', 'Successful Assignment Rate']
+            ? ['Waiting requests', 'Available Helpers', 'Active sessions', 'Average waiting time', 'Priority requests', 'Pending assignments']
             : ['Completed sessions', 'Average waiting time', 'Average Helper Response Time', 'Helpfulness rating (1–5)', 'Average competency score (1–5)', 'Documentation completion rate']);
     $primary = collect($overview['cards'])->filter(fn($c) => in_array($c['label'], $primaryLabels));
     $secondary = collect($overview['cards'])->reject(fn($c) => in_array($c['label'], $primaryLabels));
@@ -23,7 +23,8 @@
     @if(in_array(auth()->user()?->role, ['adviser','moderator'], true))
         <x-analytics-period :action="route(auth()->user()->role.'.dashboard')" :dates="\App\Services\AnalyticsPeriod::fromRequest(request())->dates()" :filters="$overview['competency_comparison']['filters'] ?? []" />
     @endif
-    <div class="co-kpis">@foreach($primary as $card)<article class="co-kpi"><h3 title="{{ $card['definition'] }}">{{ $card['label'] }}</h3>
+    @php $kpiIcons = ['Waiting requests'=>'hourglass','Available Helpers'=>'user-check','Active sessions'=>'message','Average waiting time'=>'clock','Priority requests'=>'flag','Pending assignments'=>'user-plus','Completed sessions'=>'check-circle','Total sessions'=>'list','Active Helpers'=>'users','Average Helper Response Time'=>'bolt','Average satisfaction rating (/5)'=>'star']; @endphp
+    <div class="co-kpis">@foreach($primary as $card)<article class="co-kpi">@isset($kpiIcons[$card['label']])<span class="co-kpi-icon" aria-hidden="true"><x-ui-icon :name="$kpiIcons[$card['label']]" /></span>@endisset<h3 title="{{ $card['definition'] }}">{{ $card['label'] }}</h3>
     <strong @if(auth()->user()?->role === 'moderator') @if($card['label'] === 'Waiting requests') id="statQueue" @elseif($card['label'] === 'Active sessions') id="statSessions" @elseif($card['label'] === 'Available Helpers') id="statHelpers" @elseif($card['label'] === 'Active emergencies') id="statEmergency" @endif @endif>{{ array_key_exists('raw',$card) ? \App\Services\SessionPerformance::number($card['raw'], $card['unit'] ?? '') : ($card['value'] === 'No data' ? '—' : $formatValue($card['value'])) }}</strong>
     </article>@endforeach</div>
     @if(auth()->user()?->role === 'adviser')
