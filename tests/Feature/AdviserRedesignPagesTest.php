@@ -23,6 +23,45 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertSame(0, substr_count($html, 'data-page-slot'));
     }
 
+    public function test_dashboard_puts_charts_beside_kpis_previews_five_helpers_and_shows_activity_timeline(): void
+    {
+        $adviser = $this->adviser();
+        foreach (range(1, 6) as $i) $this->helperFor($adviser);
+        $this->documentedReport($adviser);
+        \App\Models\HelperAvailabilityLog::create(['helper_id' => \App\Models\Helper::where('adviser_id', $adviser->id)->first()->id, 'previous_status' => 'unavailable', 'new_status' => 'available', 'changed_at' => now()]);
+
+        $html = $this->actingAs($adviser->user)->get(route('adviser.dashboard'))->assertOk()->getContent();
+
+        $this->assertLessThan(strpos($html, 'Session documentation'), strpos($html, 'class="co-charts"'), 'Charts sit right after the KPI cards.');
+        $this->assertLessThan(strpos($html, 'Session documentation'), strpos($html, 'id="competency-comparison"'));
+        preg_match('/aria-label="Supervised Helpers"[\s\S]*?<\/table>/', $html, $helpers);
+        $this->assertSame(5, substr_count($helpers[0] ?? '', '<tr') - 1, 'Header row plus five Helpers.');
+        $this->assertStringContainsString('Showing 5 of 7 Helpers', $html);
+        $this->assertStringContainsString('class="av-timeline"', $html);
+        $this->assertMatchesRegularExpression('/<li class="av-timeline-item av-timeline-item--helper">\s*<span class="av-timeline-icon"/', $html);
+        $this->assertStringContainsString('class="co-kpi-period"', $html);
+    }
+
+    public function test_competency_chart_leaves_out_helpers_with_no_evaluation_and_lists_them_apart(): void
+    {
+        $adviser = $this->adviser();
+        $scored = $this->helperFor($adviser);
+        $scored->update(['first_name' => 'Scored', 'last_name' => 'Helper']);
+        $quiet = $this->helperFor($adviser);
+        $quiet->update(['first_name' => 'Quiet', 'last_name' => 'Helper']);
+        $row = fn ($helper, $score) => ['helper' => $helper->fresh(), 'score' => $score, 'count' => 0, 'needs_attention' => false, 'weakest' => null];
+        $rows = new \Illuminate\Pagination\LengthAwarePaginator(collect([$row($scored, 4.0), $row($quiet, null)]), 2, 10);
+        $comparison = ['dates' => [], 'options' => ['overall_score' => 'Overall'], 'skill' => 'overall_score', 'sort' => 'lowest', 'rows' => $rows];
+
+        $this->actingAs($adviser->user);
+        $html = (string) $this->blade('<x-adviser-competency-comparison :comparison="$comparison" />', ['comparison' => $comparison]);
+        $this->assertMatchesRegularExpression('/class="ac-unevaluated"[^>]*>[\s\S]*?Quiet Helper/', $html);
+        preg_match('/<section[^>]*class="[^"]*ac-chart-card[\s\S]*?<\/section>/', $html, $chart);
+        $this->assertNotEmpty($chart, 'Chart renders for the scored Helper.');
+        $this->assertStringContainsString('Scored Helper', $chart[0]);
+        $this->assertStringNotContainsString('Quiet Helper', $chart[0]);
+    }
+
     public function test_attention_strip_lists_only_waiting_work(): void
     {
         $adviser = $this->adviser();

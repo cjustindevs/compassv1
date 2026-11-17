@@ -6,8 +6,8 @@
 <label>Skill<select name="competency_skill">@foreach($comparison['options'] as $key=>$label)<option value="{{ $key }}" @selected($comparison['skill']===$key)>{{ $label }}</option>@endforeach</select></label>
 <label>Sort<select name="competency_sort">@foreach(['lowest'=>'Lowest score first','highest'=>'Highest score first','name'=>'Helper name'] as $key=>$label)<option value="{{ $key }}" @selected($comparison['sort']===$key)>{{ $label }}</option>@endforeach</select></label><button type="submit" class="ac-button">Apply</button>
 </form>
-<?php $chartRows = $comparison['rows']->getCollection(); ?>
-@if($chartRows->contains(fn ($row) => $row['score'] !== null))
+<?php $allRows = $comparison['rows']->getCollection(); $chartRows = $allRows->filter(fn ($row) => $row['score'] !== null)->values(); $unevaluated = $allRows->filter(fn ($row) => $row['score'] === null); ?>
+@if($chartRows->isNotEmpty())
 @php
     $skillLabel = $comparison['options'][$comparison['skill']];
     $comparisonChart = [
@@ -23,6 +23,7 @@
 @endphp
 <x-analytics-chart class="ac-chart-card" :title="$skillLabel.' by Helper'" description="Average score on a 1–5 scale. Amber bars mark a skill below 2.5." :chart="$comparisonChart" />
 @endif
+@if($unevaluated->isNotEmpty())<p class="ac-unevaluated"><strong>Not evaluated yet:</strong> {{ $unevaluated->map(fn ($row) => $row['helper']->full_name ?: 'Helper')->join(', ') }}. They are left out of the chart so they don't look like a zero score.</p>@endif
 <div class="compact-table-wrap"><table class="compact-data-table"><thead><tr><th>Helper</th><th>Score (1–5)</th><th>Evaluations</th><th>Skill needing attention</th><th><span class="sr-only">Action</span></th></tr></thead><tbody>
 @forelse($comparison['rows'] as $row)
 <?php $helper=$row['helper']; ?>

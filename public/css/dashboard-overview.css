@@ -10,3 +10,4 @@
 @media(max-width:700px){.co-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.co-overview .co-kpi{padding:16px}.co-kpi>strong{font-size:28px}}
 @media(max-width:350px){.co-kpis{grid-template-columns:1fr}}
 .co-kpi-icon{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:10px;background:#ecfdf3;color:#087341}.co-kpi-icon .compass-icon{width:20px;height:20px}
+.co-kpi-period{display:block;font-size:11px;color:#64748b;margin-top:auto}

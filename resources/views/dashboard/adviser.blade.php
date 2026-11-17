@@ -16,6 +16,8 @@
     ]" />
 
     <x-dashboard-overview part="summary" :overview="$overview" :show-recent="false" :show-definitions="false" :smooth-lines="true" />
+    {{-- Charts sit right under the KPI cards (QA): same period, same look. --}}
+    <x-dashboard-overview part="analytics" :overview="$overview" :show-recent="false" :show-definitions="false" :smooth-lines="true" />
     <div class="av-grid">
         <x-ui.card title="Session documentation">
             <x-slot:actions><a class="av-link" href="{{ route('adviser.evaluations') }}">View all reviews</a></x-slot:actions>
@@ -42,7 +44,16 @@
             @if(count($recentActivity) === 0)
                 <x-ui.empty title="No recent supervision activity." />
             @else
-            <ul class="av-activity">@foreach($recentActivity as $activity)<li><p class="font-semibold">{{ $activity['message'] }}</p><p class="av-muted">{{ $activity['detail'] }}</p><time>{{ $activity['time'] }}</time></li>@endforeach</ul>
+            @php $activityIcons = ['emergency' => 'warning', 'evaluation' => 'clipboard', 'referral' => 'share', 'helper' => 'user']; @endphp
+            <ol class="av-timeline">
+            @foreach($recentActivity as $activity)
+                <li class="av-timeline-item av-timeline-item--{{ $activity['type'] ?? 'other' }}">
+                    <span class="av-timeline-icon" aria-hidden="true"><x-ui-icon :name="$activityIcons[$activity['type'] ?? ''] ?? 'activity'" /></span>
+                    <div class="av-timeline-body"><p class="av-timeline-title">{{ $activity['message'] }}</p><p class="av-muted">{{ \Illuminate\Support\Str::limit($activity['detail'], 70) }}</p></div>
+                    <time class="av-timeline-time">{{ $activity['time'] }}</time>
+                </li>
+            @endforeach
+            </ol>
             @endif
         </x-ui.card>
     </div>
@@ -54,7 +65,7 @@
         <x-ui.table :stack="true" role="region" aria-label="Supervised Helpers">
             <thead><tr><th>Helper</th><th>Availability</th><th>Readiness</th><th>Workload</th><th>Competency</th></tr></thead>
             <tbody>
-            @foreach($helpers as $helper)
+            @foreach($helpers->take(5) as $helper)
                 @php
                     $eligibility = app(\App\Services\HelperEligibilityService::class)->status($helper);
                 @endphp
@@ -69,8 +80,19 @@
             </tbody>
         </x-ui.table>
         @endif
-        @if($totalHelpers > $helpers->count())<p class="av-muted mt-3">Showing {{ $helpers->count() }} Helpers. Open View all for the full list.</p>@endif
+        @if($totalHelpers > min(5, $helpers->count()))<p class="av-muted mt-3">Showing {{ min(5, $helpers->count()) }} of {{ $totalHelpers }} Helpers. <a class="av-link" href="{{ route('adviser.helpers') }}">View all</a></p>@endif
     </x-ui.card>
-    <x-dashboard-overview part="analytics" :overview="$overview" :show-recent="false" :show-definitions="false" :smooth-lines="true" />
 </div>
+<style>
+.av-timeline{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.av-timeline-item{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 0;border-top:1px solid #edf0ee}
+.av-timeline-item:first-child{border-top:0}
+.av-timeline-icon{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:999px;background:#ecfdf3;color:#087341}
+.av-timeline-icon .compass-icon{width:16px;height:16px}
+.av-timeline-item--emergency .av-timeline-icon{background:#fef2f2;color:#b91c1c}
+.av-timeline-item--referral .av-timeline-icon{background:#eff6ff;color:#1d4ed8}
+.av-timeline-title{font-size:14px;font-weight:600;margin:0;color:#163b2d}
+.av-timeline-body .av-muted{margin:2px 0 0;font-size:12px}
+.av-timeline-time{font-size:12px;color:#64748b;white-space:nowrap}
+</style>
 @endsection
