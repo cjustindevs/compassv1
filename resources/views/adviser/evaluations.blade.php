@@ -12,16 +12,16 @@
         <x-ui.kpi label="Total Feedback Given" :value="$feedbackCount" tone="green" icon="check-circle" note="Evaluations completed" />
     </x-ui.kpi-grid>
 
-    <x-ui.card class="ui-eval-process">
-        <div class="ui-eval-process-body">
-            <div class="ui-eval-process-intro">
-                <h2 class="ui-card-title">Evaluation Process</h2>
-                <p class="ui-card-sub">A 4-step workflow for reviewing and evaluating helper sessions.</p>
-            </div>
-            <x-evaluation-steps :current="3" variant="stepper" />
-        </div>
-    </x-ui.card>
+    @php
+        $evalView = request('history') === 'archived' ? 'archived' : (request('tab') === 'completed' ? 'completed' : 'pending');
+    @endphp
+    <x-ui.tabs label="Evaluation lists" :items="[
+        ['label' => 'Pending', 'href' => route('adviser.evaluations'), 'active' => $evalView === 'pending', 'count' => $totalPending],
+        ['label' => 'Completed', 'href' => route('adviser.evaluations', ['tab' => 'completed']), 'active' => $evalView === 'completed'],
+        ['label' => 'Archived', 'href' => route('adviser.evaluations', ['tab' => 'archived', 'history' => 'archived']), 'active' => $evalView === 'archived'],
+    ]" />
 
+    @if($evalView === 'pending')
     <x-ui.card title="Awaiting review" id="awaitingReview">
         <x-slot:actions><x-ui.badge tone="green">{{ $totalPending }} sessions</x-ui.badge></x-slot:actions>
 
@@ -57,13 +57,15 @@
                     $risk = $report->session->risk_level ?? 'low';
                     $riskTone = ['low' => 'green', 'moderate' => 'amber'][$risk] ?? 'red';
                     $alias = $report->session->seeker->generated_alias ?? 'Anonymous';
-                    $searchText = mb_strtolower(trim($alias.' '.($report->session->helper->first_name ?? '').' '.($report->session->helper->last_name ?? '').' '.($report->session->concern->concern_name ?? 'General')));
+                    $sessionRef = $report->session->reference_number ?: '#'.$report->session_id;
+                    $searchText = mb_strtolower(trim($sessionRef.' '.$alias.' '.($report->session->helper->first_name ?? '').' '.($report->session->helper->last_name ?? '').' '.($report->session->concern->concern_name ?? 'General')));
                 @endphp
                 <div class="ui-eval-row ui-eval-row--{{ $risk }}" data-eval-row data-risk="{{ $risk }}" data-time="{{ $report->created_at->timestamp }}" data-alias="{{ $alias }}" data-search="{{ $searchText }}">
                     <span class="ui-avatar" aria-hidden="true">{{ strtoupper(substr($alias, 0, 1)) }}</span>
                     <div class="ui-eval-who">
                         <p class="ui-list-title">{{ $alias }}</p>
                         <p class="ui-list-sub">
+                            <span class="ui-eval-ref">{{ $sessionRef }}</span> ·
                             {{ $report->session->helper->first_name ?? 'Unknown' }} {{ $report->session->helper->last_name ?? '' }}
                             · {{ $report->created_at->format('M d, Y') }}
                             · {{ $report->session->session_type ?? 'Chat' }}
@@ -79,13 +81,10 @@
                         </p>
                     </div>
                     <div class="ui-eval-progress">
-                        <x-evaluation-steps :current="3" variant="dots" />
-                        <p class="ui-list-sub">Awaiting your evaluation</p>
+                        <x-ui.badge tone="amber">Awaiting evaluation</x-ui.badge>
                     </div>
                     <div class="ui-eval-actions">
-                        <a href="{{ route('adviser.session.show', $report->session_id) }}" class="btn-outline">
-                            <x-ui-icon name="eye" /> View Session
-                        </a>
+                        <x-ui.icon-button icon="eye" label="View Session" :href="route('adviser.session.show', $report->session_id)" />
                         <a href="{{ route('adviser.evaluate', $report->id) }}" class="btn-primary">
                             <x-ui-icon name="check" /> Evaluate
                         </a>
@@ -112,11 +111,9 @@
             </x-ui.empty>
         @endif
     </x-ui.card>
-
-        <div class="av-actions mb-4"><a class="av-button" href="{{ route('adviser.evaluations') }}">Recent reviews</a><a class="av-button" href="{{ route('adviser.evaluations',['history'=>'archived']) }}">Archived reviews</a></div>
-        <!-- Recently Completed -->
+    @else
         @if($completedReports->isNotEmpty())
-            <x-ui.card :title="request('history')==='archived' ? 'Archived reviews' : 'Recently Completed'">
+            <x-ui.card :title="$evalView === 'archived' ? 'Archived reviews' : 'Completed reviews'">
                 <x-slot:actions><span class="text-sm text-gray-400">{{ $completedReports->total() }} reviews</span></x-slot:actions>
                 @foreach($completedReports as $report)
                     <div class="ui-list-row">
@@ -136,11 +133,12 @@
                         <div class="av-actions"><span class="text-xs text-gray-400">{{ $report->updated_at->diffForHumans() }}</span>@include('adviser.partials.archive-action',['record'=>$report->session])</div>
                     </div>
                 @endforeach
-                {{ $completedReports->links() }}
+                {{ $completedReports->links('vendor.pagination.compass', ['noun' => 'reviews']) }}
             </x-ui.card>
         @else
-            <section class="av-panel av-empty">{{ request('history')==='archived' ? 'No completed reviews have been archived.' : 'No completed reviews to show.' }}</section>
+            <x-ui.empty :title="$evalView === 'archived' ? 'No archived reviews' : 'No completed reviews'" :text="$evalView === 'archived' ? 'No completed reviews have been archived.' : 'No completed reviews to show.'" />
         @endif
+    @endif
 
         <!-- Footer -->
         <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">

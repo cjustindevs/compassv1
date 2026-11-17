@@ -70,11 +70,14 @@ class AdviserRedesignPagesTest extends TestCase
             ->assertOk()
             ->assertSee('ui-kpi--red', false)
             ->assertSee('ui-kpi-icon', false)
-            ->assertSee('Evaluation Process')
+            ->assertDontSee('Evaluation Process')
+            ->assertDontSee('eval-steps-dots', false)
             ->assertSee('Awaiting review')
             ->assertSee('2 sessions')
             ->assertSee('ui-eval-row--high', false)
-            ->assertSee('Awaiting your evaluation')
+            ->assertSee('Awaiting evaluation')
+            ->assertSee($high->session->reference_number ?: '#'.$high->session_id)
+            ->assertSee('aria-label="View Session"', false)
             ->assertSee(route('adviser.evaluate', $high->id), false)
             ->assertSee(route('adviser.session.show', $low->session_id), false)
             ->assertDontSee('⋮');
@@ -101,19 +104,31 @@ class AdviserRedesignPagesTest extends TestCase
             ->assertDontSee('data-eval-row', false);
     }
 
-    public function test_pending_evaluations_keeps_history_links_and_archive_action(): void
+    public function test_pending_evaluations_uses_pending_completed_archived_tabs(): void
     {
         $adviser = $this->adviser();
-        $report = $this->documentedReport($adviser);
-        $report->update(['adviser_reviewed' => true]);
+        $pending = $this->documentedReport($adviser);
+        $reviewed = $this->documentedReport($adviser);
+        $reviewed->update(['adviser_reviewed' => true]);
+        $this->actingAs($adviser->user);
 
-        $this->actingAs($adviser->user)->get(route('adviser.evaluations'))
-            ->assertOk()
-            ->assertSee('Recent reviews')
-            ->assertSee('Archived reviews')
-            ->assertSee('history=archived', false)
-            ->assertSee('Recently Completed')
-            ->assertSee('Quality supervision leads to quality support.');
+        $html = $this->get(route('adviser.evaluations'))->assertOk()->getContent();
+        $this->assertStringContainsString('<nav class="ui-tabs" aria-label="Evaluation lists">', $html);
+        $this->assertStringContainsString('tab=completed', $html);
+        $this->assertStringContainsString('history=archived', $html);
+        $this->assertStringContainsString('data-eval-row', $html);
+        $this->assertStringNotContainsString('Completed reviews', $html, 'The Pending tab shows only pending sessions.');
+        $this->assertStringNotContainsString('Recent reviews', $html);
+
+        $completed = $this->get(route('adviser.evaluations', ['tab' => 'completed']))->assertOk()->getContent();
+        $this->assertStringContainsString('Completed reviews', $completed);
+        $this->assertStringNotContainsString('data-eval-row', $completed);
+        $this->assertStringContainsString(route('adviser.archive.store'), $completed);
+        $this->assertStringContainsString('Quality supervision leads to quality support.', $completed);
+
+        $archived = $this->get(route('adviser.evaluations', ['tab' => 'archived', 'history' => 'archived']))->assertOk()->getContent();
+        $this->assertStringContainsString('No archived reviews', $archived);
+        $this->assertStringContainsString('No completed reviews have been archived.', $archived);
     }
 
     public function test_evaluate_form_has_sections_save_bar_and_unchanged_contract(): void
