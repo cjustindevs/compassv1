@@ -48,7 +48,9 @@ class DashboardOverview
             $analytics = app(AdviserAnalytics::class)->report(['start'=>\Illuminate\Support\Carbon::instance($period->start->utc()), 'end'=>\Illuminate\Support\Carbon::instance($period->end->utc())], $adviser->id);
             $metrics = $analytics['metrics'];
             foreach ([
+                'Total sessions' => ['total', '', 'Support requests submitted in the selected period.'],
                 'Completed sessions' => ['completed', '', 'Valid started sessions completed/evaluated with end time in the selected period.'],
+                'Average satisfaction rating (/5)' => ['satisfaction', '', 'Average Seeker overall rating in the period, on a 1–5 scale.'],
                 'Average Helper Response Time' => ['response_minutes', ' min', 'Session start to first assigned Helper message or connected voice call; by session start date.'],
                 'Helpfulness rating (1–5)' => ['helpfulness', '', 'Average of Seeker helpfulness answers in the period: Very Helpful 5, Helpful 3.67, Neutral 2.33, Not Helpful 1.'],
                 'Average competency score (1–5)' => ['competency', '', 'Finalized, evidenced current-rubric evaluations by evaluation date; same records as the comparison.'],
@@ -67,6 +69,8 @@ class DashboardOverview
                 $cards[array_key_last($cards)]['link'] = route('adviser.reports', $period->dates());
                 if (isset($analytics['samples'][$key])) $cards[array_key_last($cards)]['samples'] = $analytics['samples'][$key];
             }
+            $add('Active Helpers', $analytics['samples']['workload'] ?? 0, 'Your Helpers who started or completed a session in the selected period.');
+            $cards[array_key_last($cards)] += ['raw'=>(float) ($analytics['samples']['workload'] ?? 0), 'unit'=>''];
             $referrals = Referral::whereIn('session_id', $caseRows->pluck('id'))->forAdviser($adviser->id)->get();
             $reviewSamples = $referrals->filter(fn ($r) => $r->created_at && $r->reviewed_at && $r->reviewed_at->gte($r->created_at)
                 && $r->reviewed_at->gte($period->start) && $r->reviewed_at->lt($period->end) && $r->reviewed_at->lte(now()))

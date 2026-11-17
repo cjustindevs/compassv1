@@ -5,8 +5,9 @@
         ? ['Total users', 'Active accounts', 'Available Helpers', 'Matching success rate']
         : (auth()->user()?->role === 'moderator'
             ? ['Waiting requests', 'Available Helpers', 'Active sessions', 'Average waiting time', 'Priority requests', 'Pending assignments']
-            : ['Completed sessions', 'Average waiting time', 'Average Helper Response Time', 'Helpfulness rating (1–5)', 'Average competency score (1–5)', 'Documentation completion rate']);
-    $primary = collect($overview['cards'])->filter(fn($c) => in_array($c['label'], $primaryLabels));
+            : ['Average Helper Response Time', 'Average waiting time', 'Total sessions', 'Completed sessions', 'Active Helpers', 'Average satisfaction rating (/5)']);
+    // KPI cards in QA's order for each role; everything else goes to the supporting metrics.
+    $primary = collect($overview['cards'])->filter(fn($c) => in_array($c['label'], $primaryLabels))->sortBy(fn($c) => array_search($c['label'], $primaryLabels))->values();
     $secondary = collect($overview['cards'])->reject(fn($c) => in_array($c['label'], $primaryLabels));
     $formatValue = function ($value) {
         if ($value === 'No data') return '—';

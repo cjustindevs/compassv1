@@ -194,6 +194,22 @@ class RoleKpiTest extends TestCase
         $this->assertStringNotContainsString('Documentation completion', $kpis[0] ?? '');
     }
 
+    public function test_adviser_kpis_follow_qa_order_with_total_sessions_active_helpers_and_satisfaction(): void
+    {
+        $helper = $this->helper();
+        $case = $this->supportCase($helper);
+        HelpSeekerEvaluation::create(['session_id'=>$case->id, 'overall_score'=>10, 'submitted_at'=>now()->subMinutes(10)]);
+        $html = $this->actingAs($helper->adviser->user)->get(route('adviser.dashboard', ['period'=>'today']))->assertOk()->getContent();
+        preg_match('/<div class="co-kpis">[\s\S]*?<\/div>/', $html, $kpis);
+        preg_match_all('/<h3[^>]*>([^<]+)<\/h3>\s*<strong[^>]*>\s*([^<]*?)\s*<\/strong>/', $kpis[0] ?? '', $cards, PREG_SET_ORDER);
+        $this->assertSame(['Average Helper Response Time', 'Average waiting time', 'Total sessions', 'Completed sessions', 'Active Helpers', 'Average satisfaction rating (/5)'], array_column($cards, 1));
+        $values = array_combine(array_column($cards, 1), array_column($cards, 2));
+        $this->assertSame('1', $values['Total sessions']);
+        $this->assertSame('1', $values['Completed sessions']);
+        $this->assertSame('1', $values['Active Helpers']);
+        $this->assertSame('5', $values['Average satisfaction rating (/5)']);
+    }
+
     public function test_admin_kpis_are_total_active_inactive_accounts_and_system_status(): void
     {
         $admin = User::factory()->create(['role'=>'admin', 'is_active'=>true]);
