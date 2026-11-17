@@ -478,6 +478,21 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertStringNotContainsString('minmax(260px, 1fr)', $html);
     }
 
+    public function test_reports_exports_sit_in_one_export_dropdown(): void
+    {
+        $adviser = $this->adviser();
+        $html = $this->actingAs($adviser->user)->get(route('adviser.reports'))->assertOk()->getContent();
+
+        $this->assertSame(1, substr_count($html, '<details class="ui-dropdown"'));
+        $this->assertMatchesRegularExpression('/<summary class="btn-secondary ui-dropdown-toggle"[^>]*>.*Export/s', $html);
+        $menu = substr($html, strpos($html, '<details class="ui-dropdown"'));
+        $menu = substr($menu, 0, strpos($menu, '</details>'));
+        $this->assertStringContainsString('format=csv', $menu);
+        $this->assertStringContainsString('format=pdf', $menu);
+        $this->assertStringContainsString('Export case CSV', $menu);
+        $this->assertStringContainsString('Export case PDF', $menu);
+    }
+
     public function test_common_actions_are_icon_buttons_with_tooltips(): void
     {
         $adviser = $this->adviser();
