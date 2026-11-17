@@ -581,6 +581,44 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertStringContainsString(route('adviser.session.show', $report->session_id), $reports);
     }
 
+    public function test_schedule_duty_form_opens_in_a_dialog_and_rows_use_icons_and_capacity_bars(): void
+    {
+        $adviser = $this->adviser();
+        $html = $this->actingAs($adviser->user)->get(route('adviser.schedule'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('data-dialog-open="dutyDialog"', $html);
+        $this->assertMatchesRegularExpression('/<dialog id="dutyDialog" class="workflow-dialog duty-dialog"/', $html);
+        $dialog = substr($html, strpos($html, '<dialog id="dutyDialog"'));
+        $dialog = substr($dialog, 0, strpos($dialog, '</dialog>'));
+        $this->assertStringContainsString('id="dutyForm"', $dialog);
+        $this->assertStringContainsString('class="duty-grid duty-grid--single"', $html);
+
+        $view = file_get_contents(resource_path('views/moderator/schedules.blade.php'));
+        $this->assertStringContainsString('<x-ui.icon-button icon="edit" label="Edit duty"', $view);
+        $this->assertStringContainsString('<x-ui.icon-button icon="trash" label="Remove duty" type="submit" tone="danger"', $view);
+        $this->assertStringContainsString('<x-ui.icon-button icon="undo" label="Restore duty" type="submit"', $view);
+        $this->assertStringContainsString('class="ui-capacity"', $view);
+        $this->assertStringContainsString('data-duty-remove', $view);
+        $this->assertStringContainsString('@if($edit || old(\'helper_id\')) data-open-on-load @endif', $view);
+    }
+
+    public function test_helper_workload_rows_use_status_badges_and_capacity_bars(): void
+    {
+        $adviser = $this->adviser();
+        $this->helperFor($adviser);
+        $html = $this->actingAs($adviser->user)->get(route('adviser.schedule'))->assertOk()->getContent();
+        $body = substr($html, strpos($html, 'data-workload-body'));
+        $body = substr($body, 0, strpos($body, '</tbody>'));
+
+        $this->assertMatchesRegularExpression('/<td data-label="Current status"[^>]*><span class="ui-badge ui-badge--(green|amber|neutral)">/', $body);
+        $this->assertStringContainsString('class="ui-capacity"', $body);
+
+        $js = file_get_contents(public_path('js/helper-workload.js'));
+        $this->assertStringContainsString("'ui-badge ui-badge--'", $js);
+        $this->assertStringContainsString("'ui-capacity'", $js);
+        $this->assertStringNotContainsString('innerHTML = helper', $js);
+    }
+
     public function test_resources_toolbar_badges_and_history_dialog(): void
     {
         $adviser = $this->adviser();

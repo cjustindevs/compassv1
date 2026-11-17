@@ -316,3 +316,7 @@ summary.ui-icon-btn::-webkit-details-marker { display: none; }
 .compass-ui .ui-tab:is(.is-active, .active) { border-bottom-color: var(--compass-green); color: var(--compass-green-dark); }
 .compass-ui .ui-tab > span { min-width: 22px; padding: 0 7px; border-radius: var(--radius-pill); background: #f3f4f6; color: var(--compass-text); font-size: var(--text-xs); line-height: 20px; text-align: center; }
 .compass-ui .ui-tab:is(.is-active, .active) > span { background: var(--compass-green-soft); color: var(--compass-green-dark); }
+
+/* Compact capacity bar (e.g. sessions used in a duty shift). */
+.ui-capacity { display: block; width: 100%; max-width: 120px; height: 6px; margin: 6px 0 2px; border-radius: var(--radius-pill); background: #e5ece8; overflow: hidden; }
+.ui-capacity > i { display: block; height: 100%; border-radius: inherit; background: var(--compass-green); }

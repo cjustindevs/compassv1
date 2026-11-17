@@ -16,7 +16,14 @@
                 const row = element('tr', ''); row.dataset.helperId = helper.id;
                 const labels = ['Helper','Current status','Sessions in duty','Current assignment','Remaining'];
                 [helper.name,helper.status,`${helper.used} / ${helper.limit}`,`${helper.assignments ? 'Assigned / reserved' : 'None'} (${helper.assignments} / 1)`,helper.remaining].forEach((value, index) => { const cell = element('td', value); cell.dataset.label = labels[index]; row.append(cell); });
-                row.children[1].title = helper.reason || ''; body.append(row);
+                row.children[1].title = helper.reason || '';
+                const status = String(helper.status || ''), tone = status === 'Available' ? 'green' : (/^(In session|At capacity)/.test(status) ? 'amber' : 'neutral');
+                const badge = element('span', status); badge.className = 'ui-badge ui-badge--' + tone; row.children[1].replaceChildren(badge);
+                const limit = Number(helper.limit) || 0, used = Number(helper.used) || 0;
+                const bar = element('span', ''); bar.className = 'ui-capacity'; bar.setAttribute('role', 'img'); bar.setAttribute('aria-label', used + ' of ' + limit + ' sessions used');
+                const fill = document.createElement('i'); fill.style.width = (limit ? Math.min(100, Math.round(used / limit * 100)) : 0) + '%'; bar.append(fill);
+                row.children[2].prepend(bar);
+                body.append(row);
             }
             if (!data.helpers.length) { const row=element('tr',''),cell=element('td','No Helpers match these filters.'); cell.colSpan=5;row.append(cell);body.append(row); }
             root.querySelector('[data-workload-pages]').innerHTML = data.pagination;

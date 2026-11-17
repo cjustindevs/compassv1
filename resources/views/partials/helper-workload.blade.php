@@ -12,7 +12,7 @@
         <thead><tr><th>Helper</th><th>Current status</th><th>Sessions in duty</th><th>Current assignment</th><th>Remaining</th></tr></thead>
         <tbody data-workload-body>
         @forelse($workload as $row)
-            <tr data-helper-id="{{ $row['id'] }}"><td data-label="Helper">{{ $row['name'] }}</td><td data-label="Current status" title="{{ $row['reason'] }}">{{ $row['status'] }}</td><td data-label="Sessions in duty">{{ $row['used'] }} / {{ $row['limit'] }}</td><td data-label="Current assignment">{{ $row['assignments'] ? 'Assigned / reserved' : 'None' }} ({{ $row['assignments'] }} / 1)</td><td data-label="Remaining">{{ $row['remaining'] }}</td></tr>
+            <tr data-helper-id="{{ $row['id'] }}"><td data-label="Helper">{{ $row['name'] }}</td>@php($statusTone = $row['status'] === 'Available' ? 'green' : (str_starts_with($row['status'], 'In session') || str_starts_with($row['status'], 'At capacity') ? 'amber' : 'neutral'))<td data-label="Current status" title="{{ $row['reason'] }}"><span class="ui-badge ui-badge--{{ $statusTone }}">{{ $row['status'] }}</span></td><td data-label="Sessions in duty"><span class="ui-capacity" role="img" aria-label="{{ $row['used'] }} of {{ $row['limit'] }} sessions used"><i style="width:{{ $row['limit'] ? min(100, round($row['used'] / $row['limit'] * 100)) : 0 }}%"></i></span>{{ $row['used'] }} / {{ $row['limit'] }}</td><td data-label="Current assignment">{{ $row['assignments'] ? 'Assigned / reserved' : 'None' }} ({{ $row['assignments'] }} / 1)</td><td data-label="Remaining">{{ $row['remaining'] }}</td></tr>
         @empty<tr><td colspan="5">No Helpers match these filters.</td></tr>@endforelse
         </tbody>
     </x-ui.table>
