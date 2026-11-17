@@ -32,6 +32,21 @@ class UiComponentsTest extends TestCase
         $this->assertStringContainsString('ui-badge--neutral">Something Else<', $badge('something_else'));
     }
 
+    public function test_icon_button_has_a_name_a_tooltip_and_keeps_extra_attributes(): void
+    {
+        $link = Blade::render('<x-ui.icon-button icon="eye" label="View documentation" href="/x" />');
+        $this->assertStringContainsString('<a href="/x"', $link);
+        $this->assertStringContainsString('class="ui-icon-btn"', $link);
+        $this->assertStringContainsString('aria-label="View documentation"', $link);
+        $this->assertStringContainsString('data-tooltip="View documentation"', $link);
+        $this->assertStringContainsString('#eye', $link);
+
+        $submit = Blade::render('<x-ui.icon-button icon="archive" label="Archive" type="submit" data-confirm="Archive this?" />');
+        $this->assertStringContainsString('<button type="submit"', $submit);
+        $this->assertStringContainsString('data-confirm="Archive this?"', $submit);
+        $this->assertStringContainsString('#archive', $submit);
+    }
+
     public function test_sign_in_links_are_readable_and_not_marked_by_colour_alone(): void
     {
         $html = $this->get(route('login'))->assertOk()->getContent();

@@ -39,7 +39,7 @@
                     <td data-label="Description">@if($category->description){{ \Illuminate\Support\Str::limit($category->description, 100) }}@else<span class="ui-muted-dash" aria-label="No description">—</span>@endif</td>
                     <td data-label="Status"><x-ui.badge :tone="$category->is_active ? 'green' : 'neutral'">{{ $category->is_active ? 'Active' : 'Inactive' }}</x-ui.badge></td>
                     <td data-label="Edit" class="ui-actions concern-edit-cell">
-                        <details class="concern-edit"><summary class="btn-secondary">Edit category</summary>
+                        <details class="concern-edit"><summary class="ui-icon-btn" aria-label="Edit category" data-tooltip="Edit category"><x-ui-icon name="edit" /></summary>
                             <form method="POST" action="{{ route('concerns.update',$category) }}">@csrf @method('PATCH')
                                 <div class="concern-fields">
                                     <x-ui.field label="Category name" for="concernName{{ $category->id }}"><input id="concernName{{ $category->id }}" name="concern_name" required maxlength="100" value="{{ $category->concern_name }}"></x-ui.field>

@@ -121,8 +121,8 @@
                             @endif
                         </div>
 
-                        <div class="flex items-center gap-2 mt-1">
-                            <button class="btn-secondary edit-resource" type="button"
+                        <div class="ui-icon-actions mt-1">
+                            <x-ui.icon-button icon="edit" label="Edit resource" class="edit-resource"
                                     data-id="{{ $resource->id }}"
                                     data-title="{{ $resource->title }}"
                                     data-description="{{ $resource->description }}"
@@ -133,9 +133,8 @@
                                     data-tags="{{ is_array($resource->tags) ? implode(', ', $resource->tags) : '' }}"
                                     data-featured="{{ $resource->is_featured ? '1' : '0' }}"
                                     data-published="{{ $resource->is_published ? '1' : '0' }}"
-                                    data-visibility="{{ $resource->visibility }}" data-review="{{ $resource->review_date }}" data-content="{{ $resource->content }}">
-                                <x-ui-icon name="edit"  /> Edit
-                            </button>
+                                    data-visibility="{{ $resource->visibility }}" data-review="{{ $resource->review_date }}" data-content="{{ $resource->content }}" />
+                            @unless($resource->archived_at)
                             <form class="form-maximized" method="POST" action="{{ route('adviser.resources.destroy', ['id' => $resource->id]) }}"
                                   data-confirm="Archive resource?"
                                   data-confirm-message="This resource will be hidden; version history will remain available."
@@ -143,8 +142,9 @@
                                   data-confirm-class="bg-red-600 hover:bg-red-700 focus:ring-red-500">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn-secondary" style="color:#EF4444;border-color:#FECACA;"><x-ui-icon name="trash"  /> Archive</button>
+                                <x-ui.icon-button icon="archive" label="Archive resource" type="submit" tone="danger" />
                             </form>
+                            @endunless
                         </div>
                         <details class="resource-history"><summary>Update history</summary><x-supervision-history :record="$resource" /></details>
                     </div>

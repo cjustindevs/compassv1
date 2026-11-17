@@ -478,6 +478,32 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertStringNotContainsString('minmax(260px, 1fr)', $html);
     }
 
+    public function test_common_actions_are_icon_buttons_with_tooltips(): void
+    {
+        $adviser = $this->adviser();
+        \App\Models\ConcernCategory::create(['concern_name' => 'Sleep', 'is_active' => true]);
+        $live = \App\Models\SelfHelpResource::create(['title' => 'Read calmly', 'description' => 'A guide', 'category' => 'article', 'content' => 'Read slowly.', 'is_published' => true]);
+        \App\Models\SelfHelpResource::create(['title' => 'Old guide', 'description' => 'Archived', 'category' => 'article', 'content' => 'Old.', 'is_published' => false])->forceFill(['archived_at' => now()])->save();
+        $this->actingAs($adviser->user);
+
+        $concerns = $this->get(route('concerns.manage'))->assertOk()->getContent();
+        $this->assertStringContainsString('<summary class="ui-icon-btn" aria-label="Edit category" data-tooltip="Edit category">', $concerns);
+
+        $resources = $this->get(route('adviser.resources'))->assertOk()->getContent();
+        $this->assertStringContainsString('class="ui-icon-btn edit-resource"', $resources);
+        $this->assertStringContainsString('aria-label="Edit resource"', $resources);
+        $this->assertStringContainsString('aria-label="Archive resource"', $resources);
+        $this->assertStringContainsString('#archive', $resources);
+        $this->assertStringNotContainsString('<x-ui-icon name="trash"', $resources);
+        $this->assertSame(1, substr_count($resources, 'aria-label="Archive resource"'), 'An archived resource has no Archive button.');
+        $this->assertStringContainsString(route('adviser.resources.destroy', ['id' => $live->id]), $resources);
+
+        $report = $this->documentedReport($adviser, 'evaluated');
+        $reports = $this->get(route('adviser.reports'))->assertOk()->getContent();
+        $this->assertStringContainsString('aria-label="View documentation"', $reports);
+        $this->assertStringContainsString(route('adviser.session.show', $report->session_id), $reports);
+    }
+
     public function test_concern_without_description_shows_a_muted_dash(): void
     {
         $adviser = $this->adviser();
