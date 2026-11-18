@@ -5,3 +5,13 @@
 .duty-dialog .workflow-dialog__body form{display:grid;gap:14px}
 .duty-row-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .duty-row-actions form{display:inline-flex;align-items:center;gap:8px}
+
+/* Schedule type and weekday options as clear option buttons. */
+.duty-choice{gap:10px}
+.duty-choice label,.duty-weekdays label{gap:8px;padding:10px 14px;margin:6px 0 12px;font-size:14px;font-weight:600;color:#163b2d;background:#fff;cursor:pointer;transition:border-color .15s ease,background-color .15s ease}
+.duty-choice label{min-width:150px}
+.duty-choice label:hover,.duty-weekdays label:hover{border-color:#a7d8bc}
+.duty-choice label:has(:checked),.duty-weekdays label:has(:checked){background:#eaf8f0;border-color:#087341}
+.duty-choice label:has(:focus-visible),.duty-weekdays label:has(:focus-visible){outline:2px solid #087341;outline-offset:2px}
+.duty-weekdays label{padding:8px 12px}
+.duty-weekdays{gap:8px;margin:6px 0 10px}.duty-weekdays label{margin:0}

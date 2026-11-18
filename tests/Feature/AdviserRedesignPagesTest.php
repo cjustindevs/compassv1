@@ -550,6 +550,20 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertStringContainsString('tab=cases', $html);
     }
 
+    public function test_schedule_dialog_has_no_testing_notice_and_dialog_radios_keep_their_size(): void
+    {
+        config(['app.enforce_duty_hours' => false]);
+        $adviser = $this->adviser();
+        $this->helperFor($adviser);
+        $html = $this->actingAs($adviser->user)->get(route('adviser.schedule'))->assertOk()->getContent();
+        $this->assertStringNotContainsString('Testing mode', $html);
+        $this->assertStringNotContainsString('duty-testing', $html);
+        $this->assertMatchesRegularExpression('/<div class="duty-choice"><label><input type="radio" name="schedule_type" value="single"/', $html);
+        $this->assertStringContainsString('.workflow-dialog :is(input[type="radio"], input[type="checkbox"]){-webkit-appearance:auto;appearance:auto;flex:none;width:16px;height:16px', file_get_contents(public_path('css/workflow-dialogs.css')));
+        $this->assertStringNotContainsString('Testing:', file_get_contents(resource_path('views/helper/partials/duty-summary.blade.php')));
+        $this->assertStringNotContainsString('Testing:', file_get_contents(public_path('js/helper-duty.js')));
+    }
+
     public function test_calendar_resources_schedule_keep_hooks(): void
     {
         $adviser = $this->adviser();

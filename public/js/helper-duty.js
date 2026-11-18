@@ -13,7 +13,7 @@
             const {duties}=await response.json();if(!duties)return;
             render(root.querySelector('[data-duty-today]'),duties.today,'No duty scheduled today. Contact your Moderator.',true);
             render(root.querySelector('[data-duty-upcoming]'),duties.upcoming,'No upcoming duty scheduled.',false);
-            root.querySelector('[data-duty-note]').textContent=duties.testing?'Testing: today’s duty applies at any clock time. Passed readiness is still required.':'Complete readiness before your shift. Availability depends on your duty, readiness, and current assignment.';
+            root.querySelector('[data-duty-note]').textContent='Complete readiness before your shift. Availability depends on your duty, readiness, and current assignment.';
         }catch{}finally{pending=false;}
     }
     refresh();setInterval(refresh,15000);document.addEventListener('visibilitychange',refresh);window.addEventListener('online',refresh);
