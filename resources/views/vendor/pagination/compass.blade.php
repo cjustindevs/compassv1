@@ -16,7 +16,7 @@
         <ul class="ui-pagination-pills">
             <li>
                 @if ($paginator->onFirstPage())
-                    <span class="ui-page ui-page--disabled" aria-disabled="true" aria-label="Previous page"><x-ui-icon name="chevron-left" /></span>
+                    <span class="ui-page ui-page--disabled" aria-disabled="true"><x-ui-icon name="chevron-left" /><span class="sr-only">Previous page</span></span>
                 @else
                     <a class="ui-page" href="{{ $paginator->previousPageUrl() }}" rel="prev" aria-label="Previous page"><x-ui-icon name="chevron-left" /></a>
                 @endif
@@ -41,7 +41,7 @@
                 @if ($paginator->hasMorePages())
                     <a class="ui-page" href="{{ $paginator->nextPageUrl() }}" rel="next" aria-label="Next page"><x-ui-icon name="chevron-right" /></a>
                 @else
-                    <span class="ui-page ui-page--disabled" aria-disabled="true" aria-label="Next page"><x-ui-icon name="chevron-right" /></span>
+                    <span class="ui-page ui-page--disabled" aria-disabled="true"><x-ui-icon name="chevron-right" /><span class="sr-only">Next page</span></span>
                 @endif
             </li>
         </ul>

@@ -74,7 +74,7 @@
 </tr>
 @empty<tr>
 <td colspan="3" class="empty-state">No duty dates have been assigned this month. Contact your Adviser or Moderator for scheduling.
-@if($adviser)<a class="link" href="mailto:{{ $adviser->email ?? $adviser->user?->email }}">Contact {{ $adviser->full_name }}</a>@endif</td>
+@if($adviser)<a class="link hf-inline-link" href="mailto:{{ $adviser->email ?? $adviser->user?->email }}">Contact {{ $adviser->full_name }}</a>@endif</td>
 </tr>
 @endforelse</tbody>
 </table>

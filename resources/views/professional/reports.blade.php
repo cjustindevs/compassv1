@@ -225,10 +225,10 @@
             @if($errors->any())<div class="analytics-feedback" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
             <p class="analytics-period-caption">{{ $dates['from'] }} – {{ $dates['to'] }} · Philippine Time. The status filter applies to all measures and records. Each measure uses its named event date; the table uses your selected date basis.</p>
             <dl class="analytics-measures">
-                <div><dt>Total Referrals Received</dt><dd>{{ number_format($analytics['received']['total']) }}</dd><small>Notification date; legacy creation fallback</small></div>
-                <div><dt>Completed Referrals</dt><dd>{{ number_format($analytics['completed']['total']) }}</dd><small>Adviser confirmation date; may have been received earlier</small></div>
-                <div><dt>Closed Referrals</dt><dd>{{ number_format($analytics['closed']) }}</dd><small>Closed status and recorded closure date</small></div>
-                <div><dt>Average Acceptance Time</dt><dd>{{ $analytics['response_hours'] === null ? 'No data' : ($analytics['response_hours'] < 1 ? round($analytics['response_hours'] * 60, 1).' min' : round($analytics['response_hours'], 1).' h') }}</dd><small>{{ $analytics['response_samples'] }} valid acceptances in period</small></div>
+                <div><dt>Total Referrals Received</dt><dd>{{ number_format($analytics['received']['total']) }}<small>Notification date; legacy creation fallback</small></dd></div>
+                <div><dt>Completed Referrals</dt><dd>{{ number_format($analytics['completed']['total']) }}<small>Adviser confirmation date; may have been received earlier</small></dd></div>
+                <div><dt>Closed Referrals</dt><dd>{{ number_format($analytics['closed']) }}<small>Closed status and recorded closure date</small></dd></div>
+                <div><dt>Average Acceptance Time</dt><dd>{{ $analytics['response_hours'] === null ? 'No data' : ($analytics['response_hours'] < 1 ? round($analytics['response_hours'] * 60, 1).' min' : round($analytics['response_hours'], 1).' h') }}<small>{{ $analytics['response_samples'] }} valid acceptances in period</small></dd></div>
             </dl>
             <details class="analytics-definitions"><summary>Calculations and data coverage</summary>
                 <p>Received uses professional notification dates. {{ $analytics['legacy_received'] }} records in this period use legacy creation dates because no notification timestamp exists. Completion uses the recorded Adviser confirmation time. {{ $analytics['legacy_completions_without_confirmation'] }} legacy finished records have no confirmation evidence and are excluded from confirmed totals. Closed-only records remain separate.</p>
@@ -237,7 +237,7 @@
                 <p>Charts and Reports use the same sources. CSV includes all matching table records and the same filters. Printing includes only the current page; use CSV for the full filtered dataset.</p>
             </details>
             {{-- QA: Reports are tables; the same charts are on the Dashboard. --}}
-            <p class="analytics-period-caption">Charts for referrals received, acceptance, status and outcomes are on your <a class="link" href="{{ route('professional.dashboard') }}">Dashboard</a>.</p>
+            <p class="analytics-period-caption">Charts for referrals received, acceptance, status and outcomes are on your <a class="link hf-inline-link" href="{{ route('professional.dashboard') }}">Dashboard</a>.</p>
             <div class="card analytics-report-table">
                 <div class="card-header"><h3>Referral records</h3><span class="text-sm text-gray-500">{{ number_format($records->total()) }} matching records</span></div>
                 <p class="analytics-period-caption">Date basis: {{ ucfirst($filters['activity']) }} · Status: {{ isset($filters['status']) && $filters['status'] ? Str::headline($filters['status']) : 'All authorized statuses' }}</p>

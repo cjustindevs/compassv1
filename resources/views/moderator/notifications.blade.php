@@ -64,7 +64,7 @@
                 @foreach($updates as $notification)
                 <div class="notif-item ui-notification-row {{ $notification->notification_type === 'emergency' ? 'moderator-emergency-notification' : '' }} {{ $notification->status === 'unread' ? 'unread' : '' }}">
                     <div class="content ui-notification-content">
-                        <p class="title">@if($notification->status === 'unread')<span class="dot" aria-label="Unread"></span>@endif{{ \Illuminate\Support\Str::limit($notification->title,80) }}</p>
+                        <p class="title">@if($notification->status === 'unread')<span class="dot" role="img" aria-label="Unread"></span>@endif{{ \Illuminate\Support\Str::limit($notification->title,80) }}</p>
                         <p class="msg">{{ \Illuminate\Support\Str::limit(preg_split('/(?<=[.!?])\s+/', strip_tags($notification->message),2)[0],180) }}</p>
                         <p class="time">{{ $notification->created_at->copy()->timezone('Asia/Manila')->format('M j, Y g:i A') }} PHT</p>
                     </div>

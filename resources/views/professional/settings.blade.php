@@ -187,7 +187,7 @@
                         <div class="text-xs text-gray-400">Advisers can only assign referrals to available professionals</div>
                     </div>
                     <label class="toggle-switch">
-                        <input type="checkbox" name="is_available" value="1"
+                        <input type="checkbox" name="is_available" value="1" aria-label="Accept new referrals"
                                {{ optional(auth()->user()->psychologyProfessional)->is_available ? 'checked' : '' }}>
                         <span class="toggle-slider"></span>
                     </label>
@@ -210,7 +210,7 @@
                         <div class="text-xs text-gray-400">Email when a new referral is assigned to you</div>
                     </div>
                     <label class="toggle-switch">
-                        <input type="checkbox" checked disabled>
+                        <input type="checkbox" checked disabled aria-label="New referral alerts">
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
@@ -220,7 +220,7 @@
                         <div class="text-xs text-gray-400">Email when an adviser responds to your case updates</div>
                     </div>
                     <label class="toggle-switch">
-                        <input type="checkbox" checked disabled>
+                        <input type="checkbox" checked disabled aria-label="Case updates">
                         <span class="toggle-slider"></span>
                     </label>
                 </div>

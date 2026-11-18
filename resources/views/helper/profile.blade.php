@@ -79,18 +79,18 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 hf-form-grid">
                         <div class="form-group">
-                            <label class="form-label">First name</label>
-                            <input type="text" name="first_name" class="form-control" value="{{ old('first_name', $helper->first_name) }}" required>
+                            <label for="field-first-name" class="form-label">First name</label>
+                            <input id="field-first-name" type="text" name="first_name" class="form-control" value="{{ old('first_name', $helper->first_name) }}" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Last name</label>
-                            <input type="text" name="last_name" class="form-control" value="{{ old('last_name', $helper->last_name) }}" required>
+                            <label for="field-last-name" class="form-label">Last name</label>
+                            <input id="field-last-name" type="text" name="last_name" class="form-control" value="{{ old('last_name', $helper->last_name) }}" required>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Bio</label>
-                        <textarea name="bio" class="form-control" placeholder="Short intro about yourself">{{ old('bio', $helper->bio ?? '') }}</textarea>
+                        <label for="field-bio" class="form-label">Bio</label>
+                        <textarea id="field-bio" name="bio" class="form-control" placeholder="Short intro about yourself">{{ old('bio', $helper->bio ?? '') }}</textarea>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 hf-form-grid">
@@ -99,14 +99,14 @@
                             <input type="text" id="profile-phone" class="form-control" readonly value="{{ $helper->phone ?? 'Not recorded' }}">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Preferred language</label>
-                            <input type="text" name="preferred_language" class="form-control" value="{{ old('preferred_language', $helper->preferred_language ?? 'English') }}">
+                            <label for="field-preferred-language" class="form-label">Preferred language</label>
+                            <input id="field-preferred-language" type="text" name="preferred_language" class="form-control" value="{{ old('preferred_language', $helper->preferred_language ?? 'English') }}">
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Declared interests (subject to adviser verification)</label>
-                        <input type="text" name="specializations" class="form-control" value="{{ old('specializations', $helper->declared_specializations ?? '') }}" placeholder="e.g. Anxiety, Family Stress, Academics">
+                        <label for="field-specializations" class="form-label">Declared interests (subject to adviser verification)</label>
+                        <input id="field-specializations" type="text" name="specializations" class="form-control" value="{{ old('specializations', $helper->declared_specializations ?? '') }}" placeholder="e.g. Anxiety, Family Stress, Academics">
                     </div>
 
                     <hr class="divider">

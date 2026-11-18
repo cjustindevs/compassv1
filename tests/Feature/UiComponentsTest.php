@@ -179,13 +179,30 @@ class UiComponentsTest extends TestCase
         $this->assertStringContainsString('ui-pagination', $html);
     }
 
+    public function test_accessibility_fixes_stay_in_place(): void
+    {
+        $assets = file_get_contents(resource_path('views/partials/ui-assets.blade.php'));
+        $this->assertGreaterThan(strpos($assets, 'css/compass-layout.css'), strpos($assets, 'css/accessibility-contrast.css'), 'Contrast fixes load last.');
+        $css = file_get_contents(public_path('css/accessibility-contrast.css'));
+        foreach (['.sr-only', '--green-600: #087341', '--compass-danger: #b91c1c', '.text-gray-400', 'compass-badge-ring', 'prefers-reduced-motion'] as $needle) $this->assertStringContainsString($needle, $css);
+        $this->assertDoesNotMatchRegularExpression('/<span aria-disabled="true" aria-label=/', file_get_contents(resource_path('views/vendor/pagination/tailwind.blade.php')));
+        foreach (['professional/profile', 'helper/profile', 'helper/settings', 'moderator/settings'] as $view) {
+            $html = file_get_contents(resource_path("views/$view.blade.php"));
+            $this->assertDoesNotMatchRegularExpression('/<label(?![^>]*\bfor=)[^>]*>[^<]*<\/label>\s*<(input|select|textarea)\b(?![^>]*\bid=)(?![^>]*type="hidden")[^>]*\bname=/', $html, "$view has an unlinked label");
+        }
+        $this->assertStringContainsString('aria-label="Accept new referrals"', file_get_contents(resource_path('views/professional/settings.blade.php')));
+        $this->assertStringContainsString('<span class="dot" role="img" aria-label="Unread">', file_get_contents(resource_path('views/moderator/notifications.blade.php')));
+    }
+
     public function test_pagination_last_page_disables_next(): void
     {
         $paginator = new \Illuminate\Pagination\LengthAwarePaginator(range(11, 19), 19, 10, 2, ['path' => '/helpers']);
         $html = $paginator->links('vendor.pagination.compass', ['noun' => 'helpers'])->toHtml();
 
         $this->assertStringContainsString('Showing 11–19 of 19 helpers', $html);
-        $this->assertMatchesRegularExpression('/aria-disabled="true"[^>]*aria-label="Next page"/', $html);
+        // The label is screen-reader text inside the disabled span (aria-label is not allowed on a plain span).
+        $this->assertMatchesRegularExpression('/<span class="ui-page ui-page--disabled" aria-disabled="true">[\s\S]*?<span class="sr-only">Next page<\/span><\/span>/', $html);
+        $this->assertStringNotContainsString('aria-disabled="true" aria-label', $html);
         $this->assertStringNotContainsString('rel="next"', $html);
         $this->assertStringContainsString('rel="prev"', $html);
     }

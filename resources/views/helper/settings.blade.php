@@ -36,8 +36,8 @@
                         <span><span class="font-semibold text-gray-800" style="font-size:14px;">Session reminders</span><span class="block text-xs text-gray-500">Remind me about sessions</span></span>
                     </label>
                     <div class="border border-gray-200 rounded-xl p-4">
-                        <label class="form-label" style="margin-bottom:4px;">Preferred communication</label>
-                        <select name="preferred_communication_mode" class="form-control">
+                        <label for="field-preferred-communication-mode" class="form-label" style="margin-bottom:4px;">Preferred communication</label>
+                        <select id="field-preferred-communication-mode" name="preferred_communication_mode" class="form-control">
                             <option value="chat" {{ $preferences['preferred_communication_mode'] === 'chat' ? 'selected' : '' }}>Chat</option>
                             <option value="voice" {{ $preferences['preferred_communication_mode'] === 'voice' ? 'selected' : '' }}>Voice</option>
                             <option value="both" {{ $preferences['preferred_communication_mode'] === 'both' ? 'selected' : '' }}>Both</option>
@@ -49,8 +49,8 @@
             <hr class="divider">
 
             <div class="form-group">
-                <label class="form-label">Language</label>
-                <input type="text" name="preferred_language" class="form-control" value="{{ $preferences['preferred_language'] ?? 'English' }}" style="max-width:280px;">
+                <label for="field-preferred-language" class="form-label">Language</label>
+                <input id="field-preferred-language" type="text" name="preferred_language" class="form-control" value="{{ $preferences['preferred_language'] ?? 'English' }}" style="max-width:280px;">
             </div>
 
             <hr class="divider">

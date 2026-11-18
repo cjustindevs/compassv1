@@ -84,26 +84,26 @@
                 @method('PUT')
                 <div class="settings-grid two">
                     <div>
-                        <label class="form-label">Display Name</label>
-                        <input type="text" name="name" class="form-input {{ $errors->has('name') ? 'error' : '' }}" value="{{ old('name', $user->name) }}" required>
+                        <label for="field-name" class="form-label">Display Name</label>
+                        <input id="field-name" type="text" name="name" class="form-input {{ $errors->has('name') ? 'error' : '' }}" value="{{ old('name', $user->name) }}" required>
                         @error('name') <p class="error-text">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="form-label">Email</label>
-                        <input type="email" name="email" class="form-input {{ $errors->has('email') ? 'error' : '' }}" value="{{ old('email', $user->email) }}" required>
+                        <label for="field-email" class="form-label">Email</label>
+                        <input id="field-email" type="email" name="email" class="form-input {{ $errors->has('email') ? 'error' : '' }}" value="{{ old('email', $user->email) }}" required>
                         @error('email') <p class="error-text">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="form-label">First Name</label>
-                        <input type="text" name="first_name" class="form-input" value="{{ old('first_name', $moderator->first_name) }}" required>
+                        <label for="field-first-name" class="form-label">First Name</label>
+                        <input id="field-first-name" type="text" name="first_name" class="form-input" value="{{ old('first_name', $moderator->first_name) }}" required>
                     </div>
                     <div>
-                        <label class="form-label">Last Name</label>
-                        <input type="text" name="last_name" class="form-input" value="{{ old('last_name', $moderator->last_name) }}" required>
+                        <label for="field-last-name" class="form-label">Last Name</label>
+                        <input id="field-last-name" type="text" name="last_name" class="form-input" value="{{ old('last_name', $moderator->last_name) }}" required>
                     </div>
                     <div>
-                        <label class="form-label">Assigned Shift</label>
-                        <input type="text" name="assigned_shift" class="form-input" value="{{ old('assigned_shift', $moderator->assigned_shift) }}" placeholder="e.g. Morning Shift">
+                        <label for="field-assigned-shift" class="form-label">Assigned Shift</label>
+                        <input id="field-assigned-shift" type="text" name="assigned_shift" class="form-input" value="{{ old('assigned_shift', $moderator->assigned_shift) }}" placeholder="e.g. Morning Shift">
                     </div>
                 </div>
                 <div class="ui-save-bar{{ $errors->any() ? ' is-visible' : '' }}" data-save-bar><p class="ui-save-bar-text">You have unsaved changes.</p><button type="submit" class="btn-primary"><x-ui-icon name="save" class="mr-1" /> Save Profile</button></div>
@@ -116,18 +116,18 @@
                 @method('PUT')
                 <div class="settings-grid">
                     <div>
-                        <label class="form-label">Current Password</label>
-                        <input type="password" name="current_password" class="form-input {{ $errors->has('current_password') ? 'error' : '' }}" required>
+                        <label for="field-current-password" class="form-label">Current Password</label>
+                        <input id="field-current-password" type="password" name="current_password" class="form-input {{ $errors->has('current_password') ? 'error' : '' }}" required>
                         @error('current_password') <p class="error-text">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="form-label">New Password</label>
-                        <input type="password" name="new_password" class="form-input {{ $errors->has('new_password') ? 'error' : '' }}" required>
+                        <label for="field-new-password" class="form-label">New Password</label>
+                        <input id="field-new-password" type="password" name="new_password" class="form-input {{ $errors->has('new_password') ? 'error' : '' }}" required>
                         @error('new_password') <p class="error-text">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="form-label">Confirm New Password</label>
-                        <input type="password" name="new_password_confirmation" class="form-input" required>
+                        <label for="field-new-password-confirmation" class="form-label">Confirm New Password</label>
+                        <input id="field-new-password-confirmation" type="password" name="new_password_confirmation" class="form-input" required>
                     </div>
                 </div>
                 <div class="ui-save-bar{{ $errors->any() ? ' is-visible' : '' }}" data-save-bar><p class="ui-save-bar-text">You have unsaved changes.</p><button type="submit" class="btn-primary"><x-ui-icon name="key" class="mr-1" /> Update Password</button></div>

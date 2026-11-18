@@ -257,34 +257,34 @@
                     @method('PUT')
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Full Name <span class="text-red-500">*</span></label>
-                        <input type="text" name="name" value="{{ old('name', $user->name) }}"
+                        <label for="field-name" class="block text-sm font-medium text-gray-700 mb-2">Full Name <span class="text-red-500">*</span></label>
+                        <input id="field-name" type="text" name="name" value="{{ old('name', $user->name) }}"
                                class="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" required>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Email <span class="text-red-500">*</span></label>
-                        <input type="email" name="email" value="{{ old('email', $user->email) }}"
+                        <label for="field-email" class="block text-sm font-medium text-gray-700 mb-2">Email <span class="text-red-500">*</span></label>
+                        <input id="field-email" type="email" name="email" value="{{ old('email', $user->email) }}"
                                class="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none" required>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
-                        <input type="text" name="specialization" value="{{ old('specialization', $professional->specialization) }}"
+                        <label for="field-specialization" class="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
+                        <input id="field-specialization" type="text" name="specialization" value="{{ old('specialization', $professional->specialization) }}"
                                class="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none"
                                placeholder="e.g. Clinical Psychology">
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">License Number</label>
-                        <input type="text" name="license_number" value="{{ old('license_number', $professional->license_number) }}"
+                        <label for="field-license-number" class="block text-sm font-medium text-gray-700 mb-2">License Number</label>
+                        <input id="field-license-number" type="text" name="license_number" value="{{ old('license_number', $professional->license_number) }}"
                                class="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none"
                                placeholder="e.g. PSY-2024-001">
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                        <input type="text" name="phone" value="{{ old('phone', $professional->phone) }}"
+                        <label for="field-phone" class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                        <input id="field-phone" type="text" name="phone" value="{{ old('phone', $professional->phone) }}"
                                class="w-full p-3 border border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none"
                                placeholder="e.g. +63 912 345 6789">
                     </div>
@@ -313,7 +313,7 @@
                                 <div class="text-xs text-gray-400">Turn off while you are at full capacity</div>
                             </div>
                             <label class="toggle-switch">
-                                <input type="checkbox" name="is_available" value="1" id="availabilityToggle"
+                                <input type="checkbox" name="is_available" value="1" id="availabilityToggle" aria-label="Accept new referrals"
                                        {{ $professional->is_available ? 'checked' : '' }}>
                                 <span class="toggle-slider"></span>
                             </label>
