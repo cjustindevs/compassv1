@@ -22,6 +22,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         \Illuminate\Validation\Rules\Password::defaults(fn () => \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->numbers()->symbols());
+        // One pagination look everywhere (the framework default switches to dark colours on devices in dark mode).
+        \Illuminate\Pagination\Paginator::defaultView('vendor.pagination.compass');
         $this->registerViewComposers();
         // The per-request sidebar memo must not outlive a change to the data it summarises.
         foreach ([\App\Models\Helper::class, \App\Models\Session::class] as $model) {

@@ -70,6 +70,42 @@ function showToast(message, type = 'info', duration = 3500) {
 window.showToast = showToast;
 
 /* ── Confirmation modal ────────────────────────────────────── */
+// Tone (danger | primary | warning) and icon for a confirmation, from what the button does.
+// data-confirm-tone / data-confirm-icon-name on the trigger override the guess.
+function confirmPresentation(options = {}) {
+    const text = String(options.confirmText || '').toLowerCase();
+    const cls = String(options.confirmClass || '');
+    const icons = [
+        [/log ?out/, 'logout'], [/^end\b|end session/, 'stop-circle'], [/delete|remove/, 'trash'],
+        [/archive/, 'archive'], [/decline|reject|deactivate|cancel/, 'ban'], [/restore|reopen/, 'refresh'],
+    ];
+    const positive = /\b(agree|approve|accept|assign|record|save|submit|confirm decision|restore|reopen|activate|continue)\b/;
+    let tone = ['danger', 'primary', 'warning'].includes(options.tone) ? options.tone : null;
+    if (!tone) {
+        if (/green|emerald/.test(cls) || (positive.test(text) && !/red/.test(cls) && !/deactivate/.test(text))) tone = 'primary';
+        else if (/yellow|amber/.test(cls)) tone = 'warning';
+        else tone = 'danger';
+    }
+    const matched = icons.find(([pattern]) => pattern.test(text));
+    const fallback = { danger: 'warning', primary: 'check-circle', warning: 'alert-circle' }[tone];
+    return { tone, icon: options.iconName || (matched ? matched[1] : fallback) };
+}
+
+let spriteText = null;
+async function inlineSpriteIcon(name) {
+    try {
+        if (spriteText === null) {
+            const url = document.querySelector('meta[name="compass-icon-sprite"]')?.content || '/images/compass-icons.svg';
+            spriteText = await (await fetch(url, { credentials: 'same-origin' })).text();
+        }
+        const symbol = new DOMParser().parseFromString(spriteText, 'image/svg+xml').getElementById(name);
+        if (!symbol) return null;
+        return `<svg class="compass-icon" width="24" height="24" viewBox="${symbol.getAttribute('viewBox') || '0 0 24 24'}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${symbol.innerHTML}</svg>`;
+    } catch {
+        return null;
+    }
+}
+
 function confirmAction(options = {}) {
     return new Promise((resolve) => {
         const modal    = document.getElementById('confirmationModal');
@@ -85,20 +121,23 @@ function confirmAction(options = {}) {
             return;
         }
 
+        const { tone, icon } = confirmPresentation(options);
+        const box = modal.querySelector('.modal-box');
+        if (box) box.dataset.tone = tone;
         titleEl.textContent  = options.title || 'Are you sure?';
         msgEl.textContent    = options.message || 'This action cannot be undone.';
-        if (iconEl) iconEl.hidden = true;
+        if (iconEl) { iconEl.innerHTML = ''; iconEl.hidden = false; }
         confirmBtn.textContent = options.confirmText || 'Confirm';
-        confirmBtn.className =
-            'btn-modal-confirm px-6 py-2.5 text-white rounded-lg font-medium transition-colors ' +
-            'focus:outline-none focus:ring-2 focus:ring-offset-2 ' +
-            (options.confirmClass || 'bg-red-600 hover:bg-red-700 focus:ring-red-500');
+        confirmBtn.className = 'btn-modal-confirm';
+        const returnFocus = document.activeElement;
 
         let settled = false;
         const close = (result) => {
             if (settled) return;
             settled = true;
             modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            if (returnFocus && typeof returnFocus.focus === 'function' && !result) returnFocus.focus();
             document.removeEventListener('keydown', onKey);
             confirmBtn.removeEventListener('click', onConfirm);
             cancelBtn.removeEventListener('click', onCancel);
@@ -108,7 +147,14 @@ function confirmAction(options = {}) {
         const onConfirm = () => close(true);
         const onCancel  = () => close(false);
         const onOverlay = (e) => { if (e.target === modal) close(false); };
-        const onKey     = (e) => { if (e.key === 'Escape') close(false); };
+        const onKey     = (e) => {
+            if (e.key === 'Escape') close(false);
+            // Keep Tab inside the two buttons while the dialog is open.
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                (document.activeElement === confirmBtn ? cancelBtn : confirmBtn).focus();
+            }
+        };
 
         confirmBtn.addEventListener('click', onConfirm);
         cancelBtn.addEventListener('click', onCancel);
@@ -116,6 +162,15 @@ function confirmAction(options = {}) {
         document.addEventListener('keydown', onKey);
 
         modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+        // Chrome sometimes leaves an external sprite <use> blank in a dialog that has just appeared,
+        // so the icon's shapes are copied in directly (the sprite is already cached by the page).
+        if (iconEl) {
+            iconEl.innerHTML = uiIcon(icon);
+            inlineSpriteIcon(icon).then((svg) => { if (svg && modal.classList.contains('active')) iconEl.innerHTML = svg; });
+        }
+        // Risky actions start on the safe choice; positive ones on the action.
+        (tone === 'danger' ? cancelBtn : confirmBtn).focus();
     });
 }
 
@@ -141,7 +196,8 @@ function initConfirmDelegation() {
             message: form.dataset.confirmMessage || 'This action cannot be undone.',
             confirmText: form.dataset.confirmText || 'Confirm',
             confirmClass: form.dataset.confirmClass || 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
-            icon:     form.dataset.confirmIcon || '' + uiIcon('warning', 'text-yellow-500 text-5xl') + '',
+            tone:     form.dataset.confirmTone,
+            iconName: form.dataset.confirmIconName,
         });
 
         delete form.dataset.confirmPending;
@@ -165,7 +221,8 @@ function initConfirmDelegation() {
             message: trigger.dataset.confirmMessage || 'This action cannot be undone.',
             confirmText: trigger.dataset.confirmText || 'Confirm',
             confirmClass: trigger.dataset.confirmClass || 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
-            icon:     trigger.dataset.confirmIcon || '' + uiIcon('warning', 'text-yellow-500 text-5xl') + '',
+            tone:     trigger.dataset.confirmTone,
+            iconName: trigger.dataset.confirmIconName,
         });
 
         if (!ok) return;
@@ -231,6 +288,11 @@ function initLoadingButtons() {
 /* ── Initialise once the DOM is ready ──────────────────────── */
 document.addEventListener('DOMContentLoaded', function () {
     initConfirmDelegation();
+    // Warm the icon sprite so the first confirmation shows its icon at once.
+    if (document.getElementById('confirmationModal')) {
+        const warm = () => inlineSpriteIcon('warning');
+        'requestIdleCallback' in window ? window.requestIdleCallback(warm, { timeout: 3000 }) : setTimeout(warm, 1500);
+    }
     initLoadingButtons();
     convertFlashAlerts();
 });

@@ -55,7 +55,7 @@
 </tbody>
 </table>
 </div>
-<div class="hf-record-count">Showing {{ $adviserFeedback->firstItem() ?? 0 }}-{{ $adviserFeedback->lastItem() ?? 0 }} of {{ $adviserFeedback->total() }} records</div>{{ $adviserFeedback->links() }}</section>
+{{ $adviserFeedback->links('vendor.pagination.compass', ['noun' => 'records']) }}</section>
 <section class="card">
 <header class="card-header">
 <h3>Help-Seeker Feedback</h3>
@@ -97,6 +97,6 @@
 </tbody>
 </table>
 </div>
-<div class="hf-record-count">Showing {{ $seekerFeedback->firstItem() ?? 0 }}-{{ $seekerFeedback->lastItem() ?? 0 }} of {{ $seekerFeedback->total() }} records</div>{{ $seekerFeedback->links() }}</section>
+{{ $seekerFeedback->links('vendor.pagination.compass', ['noun' => 'records']) }}</section>
 </div>
 @endsection

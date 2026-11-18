@@ -83,6 +83,6 @@
 @endforelse</tbody>
 </table>
 </div>
-<div class="hf-record-count">Showing {{ $history->firstItem() ?? 0 }}-{{ $history->lastItem() ?? 0 }} of {{ $history->total() }} evaluations</div>{{ $history->links() }}</section>
+{{ $history->links('vendor.pagination.compass', ['noun' => 'evaluations']) }}</section>
 </div>
 @endsection

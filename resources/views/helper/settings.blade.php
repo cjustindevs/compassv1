@@ -23,19 +23,19 @@
             <div class="form-group">
                 <label class="form-label">Notifications</label>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label class="checkbox-group border border-gray-200 rounded-xl p-4">
+                    <label class="checkbox-group checkbox-card">
                         <input type="checkbox" name="email_notifications" value="1" {{ $preferences['email_notifications'] ? 'checked' : '' }}>
                         <span><span class="font-semibold text-gray-800" style="font-size:14px;">Email notifications</span><span class="block text-xs text-gray-500">Receive email updates</span></span>
                     </label>
-                    <label class="checkbox-group border border-gray-200 rounded-xl p-4">
+                    <label class="checkbox-group checkbox-card">
                         <input type="checkbox" name="push_notifications" value="1" {{ $preferences['push_notifications'] ? 'checked' : '' }}>
                         <span><span class="font-semibold text-gray-800" style="font-size:14px;">Push notifications</span><span class="block text-xs text-gray-500">Get real-time alerts</span></span>
                     </label>
-                    <label class="checkbox-group border border-gray-200 rounded-xl p-4">
+                    <label class="checkbox-group checkbox-card">
                         <input type="checkbox" name="session_reminders" value="1" {{ $preferences['session_reminders'] ? 'checked' : '' }}>
                         <span><span class="font-semibold text-gray-800" style="font-size:14px;">Session reminders</span><span class="block text-xs text-gray-500">Remind me about sessions</span></span>
                     </label>
-                    <div class="border border-gray-200 rounded-xl p-4">
+                    <div class="checkbox-card checkbox-card--field">
                         <label for="field-preferred-communication-mode" class="form-label" style="margin-bottom:4px;">Preferred communication</label>
                         <select id="field-preferred-communication-mode" name="preferred_communication_mode" class="form-control">
                             <option value="chat" {{ $preferences['preferred_communication_mode'] === 'chat' ? 'selected' : '' }}>Chat</option>
@@ -58,11 +58,11 @@
             <div class="form-group">
                 <label class="form-label">Privacy</label>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label class="checkbox-group border border-gray-200 rounded-xl p-4">
+                    <label class="checkbox-group checkbox-card">
                         <input type="checkbox" name="show_email" value="1" {{ $preferences['show_email'] ? 'checked' : '' }}>
                         <span><span class="font-semibold text-gray-800" style="font-size:14px;">Show email to peers</span><span class="block text-xs text-gray-500">Display your email publicly</span></span>
                     </label>
-                    <label class="checkbox-group border border-gray-200 rounded-xl p-4">
+                    <label class="checkbox-group checkbox-card">
                         <input type="checkbox" name="allow_data_research" value="1" {{ $preferences['allow_data_research'] ? 'checked' : '' }}>
                         <span><span class="font-semibold text-gray-800" style="font-size:14px;">Allow anonymized research use</span><span class="block text-xs text-gray-500">Contribute to studies anonymously</span></span>
                     </label>

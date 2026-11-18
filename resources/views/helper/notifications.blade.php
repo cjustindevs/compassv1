@@ -45,7 +45,7 @@ $type=str_contains(strtolower($item->title),'overdue') ? 'Overdue' : (str_contai
 <p>New assignments and important updates will appear here.</p>
 </div>
 @endforelse
-<div class="hf-record-count ui-notification-footer">Showing {{ $notifications->firstItem() ?? 0 }}-{{ $notifications->lastItem() ?? 0 }} of {{ $notifications->total() }} updates</div>{{ $notifications->links() }}
+{{ $notifications->links('vendor.pagination.compass', ['noun' => 'updates']) }}
 </section>
 </div>
 @endsection

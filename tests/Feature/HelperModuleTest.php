@@ -41,6 +41,34 @@ class HelperModuleTest extends TestCase
         Session::where('session_status','active')->update(['helper_accepted_at'=>now()->subMinutes(10)]);
     }
 
+    public function test_helper_ui_fixes_metrics_grid_pagination_option_cards_and_confirm_dialog(): void
+    {
+        $this->actingAs($this->helperUser);
+
+        $reports = $this->get(route('helper.reports'))->assertOk()->getContent();
+        $this->assertStringContainsString('class="hf-metric-grid"', $reports);
+        $this->assertSame(8, substr_count($reports, 'class="hf-metric"'));
+        $this->assertStringContainsString('How these are calculated', $reports);
+        $this->assertStringNotContainsString('Performance metrics and calculation notes', $reports);
+
+        foreach (range(1, 17) as $i) {
+            \App\Models\Notification::create(['user_account_id' => $this->helperUser->id, 'title' => "Update $i", 'message' => 'Body', 'notification_type' => 'system', 'status' => 'unread']);
+        }
+        $notifications = $this->get(route('helper.notifications'))->assertOk()->getContent();
+        $this->assertStringContainsString('class="ui-pagination"', $notifications);
+        $this->assertSame(1, substr_count($notifications, 'Showing '), 'One count line, not two.');
+        $this->assertStringNotContainsString('dark:bg-gray-800', $notifications, 'No framework pagination that turns dark.');
+
+        $settings = $this->get(route('helper.settings'))->assertOk()->getContent();
+        $this->assertSame(5, substr_count($settings, 'class="checkbox-group checkbox-card"'));
+        $this->assertStringNotContainsString('checkbox-group border border-gray-200 rounded-xl p-4', $settings);
+
+        $modal = file_get_contents(resource_path('views/components/confirmation-modal.blade.php'));
+        $this->assertStringContainsString('class="modal-head"', $modal);
+        $this->assertStringContainsString('aria-describedby="modalMessage"', $modal);
+        $this->assertStringContainsString('#confirmationModal .modal-icon[hidden] { display: none; }', $modal, 'An empty icon circle never shows.');
+    }
+
     public function test_schedule_uses_philippine_date_across_utc_midnight(): void
     {
         $this->travelTo(\Illuminate\Support\Carbon::parse('2026-09-09 16:05:00', 'UTC'));

@@ -90,7 +90,7 @@ a.ui-kpi:hover { box-shadow: var(--shadow-2); }
 .ui-page { display: inline-flex; align-items: center; justify-content: center; min-width: var(--control-h); height: var(--control-h); padding: 0 var(--space-3); border: 1px solid var(--compass-border); border-radius: var(--radius-pill); background: #fff; color: var(--compass-text); font-size: var(--text-base); font-weight: 600; text-decoration: none; }
 a.ui-page:hover { border-color: var(--compass-green); color: var(--compass-green-dark); }
 a.ui-page:focus-visible { outline: none; box-shadow: var(--ring); }
-.ui-page--active { background: var(--compass-green); border-color: var(--compass-green); color: #fff; }
+.ui-page--active { background: var(--compass-green-dark, #027039); border-color: var(--compass-green-dark, #027039); color: #fff; }
 .ui-page--disabled { opacity: .45; }
 .ui-page--gap { border-color: transparent; background: transparent; }
 .ui-page svg { width: 18px; height: 18px; }
@@ -326,3 +326,14 @@ summary.ui-icon-btn::-webkit-details-marker { display: none; }
 .ui-pagination-size { margin: 0; font-size: var(--text-caption); color: var(--compass-muted); }
 .ui-pagination-size label { display: inline-flex; align-items: center; gap: 8px; }
 .ui-pagination-size select { min-height: 36px; padding: 4px 28px 4px 10px; border: 1px solid #d6e2da; border-radius: 8px; background-color: #fff; font-size: 14px; }
+
+/* Settings option cards: a checkbox (or one field) inside a bordered card, the box lined up with its text. */
+.compass-ui .checkbox-card { display: flex; align-items: flex-start; gap: 12px; min-width: 0; padding: 14px 16px; border: 1px solid #dfe8e2; border-radius: 12px; background: #fff; cursor: pointer; transition: border-color .15s ease, background-color .15s ease; }
+.compass-ui .checkbox-card:hover { border-color: #a7d8bc; }
+.compass-ui .checkbox-card:has(input[type="checkbox"]:checked) { border-color: #087341; background: #f3fbf6; }
+.compass-ui .checkbox-card:has(input:focus-visible) { outline: 2px solid #087341; outline-offset: 2px; }
+.compass-ui .checkbox-card input[type="checkbox"] { flex: none; width: 18px; height: 18px; margin: 2px 0 0; accent-color: #027039; color: #027039; border-radius: 4px; border-color: #94a3b8; cursor: pointer; }
+.compass-ui .checkbox-card > span { display: grid; gap: 2px; min-width: 0; line-height: 1.4; }
+.compass-ui .checkbox-card--field { display: block; cursor: default; }
+.compass-ui .checkbox-card--field:hover { border-color: #dfe8e2; }
+.compass-ui .checkbox-card--field .form-label { margin-bottom: 6px; }
