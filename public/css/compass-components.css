@@ -59,7 +59,7 @@ a.ui-kpi:hover { box-shadow: var(--shadow-2); }
 
 .compass-ui .ui-table { width: 100%; overflow-x: auto; }
 .compass-ui .ui-table table { width: 100%; border-collapse: collapse; font-size: var(--text-base); }
-.compass-ui .ui-table table th { padding: var(--space-3) var(--space-4); text-align: left; font-size: var(--text-caption); font-weight: 700; color: var(--compass-muted); background: #f3f4f6; white-space: nowrap; }
+.compass-ui .ui-table table th { padding: var(--space-3) var(--space-4); text-align: left; font-size: var(--text-caption); font-weight: 700; color: #4b5563; background: #f3f4f6; white-space: nowrap; }
 .compass-ui .ui-table table td { padding: var(--space-3) var(--space-4); height: var(--row-h); border-bottom: 1px solid var(--compass-divider); font-size: var(--text-base); color: var(--compass-text); vertical-align: middle; }
 .compass-ui .ui-table table td.ui-actions { display: table-cell; white-space: nowrap; text-align: right; }
 .compass-ui .ui-table table td.ui-actions > :not(dialog) { margin-left: var(--space-2); max-width: 100%; }
