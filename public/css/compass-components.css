@@ -320,3 +320,6 @@ summary.ui-icon-btn::-webkit-details-marker { display: none; }
 /* Compact capacity bar (e.g. sessions used in a duty shift). */
 .ui-capacity { display: block; width: 100%; max-width: 120px; height: 6px; margin: 6px 0 2px; border-radius: var(--radius-pill); background: #e5ece8; overflow: hidden; }
 .ui-capacity > i { display: block; height: 100%; border-radius: inherit; background: var(--compass-green); }
+
+/* Rows hidden by filters or paging stay hidden, including in stacked (phone) tables. */
+.ui-table tr[hidden], .compass-ui .ui-table tr[hidden] { display: none !important; }

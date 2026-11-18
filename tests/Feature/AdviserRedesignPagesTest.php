@@ -470,6 +470,34 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertSame(1, substr_count($detail, '<h1'));
     }
 
+    public function test_transcripts_are_a_paged_filterable_table_with_access_in_a_dialog(): void
+    {
+        $adviser = $this->adviser();
+        $report = $this->documentedReport($adviser);
+        $id = $report->session_id;
+
+        $html = $this->actingAs($adviser->user)->get(route('adviser.transcripts'))->assertOk()->getContent();
+        $this->assertStringContainsString('data-table-pager', $html);
+        $this->assertStringContainsString('js/table-pager.js', $html);
+        preg_match_all('/<th[^>]*>([^<]+)</', $html, $heads);
+        $this->assertSame(['Session ID', 'Helper', 'Date and time (PHT)', 'Session status', 'Transcript', 'Actions'], array_map('trim', $heads[1]));
+        $this->assertMatchesRegularExpression('/<select[^>]*data-pager-size[^>]*>\s*<option value="10"[^>]*>10<\/option>\s*<option value="15">15<\/option>\s*<option value="25">25<\/option>\s*<option value="50">50<\/option>/', $html);
+        foreach (['helper', 'status', 'transcript'] as $key) $this->assertStringContainsString('data-pager-filter="'.$key.'"', $html);
+        $this->assertMatchesRegularExpression('/<tr data-pager-row[^>]*data-helper="Demo Helper"[^>]*data-status="completed"[^>]*data-transcript="(available|unavailable)"[^>]*data-date="\d{4}-\d{2}-\d{2}"/', $html);
+        $this->assertMatchesRegularExpression('/class="at-access-note"[^>]*>\s*<svg/', $html, 'The access notice starts with an info icon.');
+        $this->assertStringNotContainsString('<details class="at-record"', $html);
+        $this->assertStringContainsString('.ui-table tr[hidden]', file_get_contents(public_path('css/compass-components.css')), 'Stacked phone tables must respect hidden rows.');
+
+        if (str_contains($html, 'data-transcript="available"')) {
+            $this->assertStringContainsString('data-dialog-open="transcript-access-'.$id.'"', $html);
+            $this->assertMatchesRegularExpression('/<dialog id="transcript-access-'.$id.'" class="workflow-dialog"/', $html);
+            $this->assertStringContainsString('action="'.route('adviser.transcript.access', $id).'"', $html);
+            $failed = $this->from(route('adviser.transcripts'))->followingRedirects()
+                ->post(route('adviser.transcript.access', $id), ['purpose' => 'quality_assurance', 'reason' => 'short'])->getContent();
+            $this->assertMatchesRegularExpression('/<dialog id="transcript-access-'.$id.'" class="workflow-dialog"[^>]*data-open-on-load/', $failed);
+        }
+    }
+
     public function test_reports_has_filter_bar_chips_and_kpis(): void
     {
         $adviser = $this->adviser();
