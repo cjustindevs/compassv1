@@ -20,7 +20,9 @@ class RoleActivityReport
 {
     private function records($query, bool $export, string $page)
     {
-        return $export ? $query->get() : $query->paginate(15, ['*'], $page)->withQueryString();
+        // Rows per page: 10, 15 (default), 25 or 50.
+        $perPage = in_array((int) request('per_page'), [10, 15, 25, 50], true) ? (int) request('per_page') : 15;
+        return $export ? $query->get() : $query->paginate($perPage, ['*'], $page)->withQueryString();
     }
 
     public function report(Request $request, bool $export = false): array

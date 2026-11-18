@@ -323,3 +323,6 @@ summary.ui-icon-btn::-webkit-details-marker { display: none; }
 
 /* Rows hidden by filters or paging stay hidden, including in stacked (phone) tables. */
 .ui-table tr[hidden], .compass-ui .ui-table tr[hidden] { display: none !important; }
+.ui-pagination-size { margin: 0; font-size: var(--text-caption); color: var(--compass-muted); }
+.ui-pagination-size label { display: inline-flex; align-items: center; gap: 8px; }
+.ui-pagination-size select { min-height: 36px; padding: 4px 28px 4px 10px; border: 1px solid #d6e2da; border-radius: 8px; background-color: #fff; font-size: 14px; }

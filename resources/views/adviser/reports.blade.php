@@ -74,19 +74,20 @@
 @endpush
 <x-ui.filter-chips :chips="$chips" :reset-href="$resetHref" />
 </x-ui.card>
+{{-- QA: Reports are tables; the charts live on the Dashboard. --}}
+<p class="reports-charts-note"><x-ui-icon name="chart-line" /><span>Charts for your supervised sessions are on your <a class="av-link" href="{{ route('adviser.dashboard') }}">Dashboard</a>.</span></p>
 @php $kpiIcons = ['Cases in period' => 'folder', 'Completed cases' => 'check-circle', 'Active sessions' => 'message', 'Pending requests' => 'hourglass', 'Emergencies' => 'warning', 'Resolved emergencies' => 'check-circle', 'Unresolved emergencies' => 'alert-circle', 'Emergency resolution time' => 'clock']; @endphp
 @if($tab==='cases')
 <x-ui.kpi-grid>
 @foreach(['Cases in period'=>'neutral','Completed cases'=>'green','Active sessions'=>'blue','Pending requests'=>'amber'] as $label=>$tone)<x-ui.kpi :icon="$kpiIcons[$label] ?? 'activity'" :label="$label" :value="$roleReport['summary'][$label]" :tone="$tone" />
 @endforeach
 </x-ui.kpi-grid>
-<x-report-charts :groups="collect($roleReport['groups'])->only(['Cases by status','Case categories','Case outcome trend'])->all()" heading="Case outcomes and categories" caption="Selected period · Philippine Time" />
 <x-ui.card title="Session records" :subtitle="$sessions->total().' records. Archiving preserves history and never reopens or closes a case.'">
 <x-ui.table :stack="true" class="ui-table--wide"><thead><tr><th>Reference</th><th>Helper</th><th>Concern</th><th>Status</th><th>Activity date</th><th>Actions</th></tr></thead><tbody>
 @forelse($sessions as $session)<tr><td data-label="Reference">{{ $session->reference_number }}</td><td data-label="Helper">{{ $session->helper?->full_name ?? 'Unassigned' }}</td><td data-label="Concern">{{ $session->concern?->concern_name ?? 'Not recorded' }}</td><td data-label="Status"><x-ui.status-badge :status="$session->session_status" />@if($session->archived_at)<small>Archived</small>@endif</td><td data-label="Activity date">{{ ($session->end_time ?? $session->start_time ?? $session->submitted_at ?? $session->created_date ?? $session->created_at)?->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') }}</td><td data-label="Actions" class="ui-actions"><span class="ui-icon-actions"><x-ui.icon-button icon="eye" label="View documentation" :href="route('adviser.session.show',$session->id)" />@include('adviser.partials.archive-action',['record'=>$session])</span></td></tr>
 @empty<tr><td colspan="6">No records match these filters.</td></tr>@endforelse
 </tbody></x-ui.table>
-{{ $sessions->links('vendor.pagination.compass', ['noun' => 'records']) }}
+{{ $sessions->links('vendor.pagination.compass', ['noun' => 'records', 'sizes' => true]) }}
 </x-ui.card>
 @elseif($tab==='performance')
 <x-ui.card title="Service performance" subtitle="Actual supervised service records in the selected period. Scheduled duty is planned coverage, not attendance.">
@@ -94,17 +95,6 @@
 @foreach(['total'=>['Session records',''],'completed'=>['Completed sessions',''],'completion_rate'=>['Completion rate','%'],'referral_rate'=>['Referral rate','%'],'response_minutes'=>['Helper first response',' min'],'waiting_minutes'=>['Queue waiting time',' min'],'duration_minutes'=>['Completed session duration',' min'],'helpfulness'=>['Helpfulness rating (1–5)',''],'referral_approval_rate'=>['Referral approval rate','%'],'duty_hours'=>['Scheduled duty coverage',' h'],'competency'=>['Average competency (1–5)',''],'workload'=>['Completed sessions per serving Helper',''],'documentation_rate'=>['Documentation completion rate','%'],'documentation_pending'=>['Pending documentation',''],'emergency_rate'=>['Emergency escalation rate','%']] as $key=>$label)<tr><td data-label="Measure">{{ $label[0] }}</td><td data-label="Recorded result">{{ \App\Services\SessionPerformance::number($metrics[$key], $label[1]) }}@if(isset($samples[$key]))<small>{{ $samples[$key] }} records measured</small>@endif</td></tr>@endforeach
 </tbody></x-ui.table>
 </x-ui.card>
-@php
-    $monthLabel = fn ($m) => \Carbon\Carbon::createFromFormat('Y-m', $m)->format('M Y');
-    $activityChart = ['type' => 'column', 'labels' => collect($trends)->pluck('month')->map($monthLabel)->values()->all(),
-        'datasets' => [['label' => 'Session records', 'data' => collect($trends)->pluck('sessions')->values()->all()], ['label' => 'Completed', 'data' => collect($trends)->pluck('completed')->values()->all()]]];
-    $competencyChart = ['type' => 'line', 'scale' => [1, 5], 'unit' => '', 'labels' => collect($competency)->pluck('month')->map($monthLabel)->values()->all(),
-        'datasets' => [['label' => 'Average score (1–5)', 'data' => collect($competency)->pluck('score')->map(fn ($v) => $v === null ? null : (float) $v)->values()->all()]]];
-@endphp
-<div class="analytics-chart-grid report-chart-grid">
-<x-analytics-chart title="Monthly session activity" description="Supervised session records and completions per month · Philippine Time" :chart="$activityChart" />
-<x-analytics-chart title="Competency in the selected period" :description="ucwords(str_replace('_',' ', $filters['competency_metric'])).' from recorded evaluations, monthly average on a 1–5 scale.'" :chart="$competencyChart" />
-</div>
 <details class="ui-card reports-details"><summary>Calculation definitions</summary>@foreach($definitions as $label=>$definition)<p class="ui-prose" style="margin-top:12px"><strong>{{ ucwords(str_replace('_',' ',$label)) }}:</strong> {{ $definition }}</p>@endforeach</details>
 @else
 @php
@@ -113,7 +103,6 @@
 @endphp
 @if($summaryLabels)<x-ui.kpi-grid>@foreach($summaryLabels as $label=>$tone)<x-ui.kpi :icon="$kpiIcons[$label] ?? 'activity'" :label="$label" :value="$roleReport['summary'][$label]" :tone="$tone" />
 @endforeach</x-ui.kpi-grid>@endif
-@if($tab==='safety')<x-report-charts :groups="collect($roleReport['groups'])->only(['Emergency status','Emergency priority'])->all()" heading="Emergency overview" />@endif
 <x-ui.card :title="$tab==='safety' ? 'Emergency case activity' : 'Your recorded actions'" :subtitle="$tab==='activity' ? 'Your auditable Adviser actions, including archive and restore events. Case and emergency records are available in their report groups.' : null">
 <x-ui.table :stack="true" class="ui-table--wide"><thead><tr>@foreach($reportTable['columns'] as $column)<th>{{ $column }}</th>@endforeach</tr></thead><tbody>
 @forelse($reportTable['records'] as $record)
@@ -123,7 +112,7 @@
 <tr>@foreach($cells as $cell)<td data-label="{{ $reportTable['columns'][$loop->index] ?? '' }}">{{ $cell ?? 'Not recorded' }}</td>@endforeach</tr>
 @empty<tr><td colspan="{{ count($reportTable['columns']) }}">No records match these filters.</td></tr>@endforelse
 </tbody></x-ui.table>
-{{ $reportTable['records']->links('vendor.pagination.compass', ['noun' => 'records']) }}
+{{ $reportTable['records']->links('vendor.pagination.compass', ['noun' => 'records', 'sizes' => true]) }}
 </x-ui.card>
 @endif
 </div>
@@ -132,5 +121,6 @@
 .reports-page .reports-details>summary{cursor:pointer;font-size:18px;font-weight:700}
 .reports-page .reports-details[open]>summary{margin-bottom:12px}
 .reports-page .ui-badge{white-space:nowrap}
+.reports-charts-note{display:flex;gap:8px;align-items:center;font-size:13px;color:#53665a;margin:4px 0 16px}.reports-charts-note .compass-icon{color:#087341;flex:none}
 </style>
 @endsection

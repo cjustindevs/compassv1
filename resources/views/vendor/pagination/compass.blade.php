@@ -2,6 +2,16 @@
 @if ($paginator->total() > 0)
 <nav class="ui-pagination" aria-label="Pagination">
     <p class="ui-pagination-summary">Showing {{ $paginator->firstItem() }}–{{ $paginator->lastItem() }} of {{ $paginator->total() }} {{ $noun }}</p>
+    @if (! empty($sizes))
+        {{-- Rows per page: only for lists whose controller reads per_page. Keeps every other filter; returns to page 1. --}}
+        <form class="ui-pagination-size" method="GET" action="{{ url()->current() }}">
+            @foreach (request()->except(['per_page']) as $key => $value)
+                @if (! is_array($value) && ! str_ends_with($key, 'page'))<input type="hidden" name="{{ $key }}" value="{{ $value }}">@endif
+            @endforeach
+            <label>Rows per page <select name="per_page" onchange="this.form.submit()">@foreach ([10, 15, 25, 50] as $size)<option value="{{ $size }}" @selected($paginator->perPage() === $size)>{{ $size }}</option>@endforeach</select></label>
+            <noscript><button type="submit" class="btn-secondary">Show</button></noscript>
+        </form>
+    @endif
     @if ($paginator->hasPages())
         <ul class="ui-pagination-pills">
             <li>

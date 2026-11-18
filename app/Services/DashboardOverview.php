@@ -133,14 +133,26 @@ class DashboardOverview
     }
     private function months(Collection $rows, string $field): array
     {
+        // Short ranges group by day, medium ranges by week (Monday start), long ranges by month.
         $period = AnalyticsPeriod::fromRequest(request());
-        $daily = $period->start->diffInDays($period->end) <= 62;
-        $format = $daily ? 'Y-m-d' : 'Y-m';
+        $days = $period->start->diffInDays($period->end);
+        $unit = $days <= 31 ? 'day' : ($days <= 182 ? 'week' : 'month');
+        $bucket = fn ($date) => match ($unit) {
+            'day' => $date->format('Y-m-d'),
+            'week' => $date->startOfWeek(\Carbon\CarbonInterface::MONDAY)->format('Y-m-d'),
+            default => $date->format('Y-m'),
+        };
         $counts = $rows->filter(fn ($r) => $r->$field && $r->$field->gte($period->start) && $r->$field->lt($period->end) && $r->$field->lte(now()))
-            ->groupBy(fn ($r) => $r->$field->copy()->timezone('Asia/Manila')->format($format))->map->count();
+            ->groupBy(fn ($r) => $bucket(\Carbon\CarbonImmutable::instance($r->$field)->timezone('Asia/Manila')))->map->count();
         $values = [];
-        for ($date = $daily ? $period->start : $period->start->startOfMonth(); $date->lt($period->end); $date = $daily ? $date->addDay() : $date->addMonth()) {
-            $values[$date->format($daily ? 'M j, Y' : 'M Y')] = $counts->get($date->format($format), 0);
+        $date = match ($unit) {
+            'day' => $period->start,
+            'week' => $period->start->startOfWeek(\Carbon\CarbonInterface::MONDAY),
+            default => $period->start->startOfMonth(),
+        };
+        for (; $date->lt($period->end); $date = match ($unit) { 'day' => $date->addDay(), 'week' => $date->addWeek(), default => $date->addMonth() }) {
+            $label = match ($unit) { 'day' => $date->format('M j'), 'week' => 'Week of '.$date->format('M j'), default => $date->format('M Y') };
+            $values[$label] = $counts->get($bucket($date), 0);
         }
         return $values;
     }

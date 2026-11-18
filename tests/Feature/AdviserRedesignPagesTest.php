@@ -498,6 +498,44 @@ class AdviserRedesignPagesTest extends TestCase
         }
     }
 
+    public function test_reports_are_tables_with_rows_per_page_and_charts_live_on_the_dashboard(): void
+    {
+        $adviser = $this->adviser();
+        foreach (range(1, 12) as $i) $this->documentedReport($adviser);
+        $this->actingAs($adviser->user);
+
+        foreach (['cases', 'performance', 'safety', 'activity'] as $tab) {
+            $html = $this->get(route('adviser.reports', ['tab' => $tab]))->assertOk()->getContent();
+            $this->assertStringNotContainsString('data-analytics-chart', $html, $tab.' has no charts');
+            $this->assertStringContainsString('href="'.route('adviser.dashboard').'"', $html, $tab.' points to the dashboard charts');
+        }
+
+        $html = $this->get(route('adviser.reports', ['tab' => 'cases', 'per_page' => 10]))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/<select[^>]*name="per_page"[^>]*>[\s\S]*?<option value="10"\s+selected>10<\/option>/', $html);
+        $this->assertStringContainsString('Showing 1–10 of 12 records', $html);
+        $this->assertMatchesRegularExpression('/<form[^>]*class="ui-pagination-size"[\s\S]*?<input type="hidden" name="tab" value="cases">/', $html, 'Changing the page size keeps the filters.');
+        $this->get(route('adviser.reports', ['per_page' => 7]))->assertSessionHasErrors('per_page');
+    }
+
+    public function test_dashboard_trend_groups_by_day_week_or_month_by_range_length(): void
+    {
+        $adviser = $this->adviser();
+        $this->actingAs($adviser->user);
+        $trend = function (array $query) {
+            $overview = $this->get(route('adviser.dashboard', $query))->assertOk()->viewData('overview');
+            return array_keys(collect($overview['charts'])->firstWhere('title', 'Case trend')['values']);
+        };
+        $today = now('Asia/Manila');
+        $days = $trend(['period' => 'custom', 'from' => $today->copy()->subDays(9)->toDateString(), 'to' => $today->toDateString()]);
+        $this->assertCount(10, $days);
+        $this->assertMatchesRegularExpression('/^[A-Z][a-z]{2} \d{1,2}$/', $days[0]);
+        $weeks = $trend(['period' => 'custom', 'from' => $today->copy()->subDays(89)->toDateString(), 'to' => $today->toDateString()]);
+        $this->assertStringStartsWith('Week of ', $weeks[0]);
+        $this->assertLessThanOrEqual(15, count($weeks));
+        $months = $trend(['period' => 'custom', 'from' => $today->copy()->subDays(299)->toDateString(), 'to' => $today->toDateString()]);
+        $this->assertMatchesRegularExpression('/^[A-Z][a-z]{2} \d{4}$/', $months[0]);
+    }
+
     public function test_reports_has_filter_bar_chips_and_kpis(): void
     {
         $adviser = $this->adviser();

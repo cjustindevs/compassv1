@@ -6,7 +6,7 @@ use App\Services\{AdviserAnalytics,AdviserScope,SupportAudit};
 use Illuminate\Http\Request;
 class AdviserReportController extends Controller {
     public function index(Request $request, AdviserAnalytics $analytics) {
-        $request->validate(['tab'=>'nullable|in:cases,performance,safety,activity', 'history'=>'nullable|in:current,archived,all']);
+        $request->validate(['tab'=>'nullable|in:cases,performance,safety,activity', 'history'=>'nullable|in:current,archived,all', 'per_page'=>'nullable|in:10,15,25,50']);
         $filters=$analytics->filters($request); $data=$analytics->report($filters);
         // One date interval and one set of controls drive every report group.
         $reportRequest = $request->duplicate();
