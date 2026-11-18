@@ -28,7 +28,7 @@ class SelfHelpStepProgressTest extends TestCase
 
         $this->actingAs($this->seeker())->get(route('selfhelp.show', $resource->id))->assertOk()
             ->assertSee('Step 1 of 3')->assertSee('Get comfortable')->assertSee('Breathe in')
-            ->assertSee('role="progressbar"', false)->assertSee('data-listen', false)->assertSee('data-calm-sound', false)
+            ->assertSee('role="progressbar"', false)->assertSee('data-listen', false)->assertSee('data-calm-sound', false)->assertSee('Calming music')->assertSee('js/calm-music.js', false)->assertDontSee('Calm sound')
             ->assertSee('Breathe with the circle')->assertSee('Mark complete');
     }
 

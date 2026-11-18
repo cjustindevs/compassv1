@@ -208,7 +208,7 @@
                     </p>
                     <div class="player-tools">
                         <button type="button" class="btn btn-outline" data-listen aria-pressed="false" hidden>Listen</button>
-                        <button type="button" class="btn btn-outline" data-calm-sound aria-pressed="false" hidden>Calm sound</button>
+                        <button type="button" class="btn btn-outline" data-calm-sound aria-pressed="false" hidden><x-ui-icon name="play-circle" /> <span data-calm-label>Calming music</span></button>
                     </div>
                 </div>
                 <div class="progress-track" role="progressbar" aria-label="Progress through this resource" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $completed ? 100 : $savedPercent }}" data-progress-bar><div class="fill" style="width: {{ $completed ? 100 : $savedPercent }}%"></div></div>
@@ -255,6 +255,7 @@
 
     @include('partials.sidebar', ['active' => ['selfhelp*'], 'role' => 'Help Seeker'])
 
+    <script src="{{ asset('js/calm-music.js') }}?v={{ filemtime(public_path('js/calm-music.js')) }}"></script>
     <script>
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
         let isSaved = {{ $isSaved ? 'true' : 'false' }};
@@ -407,42 +408,21 @@
             window.addEventListener('pagehide', stop);
         })();
 
-        // ── Calm sound: soft generated rain-like noise with slow swells (no audio files) ──
+        // ── Calming music: soft chords and bell notes generated in the browser (public/js/calm-music.js) ──
         (() => {
             const btn = document.querySelector('[data-calm-sound]');
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            if (!btn || !AudioCtx) return;
+            if (!btn || !AudioCtx || !window.CompassCalmMusic) return;
             btn.hidden = false;
-            let ctx = null, master = null;
-            function start() {
-                ctx = new AudioCtx();
-                const buffer = ctx.createBuffer(1, ctx.sampleRate * 4, ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                let last = 0;
-                for (let i = 0; i < data.length; i++) { const white = Math.random() * 2 - 1; last = (last + 0.02 * white) / 1.02; data[i] = last * 3.2; }
-                const noise = ctx.createBufferSource(); noise.buffer = buffer; noise.loop = true;
-                const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 900;
-                master = ctx.createGain(); master.gain.value = 0;
-                const swell = ctx.createOscillator(); swell.frequency.value = 0.08;
-                const swellDepth = ctx.createGain(); swellDepth.gain.value = 0.05;
-                swell.connect(swellDepth).connect(master.gain);
-                noise.connect(filter).connect(master).connect(ctx.destination);
-                noise.start(); swell.start();
-                master.gain.linearRampToValueAtTime(0.14, ctx.currentTime + 2);
-            }
-            function stop() {
-                if (!ctx) return;
-                const c = ctx; ctx = null;
-                master.gain.linearRampToValueAtTime(0, c.currentTime + 0.8);
-                setTimeout(() => c.close(), 900);
-            }
+            const music = window.CompassCalmMusic.createPlayer(AudioCtx);
+            const label = btn.querySelector('[data-calm-label]');
             btn.addEventListener('click', () => {
-                const on = btn.getAttribute('aria-pressed') !== 'true';
+                const on = !music.playing;
                 btn.setAttribute('aria-pressed', String(on));
-                btn.textContent = on ? 'Stop sound' : 'Calm sound';
-                on ? start() : stop();
+                if (label) label.textContent = on ? 'Stop music' : 'Calming music';
+                on ? music.start() : music.stop();
             });
-            window.addEventListener('pagehide', stop);
+            window.addEventListener('pagehide', () => music.stop());
         })();
 
         // ── Breathing guide: in 4s, hold 4s, out 6s ──
