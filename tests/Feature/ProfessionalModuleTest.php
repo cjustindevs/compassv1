@@ -280,6 +280,15 @@ class ProfessionalModuleTest extends TestCase
         ]);
     }
 
+    public function test_professional_reports_are_tables_and_charts_stay_on_the_dashboard(): void
+    {
+        $reports = $this->actingAs($this->professionalUser)->get(route('professional.reports'))->assertOk()->getContent();
+        $this->assertStringNotContainsString('data-analytics-chart', $reports);
+        $this->assertStringContainsString('Referral records', $reports);
+        $this->assertStringContainsString('href="'.route('professional.dashboard').'"', $reports);
+        $this->get(route('professional.dashboard'))->assertOk()->assertSee('data-analytics-chart', false);
+    }
+
     public function test_professional_sidebar_is_short_with_profile_in_the_user_block(): void
     {
         $html = $this->actingAs($this->professionalUser)->get(route('professional.dashboard'))->assertOk()->getContent();

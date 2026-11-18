@@ -236,15 +236,8 @@
                 <p>Acceptance time measures professional notification to recorded acceptance; missing, negative, and future intervals are excluded. {{ $analytics['missing_completion_dates'] }} historical finished records lack usable completion dates and are excluded from completion totals. Archived cases remain in authorized history.</p>
                 <p>Charts and Reports use the same sources. CSV includes all matching table records and the same filters. Printing includes only the current page; use CSV for the full filtered dataset.</p>
             </details>
-            @php
-                $outcomes = collect($analytics['outcomes'])->mapWithKeys(fn ($count, $outcome) => [ucwords(str_replace('_', ' ', $outcome ?: 'unrecorded')) => (int) $count])->sortDesc();
-            @endphp
-            <div class="analytics-chart-grid report-chart-grid">
-                <x-analytics-chart title="Referrals received and completed" :description="$analytics['received']['interval'].' counts · Philippine Time'" :chart="['type'=>'line','labels'=>$analytics['received']['labels'],'datasets'=>[['label'=>'Received','data'=>$analytics['received']['values']],['label'=>'Completed','data'=>$analytics['completed']['values']]]]" />
-                <x-analytics-chart title="Acceptance rate" :description="$analytics['accepted'].' of '.$analytics['received']['total'].' referrals received in this period were accepted.'" :chart="['type'=>'gauge','unit'=>'%','labels'=>['Acceptance rate'],'datasets'=>[['label'=>'Acceptance rate','data'=>[$analytics['acceptance_rate']]]],'caption'=>'accepted']" />
-                <x-analytics-chart title="Referral status" description="Current status of referrals received in this period." :chart="['type'=>'bar','labels'=>$analytics['statuses']['labels'],'datasets'=>[['label'=>'Referrals','data'=>$analytics['statuses']['values']]]]" />
-                <x-analytics-chart title="Completed referral outcomes" description="Recorded outcome of referrals completed in this period." :chart="['type'=>'donut','labels'=>$outcomes->keys()->all(),'datasets'=>[['label'=>'Referrals','data'=>$outcomes->values()->all()]]]" />
-            </div>
+            {{-- QA: Reports are tables; the same charts are on the Dashboard. --}}
+            <p class="analytics-period-caption">Charts for referrals received, acceptance, status and outcomes are on your <a class="link" href="{{ route('professional.dashboard') }}">Dashboard</a>.</p>
             <div class="card analytics-report-table">
                 <div class="card-header"><h3>Referral records</h3><span class="text-sm text-gray-500">{{ number_format($records->total()) }} matching records</span></div>
                 <p class="analytics-period-caption">Date basis: {{ ucfirst($filters['activity']) }} · Status: {{ isset($filters['status']) && $filters['status'] ? Str::headline($filters['status']) : 'All authorized statuses' }}</p>
