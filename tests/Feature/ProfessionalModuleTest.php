@@ -289,13 +289,30 @@ class ProfessionalModuleTest extends TestCase
         $this->get(route('professional.dashboard'))->assertOk()->assertSee('data-analytics-chart', false);
     }
 
+    public function test_notifications_are_reached_from_each_roles_own_sidebar(): void
+    {
+        \App\Models\Notification::create(['user_account_id' => $this->professionalUser->id, 'title' => 'New referral', 'message' => 'Review it', 'notification_type' => 'referral', 'status' => 'unread']);
+        $html = $this->actingAs($this->professionalUser)->get(route('notifications'))->assertOk()->getContent();
+        $this->assertStringContainsString(route('professional.referrals'), $html, 'Professional menu, not the Seeker one.');
+        $this->assertStringNotContainsString(route('request.screening'), $html);
+        $this->assertMatchesRegularExpression('/<span class="nav-badge" id="notifBadge"\s*>\s*1\s*<\/span>/', $html);
+
+        $admin = \App\Models\User::factory()->create(['role' => 'admin', 'is_active' => true]);
+        \App\Models\Notification::create(['user_account_id' => $admin->id, 'title' => 'Backup finished', 'message' => 'Nightly backup completed', 'notification_type' => 'system', 'status' => 'unread']);
+        $adminHtml = $this->actingAs($admin)->get(route('notifications'))->assertOk()->getContent();
+        $this->assertStringContainsString('admin-sidebar', $adminHtml);
+        $this->assertStringContainsString('Backup finished', $adminHtml);
+        $this->assertMatchesRegularExpression('/class="nav-item active"\s+href="'.preg_quote(route('notifications'), '/').'"/', $adminHtml);
+        $this->assertStringContainsString('action="'.route('notifications.read-all').'"', $adminHtml);
+    }
+
     public function test_professional_sidebar_is_short_with_profile_in_the_user_block(): void
     {
         $html = $this->actingAs($this->professionalUser)->get(route('professional.dashboard'))->assertOk()->getContent();
         $nav = substr($html, strpos($html, '<nav class="sidebar-nav">'));
         $nav = substr($nav, 0, strpos($nav, '</nav>'));
         preg_match_all('/<span class="nav-text">([^<]+)<\/span>/', $nav, $items);
-        $this->assertSame(['Dashboard', 'Referrals', 'Cases', 'Reports', 'Settings'], $items[1]);
+        $this->assertSame(['Dashboard', 'Referrals', 'Cases', 'Reports', 'Notifications', 'Settings'], $items[1]);
         preg_match_all('/<div class="nav-section">([^<]+)<\/div>/', $nav, $sections);
         $this->assertSame(['Work', 'Account'], $sections[1]);
         $this->assertMatchesRegularExpression('/<a href="'.preg_quote(route('professional.profile'), '/').'" class="sidebar-user[ "]/', $html);

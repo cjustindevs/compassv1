@@ -173,16 +173,20 @@
                 </div>
             @endforelse
         </div>
-        <div class="ui-notification-footer">{{ $notifications->links() }}</div>
+        <div class="ui-notification-footer">{{ $notifications->links('vendor.pagination.compass', ['noun' => 'notifications']) }}</div>
 
-        <p class="text-xs text-gray-500 mt-3">Showing {{ $notifications->firstItem() ?? 0 }}-{{ $notifications->lastItem() ?? 0 }} of {{ $notifications->total() }} notifications.</p>
 
     </main>
 
-    @include('partials.sidebar', [
-        'active' => ['notifications'],
-        'role'   => 'Help Seeker',
-    ])
+    {{-- Each role keeps its own menu here (the header bell is gone, so this page is reached from the sidebar). --}}
+    @if(auth()->user()?->role === 'professional')
+        @include('layouts.partials.professional-sidebar')
+    @else
+        @include('partials.sidebar', [
+            'active' => ['notifications'],
+            'role'   => 'Help Seeker',
+        ])
+    @endif
 
     <script>
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;

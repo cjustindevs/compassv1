@@ -338,3 +338,6 @@ summary.ui-icon-btn::-webkit-details-marker { display: none; }
 .compass-ui .checkbox-card--field:hover { border-color: #dfe8e2; }
 .compass-ui .checkbox-card--field .form-label { margin-bottom: 6px; }
 .compass-ui a.ui-page { text-decoration: none; }
+
+/* The header bell was removed; empty bell slots take no space. */
+[data-notification-slot]:empty, [data-page-slot]:empty { display: none !important; }

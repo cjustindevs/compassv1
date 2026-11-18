@@ -36,6 +36,10 @@
         </a>
 
         <div class="nav-section">Account</div>
+        <a href="{{ route('notifications') }}" class="nav-item {{ request()->routeIs('notifications') ? 'active' : '' }}">
+            <x-ui-icon name="bell"  /><span class="nav-text">Notifications</span>
+            <span class="nav-badge" id="notifBadge" @if(($notifBadge ?? 0) < 1) style="display:none" @endif>{{ $notifBadge ?? 0 }}</span>
+        </a>
         <a href="{{ route('professional.settings') }}" class="nav-item {{ request()->routeIs('professional.settings*') ? 'active' : '' }}">
             <x-ui-icon name="settings"  /><span class="nav-text">Settings</span>
         </a>

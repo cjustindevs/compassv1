@@ -16,19 +16,9 @@
     const inbox=el('section');inbox.id='compass-notice-inbox';inbox.className='compass-notice-dropdown';inbox.hidden=true;inbox.setAttribute('aria-label','Recent notifications');
     const workLink=el('a');workLink.className='compass-notice-pending';workLink.href=config.center;workLink.hidden=true;
     root.append(bell,inbox);
-    const slot=document.querySelector('[data-page-slot]')||document.querySelector('[data-notification-slot]');
-    if(slot)slot.append(root);
-    else {
-        // Only an existing page header can host a bell. Never insert siblings into a page's content grid or body.
-        const header=document.querySelector('[data-page-header], .main-content > .top-bar, .main-content > .flex.items-center.justify-between, main > header');
-        if(header){
-            root.className+=' is-header-action';
-            // Join an existing right-hand action group so the bell sits beside the page actions.
-            const actions=header.children.length>1?header.lastElementChild:null;
-            if(actions&&actions.tagName==='DIV'&&!actions.querySelector('h1,h2')&&actions.querySelector('a,button'))actions.append(root);
-            else header.append(root);
-        }
-    }
+    // The header bell was removed (Nov 2026): every role reaches notifications from the sidebar tab, whose
+    // unread badge this script keeps current. The bell and its dropdown are built but never placed on the page;
+    // toasts, important notices and emergency pop-ups below work exactly as before.
     const toasts=el('div');toasts.className='compass-notice-toasts';toasts.setAttribute('aria-live','polite');document.body.append(toasts);
     const close=()=>{inbox.hidden=true;bell.setAttribute('aria-expanded','false');};
     bell.addEventListener('click',()=>{inbox.hidden=!inbox.hidden;bell.setAttribute('aria-expanded',String(!inbox.hidden));if(!inbox.hidden)refresh();});

@@ -43,7 +43,8 @@ class NotificationController extends Controller
             ->unread()
             ->count();
 
-        return view('notifications.index', [
+        // Administrators read their notifications inside the admin layout (the header bell was removed).
+        return view(Auth::user()?->role === 'admin' ? 'admin.notifications' : 'notifications.index', [
             'notifications' => $notifications,
             'unreadCount' => $unreadCount,
             'activeType' => $type,

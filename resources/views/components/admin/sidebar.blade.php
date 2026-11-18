@@ -28,6 +28,7 @@
             ['key' => 'reports', 'label' => 'Reports', 'icon' => 'chart-line', 'href' => route('admin.reports')],
         ],
         'Account' => [
+            ['key' => 'notifications', 'label' => 'Notifications', 'icon' => 'bell', 'href' => route('notifications')],
             ['key' => 'settings', 'label' => 'Settings', 'icon' => 'settings', 'href' => route('admin.settings')],
         ],
     ];
