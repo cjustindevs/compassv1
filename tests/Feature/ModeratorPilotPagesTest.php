@@ -74,6 +74,24 @@ class ModeratorPilotPagesTest extends TestCase
         }
     }
 
+    public function test_recently_matched_schedule_and_reassign_are_icon_buttons_opening_dialogs(): void
+    {
+        $user = User::factory()->create(['role' => 'seeker', 'is_active' => true]);
+        $seeker = HelpSeeker::create(['user_account_id' => $user->id, 'generated_alias' => 'Alias'.$user->id]);
+        $queue = QueueRequest::create(['seeker_id' => $seeker->id, 'request_status' => 'assigned', 'priority_level' => 'low', 'request_date' => now(), 'matched_date' => now(), 'preferred_session_type' => 'chat']);
+
+        $html = $this->actingAs($this->moderator())->get(route('moderator.queue'))->assertOk()->getContent();
+        $row = substr($html, strpos($html, 'data-queue-row="'.$queue->id.'"'));
+        $row = substr($row, 0, strpos($row, '</tr>'));
+        $this->assertMatchesRegularExpression('/<button type="button" class="ui-icon-btn"(?=[^>]*aria-label="Schedule appointment")[^>]*data-dialog-open="schedule-'.$queue->id.'"/', $row);
+        $this->assertMatchesRegularExpression('/<button type="button" class="ui-icon-btn"(?=[^>]*aria-label="Reassign Helper")[^>]*data-dialog-open="reassign-'.$queue->id.'"/', $row);
+        $this->assertStringNotContainsString('type="datetime-local"', substr($row, 0, strpos($row, '<dialog')), 'The time field lives in the pop-up.');
+
+        $this->assertMatchesRegularExpression('/<dialog class="workflow-dialog" id="schedule-'.$queue->id.'"[\s\S]*?action="'.preg_quote(route('moderator.queue.schedule'), '/').'"[\s\S]*?type="datetime-local"[\s\S]*?<\/dialog>/', $html);
+        $this->assertSame(1, substr_count($html, 'id="reassign-'.$queue->id.'"'), 'Dialog and select no longer share an id.');
+        $this->assertStringContainsString('<label class="sr-only" for="reassign-helper-'.$queue->id.'"', $html);
+    }
+
     public function test_moderator_kpis_follow_qa_order_and_count_priority_and_pending_assignments(): void
     {
         $user = User::factory()->create(['role' => 'seeker', 'is_active' => true]);

@@ -254,26 +254,30 @@
                         <td data-label="Type">{{ ucfirst($item->preferred_session_type) }}</td>
                         <td data-label="Appointment"><x-ui.badge tone="green">{{ $item->scheduled_date ? $item->scheduled_date->copy()->setTimezone(config('app.schedule_timezone'))->format('M d, h:i A') : 'Awaiting acceptance' }}</x-ui.badge></td>
                         <td data-label="Actions" class="ui-actions">
-                            <form method="POST" action="{{ route('moderator.queue.schedule') }}">
-                                @csrf
-                                <label class="sr-only" for="scheduled_at-{{ $item->id }}">Appointment time for queue request {{ $item->id }}</label>
-                                <input type="datetime-local" id="scheduled_at-{{ $item->id }}" name="scheduled_at" class="assign-select"
-                                       value="{{ $item->scheduled_date?->copy()->setTimezone(config('app.schedule_timezone'))->format('Y-m-d\TH:i') }}"
-                                       title="Set the appointment time for this already-assigned session ({{ config('app.schedule_timezone') }}).">
-                                <input type="hidden" name="queue_id" value="{{ $item->id }}">
-                                <button type="submit" class="btn-secondary whitespace-nowrap">
-                                    <x-ui-icon name="calendar" /> Schedule
-                                </button>
-                            </form>
-                            <button type="button" class="btn-secondary" data-dialog-open="reassign-{{ $item->id }}">Reassign Helper</button>
+                            <x-ui.icon-button icon="calendar" label="Schedule appointment" data-dialog-open="schedule-{{ $item->id }}" />
+                            <x-ui.icon-button icon="shuffle" label="Reassign Helper" data-dialog-open="reassign-{{ $item->id }}" />
+                            <dialog class="workflow-dialog" id="schedule-{{ $item->id }}" aria-labelledby="title-schedule-{{ $item->id }}">
+                                <header class="workflow-dialog__header"><div><h2 id="title-schedule-{{ $item->id }}">Schedule appointment</h2><p>Queue #{{ $item->id }} &middot; {{ $item->seeker?->generated_alias }}</p></div><button type="button" data-dialog-close aria-label="Close"><x-ui-icon name="close" /></button></header>
+                                <form method="POST" action="{{ route('moderator.queue.schedule') }}">
+                                    <div class="workflow-dialog__body">
+                                        @csrf
+                                        <label for="scheduled_at-{{ $item->id }}">Appointment time ({{ config('app.schedule_timezone') }})</label>
+                                        <input type="datetime-local" id="scheduled_at-{{ $item->id }}" name="scheduled_at" class="assign-select"
+                                               value="{{ $item->scheduled_date?->copy()->setTimezone(config('app.schedule_timezone'))->format('Y-m-d\TH:i') }}">
+                                        <input type="hidden" name="queue_id" value="{{ $item->id }}">
+                                        <small>For a session that already has a Helper.</small>
+                                    </div>
+                                    <footer class="workflow-dialog__footer"><button type="button" class="btn-secondary" data-dialog-close>Cancel</button><button type="submit" class="btn-primary"><x-ui-icon name="calendar" /> Save time</button></footer>
+                                </form>
+                            </dialog>
                             <dialog class="workflow-dialog" id="reassign-{{ $item->id }}" aria-labelledby="title-reassign-{{ $item->id }}">
                                 <header class="workflow-dialog__header"><div><h2 id="title-reassign-{{ $item->id }}">Reassign Helper</h2><p>Queue #{{ $item->id }} &middot; {{ $item->seeker?->generated_alias }}</p></div><button type="button" data-dialog-close aria-label="Close assignment">&times;</button></header>
                                 <form method="POST" action="{{ route('moderator.queue.reassign') }}" class="reassign-form" data-queue-id="{{ $item->id }}">
                                     <div class="workflow-dialog__body">
                                         @csrf
                                         <input type="hidden" name="queue_id" value="{{ $item->id }}">
-                                        <label class="sr-only" for="reassign-{{ $item->id }}">Replacement helper for queue request {{ $item->id }}</label>
-                                        <select id="reassign-{{ $item->id }}" name="helper_id" class="assign-select">
+                                        <label class="sr-only" for="reassign-helper-{{ $item->id }}">Replacement helper for queue request {{ $item->id }}</label>
+                                        <select id="reassign-helper-{{ $item->id }}" name="helper_id" class="assign-select">
                                             <option value="">Select helper…</option>
                                             @foreach($item->helper_choices['helpers'] as $choice)
                                                 <option value="{{ $choice['id'] }}">{{ $choice['label'] }}</option>
