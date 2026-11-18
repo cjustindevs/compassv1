@@ -186,7 +186,13 @@ class HelperDashboardController extends Controller
 
         $documentationTasks = $helper->sessions()->whereNotNull('start_time')->where('documentation_status', '!=', 'submitted')->whereIn('session_status', ['completed', 'evaluated', 'cancelled', 'no_show'])->orderByDesc('end_time')->orderByDesc('id')->limit(8)->get();
 
-        return view('dashboard.helper', ['analyticsDates' => $period->dates(), 'upcomingDuties' => $upcomingDuties, 'dutySummary' => $dutySummary] + compact(
+        // QA: the case charts live on the dashboard (Reports are tables). Same data as Helper Reports for this period.
+        $chartRequest = request()->duplicate(request()->only(['period', 'from', 'to', 'date_range']));
+        $chartRequest->setUserResolver(fn () => $user);
+        app(\App\Services\HelperViewDateRange::class)->apply($chartRequest);
+        $caseCharts = app(\App\Services\RoleActivityReport::class)->report($chartRequest)['groups'];
+
+        return view('dashboard.helper', ['analyticsDates' => $period->dates(), 'upcomingDuties' => $upcomingDuties, 'dutySummary' => $dutySummary, 'caseCharts' => $caseCharts] + compact(
             'performance',
             'documentationTasks', 'sidebarStats', 'currentReadiness', 'upcomingSession', 'recentSessions',
             'user',

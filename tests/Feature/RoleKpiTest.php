@@ -194,6 +194,19 @@ class RoleKpiTest extends TestCase
         $this->assertStringNotContainsString('Documentation completion', $kpis[0] ?? '');
     }
 
+    public function test_helper_case_charts_move_from_reports_to_the_dashboard(): void
+    {
+        $helper = $this->helper();
+        $this->supportCase($helper);
+        $this->actingAs($helper->user);
+        $reports = $this->get(route('helper.reports', ['period' => 'monthly']))->assertOk()->getContent();
+        $this->assertStringNotContainsString('data-analytics-chart', $reports);
+        $this->assertStringContainsString('href="'.route('helper.dashboard').'"', $reports);
+        $dashboard = $this->get(route('helper.dashboard', ['period' => 'monthly']))->assertOk()->getContent();
+        $this->assertStringContainsString('Case overview', $dashboard);
+        $this->assertStringContainsString('data-analytics-chart', $dashboard);
+    }
+
     public function test_adviser_kpis_follow_qa_order_with_total_sessions_active_helpers_and_satisfaction(): void
     {
         $helper = $this->helper();
