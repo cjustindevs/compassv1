@@ -1,3 +1,17 @@
+// Icon buttons keep their icon: write the label into the hidden label span and the accessible name/tooltip.
+// Plain buttons (no label span) get their text replaced, as before.
+export function setButtonLabel(button, text) {
+    if (!button) return;
+    const label = typeof button.querySelector === 'function' ? button.querySelector('[data-voice-label]') : null;
+    if (label) {
+        label.textContent = text;
+        button.setAttribute?.('aria-label', text);
+        button.setAttribute?.('data-tooltip', text);
+    } else {
+        button.textContent = text;
+    }
+}
+
 export class VoiceCallClient {
     constructor(root, config, environment) {
         this.root = root; this.config = config; this.env = environment;
@@ -183,7 +197,7 @@ export class VoiceCallClient {
         this.buttons.decline.hidden = !incoming || this.ended;
         this.buttons.mute.hidden = !this.stream || this.ended;
         this.buttons.leave.hidden = !this.pc || !active || this.ended;
-        this.buttons.leave.textContent = this.call?.status === 'ringing' && this.call?.is_caller ? 'Cancel call' : 'Leave call';
+        setButtonLabel(this.buttons.leave, this.call?.status === 'ringing' && this.call?.is_caller ? 'Cancel call' : 'Leave call');
         if (this.microphoneButton) {
             this.microphoneButton.hidden = !!this.pc || this.ended;
             this.microphoneButton.disabled = this.busy;
@@ -503,7 +517,7 @@ export class VoiceCallClient {
         const tracks = this.stream.getAudioTracks();
         const muted = tracks.some(track => track.enabled);
         tracks.forEach(track => { track.enabled = !muted; });
-        this.buttons.mute.textContent = muted ? 'Unmute' : 'Mute';
+        setButtonLabel(this.buttons.mute, muted ? 'Unmute' : 'Mute');
         this.buttons.mute.setAttribute('aria-pressed',String(muted));
     }
 
@@ -526,7 +540,7 @@ export class VoiceCallClient {
         this.stream?.getTracks().forEach(track => track.stop()); this.stream = null;
         this.audio.srcObject?.getTracks?.().forEach(track => track.stop());
         this.audio.srcObject = null; this.buttons.play.hidden = true;
-        this.buttons.mute.textContent = 'Mute'; this.buttons.mute.setAttribute('aria-pressed','false');
+        setButtonLabel(this.buttons.mute, 'Mute'); this.buttons.mute.setAttribute('aria-pressed','false');
         this.pendingCandidates = []; this.offerSent = false; this.restarts = 0;
         this.signalCursor = 0; this.seenSignals.clear(); this.signalQueue = Promise.resolve();
         this.connectedSince = null;

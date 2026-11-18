@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { VoiceCallClient } from '../../resources/js/voice-call-client.mjs';
+import { VoiceCallClient, setButtonLabel } from '../../resources/js/voice-call-client.mjs';
 
 function room() {
     const elements = {};
@@ -360,4 +360,19 @@ test('an incoming call opens chat controls once and subsequent polling respects 
     await r.client.poll();assert.equal(r.client.root.hidden,true);
     r.setState({available:true,signaling_available:true,session:{ended:false},call:{id:'incoming-two',is_caller:false,status:'ringing'}});
     await r.client.poll();assert.equal(r.client.root.hidden,false);
+});
+
+test('icon buttons keep their icon: labels go to the hidden span, aria-label and tooltip', () => {
+    const span = { textContent: 'Mute' };
+    const attributes = {};
+    const iconButton = { textContent: '<svg/>Mute', querySelector: (selector) => (selector === '[data-voice-label]' ? span : null), setAttribute(key, value) { attributes[key] = value; } };
+    setButtonLabel(iconButton, 'Unmute');
+    assert.equal(span.textContent, 'Unmute');
+    assert.equal(attributes['aria-label'], 'Unmute');
+    assert.equal(attributes['data-tooltip'], 'Unmute');
+    assert.equal(iconButton.textContent, '<svg/>Mute', 'the icon markup is left alone');
+    const plain = { textContent: 'Leave call' };
+    setButtonLabel(plain, 'Cancel call');
+    assert.equal(plain.textContent, 'Cancel call');
+    setButtonLabel(null, 'x');
 });

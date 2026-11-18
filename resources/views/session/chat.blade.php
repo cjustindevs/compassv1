@@ -367,6 +367,7 @@
             </div>
             <div class="chat-header-actions">
                 <span class="session-timer" id="sessionTimer" data-started-at="{{ optional($session->start_time)->timestamp }}">00:00</span>
+                <x-voice-call-launcher :session="$session" />
                 <div data-notification-slot></div>
                 <form class="chat-session-end" method="POST" action="{{ route('session.end', ['session_id'=>$session->id]) }}"
                       data-confirm="End session?"

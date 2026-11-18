@@ -6,8 +6,18 @@
         'state'=>route('voice.state',$session), 'credentials'=>route('voice.credentials',$session),
         'start'=>route('voice.start',$session), 'action'=>route('voice.action',$session), 'signal'=>route('voice.signal',$session),
         'consent'=>route('voice.consent',$session), 'requestConsent'=>route('voice.consent-request',$session), 'role'=>auth()->user()->role];
+    // Round icon controls (QA: icons instead of text). The label stays for screen readers and as the tooltip.
+    $controls = [
+        'start' => ['phone', 'Call', 'voice-btn voice-btn--go', 'disabled'],
+        'accept' => ['phone', 'Accept call', 'voice-btn voice-btn--go', 'hidden'],
+        'decline' => ['phone-off', 'Decline', 'voice-btn voice-btn--end', 'hidden'],
+        'mute' => ['microphone', 'Mute', 'voice-btn', 'hidden aria-pressed="false"'],
+        'play' => ['play', 'Play audio', 'voice-btn', 'hidden'],
+        'microphone' => ['microphone', 'Check microphone', 'voice-btn', 'disabled'],
+        'leave' => ['phone-off', 'Leave call', 'voice-btn voice-btn--end', 'hidden'],
+    ];
 @endphp
-@if(!$dedicated)<button type="button" class="voice-chat-launcher" data-voice-toggle aria-expanded="false"><x-ui-icon name="phone" /> Call</button>@endif
+{{-- In text chat the panel opens from <x-voice-call-launcher> in the top bar. --}}
 <section class="voice-call-panel {{ $dedicated ? 'voice-call-dedicated' : 'voice-chat-panel' }}" data-voice-call data-chat="{{ $dedicated ? 'false' : 'true' }}" data-voice-state="checking" aria-label="Live voice call" @if(!$dedicated) hidden @endif>
     <div class="voice-call-visual" aria-hidden="true"><x-ui-icon name="phone" /><span></span><span></span><span></span></div>
     <div class="voice-call-copy">
@@ -17,27 +27,18 @@
         <small>Audio is not recorded. Leaving the call keeps this support session and text chat open.</small>
     </div>
     <div class="voice-call-actions">
-        <button type="button" data-voice-consent hidden>{{ auth()->user()->role === 'seeker' ? 'Enable voice calls' : 'Request voice call' }}</button>
-        <button type="button" data-voice-start disabled>Call</button>
-        <button type="button" data-voice-accept hidden>Accept call</button>
-        <button type="button" data-voice-decline hidden>Decline</button>
-        <button type="button" data-voice-mute hidden aria-pressed="false">Mute</button>
-        <button type="button" data-voice-leave hidden>Leave call</button>
-        <button type="button" data-voice-play hidden>Play audio</button>
-        <button type="button" data-voice-retry hidden>Retry connection</button>
-        <button type="button" data-voice-microphone disabled>Check microphone</button>
+        <button type="button" class="voice-consent-btn" data-voice-consent hidden>{{ auth()->user()->role === 'seeker' ? 'Enable voice calls' : 'Request voice call' }}</button>
+        @foreach($controls as $name => [$icon, $label, $class, $state])
+        <button type="button" class="{{ $class }}" data-voice-{{ $name }} {!! $state !!} aria-label="{{ $label }}" data-tooltip="{{ $label }}"><x-ui-icon :name="$icon" /><span class="sr-only" data-voice-label>{{ $label }}</span></button>
+        @endforeach
     </div>
-    <div class="voice-call-check"><span data-voice-microphone-status role="status">Microphone not checked</span></div>
-    <details class="voice-call-details">
-        <summary>Connection details</summary>
-        <dl>
-            <div><dt>Microphone</dt><dd data-voice-detail-microphone>Not checked</dd></div>
-            <div><dt>Session service</dt><dd data-voice-detail-server>Checking</dd></div>
-            <div><dt>Call messages</dt><dd data-voice-detail-signaling>Checking</dd></div>
-            <div><dt>Audio connection</dt><dd data-voice-detail-audio>Not started</dd></div>
-            <div><dt>Last issue</dt><dd data-voice-detail-error>None</dd></div>
-        </dl>
-    </details>
+    <span class="sr-only" data-voice-microphone-status role="status">Microphone not checked</span>
+    {{-- Shown only when the connection has a problem (reconnecting, failed, unavailable). --}}
+    <div class="voice-call-alert" data-voice-alert role="alert" hidden>
+        <x-ui-icon name="warning" />
+        <p data-voice-alert-text>Connection problem.</p>
+        <button type="button" class="voice-btn" data-voice-retry hidden aria-label="Retry connection" data-tooltip="Retry connection"><x-ui-icon name="refresh" /><span class="sr-only" data-voice-label>Retry connection</span></button>
+    </div>
     <audio data-voice-audio autoplay playsinline></audio>
     @if(auth()->user()->role === 'seeker')
     <dialog data-voice-consent-dialog class="focus-panel-dialog" aria-label="Voice participation consent"><h2>Enable voice calls?</h2><p>I agree to live audio with my assigned Helper. Audio is not recorded or transcribed. I can leave the call and continue with messages.</p><label><input type="checkbox" data-voice-consent-check> I agree to voice participation.</label><p data-voice-consent-error role="alert"></p><div class="voice-call-actions"><button type="button" data-voice-consent-save>Enable voice</button><button type="button" data-voice-consent-cancel>Keep using messages</button></div></dialog>

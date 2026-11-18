@@ -3,6 +3,26 @@ import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { VoiceCallClient } from './voice-call-client.mjs';
 
+// The connection-details panel is gone; a small alert appears only while the call has a connection problem.
+const PROBLEM_STATES = ['reconnecting', 'failed', 'unavailable'];
+function watchConnectionProblems(root) {
+    const alert = root.querySelector('[data-voice-alert]');
+    const text = root.querySelector('[data-voice-alert-text]');
+    const status = root.querySelector('[data-voice-status]');
+    const retry = root.querySelector('[data-voice-retry]');
+    if (!alert || typeof MutationObserver === 'undefined') return;
+    const sync = () => {
+        const problem = PROBLEM_STATES.includes(root.getAttribute('data-voice-state')) || (retry && !retry.hidden);
+        alert.hidden = !problem;
+        if (problem && text && status) text.textContent = status.textContent;
+    };
+    const observer = new MutationObserver(sync);
+    observer.observe(root, { attributes: true, attributeFilter: ['data-voice-state'] });
+    if (retry) observer.observe(retry, { attributes: true, attributeFilter: ['hidden'] });
+    if (status) observer.observe(status, { childList: true, characterData: true, subtree: true });
+    sync();
+}
+
 function initialize() {
     document.querySelectorAll('[data-voice-call]').forEach(root => {
         let client, config;
@@ -19,6 +39,7 @@ function initialize() {
             root.querySelector('[data-voice-status]').textContent = 'Reload this page in Safari or Chrome. Your messages remain available.';
             return;
         }
+        watchConnectionProblems(root);
         const toggle = document.querySelector('[data-voice-toggle]');
         toggle?.addEventListener?.('click', () => { root.hidden = !root.hidden; toggle.setAttribute('aria-expanded',String(!root.hidden)); });
         const consent = root.querySelector('[data-voice-consent]'), consentDialog = root.querySelector('[data-voice-consent-dialog]');

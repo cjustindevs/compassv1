@@ -329,6 +329,7 @@
                     <span class="session-timer" id="sessionTimer">00:00</span>
                 @endif
                 <span class="status-badge {{ $session->session_status === 'active' ? 'active' : 'helper-assigned' }}">{{ $session->status_label }}</span>
+                <x-voice-call-launcher :session="$session" />
                 @if($session->isReferralEligible())
                     <button type="button" class="action-btn referral-btn" id="referralBtn" @disabled(!$session->canRecommendReferral()) title="Exchange messages or connect a voice call first"><x-ui-icon name="arrow-right"  /> Referral</button>
                 @endif

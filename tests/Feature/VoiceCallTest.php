@@ -335,6 +335,26 @@ class VoiceCallTest extends TestCase
         }
     }
 
+    public function test_call_screen_uses_icon_controls_header_call_button_and_problem_popup(): void
+    {
+        [$seeker,$helper,$session]=$this->room();
+        $session->update(['session_type'=>'chat']);
+
+        $html=$this->actingAs($seeker)->get(route('session.chat'))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/<div class="chat-header-actions">[\s\S]*?data-voice-toggle[\s\S]*?data-notification-slot/', $html, 'Call button sits with the bell in the top bar.');
+        $this->assertSame(1, substr_count($html, 'data-voice-toggle'));
+        $this->assertMatchesRegularExpression('/<button type="button" class="voice-launcher"[^>]*aria-label="Voice call"/', $html);
+        $this->assertStringNotContainsString('Connection details', $html);
+        $this->assertMatchesRegularExpression('/<div class="voice-call-alert" data-voice-alert role="alert" hidden>/', $html);
+        foreach (['start'=>'Call','accept'=>'Accept call','decline'=>'Decline','mute'=>'Mute','leave'=>'Leave call','retry'=>'Retry connection'] as $name=>$label) {
+            $this->assertMatchesRegularExpression('/<button type="button" class="voice-btn[^"]*" data-voice-'.$name.'\b[^>]*aria-label="'.$label.'"[^>]*>\s*<svg[\s\S]*?<span class="sr-only" data-voice-label>'.$label.'<\/span>/', $html, $name);
+        }
+
+        $helperHtml=$this->actingAs($helper)->get(route('helper.chat.show',$session->id))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/<div class="session-badges">[\s\S]*?data-voice-toggle/', $helperHtml);
+        $this->assertSame(1, substr_count($helperHtml, 'data-voice-toggle'));
+    }
+
     public function test_active_text_chat_enables_calls_only_after_seeker_consent_without_changing_session(): void
     {
         [$seeker,$helper,$session]=$this->room();
