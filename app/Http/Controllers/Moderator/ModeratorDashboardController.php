@@ -36,11 +36,25 @@ class ModeratorDashboardController extends Controller
         $overview = app(DashboardOverview::class)->forUser($request->user());
         $overviewSignature = hash('sha256', json_encode($overview));
 
+        // QA: Reports are tables, so the case overview, Helper workload and competency charts live here.
+        // Same data as Moderator Reports, for the dashboard's selected period.
+        $dates = \App\Services\AnalyticsPeriod::fromRequest($request)->dates();
+        $chartRequest = $request->duplicate(['from' => $dates['from'], 'to' => $dates['to']]);
+        $chartRequest->setUserResolver(fn () => $request->user());
+        $caseReport = app(\App\Services\RoleActivityReport::class)->report($chartRequest);
+        $analytics = app(ModeratorAnalyticsController::class);
+        $workload = $analytics->getWorkloadDistribution();
+        $radar = $analytics->getSkillRadar($caseReport['from'], $caseReport['to']);
+        $caseCharts = $caseReport['charts'];
+
         return view('moderator.dashboard', compact(
             'overviewSignature',
             'overview',
             'stats',
-            'recentActivity'
+            'recentActivity',
+            'caseCharts',
+            'workload',
+            'radar'
         ));
     }
 

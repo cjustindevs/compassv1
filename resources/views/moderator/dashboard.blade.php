@@ -52,6 +52,7 @@
     ]" />
 
     <section id="dashboard-analytics" aria-label="Operations dashboard summaries">@include('moderator.partials.dashboard-analytics')</section>
+    <div class="mo-report-charts">@include('moderator.partials.dashboard-report-charts')</div>
 
     <div class="dashboard-columns">
         <x-ui.card title="Recent Activity">

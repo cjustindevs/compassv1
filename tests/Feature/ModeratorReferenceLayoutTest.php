@@ -48,8 +48,11 @@ class ModeratorReferenceLayoutTest extends TestCase
         }
         $scheduled = $this->supportCase();
         $scheduled->update(['scheduled_start' => now()->addDay()]);
-        $this->get(route('moderator.reports'))->assertOk()->assertSee('Case Overview')->assertSee('Activity Log')->assertSee('data-analytics-chart', false)->assertSee('View exact values')
+        $this->get(route('moderator.reports'))->assertOk()->assertSee('Activity Log')
             ->assertViewHas('roleReport', fn ($r) => $r['summary']['Cases in period'] === 7 && $r['summary']['Pending requests'] === 1 && $r['summary']['Completed cases'] === 2 && array_sum($r['charts']['status']['values']) === 7 && $r['charts']['status']['values']['Scheduled'] === 1);
+        // The case overview charts now live on the Dashboard (QA: Reports are tables).
+        $this->get(route('moderator.dashboard'))->assertOk()->assertSee('Case overview')->assertSee('data-analytics-chart', false)->assertSee('View exact values')
+            ->assertViewHas('caseCharts', fn ($c) => array_sum($c['status']['values']) === 7 && $c['status']['values']['Scheduled'] === 1);
     }
 
     public function test_archived_emergency_filter_includes_retained_archive_markers(): void
@@ -84,7 +87,7 @@ class ModeratorReferenceLayoutTest extends TestCase
             $this->getJson(route('moderator.reports', $input))->assertUnprocessable()->assertJsonValidationErrors($error);
         }
         $this->get(route('moderator.reports', ['date_range' => '2025-10-09 to 2026-10-09']))->assertOk();
-        $this->get(route('moderator.reports', ['overview' => '', 'tab' => '', 'activity' => '']))->assertOk()->assertSee('Case Overview');
+        $this->get(route('moderator.reports', ['overview' => '', 'tab' => '', 'activity' => '']))->assertOk()->assertSee('Activity Log');
     }
 
     public function test_activity_filters_use_context_and_preserve_event_outcomes_and_pagination(): void
@@ -136,7 +139,8 @@ class ModeratorReferenceLayoutTest extends TestCase
         EmergencyResource::create(['agency_name' => 'Published hotline', 'hotline' => '12345', 'description' => 'Public support', 'status' => 'active'])->forceFill(['visibility' => 'public'])->save();
         EmergencyResource::create(['agency_name' => 'Private hotline', 'hotline' => '54321', 'status' => 'active'])->forceFill(['visibility' => 'private'])->save();
         $this->get(route('moderator.emergency'))->assertOk()->assertSee('No active emergency cases')->assertSee('Published hotline')->assertDontSee('Private hotline')->assertViewHas('stats', fn ($r) => $r['average_response'] === 'No data');
-        $this->get(route('moderator.reports'))->assertOk()->assertSee('No data for this period')->assertSee('No activity matches these filters');
+        $this->get(route('moderator.reports'))->assertOk()->assertSee('No activity matches these filters');
+        $this->get(route('moderator.dashboard'))->assertOk()->assertSee('No data for this period');
         $this->alert('acknowledged')->forceFill(['acknowledged_at' => now()->addHour()])->save();
         $this->alert('acknowledged')->forceFill(['acknowledged_at' => now()->subHour()])->save();
         $this->get(route('moderator.emergency'))->assertOk()->assertViewHas('stats', fn ($r) => $r['average_response'] === 'No data');

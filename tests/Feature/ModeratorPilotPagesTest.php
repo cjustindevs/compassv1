@@ -92,6 +92,18 @@ class ModeratorPilotPagesTest extends TestCase
         $this->assertStringContainsString('<label class="sr-only" for="reassign-helper-'.$queue->id.'"', $html);
     }
 
+    public function test_moderator_report_charts_move_to_the_dashboard(): void
+    {
+        $this->actingAs($this->moderator());
+        $reports = $this->get(route('moderator.reports'))->assertOk()->getContent();
+        foreach (['Current Helper workload', 'Competency by skill', 'Case Overview'] as $title) $this->assertStringNotContainsString($title, $reports, $title);
+        $this->assertStringContainsString('href="'.route('moderator.dashboard').'"', $reports);
+
+        $dashboard = $this->get(route('moderator.dashboard'))->assertOk()->getContent();
+        foreach (['Current Helper workload', 'Competency by skill', 'Case overview'] as $title) $this->assertStringContainsString($title, $dashboard, $title);
+        $this->assertLessThan(strpos($dashboard, 'Case overview'), strpos($dashboard, 'id="dashboard-analytics"'), 'Moved charts sit after the KPI cards.');
+    }
+
     public function test_moderator_kpis_follow_qa_order_and_count_priority_and_pending_assignments(): void
     {
         $user = User::factory()->create(['role' => 'seeker', 'is_active' => true]);

@@ -56,21 +56,7 @@
 <p>Average Helper workload: <strong>{{ $report['summary']['Average Helper workload'] }}</strong> completed sessions per serving Helper | {{ $report['summary']['Serving Helpers'] }} Helpers measured.</p>
 <p class="mo-filter-note">Same calculation as the dashboard: queue entry to actual start, excluding ongoing waits. These two measures use the session activity cohort (end, start, submission or legacy creation date), with the selected case status, priority and history filters. The case table retains its submission-date basis.</p>
 </details>
-<x-ui.card title="Case Overview" subtitle="Actual records in the selected Philippine Time date range. Each record is counted once.">
-    <div class="analytics-chart-grid report-chart-grid">
-    @foreach(['status','categories','emergencies','referrals'] as $key)
-        @if(isset($report['charts'][$key]))
-            @include('moderator.partials.distribution',['values'=>$report['charts'][$key]['values'],'chartTitle'=>$report['charts'][$key]['title']])
-        @endif
-    @endforeach
-    </div>
-</x-ui.card>
-<x-ui.card title="Helpers and competency">
-    <div class="analytics-chart-grid report-chart-grid">
-        <x-analytics-chart title="Current Helper workload" description="Active and assigned sessions per Helper right now; independent of the date filter." :chart="['type'=>'bar','labels'=>collect($workload)->pluck('helper')->all(),'datasets'=>[['label'=>'Open sessions','data'=>collect($workload)->pluck('count')->all()]]]" />
-        <x-analytics-chart title="Competency by skill" description="Average of current-rubric evaluations in the selected period, on a 1–5 scale." :chart="['type'=>'radar','scale'=>[1,5],'unit'=>'','labels'=>$radar['labels'],'datasets'=>[['label'=>'All Helpers (1–5)','data'=>$radar['values']]]]" />
-    </div>
-</x-ui.card>
+<p class="mo-filter-note">Case overview, Helper workload and competency charts are on your <a class="text-green-700 font-semibold" href="{{ route('moderator.dashboard') }}">Dashboard</a>.</p>
 <x-ui.card title="Activity Log" class="mo-activity">
     <x-slot:actions>
         <x-ui.tabs class="mo-activity-tabs" label="Activity type" :items="collect([''=>'All','cases'=>'Cases','emergencies'=>'Emergencies','queue'=>'Queue','actions'=>'Actions'])->map(fn ($label, $value) => ['label' => $label, 'href' => route('moderator.reports', array_merge(request()->except('activity_page'), ['activity' => $value])), 'active' => (request('activity') ?: '') === $value])->values()->all()" />
