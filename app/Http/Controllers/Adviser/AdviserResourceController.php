@@ -13,11 +13,13 @@ class AdviserResourceController extends Controller
     public function index(Request $request): View
     {
         app(\App\Services\AdviserScope::class)->actor();
-        $request->validate(['section'=>'nullable|in:resources,emergency']);
+        $request->validate(['section'=>'nullable|in:resources,emergency', 'view'=>'nullable|in:current,archived']);
         if ($request->input('section')==='emergency') {
             return view('adviser.emergency-resources', ['hotlines'=>\App\Models\EmergencyResource::orderBy('agency_name')->get()]);
         }
-        $query = SelfHelpResource::query();
+        // Current and Archived tabs: archived resources are listed only on their own tab.
+        $resourceView = $request->input('view', 'current');
+        $query = SelfHelpResource::query()->when($resourceView === 'archived', fn ($q) => $q->whereNotNull('archived_at'), fn ($q) => $q->whereNull('archived_at'));
 
         if ($request->filled('search')) {
             $query->search(trim($request->get('search')));
@@ -42,7 +44,9 @@ class AdviserResourceController extends Controller
             'featured' => SelfHelpResource::featured()->count(),
         ];
 
-        return view('adviser.resources', compact('resources', 'categories', 'stats'));
+        $archivedCount = SelfHelpResource::whereNotNull('archived_at')->count();
+
+        return view('adviser.resources', compact('resources', 'categories', 'stats', 'resourceView', 'archivedCount'));
     }
 
     public function store(Request $request): RedirectResponse

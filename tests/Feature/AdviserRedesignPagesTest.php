@@ -705,6 +705,26 @@ class AdviserRedesignPagesTest extends TestCase
         $this->assertStringNotContainsString('<details class="resource-history">', $html);
     }
 
+    public function test_resources_split_into_current_and_archived_tabs(): void
+    {
+        $adviser = $this->adviser();
+        \App\Models\SelfHelpResource::create(['title' => 'Still current', 'description' => 'A guide', 'category' => 'article', 'content' => 'Read.', 'is_published' => true]);
+        $old = \App\Models\SelfHelpResource::create(['title' => 'Old leaflet', 'description' => 'A guide', 'category' => 'article', 'content' => 'Read.', 'is_published' => false]);
+        $old->forceFill(['archived_at' => now()])->save();
+
+        $current = $this->actingAs($adviser->user)->get(route('adviser.resources'))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/class="ui-tab[^"]*is-active"[^>]*aria-current="page"[^>]*>\s*Current/', $current);
+        $this->assertStringContainsString('Still current', $current);
+        $this->assertStringNotContainsString('Old leaflet', $current);
+        $this->assertStringContainsString(route('adviser.resources', ['view' => 'archived']), $current);
+
+        $archived = $this->get(route('adviser.resources', ['view' => 'archived']))->assertOk()->getContent();
+        $this->assertStringContainsString('Old leaflet', $archived);
+        $this->assertStringNotContainsString('Still current', $archived);
+        $this->assertStringContainsString('<input type="hidden" name="view" value="archived">', $archived, 'Search keeps the tab.');
+        $this->get(route('adviser.resources', ['view' => 'bogus']))->assertSessionHasErrors('view');
+    }
+
     public function test_areas_of_concern_add_form_opens_in_a_dialog_and_rows_can_be_searched(): void
     {
         $adviser = $this->adviser();

@@ -70,7 +70,13 @@
             <x-ui.kpi icon="star" label="Featured" :value="$stats['featured']" tone="amber" />
         </x-ui.kpi-grid>
 
+        <x-ui.tabs label="Resource lists" :items="[
+            ['label' => 'Current', 'href' => route('adviser.resources'), 'active' => $resourceView === 'current'],
+            ['label' => 'Archived', 'href' => route('adviser.resources', ['view' => 'archived']), 'active' => $resourceView === 'archived', 'count' => $archivedCount],
+        ]" />
+
         <x-ui.filter-bar :action="route('adviser.resources')" class="resource-toolbar" aria-label="Resource filters">
+            @if($resourceView === 'archived')<input type="hidden" name="view" value="archived">@endif
             <x-ui.field label="Search" for="resourceSearch" class="resource-toolbar-search"><input id="resourceSearch" type="text" name="search" data-control="search" value="{{ request('search') }}" placeholder="Search resources..."></x-ui.field>
             <x-ui.field label="Category" for="resourceCategory"><select id="resourceCategory" name="category" data-control="select"><option value="all">All categories</option>@foreach($categories as $category)<option value="{{ $category }}" @selected(request('category') === $category)>{{ ucfirst($category) }}</option>@endforeach</select></x-ui.field>
             <x-slot:buttons><button type="submit" class="btn-primary"><x-ui-icon name="search" /> Search</button></x-slot:buttons>
