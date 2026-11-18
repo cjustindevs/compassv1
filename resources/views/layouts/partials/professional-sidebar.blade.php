@@ -15,7 +15,7 @@
     </div>
 
     <nav class="sidebar-nav">
-        <div class="nav-section">Clinical Work</div>
+        <div class="nav-section">Work</div>
         <a href="{{ route('professional.dashboard') }}" class="nav-item {{ request()->routeIs('professional.dashboard') ? 'active' : '' }}">
             <x-ui-icon name="dashboard"  /><span class="nav-text">Dashboard</span>
         </a>
@@ -26,37 +26,33 @@
             @endif
         </a>
         <a href="{{ route('professional.cases') }}" class="nav-item {{ request()->routeIs('professional.cases*') ? 'active' : '' }}">
-            <x-ui-icon name="folder"  /><span class="nav-text">Active Cases</span>
+            <x-ui-icon name="folder"  /><span class="nav-text">Cases</span>
             @if($active > 0)
                 <span class="nav-badge" id="activeBadge">{{ $active }}</span>
             @endif
         </a>
-
-        <div class="nav-section">Reports</div>
         <a href="{{ route('professional.reports') }}" class="nav-item {{ request()->routeIs('professional.reports*') ? 'active' : '' }}">
             <x-ui-icon name="bar-chart"  /><span class="nav-text">Reports</span>
         </a>
 
         <div class="nav-section">Account</div>
-        <a href="{{ route('professional.profile') }}" class="nav-item {{ request()->routeIs('professional.profile*') ? 'active' : '' }}">
-            <x-ui-icon name="user"  /><span class="nav-text">Profile</span>
-        </a>
         <a href="{{ route('professional.settings') }}" class="nav-item {{ request()->routeIs('professional.settings*') ? 'active' : '' }}">
             <x-ui-icon name="settings"  /><span class="nav-text">Settings</span>
         </a>
     </nav>
 
     <div class="sidebar-footer">
-        <div class="sidebar-user">
+        {{-- The user block opens the Profile (it left the menu to keep the sidebar short). --}}
+        <a href="{{ route('professional.profile') }}" class="sidebar-user {{ request()->routeIs('professional.profile*') ? 'active' : '' }}" title="View profile">
             <div class="user-avatar">{{ $avatarText }}</div>
             <div class="user-info">
                 <div class="user-name">{{ $displayName }}</div>
-                <div class="user-role">Psychology Professional</div>
+                <div class="user-role">Professional · View profile</div>
             </div>
-        </div>
+        </a>
         <div class="availability-dot">
             <span class="dot {{ $isAvailable ? 'online' : 'offline' }}"></span>
-            {{ $isAvailable ? 'Available for referrals' : 'Unavailable' }}
+            {{ $isAvailable ? 'Available' : 'Unavailable' }}
         </div>
         <div class="user-stats">
             <div class="stat">

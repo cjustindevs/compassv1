@@ -416,3 +416,8 @@
 
 /* The shared app shell owns the sidebar gutter; nested adviser pages do not add another gutter. */
 .compass-ui:not(.compass-ui-admin) .workspace-content > .adviser-page-content{padding:0}
+
+/* Professional: the user block links to the Profile. */
+.compass-ui .sidebar a.sidebar-user { text-decoration: none; color: inherit; border-radius: 10px; }
+.compass-ui .sidebar a.sidebar-user:hover, .compass-ui .sidebar a.sidebar-user.active { background: #f0fdf4; }
+.compass-ui .sidebar a.sidebar-user:focus-visible { outline: 2px solid #087341; outline-offset: 2px; }

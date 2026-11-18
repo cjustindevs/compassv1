@@ -280,6 +280,19 @@ class ProfessionalModuleTest extends TestCase
         ]);
     }
 
+    public function test_professional_sidebar_is_short_with_profile_in_the_user_block(): void
+    {
+        $html = $this->actingAs($this->professionalUser)->get(route('professional.dashboard'))->assertOk()->getContent();
+        $nav = substr($html, strpos($html, '<nav class="sidebar-nav">'));
+        $nav = substr($nav, 0, strpos($nav, '</nav>'));
+        preg_match_all('/<span class="nav-text">([^<]+)<\/span>/', $nav, $items);
+        $this->assertSame(['Dashboard', 'Referrals', 'Cases', 'Reports', 'Settings'], $items[1]);
+        preg_match_all('/<div class="nav-section">([^<]+)<\/div>/', $nav, $sections);
+        $this->assertSame(['Work', 'Account'], $sections[1]);
+        $this->assertMatchesRegularExpression('/<a href="'.preg_quote(route('professional.profile'), '/').'" class="sidebar-user[ "]/', $html);
+        $this->assertStringNotContainsString('Available for referrals', $html);
+    }
+
     public function test_cases_page_lists_active_cases(): void
     {
         $this->pendingReferral->update(['status' => Referral::STATUS_IN_PROGRESS]);
