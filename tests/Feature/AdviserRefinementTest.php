@@ -97,11 +97,13 @@ class AdviserRefinementTest extends TestCase
     {
         [$user] = $this->records();
         $notification = Notification::create(['user_account_id'=>$user->id,'title'=>'Emergency update','message'=>'An emergency requires your review.','notification_type'=>'emergency','status'=>'unread']);
-        $this->actingAs($user)->get(route('adviser.notifications'))->assertOk()->assertSee('Emergency update')->assertSee('Archived Notifications');
+        // Emergency notices are shown in safe wording (EmergencyNotificationPresentation), not their stored title.
+        $shown = app(\App\Services\EmergencyNotificationPresentation::class)->present($notification, $user)['title'];
+        $this->actingAs($user)->get(route('adviser.notifications'))->assertOk()->assertSee($shown)->assertSee('Archived Notifications');
         Cache::put('unread_count_'.$user->id,99,60);
         $this->delete(route('adviser.notifications.destroy',$notification->id))->assertRedirect();
-        $this->get(route('adviser.notifications'))->assertOk()->assertDontSee('Emergency update');
-        $this->get(route('adviser.notifications',['history'=>'archived']))->assertOk()->assertSee('Emergency update')->assertSee('Restore to inbox');
+        $this->get(route('adviser.notifications'))->assertOk()->assertDontSee($shown);
+        $this->get(route('adviser.notifications',['history'=>'archived']))->assertOk()->assertSee($shown)->assertSee('Restore to inbox');
         $this->get(route('adviser.notifications.unread-count'))->assertJson(['count'=>0]);
         [$other] = $this->records('Other');
         $this->actingAs($other)->post(route('adviser.notifications.restore',$notification->id))->assertNotFound();
