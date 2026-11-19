@@ -7,20 +7,34 @@
 <section class="card">
 <header class="card-header">
 <h3>{{ $monthName }}</h3>
-<div class="hf-actions">
-<form method="GET" action="{{ route('helper.calendar') }}" class="hf-actions">
+<nav class="hf-cal-nav" aria-label="Choose a month">
+<a class="btn btn-secondary btn-sm hf-cal-step" href="{{ route('helper.calendar',['month'=>$prevMonth,'year'=>$prevYear]) }}" aria-label="Previous month"><x-ui-icon name="chevron-left" /><span>Previous</span></a>
+<form method="GET" action="{{ route('helper.calendar') }}" class="hf-cal-pick">
     <input type="hidden" name="year" value="{{ $year }}">
-    <select name="month" class="form-control" style="width:auto" aria-label="Calendar month">
+    <select name="month" class="form-control" aria-label="Calendar month">
         @for($m=1;$m<=12;$m++)
         <option value="{{ $m }}" @selected($m===$month)>{{ \Illuminate\Support\Carbon::create($year,$m,1)->format('F') }}</option>
         @endfor
     </select>
     <button class="btn btn-secondary btn-sm" type="submit">Go</button>
 </form>
-<a class="btn btn-secondary btn-sm" href="{{ route('helper.calendar',['month'=>$prevMonth,'year'=>$prevYear]) }}">Previous month</a>
+<a class="btn btn-secondary btn-sm hf-cal-step" href="{{ route('helper.calendar',['month'=>$nextMonth,'year'=>$nextYear]) }}" aria-label="Next month"><span>Next</span><x-ui-icon name="chevron-right" /></a>
 <a class="btn btn-secondary btn-sm" href="{{ route('helper.calendar',['month'=>now('Asia/Manila')->month,'year'=>now('Asia/Manila')->year]) }}">Today</a>
-<a class="btn btn-secondary btn-sm" href="{{ route('helper.calendar',['month'=>$nextMonth,'year'=>$nextYear]) }}">Next month</a>
-</div>
+</nav>
+<style>
+.hf-cal-nav{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.hf-cal-pick{display:flex;align-items:center;gap:8px;margin:0}
+.hf-cal-pick select{width:auto;min-width:140px}
+.hf-cal-step{display:inline-flex;align-items:center;gap:4px}
+.hf-cal-step .compass-icon{width:16px;height:16px}
+@media(max-width:640px){
+  .card-header:has(> .hf-cal-nav){flex-direction:column;align-items:stretch;gap:12px}
+  .hf-cal-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .hf-cal-pick{grid-column:1/-1;order:-1}
+  .hf-cal-pick select{flex:1;min-width:0}
+  .hf-cal-nav>.btn{justify-content:center;min-width:0;padding-left:8px;padding-right:8px}
+}
+</style>
 </header>
 <p class="hf-muted" style="margin-bottom:14px">Duty is assigned by your Moderator or Adviser. Open a session to see its details.</p>
 <div class="hf-calendar-desktop">

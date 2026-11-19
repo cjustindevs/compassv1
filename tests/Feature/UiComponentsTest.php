@@ -194,6 +194,20 @@ class UiComponentsTest extends TestCase
         $this->assertStringContainsString('<span class="dot" role="img" aria-label="Unread">', file_get_contents(resource_path('views/moderator/notifications.blade.php')));
     }
 
+    public function test_phone_layout_fixes_stay_in_place(): void
+    {
+        $assets = file_get_contents(resource_path('views/partials/ui-assets.blade.php'));
+        $this->assertStringContainsString("js/mobile-tables.js", $assets, 'Every page labels its table cells for phones.');
+        $css = file_get_contents(public_path('css/compass-components.css'));
+        $this->assertStringContainsString('table.compass-stack-table td[data-label]::before { content: attr(data-label);', $css);
+        $this->assertStringContainsString('td.compass-stack-wide) { grid-column: 1 / -1; }', $css);
+        $calendar = file_get_contents(resource_path('views/helper/calendar.blade.php'));
+        $this->assertStringContainsString('<nav class="hf-cal-nav" aria-label="Choose a month">', $calendar);
+        $this->assertStringContainsString('aria-label="Previous month"', $calendar);
+        // Darkening solid green buttons must not paint the white "secondary" buttons green.
+        $this->assertStringContainsString('.seeker-button:not(.secondary):not(.danger)', file_get_contents(public_path('css/accessibility-contrast.css')));
+    }
+
     public function test_pagination_last_page_disables_next(): void
     {
         $paginator = new \Illuminate\Pagination\LengthAwarePaginator(range(11, 19), 19, 10, 2, ['path' => '/helpers']);

@@ -46,7 +46,7 @@ html.compass-ui .logout-text { color: #b91c1c; }
 html.compass-ui .status-badge.cancelled { color: #b91c1c; }
 
 /* White text on green: use the darker brand green. */
-html.compass-ui :is(.seeker-button, .duty-button, .helper-avatar, .cm-primary, .cal-cell.today .day-num),
+html.compass-ui :is(.seeker-button:not(.secondary):not(.danger), .duty-button, .helper-avatar, .cm-primary, .cal-cell.today .day-num),
 html.compass-ui .nav-badge:not(.warning):not(.danger),
 html.compass-ui #seekerConsentDialog .consent-action.primary { background-color: #027039; border-color: #027039; }
 /* Admin buttons follow the chosen accent; in the light theme they are darkened enough for white text. */

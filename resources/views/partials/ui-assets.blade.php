@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="{{ asset('css/interface-refinement.css') }}?v={{ filemtime(public_path('css/interface-refinement.css')) }}">
     <script src="{{ asset('js/focused-actions.js') }}?v={{ filemtime(public_path('js/focused-actions.js')) }}" defer></script>
     <link rel="stylesheet" href="{{ asset('css/compass-layout.css') }}?v={{ filemtime(public_path('css/compass-layout.css')) }}">
+    <script src="{{ asset('js/mobile-tables.js') }}?v={{ filemtime(public_path('js/mobile-tables.js')) }}" defer></script>
     <link rel="stylesheet" href="{{ asset('css/accessibility-contrast.css') }}?v={{ filemtime(public_path('css/accessibility-contrast.css')) }}">
     @auth
         @unless(($embeddedScreen ?? false) || request()->routeIs('home', 'login', 'register', 'seeker.register', 'seeker.consent', 'password.*', 'verification.*'))

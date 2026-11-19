@@ -341,3 +341,21 @@ summary.ui-icon-btn::-webkit-details-marker { display: none; }
 
 /* The header bell was removed; empty bell slots take no space. */
 [data-notification-slot]:empty, [data-page-slot]:empty { display: none !important; }
+
+/* Phone: tables become a list of small cards (labels from public/js/mobile-tables.js), so columns are never
+   squeezed until words break into single letters. Each value sits under its column name. */
+@media (max-width: 640px) {
+  html.compass-ui:not(.compass-ui-admin) :is(.table-container, .ui-table-scroll, .table-wrap, .table-wrapper, .table-responsive, .overflow-x-auto, .analytics-table-scroll):has(> table.compass-stack-table) { overflow: visible; border: 0; background: none; box-shadow: none; }
+  html.compass-ui:not(.compass-ui-admin) table.compass-stack-table { display: block; width: 100%; min-width: 0 !important; border: 0; background: none; }
+  html.compass-ui:not(.compass-ui-admin) table.compass-stack-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  html.compass-ui:not(.compass-ui-admin) table.compass-stack-table tbody { display: block; }
+  html.compass-ui:not(.compass-ui-admin) table.compass-stack-table tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; margin: 0 0 12px; padding: 14px 16px; border: 1px solid #e3ebe6; border-radius: 12px; background: #fff; }
+  html.compass-ui:not(.compass-ui-admin) table.compass-stack-table td { display: block; min-width: 0; height: auto !important; padding: 0 !important; border: 0 !important; text-align: left !important; white-space: normal !important; overflow-wrap: break-word; word-break: normal; font-size: 14px; }
+  html.compass-ui:not(.compass-ui-admin) table.compass-stack-table td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 2px; font-size: 12px; font-weight: 600; color: #566170; text-transform: none; letter-spacing: 0; }
+  /* The first column (usually the case or name) and long text columns take the full card width. */
+  html.compass-ui:not(.compass-ui-admin) table.compass-stack-table td:first-child { grid-column: 1 / -1; }
+  html.compass-ui:not(.compass-ui-admin) table.compass-stack-table :is(td.compass-stack-full, td.compass-stack-actions, td.compass-stack-wide) { grid-column: 1 / -1; }
+  html.compass-ui:not(.compass-ui-admin) table.compass-stack-table td.compass-stack-full { text-align: center !important; }
+  html.compass-ui:not(.compass-ui-admin) table.compass-stack-table tr:has(> td.compass-stack-full:only-child) { display: block; border-style: dashed; background: #fbfdfc; }
+  html.compass-ui:not(.compass-ui-admin) table.compass-stack-table td.compass-stack-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+}
