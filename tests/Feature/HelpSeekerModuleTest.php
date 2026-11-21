@@ -195,6 +195,22 @@ class HelpSeekerModuleTest extends TestCase
         $this->assertStringNotContainsString('Waiting for an available helper', $html);
     }
 
+    public function test_skipping_the_check_in_saves_nothing_and_documentation_says_not_answered(): void
+    {
+        [$user, $seeker] = $this->seekerUser();
+        $session = Session::create(['seeker_id' => $seeker->id, 'helper_id' => $this->helperId(), 'session_type' => 'chat', 'session_status' => Session::STATUS_ACTIVE,
+            'risk_level' => 'low', 'start_time' => now()->subMinutes(2), 'helper_accepted_at' => now()->subMinutes(2), 'created_date' => now()]);
+
+        $html = $this->actingAs($user)->withSession(['session_id' => $session->id])->get(route('session.chat'))->assertOk()->getContent();
+        $this->assertStringContainsString('data-skip', $html);
+        $this->assertStringNotContainsString("submitCheckIn('prefer_not_to_say')", $html, 'Skip must not save an answer on the Seeker\'s behalf.');
+        $this->assertStringContainsString('compass-checkin-skipped:'.$session->id, $html, 'Skip is remembered on this device only.');
+        $this->assertNull(\App\Models\SessionReport::where('session_id', $session->id)->value('help_seeker_condition'));
+
+        $view = file_get_contents(resource_path('views/helper/cases-show.blade.php'));
+        $this->assertStringContainsString("help_seeker_condition ?: 'Not answered by the Seeker'", $view);
+    }
+
     public function test_chat_page_uses_persisted_session_start_time_for_timer(): void
     {
         [$user, $seeker] = $this->seekerUser();

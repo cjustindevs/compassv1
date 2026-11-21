@@ -102,7 +102,7 @@
                 @if($session->report)
                     <div class="form-group">
                         <label class="form-label">Seeker condition</label>
-                        <div class="text-sm text-gray-700">{{ $session->report->help_seeker_condition ?: '—' }}</div>
+                        <div class="text-sm text-gray-700">{{ $session->report->help_seeker_condition ?: 'Not answered by the Seeker' }}</div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Session summary</label>

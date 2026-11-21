@@ -461,8 +461,13 @@ document.addEventListener('DOMContentLoaded', function () {
         submitCheckIn(selected.value);
     });
 
+    // "Skip for now" saves nothing: the Helper's documentation then shows "Not answered by the Seeker".
+    // The choice to skip is remembered on this device so the card does not return on reload.
+    const skipKey = 'compass-checkin-skipped:{{ $session->id }}';
+    try { if (localStorage.getItem(skipKey) === '1') card.remove(); } catch (e) {}
     form.querySelector('[data-skip]').addEventListener('click', function () {
-        submitCheckIn('prefer_not_to_say');
+        try { localStorage.setItem(skipKey, '1'); } catch (e) {}
+        card.remove();
     });
 });
 </script>

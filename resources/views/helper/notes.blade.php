@@ -37,6 +37,7 @@
                     <div class="form-group form-span-all">
                         <label class="form-label">Seeker condition</label>
                         <input type="text" id="help_seeker_condition" name="help_seeker_condition" class="form-control" placeholder="Briefly describe the seeker's condition" value="{{ old('help_seeker_condition', $report->help_seeker_condition ?? '') }}" maxlength="500">
+                        <small style="font-size:12px;color:var(--gray-500)">The Seeker did not answer the check-in. Describe their condition from the session.</small>
                     </div>
                     @endif
 
