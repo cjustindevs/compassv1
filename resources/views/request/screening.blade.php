@@ -705,9 +705,9 @@
 
                 <p class="text-xs text-gray-400 mt-4"> COMPASS cannot guarantee an immediate emergency response. If you are in danger, contact local emergency services first.</p>
             </div>
-            <div class="safety-modal-footer">
-                <button type="button" data-close-safety>Continue my request</button>
-                <a class="primary" href="{{ route('emergency') }}">Open Emergency page</a>
+            <div class="safety-modal-footer cm-actions">
+                <button type="button" class="cm-btn cm-btn--secondary" data-close-safety>Continue my request</button>
+                <a class="cm-btn cm-btn--danger" href="{{ route('emergency') }}">Open Emergency page</a>
             </div>
         </dialog>
 

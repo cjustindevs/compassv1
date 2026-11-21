@@ -7,35 +7,33 @@
     @endif
 </div>
 @if(auth()->user()->role === 'seeker')
-<dialog id="connectionDialog" aria-labelledby="connectionHeading" aria-describedby="connectionExplanation">
-    <div class="connection-heading"><h2 id="connectionHeading">Your Helper is reconnecting</h2></div>
-    <p id="connectionExplanation" data-connection-text aria-live="polite"></p>
-    <p class="connection-muted">You can stay on this page. Your existing conversation is saved, and your session timer continues.</p>
-    <div data-connection-actions hidden>
-        <button type="button" data-choice="replace" class="connection-primary">Find another Helper</button>
-        <button type="button" data-choice="wait">Keep waiting</button>
+<dialog id="connectionDialog" class="cm-dialog" data-tone="primary" aria-labelledby="connectionHeading" aria-describedby="connectionExplanation">
+    <div class="cm-scroll">
+        <div class="cm-head">
+            <span class="cm-icon" aria-hidden="true"><x-ui-icon name="refresh" /></span>
+            <div>
+                <h2 id="connectionHeading" class="cm-title">Your Helper is reconnecting</h2>
+                <p id="connectionExplanation" class="cm-text" data-connection-text aria-live="polite"></p>
+                <p class="cm-text">You can stay on this page. Your existing conversation is saved, and your session timer continues. You can reopen this notice from your session.</p>
+            </div>
+        </div>
     </div>
-    <p data-connection-error role="alert"></p>
-    <div class="connection-footer"><span class="connection-muted">You can reopen this notice from your session.</span><button type="button" id="closeConnection">Back to session</button></div>
+    <p class="cm-error" data-connection-error role="alert"></p>
+    <div class="cm-actions">
+        <button type="button" class="cm-btn cm-btn--secondary" id="closeConnection">Back to session</button>
+        <div class="cm-actions-group" data-connection-actions hidden>
+            <button type="button" class="cm-btn cm-btn--secondary" data-choice="wait">Keep waiting</button>
+            <button type="button" class="cm-btn cm-btn--primary" data-choice="replace">Find another Helper</button>
+        </div>
+    </div>
 </dialog>
 @endif
 <style>
 #connectionNotice{padding:12px 16px;background:#f0faf4;border:1px solid #cce6d7;border-radius:12px;margin:8px 12px;font:13px/1.5 Inter,system-ui,sans-serif}
-#connectionDialog{width:min(480px,calc(100vw - 32px));max-height:calc(100dvh - 40px);overflow:auto;padding:24px;border:1px solid #dce8e0;border-radius:18px;margin:auto;background:#fff;color:#203c30;font:14px/1.6 Inter,system-ui,sans-serif}
-#connectionDialog::backdrop{background:rgba(15,35,25,.45)}
-#connectionDialog .connection-heading>:is(i, .compass-icon){display:grid;place-items:center;flex:0 0 42px;height:42px;background:#eaf7ef;border-radius:12px}#connectionDialog .connection-heading{display:flex;align-items:center;gap:12px;color:#087642}
-#connectionDialog h2{font-size:18px;line-height:1.4;margin:0}
-#connectionDialog p{margin:14px 0}#connectionDialog .connection-muted{color:#62736a;font-size:13px}
-#connectionDialog [data-connection-actions]:not([hidden]){display:flex;flex-wrap:wrap;gap:8px}
-#connectionDialog .connection-footer{border-top:1px solid #e0e9e3;padding-top:14px;display:flex;justify-content:space-between;align-items:center;gap:12px}
-#connectionDialog button,#connectionNotice button{font:600 13px Inter,system-ui,sans-serif;padding:10px 14px;min-height:42px;border:1px solid #bcd8c7;border-radius:9px;background:#fff;color:#087642;cursor:pointer}
-#connectionDialog .connection-primary{background:#07964e;color:white;border-color:#07964e}
-#connectionDialog button:focus-visible,#connectionNotice button:focus-visible{outline:2px solid #087642;outline-offset:3px}
-#connectionDialog button:disabled{opacity:.55;cursor:wait}#connectionDialog [data-connection-error]{color:#b42318}
+#connectionNotice button{font:600 13px Inter,system-ui,sans-serif;padding:10px 14px;min-height:42px;border:1px solid #bcd8c7;border-radius:9px;background:#fff;color:#087642;cursor:pointer}
+#connectionNotice button:focus-visible{outline:2px solid #087642;outline-offset:3px}
 #connectionNotice:not([hidden]){display:flex;align-items:center;justify-content:space-between;gap:14px}#connectionNotice button{flex-shrink:0}
-#connectionDialog .connection-muted{background:#f6f9f7;padding:12px;border-radius:10px}#connectionDialog .connection-footer .connection-muted{background:none;padding:0;font-size:12px}
-#connectionDialog [data-connection-error]:empty{display:none}
-@media(max-width:540px){#connectionDialog{padding:20px}#connectionDialog [data-connection-actions]{flex-direction:column}#connectionDialog [data-connection-actions] button{width:100%}#connectionNotice:not([hidden]){align-items:stretch;flex-direction:column}#connectionDialog .connection-footer{align-items:flex-start;flex-direction:column}#connectionDialog .connection-footer button{width:100%}}
+@media(max-width:540px){#connectionNotice:not([hidden]){align-items:stretch;flex-direction:column}}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{

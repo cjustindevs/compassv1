@@ -55,18 +55,18 @@ dialog.cm-dialog--wide { width: min(560px, calc(100vw - 32px)); }
 .cm-actions { flex: none; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin: 0; padding: 14px 24px; background: var(--cm-strip); border-top: 1px solid var(--cm-line); }
 
 /* Buttons */
-.cm-dialog .cm-btn {
+:is(.cm-dialog, .cm-actions) .cm-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 104px; min-height: 42px; margin: 0; padding: 0 18px;
     border: 1px solid transparent; border-radius: 10px; font: inherit; font-size: 14px; font-weight: 600; line-height: 1.2; text-align: center;
     text-decoration: none !important; cursor: pointer; transition: background-color .15s ease, border-color .15s ease;
 }
-.cm-dialog .cm-btn--primary { background: var(--cm-green); color: #fff !important; }
-.cm-dialog .cm-btn--primary:hover { background: var(--cm-green-hover); }
-.cm-dialog .cm-btn--danger { background: var(--cm-red); color: #fff !important; }
-.cm-dialog .cm-btn--danger:hover { background: var(--cm-red-hover); }
-.cm-dialog .cm-btn--secondary { background: #fff; color: #334155 !important; border-color: #cbd5e1; }
-.cm-dialog .cm-btn--secondary:hover { background: #f1f5f9; }
-.cm-dialog .cm-btn:focus-visible { outline: 2px solid #087341; outline-offset: 2px; }
+:is(.cm-dialog, .cm-actions) .cm-btn--primary { background: var(--cm-green); color: #fff !important; }
+:is(.cm-dialog, .cm-actions) .cm-btn--primary:hover { background: var(--cm-green-hover); }
+:is(.cm-dialog, .cm-actions) .cm-btn--danger { background: var(--cm-red); color: #fff !important; }
+:is(.cm-dialog, .cm-actions) .cm-btn--danger:hover { background: var(--cm-red-hover); }
+:is(.cm-dialog, .cm-actions) .cm-btn--secondary { background: #fff; color: #334155 !important; border-color: #cbd5e1; }
+:is(.cm-dialog, .cm-actions) .cm-btn--secondary:hover { background: #f1f5f9; }
+:is(.cm-dialog, .cm-actions) .cm-btn:focus-visible { outline: 2px solid #087341; outline-offset: 2px; }
 .cm-dialog .cm-btn:disabled, .cm-dialog .cm-btn[aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
 
 /* Tones */
@@ -161,3 +161,23 @@ dialog.chat-action-dialog > .modal-box > .modal-sub { color: var(--cm-text); fon
     dialog.chat-action-dialog .workflow-form-body { padding: 16px 20px !important; }
     dialog.chat-action-dialog .modal-actions { padding-left: 20px !important; padding-right: 20px !important; }
 }
+
+/* The dialog box itself never draws a focus ring when it opens; focus moves to its controls. */
+dialog:focus, dialog:focus-visible { outline: none; }
+.cm-dialog .cm-text:empty { display: none; }
+/* A group of extra actions shown later (e.g. reconnecting choices) sits in the same footer row. */
+.cm-actions-group:not([hidden]) { display: contents; }
+.cm-actions-group[hidden] { display: none !important; }
+/* Simple fields inside a shared dialog. */
+.cm-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.cm-fields label { display: block; margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--cm-ink); }
+.cm-fields :is(input, select, textarea) { box-sizing: border-box; width: 100%; min-height: 44px; margin: 0; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; color: var(--cm-ink); font: inherit; font-size: 14px; }
+.cm-fields :is(input, select, textarea):focus-visible { outline: 2px solid #087341; outline-offset: 1px; border-color: #087341; }
+@media (max-width: 480px) { .cm-fields { grid-template-columns: 1fr; } .cm-actions-group:not([hidden]) { display: contents; } }
+/* Admin dialogs focus their panel on open: no outline on the panel itself, and the shadow follows its 20px corners. */
+.admin-dialog { border-radius: var(--cm-radius) !important; }
+.admin-dialog-panel:focus, .admin-dialog-panel:focus-visible, dialog [tabindex="-1"]:focus { outline: none; }
+/* Crisis resources dialog: the hotline list scrolls in the space left, so both actions always stay visible. */
+#safetyModal[open] { display: flex; flex-direction: column; }
+#safetyModal .safety-modal-header, #safetyModal .safety-modal-footer { flex: none; }
+#safetyModal .safety-modal-body { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; overscroll-behavior: contain; }

@@ -227,6 +227,24 @@ class UiComponentsTest extends TestCase
         $this->assertStringNotContainsString('.compass-important-notice button:first-child', file_get_contents(public_path('css/live-notifications.css')));
     }
 
+    public function test_one_off_dialogs_use_the_shared_modal(): void
+    {
+        $connection = file_get_contents(resource_path('views/session/connection-status.blade.php'));
+        $this->assertMatchesRegularExpression('/<dialog id="connectionDialog" class="cm-dialog"/', $connection);
+        $this->assertStringNotContainsString('#connectionDialog button', $connection, 'Old per-dialog button styles would override the shared buttons.');
+        foreach (['data-connection-text', 'data-connection-actions', 'data-connection-error', 'id="closeConnection"', 'data-choice="replace"', 'data-choice="wait"'] as $hook) {
+            $this->assertStringContainsString($hook, $connection, "The reconnect script still finds {$hook}.");
+        }
+        $range = file_get_contents(resource_path('views/moderator/reports.blade.php'));
+        $this->assertMatchesRegularExpression('/<dialog class="cm-dialog" id="range-dialog"/', $range);
+        $this->assertStringContainsString('id="range-save"', $range);
+        $screening = file_get_contents(resource_path('views/request/screening.blade.php'));
+        $this->assertStringContainsString("<a class=\"cm-btn cm-btn--danger\" href=\"{{ route('emergency') }}\">Open Emergency page</a>", $screening,'On the crisis screen the emergency page is the main (red) action.');
+        $css = file_get_contents(public_path('css/compass-modals.css'));
+        $this->assertStringContainsString('dialog:focus-visible', $css, 'The dialog box itself never shows a heavy focus outline.');
+        $this->assertStringContainsString('.admin-dialog-panel:focus-visible', $css, 'Nor does the Admin dialog panel that receives focus on open.');
+    }
+
     public function test_no_stylesheet_paints_kpi_numbers_another_colour(): void
     {
         // QA found the Adviser KPIs still dark: a later !important rule overrode the green.
