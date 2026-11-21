@@ -149,3 +149,15 @@ dialog.chat-action-dialog > .modal-box > .modal-sub { color: var(--cm-text); fon
     dialog.chat-action-dialog .modal-actions > :is(button, a) { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { dialog.workflow-dialog[open], dialog.chat-action-dialog[open], dialog.focus-panel-dialog[open] { animation: none !important; } }
+/* Stacked footers on phones: buttons keep their own height (the older row rule used a 140px flex basis). */
+@media (max-width: 480px) {
+    .workflow-dialog__footer > :is(button, a), dialog.chat-action-dialog .modal-actions > :is(button, a), .cm-actions > .cm-btn { flex: 0 0 auto !important; min-height: 46px; }
+}
+/* Boxes inside a dialog run edge to edge on phones (responsive.css pads every .modal-box with !important). */
+@media (max-width: 480px) {
+    dialog.chat-action-dialog > .modal-box, dialog.adviser-review-dialog > .modal-box { width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+    dialog.chat-action-dialog > .modal-box > h3 { padding: 22px 20px 0 !important; }
+    dialog.chat-action-dialog > .modal-box > .modal-sub { padding: 6px 20px 14px !important; }
+    dialog.chat-action-dialog .workflow-form-body { padding: 16px 20px !important; }
+    dialog.chat-action-dialog .modal-actions { padding-left: 20px !important; padding-right: 20px !important; }
+}
