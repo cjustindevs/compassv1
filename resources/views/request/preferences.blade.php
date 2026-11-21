@@ -400,7 +400,7 @@
                         </div>
                     @if($voiceReady)
                         <p id="voiceAvailability" class="request-mode-status">Voice calls are available. Choose Voice call to continue with live audio.</p>
-                        <label class="flex items-start gap-2 text-sm mt-3"><input type="checkbox" name="voice_participation" value="1" @checked(old('voice_participation'))> <span>For Voice, I agree to a live audio call with my assigned Helper. COMPASS will not record or automatically transcribe the audio. Text chat stays available if the call fails.</span></label>
+                        <label class="flex items-start gap-2 text-sm mt-3"><input type="checkbox" name="voice_participation" value="1" @checked(old('voice_participation'))> <span>For Voice, I agree to a live audio call with my assigned Helper. My supervising COMPASS Adviser may listen live to keep support safe, and I will see a notice when they do. COMPASS does not record or transcribe the audio. Text chat stays available if the call fails.</span></label>
                         @error('voice_participation')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                     @else
                         <p id="voiceAvailability" class="request-mode-status" role="status">{{ $voiceAvailability === 'preparing' ? 'Voice calls are getting ready. Refresh this page in two minutes, or continue with text chat.' : 'Voice calls are temporarily unavailable. You can continue with text chat.' }}</p>
@@ -408,7 +408,7 @@
                     @error('support_mode')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
-                    <p class="request-review-note"><x-ui-icon name="info" /> A COMPASS Adviser may review your chat or call with your Helper to keep support safe and of good quality.</p>
+                    <p class="request-review-note"><x-ui-icon name="info" /> A COMPASS Adviser may read your chat, or listen live to your call, to keep support safe and of good quality. Calls are not recorded.</p>
                 </div>
 
                 <!-- ============================================ -->

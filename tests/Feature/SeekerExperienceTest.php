@@ -51,7 +51,7 @@ class SeekerExperienceTest extends TestCase
     {
         $preferences = file_get_contents(resource_path('views/request/preferences.blade.php'));
         $this->assertStringContainsString('class="request-review-note"', $preferences);
-        $this->assertStringContainsString('A COMPASS Adviser may review your chat or call with your Helper to keep support safe and of good quality.', $preferences);
+        $this->assertStringContainsString('A COMPASS Adviser may read your chat, or listen live to your call, to keep support safe and of good quality. Calls are not recorded.', $preferences);
 
         $html = $this->actingAs($this->seeker())->get(route('seeker.referrals'))->assertOk()->getContent();
         $this->assertStringContainsString('After you agree, please wait for the Professional to contact you. You will get a notification when they do.', $html);
