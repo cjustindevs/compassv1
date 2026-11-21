@@ -173,6 +173,9 @@ export class VoiceCallClient {
         this.root.setAttribute('data-voice-state', this.uiState);
         if (this.badge) this.badge.textContent = badge;
         if (this.title) this.title.textContent = title;
+        // A status that only repeats the heading is hidden on screen but still announced (role=status).
+        const words = value => String(value || '').toLowerCase().replace(/[^a-z ]/g, '').trim();
+        if (this.status?.setAttribute) this.status.setAttribute('data-repeats-title', String(!!words(title) && words(this.status.textContent).startsWith(words(title))));
         this.updateDuration();
         this.renderDetails();
         // Both participants always see when a supervising Adviser is listening.
@@ -203,11 +206,11 @@ export class VoiceCallClient {
         this.buttons.accept.hidden = !incoming || this.ended;
         this.buttons.accept.disabled = this.busy || !(this.signalReady || this.httpReady) || !this.available;
         this.buttons.decline.hidden = !incoming || this.ended;
-        this.buttons.mute.hidden = !this.stream || this.ended;
+        this.buttons.mute.hidden = !this.stream || !this.pc || this.ended;
         this.buttons.leave.hidden = !this.pc || !active || this.ended;
         setButtonLabel(this.buttons.leave, this.call?.status === 'ringing' && this.call?.is_caller ? 'Cancel call' : 'Leave call');
         if (this.microphoneButton) {
-            this.microphoneButton.hidden = !!this.pc || this.ended;
+            this.microphoneButton.hidden = !!this.pc || this.busy || this.ended;
             this.microphoneButton.disabled = this.busy;
         }
         this.renderPresentation();

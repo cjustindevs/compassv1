@@ -392,3 +392,20 @@ test('a listening Adviser gets an audio-only offer and both participants see the
     assert.equal(client.listeners.count, 0);
     assert.equal(elements.supervised.hidden, true);
 });
+
+test('call screen shows one microphone control at a time and does not repeat its heading', async () => {
+    const r = room();
+    r.client.stream = {getTracks: () => [r.track], getAudioTracks: () => [r.track]};
+    r.client.pc = null; r.client.render();
+    assert.equal(r.elements.mute.hidden, true, 'Mute waits for a call.');
+    r.client.stream = null; r.client.busy = true; r.client.render();
+    assert.equal(r.elements.microphone.hidden, true, 'Check microphone hides while a call is being set up.');
+    r.client.busy = false;
+    await r.client.begin(false);
+    assert.equal(r.elements.mute.hidden, false); assert.equal(r.elements.microphone.hidden, true);
+
+    r.client.message('Allow microphone access to continue…', 'permission');
+    assert.equal(r.elements.status.attributes['data-repeats-title'], 'true', 'Same words as the heading: shown once, still announced.');
+    r.client.message('Your microphone is blocked. Allow it in Website Settings.', 'permission');
+    assert.equal(r.elements.status.attributes['data-repeats-title'], 'false');
+});

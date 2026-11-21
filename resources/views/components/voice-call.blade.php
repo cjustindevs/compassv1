@@ -10,11 +10,11 @@
     $controls = [
         'start' => ['phone', 'Call', 'voice-btn voice-btn--go', 'disabled'],
         'accept' => ['phone', 'Accept call', 'voice-btn voice-btn--go', 'hidden'],
-        'decline' => ['phone-off', 'Decline', 'voice-btn voice-btn--end', 'hidden'],
+        'decline' => ['phone', 'Decline', 'voice-btn voice-btn--end', 'hidden'],
         'mute' => ['microphone', 'Mute', 'voice-btn', 'hidden aria-pressed="false"'],
         'play' => ['play', 'Play audio', 'voice-btn', 'hidden'],
         'microphone' => ['microphone', 'Check microphone', 'voice-btn', 'disabled'],
-        'leave' => ['phone-off', 'Leave call', 'voice-btn voice-btn--end', 'hidden'],
+        'leave' => ['phone', 'Leave call', 'voice-btn voice-btn--end', 'hidden'],
     ];
 @endphp
 {{-- In text chat the panel opens from <x-voice-call-launcher> in the top bar. --}}
@@ -43,7 +43,14 @@
     </div>
     <audio data-voice-audio autoplay playsinline></audio>
     @if(auth()->user()->role === 'seeker')
-    <dialog data-voice-consent-dialog class="focus-panel-dialog" aria-label="Voice participation consent"><h2>Enable voice calls?</h2><p>I agree to live audio with my assigned Helper. My supervising COMPASS Adviser may listen live to keep support safe, and I will see a notice whenever they do. Calls are not recorded or transcribed. I can leave the call and continue with messages.</p><label><input type="checkbox" data-voice-consent-check> I agree to voice calls and live supervision.</label><p data-voice-consent-error role="alert"></p><div class="voice-call-actions"><button type="button" data-voice-consent-save>Enable voice</button><button type="button" data-voice-consent-cancel>Keep using messages</button></div></dialog>
+    <dialog data-voice-consent-dialog class="cm-dialog" data-tone="primary" aria-label="Voice participation consent">
+        <div class="cm-scroll">
+            <div class="cm-head"><span class="cm-icon" aria-hidden="true"><x-ui-icon name="phone" /></span><div><h2 class="cm-title">Enable voice calls?</h2><p class="cm-text">I agree to live audio with my assigned Helper. My supervising COMPASS Adviser may listen live to keep support safe, and I will see a notice whenever they do. Calls are not recorded or transcribed. I can leave the call and continue with messages.</p></div></div>
+            <div class="cm-body"><label class="cm-check"><input type="checkbox" data-voice-consent-check> I agree to voice calls and live supervision.</label></div>
+        </div>
+        <p class="cm-error" data-voice-consent-error role="alert"></p>
+        <div class="cm-actions"><button type="button" class="cm-btn cm-btn--secondary" data-voice-consent-cancel>Keep using messages</button><button type="button" class="cm-btn cm-btn--primary" data-voice-consent-save>Enable voice</button></div>
+    </dialog>
     @endif
     <script type="application/json" data-voice-config>@json($voiceConfig)</script>
 </section>

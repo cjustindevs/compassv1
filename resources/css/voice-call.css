@@ -62,3 +62,7 @@
 .voice-call-supervised { display:flex; align-items:center; gap:8px; width:100%; margin:0; padding:8px 12px; border:1px solid #bfdbfe; border-radius:10px; background:#eff6ff; color:#1e3a8a; font-size:13px; font-weight:600; }
 .voice-call-supervised[hidden] { display:none !important; }
 .voice-call-supervised .compass-icon { flex:none; width:18px; height:18px; }
+/* A status line that repeats the heading stays for screen readers only. */
+.voice-call-panel [data-voice-status][data-repeats-title="true"] { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+/* Hang-up: the handset turned on its side (red), as on a phone's call screen. */
+.voice-call-actions .voice-btn--end .compass-icon { transform:rotate(135deg); }
