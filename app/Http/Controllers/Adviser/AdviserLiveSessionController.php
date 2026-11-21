@@ -44,7 +44,10 @@ class AdviserLiveSessionController extends Controller
         }
         SupportAudit::record('adviser_live_session_viewed', $session, ['adviser_id' => $adviser->id]);
 
-        return view('adviser.live-session', compact('session'));
+        // Live voice supervision: why listening is not possible right now (null when it is).
+        $listenBlocker = app(VoiceSupervisionService::class)->blocker($request->user(), $session);
+
+        return view('adviser.live-session', compact('session', 'listenBlocker'));
     }
 
     /** Messages and coach notes after the given ids; also reports whether the session is still live. */
@@ -73,11 +76,13 @@ class AdviserLiveSessionController extends Controller
     public function storeNote(Request $request, int $id): JsonResponse|RedirectResponse
     {
         $adviser = $this->actor($request);
-        $data = $request->validate(['note' => 'required|string|min:2|max:600']);
+        $data = $request->validate(['note' => 'required|string|min:2|max:600', 'private' => 'sometimes|boolean']);
         $session = $this->liveQuery($adviser->id)->findOrFail($id);
-        $note = SessionCoachNote::create(['session_id' => $session->id, 'adviser_id' => $adviser->id, 'helper_id' => $session->helper_id, 'note' => trim($data['note'])]);
-        SupportAudit::record('adviser_coach_note_sent', $session, ['adviser_id' => $adviser->id, 'note_id' => $note->id]);
-        if ($session->helper?->user_account_id) {
+        $private = (bool) ($data['private'] ?? false);
+        $note = SessionCoachNote::create(['session_id' => $session->id, 'adviser_id' => $adviser->id, 'helper_id' => $session->helper_id, 'note' => trim($data['note']), 'is_private' => $private]);
+        SupportAudit::record($private ? 'adviser_private_note_saved' : 'adviser_coach_note_sent', $session, ['adviser_id' => $adviser->id, 'note_id' => $note->id]);
+        // A private note stays with the Adviser (shown again when evaluating this session); only coach notes reach the Helper.
+        if (! $private && $session->helper?->user_account_id) {
             Notification::create(['user_account_id' => $session->helper->user_account_id, 'notification_type' => 'session',
                 'title' => 'Coach note from your Adviser', 'message' => 'Your Adviser sent a private note for your current session. Only you can see it.',
                 'link' => route('helper.chat.show', $session->id, false)]);
@@ -85,7 +90,7 @@ class AdviserLiveSessionController extends Controller
 
         return $request->expectsJson()
             ? response()->json(['note' => $note->load('adviser')->toFeed()], 201)
-            : back()->with('success', 'Coach note sent to the Helper.');
+            : back()->with('success', $private ? 'Private note saved.' : 'Coach note sent to the Helper.');
     }
 
     private function actor(Request $request)

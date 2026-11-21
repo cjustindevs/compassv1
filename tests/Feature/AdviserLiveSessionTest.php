@@ -37,7 +37,7 @@ class AdviserLiveSessionTest extends TestCase
         [$au, , $su, $session, $seeker] = $this->fixture();
 
         $this->actingAs($au)->get(route('adviser.live.index'))->assertOk()->assertSee('Watch live')->assertSee($seeker->generated_alias);
-        $this->get(route('adviser.live.show', $session->id))->assertOk()->assertSee('Coach the Helper privately');
+        $this->get(route('adviser.live.show', $session->id))->assertOk()->assertSee('Keep private (not sent to the Helper)')->assertSee('Send to Helper');
         $this->getJson(route('adviser.live.feed', $session->id))->assertOk()
             ->assertJsonPath('live', true)
             ->assertJsonPath('messages.0.text', 'I feel stressed about exams.')

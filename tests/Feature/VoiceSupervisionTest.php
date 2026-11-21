@@ -119,6 +119,37 @@ class VoiceSupervisionTest extends TestCase
         $this->assertStringNotContainsString('Audio is not recorded or transcribed. I can leave', $html);
     }
 
+    public function test_adviser_takes_private_notes_while_listening_that_the_helper_never_sees(): void
+    {
+        [$seeker, $helper, $session, $adviser] = $this->room();
+        $this->connectedCall($seeker, $helper, $session);
+
+        $page = $this->actingAs($adviser)->get(route('adviser.live.index'))->assertOk()->getContent();
+        $this->assertStringContainsString(route('adviser.live.show', $session->id), $page, 'Voice sessions appear on Live sessions.');
+        $this->assertStringContainsString('Voice call', $page);
+        $show = $this->get(route('adviser.live.show', $session->id))->assertOk()->getContent();
+        $this->assertStringContainsString('data-voice-listen="'.route('adviser.live.listen.start', $session->id).'"', $show);
+        $this->assertStringContainsString('name="private"', $show);
+        $this->assertStringContainsString('js/voice-listen.js', $show);
+
+        $this->postJson(route('adviser.live.notes', $session->id), ['note' => 'Helper paused well before advising.', 'private' => true])->assertCreated()->assertJsonPath('note.private', true);
+        $this->postJson(route('adviser.live.notes', $session->id), ['note' => 'Ask what support they already have.'])->assertCreated()->assertJsonPath('note.private', false);
+        $this->assertSame(1, \App\Models\Notification::where('user_account_id', $helper->id)->where('title', 'Coach note from your Adviser')->count(), 'Only the coach note notifies the Helper.');
+
+        $helperNotes = $this->actingAs($helper)->getJson(route('helper.chat.coach-notes', $session->id))->assertOk()->json('notes');
+        $this->assertSame(['Ask what support they already have.'], array_column($helperNotes, 'note'));
+        $this->assertSame(['Helper paused well before advising.', 'Ask what support they already have.'],
+            array_column($this->actingAs($adviser)->getJson(route('adviser.live.feed', $session->id))->json('notes'), 'note'));
+
+        // The notes come back when the Adviser evaluates the session.
+        $session->update(['session_status' => 'completed', 'end_time' => now()]);
+        $report = \App\Models\SessionReport::create(['session_id' => $session->id, 'session_summary' => 'Listened and planned next steps.', 'personal_reflection' => 'Slow down.']);
+        $evaluate = $this->actingAs($adviser)->get(route('adviser.evaluate', $report->id))->assertOk()->getContent();
+        $this->assertStringContainsString('Your notes from the live session', $evaluate);
+        $this->assertStringContainsString('Helper paused well before advising.', $evaluate);
+        $this->assertStringContainsString('Private note', $evaluate);
+    }
+
     public function test_listening_ends_with_the_call_and_stop_is_audited(): void
     {
         [$seeker, $helper, $session, $adviser] = $this->room();

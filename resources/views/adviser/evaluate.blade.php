@@ -160,6 +160,22 @@
         </div>
     </x-ui.card>
 
+    {{-- Notes this Adviser took while watching or listening live: private ones stay with the Adviser. --}}
+    @php($liveNotes = \App\Models\SessionCoachNote::where('session_id', $report->session_id)->where('adviser_id', auth()->user()?->adviser?->id)->orderBy('id')->get())
+    @if($liveNotes->isNotEmpty())
+    <x-ui.card title="Your notes from the live session" class="mb-4">
+        <ul class="ev-live-notes">
+            @foreach($liveNotes as $note)
+                <li @class(['is-private' => $note->is_private])>
+                    <small>{{ $note->created_at?->copy()->timezone('Asia/Manila')->format('M d, g:i A') }} · {{ $note->is_private ? 'Private note' : 'Sent to the Helper' }}</small>
+                    <p>{{ $note->note }}</p>
+                </li>
+            @endforeach
+        </ul>
+        <style>.ev-live-notes{list-style:none;margin:0;padding:0;display:grid;gap:8px}.ev-live-notes li{padding:10px 12px;border-radius:10px;background:#f8fbf9;border:1px solid #e3ebe6}.ev-live-notes li.is-private{background:#fffbeb;border-style:dashed;border-color:#fcd34d}.ev-live-notes small{display:block;font-size:12px;color:#566170}.ev-live-notes p{margin:2px 0 0;font-size:14px;color:#1f2937;overflow-wrap:anywhere}</style>
+    </x-ui.card>
+    @endif
+
     <x-ui.card title="Referral and risk review" class="mb-4">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
             <div>

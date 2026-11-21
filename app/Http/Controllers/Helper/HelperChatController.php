@@ -219,7 +219,7 @@ class HelperChatController extends Controller
         $helper = Auth::user()->helper;
         $session = Session::where('helper_id', $helper?->id)->findOrFail($id);
         $after = (int) request()->query('after', 0);
-        $notes = \App\Models\SessionCoachNote::with('adviser')->where('session_id', $session->id)->where('helper_id', $helper->id)
+        $notes = \App\Models\SessionCoachNote::with('adviser')->where('session_id', $session->id)->where('helper_id', $helper->id)->where('is_private', false)
             ->where('id', '>', $after)->orderBy('id')->get();
         \App\Models\SessionCoachNote::whereIn('id', $notes->whereNull('read_at')->pluck('id'))->update(['read_at' => now()]);
 

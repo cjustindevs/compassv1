@@ -3,7 +3,7 @@
 @section('content')
 <div class="adviser-page-content lw-page" data-live-feed="{{ route('adviser.live.feed', $session->id) }}" data-live-notes="{{ route('adviser.live.notes', $session->id) }}">
     @php($risk = $session->risk_level ?? 'low')
-    <x-ui.page-header title="Live session" description="Read-only. The Seeker and Helper cannot see that you are watching; this view is recorded in the audit log under supervision consent." :back-href="route('adviser.live.index')" back-label="Back to Live sessions" />
+    <x-ui.page-header title="Live session" description="Read-only supervision, recorded in the audit log. Reading the chat is not shown to the participants; when you listen to a call, they see that an Adviser is listening." :back-href="route('adviser.live.index')" back-label="Back to Live sessions" />
 
     <x-ui.card>
         <dl class="ui-summary">
@@ -16,6 +16,39 @@
         </dl>
     </x-ui.card>
 
+    {{-- Live voice supervision: listen receive-only (your microphone is never used; nothing is recorded). --}}
+    <section class="ui-card lw-listen" data-voice-listen="{{ route('adviser.live.listen.start', $session->id) }}" data-listen-state="idle" aria-labelledby="lwListenTitle">
+        <div class="lw-listen-copy">
+            <span class="lw-listen-icon" aria-hidden="true"><x-ui-icon name="phone" /></span>
+            <div>
+                <h2 class="ui-card-title" id="lwListenTitle">Listen to the call</h2>
+                <p class="ui-card-sub" data-listen-status role="status" aria-live="polite">{{ $listenBlocker ?? 'A call is connected. Listening is receive-only: your microphone is never used and nothing is recorded.' }}</p>
+            </div>
+        </div>
+        <div class="lw-listen-actions">
+            <button type="button" class="btn-primary" data-listen-open @disabled($listenBlocker)><x-ui-icon name="play-circle" /> Listen</button>
+            <button type="button" class="btn-secondary" data-listen-play hidden>Play audio</button>
+            <button type="button" class="btn-outline-danger" data-listen-stop hidden><x-ui-icon name="stop-circle" /> Stop listening</button>
+        </div>
+        <div data-listen-audio hidden></div>
+    </section>
+    <dialog id="voiceListenDialog" class="workflow-dialog" aria-labelledby="voiceListenTitle">
+        <header class="workflow-dialog__header"><div><h2 id="voiceListenTitle">Listen to this call</h2><p>The Seeker and the Helper will see a notice that an Adviser is listening. This is recorded in the audit log.</p></div><button type="button" data-dialog-close aria-label="Close"><x-ui-icon name="close" /></button></header>
+        <form>
+            <div class="workflow-dialog__body lw-listen-form">
+                <label for="lwListenPurpose">Purpose <span aria-hidden="true">*</span></label>
+                <select id="lwListenPurpose" name="purpose" required>
+                    <option value="">Select a purpose</option>
+                    @foreach(\App\Services\VoiceSupervisionService::PURPOSES as $purpose)<option value="{{ $purpose }}">{{ ucwords(str_replace('_', ' ', $purpose)) }}</option>@endforeach
+                </select>
+                <label for="lwListenReason">Reason <span aria-hidden="true">*</span></label>
+                <textarea id="lwListenReason" name="reason" rows="3" minlength="10" maxlength="500" required placeholder="For example: Checking how the Helper handles a first voice call."></textarea>
+                <p class="lw-error" data-listen-error role="alert"></p>
+            </div>
+            <footer class="workflow-dialog__footer"><button type="button" class="btn-secondary" data-dialog-close>Cancel</button><button type="submit" class="btn-primary">Start listening</button></footer>
+        </form>
+    </dialog>
+
     <div class="lw-grid">
         <section class="ui-card" aria-labelledby="lwTranscript">
             <h2 class="ui-card-title" id="lwTranscript">Conversation</h2>
@@ -24,16 +57,17 @@
             </div>
         </section>
         <aside class="ui-card lw-coach" aria-labelledby="lwCoach">
-            <h2 class="ui-card-title" id="lwCoach">Coach the Helper privately</h2>
-            <p class="ui-card-sub">Only {{ $session->helper?->first_name ?? 'the Helper' }} sees these notes, in a panel beside their chat. Keep them short and practical.</p>
+            <h2 class="ui-card-title" id="lwCoach">Notes</h2>
+            <p class="ui-card-sub">Send a coach note that only {{ $session->helper?->first_name ?? 'the Helper' }} sees, or keep a private note for yourself. Private notes appear again when you evaluate this session.</p>
             <form data-live-note-form>
                 @csrf
-                <label for="lwNote" class="sr-only">Coach note</label>
+                <label for="lwNote" class="sr-only">Note</label>
                 <textarea id="lwNote" name="note" rows="3" maxlength="600" required placeholder="For example: Reflect their feelings back before suggesting steps."></textarea>
-                <button type="submit" class="btn-primary">Send to Helper</button>
+                <label class="lw-private"><input type="checkbox" name="private" value="1"> Keep private (not sent to the Helper)</label>
+                <button type="submit" class="btn-primary" data-note-submit>Send to Helper</button>
                 <p class="lw-error" data-live-note-error role="alert" hidden></p>
             </form>
-            <h3>Notes sent</h3>
+            <h3>Notes</h3>
             <ul class="lw-notes" data-live-notes-list><li class="lw-empty" data-live-notes-empty>No notes yet.</li></ul>
         </aside>
     </div>
@@ -58,6 +92,17 @@
 .lw-notes li { font-size: 14px; background: #F9FAFB; border-radius: 12px; padding: 8px 12px; color: #1F2937; overflow-wrap: anywhere; }
 .lw-notes li small { display: block; font-size: 12px; color: #6B7280; }
 @media (max-width: 1000px) { .lw-grid { grid-template-columns: 1fr; } .lw-coach { position: static; } }
+.lw-listen { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; margin-bottom: 16px; }
+.lw-listen-copy { display: flex; align-items: flex-start; gap: 12px; min-width: 0; flex: 1 1 320px; }
+.lw-listen-icon { display: inline-grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: #ecfdf3; color: #087341; }
+.lw-listen[data-listen-state="listening"] .lw-listen-icon { background: #027039; color: #fff; }
+.lw-listen .ui-card-sub { margin: 2px 0 0; }
+.lw-listen-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.lw-listen-form { display: grid; gap: 8px; }
+.lw-listen-form select, .lw-listen-form textarea { width: 100%; }
+.lw-private { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #334155; }
+.lw-private input { width: 16px; height: 16px; accent-color: #027039; }
+.lw-notes li.is-private { background: #fffbeb; border: 1px dashed #fcd34d; }
 @media (max-width: 700px) { .lw-msg { max-width: 90%; } }
 </style>
 <script>
@@ -74,7 +119,15 @@
     const token = form.querySelector('input[name="_token"]').value;
     let after = 0, notesAfter = 0, stopped = false, timer = null;
     const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
-    const addNote = (n) => { notesEmpty.hidden = true; const li = el('li'); li.append(el('small', '', n.time + (n.read ? ' · seen' : '')), document.createTextNode(n.note)); notesList.prepend(li); notesAfter = Math.max(notesAfter, n.id); };
+    const addNote = (n) => {
+        if (notesList.querySelector('[data-note-id="' + n.id + '"]')) return;
+        notesEmpty.hidden = true; const li = el('li', n.private ? 'is-private' : ''); li.dataset.noteId = n.id;
+        li.append(el('small', '', n.time + (n.private ? ' · Private, only you' : (n.read ? ' · Sent · seen' : ' · Sent to Helper'))), document.createTextNode(n.note));
+        notesList.prepend(li); notesAfter = Math.max(notesAfter, n.id);
+    };
+    const privateBox = form.querySelector('input[name="private"]');
+    const submitLabel = form.querySelector('[data-note-submit]');
+    privateBox.addEventListener('change', () => { submitLabel.textContent = privateBox.checked ? 'Save private note' : 'Send to Helper'; });
     async function poll() {
         if (stopped || document.hidden) return;
         try {
@@ -106,10 +159,10 @@
         if (!note) return;
         button.disabled = true; error.hidden = true;
         try {
-            const res = await fetch(root.dataset.liveNotes, { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRF-TOKEN': token, Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ note }) });
-            if (!res.ok) throw new Error(res.status === 404 ? 'The session is no longer live.' : 'The note could not be sent. Try again.');
+            const res = await fetch(root.dataset.liveNotes, { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRF-TOKEN': token, Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ note, private: privateBox.checked }) });
+            if (!res.ok) throw new Error(res.status === 404 ? 'The session is no longer live.' : 'The note could not be saved. Try again.');
             const data = await res.json();
-            addNote(data.note); form.reset();
+            addNote(data.note); form.note.value = '';
         } catch (err) { error.textContent = err.message; error.hidden = false; }
         finally { if (!stopped) button.disabled = false; }
     });
@@ -118,4 +171,5 @@
     document.addEventListener('visibilitychange', poll);
 })();
 </script>
+<script src="{{ asset('js/voice-listen.js') }}?v={{ filemtime(public_path('js/voice-listen.js')) }}" defer></script>
 @endsection
