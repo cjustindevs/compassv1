@@ -30,11 +30,18 @@
     <small class="co-kpi-period">{{ str_starts_with($card['definition'] ?? '', 'Live') ? 'Live now' : 'Selected period' }}</small>
     </article>@endforeach</div>
     @if(auth()->user()?->role === 'adviser')
+        {{-- Evaluations, screenings, referrals and emergencies are already in "Needs your attention" above;
+             only the items it does not cover show here, and only when there is something to open. --}}
+        @php
+            $atCapacity = (int) (collect($overview['cards'])->firstWhere('label', 'Helpers at capacity')['value'] ?? 0);
+            $liveNow = auth()->user()->adviser ? \App\Models\Session::where('session_status','active')->whereIn('session_type',['chat','voice'])->where('is_test_record',false)->whereHas('helper', fn ($q) => $q->where('adviser_id', auth()->user()->adviser->id))->count() : 0;
+        @endphp
+        @if($atCapacity || $liveNow)
         <nav class="co-task-links" aria-label="Live support actions">
-        @foreach(['Screening reviews pending'=>'adviser.screenings','Referral reviews pending'=>'adviser.referrals','Evaluations pending'=>'adviser.evaluations','Escalated cases'=>'adviser.emergencies','Helpers at capacity'=>'adviser.schedule'] as $label=>$target)
-        <a href="{{ route($target) }}"><strong>{{ collect($overview['cards'])->firstWhere('label',$label)['value'] ?? 0 }}</strong> {{ $label === 'Escalated cases' ? 'Live emergencies' : $label }}</a>
-        @endforeach
-        <a href="{{ route('adviser.live.index') }}"><strong>{{ auth()->user()->adviser ? \App\Models\Session::where('session_status','active')->where('session_type','chat')->where('is_test_record',false)->whereHas('helper', fn ($q) => $q->where('adviser_id', auth()->user()->adviser->id))->count() : 0 }}</strong> Live sessions to watch</a></nav>
+            @if($liveNow)<a href="{{ route('adviser.live.index') }}"><strong>{{ $liveNow }}</strong> Live {{ \Illuminate\Support\Str::plural('session', $liveNow) }} to watch or listen to</a>@endif
+            @if($atCapacity)<a href="{{ route('adviser.schedule') }}"><strong>{{ $atCapacity }}</strong> {{ \Illuminate\Support\Str::plural('Helper', $atCapacity) }} at capacity</a>@endif
+        </nav>
+        @endif
     @endif
     @unless(auth()->user()?->role === 'moderator')<details class="co-definitions"><summary>Operational status and supporting metrics</summary><div class="co-secondary">@foreach($secondary as $card)<div><span title="{{ $card['definition'] }}">{{ $card['label'] }}</span><strong title="{{ $card['definition'] }}" @if(auth()->user()?->role === 'moderator' && $card['label'] === 'Active emergencies') id="statEmergency" @endif>{{ array_key_exists('raw',$card) ? \App\Services\SessionPerformance::number($card['raw'], $card['unit'] ?? '') : $formatValue($card['value']) }}</strong>@if(isset($card['samples']))<small>{{ $card['samples'] }} cases measured</small>@endif</div>@endforeach</div></details>@endunless
 

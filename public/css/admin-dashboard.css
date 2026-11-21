@@ -1083,7 +1083,7 @@ a.sidebar-link:hover, a.sidebar-link:focus-visible { background: var(--compass-g
 .admin-app button, .admin-app input, .admin-app select, .admin-app textarea { font-family: inherit; line-height: 1.5; }
 .admin-app :where(h1,h2,h3,p) { overflow-wrap: anywhere; }
 .admin-app :where(h1,h2,h3) { font-weight: 600; letter-spacing: -.015em; }
-.admin-app :where(.page-heading,.users-page-heading,.audit-page-heading,.reports-page-heading) h1 { font-size: 24px; font-weight: 600; line-height: 1.25; }
+.admin-app :where(.page-heading,.users-page-heading,.audit-page-heading,.reports-page-heading,.roles-page-heading,.resource-page-heading) h1 { font-size: 28px; font-weight: 800; line-height: 1.2; }
 .admin-app :where(.page-heading,.users-page-heading,.audit-page-heading,.reports-page-heading) p { font-size: 14px; line-height: 1.5; }
 .admin-app .admin-content { padding-bottom: 40px; }
 .admin-app .admin-button { min-height: 42px; font-size: 13px; font-weight: 600; line-height: 1.4; }
@@ -1293,3 +1293,5 @@ a.sidebar-link:hover, a.sidebar-link:focus-visible { background: var(--compass-g
 
 @media(min-width:769px) and (max-width:1200px){.admin-account-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .admin-account-stats .stat-value{overflow-wrap:anywhere}
+/* One page-title size across every role (matches the 28px / 800 titles elsewhere). */
+.admin-app .admin-content h1 { font-size: 28px; font-weight: 800; line-height: 1.2; }

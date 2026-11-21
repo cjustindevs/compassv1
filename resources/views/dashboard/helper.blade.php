@@ -10,6 +10,32 @@
 <p>Contact your Adviser or administrator to finish onboarding.</p>
 </section>
 @else
+{{-- Urgent first: a live session, an emergency, or a reason you cannot take sessions. --}}
+@if($activeSessionData)
+<section class="card">
+<header class="card-header">
+<h3>Active Session</h3>
+<span class="hf-status">Live</span>
+</header>
+<p>{{ $activeSessionData['alias'] }} / {{ $activeSessionData['mode'] }} / {{ $activeSessionData['elapsed'] }} elapsed</p>
+@if($activeSessionData['elapsed_minutes']>=85)
+<p class="hf-muted">{{ $activeSessionData['elapsed_minutes']>=90 ? '90-minute limit exceeded. End and document this session.' : 'Approaching the 90-minute session limit.' }}</p>
+@endif<a class="btn btn-primary btn-sm" href="{{ route('helper.cases.show',$activeSessionData['id']) }}">Resume session</a>
+</section>
+@endif
+@if(count($emergencyCases))
+<section class="card">
+<header class="card-header">
+<h3>Emergency support</h3>
+<span class="hf-status hf-status-danger">Attention required</span>
+</header>
+<p class="hf-muted">{{ $emergencyCases[0]['alias'] }} / {{ $emergencyCases[0]['incident'] }}</p>
+<a href="{{ route('helper.cases.show',$emergencyCases[0]['id']) }}" class="btn btn-secondary btn-sm">Open assigned case</a>
+</section>
+@endif
+@if($helper)
+@php $helperBlockers = app(\App\Services\HelperEligibilityService::class)->reasons($helper); @endphp
+@if($helperBlockers !== [])<details class="card hf-eligibility-note"><summary>You can't take sessions right now ({{ count($helperBlockers) }} {{ \Illuminate\Support\Str::plural('reason', count($helperBlockers)) }}). See why</summary><x-eligibility-check :helper="$helper" /></details>@endif @endif
 <x-analytics-period :action="route('helper.dashboard')" :dates="$analyticsDates" />
 @include('helper.partials.duty-summary')
 @php
@@ -30,25 +56,6 @@
 <div><span class="hf-glance-label">Pending documentation</span><strong>{{ $helper->sessions()->whereNotNull('start_time')->whereNotNull('end_time')->where('end_time','<=',now())->where('documentation_status', '!=', 'submitted')->whereIn('session_status',['completed','evaluated','cancelled','no_show'])->count() }}</strong></div>
 <div><span class="hf-glance-label">Upcoming Session</span>@if($upcomingSession)<strong>{{ $upcomingSession->scheduled_start->copy()->timezone('Asia/Manila')->format('M d, g:i A') }} PHT</strong><small>{{ $upcomingSession->reference_number }}</small>@else<strong>None scheduled</strong>@endif</div>
 </section>
-@if($helper)
-@php $helperBlockers = app(\App\Services\HelperEligibilityService::class)->reasons($helper); @endphp
-@if($helperBlockers !== [])<details class="card hf-eligibility-note"><summary>You can't take sessions right now ({{ count($helperBlockers) }} {{ \Illuminate\Support\Str::plural('reason', count($helperBlockers)) }}). See why</summary><x-eligibility-check :helper="$helper" /></details>@endif @endif
-@if(count($emergencyCases))
-<section class="card">
-<header class="card-header">
-<h3>Emergency support</h3>
-<span class="hf-status hf-status-danger">Attention required</span>
-</header>
-<p class="hf-muted">{{ $emergencyCases[0]['alias'] }} / {{ $emergencyCases[0]['incident'] }}</p>
-<a href="{{ route('helper.cases.show',$emergencyCases[0]['id']) }}" class="btn btn-secondary btn-sm">Open assigned case</a>
-</section>
-@endif
-@php
-    $growthRows = $performance['evaluations']->filter(fn ($e) => $e->rubric_version === \App\Services\CompetencyRubric::VERSION);
-    $growthChart = ['title'=>'Competency growth trend','unit'=>'Scale 1–5','values'=>$growthRows->groupBy(fn ($e) => $e->evaluation_date->timezone('Asia/Manila')->format('M Y'))->map(fn ($group) => round($group->avg('normalized_score'),2))->all(),'definition'=>'Average finalized evaluations per month on the current rubric, rated 1-5. Missing months have no evaluation; no performance is inferred. At least two evaluations are needed for growth.'];
-@endphp
-@if($growthRows->count() >= 2)<x-dashboard-chart :chart="$growthChart" :smooth="true" />@else<section class="card" style="margin:14px 0"><h3>Competency growth</h3><p class="hf-muted">Insufficient history. At least two evaluations on the current rubric are required.</p></section>@endif
-@if(!empty($caseCharts))<x-report-charts :groups="$caseCharts" heading="Case overview" caption="Selected period · Philippine Time" />@endif
 <style>.hf-glance{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 24px;margin:14px 0}.hf-glance>div{display:grid;gap:4px;align-content:start;min-width:0}.hf-glance-label{font-size:12px;color:#64748b}.hf-glance strong{font-size:16px;color:#163b2d}.hf-glance small{font-size:12px;color:#64748b}@media(max-width:700px){.hf-glance{grid-template-columns:1fr}}.helper-performance-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}.helper-performance-details dt{font-size:12px;color:#64748b}.helper-performance-details dd{font-size:14px;margin:4px 0}@media(max-width:560px){.helper-performance-details{grid-template-columns:1fr}}</style>
 <link rel="stylesheet" href="{{ asset('css/dashboard-overview.css') }}">
 
@@ -77,18 +84,6 @@
 </div>
 </section>
 </div>
-@if($activeSessionData)
-<section class="card">
-<header class="card-header">
-<h3>Active Session</h3>
-<span class="hf-status">Live</span>
-</header>
-<p>{{ $activeSessionData['alias'] }} / {{ $activeSessionData['mode'] }} / {{ $activeSessionData['elapsed'] }} elapsed</p>
-@if($activeSessionData['elapsed_minutes']>=85)
-<p class="hf-muted">{{ $activeSessionData['elapsed_minutes']>=90 ? '90-minute limit exceeded. End and document this session.' : 'Approaching the 90-minute session limit.' }}</p>
-@endif<a class="btn btn-primary btn-sm" href="{{ route('helper.cases.show',$activeSessionData['id']) }}">Resume session</a>
-</section>
-@endif
 <div class="hf-grid" style="margin-bottom:20px">
     <div>
 <section class="card">
@@ -205,6 +200,13 @@
 </table>
 </div>
 </section>
+{{-- Analytics last: growth and case overview for the selected period. --}}
+@php
+    $growthRows = $performance['evaluations']->filter(fn ($e) => $e->rubric_version === \App\Services\CompetencyRubric::VERSION);
+    $growthChart = ['title'=>'Competency growth trend','unit'=>'Scale 1–5','values'=>$growthRows->groupBy(fn ($e) => $e->evaluation_date->timezone('Asia/Manila')->format('M Y'))->map(fn ($group) => round($group->avg('normalized_score'),2))->all(),'definition'=>'Average finalized evaluations per month on the current rubric, rated 1-5. Missing months have no evaluation; no performance is inferred. At least two evaluations are needed for growth.'];
+@endphp
+@if($growthRows->count() >= 2)<x-dashboard-chart :chart="$growthChart" :smooth="true" />@else<section class="card" style="margin:14px 0"><h3>Competency growth</h3><p class="hf-muted">Insufficient history. At least two evaluations on the current rubric are required.</p></section>@endif
+@if(!empty($caseCharts))<x-report-charts :groups="$caseCharts" heading="Case overview" caption="Selected period · Philippine Time" />@endif
 @endif
 </div>
 @endsection

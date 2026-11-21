@@ -822,6 +822,8 @@
 
         <div id="tab-dashboard" class="tab-content">
 
+            {{-- The period picker sits above the cards and lists it controls. --}}
+            <x-analytics-period :action="route('seeker.dashboard')" :dates="$analyticsDates" />
             <x-performance-cards :cards="$seekerIndicators" />
             @php $seekerTasks = collect($seekerIndicators)->filter(fn ($c) => !empty($c['task']) && ($c['raw'] ?? 0) > 0); @endphp
             @if($seekerTasks->isNotEmpty())
@@ -832,7 +834,6 @@
             @endif
 
             <!-- Recent Sessions -->
-            <x-analytics-period :action="route('seeker.dashboard')" :dates="$analyticsDates" />
             <div class="bg-white rounded-2xl border border-gray-200 p-4 md:p-6 mb-6">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="font-bold text-gray-800">Recent Sessions</h2>
