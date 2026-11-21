@@ -207,6 +207,26 @@ class UiComponentsTest extends TestCase
         $this->assertStringContainsString('color:#087341;font-variant-numeric', file_get_contents(resource_path('views/components/performance-cards.blade.php')));
     }
 
+    public function test_every_page_loads_one_modal_look_and_notices_use_it(): void
+    {
+        // QA: "the modals look ugly". One stylesheet, loaded last, gives every dialog the same shell.
+        $assets = file_get_contents(resource_path('views/partials/ui-assets.blade.php'));
+        $this->assertStringContainsString('css/compass-modals.css', $assets);
+        $this->assertGreaterThan(strpos($assets, 'css/accessibility-contrast.css'), strpos($assets, 'css/compass-modals.css'), 'Modal styles load after the older page styles.');
+        $css = file_get_contents(public_path('css/compass-modals.css'));
+        foreach (['dialog::backdrop', 'dialog.cm-dialog', '.cm-actions', '.cm-btn--primary', '[data-tone="danger"]', '@media (max-width: 480px)', 'prefers-reduced-motion'] as $rule) {
+            $this->assertStringContainsString($rule, $css);
+        }
+        foreach (['workflow-notice', 'emergency-notice', 'completion-notice'] as $partial) {
+            $view = file_get_contents(resource_path("views/partials/{$partial}.blade.php"));
+            $this->assertStringContainsString('cm-dialog', $view, "{$partial} uses the shared modal.");
+            $this->assertStringContainsString('class="cm-actions"', $view);
+            $this->assertDoesNotMatchRegularExpression('/<dialog[^>]*style="/', $view, "{$partial} has no one-off inline dialog styling.");
+        }
+        $this->assertStringContainsString('data-tone="danger"', file_get_contents(resource_path('views/partials/emergency-notice.blade.php')));
+        $this->assertStringNotContainsString('.compass-important-notice button:first-child', file_get_contents(public_path('css/live-notifications.css')));
+    }
+
     public function test_no_stylesheet_paints_kpi_numbers_another_colour(): void
     {
         // QA found the Adviser KPIs still dark: a later !important rule overrode the green.

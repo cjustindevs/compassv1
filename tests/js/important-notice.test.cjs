@@ -22,17 +22,20 @@ function room(storage=new Map(),present=true) {
     context.localStorage = context.sessionStorage;
     vm.runInNewContext(fs.readFileSync('public/js/notification-presentation.js','utf8'),context);
     vm.runInNewContext(fs.readFileSync('public/js/important-notice.js','utf8'),context);
-    return {api:context.window.CompassImportantNotices,dialog:body.children[0],requests,storage,tick:()=>ticks[0](),another:value=>another=value,success:value=>success=value,flush:()=>new Promise(resolve=>setImmediate(resolve))};
+    const dialog=body.children[0];
+    // Structure: [head [icon, copy [title, message]], error, actions [Later, Open]].
+    const parts={title:()=>dialog.children[0].children[1].children[0],error:()=>dialog.children[1],later:()=>dialog.children[2].children[0],open:()=>dialog.children[2].children[1]};
+    return {...parts,api:context.window.CompassImportantNotices,dialog,requests,storage,tick:()=>ticks[0](),another:value=>another=value,success:value=>success=value,flush:()=>new Promise(resolve=>setImmediate(resolve))};
 }
 
 test('important actions show one centered dialog; Later keeps the unread record without completing work',async()=>{
     const r=room();r.api.enqueue({id:1,title:'Referral review',message:'Review this case',link:'/adviser/referral/1',type:'referral'});
     r.api.enqueue({id:2,title:'Assignment',message:'Accept the assignment',link:'/helper/cases',type:'assignment'});await r.flush();
-    assert.equal(r.dialog.open,true);assert.equal(r.dialog.children[0].textContent,'Referral review');
-    await r.dialog.children[3].children[1].onclick();await r.flush();
+    assert.equal(r.dialog.open,true);assert.equal(r.title().textContent,'Referral review');
+    await r.later().onclick();await r.flush();
     assert.equal(r.requests[0].url,'/notifications/1/present');assert.equal(r.requests.some(item=>/read$/.test(item.url||'')),false);
     assert.equal(r.requests.some(item=>/resolve|complete/.test(item.url||'')),false);
-    r.tick();await r.flush();assert.equal(r.dialog.children[0].textContent,'Assignment');
+    r.tick();await r.flush();assert.equal(r.title().textContent,'Assignment');
 });
 
 test('an old browser queue must pass the server freshness check before it can replay a popup',async()=>{
@@ -51,8 +54,8 @@ test('sensitive dialogs defer presentation; an already displayed notice does not
 
 test('resolved emergency notices close and failed acknowledgement preserves pending work',async()=>{
     const r=room();r.api.enqueue({id:3,title:'Emergency',type:'emergency'});await r.flush();r.api.reconcile([]);assert.equal(r.dialog.open,false);
-    r.api.enqueue({id:4,title:'Referral',type:'referral'});await r.flush();r.success(false);await r.dialog.children[3].children[0].onclick();await r.flush();
-    assert.equal(r.dialog.open,true);assert.match(r.dialog.children[2].textContent,/try again/);
+    r.api.enqueue({id:4,title:'Referral',type:'referral'});await r.flush();r.success(false);await r.open().onclick();await r.flush();
+    assert.equal(r.dialog.open,true);assert.match(r.error().textContent,/try again/);
     r.api.reconcileUnread([]);assert.equal(r.dialog.open,false);
 });
 
@@ -60,7 +63,7 @@ test('recovered unread referrals are deduplicated until acknowledged',async()=>{
     const r=room(), notice={id:5,title:'Referral review',type:'referral'};
     r.api.enqueue(notice);r.api.enqueue(notice);r.api.enqueue(notice);await r.flush();
     assert.equal(JSON.parse(r.storage.get('compass-important:7')).length,1);
-    await r.dialog.children[3].children[1].onclick();r.tick();
+    await r.later().onclick();r.tick();
     assert.equal(r.dialog.open,false);
     assert.equal(JSON.parse(r.storage.get('compass-important:7')).length,0);
 });
@@ -69,6 +72,20 @@ test('a shown but unread referral is not repeated by stale polling or a fresh pa
     const r=room(),notice={id:11,title:'Referral review',type:'referral'};
     r.api.enqueue(notice);await r.flush();
     const next=room(r.storage);next.api.enqueue(notice);next.tick();assert.equal(next.dialog.open,false);
-    await r.dialog.children[3].children[1].onclick();r.api.enqueue(notice);r.tick();assert.equal(r.dialog.open,false);
+    await r.later().onclick();r.api.enqueue(notice);r.tick();assert.equal(r.dialog.open,false);
     r.api.enqueue({id:12,title:'New referral',type:'referral'});await r.flush();assert.equal(r.dialog.open,true);
+});
+
+test('the notice uses the shared modal look: Later beside Open, emergencies in red', async () => {
+    const r = room();
+    assert.match(r.dialog.className, /cm-dialog/);
+    assert.equal(r.later().textContent, 'Later'); assert.equal(r.open().textContent, 'Open');
+    assert.match(r.later().className, /cm-btn--secondary/);
+    r.api.enqueue({id: 7, title: 'Helper matched', message: 'A helper has been matched to your request.', type: 'session'}); await r.flush();
+    assert.match(r.open().className, /cm-btn--primary/);
+    assert.match(r.dialog.children[0].children[0].innerHTML, /#user-check/);
+    await r.later().onclick(); await r.flush();
+    r.api.enqueue({id: 8, title: 'Emergency', message: 'Review now', type: 'emergency'}); r.tick(); await r.flush();
+    assert.match(r.open().className, /cm-btn--danger/);
+    assert.match(r.dialog.children[0].children[0].innerHTML, /#warning/);
 });

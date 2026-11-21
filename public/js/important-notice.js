@@ -9,12 +9,25 @@
     try { queue = JSON.parse(sessionStorage.getItem(key) || '[]'); } catch {}
     const save = () => { try { sessionStorage.setItem(key, JSON.stringify(queue.map(({claimed, ...notice}) => notice))); } catch {} };
     const node = (tag, text) => { const el = document.createElement(tag); if (text) el.textContent = text; return el; };
-    const dialog = node('dialog'); dialog.id = 'compassImportantNotice'; dialog.className = 'compass-important-notice';
+    // Shared modal look (public/css/compass-modals.css): tone icon, title, message; "Later" then "Open" on the footer.
+    const dialog = node('dialog'); dialog.id = 'compassImportantNotice'; dialog.className = 'compass-important-notice cm-dialog';
     dialog.setAttribute('aria-labelledby', 'compassImportantTitle');
-    const title = node('h2'); title.id = 'compassImportantTitle';
-    const message = node('p'), error = node('p'); error.setAttribute('role', 'alert');
+    const head = node('div'), icon = node('span'), copy = node('div');
+    head.className = 'cm-head'; icon.className = 'cm-icon'; icon.setAttribute('aria-hidden', 'true');
+    const title = node('h2'); title.id = 'compassImportantTitle'; title.className = 'cm-title';
+    const message = node('p'), error = node('p'); message.className = 'cm-text'; error.className = 'cm-error'; error.setAttribute('role', 'alert');
     const actions = node('div'), open = node('button', 'Open'), acknowledge = node('button', 'Later');
-    open.type = acknowledge.type = 'button'; actions.append(open, acknowledge); dialog.append(title, message, error, actions); document.body.append(dialog);
+    actions.className = 'cm-actions'; acknowledge.className = 'cm-btn cm-btn--secondary';
+    open.type = acknowledge.type = 'button'; copy.append(title, message); head.append(icon, copy); actions.append(acknowledge, open);
+    dialog.append(head, error, actions); document.body.append(dialog);
+    const sprite = document.querySelector('meta[name="compass-icon-sprite"]')?.content || '/images/compass-icons.svg';
+    const icons = {emergency: 'warning', referral: 'arrow-right', session: 'user-check', assignment: 'user-plus', evaluation: 'check-circle', reminder: 'clock'};
+    const present = notice => {
+        const danger = notice.type === 'emergency';
+        dialog.setAttribute('data-tone', danger ? 'danger' : 'primary');
+        open.className = `cm-btn ${danger ? 'cm-btn--danger' : 'cm-btn--primary'}`;
+        icon.innerHTML = `<svg class="compass-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="${sprite}#${icons[notice.type] || 'bell'}"></use></svg>`;
+    };
     const safe = path => typeof path === 'string' && /^\/(?!\/)/.test(path) && !/[\\\u0000-\u0020]/.test(path) ? path : config.center;
     async function show() {
         if (dialog.open || saving || claiming || document.hidden || !queue.length || document.querySelector('dialog[open]') || document.querySelector('.modal-overlay.active')) return;
@@ -31,7 +44,7 @@
             // The delivery belongs to this page; wait for the sensitive form to close.
             candidate.claimed = true; return;
         }
-        current = candidate; title.textContent = current.title; message.textContent = current.message; error.textContent = ''; dialog.showModal();
+        current = candidate; present(current); title.textContent = current.title; message.textContent = current.message; error.textContent = ''; dialog.showModal(); open.focus?.();
     }
     async function finish(navigate) {
         if (!current || saving) return;

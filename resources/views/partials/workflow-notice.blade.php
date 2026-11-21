@@ -9,19 +9,26 @@
         ->reject(fn ($key) => in_array($key, $inlineNotices ?? [], true))
         ->first(fn ($key) => is_string(session($key)));
     $toastOnly = is_string($notice) && ! $showErrors && $noticeType !== 'error';
+    $noticeProblem = $showErrors || session('error');
 @endphp
 @if($toastOnly)
 <div hidden data-compass-toast data-type="{{ $noticeType === 'info' ? 'info' : 'success' }}" data-message="{{ $notice }}"></div>
 @elseif(is_string($notice) || $showErrors)
-<dialog id="workflowNotice" aria-labelledby="workflowNoticeTitle" style="position:fixed;inset:0;margin:auto;max-height:85dvh;overflow:auto;border:1px solid #e5e7eb;border-radius:16px;padding:24px;width:min(440px,calc(100vw - 32px));color:#163b2d;">
-    <h2 id="workflowNoticeTitle" class="text-lg font-semibold mb-3">{{ $showErrors || session('error') ? 'Please review your request' : 'Status update' }}</h2>
-    @if(is_string($notice))<p class="text-sm mb-4" role="status">{{ $notice }}</p>@endif
-    @if($showErrors)
-        <ul class="text-sm mb-4 list-disc pl-5" role="alert">@foreach($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul>
-    @endif
-    <form method="dialog"><button class="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold" autofocus>Continue</button></form>
+<dialog id="workflowNotice" class="cm-dialog" data-tone="{{ $noticeProblem ? 'danger' : 'primary' }}" aria-labelledby="workflowNoticeTitle">
+    <div class="cm-scroll">
+        <div class="cm-head">
+            <span class="cm-icon" aria-hidden="true"><x-ui-icon :name="$noticeProblem ? 'alert-circle' : 'check-circle'" /></span>
+            <div>
+                <h2 id="workflowNoticeTitle" class="cm-title">{{ $noticeProblem ? 'Please review your request' : 'Status update' }}</h2>
+                @if(is_string($notice))<p class="cm-text" role="status">{{ $notice }}</p>@endif
+            </div>
+        </div>
+        @if($showErrors)
+            <div class="cm-body"><ul role="alert">@foreach($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul></div>
+        @endif
+    </div>
+    <form method="dialog" class="cm-actions"><button class="cm-btn cm-btn--primary" autofocus>Continue</button></form>
 </dialog>
-<style>#workflowNotice::backdrop { background:rgba(15,35,25,.5); }</style>
 <script>
 (() => {
     const notice = document.getElementById('workflowNotice');

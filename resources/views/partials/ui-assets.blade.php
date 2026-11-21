@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="{{ asset('css/compass-layout.css') }}?v={{ filemtime(public_path('css/compass-layout.css')) }}">
     <script src="{{ asset('js/mobile-tables.js') }}?v={{ filemtime(public_path('js/mobile-tables.js')) }}" defer></script>
     <link rel="stylesheet" href="{{ asset('css/accessibility-contrast.css') }}?v={{ filemtime(public_path('css/accessibility-contrast.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/compass-modals.css') }}?v={{ filemtime(public_path('css/compass-modals.css')) }}">
     @auth
         @unless(($embeddedScreen ?? false) || request()->routeIs('home', 'login', 'register', 'seeker.register', 'seeker.consent', 'password.*', 'verification.*'))
         <meta name="compass-notices" content="{{ json_encode(['user'=>auth()->id(),'feed'=>route('notifications.feed'),'interval'=>in_array(auth()->user()->role,['adviser','moderator','professional']) ? 2000 : 5000,'center'=>route('notifications')]) }}">

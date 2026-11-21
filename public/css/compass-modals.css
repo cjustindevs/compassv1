@@ -1,0 +1,151 @@
+/* COMPASS modals: one look for every dialog in the system.
+   Anatomy: tone icon + title + message, optional body, actions on a footer strip.
+   Tones: primary (green, default), danger (red), warning (amber), info (blue).
+   Phones (<=480px): short dialogs become bottom sheets with full-width buttons, main action first.
+   Loaded last from partials/ui-assets so it settles older per-page dialog styles. */
+
+:root {
+    --cm-ink: #163b2d;
+    --cm-text: #475569;
+    --cm-line: #e3ebe6;
+    --cm-strip: #f8fbf9;
+    --cm-radius: 20px;
+    --cm-shadow: 0 24px 48px -12px rgba(16, 42, 30, .28), 0 2px 6px rgba(16, 42, 30, .06);
+    --cm-backdrop: rgba(12, 30, 22, .48);
+    --cm-green: #027039;
+    --cm-green-hover: #01562b;
+    --cm-red: #b91c1c;
+    --cm-red-hover: #991b1b;
+    --cm-amber: #b45309;
+    --cm-amber-hover: #92400e;
+}
+
+/* Every native dialog: the same dimmed, softly blurred backdrop and a short rise on open. */
+dialog::backdrop { background: var(--cm-backdrop); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+dialog[open] { animation: cm-rise .2s ease-out; }
+@keyframes cm-rise { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes cm-sheet { from { transform: translateY(100%); } to { transform: none; } }
+
+/* ---------- Short dialogs (notices, confirmations, consents) ---------- */
+dialog.cm-dialog {
+    box-sizing: border-box; position: fixed; inset: 0; margin: auto;
+    width: min(460px, calc(100vw - 32px)); max-width: calc(100vw - 32px); max-height: calc(100dvh - 32px);
+    padding: 0; border: 1px solid var(--cm-line); border-radius: var(--cm-radius); background: #fff; color: var(--cm-ink);
+    box-shadow: var(--cm-shadow); overflow: hidden; font-family: Inter, system-ui, sans-serif; overflow-wrap: anywhere;
+}
+dialog.cm-dialog[open] { display: flex; flex-direction: column; }
+dialog.cm-dialog--wide { width: min(560px, calc(100vw - 32px)); }
+.cm-dialog * { box-sizing: border-box; }
+.cm-dialog > form[method="dialog"], .cm-dialog > .cm-form { display: contents; }
+.cm-scroll { overflow-y: auto; min-height: 0; flex: 1 1 auto; }
+.cm-head { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 16px; align-items: start; padding: 24px 24px 20px; }
+.cm-head--plain { grid-template-columns: minmax(0, 1fr); }
+.cm-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: #e6f6ec; color: #087341; box-shadow: 0 0 0 6px #f3fbf6; }
+.cm-icon .compass-icon, .cm-icon svg { width: 24px; height: 24px; }
+.cm-title { margin: 2px 0 6px !important; font-size: 18px !important; line-height: 1.35 !important; font-weight: 700 !important; color: var(--cm-ink) !important; }
+.cm-dialog .cm-text { margin: 0; font-size: 14px; line-height: 1.6; color: var(--cm-text); }
+.cm-dialog .cm-text + .cm-text { margin-top: 10px; }
+.cm-body { padding: 0 24px 20px; font-size: 14px; line-height: 1.6; color: #334155; }
+.cm-body ul { margin: 0; padding-left: 20px; }
+.cm-body li + li { margin-top: 4px; }
+.cm-check { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--cm-line); border-radius: 12px; background: var(--cm-strip); font-size: 14px; font-weight: 600; color: var(--cm-ink); cursor: pointer; }
+.cm-check input { flex: none; width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--cm-green); }
+.cm-dialog .cm-error { margin: 0; padding: 0 24px 12px; font-size: 13px; font-weight: 600; color: var(--cm-red); }
+.cm-dialog .cm-error:empty { display: none; }
+.cm-actions { flex: none; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin: 0; padding: 14px 24px; background: var(--cm-strip); border-top: 1px solid var(--cm-line); }
+
+/* Buttons */
+.cm-dialog .cm-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 104px; min-height: 42px; margin: 0; padding: 0 18px;
+    border: 1px solid transparent; border-radius: 10px; font: inherit; font-size: 14px; font-weight: 600; line-height: 1.2; text-align: center;
+    text-decoration: none !important; cursor: pointer; transition: background-color .15s ease, border-color .15s ease;
+}
+.cm-dialog .cm-btn--primary { background: var(--cm-green); color: #fff !important; }
+.cm-dialog .cm-btn--primary:hover { background: var(--cm-green-hover); }
+.cm-dialog .cm-btn--danger { background: var(--cm-red); color: #fff !important; }
+.cm-dialog .cm-btn--danger:hover { background: var(--cm-red-hover); }
+.cm-dialog .cm-btn--secondary { background: #fff; color: #334155 !important; border-color: #cbd5e1; }
+.cm-dialog .cm-btn--secondary:hover { background: #f1f5f9; }
+.cm-dialog .cm-btn:focus-visible { outline: 2px solid #087341; outline-offset: 2px; }
+.cm-dialog .cm-btn:disabled, .cm-dialog .cm-btn[aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
+
+/* Tones */
+.cm-dialog[data-tone="danger"] .cm-icon { background: #fdecec; color: var(--cm-red); box-shadow: 0 0 0 6px #fff6f6; }
+.cm-dialog[data-tone="danger"] { border-color: #f2d4d4; }
+.cm-dialog[data-tone="warning"] .cm-icon { background: #fdf3dc; color: #a15c00; box-shadow: 0 0 0 6px #fffaf0; }
+.cm-dialog[data-tone="warning"] .cm-btn--primary { background: var(--cm-amber); }
+.cm-dialog[data-tone="warning"] .cm-btn--primary:hover { background: var(--cm-amber-hover); }
+.cm-dialog[data-tone="info"] .cm-icon { background: #e8f0fd; color: #1d4ed8; box-shadow: 0 0 0 6px #f4f8fe; }
+
+/* ---------- Confirmation modal (components/confirmation-modal): same sheet behaviour on phones ---------- */
+#confirmationModal .modal-box { border-radius: var(--cm-radius); box-shadow: var(--cm-shadow); }
+#confirmationModal .modal-actions { border-radius: 0 0 var(--cm-radius) var(--cm-radius); }
+#confirmationModal.modal-overlay { background: var(--cm-backdrop); }
+
+/* ---------- Larger form dialogs (workflow, chat actions, focus panels) share the shell ---------- */
+dialog.workflow-dialog, dialog.chat-action-dialog, dialog.focus-panel-dialog {
+    border: 1px solid var(--cm-line) !important; border-radius: var(--cm-radius) !important; box-shadow: var(--cm-shadow) !important; color: var(--cm-ink);
+}
+.workflow-dialog__header, .chat-action-dialog > header, .chat-action-dialog form > header { padding: 20px 24px !important; }
+.workflow-dialog__header h2, .chat-action-dialog header h2, .focus-panel-dialog > header h2 { font-size: 18px !important; line-height: 1.35 !important; font-weight: 700 !important; color: var(--cm-ink) !important; }
+.workflow-dialog__footer, .chat-action-dialog footer, .chat-action-dialog .modal-actions {
+    padding: 14px 24px !important; background: var(--cm-strip) !important; border-top: 1px solid var(--cm-line) !important; justify-content: flex-end !important; gap: 10px !important;
+}
+.workflow-dialog__body, .chat-action-dialog .chat-action-body { padding: 20px 24px !important; }
+/* Header close buttons: a quiet round icon target, 40px. */
+.workflow-dialog__header [data-dialog-close]:not(.btn-secondary), .focus-panel-dialog > header > button, .chat-action-dialog header [data-dialog-close] {
+    display: inline-grid !important; place-items: center; flex: none; width: 40px; height: 40px; min-width: 40px; min-height: 40px; padding: 0 !important;
+    border: 1px solid var(--cm-line) !important; border-radius: 50% !important; background: #fff !important; color: #475569 !important; font-size: 0 !important; cursor: pointer;
+}
+.workflow-dialog__header [data-dialog-close]:not(.btn-secondary)::before, .focus-panel-dialog > header > button::before, .chat-action-dialog header [data-dialog-close]::before {
+    content: ''; width: 16px; height: 16px; background: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E") center / contain no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.workflow-dialog__header [data-dialog-close]:not(.btn-secondary):hover, .focus-panel-dialog > header > button:hover { background: #f1f5f9 !important; }
+.workflow-dialog__header [data-dialog-close]:not(.btn-secondary) > *, .focus-panel-dialog > header > button > *, .chat-action-dialog header [data-dialog-close] > * { display: none !important; }
+
+/* ---------- Phones: bottom sheets, full-width buttons, main action first ---------- */
+@media (max-width: 480px) {
+    dialog.cm-dialog, dialog.cm-dialog--wide {
+        inset: auto 0 0 0; margin: 0; width: 100%; max-width: 100%; max-height: 92dvh;
+        border-width: 1px 0 0; border-radius: var(--cm-radius) var(--cm-radius) 0 0;
+    }
+    dialog.cm-dialog[open] { animation: cm-sheet .24s cubic-bezier(.2, .8, .2, 1); }
+    .cm-head { grid-template-columns: 1fr; justify-items: center; text-align: center; padding: 26px 20px 18px; }
+    .cm-head--plain { justify-items: stretch; text-align: left; }
+    .cm-body { padding: 0 20px 18px; }
+    .cm-dialog .cm-error { padding: 0 20px 12px; text-align: center; }
+    .cm-actions { flex-direction: column-reverse; padding: 14px 20px max(14px, env(safe-area-inset-bottom)); }
+    .cm-actions .cm-btn { width: 100%; min-height: 46px; }
+
+    #confirmationModal.modal-overlay { align-items: flex-end !important; padding: 0 !important; }
+    #confirmationModal .modal-box { max-width: 100% !important; border-radius: var(--cm-radius) var(--cm-radius) 0 0 !important; border-width: 1px 0 0 !important; animation: cm-sheet .24s cubic-bezier(.2, .8, .2, 1) !important; }
+    #confirmationModal .modal-actions { border-radius: 0 !important; padding-bottom: max(14px, env(safe-area-inset-bottom)) !important; }
+    #confirmationModal :is(.btn-modal-cancel, .btn-modal-confirm) { min-height: 46px; }
+
+    .workflow-dialog__footer, .chat-action-dialog footer { flex-direction: column-reverse !important; align-items: stretch !important; }
+    .workflow-dialog__footer > :is(button, a), .chat-action-dialog footer > :is(button, a) { width: 100%; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    dialog[open], dialog.cm-dialog[open], #confirmationModal .modal-box { animation: none !important; }
+}
+body.reduced-motion dialog[open], body.reduced-motion #confirmationModal .modal-box { animation: none !important; }
+
+/* Helper chat actions (referral, emergency) title their box with an h3. */
+dialog.chat-action-dialog > .modal-box > h3 { font-size: 18px !important; line-height: 1.35 !important; font-weight: 700 !important; color: var(--cm-ink) !important; padding-top: 22px !important; }
+dialog.chat-action-dialog > .modal-box > .modal-sub { color: var(--cm-text); font-size: 14px; }
+
+/* Phones: form dialogs slide up as sheets too, with the footer clear of the home indicator. */
+@media (max-width: 480px) {
+    dialog.workflow-dialog, dialog.chat-action-dialog, dialog.focus-panel-dialog {
+        inset: auto 0 0 0 !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; max-height: 94dvh !important;
+        border-width: 1px 0 0 !important; border-radius: var(--cm-radius) var(--cm-radius) 0 0 !important;
+    }
+    dialog.workflow-dialog[open], dialog.chat-action-dialog[open], dialog.focus-panel-dialog[open] { animation: cm-sheet .24s cubic-bezier(.2, .8, .2, 1); }
+    .workflow-dialog__footer, .chat-action-dialog .modal-actions { padding-bottom: max(14px, env(safe-area-inset-bottom)) !important; }
+    dialog.chat-action-dialog .modal-actions { flex-direction: column-reverse !important; }
+    dialog.chat-action-dialog .modal-actions > :is(button, a) { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { dialog.workflow-dialog[open], dialog.chat-action-dialog[open], dialog.focus-panel-dialog[open] { animation: none !important; } }
