@@ -43,6 +43,7 @@ class VoiceCallService
         if (in_array($call->status, VoiceCall::OPEN, true)) {
             $call->update(['status'=>$status, 'end_reason'=>$reason, 'ended_at'=>now()]);
             VoiceSignalPacket::where('call_id', $call->id)->delete();
+            app(VoiceSupervisionService::class)->endForCall($call->id);
             SupportAudit::record('voice_call_'.$status, Session::findOrFail($call->session_id), ['call_id'=>$call->id,'reason'=>$reason]);
         }
         return $call;
@@ -76,7 +77,10 @@ class VoiceCallService
                 'voice_consent_required'=>!$this->hasConsent($session),
                 'voice_requested'=>\App\Models\AuditLog::where('target_type',$session->getTable())->where('target_id',$session->id)->where('action','voice_consent_requested')->exists(),
                 'session'=>app(SessionDurationService::class)->state($session->fresh()),
-                'call'=>$call ? $this->present($call,$user) : null];
+                'call'=>$call ? $this->present($call,$user) : null,
+                // Advisers listening live (receive-only). Each participant sends them a copy of their own audio,
+                // and sees a notice while the list is not empty.
+                'listeners'=>$call && $allowed && in_array($call->fresh()->status, VoiceCall::OPEN, true) ? app(VoiceSupervisionService::class)->listenersFor($call->fresh()) : []];
         });
     }
 

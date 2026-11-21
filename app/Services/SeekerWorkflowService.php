@@ -88,7 +88,7 @@ class SeekerWorkflowService {
             abort_unless($session->workflow_state==='session_preferences_required' && $session->concern_id && (!$session->requires_adviser_review || $session->permitsParallelScreeningSupport()) && $session->risk_level!=='emergency',409,'Complete the required steps before submitting.');
             $mode = $data['support_mode'] ?? 'chat';
             abort_unless($mode === 'chat' || ($mode === 'voice' && app(VoiceConfiguration::class)->ready() && in_array($data['voice_participation'] ?? null,[true,1,'1','yes','on','true'],true)),422,'Voice participation must be available and accepted.');
-            if ($mode === 'voice') app(ConsentService::class)->decide($user,'voice_participation','accepted',$session->id,null,'Live audio only; no recording or automatic transcription.');
+            if ($mode === 'voice') { app(ConsentService::class)->decide($user,'voice_participation','accepted',$session->id,null,'Live audio only; no recording or automatic transcription.'); app(ConsentService::class)->decide($user,'voice_supervision','accepted',$session->id,null,'Supervising Adviser may listen live; no recording.'); }
             $session->update(['workflow_state'=>'ready_for_submission','session_type'=>$mode,'voice_consent_obtained'=>$mode==='voice','voice_recording_consent'=>false]);
             $user->update(['preferred_language'=>$data['preferred_language'],'preferred_communication_mode'=>$mode]);
             $session->update(['workflow_state'=>'submitted','submitted_at'=>now(),'preferred_language'=>$data['preferred_language']]);

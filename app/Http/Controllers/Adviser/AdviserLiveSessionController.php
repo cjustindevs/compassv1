@@ -7,7 +7,12 @@ use App\Models\Message;
 use App\Models\Notification;
 use App\Models\Session;
 use App\Models\SessionCoachNote;
+use App\Models\VoiceCall;
+use App\Models\VoiceListen;
+use App\Models\VoiceSignalPacket;
 use App\Services\AdviserScope;
+use App\Services\VoiceConfiguration;
+use App\Services\VoiceSupervisionService;
 use App\Services\SupportAudit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -48,7 +53,7 @@ class AdviserLiveSessionController extends Controller
         $adviser = $this->actor($request);
         $session = Session::with(['helper', 'seeker'])->findOrFail($id);
         abort_unless($session->helper?->adviser_id === $adviser->id, 403);
-        $live = $session->isActive() && $session->session_type === 'chat';
+        $live = $session->isActive() && in_array($session->session_type, ['chat', 'voice'], true);
         $after = (int) $request->query('after', 0);
         $notesAfter = (int) $request->query('notes_after', 0);
         $messages = $live ? Message::where('session_id', $session->id)->where('id', '>', $after)->orderBy('id')->limit(200)->get()
@@ -92,8 +97,84 @@ class AdviserLiveSessionController extends Controller
 
     private function liveQuery(int $adviserId)
     {
-        return Session::where('session_status', Session::STATUS_ACTIVE)->where('session_type', 'chat')
+        return Session::where('session_status', Session::STATUS_ACTIVE)->whereIn('session_type', ['chat', 'voice'])
             ->where('is_test_record', false)
             ->whereHas('helper', fn ($q) => $q->where('adviser_id', $adviserId));
+    }
+
+    // ── Live voice supervision (receive-only; nothing is recorded) ────────────────────────────────
+
+    public function listenStart(Request $request, int $id): JsonResponse
+    {
+        $this->actor($request);
+        $data = $request->validate(['purpose' => ['required', 'string', \Illuminate\Validation\Rule::in(VoiceSupervisionService::PURPOSES)], 'reason' => 'required|string|min:10|max:500'], [
+            'purpose.required' => 'Select a purpose.', 'reason.min' => 'Explain your reason in at least 10 characters.']);
+        $session = Session::with('helper')->findOrFail($id);
+        $listen = app(VoiceSupervisionService::class)->start($request->user(), $session, $data['purpose'], $data['reason']);
+        $credential = app(VoiceConfiguration::class)->credential();
+        abort_unless($credential, 503, 'Voice is unavailable right now.');
+
+        return response()->json(['listen_id' => $listen->id, 'call_id' => $listen->call_id,
+            'iceServers' => $credential->payload, 'iceTransportPolicy' => 'relay'], 201)->header('Cache-Control', 'no-store');
+    }
+
+    /** Signals the call participants sent to this Adviser, and whether listening can continue. */
+    public function listenState(Request $request, int $id, int $listen): JsonResponse
+    {
+        [$session, $record] = $this->ownListen($request, $id, $listen);
+        $call = VoiceCall::find($record->call_id);
+        if (! $record->ended_at && (! $call || ! in_array($call->status, ['connecting', 'connected'], true) || ! $session->isActive())) {
+            app(VoiceSupervisionService::class)->stop($record, 'call_ended');
+        }
+        $after = (int) $request->query('after', 0);
+        $packets = $record->fresh()->ended_at ? collect() : VoiceSignalPacket::where('call_id', $record->call_id)->where('recipient_id', $request->user()->id)
+            ->where('expires_at', '>', now())->where('id', '>', $after)->orderBy('id')->limit(100)->get();
+
+        return response()->json(['active' => ! $record->fresh()->ended_at, 'call_status' => $call?->status,
+            'signals' => $packets->map(fn ($p) => array_merge($p->payload, ['signal_id' => $p->id]))->values(),
+            'cursor' => $packets->isNotEmpty() ? $packets->last()->id : $after])->header('Cache-Control', 'no-store');
+    }
+
+    /** The Adviser's answer (or ICE candidate) back to one participant's audio offer. */
+    public function listenSignal(Request $request, int $id, int $listen): JsonResponse
+    {
+        [$session, $record] = $this->ownListen($request, $id, $listen);
+        abort_if($record->ended_at, 409, 'Listening has ended.');
+        $data = $request->validate(['type' => 'required|in:answer,candidate', 'to' => 'required|in:seeker,helper',
+            'sdp' => 'required_if:type,answer|nullable|string|max:7000',
+            'candidate' => 'required_if:type,candidate|nullable|array:candidate,sdpMid,sdpMLineIndex,usernameFragment',
+            'candidate.candidate' => 'required_if:type,candidate|string|max:1500',
+            'candidate.sdpMid' => 'nullable|string|max:50', 'candidate.sdpMLineIndex' => 'nullable|integer|min:0|max:10', 'candidate.usernameFragment' => 'nullable|string|max:100']);
+        \App\Http\Controllers\VoiceCallController::assertRelayAudio($data);
+        abort_if($data['type'] === 'answer' && preg_match('/^a=(?:sendrecv|sendonly)\b/m', $data['sdp']), 422, 'The Adviser can only listen.');
+        $recipient = $data['to'] === 'helper' ? $session->helper?->user_account_id : $session->seeker?->user_account_id;
+        abort_unless($recipient, 409);
+        $payload = ['call_id' => $record->call_id, 'type' => $data['type'], 'listener_id' => $record->id];
+        $payload[$data['type'] === 'candidate' ? 'candidate' : 'sdp'] = $data[$data['type'] === 'candidate' ? 'candidate' : 'sdp'];
+        if (isset($payload['sdp'])) $payload['sdp'] = rtrim($payload['sdp'], "\r\n")."\r\n";
+        $packet = VoiceSignalPacket::create(['call_id' => $record->call_id, 'recipient_id' => $recipient, 'payload' => $payload, 'expires_at' => now()->addMinutes(2)]);
+        try { event(new \App\Events\VoiceSignal($session->id, $recipient, array_merge($payload, ['signal_id' => $packet->id]))); }
+        catch (\Throwable $e) { /* participants also poll for signals */ }
+
+        return response()->json(['sent' => true])->header('Cache-Control', 'no-store');
+    }
+
+    public function listenStop(Request $request, int $id, int $listen): JsonResponse
+    {
+        [, $record] = $this->ownListen($request, $id, $listen);
+        app(VoiceSupervisionService::class)->stop($record);
+
+        return response()->json(['stopped' => true]);
+    }
+
+    /** @return array{0: Session, 1: VoiceListen} */
+    private function ownListen(Request $request, int $id, int $listen): array
+    {
+        $adviser = $this->actor($request);
+        $session = Session::with(['helper', 'seeker'])->findOrFail($id);
+        abort_unless((int) $session->helper?->adviser_id === (int) $adviser->id, 403);
+        $record = VoiceListen::where('session_id', $session->id)->where('adviser_user_id', $request->user()->id)->findOrFail($listen);
+
+        return [$session, $record];
     }
 }

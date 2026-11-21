@@ -411,6 +411,11 @@ Route::middleware(['auth', 'role:adviser'])->prefix('adviser')->name('adviser.')
     Route::get('/live/{id}', [\App\Http\Controllers\Adviser\AdviserLiveSessionController::class, 'show'])->whereNumber('id')->name('live.show');
     Route::get('/live/{id}/feed', [\App\Http\Controllers\Adviser\AdviserLiveSessionController::class, 'feed'])->whereNumber('id')->name('live.feed');
     Route::post('/live/{id}/notes', [\App\Http\Controllers\Adviser\AdviserLiveSessionController::class, 'storeNote'])->whereNumber('id')->middleware('throttle:30,1')->name('live.notes');
+    // Live voice supervision: listen receive-only to a connected call (nothing is recorded).
+    Route::post('/live/{id}/listen', [\App\Http\Controllers\Adviser\AdviserLiveSessionController::class, 'listenStart'])->whereNumber('id')->middleware('throttle:10,1')->name('live.listen.start');
+    Route::get('/live/{id}/listen/{listen}', [\App\Http\Controllers\Adviser\AdviserLiveSessionController::class, 'listenState'])->whereNumber(['id', 'listen'])->name('live.listen.state');
+    Route::post('/live/{id}/listen/{listen}/signal', [\App\Http\Controllers\Adviser\AdviserLiveSessionController::class, 'listenSignal'])->whereNumber(['id', 'listen'])->middleware('throttle:240,1')->name('live.listen.signal');
+    Route::post('/live/{id}/listen/{listen}/stop', [\App\Http\Controllers\Adviser\AdviserLiveSessionController::class, 'listenStop'])->whereNumber(['id', 'listen'])->name('live.listen.stop');
     Route::get('/helpers/create', [\App\Http\Controllers\Adviser\AdviserHelperAccountController::class, 'create'])->name('helpers.create');
     Route::post('/helpers', [\App\Http\Controllers\Adviser\AdviserHelperAccountController::class, 'store'])->middleware('throttle:10,1')->name('helpers.store');
     Route::get('/helpers/export', [AdviserHelperController::class, 'export'])->name('helpers.export');

@@ -24,6 +24,8 @@ class VoiceCallController extends Controller
             abort_unless($case->isActive() && $case->helper_accepted_at && $case->start_time,409);
             abort_unless(app(\App\Services\ConsentService::class)->isFull($case->seeker),409,'Current support consent is required.');
             if (!$this->calls->hasConsent($case)) app(\App\Services\ConsentService::class)->decide($request->user(),'voice_participation','accepted',$case->id);
+            // The same agreement now names live supervision: the supervising Adviser may listen; nothing is recorded.
+            if (!app(\App\Services\VoiceSupervisionService::class)->hasConsent($case)) app(\App\Services\ConsentService::class)->decide($request->user(),'voice_supervision','accepted',$case->id,null,'Supervising Adviser may listen live; no recording.');
         });
         return response()->json(['message'=>'Voice enabled. You can start or accept a call.']);
     }
@@ -83,11 +85,24 @@ class VoiceCallController extends Controller
         return response()->json(['call'=>$this->calls->present($call,$request->user())]);
     }
 
+    /** Calls carry live audio only, and only through the relay server (no direct or video candidates). */
+    public static function assertRelayAudio(array $data): void
+    {
+        if ($data['type'] === 'candidate') {
+            abort_unless(preg_match('/\btyp relay\b/', $data['candidate']['candidate']), 422, 'Only relay candidates are allowed.');
+            return;
+        }
+        abort_if(preg_match('/^m=(?:video|application)\b/m', $data['sdp']), 422, 'Only live audio is supported.');
+        foreach (preg_split('/\r?\n/', $data['sdp']) as $line) {
+            if (str_starts_with($line, 'a=candidate:')) abort_unless(preg_match('/\btyp relay\b/', $line), 422, 'Only relay candidates are allowed.');
+        }
+    }
+
     public function signal(Request $request, Session $session)
     {
         $this->calls->authorize($request->user(),$session);
         abort_unless(app(VoiceConfiguration::class)->configured(),503);
-        $data = $request->validate(['call_id'=>'required|uuid','type'=>'required|in:offer,answer,candidate',
+        $data = $request->validate(['call_id'=>'required|uuid','type'=>'required|in:offer,answer,candidate','listener_id'=>'nullable|integer|min:1',
             'sdp'=>'required_if:type,offer,answer|nullable|string|max:7000',
             'candidate'=>'required_if:type,candidate|nullable|array:candidate,sdpMid,sdpMLineIndex,usernameFragment',
             'candidate.candidate'=>'required_if:type,candidate|string|max:1500',
@@ -99,18 +114,21 @@ class VoiceCallController extends Controller
             abort_unless(in_array($request->user()->id,[$call->caller_user_id,$call->callee_user_id],true),403);
             abort_unless(in_array($call->status,['connecting','connected'],true) && !$this->calls->stale($call),409,'This call is no longer connected.');
             $caller = $request->user()->id === $call->caller_user_id;
-            abort_if(($data['type'] === 'offer' && !$caller) || ($data['type'] === 'answer' && $caller),403);
-            if ($data['type'] === 'candidate') abort_unless(preg_match('/\btyp relay\b/', $data['candidate']['candidate']),422,'Only relay candidates are allowed.');
-            else {
-                abort_if(preg_match('/^m=(?:video|application)\b/m', $data['sdp']),422,'Only live audio is supported.');
-                foreach (preg_split('/\r?\n/', $data['sdp']) as $line) {
-                    if (str_starts_with($line,'a=candidate:')) abort_unless(preg_match('/\btyp relay\b/',$line),422,'Only relay candidates are allowed.');
-                }
+            $listen = null;
+            if (!empty($data['listener_id'])) {
+                // A copy of this participant's own audio for a listening Adviser: the participant offers, the Adviser answers.
+                $listen = \App\Models\VoiceListen::where('call_id',$call->id)->whereKey($data['listener_id'])->active()->first();
+                abort_unless($listen,409,'The Adviser is no longer listening.');
+                abort_if($data['type'] === 'answer',403);
+            } else {
+                abort_if(($data['type'] === 'offer' && !$caller) || ($data['type'] === 'answer' && $caller),403);
             }
+            self::assertRelayAudio($data);
             $payload = ['call_id'=>$call->id,'type'=>$data['type']];
             $payload[$data['type'] === 'candidate' ? 'candidate' : 'sdp'] = $data[$data['type'] === 'candidate' ? 'candidate' : 'sdp'];
             if (isset($payload['sdp'])) $payload['sdp'] = rtrim($payload['sdp'], "\r\n")."\r\n";
-            return VoiceSignalPacket::create(['call_id'=>$call->id, 'recipient_id'=>$caller ? $call->callee_user_id : $call->caller_user_id,
+            if ($listen) $payload += ['listener_id'=>$listen->id,'from'=>$request->user()->role === 'helper' ? 'helper' : 'seeker'];
+            return VoiceSignalPacket::create(['call_id'=>$call->id, 'recipient_id'=>$listen ? $listen->adviser_user_id : ($caller ? $call->callee_user_id : $call->caller_user_id),
                 'payload'=>$payload, 'expires_at'=>now()->addMinutes(2)]);
         });
         // Publish after releasing the session lock. A failed socket must not discard the fallback packet.
