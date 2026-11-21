@@ -72,7 +72,7 @@
 .hf-metric dt{display:flex;align-items:center;gap:8px;min-height:36px;font-size:13px;font-weight:600;color:#3f5247;line-height:1.35}
 .hf-metric-icon{display:inline-grid;place-items:center;flex:none;width:28px;height:28px;border-radius:8px;background:#ecfdf3;color:#087341}
 .hf-metric-icon .compass-icon{width:16px;height:16px}
-.hf-metric dd{margin:4px 0 0;font-size:24px;font-weight:750;line-height:1.2;color:#163b2d;font-variant-numeric:tabular-nums}
+.hf-metric dd{margin:4px 0 0;font-size:24px;font-weight:750;line-height:1.2;color:#087341;font-variant-numeric:tabular-nums}
 .hf-metric small{font-size:12px;line-height:1.4;color:#566170}
 .hf-metric-notes{margin-top:14px;font-size:13px;color:#566170}
 .hf-metric-notes summary{cursor:pointer;font-weight:600;color:#087341}

@@ -23,7 +23,7 @@
         #dashboard-analytics .co-overview .co-kpi { align-items: center; text-align: center; border: 1px solid #bbf7d0; border-radius: 14px; background: #f3f4f6; padding: 20px 16px; }
         #dashboard-analytics .co-kpi h3 { order: 0; font-size: 14px; font-weight: 600; color: #1F2937; }
         #dashboard-analytics .co-kpi > strong { font-size: 40px; font-weight: 800; line-height: 1.1; color: #374151; }
-        #dashboard-analytics .co-overview .co-kpi { background: #f0fdf4; } #dashboard-analytics .co-kpi > strong { color: #15803d; }
+        #dashboard-analytics .co-overview .co-kpi { background: #f0fdf4; } #dashboard-analytics .co-kpi > strong { color: #087341; }
         @media (max-width: 768px) { #dashboard-analytics .co-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } #dashboard-analytics .co-kpi > strong { font-size: 32px; } }
         #dashboard-analytics .analytics-toolbar{justify-content:flex-end}
         #dashboard-analytics .analytics-period-form{justify-content:flex-end;margin-inline-start:auto;max-width:100%}

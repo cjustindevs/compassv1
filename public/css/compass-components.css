@@ -359,3 +359,15 @@ summary.ui-icon-btn::-webkit-details-marker { display: none; }
   html.compass-ui:not(.compass-ui-admin) table.compass-stack-table tr:has(> td.compass-stack-full:only-child) { display: block; border-style: dashed; background: #fbfdfc; }
   html.compass-ui:not(.compass-ui-admin) table.compass-stack-table td.compass-stack-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 }
+
+/* KPI cards (QA, Nov 21): every number is brand green on a white card; the tone (red, amber, blue)
+   moves to the icon tile so urgent cards still stand out without clashing colours. */
+.ui-kpi[class*="ui-kpi--"] { background: #fff; border-color: #dfe8e2; }
+.ui-kpi[class*="ui-kpi--"] .ui-kpi-value, .ui-kpi .ui-kpi-value { color: #087341; }
+.ui-kpi[class*="ui-kpi--"] .ui-kpi-icon { background: #ecfdf3; color: #087341; }
+.ui-kpi.ui-kpi--red .ui-kpi-icon { background: #fef2f2; color: #b91c1c; }
+.ui-kpi.ui-kpi--amber .ui-kpi-icon { background: #fff7e6; color: #a15c00; }
+.ui-kpi.ui-kpi--blue .ui-kpi-icon { background: #eff6ff; color: #1d4ed8; }
+.ui-kpi.ui-kpi--neutral .ui-kpi-icon { background: #f3f4f6; color: #475569; }
+html.compass-ui .co-overview .co-kpi > strong, html.compass-ui .analytics-measures dd { color: #087341; }
+.hf-kpi > strong { color: #087341; }

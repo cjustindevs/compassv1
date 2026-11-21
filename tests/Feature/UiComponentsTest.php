@@ -194,6 +194,19 @@ class UiComponentsTest extends TestCase
         $this->assertStringContainsString('<span class="dot" role="img" aria-label="Unread">', file_get_contents(resource_path('views/moderator/notifications.blade.php')));
     }
 
+    public function test_case_categories_chart_is_all_green_and_kpi_numbers_are_green(): void
+    {
+        $html = (string) $this->blade('<x-dashboard-chart :chart="$chart" />', ['chart' => ['title' => 'Case categories', 'values' => ['Academic Stress' => 3, 'Emergency' => 1, 'Family' => 2]]]);
+        $this->assertStringContainsString('"colors":["#087341","#087341","#087341"]', $html);
+        $other = (string) $this->blade('<x-dashboard-chart :chart="$chart" />', ['chart' => ['title' => 'Cases by status', 'values' => ['Active' => 1, 'Resolved' => 2]]]);
+        $this->assertStringNotContainsString('"colors":', $other, 'Status charts keep their status colours.');
+
+        $css = file_get_contents(public_path('css/compass-components.css'));
+        $this->assertStringContainsString('.ui-kpi[class*="ui-kpi--"] .ui-kpi-value, .ui-kpi .ui-kpi-value { color: #087341; }', $css);
+        $this->assertStringContainsString('html.compass-ui .co-overview .co-kpi > strong', $css);
+        $this->assertStringContainsString('color:#087341;font-variant-numeric', file_get_contents(resource_path('views/components/performance-cards.blade.php')));
+    }
+
     public function test_phone_layout_fixes_stay_in_place(): void
     {
         $assets = file_get_contents(resource_path('views/partials/ui-assets.blade.php'));
