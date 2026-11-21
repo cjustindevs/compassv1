@@ -231,8 +231,10 @@ class AdviserRedesignPagesTest extends TestCase
             ->assertSee('id="evalSearch"', false)
             ->assertSee('id="evalRisk"', false)
             ->assertSee('id="evalSort"', false)
+            // QA (Nov 21): newest documentation first by default; risk order stays available.
             ->assertSee('<select id="evalSort" data-control="select">
-                        <option value="risk" selected>Highest Risk First</option>', false)
+                        <option value="newest" selected>Newest First</option>', false)
+            ->assertSee('<option value="risk">Highest Risk First</option>', false)
             ->assertSee('id="evalNoMatch"', false)
             ->assertSee('eval-list-filter.js', false)
             ->assertSee('data-risk="high"', false)

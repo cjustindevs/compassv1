@@ -43,8 +43,8 @@
                 <div class="ui-field">
                     <label for="evalSort">Sort</label>
                     <select id="evalSort" data-control="select">
-                        <option value="risk" selected>Highest Risk First</option>
-                        <option value="newest">Newest First</option>
+                        <option value="newest" selected>Newest First</option>
+                        <option value="risk">Highest Risk First</option>
                         <option value="oldest">Oldest First</option>
                         <option value="alias">Alias A–Z</option>
                     </select>
