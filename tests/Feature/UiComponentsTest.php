@@ -207,6 +207,19 @@ class UiComponentsTest extends TestCase
         $this->assertStringContainsString('color:#087341;font-variant-numeric', file_get_contents(resource_path('views/components/performance-cards.blade.php')));
     }
 
+    public function test_no_stylesheet_paints_kpi_numbers_another_colour(): void
+    {
+        // QA found the Adviser KPIs still dark: a later !important rule overrode the green.
+        foreach (glob(public_path('css/*.css')) as $file) {
+            preg_match_all('/([^{}]*kpi\s*>\s*strong[^{}]*)\{([^}]*)\}/i', file_get_contents($file), $rules, PREG_SET_ORDER);
+            foreach ($rules as [, $selector, $body]) {
+                if (preg_match('/(?<![-\w])color\s*:\s*([^;!}]+)/i', $body, $c)) {
+                    $this->assertStringContainsString('#087341', $c[1], basename($file).': '.trim($selector).' sets KPI numbers to '.trim($c[1]));
+                }
+            }
+        }
+    }
+
     public function test_dashboards_put_urgent_work_first_and_analytics_last(): void
     {
         $helper = file_get_contents(resource_path('views/dashboard/helper.blade.php'));
@@ -219,6 +232,10 @@ class UiComponentsTest extends TestCase
 
         $seeker = file_get_contents(resource_path('views/dashboard/seeker.blade.php'));
         $this->assertLessThan(strpos($seeker, '<x-performance-cards :cards="$seekerIndicators" />'), strpos($seeker, '<x-analytics-period :action="route(\'seeker.dashboard\')"'), 'Seeker: the period picker sits above the cards it controls.');
+        // QA: during a live session the Seeker first sees how to get back to it, not the welcome hero.
+        $this->assertLessThan(strpos($seeker, '<div class="hero-section'), strpos($seeker, '<h3 class="font-bold text-gray-800">Your session is active</h3>'), 'Seeker: an active session sits above the welcome hero.');
+        $this->assertStringContainsString("'Return to call'", $seeker, 'Seeker: a voice session goes back to the call, not the chat.');
+        $this->assertStringContainsString('class="seeker-live-actions"', $seeker, 'Seeker: session buttons keep one line on phones.');
     }
 
     public function test_phone_layout_fixes_stay_in_place(): void
