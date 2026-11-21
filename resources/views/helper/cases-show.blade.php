@@ -128,7 +128,7 @@
                     <div class="avatar-lg" style="margin:0 auto 12px;">{{ \Illuminate\Support\Str::substr($session->seeker->generated_alias ?? 'S', 0, 2) }}</div>
                     <div class="font-bold text-gray-800">{{ $session->seeker->generated_alias ?? 'Anonymous Seeker' }}</div>
                     <div class="text-xs text-gray-400 mt-1">
-                        {{ $session->seeker?->gender ? ucfirst($session->seeker->gender) : 'Prefer not to say' }}
+                        {{ $session->seeker?->genderLabel() ?? 'Gender not shared' }}
                         {{ $session->seeker?->age ? ' · ' . $session->seeker->age . ' yrs' : '' }}
                     </div>
                 </div>

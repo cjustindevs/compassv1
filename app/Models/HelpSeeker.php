@@ -33,6 +33,18 @@ class HelpSeeker extends Model
         'last_emergency_at' => 'datetime',
     ];
 
+    /** Gender in plain words for staff screens; null when not given or the Seeker chose not to say. */
+    public function genderLabel(): ?string
+    {
+        $value = strtolower(str_replace('_', '-', trim((string) $this->gender)));
+
+        return match ($value) {
+            '', 'prefer-not-to-say' => null,
+            'non-binary' => 'Non-binary',
+            default => ucfirst(str_replace('-', ' ', $value)),
+        };
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_account_id', 'id');

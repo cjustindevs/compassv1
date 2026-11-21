@@ -50,7 +50,7 @@ class HelperCaseController extends Controller
                 'language' => $session->seeker?->user?->preferred_language ?: 'English',
                 'concern' => $session->concern->concern_name ?? 'No concern specified',
                 'age' => $session->seeker?->age,
-                'gender' => $session->seeker?->gender,
+                'gender' => $session->seeker?->genderLabel(),
                 'created' => $session->created_at?->format('M d, Y h:i A'),
                 'waiting' => $session->created_at?->diffForHumans(),
                 'scheduled_start' => $session->scheduled_start,

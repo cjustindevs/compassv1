@@ -628,6 +628,11 @@
         .text-green-soft { color: var(--green-500); }
         .bg-green-soft { background: var(--green-50); }
         .border-green-soft { border-color: var(--green-200); }
+        .seeker-live-actions { display: flex; gap: 12px; flex-shrink: 0; }
+        #tab-home .seeker-live-actions a { white-space: nowrap; justify-content: center; }
+        @media (max-width: 639px) {
+            .seeker-live-actions { display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%; }
+        }
     </style>
     @vite(['resources/css/app.css'])
     @include('partials.ui-assets')
@@ -670,6 +675,48 @@
 
         <div id="tab-home" class="tab-content active">
 
+{{-- Urgent first: a live or pending session comes before the welcome hero. --}}
+            <!-- ═══════ ACTIVE SESSION / PENDING REQUEST ═══════ -->
+            @if($activeSession)
+                <div class="mb-6 p-5 rounded-2xl bg-white border border-[#04A052] shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4" style="border-left: 6px solid #04A052;">
+
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-bold text-gray-800">Your session is active</h3>
+                        <p class="text-sm text-gray-500">
+                            Session {{ $activeSession->reference_number }} · {{ $activeSession->mode_label }} · Started {{ $activeSession->start_time?->diffForHumans() }}
+                        </p>
+                    </div>
+                    @php $activeIsVoice = $activeSession->session_type === 'voice'; @endphp
+                    <div class="seeker-live-actions">
+                        <a href="{{ route($activeIsVoice ? 'session.voice' : 'session.chat') }}" class="btn-primary" style="text-decoration:none;">
+                            <x-ui-icon :name="$activeIsVoice ? 'phone' : 'message'" class="mr-2" /> {{ $activeIsVoice ? 'Return to call' : 'Go to Chat' }}
+                        </a>
+                        <a href="{{ route('session.evaluation') }}" class="btn-outline" style="text-decoration:none;">End &amp; Evaluate</a>
+                    </div>
+                </div>
+            @elseif($pendingSession)
+                <div class="mb-6 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4" style="border-left: 6px solid #F59E0B;">
+
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-bold text-gray-800">
+                            {{ $pendingSession->isHelperAssigned() ? 'Waiting for a helper to accept' : 'Your request is in progress' }}
+                        </h3>
+                        <p class="text-sm text-gray-500">
+                            {{ $pendingSession->reference_number }} · {{ $pendingSession->status_label }} ·
+                            {{ $pendingSession->created_at?->diffForHumans() }}
+                            @if($pendingSession->session_status === \App\Models\Session::STATUS_SCREENING_COMPLETED)
+                                · <span class="text-green-600 font-medium">Continue where you left off</span>
+                            @endif
+                        </p>
+                    </div>
+                    <div class="flex gap-3 flex-shrink-0">
+                        <a href="{{ $pendingSession->session_status === \App\Models\Session::STATUS_SCREENING_COMPLETED ? route('request.preferences') : route('request.matching') }}" class="btn-primary" style="text-decoration:none;">
+                            <x-ui-icon name="arrow-right" class="mr-2" /> Continue
+                        </a>
+                    </div>
+                </div>
+            @endif
+
             <!-- Hero -->
             <div class="hero-section mb-6">
                 <div class="hero-content">
@@ -700,45 +747,6 @@
                 </div>
             </div>
 
-            <!-- ═══════ ACTIVE SESSION / PENDING REQUEST ═══════ -->
-            @if($activeSession)
-                <div class="mb-6 p-5 rounded-2xl bg-white border border-[#04A052] shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4" style="border-left: 6px solid #04A052;">
-
-                    <div class="flex-1 min-w-0">
-                        <h3 class="font-bold text-gray-800">Your session is active</h3>
-                        <p class="text-sm text-gray-500">
-                            Session {{ $activeSession->reference_number }} · {{ $activeSession->mode_label }} · Started {{ $activeSession->start_time?->diffForHumans() }}
-                        </p>
-                    </div>
-                    <div class="flex gap-3 flex-shrink-0">
-                        <a href="{{ route($activeSession->session_type === 'voice' ? 'session.voice' : 'session.chat') }}" class="btn-primary" style="text-decoration:none;">
-                            <x-ui-icon name="message" class="mr-2" /> Go to Chat
-                        </a>
-                        <a href="{{ route('session.evaluation') }}" class="btn-outline" style="text-decoration:none;">End &amp; Evaluate</a>
-                    </div>
-                </div>
-            @elseif($pendingSession)
-                <div class="mb-6 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4" style="border-left: 6px solid #F59E0B;">
-
-                    <div class="flex-1 min-w-0">
-                        <h3 class="font-bold text-gray-800">
-                            {{ $pendingSession->isHelperAssigned() ? 'Waiting for a helper to accept' : 'Your request is in progress' }}
-                        </h3>
-                        <p class="text-sm text-gray-500">
-                            {{ $pendingSession->reference_number }} · {{ $pendingSession->status_label }} ·
-                            {{ $pendingSession->created_at?->diffForHumans() }}
-                            @if($pendingSession->session_status === \App\Models\Session::STATUS_SCREENING_COMPLETED)
-                                · <span class="text-green-600 font-medium">Continue where you left off</span>
-                            @endif
-                        </p>
-                    </div>
-                    <div class="flex gap-3 flex-shrink-0">
-                        <a href="{{ $pendingSession->session_status === \App\Models\Session::STATUS_SCREENING_COMPLETED ? route('request.preferences') : route('request.matching') }}" class="btn-primary" style="text-decoration:none;">
-                            <x-ui-icon name="arrow-right" class="mr-2" /> Continue
-                        </a>
-                    </div>
-                </div>
-            @endif
 
             <x-emergency-callout />
             <!-- MOOD CHECK-IN -->

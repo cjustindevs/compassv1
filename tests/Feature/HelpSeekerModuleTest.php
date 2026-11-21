@@ -211,6 +211,24 @@ class HelpSeekerModuleTest extends TestCase
         $this->assertStringContainsString("help_seeker_condition ?: 'Not answered by the Seeker'", $view);
     }
 
+    public function test_seeker_gender_reads_as_plain_words_and_blank_is_not_shown_as_a_choice(): void
+    {
+        // QA: the Helper saw "Prefer-not-to-say" (raw value), and "Prefer not to say" when nothing was given.
+        $label = fn ($g) => (new \App\Models\HelpSeeker(['gender' => $g]))->genderLabel();
+        $this->assertSame('Female', $label('female'));
+        $this->assertSame('Non-binary', $label('non_binary'));
+        $this->assertSame('Non-binary', $label('non-binary'));
+        $this->assertNull($label('prefer-not-to-say'));
+        $this->assertNull($label('prefer_not_to_say'));
+        $this->assertNull($label(null));
+        $this->assertNull($label(''));
+
+        $view = file_get_contents(resource_path('views/helper/cases-show.blade.php'));
+        $this->assertStringContainsString("genderLabel() ?? 'Gender not shared'", $view);
+        $this->assertStringNotContainsString("ucfirst(\$session->seeker->gender)", $view);
+        $this->assertStringContainsString("'gender' => \$session->seeker?->genderLabel()", file_get_contents(app_path('Http/Controllers/Helper/HelperCaseController.php')));
+    }
+
     public function test_chat_page_uses_persisted_session_start_time_for_timer(): void
     {
         [$user, $seeker] = $this->seekerUser();
