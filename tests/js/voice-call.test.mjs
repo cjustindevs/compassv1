@@ -4,7 +4,7 @@ import { VoiceCallClient, setButtonLabel } from '../../resources/js/voice-call-c
 
 function room() {
     const elements = {};
-    for (const name of ['audio','status','badge','title','duration','start','accept','decline','mute','leave','play','retry','microphone','microphone-status',
+    for (const name of ['audio','status','badge','title','duration','start','accept','decline','mute','leave','play','retry','microphone','microphone-status','supervised',
         'detail-microphone','detail-server','detail-signaling','detail-audio','detail-error']) {
         elements[name]={hidden:false,disabled:false,textContent:'',attributes:{},handlers:{},
             addEventListener(event,handler){this.handlers[event]=handler;},setAttribute(key,value){this.attributes[key]=value;},async play(){}};
@@ -375,4 +375,20 @@ test('icon buttons keep their icon: labels go to the hidden span, aria-label and
     setButtonLabel(plain, 'Cancel call');
     assert.equal(plain.textContent, 'Cancel call');
     setButtonLabel(null, 'x');
+});
+
+test('a listening Adviser gets an audio-only offer and both participants see the notice', async () => {
+    const { client, elements, requests, setState } = room();
+    await client.begin(false);
+    setState({ available: true, session: { ended: false }, call: { id: 'current-call', is_caller: true, status: 'connecting' }, signals: [], listeners: [{ id: 9 }] });
+    await client.poll();
+    const offer = requests.find((request) => request.body?.listener_id === 9);
+    assert.equal(offer.body.type, 'offer');
+    assert.equal(offer.body.call_id, 'current-call');
+    assert.equal(client.listeners.count, 1);
+    assert.equal(elements.supervised.hidden, false);
+    setState({ available: true, session: { ended: false }, call: { id: 'current-call', is_caller: true, status: 'connecting' }, signals: [], listeners: [] });
+    await client.poll();
+    assert.equal(client.listeners.count, 0);
+    assert.equal(elements.supervised.hidden, true);
 });

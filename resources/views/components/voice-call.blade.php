@@ -24,8 +24,10 @@
         <div class="voice-call-heading"><h2>Voice support</h2><span class="voice-call-badge" data-voice-badge>Checking</span><time data-voice-duration hidden aria-label="Call duration">00:00</time></div>
         <h3 data-voice-title>Getting your call ready</h3>
         <p data-voice-status role="status" aria-live="polite">Checking call availability…</p>
-        <small>Audio is not recorded. Leaving the call keeps this support session and text chat open.</small>
+        <small>Calls are not recorded. Your supervising COMPASS Adviser may listen live to keep support safe. Leaving the call keeps this support session and text chat open.</small>
     </div>
+    {{-- Live supervision is never hidden: both participants see this while an Adviser is listening. --}}
+    <p class="voice-call-supervised" data-voice-supervised role="status" hidden><x-ui-icon name="eye" /> A COMPASS Adviser is listening for supervision. Calls are not recorded.</p>
     <div class="voice-call-actions">
         <button type="button" class="voice-consent-btn" data-voice-consent hidden>{{ auth()->user()->role === 'seeker' ? 'Enable voice calls' : 'Request voice call' }}</button>
         @foreach($controls as $name => [$icon, $label, $class, $state])
@@ -41,7 +43,7 @@
     </div>
     <audio data-voice-audio autoplay playsinline></audio>
     @if(auth()->user()->role === 'seeker')
-    <dialog data-voice-consent-dialog class="focus-panel-dialog" aria-label="Voice participation consent"><h2>Enable voice calls?</h2><p>I agree to live audio with my assigned Helper. Audio is not recorded or transcribed. I can leave the call and continue with messages.</p><label><input type="checkbox" data-voice-consent-check> I agree to voice participation.</label><p data-voice-consent-error role="alert"></p><div class="voice-call-actions"><button type="button" data-voice-consent-save>Enable voice</button><button type="button" data-voice-consent-cancel>Keep using messages</button></div></dialog>
+    <dialog data-voice-consent-dialog class="focus-panel-dialog" aria-label="Voice participation consent"><h2>Enable voice calls?</h2><p>I agree to live audio with my assigned Helper. My supervising COMPASS Adviser may listen live to keep support safe, and I will see a notice whenever they do. Calls are not recorded or transcribed. I can leave the call and continue with messages.</p><label><input type="checkbox" data-voice-consent-check> I agree to voice calls and live supervision.</label><p data-voice-consent-error role="alert"></p><div class="voice-call-actions"><button type="button" data-voice-consent-save>Enable voice</button><button type="button" data-voice-consent-cancel>Keep using messages</button></div></dialog>
     @endif
     <script type="application/json" data-voice-config>@json($voiceConfig)</script>
 </section>

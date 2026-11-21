@@ -1,3 +1,5 @@
+import { ListenerLinks } from './voice-listener-links.mjs';
+
 // Icon buttons keep their icon: write the label into the hidden label span and the accessible name/tooltip.
 // Plain buttons (no label span) get their text replaced, as before.
 export function setButtonLabel(button, text) {
@@ -29,6 +31,10 @@ export class VoiceCallClient {
         this.badge = root.querySelector('[data-voice-badge]');
         this.title = root.querySelector('[data-voice-title]');
         this.duration = root.querySelector('[data-voice-duration]');
+        // Live supervision: a send-only copy of this participant's audio for each listening Adviser.
+        this.listeners = new ListenerLinks(this.env, payload => this.request('signal', payload));
+        this.listenerIds = []; this.iceServers = null;
+        this.supervisedNotice = root.querySelector('[data-voice-supervised]');
         this.buttons = Object.fromEntries(['start','accept','decline','mute','leave','play'].map(name => [name,root.querySelector(`[data-voice-${name}]`)]));
         this.buttons.start.addEventListener('click', () => this.begin(false));
         this.buttons.accept.addEventListener('click', () => this.begin(true));
@@ -169,6 +175,8 @@ export class VoiceCallClient {
         if (this.title) this.title.textContent = title;
         this.updateDuration();
         this.renderDetails();
+        // Both participants always see when a supervising Adviser is listening.
+        if (this.supervisedNotice) this.supervisedNotice.hidden = !(this.listenerIds?.length && this.pc);
     }
 
     updateDuration() {
@@ -243,6 +251,10 @@ export class VoiceCallClient {
             for (const signal of data.signals || []) await this.enqueueSignal(signal);
             if (this.ended || generation !== this.generation) return;
             this.signalCursor = Math.max(this.signalCursor, data.signal_cursor || 0);
+            this.listenerIds = Array.isArray(data.listeners) ? data.listeners : [];
+            const inCall = this.pc && this.stream && next && ['connecting','connected'].includes(next.status);
+            try { await this.listeners.sync(this.listenerIds, inCall ? {stream:this.stream, iceServers:this.iceServers, callId:next.id} : null); }
+            catch { /* supervision must never interrupt the call itself */ }
             if (!next || !['ringing','connecting','connected'].includes(next.status)) {
                 this.stopMedia();
                 if (!this.available) this.message(data.voice_consent_required ? 'Voice consent is needed. You can continue using messages.' : 'Voice is unavailable. Continue using text chat.', 'unavailable');
@@ -357,6 +369,7 @@ export class VoiceCallClient {
         this.stream = stream;
         const credentials = await this.request('credentials');
         if (generation !== this.generation || this.ended) throw new Error('Call cancelled.');
+        this.iceServers = credentials.iceServers;
         this.pc = new this.env.RTCPeerConnection({iceServers:credentials.iceServers,iceTransportPolicy:'relay'});
         const peer = this.pc;
         stream.getTracks().forEach(track => peer.addTrack(track,stream));
@@ -465,6 +478,13 @@ export class VoiceCallClient {
     }
 
     enqueueSignal(signal) {
+        if (signal.listener_id) {
+            // Answers and candidates from a listening Adviser go to that Adviser's link, not the main call.
+            if (!this.call || signal.call_id !== this.call.id || this.ended) return Promise.resolve();
+            if (signal.signal_id && this.seenSignals.has(signal.signal_id)) return Promise.resolve();
+            if (signal.signal_id) this.seenSignals.add(signal.signal_id);
+            return this.listeners.receive(signal).catch(() => {});
+        }
         if (!this.pc || !this.call || signal.call_id !== this.call.id || this.ended) return Promise.resolve();
         if (signal.signal_id && this.seenSignals.has(signal.signal_id)) return this.signalQueue;
         if (signal.signal_id) this.seenSignals.add(signal.signal_id);
@@ -528,6 +548,7 @@ export class VoiceCallClient {
 
     stopMedia() {
         this.generation++;
+        this.listeners?.closeAll(); this.listenerIds = [];
         this.env.clearTimeout(this.reconnectTimer);
         this.env.clearTimeout(this.audioDeadlineTimer); this.audioDeadlineTimer = null;
         const peer = this.pc; this.pc = null;

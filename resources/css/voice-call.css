@@ -58,3 +58,7 @@
 @media(max-width:600px) { .voice-call-panel { padding:12px 14px; gap:10px; } .voice-call-copy { flex-basis:calc(100% - 60px); } .voice-call-actions { width:100%; justify-content:center; } .voice-call-actions .voice-consent-btn { flex:1 1 auto; } .voice-call-copy small { margin-top:5px; } }
 
 .voice-chat-panel{margin:10px 16px!important;padding:16px!important;border-radius:12px!important}.voice-chat-panel[hidden]{display:none!important}.voice-chat-panel .voice-call-visual{display:none}.voice-chat-panel .voice-call-copy small{display:none}.voice-chat-panel .voice-call-heading h2{font-size:16px}.voice-chat-panel .voice-call-copy h3{font-size:16px}.voice-chat-panel .voice-call-copy p{font-size:13px}.voice-chat-panel dialog h2{font-size:18px}.voice-chat-panel dialog p{margin:12px 0}
+/* Live supervision notice: always visible to both participants while an Adviser listens. */
+.voice-call-supervised { display:flex; align-items:center; gap:8px; width:100%; margin:0; padding:8px 12px; border:1px solid #bfdbfe; border-radius:10px; background:#eff6ff; color:#1e3a8a; font-size:13px; font-weight:600; }
+.voice-call-supervised[hidden] { display:none !important; }
+.voice-call-supervised .compass-icon { flex:none; width:18px; height:18px; }

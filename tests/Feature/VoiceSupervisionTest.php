@@ -108,6 +108,17 @@ class VoiceSupervisionTest extends TestCase
         $this->assertDatabaseHas('consent_records', ['session_id' => $session->id, 'purpose' => 'voice_supervision', 'decision' => 'accepted']);
     }
 
+    public function test_call_screen_carries_the_listening_notice_and_supervision_wording(): void
+    {
+        [$seeker, , $session] = $this->room();
+        $session->update(['session_type' => 'chat']);
+        $html = $this->actingAs($seeker)->get(route('session.chat'))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/<p class="voice-call-supervised" data-voice-supervised role="status" hidden>/', $html);
+        $this->assertStringContainsString('A COMPASS Adviser is listening for supervision. Calls are not recorded.', $html);
+        $this->assertStringContainsString('I agree to voice calls and live supervision.', $html);
+        $this->assertStringNotContainsString('Audio is not recorded or transcribed. I can leave', $html);
+    }
+
     public function test_listening_ends_with_the_call_and_stop_is_audited(): void
     {
         [$seeker, $helper, $session, $adviser] = $this->room();
