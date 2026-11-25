@@ -106,4 +106,15 @@ class SystemHealthTest extends TestCase
             ->assertSee('Some monitoring information may be unavailable. Please try again.')
             ->assertDontSee('monitor-token-and-private-host');
     }
+
+    public function test_health_page_is_a_simple_status_list_with_details_collapsed(): void
+    {
+        // QA Nov 24 (Admin): make the system health interface more simple.
+        $html = $this->actingAs(User::factory()->create(['role' => 'admin']))->get(route('admin.system-health'))->assertOk()->getContent();
+        $this->assertStringContainsString('<section class="health-service-list"', $html);
+        $this->assertStringContainsString('class="health-service-row health-service-', $html);
+        $this->assertStringContainsString('<details class="health-details">', $html, 'Charts, storage and uptime are one click away.');
+        $this->assertLessThan(strpos($html, '<details class="health-details">'), strpos($html, 'id="health-incidents"'), 'Recent errors stay visible above the details.');
+        $this->assertStringNotContainsString('Voice recordings', $html, 'Calls are never recorded, so preview data must not suggest recordings.');
+    }
 }

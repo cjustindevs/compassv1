@@ -41,12 +41,26 @@
                 </div>
             @endif
 
-            <section class="health-service-grid" aria-label="Service health statuses">
+            <section class="health-service-list" aria-label="Service health statuses" role="list">
                 @foreach ($health['services'] as $service)
                     <x-admin.service-health-card :service="$service" />
                 @endforeach
             </section>
 
+            <article class="health-detail-card health-incidents-card" id="health-incidents" tabindex="-1">
+                <header class="card-heading-row">
+                    <div class="card-heading">
+                        <h2>Recent errors &amp; warnings</h2>
+                    </div>
+                    <a href="#health-incidents">View all</a>
+                </header>
+
+                <x-admin.health-incident-list :incidents="$health['incidents']" />
+            </article>
+
+            {{-- Charts, storage and uptime: one click away instead of filling the page (QA Nov 24). --}}
+            <details class="health-details">
+                <summary>Details: usage charts, storage and uptime</summary>
             <section class="health-charts-grid" aria-label="Infrastructure usage charts">
                 <x-admin.chart-card
                     title="CPU Usage (24h)"
@@ -135,17 +149,8 @@
                     </p>
                 </article>
 
-                <article class="health-detail-card health-incidents-card" id="health-incidents" tabindex="-1">
-                    <header class="card-heading-row">
-                        <div class="card-heading">
-                            <h2>Recent errors &amp; warnings</h2>
-                        </div>
-                        <a href="#health-incidents">View all</a>
-                    </header>
-
-                    <x-admin.health-incident-list :incidents="$health['incidents']" />
-                </article>
             </section>
+            </details>
         @endif
     </section>
 </x-admin.layout>

@@ -28,7 +28,7 @@ class SystemHealthMonitor
                 'categories' => [
                     ['label' => 'Referral attachments', 'usedGb' => 184, 'tone' => 'blue'],
                     ['label' => 'Clinical notes archive', 'usedGb' => 212, 'tone' => 'green'],
-                    ['label' => 'Voice recordings', 'usedGb' => 148, 'tone' => 'cyan'],
+                    ['label' => 'Uploaded resources', 'usedGb' => 148, 'tone' => 'cyan'],
                     ['label' => 'System logs', 'usedGb' => 68, 'tone' => 'orange'],
                 ],
             ],

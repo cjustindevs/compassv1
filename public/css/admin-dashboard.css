@@ -1295,3 +1295,26 @@ a.sidebar-link:hover, a.sidebar-link:focus-visible { background: var(--compass-g
 .admin-account-stats .stat-value{overflow-wrap:anywhere}
 /* One page-title size across every role (matches the 28px / 800 titles elsewhere). */
 .admin-app .admin-content h1 { font-size: 28px; font-weight: 800; line-height: 1.2; }
+
+/* System Health (QA Nov 24): one status line per service; charts, storage and uptime collapsed. */
+.health-service-list { display: grid; margin: 0 0 18px; border: 1px solid var(--admin-border); border-radius: 14px; background: var(--admin-card, #fff); overflow: hidden; }
+.health-service-row { display: grid; grid-template-columns: 12px minmax(160px, 1fr) auto minmax(140px, 1.2fr); align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--admin-border-soft, #eef2f0); }
+.health-service-row:last-child { border-bottom: 0; }
+.health-service-row .health-service-dot { position: static; width: 10px; height: 10px; border-radius: 50%; }
+.health-service-row .health-service-name { font-size: 14px; font-weight: 600; color: var(--admin-text, #163b2d); }
+.health-service-row .health-service-badge { justify-self: start; }
+.health-service-row .health-service-metric { font-size: 13px; color: var(--admin-muted, #64748b); text-align: right; }
+.health-service-healthy .health-service-dot { background: #16a34a; }
+.health-service-warning .health-service-dot { background: #d97706; }
+.health-service-critical .health-service-dot { background: #dc2626; }
+.system-health-page > .health-incidents-card { margin: 0 0 18px; }
+.health-details { margin: 0 0 18px; border: 1px solid var(--admin-border); border-radius: 14px; background: var(--admin-card, #fff); }
+.health-details > summary { padding: 14px 18px; font-size: 14px; font-weight: 600; color: #087341; cursor: pointer; }
+.health-details[open] > summary { border-bottom: 1px solid var(--admin-border-soft, #eef2f0); }
+.health-details > section { padding: 16px; }
+@media (max-width: 640px) {
+  .health-service-row { grid-template-columns: 12px minmax(0, 1fr) auto; }
+  .health-service-row .health-service-metric { grid-column: 2 / -1; text-align: left; }
+}
+.settings-static-value { display: grid; justify-items: end; gap: 2px; font-size: 14px; font-weight: 600; color: var(--admin-text, #163b2d); }
+.settings-static-value small { font-size: 12px; font-weight: 400; color: var(--admin-muted, #64748b); }

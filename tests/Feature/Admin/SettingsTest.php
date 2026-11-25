@@ -63,7 +63,7 @@ class SettingsTest extends TestCase
             ->assertSee('data-settings-default-theme="dark"', false)
             ->assertSee('data-setting-key="email_notifications"', false)
             ->assertSee('data-setting-key="show_email"', false)
-            ->assertSee('No verified administrator phone or SMS provider is configured.')
+            ->assertDontSee('Emergency SMS')->assertDontSee('<select disabled>', false)
             ->assertSee('An authenticator-app 2FA backend is not installed.')
             ->assertSee('English')
             ->assertSee('Safari on macOS')

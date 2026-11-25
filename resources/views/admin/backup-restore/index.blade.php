@@ -23,24 +23,31 @@
         <header class="backup-page-heading">
             <div>
                 <h1>Backup &amp; restore</h1>
-                <p>Automated nightly snapshots with 30-day retention.</p>
+                {{-- Temporary until a backup provider is connected (QA Nov 24). --}}
+                <p>{{ $backendAvailable ? 'Automated nightly snapshots with 30-day retention.' : 'Database backups are handled automatically outside COMPASS.' }}</p>
             </div>
 
+            @if ($capabilities['create'] || $capabilities['restore'])
             <div class="backup-page-actions" aria-label="Backup and restore actions">
+                @if ($capabilities['restore'])
                 <button class="admin-button admin-button-secondary" type="button" data-dialog-open="restore-picker-dialog">
                     <x-admin.icon name="upload" :size="18" /> Restore
                 </button>
+                @endif
+                @if ($capabilities['create'])
                 <button class="admin-button admin-button-primary" type="button" data-dialog-open="run-backup-dialog">
                     <x-admin.icon name="database" :size="18" /> Run backup now
                 </button>
+                @endif
             </div>
+            @endif
         </header>
 
         <section class="backup-card" aria-labelledby="recent-snapshots-title">
             <header class="backup-card-header">
                 <h2 id="recent-snapshots-title">Recent snapshots</h2>
                 @unless ($backendAvailable)
-                    <span class="backup-backend-status">Backend not configured</span>
+                    <span class="backup-backend-status">Managed outside COMPASS</span>
                 @endunless
             </header>
 
@@ -56,11 +63,8 @@
             @elseif ($snapshots->isEmpty())
                 <div class="backup-state">
                     <span></span>
-                    <h3>No backups available</h3>
-                    <p>Backup generation is not configured in this environment.</p>
-                    <button class="admin-button admin-button-secondary" type="button" data-dialog-open="run-backup-dialog">
-                        <x-admin.icon name="database" :size="17" /> Review backup setup
-                    </button>
+                    <h3>No snapshots listed here yet</h3>
+                    <p>Database backups are handled automatically outside COMPASS. Snapshots will be listed here once a backup provider is connected to this page.</p>
                 </div>
             @else
                 <div class="backup-snapshot-list">

@@ -1,9 +1,8 @@
 @props(['service'])
-
-<article class="health-service-card health-service-{{ $service['status'] }}">
+{{-- One status line per service (QA Nov 24: simpler System Health). --}}
+<div class="health-service-row health-service-{{ $service['status'] }}" role="listitem">
     <span class="health-service-dot" aria-hidden="true"></span>
-
-    <h2>{{ $service['name'] }}</h2>
+    <strong class="health-service-name">{{ $service['name'] }}</strong>
     <span class="health-service-badge">{{ $service['statusLabel'] }}</span>
-    <p>{{ $service['metric'] }}</p>
-</article>
+    <span class="health-service-metric">{{ $service['metric'] }}</span>
+</div>

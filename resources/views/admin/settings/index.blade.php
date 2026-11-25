@@ -130,22 +130,6 @@
                         <x-admin.settings-switch setting="in_app_sounds" label="In-app sounds" storage="local" :checked="true" />
                     </div>
 
-                    <div class="settings-row">
-                        <div class="settings-row-copy">
-                            <strong>Emergency SMS</strong>
-                            <span>Text me when an emergency case is flagged.</span>
-                            <small>No verified administrator phone or SMS provider is configured.</small>
-                        </div>
-                        <div class="settings-row-action">
-                            <span class="settings-unavailable-badge">Unavailable</span>
-                            <x-admin.settings-switch
-                                setting="emergency_sms"
-                                label="Emergency SMS"
-                                storage="unavailable"
-                                :disabled="! $emergencySmsAvailable"
-                            />
-                        </div>
-                    </div>
                 </section>
 
                 <section class="settings-card" id="settings-privacy" tabindex="-1" data-settings-section>
@@ -237,14 +221,8 @@
                         <div class="settings-row-copy">
                             <strong>Interface language</strong>
                             <span>Language used for administrator navigation and controls.</span>
-                            <small>Additional translations have not been installed.</small>
                         </div>
-                        <label class="admin-field settings-language-control">
-                            <span class="sr-only">Interface language</span>
-                            <select disabled>
-                                <option selected>{{ $interfaceLanguage }}</option>
-                            </select>
-                        </label>
+                        <span class="settings-static-value">{{ $interfaceLanguage }} <small>Other languages are not available yet.</small></span>
                     </div>
                 </section>
             </div>
