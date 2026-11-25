@@ -229,3 +229,9 @@ html.compass-ui .hf-score .hf-overall > h3 { align-self: stretch; text-align: le
 
 /* Moderator dashboard: chart cards keep their own height (an empty workload chart no longer stretches). */
 html.compass-ui .mo-report-charts .analytics-chart-grid { align-items: start; }
+
+/* ---------- Zoom and narrow screens (QA Nov 24: no sideways scrolling at 125% zoom or on phones) ---------- */
+html.compass-ui :is(.workspace-content, .main-content, .admin-content) input[type="date"] { max-width: 100%; min-width: 0; box-sizing: border-box; }
+@media (max-width: 1280px) {
+    html.compass-ui .er-grid { grid-template-columns: minmax(0, 1fr); }
+}
