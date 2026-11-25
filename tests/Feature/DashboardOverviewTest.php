@@ -119,7 +119,7 @@ class DashboardOverviewTest extends TestCase
             ->assertSee('css/dashboard-overview.css')->assertDontSee('At a glance');
         $moderator = User::factory()->create(['role' => 'moderator', 'is_active' => true]);
         \App\Models\Moderator::create(['user_account_id' => $moderator->id, 'first_name' => 'Test', 'last_name' => 'Moderator', 'email' => $moderator->email]);
-        $this->actingAs($moderator)->get(route('moderator.dashboard'))->assertOk()->assertSee('Emergency trend');
+        $this->actingAs($moderator)->get(route('moderator.dashboard'))->assertOk()->assertDontSee('Emergency trend');
         $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
         // The existing Administrator reference uses account KPIs; its detailed
         // role distribution remains in Reports rather than the Dashboard.

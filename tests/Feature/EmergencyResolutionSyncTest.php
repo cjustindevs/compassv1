@@ -50,7 +50,7 @@ class EmergencyResolutionSyncTest extends TestCase
         $after = $this->getJson(route('moderator.emergency.stats'))->assertJsonPath('open', 0)->assertHeader('Cache-Control', 'no-store, private')->json('signature');
         $this->assertNotSame($before, $after);
         $dashboard = $this->getJson(route('moderator.dashboard.stats'))->assertOk()->assertJsonPath('emergency_open', 0)->assertHeader('Cache-Control', 'no-store, private');
-        $this->assertStringContainsString('Active emergencies', $dashboard->json('overview_html'));
+        $this->assertStringContainsString('Waiting requests', $dashboard->json('overview_html'), 'The refreshed KPI block is returned (emergency charts were removed in QA Nov 24).');
         $this->assertStringNotContainsString('Private assessment', $dashboard->json('overview_html'));
         $this->get(route('moderator.dashboard'))->assertOk()->assertSee('js/moderator-emergency.js')->assertDontSee('window.location.reload()', false);
         $this->get(route('moderator.emergency'))->assertOk()->assertSee('No active emergency cases')->assertDontSee('Private assessment');

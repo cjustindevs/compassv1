@@ -226,3 +226,6 @@ html.compass-ui .hf-score .hf-overall > :not(h3) ~ :not(h3) { margin-top: 8px; }
 html.compass-ui .hf-score .hf-overall > :last-child { margin-bottom: auto; }
 html.compass-ui .hf-score .hf-overall { align-items: center; text-align: center; }
 html.compass-ui .hf-score .hf-overall > h3 { align-self: stretch; text-align: left; }
+
+/* Moderator dashboard: chart cards keep their own height (an empty workload chart no longer stretches). */
+html.compass-ui .mo-report-charts .analytics-chart-grid { align-items: start; }

@@ -212,55 +212,47 @@
 
     <form class="form-maximized" method="POST" action="{{ route('adviser.evaluate.store', $report->id) }}">
         @csrf
-        <x-ui.card title="Evidence and rating guide" class="mb-4">
-            <p class="text-sm text-gray-500 mb-3">Rubric: {{ \App\Services\CompetencyRubric::VERSION }}. Evidence: submitted session report #{{ $report->id }} and its correction history. Each criterion is rated independently; weighted total is on a 1 to 5 scale.</p>
-
-            <div class="mb-5 p-4 bg-gray-50 rounded-xl text-sm">
-                <h4 class="font-semibold text-gray-700 mb-2">Evidence considered</h4>
-                <ul class="list-disc pl-5 space-y-1 text-gray-600">
-                    <li>Submitted documentation (report #{{ $report->id }}): summary, observations, actions taken, session result, and follow-up plan.</li>
-                    @if($report->personal_reflection)
-                        <li>Personal reflection submitted {{ $report->reflection_submitted_at?->format('M d, Y g:i A') ?: '' }}.</li>
-                    @endif
-                    @if(count($report->skills))
-                        <li>Skills reported as applied: {{ collect($report->skills)->map(fn($skill)=>ucwords(str_replace('_',' ',$skill)))->join(', ') }}.</li>
-                    @endif
-                    <li>{{ $messages->count() ? 'Reviewed ' . $messages->count() . ' conversation messages from the authorized (consent-gated, aliased) record.' : 'Conversation transcript is not disclosed without an authorized access grant; evaluation relies on submitted documentation.' }}</li>
-                    @if($existingFeedback)
-                        <li>Prior feedback exists for this report — see the correction history above; ignore prior ratings unless this is a correction run.</li>
-                    @endif
-                </ul>
-            </div>
-
-            <details class="rounded-xl border border-gray-200 p-4 group">
-                <summary class="cursor-pointer text-sm font-semibold text-gray-700">View rating descriptors (5 = highest)</summary>
-                <div class="mt-3 overflow-x-auto">
-                    <table class="w-full text-sm text-left border-collapse">
-                        <thead>
-                            <tr class="text-xs uppercase tracking-wider text-gray-400 border-b border-gray-200">
-                                <th class="py-2 pr-3 font-semibold">Rating</th>
-                                <th class="py-2 pr-3 font-semibold">Meaning</th>
-                                <th class="py-2 font-semibold">What the helper does at this level</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @foreach([
-                                '5' => ['Excellent', 'Consistently and skillfully applies the behavior, even under difficult circumstances; serves as a model.'],
-                                '4' => ['Good', 'Applies the behavior consistently; rare, minor lapses that do not affect the session.'],
-                                '3' => ['Satisfactory', 'Applies the behavior adequately; present but with clear room to deepen skills.'],
-                                '2' => ['Needs attention', 'Applies the behavior inconsistently or superficially; noticeable gaps in quality.'],
-                                '1' => ['Unsatisfactory', 'Does not apply the behavior, or applies it in ways that undermine the session.'],
-                            ] as $score => [$tag, $meaning])
-                                <tr class="align-top">
-                                    <td class="py-2 pr-3 font-bold text-gray-800">{{ $score }}</td>
-                                    <td class="py-2 pr-3 font-medium text-gray-700">{{ $tag }}</td>
-                                    <td class="py-2 text-gray-500">{{ $meaning }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </details>
+        {{-- QA Nov 24: a short checklist; the 1–5 descriptors are one click away. --}}
+        <x-ui.card title="Before you rate" class="mb-4">
+            <ul class="eval-checklist">
+                <li>Read report #{{ $report->id }}: summary, observations, actions taken, result and follow-up plan.</li>
+                @if($report->personal_reflection)
+                    <li>Read the Helper's reflection{{ $report->reflection_submitted_at ? ' ('.$report->reflection_submitted_at->format('M d, Y').')' : '' }}.</li>
+                @endif
+                @if(count($report->skills))
+                    <li>Skills the Helper applied: {{ collect($report->skills)->map(fn($skill)=>ucwords(str_replace('_',' ',$skill)))->join(', ') }}.</li>
+                @endif
+                <li>{{ $messages->count() ? 'Review the '.$messages->count().' conversation messages shared with you.' : 'The conversation is not shared without an access grant, so rate from the documentation.' }}</li>
+                @if($existingFeedback)
+                    <li>This report already has feedback: give a correction reason below.</li>
+                @endif
+            </ul>
+            <p class="eval-note">Rate each skill on its own from 1 to 5. The weighted total is calculated for you.</p>
+            <x-ui.explainer title="How to rate (1–5)">
+                <table class="eval-scale">
+                    <thead><tr><th>Rating</th><th>Meaning</th><th>What the Helper does at this level</th></tr></thead>
+                    <tbody>
+                        @foreach([
+                            '5' => ['Excellent', 'Consistently and skillfully applies the behavior, even under difficult circumstances; serves as a model.'],
+                            '4' => ['Good', 'Applies the behavior consistently; rare, minor lapses that do not affect the session.'],
+                            '3' => ['Satisfactory', 'Applies the behavior adequately; present but with clear room to deepen skills.'],
+                            '2' => ['Needs attention', 'Applies the behavior inconsistently or superficially; noticeable gaps in quality.'],
+                            '1' => ['Unsatisfactory', 'Does not apply the behavior, or applies it in ways that undermine the session.'],
+                        ] as $score => [$tag, $meaning])
+                            <tr><td><strong>{{ $score }}</strong></td><td>{{ $tag }}</td><td>{{ $meaning }}</td></tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </x-ui.explainer>
+            <style>
+                .eval-checklist { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 8px; }
+                .eval-checklist li { position: relative; padding-left: 26px; font-size: 14px; line-height: 1.5; color: #334155; }
+                .eval-checklist li::before { content: ''; position: absolute; left: 4px; top: 5px; width: 6px; height: 11px; border: solid #087341; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+                .eval-note { margin: 0 0 12px; font-size: 13px; color: #64748b; }
+                .eval-scale { width: 100%; border-collapse: collapse; font-size: 13px; }
+                .eval-scale :is(th, td) { padding: 8px 10px; text-align: left; border-bottom: 1px solid #edf2ef; vertical-align: top; }
+                .eval-scale th { font-weight: 600; color: #475569; }
+            </style>
         </x-ui.card>
 
         <x-ui.card title="Your evaluation" class="mb-4">

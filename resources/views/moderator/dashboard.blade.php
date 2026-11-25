@@ -110,7 +110,7 @@
                         </div>
                         <div class="flex-1">
                             <p class="font-semibold text-gray-800 text-sm">Dashboard summaries</p>
-                            <p class="text-xs text-gray-500">Emergency status, priority and trends</p>
+                            <p class="text-xs text-gray-500">Case overview, Helper workload and skills</p>
                         </div>
                         <x-ui-icon name="chevron-right" class="text-gray-300" />
                     </a>

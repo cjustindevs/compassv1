@@ -136,7 +136,7 @@ class RoleReportsNavigationTest extends TestCase
     {
         $mod = $this->moderator();
         $this->actingAs($mod)->get(route('moderator.dashboard'))->assertOk()
-            ->assertSee('Emergency trend')->assertSee('Active emergency status')->assertSee('Severity / priority')
+            ->assertDontSee('Emergency trend')->assertDontSee('Active emergency status')->assertDontSee('Severity / priority')
             ->assertSee('Recent Activity')->assertDontSee('Recent emergency activity')->assertDontSee('Live Sessions')->assertDontSee('href="'.route('moderator.analytics').'"', false);
         $this->actingAs(User::factory()->create(['role' => 'helper', 'is_active' => false]))->get(route('helper.reports'))->assertForbidden();
     }

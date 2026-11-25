@@ -104,6 +104,21 @@ class ModeratorPilotPagesTest extends TestCase
         $this->assertLessThan(strpos($dashboard, 'Case overview'), strpos($dashboard, 'id="dashboard-analytics"'), 'Moved charts sit after the KPI cards.');
     }
 
+    public function test_moderator_dashboard_is_trimmed_and_emergency_kpis_read_clearly(): void
+    {
+        // QA Nov 24 (Moderator): no "Live now" under KPIs, fewer emergency charts, skills as a bar chart.
+        $this->actingAs($this->moderator());
+        $dashboard = $this->get(route('moderator.dashboard'))->assertOk()->getContent();
+        $this->assertStringNotContainsString('Live now', $dashboard);
+        foreach (['Emergency trend', 'Active emergency status', 'Severity / priority'] as $title) $this->assertStringNotContainsString($title, $dashboard, $title);
+        preg_match('/data-chart-title="Competency by skill"[^>]*data-chart-type="([a-z]+)"|data-chart-type="([a-z]+)"[^>]*data-chart-title="Competency by skill"/', $dashboard, $m);
+        $this->assertStringContainsString('Competency by skill', $dashboard);
+        $this->assertStringNotContainsString("'type'=>'radar'", file_get_contents(resource_path('views/moderator/partials/dashboard-report-charts.blade.php')), 'Skills use a bar chart, not a radar.');
+
+        $emergency = $this->get(route('moderator.emergency'))->assertOk();
+        $emergency->assertSee('Resolved in last 30 days')->assertDontSee('Resolved (30d)')->assertViewHas('stats', fn ($s) => $s['average_response'] === '0 min');
+    }
+
     public function test_moderator_kpis_follow_qa_order_and_count_priority_and_pending_assignments(): void
     {
         $user = User::factory()->create(['role' => 'seeker', 'is_active' => true]);

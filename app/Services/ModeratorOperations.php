@@ -47,11 +47,7 @@ class ModeratorOperations
             ['label' => 'Pending / unassigned', 'value' => $active->filter(fn ($e) => ! $e->acknowledged_at || ! $e->adviser_id)->count(), 'definition' => 'Live: active cases without staff acknowledgment or an assigned Adviser.'],
             ['label' => 'Average Helper workload', 'value' => SessionPerformance::display($performance['workload']), 'samples' => $performance['helpers'], 'definition' => 'Completed sessions per Helper who served in the selected activity cohort.'],
             ['label' => 'Queue timeouts', 'value' => $period->constrain(QueueRequest::where('is_test_record',false)->whereNull('duplicate_of_id')->where('request_status', 'expired'), 'COALESCE(expired_at,updated_at)')->count(), 'definition' => 'Expired queue records in the selected period, using expiry time or legacy updated time.'],
-        ], 'charts' => [
-            ['title' => 'Active emergency status', 'values' => $status, 'definition' => 'Current active cases only. The chart total equals Active emergencies.'],
-            ['title' => 'Severity / priority', 'values' => $active->groupBy('risk_level')->map->count()->all(), 'definition' => 'Recorded severity of the same active cases.'],
-            ['title' => 'Emergency trend', 'values' => $months, 'definition' => 'Emergency detections in the selected Philippine date range. Longer ranges use monthly buckets.'],
-        ], 'recent' => []];
+        ], 'charts' => [], 'recent' => []]; // QA Nov 24: emergency trend, status and severity charts removed from the dashboard.
         $wait = $queueCards->firstWhere('label', 'Average Waiting Time');
         $result['cards'][3] = ['label'=>'Average waiting time', 'value'=>$wait['value'], 'raw'=>$wait['raw'], 'unit'=>' min', 'samples'=>null,
             'definition'=>$wait['sample'].'; actual queue entry to session start. Outside-hours starts reported separately.', 'link'=>route('queue.performance', $period->dates())];

@@ -138,11 +138,11 @@ class ModeratorReferenceLayoutTest extends TestCase
     {
         EmergencyResource::create(['agency_name' => 'Published hotline', 'hotline' => '12345', 'description' => 'Public support', 'status' => 'active'])->forceFill(['visibility' => 'public'])->save();
         EmergencyResource::create(['agency_name' => 'Private hotline', 'hotline' => '54321', 'status' => 'active'])->forceFill(['visibility' => 'private'])->save();
-        $this->get(route('moderator.emergency'))->assertOk()->assertSee('No active emergency cases')->assertSee('Published hotline')->assertDontSee('Private hotline')->assertViewHas('stats', fn ($r) => $r['average_response'] === 'No data');
+        $this->get(route('moderator.emergency'))->assertOk()->assertSee('No active emergency cases')->assertSee('Published hotline')->assertDontSee('Private hotline')->assertViewHas('stats', fn ($r) => $r['average_response'] === '0 min');
         $this->get(route('moderator.reports'))->assertOk()->assertSee('No activity matches these filters');
         $this->get(route('moderator.dashboard'))->assertOk()->assertSee('No data for this period');
         $this->alert('acknowledged')->forceFill(['acknowledged_at' => now()->addHour()])->save();
         $this->alert('acknowledged')->forceFill(['acknowledged_at' => now()->subHour()])->save();
-        $this->get(route('moderator.emergency'))->assertOk()->assertViewHas('stats', fn ($r) => $r['average_response'] === 'No data');
+        $this->get(route('moderator.emergency'))->assertOk()->assertViewHas('stats', fn ($r) => $r['average_response'] === '0 min');
     }
 }

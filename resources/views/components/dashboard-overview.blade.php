@@ -27,7 +27,7 @@
     @php $kpiIcons = ['Waiting requests'=>'hourglass','Available Helpers'=>'user-check','Active sessions'=>'message','Average waiting time'=>'clock','Priority requests'=>'flag','Pending assignments'=>'user-plus','Completed sessions'=>'check-circle','Total sessions'=>'list','Active Helpers'=>'users','Average Helper Response Time'=>'bolt','Average satisfaction rating (/5)'=>'star']; @endphp
     <div class="co-kpis">@foreach($primary as $card)<article class="co-kpi">@isset($kpiIcons[$card['label']])<span class="co-kpi-icon" aria-hidden="true"><x-ui-icon :name="$kpiIcons[$card['label']]" /></span>@endisset<h3 title="{{ $card['definition'] }}">{{ $card['label'] }}</h3>
     <strong @if(auth()->user()?->role === 'moderator') @if($card['label'] === 'Waiting requests') id="statQueue" @elseif($card['label'] === 'Active sessions') id="statSessions" @elseif($card['label'] === 'Available Helpers') id="statHelpers" @elseif($card['label'] === 'Active emergencies') id="statEmergency" @endif @endif>{{ array_key_exists('raw',$card) ? \App\Services\SessionPerformance::number($card['raw'], $card['unit'] ?? '') : ($card['value'] === 'No data' ? '—' : $formatValue($card['value'])) }}</strong>
-    <small class="co-kpi-period">{{ str_starts_with($card['definition'] ?? '', 'Live') ? 'Live now' : 'Selected period' }}</small>
+    @unless(str_starts_with($card['definition'] ?? '', 'Live'))<small class="co-kpi-period">Selected period</small>@endunless
     </article>@endforeach</div>
     @if(auth()->user()?->role === 'adviser')
         {{-- Evaluations, screenings, referrals and emergencies are already in "Needs your attention" above;

@@ -249,6 +249,17 @@ class UiComponentsTest extends TestCase
         $this->assertStringContainsString('Scale details', $html);
     }
 
+    public function test_adviser_rating_guide_is_a_short_checklist_with_the_scale_collapsed(): void
+    {
+        // QA Nov 24 (Adviser, Pending Evaluations): simplify the "Evidence and rating guide".
+        $view = file_get_contents(resource_path('views/adviser/evaluate.blade.php'));
+        $this->assertStringContainsString('<x-ui.card title="Before you rate"', $view);
+        $this->assertStringContainsString('<ul class="eval-checklist">', $view);
+        $this->assertStringContainsString('<x-ui.explainer title="How to rate (1–5)">', $view);
+        $this->assertStringNotContainsString('Evidence considered', $view);
+        $this->assertStringNotContainsString('Rubric: {{ \App\Services\CompetencyRubric::VERSION }}', $view, 'The internal rubric code is not shown to Advisers.');
+    }
+
     public function test_one_off_dialogs_use_the_shared_modal(): void
     {
         $connection = file_get_contents(resource_path('views/session/connection-status.blade.php'));

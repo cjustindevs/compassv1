@@ -76,7 +76,7 @@ class ModeratorEmergencyController extends Controller
         return ['open' => $active->count(),
             'escalated_today' => $all->filter(fn ($case) => $case->escalated_at && Carbon::parse($case->escalated_at)->betweenIncluded(now('Asia/Manila')->startOfDay()->utc(), $now))->count(),
             'resolved_30d' => $resolved->count(),
-            'average_response' => $responses->isEmpty() ? 'No data' : round($responses->avg(), 1).' min',
+            'average_response' => $responses->isEmpty() ? '0 min' : round($responses->avg(), 1).' min',
         ];
     }
 
