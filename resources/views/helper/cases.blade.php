@@ -3,7 +3,7 @@
 @section('title', 'Assigned Cases')
 
 @section('heading', 'Assigned Cases')
-@section('subheading', 'All sessions assigned to you, straight from the database.')
+@section('subheading', 'Sessions assigned to you, newest first.')
 
 @section('content')
 <div class="hf-page">
@@ -30,8 +30,14 @@
     <div class="card">
         <div class="card-header">
             <h3>All Cases</h3>
-            <span class="text-xs text-gray-400">{{ $cases->count() }} session(s)</span>
+            <span class="text-xs text-gray-400">{{ $cases->total() }} {{ \Illuminate\Support\Str::plural('session', $cases->total()) }}</span>
         </div>
+        <form method="GET" action="{{ route('helper.cases') }}" class="ui-filter-bar cases-filters" role="search" aria-label="Filter cases">
+            <div class="ui-field ui-field--search"><label for="casesQ">Search</label><input id="casesQ" name="q" value="{{ $filters['q'] ?? '' }}" maxlength="80" placeholder="Reference or Seeker alias"></div>
+            <div class="ui-field"><label for="casesStatus">Status</label><select id="casesStatus" name="status"><option value="">All statuses</option>@foreach(['awaiting' => 'Awaiting acceptance', 'active' => 'Active', 'completed' => 'Completed', 'closed' => 'Cancelled or no-show'] as $value => $label)<option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>@endforeach</select></div>
+            <div class="ui-field"><label for="casesMode">Mode</label><select id="casesMode" name="mode"><option value="">All modes</option>@foreach(['chat' => 'Chat', 'voice' => 'Voice'] as $value => $label)<option value="{{ $value }}" @selected(($filters['mode'] ?? '') === $value)>{{ $label }}</option>@endforeach</select></div>
+            <div class="ui-filter-buttons"><button type="submit" class="btn btn-primary">Apply</button><a href="{{ route('helper.cases') }}" class="btn btn-secondary">Reset</a></div>
+        </form>
         <div class="table-container">
             <table>
                 <thead>
@@ -71,7 +77,7 @@
                             </td>
                             <td>
                                 @if($case['rating'])
-                                    <span class="pill" style="background:#FEF3C7;color:#B45309;"> {{ $case['rating'] }}</span>
+                                    <span class="pill case-rating">{{ $case['rating'] }}</span>
                                 @else
                                     <span class="text-gray-400">—</span>
                                 @endif
@@ -121,8 +127,13 @@
                             <td colspan="8">
                                 <div class="empty-state">
 
+                                    @if(array_filter($filters ?? []))
+                                    <h3>No cases match these filters</h3>
+                                    <p>Change or reset the filters to see more cases.</p>
+                                    @else
                                     <h3>No cases assigned yet</h3>
                                     <p>No action is needed right now. New assignments will appear here when a case becomes available.</p>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -130,6 +141,7 @@
                 </tbody>
             </table>
         </div>
+        {{ $cases->links() }}
     </div>
 
 </div>

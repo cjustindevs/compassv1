@@ -2,6 +2,7 @@
 @section('title','Dashboard')
 @section('heading','Good '.(now('Asia/Manila')->hour < 12 ? 'morning' : (now('Asia/Manila')->hour < 18 ? 'afternoon' : 'evening')).', '.(($helper ?? null)?->first_name ?? 'Helper'))
 @section('subheading','Here is what is happening with your sessions today.')
+@section('header-actions')<x-analytics-period :action="route('helper.dashboard')" :dates="$analyticsDates" />@endsection
 @section('content')
 <div class="hf-page">
 @if(isset($helperProfileMissing) && $helperProfileMissing)
@@ -36,7 +37,6 @@
 @if($helper)
 @php $helperBlockers = app(\App\Services\HelperEligibilityService::class)->reasons($helper); @endphp
 @if($helperBlockers !== [])<details class="card hf-eligibility-note"><summary>You can't take sessions right now ({{ count($helperBlockers) }} {{ \Illuminate\Support\Str::plural('reason', count($helperBlockers)) }}). See why</summary><x-eligibility-check :helper="$helper" /></details>@endif @endif
-<x-analytics-period :action="route('helper.dashboard')" :dates="$analyticsDates" />
 @include('helper.partials.duty-summary')
 @php
     $m = $performance['metrics']; $n = $performance['samples'];
@@ -44,8 +44,8 @@
     $reportLink = route('helper.reports', $analyticsDates + ['period'=>request('period','monthly')]);
     // QA's three Helper cards. Helpfulness and documentation stay on Helper Reports and in the Workload row below.
     $performanceCards = [
-        ['label'=>'Completed sessions','value'=>$m['completed'],'detail'=>'Ended in the selected period','link'=>$reportLink,'icon'=>'check-circle'],
-        ['label'=>'Competency score (1–5)','value'=>$metricValue('competency'),'detail'=>'Finalized evaluations','samples'=>$n['competency'],'link'=>route('helper.competency'),'icon'=>'star'],
+        ['label'=>'Completed sessions','value'=>$m['completed'],'detail'=>null,'link'=>$reportLink,'icon'=>'check-circle'],
+        ['label'=>'Competency score','value'=>$m['competency'] === null ? 'N/A' : $metricValue('competency'),'detail'=>null,'samples'=>$n['competency'],'link'=>route('helper.competency'),'icon'=>'star'],
         ['label'=>'Assigned sessions','value'=>$helper->sessions()->whereIn('session_status',['active','helper_assigned'])->count(),'detail'=>'Open now','link'=>route('helper.cases'),'icon'=>'clipboard'],
     ];
 @endphp

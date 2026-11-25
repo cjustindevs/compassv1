@@ -189,7 +189,7 @@ class RoleKpiTest extends TestCase
         $html = $this->actingAs($helper->user)->get(route('helper.dashboard', ['period'=>'today']))->assertOk()->getContent();
         preg_match('/<div class="performance-kpis"[\s\S]*?<\/div>/', $html, $kpis);
         $text = trim(preg_replace('/\s+/', ' ', preg_replace('/<[^>]+>/', ' ', $kpis[0] ?? '')));
-        $this->assertMatchesRegularExpression('/^Completed sessions 1 .*Competency score \(1–5\) .*Assigned sessions 2\b/u', $text);
+        $this->assertMatchesRegularExpression('/^Completed sessions 1 .*Competency score N\/A .*Assigned sessions 2\b/u', $text, 'QA Nov 24: no "(1–5)" in the label; N/A without evaluations.');
         $this->assertStringNotContainsString('Helpfulness rating', $kpis[0] ?? '');
         $this->assertStringNotContainsString('Documentation completion', $kpis[0] ?? '');
     }

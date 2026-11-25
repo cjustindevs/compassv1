@@ -23,18 +23,39 @@ class HelperCaseController extends Controller
     /**
      * List all sessions assigned to the logged-in helper (from the database).
      */
-    public function index()
+    public function index(Request $request)
     {
         abort_unless(auth()->user()?->role === 'helper' && auth()->user()?->is_active, 403);
         $helper = Auth::user()->helper;
+        // QA Nov 24: search, status and mode filters with pagination (the list used to stop at 50 rows).
+        $filters = $request->validate([
+            'q' => 'nullable|string|max:80', 'status' => 'nullable|in:awaiting,active,completed,closed',
+            'mode' => 'nullable|in:chat,voice', 'page' => 'nullable|integer|min:1',
+        ]);
+        $owned = fn () => Session::where('helper_id', $helper->id);
+        $query = $owned()->with(['seeker:id,id,user_account_id,generated_alias,age,gender', 'seeker.user:id,id,preferred_language', 'concern:id,concern_name', 'evaluation']);
+        if ($q = trim($filters['q'] ?? '')) {
+            $query->where(function ($query) use ($q) {
+                if (preg_match('/^(?:R-|#)?0*(\d+)$/i', $q, $match)) {
+                    $query->whereKey((int) $match[1]);
+                } else {
+                    $query->whereHas('seeker', fn ($seeker) => $seeker->where('generated_alias', 'like', '%'.$q.'%'));
+                }
+            });
+        }
+        match ($filters['status'] ?? null) {
+            'awaiting' => $query->where('session_status', 'helper_assigned'),
+            'active' => $query->where('session_status', 'active'),
+            'completed' => $query->whereIn('session_status', ['completed', 'evaluated']),
+            'closed' => $query->whereIn('session_status', ['cancelled', 'no_show']),
+            default => null,
+        };
+        if ($mode = $filters['mode'] ?? null) {
+            $mode === 'voice' ? $query->where('session_type', 'voice') : $query->where('session_type', '!=', 'voice');
+        }
+        $sessions = $query->orderByDesc('created_date')->orderByDesc('id')->paginate(10)->withQueryString();
 
-        $sessions = Session::with(['seeker:id,id,user_account_id,generated_alias,age,gender', 'seeker.user:id,id,preferred_language', 'concern:id,concern_name', 'evaluation'])
-            ->where('helper_id', $helper->id)
-            ->orderByDesc('created_date')
-            ->limit(50)
-            ->get();
-
-        $cases = $sessions->map(function (Session $session) {
+        $cases = $sessions->through(function (Session $session) {
             $expired = $session->session_status === 'helper_assigned' && $session->pre_session_brief_expires_at?->isPast();
 
             return [
@@ -54,7 +75,8 @@ class HelperCaseController extends Controller
                 'created' => $session->created_at?->format('M d, Y h:i A'),
                 'waiting' => $session->created_at?->diffForHumans(),
                 'scheduled_start' => $session->scheduled_start,
-                'rating' => $session->evaluation ? (int) round((float) $session->evaluation->overall_score) : null,
+                'rating' => $session->evaluation && ($rating = \App\Services\AdviserAnalytics::rating((float) $session->evaluation->overall_score)) !== null
+                    ? \App\Support\ScoreFormat::number($rating).' / 5' : null,
                 'active' => $session->session_status === 'active',
                 'expired' => $expired,
                 'pending' => $session->session_status === 'helper_assigned' && ! $expired,
@@ -62,13 +84,15 @@ class HelperCaseController extends Controller
             ];
         });
 
+        // Counts cover every owned case, not just the visible page.
         $stats = [
-            'pending' => $cases->where('pending', true)->count(),
-            'active' => $cases->where('active', true)->count(),
-            'completed' => $cases->where('completed', true)->count(),
+            'pending' => $owned()->where('session_status', 'helper_assigned')
+                ->where(fn ($q) => $q->whereNull('pre_session_brief_expires_at')->orWhere('pre_session_brief_expires_at', '>', now()))->count(),
+            'active' => $owned()->where('session_status', 'active')->count(),
+            'completed' => $owned()->whereIn('session_status', ['completed', 'evaluated', 'cancelled', 'no_show'])->count(),
         ];
 
-        return view('helper.cases', compact('cases', 'stats'));
+        return view('helper.cases', compact('cases', 'stats', 'filters'));
     }
 
     /**

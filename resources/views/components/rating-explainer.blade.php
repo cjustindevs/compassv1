@@ -1,67 +1,53 @@
-@props(['helper', 'audience' => 'helper'])
+@props(['helper', 'audience' => 'helper', 'from' => null, 'to' => null])
 {{--
-    "How your ratings work" (QA: Helpers and Advisers could not tell where ratings come from,
-    how they are averaged, or where they are used). Display only: no calculation changes.
+ Rating summary: three compact cards (Seeker feedback, Adviser evaluation, Combined rating) with the
+ explanation in a collapsible block. QA Nov 24: the numbers follow the page's date range and the same
+ evaluations as the dashboard (App\Services\HelperRatingSummary); display only, no calculation change.
 --}}
 @php
-    $seekerScores = \App\Models\HelpSeekerEvaluation::whereHas('session', fn ($q) => $q->where('helper_id', $helper->id))
-        ->pluck('overall_score')
-        ->map(fn ($s) => \App\Services\AdviserAnalytics::rating($s === null ? null : (float) $s))
-        ->filter(fn ($s) => $s !== null);
-    $adviserScores = \App\Models\HelperCompetencyHistory::where('helper_id', $helper->id)->whereNotNull('overall_score')->get()
-        ->map(fn ($e) => $e->normalized_score)->filter(fn ($s) => $s !== null && $s > 0);
-    $seekerAvg = $seekerScores->isNotEmpty() ? round($seekerScores->avg(), 2) : null;
-    $adviserAvg = $adviserScores->isNotEmpty() ? round($adviserScores->avg(), 2) : null;
-    $parts = array_values(array_filter([$seekerAvg, $adviserAvg], fn ($v) => $v !== null));
-    $combined = $parts ? round(array_sum($parts) / count($parts), 2) : null;
-    $latest = $helper->competency_score !== null && (float) $helper->competency_score > 0 ? round((float) $helper->competency_score, 1) : null;
+    $summary = app(\App\Services\HelperRatingSummary::class)->for($helper, $from, $to);
+    $fmt = fn ($v) => $v === null ? 'N/A' : \App\Support\ScoreFormat::number($v, 2);
+    $period = $summary['from'] && $summary['to']
+        ? \Illuminate\Support\Carbon::parse($summary['from'])->format('M j').' – '.\Illuminate\Support\Carbon::parse($summary['to'])->format('M j, Y')
+        : 'All time';
     $you = $audience === 'helper' ? 'your' : 'this Helper\'s';
-    $fmt = fn ($v) => \App\Support\ScoreFormat::number($v, 2);
 @endphp
-<section {{ $attributes->merge(['class' => 'rating-explainer']) }} aria-labelledby="ratingExplainerTitle">
-    <header>
-        <h3 id="ratingExplainerTitle">How {{ $audience === 'helper' ? 'your' : 'the' }} ratings work</h3>
-        <p>All ratings use the same 1–5 scale (5 is best).</p>
-    </header>
-    <div class="re-grid">
+<section {{ $attributes->merge(['class' => 'rating-explainer']) }} aria-label="Rating summary">
+    <div class="re-cards">
         <div class="re-item">
             <span class="re-label">Seeker feedback</span>
-            <strong>{{ $fmt($seekerAvg) }}</strong>
-            <small>{{ $seekerScores->count() }} {{ \Illuminate\Support\Str::plural('rating', $seekerScores->count()) }} · Seekers rate each session after it ends. Older 1–10 ratings are converted to 1–5.</small>
+            <strong>{{ $fmt($summary['seeker_avg']) }}</strong>
+            <small>{{ $summary['seeker_count'] }} {{ \Illuminate\Support\Str::plural('rating', $summary['seeker_count']) }} · {{ $period }}</small>
         </div>
-        <div class="re-op" aria-hidden="true">+</div>
         <div class="re-item">
             <span class="re-label">Adviser evaluation</span>
-            <strong>{{ $fmt($adviserAvg) }}</strong>
-            <small>{{ $adviserScores->count() }} {{ \Illuminate\Support\Str::plural('evaluation', $adviserScores->count()) }} · Your Adviser scores five skills from session documentation.</small>
+            <strong>{{ $fmt($summary['adviser_avg']) }}</strong>
+            <small>{{ $summary['adviser_count'] }} {{ \Illuminate\Support\Str::plural('evaluation', $summary['adviser_count']) }} · {{ $period }}</small>
         </div>
-        <div class="re-op" aria-hidden="true">=</div>
         <div class="re-item re-total">
             <span class="re-label">Combined rating</span>
-            <strong>{{ $fmt($combined) }}</strong>
-            <small>Average of the two sources above (or the one that exists).</small>
+            <strong>{{ $fmt($summary['combined']) }}</strong>
+            <small>Average of the two sources</small>
         </div>
     </div>
-    <dl class="re-uses">
-        <div><dt>Used for matching</dt><dd>Only the <strong>latest Adviser evaluation</strong> ({{ \App\Support\ScoreFormat::number($latest) }}) counts, as 30% of {{ $you }} matching score. Workload, specialty, language, availability and experience make up the rest. Seeker feedback is not used for matching.</dd></div>
-        <div><dt>Used for growth</dt><dd>Adviser evaluations set {{ $you }} competency level and training recommendations. Seeker feedback is reviewed by the Adviser during supervision.</dd></div>
-    </dl>
+    <x-ui.explainer title="How {{ $audience === 'helper' ? 'your' : 'the' }} ratings work">
+        <p>All ratings use the same 1–5 scale (5 is best). Seekers rate each session after it ends; older 1–10 ratings are converted to 1–5. {{ $audience === 'helper' ? 'Your' : 'The' }} Adviser scores five skills from session documentation. Only finalized evaluations are counted.</p>
+        <p><strong>Combined rating:</strong> the average of the Seeker and Adviser averages above, or the one that exists.</p>
+        <p><strong>Used for matching:</strong> only the latest Adviser evaluation ({{ \App\Support\ScoreFormat::number($summary['latest']) }}) counts, as 30% of {{ $you }} matching score. Workload, specialty, language, availability and experience make up the rest. Seeker feedback is not used for matching.</p>
+        <p><strong>Used for growth:</strong> Adviser evaluations set {{ $you }} competency level and training recommendations. Seeker feedback is reviewed by the Adviser during supervision.</p>
+    </x-ui.explainer>
 </section>
 @once
 <style>
-.rating-explainer { background: #fff; border: 1px solid #dfe9e3; border-radius: 14px; padding: 16px 18px; display: grid; gap: 12px; margin: 14px 0; }
-.rating-explainer header h3 { margin: 0; font-size: 14px; font-weight: 700; color: #163b2d; }
-.rating-explainer header p { margin: 2px 0 0; font-size: 13px; color: #64746b; }
-.re-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: stretch; }
-.re-item { display: grid; gap: 2px; align-content: start; background: #f6faf7; border-radius: 10px; padding: 10px 12px; }
-.re-item strong { font-size: 20px; color: #163b2d; font-variant-numeric: tabular-nums; }
+.rating-explainer { display: grid; gap: 10px; margin: 0 0 16px; }
+.re-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.re-item { display: grid; gap: 2px; align-content: start; background: #fff; border: 1px solid #dfe9e3; border-radius: 12px; padding: 12px 14px; }
+.re-item strong { font-size: 20px; color: #087341; font-variant-numeric: tabular-nums; }
 .re-item small { font-size: 12px; color: #64746b; line-height: 1.45; }
-.re-total { background: #eaf8f0; }
-.re-label { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #087341; }
-.re-op { align-self: center; font-size: 20px; font-weight: 700; color: #94a39a; }
-.re-uses { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 20px; margin: 0; }
-.re-uses dt { font-size: 12px; font-weight: 700; color: #163b2d; }
-.re-uses dd { margin: 2px 0 0; font-size: 13px; color: #4b5b52; line-height: 1.5; }
-@media (max-width: 860px) { .re-grid { grid-template-columns: 1fr; } .re-op { display: none; } .re-uses { grid-template-columns: 1fr; } }
+.re-total { background: #f3fbf6; }
+.re-label { font-size: 13px; font-weight: 600; color: #334155; }
+.rating-explainer .ui-explainer { margin: 0; }
+.rating-explainer .ui-explainer-body p { margin: 0 0 8px; }
+@media (max-width: 760px) { .re-cards { grid-template-columns: 1fr; } }
 </style>
 @endonce

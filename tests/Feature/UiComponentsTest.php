@@ -284,9 +284,9 @@ class UiComponentsTest extends TestCase
     {
         $helper = file_get_contents(resource_path('views/dashboard/helper.blade.php'));
         $at = fn (string $needle) => strpos($helper, $needle);
-        $this->assertLessThan($at('<x-analytics-period'), $at('<h3>Active Session</h3>'), 'Helper: a live session comes first.');
-        $this->assertLessThan($at('<x-analytics-period'), $at('<h3>Emergency support</h3>'));
-        $this->assertLessThan($at('<x-analytics-period'), $at('hf-eligibility-note'));
+        $this->assertLessThan($at('<x-performance-cards'), $at('<h3>Active Session</h3>'), 'Helper: a live session comes first.');
+        $this->assertLessThan($at('<x-performance-cards'), $at('<h3>Emergency support</h3>'));
+        $this->assertLessThan($at('<x-performance-cards'), $at('hf-eligibility-note'));
         $this->assertLessThan($at('<x-dashboard-chart :chart="$growthChart"'), $at('<h3>Documentation to complete</h3>'), 'Helper: work lists before charts.');
         $this->assertLessThan($at('<x-dashboard-chart :chart="$growthChart"'), $at('<h3>Assigned Cases</h3>'));
 

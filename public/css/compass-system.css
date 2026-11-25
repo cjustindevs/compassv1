@@ -196,3 +196,33 @@ html.compass-ui .ui-filter-bar .ui-filter-buttons > :is(a, button) { display: in
 @media (min-width: 1024px) {
     body.settings-page .main-content > * { max-width: 960px; }
 }
+
+/* ---------- Page header actions (Helper layout): filters at the upper right ---------- */
+html.compass-ui .main-content > .top-bar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+html.compass-ui .top-bar-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-left: auto; }
+html.compass-ui .top-bar-actions .analytics-toolbar { margin: 0 !important; }
+@media (max-width: 768px) { html.compass-ui .top-bar-actions { width: 100%; margin-left: 0; } }
+
+/* ---------- Helper summary tiles (Assigned Cases): same compact size as other KPI cards ---------- */
+html.compass-ui .main-content .stat-card { padding: 16px 18px; }
+html.compass-ui .main-content .stat-card .stat-number { font-size: var(--cs-kpi); line-height: 1.2; color: #087341; }
+html.compass-ui .main-content .stat-card .stat-label { font-size: var(--cs-small); font-weight: 600; }
+html.compass-ui .case-rating { background: #f1f5f9; color: #334155; font-weight: 600; }
+html.compass-ui .cases-filters { padding: 0 0 14px; }
+/* Helper date range in the page header: compact, one line with its buttons. */
+html.compass-ui .top-bar-actions .hf-filter { display: flex; align-items: flex-end; gap: 8px; margin: 0; flex-wrap: wrap; }
+html.compass-ui .top-bar-actions .hf-range > label { font-size: var(--cs-small); font-weight: 600; color: #475569; }
+html.compass-ui .top-bar-actions .hf-range-button { width: 250px; max-width: 100%; height: var(--cs-control); }
+html.compass-ui .top-bar-actions .hf-filter .btn { height: var(--cs-control); display: inline-flex; align-items: center; }
+@media (min-width: 769px) { html.compass-ui .top-bar-actions .hf-filter { flex-wrap: nowrap; } }
+/* Competency: the overall score card is the narrow column with its content centred (no empty block). */
+@media (min-width: 900px) {
+    html.compass-ui .hf-score { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 16px; align-items: stretch; }
+}
+html.compass-ui .hf-score .hf-overall { display: flex; flex-direction: column; }
+html.compass-ui .hf-score .hf-overall > h3 { align-self: flex-start; }
+html.compass-ui .hf-score .hf-overall > :not(h3) { margin-top: auto; }
+html.compass-ui .hf-score .hf-overall > :not(h3) ~ :not(h3) { margin-top: 8px; }
+html.compass-ui .hf-score .hf-overall > :last-child { margin-bottom: auto; }
+html.compass-ui .hf-score .hf-overall { align-items: center; text-align: center; }
+html.compass-ui .hf-score .hf-overall > h3 { align-self: stretch; text-align: left; }

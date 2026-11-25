@@ -62,6 +62,8 @@
                     </div>
                 </div>
             </div>
+            {{-- Page-level filters sit at the upper right (QA Nov 24). --}}
+            @hasSection('header-actions')<div class="top-bar-actions">@yield('header-actions')</div>@endif
         </div>
 
         @if (session('success'))

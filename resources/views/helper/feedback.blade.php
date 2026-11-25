@@ -2,16 +2,18 @@
 @section('title','Feedback')
 @section('heading','Feedback')
 @section('subheading','Adviser and help-seeker evaluations from your peer-support sessions.')
-@section('content')
-<div class="hf-page">
+@section('header-actions')
 <form method="GET" action="{{ route('helper.feedback') }}" class="hf-filter hf-filter-top">
 <x-helper-date-range :from="$range['from']" :to="$range['to']" />
 <input type="hidden" name="adviser_search" value="{{ request('adviser_search') }}">
 <input type="hidden" name="seeker_search" value="{{ request('seeker_search') }}">
-<button class="btn btn-secondary">Apply</button>
+<button class="btn btn-primary">Apply</button>
 <a class="btn btn-secondary" href="{{ route('helper.feedback') }}">Reset</a>
 </form>
-@if(auth()->user()?->helper)<x-rating-explainer :helper="auth()->user()->helper" />@endif
+@endsection
+@section('content')
+<div class="hf-page">
+@if(auth()->user()?->helper)<x-rating-explainer :helper="auth()->user()->helper" :from="$range['from']" :to="$range['to']" />@endif
 <section class="card">
 <header class="card-header">
 <h3>Adviser Feedback</h3>

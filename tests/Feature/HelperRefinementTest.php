@@ -202,4 +202,82 @@ class HelperRefinementTest extends TestCase
         $this->get(route('helper.feedback.view', $foreignFeedback->id))->assertNotFound();
         $this->get(route('helper.feedback.view', $feedback->id))->assertOk();
     }
+
+    public function test_ratings_summary_follows_the_date_range_and_the_dashboard_evaluations(): void
+    {
+        // QA Nov 24: the "How your ratings work" numbers were all-time and counted evaluations the dashboard leaves out.
+        $helper = $this->helper();
+        $finalized = function (int $score, $date, bool $reviewed = true) use ($helper) {
+            $session = $this->supportCase($helper, ['created_date' => $date, 'start_time' => $date, 'end_time' => $date]);
+            $report = SessionReport::create(['session_id' => $session->id, 'session_summary' => 'Summary', 'adviser_reviewed' => $reviewed]);
+            $evaluation = HelperCompetencyHistory::create(['helper_id' => $helper->id, 'adviser_id' => $helper->adviser_id,
+                'active_listening_score' => $score, 'empathy_score' => $score, 'respect_score' => $score, 'ethical_practices_score' => $score, 'referral_accuracy_score' => $score,
+                'overall_score' => $score, 'competency_level' => $score, 'evaluation_date' => $date]);
+            $evaluation->forceFill(['report_id' => $report->id, 'rubric_version' => \App\Services\CompetencyRubric::VERSION, 'evidence' => ['session_report_id' => $report->id]])->save();
+
+            return $evaluation;
+        };
+        $finalized(4, now()->subDays(2));                 // counts
+        $finalized(2, now()->subDays(40));                // outside the range
+        $finalized(1, now()->subDays(1), false);          // not reviewed: the dashboard leaves it out
+        HelpSeekerEvaluation::create(['session_id' => $this->supportCase($helper)->id, 'overall_score' => 10, 'submitted_at' => now()->subDay()]);
+        HelpSeekerEvaluation::create(['session_id' => $this->supportCase($helper)->id, 'overall_score' => 1, 'submitted_at' => now()->subDays(40)]);
+        HelpSeekerEvaluation::create(['session_id' => $this->supportCase($helper, ['is_test_record' => true])->id, 'overall_score' => 1, 'submitted_at' => now()->subDay()]);
+
+        $from = now('Asia/Manila')->subDays(7)->toDateString();
+        $to = now('Asia/Manila')->toDateString();
+        $summary = app(\App\Services\HelperRatingSummary::class)->for($helper, $from, $to);
+        $this->assertSame(1, $summary['adviser_count']);
+        $this->assertEqualsWithDelta(4.0, $summary['adviser_avg'], 0.001);
+        $this->assertSame(1, $summary['seeker_count']);
+        $this->assertEqualsWithDelta(5.0, $summary['seeker_avg'], 0.001);
+        $this->assertEqualsWithDelta(4.5, $summary['combined'], 0.001, 'Combined is the average of the two averages.');
+
+        $period = new \App\Services\AnalyticsPeriod(\Carbon\CarbonImmutable::parse($from, 'Asia/Manila')->startOfDay(), \Carbon\CarbonImmutable::parse($to, 'Asia/Manila')->addDay()->startOfDay());
+        $dashboard = app(\App\Services\CompetencyEvidence::class)->evaluations(collect([$helper->id]), $period)->avg('normalized_score');
+        $this->assertEqualsWithDelta($dashboard, $summary['adviser_avg'], 0.001, 'The box and the dashboard agree.');
+
+        $empty = app(\App\Services\HelperRatingSummary::class)->for($helper, '2026-01-01', '2026-01-31');
+        $this->assertNull($empty['combined']);
+
+        $html = $this->actingAs($helper->user)->get(route('helper.competency', ['date_range' => "$from to $to"]))->assertOk()->getContent();
+        $this->assertStringContainsString('1 rating', $html);
+        $this->assertStringNotContainsString('class="re-op"', $html, 'No plus or equals signs between the cards.');
+        $this->assertStringContainsString('<details class="ui-explainer"', $html, 'The long explanation is collapsed.');
+    }
+
+    public function test_assigned_cases_filter_paginate_count_every_record_and_rate_on_five(): void
+    {
+        // QA Nov 24 (Assigned Cases): filters, pagination, one table; ratings on the same 1–5 scale as elsewhere.
+        $helper = $this->helper();
+        $chat = collect(range(1, 12))->map(fn () => $this->supportCase($helper));
+        $voice = $this->supportCase($helper, ['session_type' => 'voice', 'session_status' => 'active', 'end_time' => null]);
+        HelpSeekerEvaluation::create(['session_id' => $chat->first()->id, 'overall_score' => 10, 'submitted_at' => now()]);
+
+        $this->actingAs($helper->user);
+        $page = $this->get(route('helper.cases'))->assertOk()
+            ->assertSee('name="q"', false)->assertSee('name="status"', false)->assertSee('name="mode"', false)
+            ->assertSee('Showing 1–10 of 13', false)
+            ->assertViewHas('stats', fn ($s) => $s['completed'] === 12 && $s['active'] === 1);
+        $this->get(route('helper.cases', ['mode' => 'voice']))->assertSee($voice->reference_number)->assertDontSee($chat->last()->reference_number);
+        $this->get(route('helper.cases', ['status' => 'active']))->assertSee($voice->reference_number)->assertDontSee($chat->last()->reference_number);
+        $this->get(route('helper.cases', ['q' => $voice->reference_number]))->assertSee($voice->reference_number)->assertDontSee($chat->last()->reference_number);
+        $this->get(route('helper.cases', ['q' => $chat->first()->reference_number]))->assertSee('5.0 / 5');
+        $this->get(route('helper.cases', ['status' => 'everything']))->assertSessionHasErrors('status');
+    }
+
+    public function test_dashboard_period_filter_sits_top_right_and_cards_drop_extra_lines(): void
+    {
+        // QA Nov 24 (Helper dashboard).
+        $helper = $this->helper();
+        $html = $this->actingAs($helper->user)->get(route('helper.dashboard'))->assertOk()->getContent();
+        $actions = substr($html, strpos($html, 'class="top-bar-actions"'));
+        $this->assertStringContainsString('class="analytics-toolbar"', substr($actions, 0, 3000), 'The period filter is in the page header, upper right.');
+        $this->assertSame(1, substr_count($html, 'class="analytics-toolbar"'), 'It appears once.');
+        $this->assertStringContainsString('<h3>Competency score</h3>', $html);
+        $this->assertStringNotContainsString('Competency score (1–5)', $html);
+        $this->assertStringNotContainsString('Finalized evaluations', $html);
+        $this->assertStringNotContainsString('Ended in the selected period', $html);
+        $this->assertMatchesRegularExpression('/<h3>Competency score<\/h3><strong[^>]*>N\/A<\/strong>/', $html, 'No evaluation yet reads N/A, not a dash.');
+    }
 }

@@ -278,7 +278,7 @@
         <!-- ─── HISTORY CARD: filters, table, pagination (QA Nov 24) ─── -->
         <div class="history-card">
             <form method="GET" action="{{ route('session.history') }}" class="ui-filter-bar history-filters" role="search" aria-label="Filter sessions">
-                <div class="ui-field ui-field--search"><label for="historyQ">Search</label><input id="historyQ" name="q" value="{{ $filters['q'] ?? '' }}" maxlength="80" placeholder="R-0012 or Helper name"></div>
+                <div class="ui-field ui-field--search"><label for="historyQ">Search</label><input id="historyQ" name="q" value="{{ $filters['q'] ?? '' }}" maxlength="80" placeholder="Reference or Helper name"></div>
                 <div class="ui-field"><label for="historyMode">Mode</label><select id="historyMode" name="mode"><option value="">All modes</option>@foreach(['chat' => 'Chat', 'voice' => 'Voice'] as $value => $label)<option value="{{ $value }}" @selected(($filters['mode'] ?? '') === $value)>{{ $label }}</option>@endforeach</select></div>
                 <div class="ui-field"><label for="historyStatus">Status</label><select id="historyStatus" name="status"><option value="">All statuses</option>@foreach(['completed' => 'Completed', 'active' => 'Active', 'cancelled' => 'Cancelled', 'no_show' => 'No show'] as $value => $label)<option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>@endforeach</select></div>
                 <div class="ui-field ui-field--date"><label for="historyFrom">From</label><input id="historyFrom" type="date" name="from" value="{{ $filters['from'] ?? '' }}"></div>
