@@ -227,6 +227,28 @@ class UiComponentsTest extends TestCase
         $this->assertStringNotContainsString('.compass-important-notice button:first-child', file_get_contents(public_path('css/live-notifications.css')));
     }
 
+    public function test_every_page_shares_one_type_scale_table_look_and_compact_cards(): void
+    {
+        // QA Nov 24 (General): font sizes, tables, cards and filters differed between pages and roles.
+        $assets = file_get_contents(resource_path('views/partials/ui-assets.blade.php'));
+        $this->assertStringContainsString('css/compass-system.css', $assets);
+        $this->assertGreaterThan(strpos($assets, 'css/compass-modals.css'), strpos($assets, 'css/compass-system.css'), 'The shared system loads last.');
+
+        $css = file_get_contents(public_path('css/compass-system.css'));
+        foreach ([
+            '--cs-section: 18px', '--cs-th: 13px', '--cs-td: 14px', '--cs-kpi: 24px',
+            ':is(.workspace-content, .main-content, .admin-content)',
+            'text-transform: none', 'overflow-wrap: break-word', '.ui-explainer', '.analytics-toolbar',
+        ] as $rule) {
+            $this->assertStringContainsString($rule, $css, "compass-system.css sets {$rule}");
+        }
+
+        $html = (string) $this->blade('<x-ui.explainer title="How ratings work">Scale details</x-ui.explainer>');
+        $this->assertStringContainsString('<details class="ui-explainer"', $html);
+        $this->assertStringContainsString('How ratings work', $html);
+        $this->assertStringContainsString('Scale details', $html);
+    }
+
     public function test_one_off_dialogs_use_the_shared_modal(): void
     {
         $connection = file_get_contents(resource_path('views/session/connection-status.blade.php'));

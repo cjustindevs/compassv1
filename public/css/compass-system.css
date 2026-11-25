@@ -1,0 +1,179 @@
+/* COMPASS system: one type scale, table look, card size, button size and filter bar for every role.
+   QA Nov 24 (General): sizes differed between pages and roles. Loaded last from partials/ui-assets.
+   Scope: the main content of each layout (.workspace-content: Seeker/Adviser/Moderator/Professional,
+   .main-content: Helper, .admin-content: Admin). Dialogs keep compass-modals.css. */
+
+:root {
+    --cs-ink: #163b2d;
+    --cs-text: #1f2937;
+    --cs-muted: #64748b;
+    --cs-line: #e3ebe6;
+    --cs-head-bg: #f7faf8;
+    --cs-section: 18px;
+    --cs-sub: 15px;
+    --cs-body: 14px;
+    --cs-small: 13px;
+    --cs-th: 13px;
+    --cs-td: 14px;
+    --cs-kpi: 24px;
+    --cs-control: 40px;
+    --cs-radius: 10px;
+}
+
+/* ---------- Section and card titles: one size (pages used 12, 14, 16, 18 and 20px) ---------- */
+html.compass-ui :is(.workspace-content, .main-content, .admin-content) h2:not(.cm-title):not(.health-service-card h2),
+html.compass-ui :is(.workspace-content, .main-content, .admin-content) :is(.ui-card-title, .card-header > h3, header.card-header > h3, section.card > h3, .report-charts-heading > h2) {
+    font-size: var(--cs-section) !important;
+    line-height: 1.35 !important;
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    color: var(--cs-ink);
+}
+/* Card subtitles and section descriptions */
+html.compass-ui :is(.workspace-content, .main-content, .admin-content) :is(.ui-card-sub, .ui-page-desc, .card-subtitle) {
+    font-size: var(--cs-small);
+    line-height: 1.5;
+    color: var(--cs-muted);
+}
+
+/* ---------- Tables: one header style, one cell size, aligned actions, no broken layouts ---------- */
+html.compass-ui :is(.workspace-content, .main-content, .admin-content) table:not([class*="calendar"]):not([class*="cal-"]) th {
+    font-size: var(--cs-th) !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    color: #475569 !important;
+    white-space: nowrap;
+}
+html.compass-ui :is(.workspace-content, .main-content, .admin-content) table:not([class*="calendar"]):not([class*="cal-"]) td {
+    font-size: var(--cs-td) !important;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--cs-text);
+    overflow-wrap: break-word;
+    word-break: normal;
+}
+html.compass-ui :is(.workspace-content, .main-content, .admin-content) table:not([class*="calendar"]):not([class*="cal-"]) td :is(.btn-primary, .btn-secondary, .btn-outline, .btn-danger, .admin-button, a.link, button) {
+    white-space: nowrap;
+}
+@media (min-width: 769px) {
+    html.compass-ui :is(.workspace-content, .main-content, .admin-content) table:not([class*="calendar"]):not([class*="cal-"]) :is(th, td) {
+        padding: 12px 14px;
+        vertical-align: middle;
+    }
+    html.compass-ui :is(.workspace-content, .main-content, .admin-content) table:not([class*="calendar"]):not([class*="cal-"]) thead th {
+        background: var(--cs-head-bg);
+        border-bottom: 1px solid var(--cs-line);
+    }
+}
+
+/* ---------- Summary cards: compact (QA: "liitan ang KPI", no oversized cards) ---------- */
+html.compass-ui .co-kpis .co-kpi,
+html.compass-ui .performance-kpi,
+html.compass-ui .ui-kpi {
+    padding: 16px 18px !important;
+    min-height: 0 !important;
+    gap: 6px !important;
+}
+html.compass-ui :is(.co-kpis .co-kpi, .performance-kpi) > strong,
+html.compass-ui .ui-kpi .ui-kpi-value {
+    font-size: var(--cs-kpi) !important;
+    line-height: 1.2 !important;
+}
+html.compass-ui :is(.co-kpis .co-kpi, .performance-kpi) > h3,
+html.compass-ui .ui-kpi .ui-kpi-label {
+    font-size: var(--cs-small) !important;
+}
+
+/* ---------- Buttons: one height and text size ---------- */
+html.compass-ui :is(.workspace-content, .main-content, .admin-content) :is(.btn-primary, .btn-secondary, .btn-outline, .btn-danger, .analytics-button):not(.btn-sm):not(.icon-button) {
+    min-height: var(--cs-control);
+    font-size: var(--cs-body);
+    font-weight: 600;
+    border-radius: var(--cs-radius);
+}
+
+/* ---------- Empty states: one calm look ---------- */
+html.compass-ui :is(.workspace-content, .main-content, .admin-content) :is(.empty-state, .ui-empty) {
+    padding: 28px 16px;
+    text-align: center;
+    color: var(--cs-muted);
+    font-size: var(--cs-body);
+}
+html.compass-ui :is(.workspace-content, .main-content, .admin-content) :is(.empty-state, .ui-empty) :is(h3, strong) {
+    font-size: var(--cs-sub) !important;
+    font-weight: 600 !important;
+    color: var(--cs-ink);
+}
+
+/* ---------- Period filter: compact, on one line, at the right of the page ---------- */
+html.compass-ui .analytics-toolbar {
+    justify-content: flex-end;
+    margin: 0 0 16px !important;
+}
+html.compass-ui .analytics-period-form {
+    align-items: center !important;
+    gap: 8px !important;
+}
+html.compass-ui .analytics-period-form label {
+    display: flex !important;
+    align-items: center;
+    gap: 8px !important;
+    font-size: var(--cs-small) !important;
+    font-weight: 600;
+    color: #475569;
+}
+html.compass-ui .analytics-period-form :is(select, input) {
+    min-height: var(--cs-control);
+    width: auto;
+    max-width: 170px;
+    padding: 0 10px !important;
+    font-size: var(--cs-body);
+}
+html.compass-ui .analytics-period-form .analytics-button,
+html.compass-ui .analytics-toolbar > .analytics-button {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--cs-control);
+    padding: 0 14px !important;
+}
+@media (max-width: 640px) {
+    html.compass-ui .analytics-toolbar { justify-content: stretch; }
+    html.compass-ui .analytics-period-form { width: 100%; }
+    html.compass-ui .analytics-period-form label { flex: 1 1 100%; }
+    html.compass-ui .analytics-period-form :is(select, input) { flex: 1; max-width: none; }
+}
+
+/* ---------- "How this works": one collapsible explanation ---------- */
+.ui-explainer {
+    margin: 0 0 16px;
+    border: 1px solid var(--cs-line);
+    border-radius: 12px;
+    background: #fff;
+}
+.ui-explainer > summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    font-size: var(--cs-small);
+    font-weight: 600;
+    color: #087341;
+    cursor: pointer;
+    list-style: none;
+}
+.ui-explainer > summary::-webkit-details-marker { display: none; }
+.ui-explainer > summary .compass-icon { width: 16px; height: 16px; flex: none; }
+.ui-explainer > summary::after { content: ''; margin-left: auto; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform .15s ease; }
+.ui-explainer[open] > summary::after { transform: rotate(-135deg); }
+.ui-explainer > summary:focus-visible { outline: 2px solid #087341; outline-offset: 2px; border-radius: 12px; }
+.ui-explainer-body {
+    padding: 0 14px 14px;
+    font-size: var(--cs-small);
+    line-height: 1.6;
+    color: #475569;
+}
+.ui-explainer-body > :first-child { margin-top: 0; }
+.ui-explainer-body > :last-child { margin-bottom: 0; }
+@media (prefers-reduced-motion: reduce) { .ui-explainer > summary::after { transition: none; } }
