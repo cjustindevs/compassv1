@@ -249,6 +249,17 @@ class UiComponentsTest extends TestCase
         $this->assertStringContainsString('Scale details', $html);
     }
 
+    public function test_phone_toasts_sit_at_the_bottom_clear_of_page_controls(): void
+    {
+        // Phone sweep: a toast at the top covered the period filter now in the page header.
+        $css = file_get_contents(public_path('css/compass-layout.css'));
+        preg_match('/@media \(max-width: 600px\) \{(.*?)\n\}/s', $css, $phone);
+        $this->assertNotEmpty($phone);
+        $this->assertStringContainsString('top: auto', $phone[1]);
+        $this->assertStringContainsString('bottom: calc(var(--compass-toast-bottom, 16px) + env(safe-area-inset-bottom))', $phone[1]);
+        $this->assertStringContainsString('body:has(#messageInput), body.voice-session { --compass-toast-bottom: 96px; }', $phone[1], 'Above the chat composer and the call footer.');
+    }
+
     public function test_adviser_rating_guide_is_a_short_checklist_with_the_scale_collapsed(): void
     {
         // QA Nov 24 (Adviser, Pending Evaluations): simplify the "Evidence and rating guide".

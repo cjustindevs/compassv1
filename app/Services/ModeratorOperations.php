@@ -16,20 +16,8 @@ class ModeratorOperations
         $service = app(ModeratorEmergencyCases::class);
         $all = $service->query()->get();
         $active = $service->active()->get();
-        $status = ['Awaiting acknowledgment' => 0, 'Responding' => 0, 'Escalated' => 0];
-        foreach ($active as $case) {
-            $status[$service->statusLabel($case)]++;
-        }
         $period = AnalyticsPeriod::fromRequest(request());
         $performance = app(SessionPerformance::class)->operations($period);
-        $months = [];
-        $daily = $period->start->diffInDays($period->end) <= 62;
-        $format = $daily ? 'Y-m-d' : 'Y-m';
-        $detections = $all->filter(fn ($e) => Carbon::parse($e->triggered_at)->gte($period->start) && Carbon::parse($e->triggered_at)->lt($period->end) && Carbon::parse($e->triggered_at)->lte(now()))
-            ->groupBy(fn ($e) => Carbon::parse($e->triggered_at)->timezone('Asia/Manila')->format($format))->map->count();
-        for ($date = $daily ? $period->start : $period->start->startOfMonth(); $date->lt($period->end); $date = $daily ? $date->addDay() : $date->addMonth()) {
-            $months[$date->format($daily ? 'M j, Y' : 'M Y')] = $detections->get($date->format($format), 0);
-        }
 
         $reportRequest = clone request();
         if ($actor) $reportRequest->setUserResolver(fn () => $actor);

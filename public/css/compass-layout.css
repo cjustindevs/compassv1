@@ -57,8 +57,12 @@
 /* Legacy page flash alerts that were fixed to a corner join the stack instead. */
 .compass-toast-stack .flash-alert { position: static !important; inset: auto !important; margin: 0 !important; width: auto !important; max-width: none !important; }
 @keyframes compass-toast-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@keyframes compass-toast-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+/* Phones: toasts rise from the bottom (snackbar) so they never cover the page header or its filters. */
 @media (max-width: 600px) {
-    .compass-toast-stack { right: 12px; left: 12px; width: auto; }
+    .compass-toast-stack { top: auto; bottom: calc(var(--compass-toast-bottom, 16px) + env(safe-area-inset-bottom)); right: 12px; left: 12px; width: auto; }
+    .compass-toast { animation-name: compass-toast-up; }
+    body:has(#messageInput), body.voice-session { --compass-toast-bottom: 96px; }
 }
 
 /* ── System banners ────────────────────────────────────────────────── */
