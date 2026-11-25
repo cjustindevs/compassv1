@@ -76,3 +76,25 @@
 /* Request step 2: note that an Adviser may review the chat or call. */
 .request-review-note { display:flex; gap:8px; align-items:flex-start; margin-top:12px; padding:10px 12px; border-radius:10px; background:#f0fdf4; color:#14532d; font-size:14px; line-height:1.5; max-width:760px; }
 .request-review-note .compass-icon { flex:none; margin-top:2px; }
+
+/* Request History (QA Nov 24): one container, compact filters on one row, aligned table actions. */
+.seeker-heading-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+.request-history-filters { display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px; margin:0 0 20px; }
+.request-history-filters label { display:grid; gap:6px; flex:0 1 200px; font-size:13px; font-weight:600; color:#334155; }
+.request-history-filters label.rh-search { flex:1 1 240px; max-width:320px; }
+.request-history-filters label.rh-date { flex:0 1 160px; }
+.request-history-filters :is(input, select) { height:40px; padding:0 12px; border:1px solid #cbd5e1; border-radius:10px; font-size:14px; font-weight:400; }
+.request-history-filters .rh-buttons { display:flex; gap:8px; }
+.request-history-filters .rh-buttons .seeker-button { height:40px; min-height:40px; padding:0 16px; }
+.request-history .rh-title { font-size:16px; font-weight:600; margin:0 0 12px; }
+.request-history .seeker-table .rh-actions { text-align:right; white-space:nowrap; }
+.request-history .rh-action-buttons { display:inline-flex; gap:8px; justify-content:flex-end; }
+.request-history .rh-action-buttons .seeker-button { min-height:36px; padding:0 14px; font-size:13px; }
+@media (max-width:768px) {
+  .seeker-heading { flex-wrap:wrap; }
+  .seeker-heading-actions { width:100%; justify-content:stretch; }
+  .seeker-heading-actions > * { flex:1; }
+  .request-history-filters label, .request-history-filters label.rh-search, .request-history-filters label.rh-date { flex:1 1 100%; max-width:none; }
+  .request-history-filters .rh-buttons { width:100%; } .request-history-filters .rh-buttons > * { flex:1; }
+  .request-history .seeker-table .rh-actions { text-align:left; }
+}

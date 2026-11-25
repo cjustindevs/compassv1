@@ -135,7 +135,7 @@ class NotificationArchiveTest extends TestCase
             ->assertViewHas('notifications', fn ($items) => $items->count() === 2);
         $this->get(route('notifications', ['type' => 'session']))->assertOk()
             ->assertViewHas('notifications', fn ($items) => $items->total() === 1)
-            ->assertSee($session->title)->assertSee('Open &amp; mark as read', false);
+            ->assertSee($session->title)->assertSee("markRead({$session->id}, true)", false)->assertSeeText('Open');
         $this->postJson(route('notifications.read', $session->id))->assertOk()->assertJson(['read' => true]);
         $this->assertTrue($session->fresh()->is_read);
         $this->postJson(route('notifications.read', $foreign->id))->assertNotFound();
@@ -144,5 +144,23 @@ class NotificationArchiveTest extends TestCase
         $this->assertDatabaseHas('notifications', ['id' => $session->id]);
         $this->assertNotNull(Notification::withoutGlobalScopes()->findOrFail($session->id)->archived_at);
         $this->get(route('notifications', ['type' => 'session']))->assertOk()->assertDontSee($session->title);
+    }
+
+    public function test_notification_center_filters_by_read_state_and_type_from_one_compact_toolbar(): void
+    {
+        // QA Nov 24: nine type tabs crowded the page; filters, list and actions are arranged in one toolbar and panel.
+        $user = $this->makeUser();
+        $unread = $this->makeNotification($user, ['title' => 'Unread reminder', 'notification_type' => 'reminder']);
+        $read = $this->makeNotification($user, ['title' => 'Already read update', 'notification_type' => 'update', 'status' => 'read', 'read_at' => now()]);
+
+        $html = $this->actingAs($user)->get(route('notifications'))->assertOk()->getContent();
+        $this->assertStringContainsString('class="notif-toolbar"', $html);
+        $this->assertStringContainsString('<select id="notifType" name="type"', $html);
+        $this->assertStringNotContainsString('class="filter-btn', $html, 'The row of nine type tabs is gone.');
+        $this->assertStringContainsString('class="notif-panel"', $html);
+
+        $this->get(route('notifications', ['status' => 'unread']))->assertSee('Unread reminder')->assertDontSee('Already read update');
+        $this->get(route('notifications', ['status' => 'unread', 'type' => 'update']))->assertDontSee('Already read update');
+        $this->get(route('notifications', ['status' => 'everything']))->assertNotFound();
     }
 }

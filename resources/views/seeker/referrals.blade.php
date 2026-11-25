@@ -51,14 +51,13 @@
                 </button>
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-800">Referrals and Appointments</h1>
-                    <p class="text-sm text-gray-500 hidden sm:block">Review recommendations for professional support.</p>
+                    <p class="text-sm text-gray-500 hidden sm:block">Review recommendations for professional support. You decide whether to proceed.</p>
                 </div>
             </div>
             <div class="flex items-center gap-3">
             </div>
         </div>
 
-            <p class="referrals-intro">Review your approved recommendations here. You choose whether to proceed. Contact details and identity disclosure are a separate step.</p>
             <p class="referrals-wait-note"><x-ui-icon name="clock" /> After you agree, please wait for the Professional to contact you. You will get a notification when they do.</p>
             @if(session('success'))<div role="status" class="referral-flash">{{ session('success') }}</div>@endif
             @if($errors->any())<div role="alert" class="referral-flash">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
@@ -150,11 +149,6 @@
                 <div class="referral-card referral-empty"><h2>No referral decisions yet</h2><p>Recommendations will appear here when they are ready for review.</p></div>
             @endforelse
 
-        <!-- Footer -->
-        <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-
-            Every decision you make is respected.
-        </div>
 
         </div>
     </main>

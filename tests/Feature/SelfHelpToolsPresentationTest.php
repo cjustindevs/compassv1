@@ -345,4 +345,18 @@ class SelfHelpToolsPresentationTest extends TestCase
 
         return $snapshot;
     }
+
+    public function test_library_toolbar_groups_search_topic_and_format_and_cards_share_one_shape(): void
+    {
+        // QA Nov 24: arrange search, Continue, Saved, Topic and Format; uniform resource cards.
+        $html = $this->actingAs($this->seeker())->get(route('selfhelp'))->assertOk()->getContent();
+        $filters = substr($html, strpos($html, 'class="sh-filters"'));
+        $this->assertStringContainsString('id="selfhelpSearch"', $filters, 'Search sits with the library filters, not alone in the page header.');
+        $view = file_get_contents(resource_path('views/selfhelp/index.blade.php'));
+        $this->assertStringContainsString('<div class="sh-filter-row"><span class="sh-chips-label">Topic</span>', $view, 'Topic and Format are aligned rows (rendered when resources exist).');
+        $this->assertStringContainsString('<div class="sh-filter-row"><span class="sh-chips-label">Format</span>', $view);
+        $this->assertStringNotContainsString('Small steps every day add up', $html);
+        $this->assertStringContainsString('.resource-card .meta { margin-top: auto', $html, 'Card tags line up at the bottom.');
+        $this->assertStringContainsString('.resource-card .topic-label { text-transform: none', $html);
+    }
 }

@@ -97,7 +97,7 @@
     @vite(['resources/css/app.css'])
     @include('partials.ui-assets')
 </head>
-<body class="compass-compact">
+<body class="compass-compact settings-page">
 
     <main class="main-content">
 

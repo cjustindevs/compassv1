@@ -211,6 +211,50 @@ class HelpSeekerModuleTest extends TestCase
         $this->assertStringContainsString("help_seeker_condition ?: 'Not answered by the Seeker'", $view);
     }
 
+    public function test_session_history_filters_by_reference_mode_status_and_date_and_paginates(): void
+    {
+        // QA Nov 24 (Seeker): Session History needs filters and pagination.
+        [$user, $seeker] = $this->seekerUser();
+        $helperId = $this->helperId();
+        $make = fn (string $type, string $status, string $created) => Session::create(['seeker_id' => $seeker->id, 'helper_id' => $helperId, 'session_type' => $type,
+            'session_status' => $status, 'risk_level' => 'low', 'created_date' => \Illuminate\Support\Carbon::parse($created, 'Asia/Manila')->utc()]);
+        $voice = $make('voice', Session::STATUS_COMPLETED, '2026-10-05 10:00');
+        $chat = $make('chat', Session::STATUS_CANCELLED, '2026-11-05 10:00');
+        foreach (range(1, 11) as $i) $make('chat', Session::STATUS_COMPLETED, '2026-11-10 09:00');
+
+        $this->actingAs($user);
+        $page = $this->get(route('session.history'))->assertOk();
+        $page->assertSee('name="q"', false)->assertSee('name="mode"', false)->assertSee('name="status"', false)->assertSee('name="from"', false)->assertSee('name="to"', false);
+        $page->assertSee('Showing 1–10 of 13', false);
+
+        $this->get(route('session.history', ['q' => $voice->reference_number]))->assertSee($voice->reference_number)->assertDontSee($chat->reference_number);
+        $this->get(route('session.history', ['mode' => 'voice']))->assertSee($voice->reference_number)->assertDontSee($chat->reference_number);
+        $this->get(route('session.history', ['status' => 'cancelled']))->assertSee($chat->reference_number)->assertDontSee($voice->reference_number);
+        $this->get(route('session.history', ['from' => '2026-10-01', 'to' => '2026-10-31']))->assertSee($voice->reference_number)->assertDontSee($chat->reference_number);
+        $this->get(route('session.history', ['mode' => 'video']))->assertSessionHasErrors('mode');
+    }
+
+    public function test_request_history_is_one_container_with_its_main_action_at_the_top_right(): void
+    {
+        // QA Nov 24: remove the double container; "View active request" belongs at the upper right.
+        [$user] = $this->seekerUser();
+        $html = $this->actingAs($user)->get(route('seeker.requests'))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/<div class="seeker-heading-actions">\s*<a class="seeker-button" href="[^"]+">Request support<\/a>/', $html);
+        $this->assertStringNotContainsString('class="request-section"', $html, 'Only the page card wraps the table.');
+        $this->assertStringContainsString('class="request-history-filters"', $html);
+    }
+
+    public function test_matching_step_drops_the_lines_qa_asked_to_remove_and_emergency_has_no_badge(): void
+    {
+        // QA Nov 24 (Seeker, Request Help step 3 and Emergency Support).
+        $matching = file_get_contents(resource_path('views/request/matching.blade.php'));
+        foreach (['This page checks again automatically every 15 seconds.', 'Your request is saved in the matching queue.', 'Step 3 of 3</span> · Matching', '· Submitted {{'] as $line) {
+            $this->assertStringNotContainsString($line, $matching);
+        }
+        $this->assertStringContainsString('Waiting for an available helper', $matching, 'The status heading stays.');
+        $this->assertStringNotContainsString('<span class="emg-eyebrow">', file_get_contents(resource_path('views/emergency.blade.php')));
+    }
+
     public function test_seeker_gender_reads_as_plain_words_and_blank_is_not_shown_as_a_choice(): void
     {
         // QA: the Helper saw "Prefer-not-to-say" (raw value), and "Prefer not to say" when nothing was given.

@@ -322,56 +322,59 @@ class SessionController extends Controller
     /**
      * Show real session history from the database
      */
-    public function history()
+    public function history(Request $request)
     {
         \Illuminate\Support\Facades\Gate::authorize('seeker-workflow');
-        $helpSeeker = Auth::user()->helpSeeker;
-        $period = request()->hasAny(['from', 'to', 'period']) ? \App\Services\AnalyticsPeriod::fromRequest(request()) : null;
-
-        if (!$helpSeeker) {
-            $sessions = [];
-        } else {
-            $sessions = Session::with(['helper', 'evaluation', 'concern'])
-                ->where('seeker_id', $helpSeeker->id)
-                ->when($period, fn ($query) => $query->where('created_date', '>=', $period->start->utc())->where('created_date', '<', $period->end->utc()))
-                ->orderByDesc('created_date')
-                ->get()
-                ->map(function (Session $session) {
-                    $statusLabels = [
-                        'completed' => 'Completed',
-                        'evaluated' => 'Evaluated',
-                        'cancelled' => 'Cancelled',
-                        'active' => 'Active',
-                        'scheduled' => 'Scheduled',
-                        'no_show' => 'No Show',
-                        'screening_completed' => 'Screening Done',
-                        'preferences_set' => 'Pending Helper',
-                        'waiting' => 'In Queue',
-                        'helper_assigned' => 'Helper Assigned',
-                    ];
-
-                    $mode = match ($session->session_type) {
-                        'voice' => 'Voice',
-                        default => 'Chat',
-                    };
-
-                    return [
-                        'id' => $session->reference_number,
-                        'date' => $session->created_date?->format('M d, Y'),
-                        'helper' => $session->helper->public_alias ?? '—',
-                        'mode' => $mode,
-                        'duration' => $session->duration ? $session->duration . 'm' : '—',
-                        'rating' => $session->evaluation
-                            ? (int) round((float) $session->evaluation->overall_score)
-                            : 0,
-                        'status' => $statusLabels[$session->session_status] ?? ucfirst($session->session_status),
-                        'risk' => ucfirst($session->risk_level ?? 'Low'),
-                    ];
-                })
-                ->all();
+        // QA Nov 24: Session History has filters (reference, mode, status, PHT dates) and pagination.
+        $filters = $request->validate([
+            'q' => 'nullable|string|max:80', 'mode' => 'nullable|in:chat,voice',
+            'status' => 'nullable|in:completed,active,cancelled,no_show',
+            'from' => 'nullable|date_format:Y-m-d', 'to' => 'nullable|date_format:Y-m-d|after_or_equal:from', 'page' => 'nullable|integer|min:1',
+        ]);
+        $statusLabels = ['completed' => 'Completed', 'evaluated' => 'Evaluated', 'cancelled' => 'Cancelled', 'active' => 'Active', 'scheduled' => 'Scheduled',
+            'no_show' => 'No Show', 'screening_completed' => 'Screening Done', 'preferences_set' => 'Pending Helper', 'waiting' => 'In Queue', 'helper_assigned' => 'Helper Assigned'];
+        $seekerId = Auth::user()->helpSeeker?->id ?? 0;
+        $query = Session::with(['helper', 'evaluation', 'concern'])->where('seeker_id', $seekerId);
+        if ($q = trim($filters['q'] ?? '')) {
+            $query->where(function ($query) use ($q) {
+                if (preg_match('/^(?:R-|#)?0*(\d+)$/i', $q, $match)) {
+                    $query->whereKey((int) $match[1]);
+                } else {
+                    $query->whereHas('helper', fn ($helper) => $helper->where('public_alias', 'like', '%'.$q.'%'));
+                }
+            });
+        }
+        if ($mode = $filters['mode'] ?? null) {
+            $mode === 'voice' ? $query->where('session_type', 'voice') : $query->where('session_type', '!=', 'voice');
+        }
+        match ($filters['status'] ?? null) {
+            'completed' => $query->whereIn('session_status', ['completed', 'evaluated']),
+            null => null,
+            default => $query->where('session_status', $filters['status']),
+        };
+        foreach (['from', 'to'] as $bound) {
+            if (! empty($filters[$bound])) {
+                $day = \Illuminate\Support\Carbon::createFromFormat('!Y-m-d', $filters[$bound], 'Asia/Manila');
+                $query->where('created_date', $bound === 'from' ? '>=' : '<=', ($bound === 'from' ? $day->startOfDay() : $day->endOfDay())->utc());
+            }
         }
 
-        return view('session.history', compact('sessions'));
+        $sessions = $query->orderByDesc('created_date')->orderByDesc('id')->paginate(10)->withQueryString()
+            ->through(function (Session $session) use ($statusLabels) {
+                $rating = $session->evaluation ? \App\Services\AdviserAnalytics::rating((float) $session->evaluation->overall_score) : null;
+
+                return [
+                    'id' => $session->reference_number,
+                    'date' => $session->created_date?->copy()->timezone('Asia/Manila')->format('M d, Y'),
+                    'helper' => $session->helper->public_alias ?? '—',
+                    'mode' => $session->session_type === 'voice' ? 'Voice' : 'Chat',
+                    'duration' => $session->duration ? $session->duration.'m' : '—',
+                    'rating' => $rating === null ? 'Not rated' : \App\Support\ScoreFormat::number($rating).' / 5',
+                    'status' => $statusLabels[$session->session_status] ?? ucfirst(str_replace('_', ' ', $session->session_status)),
+                ];
+            });
+
+        return view('session.history', compact('sessions', 'filters'));
     }
 
     /**

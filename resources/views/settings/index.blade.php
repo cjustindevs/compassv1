@@ -53,7 +53,7 @@
     @vite(['resources/css/app.css'])
     @include('partials.ui-assets')
 </head>
-<body class="compass-compact">
+<body class="compass-compact settings-page">
 
     <main class="main-content">
 
@@ -111,10 +111,6 @@
             @endif
         </div>
 
-        <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-
-            COMPASS · Peer support made safe.
-        </div>
 
     </main>
 

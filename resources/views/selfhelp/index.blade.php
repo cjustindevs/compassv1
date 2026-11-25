@@ -142,11 +142,30 @@
         .resource-card .meta { gap: 6px; margin-top: 4px; }
         .kind, .badge-featured, .chip { font-size: 13px; padding: 4px 10px; }
         .sh-topic-note { font-size: 13px; padding: 10px 14px; }
-        @media (min-width: 1200px) { .sh-filters { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 20px; } .sh-filters > div:first-child { grid-column: 1 / -1; } }
+        /* Filter rows stack (QA Nov 24): Topic, then Format, each aligned under its label. */
     </style>
 <link rel="stylesheet" href="{{ asset('css/selfhelp-mobile.css') }}?v={{ filemtime(public_path('css/selfhelp-mobile.css')) }}">
     @vite(['resources/css/app.css'])
     @include('partials.ui-assets')
+    <style>
+        /* QA Nov 24: search with the filters, aligned Topic/Format rows, one card shape. */
+        .sh-filters-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+        .sh-filters-head .sh-search { flex: 0 1 360px; min-width: 220px; }
+        .sh-filters-head .sh-search .search-box input { height: 40px; }
+        .sh-filter-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: start; gap: 8px; }
+        .sh-filter-row .sh-chips-label { padding-top: 7px; font-size: 13px; font-weight: 600; color: #475569; }
+        .sh-filter-row .sh-chips { gap: 8px; }
+        .sh-grid { align-items: stretch; }
+        .resource-card { display: flex; flex-direction: column; height: 100%; }
+        .resource-card .body { flex: 1; display: flex; flex-direction: column; }
+        .resource-card .topic-label { text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 600; }
+        .resource-card h3 { font-size: 16px; line-height: 1.35; }
+        .resource-card .summary { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .resource-card .meta { margin-top: auto; padding-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+        .sh-mine { align-items: stretch; }
+        .sh-panel .sh-empty { margin: 8px 0 0; padding: 14px; border: 1px dashed #dbe5df; border-radius: 12px; font-size: 13px; color: #64748b; }
+        @media (max-width: 768px) { .sh-filters-head .sh-search { flex-basis: 100%; } .sh-filter-row { grid-template-columns: 1fr; gap: 6px; } .sh-filter-row .sh-chips-label { padding-top: 0; } }
+    </style>
 </head>
 <body>
     <main class="main-content selfhelp-content">
@@ -163,11 +182,6 @@
                         <p>Short exercises and readings you can do on your own. Each one has steps, sound, and a picture guide.</p>
                     </div>
                 </div>
-                <form method="GET" action="{{ route('selfhelp') }}" class="sh-search" role="search">
-                    <label for="selfhelpSearch" class="sr-only">Search self-help resources</label>
-                    <div class="search-box"><input type="search" id="selfhelpSearch" name="q" value="{{ $search }}" placeholder="Search, for example anxiety or sleep"></div>
-                    @if($search !== '')<a href="{{ route('selfhelp') }}" class="link-btn">Clear</a>@endif
-                </form>
             </header>
 
             @if($search !== '')
@@ -217,23 +231,28 @@
 
             {{-- Library: filter by topic (on this page) or by format (separate page) --}}
             <section class="sh-filters" aria-labelledby="libraryTitle">
-                <div><h2 class="sh-block-title" id="libraryTitle">{{ $search === '' ? 'Browse by what you need' : 'Matching resources' }}</h2><p class="sh-block-sub">Grouped by the kind of support each resource offers.</p></div>
+                <div class="sh-filters-head">
+                    <div><h2 class="sh-block-title" id="libraryTitle">{{ $search === '' ? 'Browse by what you need' : 'Matching resources' }}</h2><p class="sh-block-sub">Grouped by the kind of support each resource offers.</p></div>
+                    <form method="GET" action="{{ route('selfhelp') }}" class="sh-search" role="search">
+                        <label for="selfhelpSearch" class="sr-only">Search self-help resources</label>
+                        <div class="search-box"><input type="search" id="selfhelpSearch" name="q" value="{{ $search }}" placeholder="Search, for example anxiety or sleep"></div>
+                        @if($search !== '')<a href="{{ route('selfhelp') }}" class="link-btn">Clear</a>@endif
+                    </form>
+                </div>
                 @if(count($sections) > 0)
-                    <div class="sh-chips" role="group" aria-label="Filter by topic">
-                        <span class="sh-chips-label">Topic</span>
+                    <div class="sh-filter-row"><span class="sh-chips-label">Topic</span><div class="sh-chips" role="group" aria-label="Filter by topic">
                         <button type="button" class="sh-chip" data-topic-filter="all" aria-pressed="true">All topics</button>
                         @foreach($sections as $section)
                             <button type="button" class="sh-chip" data-topic-filter="{{ $section['key'] }}" aria-pressed="false">{{ $section['label'] }} <small>{{ $section['resources']->count() }}</small></button>
                         @endforeach
-                    </div>
+                    </div></div>
                 @endif
                 @if($categories->count() > 0)
-                    <nav class="sh-chips sh-chips-inline" aria-label="Browse by format">
-                        <span class="sh-chips-label">Format</span>
+                    <div class="sh-filter-row"><span class="sh-chips-label">Format</span><nav class="sh-chips" aria-label="Browse by format">
                         @foreach($categories as $cat)
                             <a class="sh-chip" href="{{ route('selfhelp.category', $cat['slug']) }}">{{ $cat['label'] }} <small>{{ $cat['count'] }}</small></a>
                         @endforeach
-                    </nav>
+                    </nav></div>
                 @endif
             </section>
 
@@ -271,7 +290,6 @@
                 </div>
             @endif
 
-            <p class="sh-foot">Small steps every day add up. You are doing great.</p>
         </div>
     </main>
 

@@ -177,3 +177,22 @@ html.compass-ui .analytics-toolbar > .analytics-button {
 .ui-explainer-body > :first-child { margin-top: 0; }
 .ui-explainer-body > :last-child { margin-bottom: 0; }
 @media (prefers-reduced-motion: reduce) { .ui-explainer > summary::after { transition: none; } }
+
+/* ---------- Filter bars: same control height, sensible widths, buttons at the end of the row ---------- */
+@media (min-width: 769px) {
+    html.compass-ui .ui-filter-bar:not(.ui-filter-bar--grid) { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+    html.compass-ui .ui-filter-bar:not(.ui-filter-bar--grid) > .ui-field { flex: 0 1 180px; width: auto; }
+    html.compass-ui .ui-filter-bar:not(.ui-filter-bar--grid) > .ui-field--search { flex: 1 1 240px; max-width: 320px; }
+    html.compass-ui .ui-filter-bar:not(.ui-filter-bar--grid) > .ui-field--date { flex: 0 1 160px; }
+    html.compass-ui .ui-filter-bar:not(.ui-filter-bar--grid) > .ui-filter-buttons { width: auto; }
+}
+html.compass-ui .ui-filter-bar .ui-field { display: grid; gap: 6px; }
+html.compass-ui .ui-filter-bar .ui-field > label { font-size: var(--cs-small); font-weight: 600; color: #334155; }
+html.compass-ui .ui-filter-bar .ui-field :is(input, select) { height: var(--cs-control); padding: 0 12px; border: 1px solid #cbd5e1; border-radius: var(--cs-radius); background: #fff; font-size: var(--cs-body); min-width: 0; width: 100%; }
+html.compass-ui .ui-filter-bar .ui-filter-buttons { display: flex; gap: 8px; }
+html.compass-ui .ui-filter-bar .ui-filter-buttons > :is(a, button) { display: inline-flex; align-items: center; justify-content: center; height: var(--cs-control); padding: 0 16px; text-decoration: none; }
+
+/* ---------- Settings (all roles' Seeker settings pages): readable width, not full-screen fields ---------- */
+@media (min-width: 1024px) {
+    body.settings-page .main-content > * { max-width: 960px; }
+}

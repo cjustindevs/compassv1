@@ -275,20 +275,29 @@
             </div>
         </div>
 
-        <!-- ─── HISTORY CARD ─── -->
+        <!-- ─── HISTORY CARD: filters, table, pagination (QA Nov 24) ─── -->
         <div class="history-card">
+            <form method="GET" action="{{ route('session.history') }}" class="ui-filter-bar history-filters" role="search" aria-label="Filter sessions">
+                <div class="ui-field ui-field--search"><label for="historyQ">Search</label><input id="historyQ" name="q" value="{{ $filters['q'] ?? '' }}" maxlength="80" placeholder="R-0012 or Helper name"></div>
+                <div class="ui-field"><label for="historyMode">Mode</label><select id="historyMode" name="mode"><option value="">All modes</option>@foreach(['chat' => 'Chat', 'voice' => 'Voice'] as $value => $label)<option value="{{ $value }}" @selected(($filters['mode'] ?? '') === $value)>{{ $label }}</option>@endforeach</select></div>
+                <div class="ui-field"><label for="historyStatus">Status</label><select id="historyStatus" name="status"><option value="">All statuses</option>@foreach(['completed' => 'Completed', 'active' => 'Active', 'cancelled' => 'Cancelled', 'no_show' => 'No show'] as $value => $label)<option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>@endforeach</select></div>
+                <div class="ui-field ui-field--date"><label for="historyFrom">From</label><input id="historyFrom" type="date" name="from" value="{{ $filters['from'] ?? '' }}"></div>
+                <div class="ui-field ui-field--date"><label for="historyTo">To</label><input id="historyTo" type="date" name="to" value="{{ $filters['to'] ?? '' }}"></div>
+                <div class="ui-filter-buttons"><button type="submit" class="btn-primary">Apply</button><a href="{{ route('session.history') }}" class="btn-secondary">Reset</a></div>
+            </form>
+            @if($errors->any())<p class="history-error" role="alert">{{ $errors->first() }}</p>@endif
 
-            @if(count($sessions) > 0)
+            @if($sessions->total() > 0)
                 <div class="table-container">
                     <table>
                         <thead>
                             <tr>
                                 <th>Session</th>
-                                <th>Date</th>
+                                <th>Date (PHT)</th>
                                 <th>Helper</th>
-                                <th class="hidden sm:table-cell">Mode</th>
-                                <th class="hidden sm:table-cell">Duration</th>
-                                <th>Rating</th>
+                                <th>Mode</th>
+                                <th>Duration</th>
+                                <th>Your rating</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -296,48 +305,29 @@
                             @foreach($sessions as $session)
                                 <tr>
                                     <td class="font-medium text-gray-800">{{ $session['id'] }}</td>
-                                    <td class="text-gray-600">{{ $session['date'] }}</td>
-                                    <td class="text-gray-600">{{ $session['helper'] }}</td>
-                                    <td class="text-gray-500 hidden sm:table-cell">{{ $session['mode'] }}</td>
-                                    <td class="text-gray-500 hidden sm:table-cell">{{ $session['duration'] }}</td>
-                                    <td>
-                                        <span class="stars">
-                                            @for($i = 1; $i <= 5; $i++)
-                                                @if($i <= $session['rating'])
-
-                                                @else
-
-                                                @endif
-                                            @endfor
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="status-badge {{ str_replace('_', '-', strtolower($session['status'])) }}">
-                                            {{ $session['status'] }}
-                                        </span>
-                                    </td>
+                                    <td>{{ $session['date'] }}</td>
+                                    <td>{{ $session['helper'] }}</td>
+                                    <td>{{ $session['mode'] }}</td>
+                                    <td>{{ $session['duration'] }}</td>
+                                    <td>{{ $session['rating'] }}</td>
+                                    <td><span class="status-badge {{ str_replace([' ', '_'], '-', strtolower($session['status'])) }}">{{ $session['status'] }}</span></td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
+                {{ $sessions->links() }}
+            @elseif(array_filter($filters))
+                <div class="empty-state"><h3>No sessions match these filters</h3><p>Change or reset the filters to see more sessions.</p></div>
             @else
-                <div class="text-center py-12">
-                    <h3 class="text-lg font-semibold text-gray-800">No sessions yet</h3>
-                    <p class="text-gray-500 text-sm mt-1">Your session history will appear here once you complete a session.</p>
-                    <a href="{{ route('request.screening') }}" class="inline-block mt-4 px-6 py-2 bg-green-500 text-white text-sm font-semibold rounded-full hover:bg-green-600 transition">
-                        Request Support
-                    </a>
+                <div class="empty-state">
+                    <h3>No sessions yet</h3>
+                    <p>Your session history will appear here once you complete a session.</p>
+                    <a href="{{ route('request.screening') }}" class="btn-primary" style="display:inline-flex;margin-top:12px;text-decoration:none">Request support</a>
                 </div>
             @endif
-
         </div>
 
-        <!-- Footer -->
-        <div class="mt-8 text-center text-sm text-gray-400 border-t border-gray-200 pt-6">
-
-            Every session is a step toward healing.
-        </div>
 
     </main>
 

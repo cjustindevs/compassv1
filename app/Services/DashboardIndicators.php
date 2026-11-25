@@ -46,7 +46,7 @@ class DashboardIndicators
             ?? Session::pendingForSeeker($user->helpSeeker->id)->where('is_test_record', false)->whereNull('duplicate_of_id')->with('queue')->first();
         $position = $current?->queue?->request_status === 'waiting' ? app(QueueManagementService::class)->position($current->queue) : null;
         return [
-            $this->textCard('Active request', $current?->status_label ?? 'None', $current ? 'Your current support request' : 'You have no open request', $current ? route('seeker.requests.show', $current) : null) + ['icon'=>'message'],
+            $this->textCard('Active request', $current?->status_label ?? '—', $current ? 'Your current support request' : 'You have no open request', $current ? route('seeker.requests.show', $current) : null) + ['icon'=>'message'],
             $this->textCard('Queue position', $position ? '#'.$position : '—', $position ? 'Follows priority and request time; it may change' : 'Shown while your request is waiting') + ['icon'=>'hourglass'],
             $this->card('Completed sessions', $period->constrain(clone $completed, 'end_time')->count(), 'Your sessions ending in selected period', link: route('session.history')) + ['icon'=>'check-circle'],
             $this->card('Feedback due', (clone $completed)->where('end_time', '<=', now())->whereDoesntHave('evaluation')->count(), 'All concluded sessions awaiting your feedback', link: route('session.history')) + ['task'=>true],

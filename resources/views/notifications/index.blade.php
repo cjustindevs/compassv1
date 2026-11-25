@@ -74,6 +74,26 @@
             .main-content { margin-left: 0; padding: 16px 16px 100px; }
             .filter-row { overflow-x: auto; }
         }
+    /* QA Nov 24: one toolbar, one panel, rows separated by lines, compact actions. */
+    .notif-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px}
+    .notif-segment{display:inline-flex;padding:3px;border:1px solid #dbe5df;border-radius:10px;background:#fff}
+    .notif-segment a{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-radius:8px;font-size:14px;font-weight:600;color:#475569;text-decoration:none}
+    .notif-segment a.active{background:#eaf8f0;color:#027039}
+    .notif-count{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#027039;color:#fff;font-size:11px}
+    .notif-type{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#475569}
+    .notif-type select{height:40px;min-width:180px;padding:0 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;font-size:14px}
+    .notif-panel{background:#fff;border:1px solid #e3ebe6;border-radius:16px;overflow:hidden}
+    .notif-panel .ui-notification-list{display:block}
+    .notif-panel .notif-card{border:0;border-bottom:1px solid #edf2ef;border-radius:0;padding:16px 20px;align-items:center}
+    .notif-panel .notif-card:hover{transform:none;box-shadow:none;background:#fafcfb}
+    .notif-panel .notif-card.unread{border-left:4px solid #04a052;background:#f4fbf7}
+    .notif-panel .empty-state{border:0;border-radius:0}
+    .notif-panel .ui-notification-footer{padding:12px 20px;border-top:1px solid #edf2ef}
+    .notif-panel .ui-notification-footer:empty{display:none}
+    .notif-type-badge{display:inline-flex;padding:2px 8px;border-radius:999px;background:#f1f5f9;color:#475569;font-size:12px;font-weight:600}
+    .notif-card .ui-notification-actions{display:flex;align-items:center;gap:8px;flex:none}
+    .notif-card .ui-notification-actions .link-btn,.notif-card .ui-notification-actions .delete-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;min-width:36px;padding:0 12px;border:1px solid #dbe5df;border-radius:10px;background:#fff;font-size:13px}
+    @media(max-width:640px){.notif-toolbar{align-items:stretch}.notif-segment,.notif-type{width:100%}.notif-segment a{flex:1;justify-content:center}.notif-type select{flex:1;min-width:0}.notif-panel .notif-card{flex-direction:column;align-items:stretch}.notif-card .ui-notification-actions{justify-content:flex-start}}
     .moderator-emergency-notification{border-left:4px solid #c34242!important}.moderator-emergency-notification h4{color:#982e2e}.notif-card .notif-content{min-width:0;overflow-wrap:anywhere}
 </style>
     @vite(['resources/css/app.css'])
@@ -115,19 +135,24 @@
             @endif
         </div>
 
-        <!-- Type filters -->
-        <div class="flex items-center gap-2 mb-6 filter-row ui-notification-toolbar">
-            <a href="{{ route('notifications') }}" class="filter-btn {{ $activeType === null ? 'active' : '' }}">
-                <x-ui-icon name="list"  /> All
-            </a>
-            @foreach($types as $slug => $meta)
-                <a href="{{ route('notifications', ['type' => $slug]) }}" class="filter-btn {{ $activeType === $slug ? 'active' : '' }}">
-                    <span><x-ui-icon :value="$meta['icon']" /></span> {{ $meta['label'] }}
-                </a>
-            @endforeach
-        </div>
+        <!-- Filters (QA Nov 24): read state and type in one compact toolbar -->
+        <form method="GET" action="{{ route('notifications') }}" class="notif-toolbar" aria-label="Filter notifications">
+            <div class="notif-segment" role="group" aria-label="Show">
+                <a href="{{ route('notifications', array_filter(['type' => $activeType])) }}" @class(['active' => ! ($activeStatus ?? null)]) @if(! ($activeStatus ?? null)) aria-current="page" @endif>All</a>
+                <a href="{{ route('notifications', array_filter(['type' => $activeType, 'status' => 'unread'])) }}" @class(['active' => ($activeStatus ?? null) === 'unread']) @if(($activeStatus ?? null) === 'unread') aria-current="page" @endif>Unread @if($unreadCount > 0)<span class="notif-count">{{ $unreadCount }}</span>@endif</a>
+            </div>
+            @if($activeStatus ?? null)<input type="hidden" name="status" value="{{ $activeStatus }}">@endif
+            <label class="notif-type" for="notifType"><span>Type</span>
+                <select id="notifType" name="type" onchange="this.form.submit()">
+                    <option value="">All types</option>
+                    @foreach($types as $slug => $meta)<option value="{{ $slug }}" @selected($activeType === $slug)>{{ $meta['label'] }}</option>@endforeach
+                </select>
+            </label>
+            <noscript><button type="submit" class="btn-secondary">Apply</button></noscript>
+        </form>
 
         <!-- Notification list -->
+        <section class="notif-panel" aria-label="Notifications">
         <div id="notifList" class="ui-notification-list">
             @php($emergencyCopy = app(\App\Services\EmergencyNotificationPresentation::class))
             @forelse($notifications as $notification)
@@ -138,24 +163,21 @@
                         <p class="text-sm text-gray-500 mt-1">@if(auth()->user()->role === 'moderator'){{ \Illuminate\Support\Str::limit($notification->notification_type === 'emergency' ? strip_tags($copy['message']) : preg_split('/(?<=[.!?])\s+/', strip_tags($copy['message']), 2)[0], 180) }}@else{{ $copy['message'] }}@endif</p>
                         <div class="flex items-center gap-4 mt-2">
                             <span class="text-xs text-gray-400">{{ auth()->user()->role === 'moderator' ? $notification->created_at->copy()->timezone('Asia/Manila')->format('M j, Y g:i A').' PHT' : $notification->created_at->diffForHumans() }}</span>
-                            <span class="text-[11px] uppercase font-bold tracking-wide
-                                {{ $notification->notification_type === 'session' ? 'text-blue-500' : ($notification->notification_type === 'reminder' ? 'text-amber-500' : ($notification->notification_type === 'update' ? 'text-purple-500' : 'text-[#04A052]')) }}">
-                                {{ $types[$notification->notification_type]['label'] ?? ucfirst($notification->notification_type ?? 'System') }}
-                            </span>
+                            <span class="notif-type-badge">{{ $types[$notification->notification_type]['label'] ?? ucfirst($notification->notification_type ?? 'System') }}</span>
                         </div>
                     </div>
                     <div class="ui-notification-actions">
                         @if(! $notification->is_read && $notification->link)
                             <button class="link-btn" data-link="{{ $notification->link }}" onclick="markRead({{ $notification->id }}, true)">
-                                <x-ui-icon name="arrow-right" class="mr-1" />Open &amp; mark as read
+                                <x-ui-icon name="arrow-right" class="mr-1" />Open
                             </button>
                         @endif
                         @if(! $notification->is_read)
-                            <button class="link-btn" onclick="markRead({{ $notification->id }}, false)" title="Mark as read">
+                            <button class="link-btn" onclick="markRead({{ $notification->id }}, false)" title="Mark as read" aria-label="Mark as read" data-tooltip="Mark as read">
                                 <x-ui-icon name="check"  />
                             </button>
                         @endif
-                        <button class="delete-btn" onclick="deleteNotif({{ $notification->id }})" title="Archive">
+                        <button class="delete-btn" onclick="deleteNotif({{ $notification->id }})" title="Archive" aria-label="Archive" data-tooltip="Archive">
                             <x-ui-icon name="archive"  />
                         </button>
                     </div>
@@ -163,7 +185,9 @@
             @empty
                 <div class="empty-state">
                     <h3 class="text-lg font-semibold text-gray-800">
-                        @if($activeType)
+                        @if($activeStatus ?? null)
+                            No unread notifications
+                        @elseif($activeType)
                             No {{ strtolower($types[$activeType]['label']) }} notifications
                         @else
                             No notifications yet
@@ -174,6 +198,7 @@
             @endforelse
         </div>
         <div class="ui-notification-footer">{{ $notifications->links('vendor.pagination.compass', ['noun' => 'notifications']) }}</div>
+        </section>
 
 
     </main>

@@ -176,7 +176,7 @@ class RoleKpiTest extends TestCase
     {
         $done = $this->supportCase($this->helper());
         $cards = collect(app(\App\Services\DashboardIndicators::class)->seeker($done->seeker->user, AnalyticsPeriod::fromRequest(Request::create('/', 'GET'))))->keyBy('label');
-        $this->assertSame('None', $cards['Active request']['value']);
+        $this->assertSame('—', $cards['Active request']['value'], 'QA Nov 24: a dash like Queue position, not None.');
         $this->assertSame('—', $cards['Queue position']['value']);
     }
 

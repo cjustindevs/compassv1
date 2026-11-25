@@ -31,11 +31,14 @@ class NotificationController extends Controller
      */
     public function index(Request $request): View
     {
-        $type = $request->query('type');
+        $type = $request->query('type') ?: null;
         abort_unless($type === null || array_key_exists($type, static::TYPES), 404);
+        $status = $request->query('status') ?: null;
+        abort_unless($status === null || $status === 'unread', 404);
 
         $notifications = Notification::where('user_account_id', Auth::id())
             ->ofType($type)
+            ->when($status === 'unread', fn ($query) => $query->unread())
             ->latest()->latest('id')
             ->paginate(15)->withQueryString();
 
@@ -48,6 +51,7 @@ class NotificationController extends Controller
             'notifications' => $notifications,
             'unreadCount' => $unreadCount,
             'activeType' => $type,
+            'activeStatus' => $status,
             'types' => static::TYPES,
         ]);
     }

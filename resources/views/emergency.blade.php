@@ -157,7 +157,6 @@
 @section('content')
 <div class="emg-page">
 
-    <span class="emg-eyebrow"> Emergency</span>
     <h1 class="emg-title">Emergency support</h1>
     <p class="emg-lede">
         If there is an immediate threat to safety, contact an appropriate emergency service or seek help
