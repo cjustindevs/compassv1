@@ -645,7 +645,7 @@
                 <div class="actions-compact request-one-page-actions">
                     <button type="button" data-open-seeker-consent class="btn-outline">Terms and Privacy</button>
                     <button type="submit" class="btn-primary w-full sm:w-auto">
-                        Start <span data-start-label>chatting</span> <x-ui-icon name="arrow-right"  />
+                        <span>Start <span data-start-label>chatting</span></span> <x-ui-icon name="arrow-right"  />
                     </button>
                 </div>
 

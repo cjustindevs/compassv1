@@ -175,14 +175,30 @@
 .compass-ui .landing-page .landing-quote p { margin: 0; font-size: 18px; line-height: 1.55; font-weight: 500; letter-spacing: -.01em; }
 .compass-ui .landing-page .landing-quote footer { margin-top: auto; font-size: 12px; color: #b8d7bd; }
 @media (max-width: 1023px) {
-    .compass-ui .landing-page .landing-timeline { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 28px; }
-    .compass-ui .landing-page .landing-timeline::before { display: none; }
+    /* Tablets and phones: the history reads top to bottom along one joined line. */
+    .compass-ui .landing-page .landing-timeline { grid-template-columns: minmax(0, 1fr); margin-top: 4px; }
+    .compass-ui .landing-page .landing-timeline::before { left: 7px; right: auto; top: 6px; bottom: 30px; width: 3px; height: auto; background: linear-gradient(180deg, #7b4fd0, #04a052 40%, #087341); }
+    .compass-ui .landing-page .landing-timeline li { padding: 0 0 26px 34px; }
+    .compass-ui .landing-page .landing-timeline li:last-child { padding-bottom: 0; }
     .compass-ui .landing-page .landing-about-lower { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 480px) {
-    .compass-ui .landing-page .landing-timeline { grid-template-columns: minmax(0, 1fr); }
+    /* Wrapped lines lose their inline divider instead of showing a stray bar. */
+    .compass-ui .landing-page .landing-hero-copy .landing-eyebrow span { flex-basis: 100%; border-left: 0; padding-left: 0; }
+    .compass-ui .landing-page .landing-trust { flex-direction: column; gap: 6px; }
+    .compass-ui .landing-page .landing-trust li + li { border-left: 0; padding-left: 0; }
     .compass-ui .landing-page .landing-stats > div { padding: 18px; }
     .compass-ui .landing-page .landing-stats dd { font-size: 28px; }
     .compass-ui .landing-page .landing-quote { padding: 24px; }
     .compass-ui .landing-page .landing-quote p { font-size: 16px; }
+}
+@media (max-width: 360px) {
+    /* Smallest phones: logo, Get started and menu fit on one line. */
+    .compass-ui .landing-page .landing-nav { gap: 6px; }
+    .compass-ui .landing-page .landing-brand .pdaf-lockup { gap: 7px; }
+    .compass-ui .landing-page .landing-brand .pdaf-lockup-seal img { width: 32px; height: 32px; }
+    .compass-ui .landing-page .landing-brand .pdaf-lockup-words img { width: 96px; }
+    .compass-ui .landing-page .landing-nav-actions { gap: 6px; }
+    .compass-ui .landing-page .landing-nav .btn-primary { padding: 9px 10px; }
+    .compass-ui .landing-page .landing-menu-toggle { width: 40px; height: 40px; }
 }

@@ -129,3 +129,22 @@
     .request-one-page-actions { flex-direction:column-reverse; align-items:stretch; }
     .request-one-page-actions .btn-outline { width:100%; }
 }
+
+/* One-page request: small-screen fixes. */
+.request-one-page .request-safety-question .request-block-title { display: block; }
+.request-one-page .safety-buttons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.request-one-page .safety-btn, .request-one-page .safety-btn label { height: 100%; }
+.request-one-page .safety-btn label { display: flex; align-items: center; justify-content: center; text-align: center; }
+.compass-ui .request-flow-compact .request-one-page .request-one-page-actions { flex-direction: row; align-items: center; }
+.compass-ui .request-flow-compact .request-one-page .request-one-page-actions > .btn-outline,
+.compass-ui .request-flow-compact .request-one-page .request-one-page-actions > .btn-primary { width: auto; }
+@media (max-width: 480px) {
+    .compass-ui .request-flow-compact .request-one-page .request-one-page-actions { flex-direction: column-reverse; align-items: stretch; }
+    .compass-ui .request-flow-compact .request-one-page .request-one-page-actions > .btn-outline,
+    .compass-ui .request-flow-compact .request-one-page .request-one-page-actions > .btn-primary { width: 100%; }
+}
+@media (max-width: 400px) {
+    .request-one-page .safety-buttons { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .request-one-page .safety-btn:last-child { grid-column: 1 / -1; }
+    .request-flow-compact h1 { font-size: 20px; }
+}
