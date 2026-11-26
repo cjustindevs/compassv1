@@ -12,10 +12,10 @@
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --green-50: #F1F8E6;
-            --green-500: #4E9A2A;
-            --green-600: #3F7F22;
-            --green-700: #2b6619;
+            --green-50: #EAF8F0;
+            --green-500: #04A052;
+            --green-600: #038A45;
+            --green-700: #027039;
             --gray-50: #F9FAFB;
             --gray-100: #F3F4F6;
             --gray-200: #E5E7EB;
@@ -227,7 +227,7 @@
                 <p class="text-xs text-gray-400">
 
                     Fine-grained notification preferences are managed from the general
-                    <a href="{{ route('settings') }}" class="text-[#4E9A2A] font-semibold hover:underline">account settings</a> page.
+                    <a href="{{ route('settings') }}" class="text-[#04A052] font-semibold hover:underline">account settings</a> page.
                     Professional alerts (referrals, case updates) are always delivered in-app.
                 </p>
             </div>

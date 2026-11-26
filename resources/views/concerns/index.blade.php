@@ -74,7 +74,7 @@
 .compass-ui .concern-management .ui-table :is(th,td):last-child{text-align:right}
 .concern-management tr[hidden]{display:none}
 .concern-management .ui-field textarea{padding:12px;font-size:15px;border:1px solid var(--compass-border,#e5e7eb);border-radius:12px;background:#fff;resize:vertical;font-family:inherit}
-.concern-management .ui-field textarea:focus-visible{outline:none;box-shadow:var(--ring,0 0 0 3px rgba(78, 154, 42,.25))}
+.concern-management .ui-field textarea:focus-visible{outline:none;box-shadow:var(--ring,0 0 0 3px rgba(4,160,82,.25))}
 .concern-management .ui-field{min-width:0}
 .concern-management .concern-edit summary{cursor:pointer;list-style:none;display:inline-flex}
 .concern-management .concern-edit summary::-webkit-details-marker{display:none}

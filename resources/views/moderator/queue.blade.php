@@ -7,7 +7,7 @@
     @vite(['resources/js/moderator-notifications.js'])
     <style>
         .queue-flash { border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
-        .queue-flash.success { background: #F1F8E6; color: #2b6619; border: 1px solid #DDEFC6; }
+        .queue-flash.success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; }
         .queue-flash.error { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
         .queue-stats { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 32px; font-size: 15px; color: var(--compass-muted, #6B7280); }
         .queue-stats strong { font-size: 24px; font-weight: 800; color: var(--compass-text, #1F2937); margin-left: 6px; }
@@ -20,7 +20,7 @@
         .queue-actions-cell { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; }
         .queue-actions-cell form { margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .assign-select { min-height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--compass-border, #E5E7EB); font-size: 15px; background: var(--bg-card, #fff); color: var(--compass-text, #1F2937); min-width: 170px; max-width: 100%; }
-        .assign-select:focus { outline: 2px solid var(--compass-green, #4E9A2A); outline-offset: 1px; }
+        .assign-select:focus { outline: 2px solid var(--compass-green, #04A052); outline-offset: 1px; }
         .assign-form, .reassign-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
         .assign-form .assign-select, .reassign-form .assign-select { width: 100%; }
         [data-helper-reason] { display: block; max-width: 340px; white-space: normal; font-size: 13px; color: var(--compass-muted, #6B7280); }

@@ -45,7 +45,7 @@
 .eligibility-check header { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .eligibility-check h3 { margin: 0; font-size: 14px; font-weight: 700; color: #163b2d; }
 .ec-badge { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; }
-.ec-badge.is-ok { background: #ecf6e7; color: #2b5815; }
+.ec-badge.is-ok { background: #e7f6ee; color: #05683a; }
 .ec-badge.is-blocked { background: #fff4e0; color: #8a5300; }
 .ec-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px 18px; }
 .ec-list li { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; padding: 4px 0; }
@@ -54,6 +54,6 @@
 .is-blocked > .ec-mark { background: #d03b3b; }
 .ec-text strong { color: #163b2d; font-weight: 600; }
 .ec-text small { display: block; color: #8a3b30; font-size: 12px; line-height: 1.45; margin-top: 2px; }
-.ec-text small a { color: #2b5815; font-weight: 600; }
+.ec-text small a { color: #05683a; font-weight: 600; }
 </style>
 @endonce

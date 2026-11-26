@@ -30,7 +30,7 @@
     }
     #{{ $identityDialogId }} .rv-modal__eyebrow {
         display: inline-flex; align-items: center; gap: 6px; margin: 0 0 6px;
-        font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #2b6619;
+        font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #027039;
     }
     #{{ $identityDialogId }} h2 { margin: 0; font-size: 18px; font-weight: 700; line-height: 1.3; }
     #{{ $identityDialogId }} .rv-modal__sub { margin: 5px 0 0; font-size: 13px; line-height: 1.6; color: #64748b; }
@@ -48,10 +48,10 @@
         background: #e2e8f0; color: #fff; font-size: 11px; font-weight: 700;
         display: grid; place-items: center;
     }
-    #{{ $identityDialogId }} .rv-steps li[data-done] { color: #2b6619; }
-    #{{ $identityDialogId }} .rv-steps li[data-done]::before { content: '\f00c'; background: #4e9a2a; }
+    #{{ $identityDialogId }} .rv-steps li[data-done] { color: #027039; }
+    #{{ $identityDialogId }} .rv-steps li[data-done]::before { content: '\f00c'; background: #04a052; }
     #{{ $identityDialogId }} .rv-steps li[data-current] { color: #163b2d; font-weight: 600; }
-    #{{ $identityDialogId }} .rv-steps li[data-current]::before { content: '\f111'; background: #4e9a2a; }
+    #{{ $identityDialogId }} .rv-steps li[data-current]::before { content: '\f111'; background: #04a052; }
     #{{ $identityDialogId }} .rv-steps li:not(:last-child)::after { content: ''; width: 18px; height: 1px; background: #e2e8f0; }
     #{{ $identityDialogId }} .rv-card {
         border: 1px solid #e5e7eb; border-radius: 14px; padding: 14px 16px; margin: 0 0 14px; background: #fbfdfc;
@@ -60,14 +60,14 @@
         display: flex; align-items: center; gap: 7px; margin: 0 0 8px;
         font-size: 13px; font-weight: 700; color: #163b2d;
     }
-    #{{ $identityDialogId }} .rv-card h3 :is(i, .compass-icon) { color: #4e9a2a; }
+    #{{ $identityDialogId }} .rv-card h3 :is(i, .compass-icon) { color: #04a052; }
     #{{ $identityDialogId }} .rv-consent-terms__list { margin: 0; padding-left: 18px; }
     #{{ $identityDialogId }} .rv-consent-terms__list li { font-size: 13px; line-height: 1.7; color: #475569; margin-bottom: 5px; }
     #{{ $identityDialogId }} .rv-consent-terms__list li:last-child { margin-bottom: 0; }
     #{{ $identityDialogId }} .rv-consent-terms__list strong { color: #163b2d; }
     #{{ $identityDialogId }} .rv-facts { display: grid; gap: 8px; margin: 0; }
     #{{ $identityDialogId }} .rv-facts div { display: flex; gap: 9px; font-size: 13px; line-height: 1.6; color: #475569; }
-    #{{ $identityDialogId }} .rv-facts :is(i, .compass-icon) { color: #4e9a2a; margin-top: 3px; flex-shrink: 0; }
+    #{{ $identityDialogId }} .rv-facts :is(i, .compass-icon) { color: #04a052; margin-top: 3px; flex-shrink: 0; }
     #{{ $identityDialogId }} fieldset { border: 0; padding: 0; margin: 0 0 14px; }
     #{{ $identityDialogId }} legend { padding: 0; font-size: 13px; font-weight: 700; color: #163b2d; margin-bottom: 4px; }
     #{{ $identityDialogId }} .rv-hint { margin: 0 0 12px; font-size: 12px; line-height: 1.6; color: #64748b; }
@@ -79,21 +79,21 @@
         width: 100%; box-sizing: border-box; padding: 10px 12px; font-size: 14px; font-family: inherit; color: #163b2d;
         background: #fff; border: 1px solid #d1d5db; border-radius: 10px; transition: border-color .15s ease, box-shadow .15s ease;
     }
-    #{{ $identityDialogId }} .rv-field input:focus { outline: none; border-color: #4e9a2a; box-shadow: 0 0 0 3px rgba(78, 154, 42, .18); }
+    #{{ $identityDialogId }} .rv-field input:focus { outline: none; border-color: #04a052; box-shadow: 0 0 0 3px rgba(4, 160, 82, .18); }
     #{{ $identityDialogId }} .rv-field input[aria-invalid="true"] { border-color: #dc2626; }
     #{{ $identityDialogId }} .rv-field .rv-error { display: none; margin: 5px 0 0; font-size: 12px; color: #b91c1c; }
     #{{ $identityDialogId }} .rv-field .rv-error[data-shown] { display: block; }
     #{{ $identityDialogId }} .rv-consent {
         display: flex; gap: 11px; align-items: flex-start; padding: 14px 16px; cursor: pointer;
-        background: #f1f8e6; border: 1px solid #ddefc6; border-radius: 14px;
+        background: #eaf8f0; border: 1px solid #d0f0d8; border-radius: 14px;
         font-size: 13px; line-height: 1.65; color: #163b2d;
     }
-    #{{ $identityDialogId }} .rv-consent input { margin: 2px 0 0; width: 17px; height: 17px; flex-shrink: 0; accent-color: #4e9a2a; }
+    #{{ $identityDialogId }} .rv-consent input { margin: 2px 0 0; width: 17px; height: 17px; flex-shrink: 0; accent-color: #04a052; }
     #{{ $identityDialogId }} .rv-alert { margin: 12px 0 0; font-size: 13px; line-height: 1.6; color: #b91c1c; }
     #{{ $identityDialogId }} .rv-alert:empty { display: none; }
     #{{ $identityDialogId }} .rv-done { display: none; text-align: center; padding: 8px 0 4px; }
     #{{ $identityDialogId }} .rv-done[data-shown] { display: block; }
-    #{{ $identityDialogId }} .rv-done :is(i, .compass-icon) { font-size: 28px; color: #4e9a2a; margin-bottom: 12px; }
+    #{{ $identityDialogId }} .rv-done :is(i, .compass-icon) { font-size: 28px; color: #04a052; margin-bottom: 12px; }
     #{{ $identityDialogId }} .rv-done h3 { margin: 0 0 6px; font-size: 16px; font-weight: 700; }
     #{{ $identityDialogId }} .rv-done p { margin: 0; font-size: 13px; line-height: 1.7; color: #64748b; }
     #{{ $identityDialogId }} .rv-modal__foot {
@@ -103,13 +103,13 @@
     #{{ $identityDialogId }} .rv-btn {
         display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px;
         font-family: inherit; font-size: 13px; font-weight: 600; border-radius: 10px; cursor: pointer;
-        border: 1px solid #d8e5d1; background: #fff; color: #2b6619; transition: background .15s ease, border-color .15s ease;
+        border: 1px solid #d1e5d9; background: #fff; color: #027039; transition: background .15s ease, border-color .15s ease;
     }
     #{{ $identityDialogId }} .rv-btn:hover { background: #f1f5f3; }
-    #{{ $identityDialogId }} .rv-btn.primary { background: #4e9a2a; border-color: #4e9a2a; color: #fff; }
-    #{{ $identityDialogId }} .rv-btn.primary:hover { background: #3f7f22; }
+    #{{ $identityDialogId }} .rv-btn.primary { background: #04a052; border-color: #04a052; color: #fff; }
+    #{{ $identityDialogId }} .rv-btn.primary:hover { background: #038a45; }
     #{{ $identityDialogId }} .rv-btn:disabled { opacity: .55; cursor: not-allowed; }
-    #{{ $identityDialogId }} :focus-visible { outline: 3px solid #b5db80; outline-offset: 2px; }
+    #{{ $identityDialogId }} :focus-visible { outline: 3px solid #86efac; outline-offset: 2px; }
     @media (max-width: 480px) {
         #{{ $identityDialogId }} { width: calc(100vw - 16px); max-height: 92dvh; }
         #{{ $identityDialogId }} .rv-modal__body { max-height: 56dvh; }

@@ -40,7 +40,7 @@
 .compass-toast {
     position: relative; display: flex; align-items: flex-start; gap: 10px;
     padding: 12px 40px 12px 14px; border: 1px solid var(--compass-border, #e5e7eb);
-    border-left: 4px solid var(--compass-green, #4e9a2a); border-radius: 12px;
+    border-left: 4px solid var(--compass-green, #04a052); border-radius: 12px;
     background: #fff; color: var(--compass-text, #1f2937); box-shadow: 0 8px 24px rgb(22 59 45 / 14%);
     font: 500 13px/1.5 var(--compass-font, Inter, sans-serif); overflow-wrap: anywhere;
     animation: compass-toast-in .18s ease-out;
@@ -53,7 +53,7 @@
     width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent;
     color: var(--compass-muted, #6b7280); font-size: 18px; line-height: 1; cursor: pointer;
 }
-.compass-toast-close:hover { background: var(--compass-green-soft, #f1f8e6); }
+.compass-toast-close:hover { background: var(--compass-green-soft, #eaf8f0); }
 /* Legacy page flash alerts that were fixed to a corner join the stack instead. */
 .compass-toast-stack .flash-alert { position: static !important; inset: auto !important; margin: 0 !important; width: auto !important; max-width: none !important; }
 @keyframes compass-toast-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
@@ -85,15 +85,15 @@
 .compass-install-banner .compass-install-actions { display: flex; gap: 8px; }
 .compass-install-banner button {
     min-height: 40px; padding: 8px 16px; border-radius: 10px; font: 600 13px/1 var(--compass-font, Inter, sans-serif); cursor: pointer;
-    border: 1px solid var(--compass-border, #e5e7eb); background: #fff; color: var(--compass-green-dark, #2b6619);
+    border: 1px solid var(--compass-border, #e5e7eb); background: #fff; color: var(--compass-green-dark, #027039);
 }
-.compass-install-banner button.is-primary { background: var(--compass-green, #4e9a2a); border-color: var(--compass-green, #4e9a2a); color: #fff; }
+.compass-install-banner button.is-primary { background: var(--compass-green, #04a052); border-color: var(--compass-green, #04a052); color: #fff; }
 
 /* Sidebar "Install app" (visible only when the browser can install COMPASS). */
 .compass-ui .sidebar-install-btn {
     display: flex; align-items: center; justify-content: center; width: 100%; min-height: 38px; margin: 0 0 8px;
-    border: 1px dashed #cbe3bf; border-radius: 10px; background: var(--compass-green-soft, #f1f8e6);
-    color: var(--compass-green-dark, #2b6619); font: 600 13px/1.2 var(--compass-font, Inter, sans-serif); cursor: pointer;
+    border: 1px dashed #bfe3cf; border-radius: 10px; background: var(--compass-green-soft, #eaf8f0);
+    color: var(--compass-green-dark, #027039); font: 600 13px/1.2 var(--compass-font, Inter, sans-serif); cursor: pointer;
 }
 .compass-ui .sidebar-install-btn[hidden] { display: none; }
 .compass-ui .sidebar.collapsed .sidebar-install-btn { display: none; }
@@ -154,17 +154,17 @@
 /* ── Adviser screening review cards: one tidy info grid instead of loose rows ── */
 .compass-ui .screening-reviews .screening-review-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 24px; margin: 0; }
 .compass-ui .screening-reviews .screening-review-meta dt { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #7a8b82; margin-bottom: 4px; }
-.compass-ui .screening-reviews .screening-review-meta dd { margin: 0; font-size: 14px; font-weight: 600; color: #2f4225; }
+.compass-ui .screening-reviews .screening-review-meta dd { margin: 0; font-size: 14px; font-weight: 600; color: #26443a; }
 .compass-ui .screening-reviews .screening-review-meta dd small { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; color: #6b7b74; }
 .compass-ui .screening-reviews .screening-intake-answer { display: block; }
 .compass-ui .screening-reviews .screening-intake-answer strong { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; background: #f1f4f2; color: #354f41; }
 .compass-ui .screening-reviews .screening-intake-answer[data-safety-answer="yes"] strong { background: #fdecec; color: #a32626; }
-.compass-ui .screening-reviews .screening-intake-answer[data-safety-answer="no"] strong { background: #ecf6e7; color: #2b5815; }
+.compass-ui .screening-reviews .screening-intake-answer[data-safety-answer="no"] strong { background: #e7f6ee; color: #05683a; }
 .compass-ui .screening-reviews .screening-intake-answer[data-safety-answer="prefer_not_to_say"] strong { background: #fff4e0; color: #8a5300; }
 
 /* ── Dashboard "supporting metrics": a grid of small tiles inside one card ── */
 .co-overview .co-definitions { background: #fff; border: 1px solid #dfe9e3; border-radius: 14px; padding: 4px 18px; margin: 0 0 20px; }
-.co-overview .co-definitions > summary { padding: 12px 0; font-size: 14px; font-weight: 600; color: #31711d; }
+.co-overview .co-definitions > summary { padding: 12px 0; font-size: 14px; font-weight: 600; color: #087341; }
 .co-overview .co-definitions[open] > summary { border-bottom: 1px solid #edf2ef; margin-bottom: 4px; }
 .co-overview .co-secondary { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; padding: 12px 0 16px; }
 .co-overview .co-secondary > div { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 12px; border-radius: 10px; background: #f6faf7; font-size: 12px; min-width: 0; }

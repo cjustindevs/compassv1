@@ -72,8 +72,8 @@
 .hf-status {
     display:inline-flex;
     align-items:center;
-    background:#ecf8e6;
-    color:#346919;
+    background:#e6f8ed;
+    color:#087a42;
     padding:5px 10px;
     border-radius:5px;
     font-size:12px;
@@ -92,7 +92,7 @@
     color:#b52e2e
 }
 .hf-availability {
-    border-left:3px solid #3d7e1d!important
+    border-left:3px solid #009b50!important
 }
 .hf-availability strong {
     font-size:24px;
@@ -243,7 +243,7 @@
 .hf-score-value {
     font-size:28px;
     line-height:1.2;
-    color:#3d7e1d;
+    color:#009b50;
     font-weight:800
 }
 .hf-score-value small {
@@ -281,11 +281,11 @@
     border-radius:5px
 }
 .hf-page progress::-webkit-progress-value {
-    background:#3d7e1d;
+    background:#009b50;
     border-radius:5px
 }
 .hf-page progress::-moz-progress-bar {
-    background:#3d7e1d;
+    background:#009b50;
     border-radius:5px
 }
 .hf-chart {
@@ -324,7 +324,7 @@
     margin-top:12px
 }
 .hf-notification-unread {
-    border-left:3px solid #3d7e1d;
+    border-left:3px solid #009b50;
     padding-left:14px
 }
 .hf-notification p {
@@ -361,15 +361,15 @@
     color:#a4aea8
 }
 .hf-calendar-cell.today {
-    box-shadow:inset 0 0 0 2px #3d7e1d
+    box-shadow:inset 0 0 0 2px #009b50
 }
 .hf-calendar-cell strong {
     font-size:12px
 }
 .hf-calendar-event {
     display:block;
-    color:#306317;
-    background:#edf7e8;
+    color:#05753d;
+    background:#e8f7ee;
     padding:4px 6px;
     margin-top:5px;
     border-radius:4px;
@@ -516,9 +516,9 @@
 .skill-chip { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border: 1px solid #d6e2db; border-radius: 999px; background: #fff; color: #163b2d; font-size: 15px; font-weight: 600; cursor: pointer; user-select: none; }
 .skill-chip input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
 .skill-chips .skill-chip svg.skill-chip-check { display: none; width: 16px; height: 16px; }
-.skill-chip:hover { border-color: #4e9a2a; }
+.skill-chip:hover { border-color: #04a052; }
 .skill-chip:has(input:focus-visible) { outline: 3px solid rgb(4 160 82 / 35%); outline-offset: 2px; }
-.skill-chip:has(input:checked) { background: #f1f8e6; border-color: #4e9a2a; color: #2b6619; }
+.skill-chip:has(input:checked) { background: #eaf8f0; border-color: #04a052; color: #027039; }
 .skill-chips .skill-chip:has(input:checked) svg.skill-chip-check { display: inline-block; }
 
 /* Helper dashboard: the "why not eligible" checklist folds into one line. */

@@ -10,8 +10,8 @@
 // separate fixed set and always ship with a text label, never color alone.
 
 export const PALETTE = {
-    light: ['#38731B', '#2a78d6', '#eb6834', '#6250d6', '#eda100', '#e87ba4'],
-    dark: ['#499623', '#3987e5', '#d95926', '#9085e9', '#c98500', '#d55181'],
+    light: ['#078749', '#2a78d6', '#eb6834', '#6250d6', '#eda100', '#e87ba4'],
+    dark: ['#1f9a5c', '#3987e5', '#d95926', '#9085e9', '#c98500', '#d55181'],
 };
 
 export const STATUS = { good: '#0ca30c', warning: '#fab219', serious: '#ec835a', critical: '#d03b3b', neutral: '#94a3b8' };

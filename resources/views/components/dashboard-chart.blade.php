@@ -24,6 +24,6 @@
     ];
     if ($isScore) $spec['scale'] = $type === 'bar' ? [0, 5] : [1, 5];
     // Categories are not statuses: one brand green for every bar (QA), never the status colours.
-    if (str_contains($lower, 'categor') && $type === 'bar') $spec['datasets'][0]['colors'] = array_fill(0, count($values), '#31711d');
+    if (str_contains($lower, 'categor') && $type === 'bar') $spec['datasets'][0]['colors'] = array_fill(0, count($values), '#087341');
 @endphp
 <x-analytics-chart class="co-chart {{ $isTrend ? 'co-trend' : '' }}" :title="$title" :description="$caption" :chart="$spec" :definition="$chart['definition'] ?? null" />

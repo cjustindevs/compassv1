@@ -9,8 +9,8 @@
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --green-50: #F1F8E6; --green-100: #E4F2CF; --green-200: #C5E39A; --green-300: #A9D46E;
-            --green-400: #8CC13D; --green-500: #4E9A2A; --green-600: #3F7F22; --green-700: #2b6619;
+            --green-50: #EAF8F0; --green-100: #DCF5E0; --green-200: #A8E0B0; --green-300: #6DCB80;
+            --green-400: #30B650; --green-500: #04A052; --green-600: #038A45; --green-700: #027039;
             --green-800: #01562B; --gray-100: #F1F4F2; --gray-200: #E2E8E4; --gray-300: #CBD5CF;
             --gray-400: #94A39A; --gray-500: #64746B; --gray-600: #4B5B52; --gray-800: #163B2D;
             --card-bg: #ffffff; --page-bg: #F8FBF9;
@@ -27,7 +27,7 @@
         .sh-head p { font-size: 14px; color: var(--gray-500); margin-top: 4px; }
         .sh-search { display: flex; gap: 8px; flex: 0 1 420px; min-width: 240px; }
         .search-box { display: flex; align-items: center; background: var(--card-bg); border: 1px solid var(--gray-200); border-radius: 12px; padding: 10px 14px; flex: 1; }
-        .search-box:focus-within { border-color: var(--green-500); box-shadow: 0 0 0 4px rgba(78, 154, 42,.08); }
+        .search-box:focus-within { border-color: var(--green-500); box-shadow: 0 0 0 4px rgba(4,160,82,.08); }
         .search-box input { border: none; outline: none; background: transparent; flex: 1; font-size: 14px; color: var(--gray-800); width: 100%; }
         .link-btn { display: inline-flex; align-items: center; background: var(--card-bg); border: 1px solid var(--gray-200); border-radius: 12px; color: var(--gray-600); font-size: 13px; font-weight: 600; padding: 9px 14px; text-decoration: none; white-space: nowrap; }
         .link-btn:hover { border-color: var(--green-400); color: var(--green-700); }

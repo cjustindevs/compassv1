@@ -8,9 +8,9 @@
     <title>COMPASS – Register</title>
     <style>
         * { font-family: 'Inter', sans-serif; }
-        .gradient-bg { background: linear-gradient(135deg, #F3F9EA 0%, #E4F2CF 50%, #FFFFFF 100%); }
+        .gradient-bg { background: linear-gradient(135deg, #ECFDF5 0%, #DCFCE7 50%, #FFFFFF 100%); }
         .btn-primary {
-            background: linear-gradient(135deg, #3F7F22, #8CC13D);
+            background: linear-gradient(135deg, #16A34A, #22C55E);
             transition: all 0.3s ease;
             box-shadow: none;
         }
@@ -22,15 +22,15 @@
             transition: all 0.3s ease;
         }
         .btn-secondary:hover { background: #E5E7EB; transform: scale(1.02); }
-        .input-focus:focus { border-color: #3F7F22; box-shadow: 0 0 0 3px rgba(73, 150, 35, 0.15); }
-        .step-active { background: #3F7F22; color: white; border-color: #3F7F22; }
-        .step-done { background: #E4F2CF; color: #3F7F22; border-color: #3F7F22; }
+        .input-focus:focus { border-color: #16A34A; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15); }
+        .step-active { background: #16A34A; color: white; border-color: #16A34A; }
+        .step-done { background: #DCFCE7; color: #16A34A; border-color: #16A34A; }
         .step-inactive { background: #F3F4F6; color: #9CA3AF; border-color: #E5E7EB; }
         .fade-enter { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .otp-digit { width: 48px; height: 56px; text-align: center; font-size: 24px; font-weight: 700; border: 2px solid #E5E7EB; border-radius: 12px; outline: none; transition: border-color 0.2s; background: #FAFAFA; }
-        .otp-digit:focus { border-color: #3F7F22; box-shadow: 0 0 0 3px rgba(73, 150, 35, 0.15); background: white; }
-        .otp-digit.filled { border-color: #3F7F22; background: #F3F9EA; }
+        .otp-digit:focus { border-color: #16A34A; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15); background: white; }
+        .otp-digit.filled { border-color: #16A34A; background: #ECFDF5; }
         .card-shadow { box-shadow: 0 20px 60px rgba(0,0,0,0.06); }
         .otp-container { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
         .modal-overlay { position: fixed; inset: 0; z-index: 999; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
@@ -49,7 +49,7 @@
         .consent-step-text { max-height: 400px; overflow-y: auto; padding-right: 8px; }
         .consent-step-text::-webkit-scrollbar { width: 6px; }
         .consent-step-text::-webkit-scrollbar-track { background: #F3F4F6; border-radius: 4px; }
-        .consent-step-text::-webkit-scrollbar-thumb { background: #3F7F22; border-radius: 4px; }
+        .consent-step-text::-webkit-scrollbar-thumb { background: #16A34A; border-radius: 4px; }
 
         /* ─── Mobile responsiveness ─── */
         @media (max-width: 640px) {
@@ -281,7 +281,7 @@
                                     <li> Abusive, threatening, or harassing behavior may result in <strong>termination of access</strong>.</li>
                                 </ul>
 
-                                <p style="margin-top: 12px; font-weight: 600; color: #1D4A16;">
+                                <p style="margin-top: 12px; font-weight: 600; color: #14532D;">
                                      If you are in immediate danger, please use the Emergency Button or contact local crisis hotlines immediately.
                                 </p>
                             </div>

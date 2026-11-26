@@ -76,9 +76,9 @@
                         </div>
                         <div class="settings-accent-options" role="radiogroup" aria-label="Accent color">
                             @foreach ([
-                                'green' => ['Green', '#4e9a2a'],
+                                'green' => ['Green', '#04a052'],
                                 'cyan' => ['Cyan blue', '#2aa8ef'],
-                                'mint' => ['Secondary green', '#6ac53c'],
+                                'mint' => ['Secondary green', '#3cc568'],
                                 'orange' => ['Orange', '#f79009'],
                                 'red' => ['Red', '#e93e5b'],
                             ] as $value => [$label, $color])

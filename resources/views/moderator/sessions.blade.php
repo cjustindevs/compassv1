@@ -13,7 +13,7 @@
         .activity-item .icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; background: #F3F4F6; color: #374151; }
         .activity-item .icon.emergency { background: #FEF2F2; color: #B91C1C; }
         .activity-item .icon.assignment { background: #EFF6FF; color: #1D4ED8; }
-        .activity-item .icon.session { background: #F3F9EA; color: #31711D; }
+        .activity-item .icon.session { background: #F0FDF4; color: #15803D; }
         .activity-item .message { font-size: 15px; font-weight: 500; color: var(--compass-text, #1F2937); }
         .activity-item .time { font-size: 13px; color: var(--compass-muted, #6B7280); }
         .page-action-link { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }

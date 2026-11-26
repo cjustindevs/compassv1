@@ -48,15 +48,15 @@
         .admin-notifications .admin-section-heading h1{margin:0 0 4px;font-size:24px}
         .admin-notification-filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
         .admin-notification-filters a{padding:6px 12px;border:1px solid #dfe5ed;border-radius:999px;background:#fff;color:#334155;font-size:13px;text-decoration:none}
-        .admin-notification-filters a.is-active{background:#2b6619;border-color:#2b6619;color:#fff}
+        .admin-notification-filters a.is-active{background:#027039;border-color:#027039;color:#fff}
         .admin-notification-list{display:grid;gap:10px}
         .admin-notification{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:16px 18px;border:1px solid #e3e8ef;border-radius:12px;background:#fff}
-        .admin-notification.is-unread{border-left:3px solid #31711d;background:#f6fbf8}
+        .admin-notification.is-unread{border-left:3px solid #087341;background:#f6fbf8}
         .admin-notification-copy{min-width:0}
         .admin-notification-copy strong{display:flex;align-items:center;gap:8px;font-size:14px;color:#163b2d}
         .admin-notification-copy p{margin:4px 0;font-size:14px;color:#334155}
         .admin-notification-copy small{font-size:12px;color:#566170}
-        .admin-notification-dot{width:8px;height:8px;border-radius:50%;background:#31711d;flex:none}
+        .admin-notification-dot{width:8px;height:8px;border-radius:50%;background:#087341;flex:none}
         .admin-notification-actions{display:flex;flex-wrap:wrap;gap:8px;flex:none}
         @media(max-width:640px){.admin-notification,.admin-notifications .admin-section-heading{flex-direction:column}}
     </style>

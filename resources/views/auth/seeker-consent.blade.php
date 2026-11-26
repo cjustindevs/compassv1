@@ -26,8 +26,8 @@
 @push('styles')
 <style>
 .consent-option { display:flex; align-items:flex-start; gap:14px; padding:16px; border:1px solid #e5e7eb; border-radius:12px; cursor:pointer; }
-.consent-option:has(input:checked) { background:#f3f9ea; border-color:#b5db80; }
-.consent-option:focus-within { outline:2px solid #3f7f22; outline-offset:2px; }
-.consent-option input { margin-top:3px; width:18px; height:18px; flex-shrink:0; accent-color:#31711d; }
+.consent-option:has(input:checked) { background:#f0fdf4; border-color:#86efac; }
+.consent-option:focus-within { outline:2px solid #16a34a; outline-offset:2px; }
+.consent-option input { margin-top:3px; width:18px; height:18px; flex-shrink:0; accent-color:#15803d; }
 </style>
 @endpush

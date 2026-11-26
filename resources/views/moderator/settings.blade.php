@@ -6,28 +6,28 @@
     <meta name="user-id" content="{{ auth()->id() }}">
     @vite(['resources/js/moderator-notifications.js'])
     <style>
-        .settings-flash { border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; background: #F1F8E6; color: #2b6619; border: 1px solid #DDEFC6; }
+        .settings-flash { border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; }
         .settings-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 16px; }
         @media (min-width: 769px) { .settings-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         .form-label { display: block; font-weight: 600; font-size: 14px; color: var(--compass-text, #374151); margin-bottom: 6px; }
         .form-input { width: 100%; min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--compass-border, #E5E7EB); font-size: 15px; background: var(--bg-card, #fff); }
-        .form-input:focus { outline: 2px solid var(--compass-green, #4E9A2A); outline-offset: 1px; }
+        .form-input:focus { outline: 2px solid var(--compass-green, #04A052); outline-offset: 1px; }
         .form-input.error { border-color: #DC2626; }
         .error-text { font-size: 13px; color: #DC2626; margin-top: 4px; }
         .toggle { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
         .toggle input { opacity: 0; width: 0; height: 0; }
         .toggle .slider { position: absolute; cursor: pointer; inset: 0; background: var(--compass-border, #E5E7EB); border-radius: 24px; transition: 0.3s; }
         .toggle .slider:before { content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
-        .toggle input:checked + .slider { background: var(--compass-green, #4E9A2A); }
+        .toggle input:checked + .slider { background: var(--compass-green, #04A052); }
         .toggle input:checked + .slider:before { transform: translateX(20px); }
-        .toggle input:focus-visible + .slider { outline: 2px solid var(--compass-green, #4E9A2A); outline-offset: 2px; }
+        .toggle input:focus-visible + .slider { outline: 2px solid var(--compass-green, #04A052); outline-offset: 2px; }
         .pref-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--compass-divider, #F3F4F6); }
         .pref-row p { margin: 0; }
         .pref-row .pref-label { font-size: 15px; font-weight: 600; color: var(--compass-text, #374151); }
         .pref-row .pref-desc { font-size: 13px; color: var(--compass-muted, #6B7280); }
         .radio-group { display: flex; gap: 10px; }
         .radio-option { flex: 1; border: 1px solid var(--compass-border, #E5E7EB); border-radius: 14px; padding: 12px; text-align: center; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--compass-muted, #6B7280); }
-        .radio-option.selected { border-color: var(--compass-green, #4E9A2A); background: #F1F8E6; color: #2b6619; }
+        .radio-option.selected { border-color: var(--compass-green, #04A052); background: #EAF8F0; color: #027039; }
     </style>
 @endpush
 

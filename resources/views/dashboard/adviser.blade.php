@@ -87,7 +87,7 @@
 .av-timeline{list-style:none;margin:0;padding:0;display:grid;gap:2px}
 .av-timeline-item{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 0;border-top:1px solid #edf0ee}
 .av-timeline-item:first-child{border-top:0}
-.av-timeline-icon{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:999px;background:#f2fbee;color:#31711d}
+.av-timeline-icon{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:999px;background:#ecfdf3;color:#087341}
 .av-timeline-icon .compass-icon{width:16px;height:16px}
 .av-timeline-item--emergency .av-timeline-icon{background:#fef2f2;color:#b91c1c}
 .av-timeline-item--referral .av-timeline-icon{background:#eff6ff;color:#1d4ed8}

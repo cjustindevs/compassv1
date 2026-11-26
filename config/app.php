@@ -70,7 +70,7 @@ return [
         'project' => 'Project Dial-A-Friend',
         'institution' => 'Divine Word College of Calapan',
         'tagline' => 'Connect. Guide. Support.',
-        'theme_color' => '#4E9A2A',
+        'theme_color' => '#04A052',
         'assets' => [
             'logo_light' => '/images/compass/logo-light.png',
             'logo_dark' => '/images/compass/logo-dark.png',

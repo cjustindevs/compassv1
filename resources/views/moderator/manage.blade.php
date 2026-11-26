@@ -7,20 +7,20 @@
     @vite(['resources/js/moderator-notifications.js'])
     <style>
         .manage-flash { border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
-        .manage-flash.success { background: #F1F8E6; color: #2b6619; border: 1px solid #DDEFC6; }
+        .manage-flash.success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; }
         .manage-flash.error { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
         .manage-columns { display: grid; grid-template-columns: 1fr; gap: 0 24px; align-items: start; margin-bottom: 24px; }
         .manage-columns > .ui-card { margin-bottom: 0; }
         @media (min-width: 1024px) { .manage-columns { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); } }
         .adviser-card { display: block; border: 1px solid var(--compass-border, #E5E7EB); border-radius: 16px; padding: 16px; margin-bottom: 12px; text-decoration: none; color: inherit; }
-        .adviser-card:hover, .adviser-card.selected { border-color: var(--compass-green, #4E9A2A); }
-        .adviser-card.selected { background: var(--compass-green-soft, #F3F9EA); }
+        .adviser-card:hover, .adviser-card.selected { border-color: var(--compass-green, #04A052); }
+        .adviser-card.selected { background: var(--compass-green-soft, #F0FDF4); }
         .adviser-card .ui-list-row { padding: 0; border-bottom: 0; }
         .adviser-card .ui-list-row { flex-wrap: nowrap; } .adviser-card .ui-list-side { width: auto; }
         .adviser-chevron { color: var(--compass-muted, #6B7280); flex-shrink: 0; }
         .slot-bar { display: flex; gap: 4px; margin-top: 12px; }
         .slot { flex: 1; height: 6px; border-radius: 3px; background: #E5E7EB; }
-        .slot.filled { background: var(--compass-green, #4E9A2A); }
+        .slot.filled { background: var(--compass-green, #04A052); }
         .workspace-sub { font-size: 15px; color: var(--compass-muted, #6B7280); margin: 0 0 8px; }
         .workspace-sub strong { color: var(--compass-text, #1F2937); }
         .workspace-section { margin-top: 24px; }
@@ -28,18 +28,18 @@
         .btn-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 18px; border-radius: 999px; font-size: 15px; font-weight: 600; cursor: pointer; text-decoration: none; }
         .btn-pill-outline { background: var(--bg-card, #fff); color: var(--compass-text, #1F2937); border: 1px solid var(--compass-border, #E5E7EB); }
         .btn-pill-outline:hover { border-color: #DC2626; color: #B91C1C; }
-        .btn-pill-primary { background: var(--compass-green, #4E9A2A); color: #fff; border: 1px solid var(--compass-green, #4E9A2A); }
-        .btn-pill-primary:hover:not(:disabled) { background: var(--compass-green-dark, #2b6619); }
+        .btn-pill-primary { background: var(--compass-green, #04A052); color: #fff; border: 1px solid var(--compass-green, #04A052); }
+        .btn-pill-primary:hover:not(:disabled) { background: var(--compass-green-dark, #027039); }
         .btn-pill:disabled { opacity: .5; cursor: not-allowed; }
         .ui-list-actions form { margin: 0; }
         .status-pill { display: inline-block; font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 999px; white-space: nowrap; }
-        .status-pill.available { background: #E4F2CF; color: #275a18; }
+        .status-pill.available { background: #DCFCE7; color: #166534; }
         .status-pill.offline { background: #F3F4F6; color: #4B5563; }
         .helpers-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
         .helpers-tools a { font-size: 14px; color: var(--compass-muted, #6B7280); text-decoration: none; }
         .helpers-tools a:hover { color: var(--compass-text, #1F2937); }
         .helpers-tools input[type="text"] { min-height: 44px; width: 220px; max-width: 100%; border: 1px solid var(--compass-border, #E5E7EB); border-radius: 999px; padding: 0 16px; font-size: 15px; background: var(--bg-card, #fff); }
-        .helpers-tools input[type="text"]:focus { outline: 2px solid var(--compass-green, #4E9A2A); outline-offset: 1px; }
+        .helpers-tools input[type="text"]:focus { outline: 2px solid var(--compass-green, #04A052); outline-offset: 1px; }
         .ui-table td small { display: block; font-size: 13px; color: var(--compass-muted, #6B7280); }
         .assign-inline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .assign-inline select { min-height: 44px; border: 1px solid var(--compass-border, #E5E7EB); border-radius: 12px; padding: 0 12px; font-size: 15px; background: var(--bg-card, #fff); max-width: 100%; }

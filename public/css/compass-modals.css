@@ -12,7 +12,7 @@
     --cm-radius: 20px;
     --cm-shadow: 0 24px 48px -12px rgba(16, 42, 30, .28), 0 2px 6px rgba(16, 42, 30, .06);
     --cm-backdrop: rgba(12, 30, 22, .48);
-    --cm-green: #2b6619;
+    --cm-green: #027039;
     --cm-green-hover: #01562b;
     --cm-red: #b91c1c;
     --cm-red-hover: #991b1b;
@@ -40,7 +40,7 @@ dialog.cm-dialog--wide { width: min(560px, calc(100vw - 32px)); }
 .cm-scroll { overflow-y: auto; min-height: 0; flex: 1 1 auto; }
 .cm-head { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 16px; align-items: start; padding: 24px 24px 20px; }
 .cm-head--plain { grid-template-columns: minmax(0, 1fr); }
-.cm-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: #ebf6e6; color: #31711d; box-shadow: 0 0 0 6px #f3fbf6; }
+.cm-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: #e6f6ec; color: #087341; box-shadow: 0 0 0 6px #f3fbf6; }
 .cm-icon .compass-icon, .cm-icon svg { width: 24px; height: 24px; }
 .cm-title { margin: 2px 0 6px !important; font-size: 18px !important; line-height: 1.35 !important; font-weight: 700 !important; color: var(--cm-ink) !important; }
 .cm-dialog .cm-text { margin: 0; font-size: 14px; line-height: 1.6; color: var(--cm-text); }
@@ -66,7 +66,7 @@ dialog.cm-dialog--wide { width: min(560px, calc(100vw - 32px)); }
 :is(.cm-dialog, .cm-actions) .cm-btn--danger:hover { background: var(--cm-red-hover); }
 :is(.cm-dialog, .cm-actions) .cm-btn--secondary { background: #fff; color: #334155 !important; border-color: #cbd5e1; }
 :is(.cm-dialog, .cm-actions) .cm-btn--secondary:hover { background: #f1f5f9; }
-:is(.cm-dialog, .cm-actions) .cm-btn:focus-visible { outline: 2px solid #31711d; outline-offset: 2px; }
+:is(.cm-dialog, .cm-actions) .cm-btn:focus-visible { outline: 2px solid #087341; outline-offset: 2px; }
 .cm-dialog .cm-btn:disabled, .cm-dialog .cm-btn[aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
 
 /* Tones */
@@ -172,7 +172,7 @@ dialog:focus, dialog:focus-visible { outline: none; }
 .cm-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .cm-fields label { display: block; margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--cm-ink); }
 .cm-fields :is(input, select, textarea) { box-sizing: border-box; width: 100%; min-height: 44px; margin: 0; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; color: var(--cm-ink); font: inherit; font-size: 14px; }
-.cm-fields :is(input, select, textarea):focus-visible { outline: 2px solid #31711d; outline-offset: 1px; border-color: #31711d; }
+.cm-fields :is(input, select, textarea):focus-visible { outline: 2px solid #087341; outline-offset: 1px; border-color: #087341; }
 @media (max-width: 480px) { .cm-fields { grid-template-columns: 1fr; } .cm-actions-group:not([hidden]) { display: contents; } }
 /* Admin dialogs focus their panel on open: no outline on the panel itself, and the shadow follows its 20px corners. */
 .admin-dialog { border-radius: var(--cm-radius) !important; }

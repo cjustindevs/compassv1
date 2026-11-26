@@ -44,10 +44,10 @@
     #confirmationModal .btn-modal-cancel:hover { background: #f1f5f9; }
     #confirmationModal .btn-modal-confirm { border: 1px solid transparent; color: #fff; background: #b91c1c; }
     #confirmationModal .btn-modal-confirm:hover { background: #991b1b; }
-    #confirmationModal :is(.btn-modal-cancel, .btn-modal-confirm):focus-visible { outline: 2px solid #31711d; outline-offset: 2px; }
+    #confirmationModal :is(.btn-modal-cancel, .btn-modal-confirm):focus-visible { outline: 2px solid #087341; outline-offset: 2px; }
     /* Tones */
-    #confirmationModal [data-tone="primary"] .modal-icon { background: #ebf6e6; color: #31711d; box-shadow: 0 0 0 6px #f3fbf6; }
-    #confirmationModal [data-tone="primary"] .btn-modal-confirm { background: #2b6619; }
+    #confirmationModal [data-tone="primary"] .modal-icon { background: #e6f6ec; color: #087341; box-shadow: 0 0 0 6px #f3fbf6; }
+    #confirmationModal [data-tone="primary"] .btn-modal-confirm { background: #027039; }
     #confirmationModal [data-tone="primary"] .btn-modal-confirm:hover { background: #01562b; }
     #confirmationModal [data-tone="warning"] .modal-icon { background: #fdf3dc; color: #a15c00; box-shadow: 0 0 0 6px #fffaf0; }
     #confirmationModal [data-tone="warning"] .btn-modal-confirm { background: #b45309; }

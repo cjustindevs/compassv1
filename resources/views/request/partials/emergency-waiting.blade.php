@@ -19,7 +19,7 @@
 .emergency-wait .ew-panel {padding:20px;border:1px solid #e2e8e5;border-radius:14px;min-width:0}
 .emergency-wait .ew-panel h3 {font-size:14px;font-weight:600;margin:0 0 8px}
 .emergency-wait .ew-panel p {margin:0 0 12px}
-.emergency-wait .ew-status {display:inline-flex;font-size:12px;font-weight:600;color:#2b6619;background:#f1f8e6;border-radius:20px;padding:5px 10px;margin-bottom:12px}
+.emergency-wait .ew-status {display:inline-flex;font-size:12px;font-weight:600;color:#027039;background:#eaf8f0;border-radius:20px;padding:5px 10px;margin-bottom:12px}
 .emergency-wait .ew-resources {margin-top:16px;background:#fffbeb;border:1px solid #fde6ab;border-radius:14px;padding:20px;display:flex;justify-content:space-between;gap:20px;align-items:center}
 .emergency-wait .ew-resources h3 {font-size:14px;font-weight:600;margin:0 0 8px;color:#78350f}
 .emergency-wait .ew-resources p {margin:0;max-width:680px;color:#785438}

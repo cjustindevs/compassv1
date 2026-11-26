@@ -8,13 +8,13 @@
     <style>
         .breath-circle {
             width: 180px; height: 180px; border-radius: 50%;
-            background: linear-gradient(135deg, #F1F8E6, #DDEFC6);
+            background: linear-gradient(135deg, #EAF8F0, #D0F0D8);
             margin: 24px auto; display: flex; align-items: center; justify-content: center;
             font-size: 20px; font-weight: 700; color: var(--green-700);
             transition: transform 1s ease, background 0.5s ease, border-color 0.5s ease;
-            border: 4px solid #4E9A2A;
+            border: 4px solid #04A052;
         }
-        .breath-circle.inhale { transform: scale(1.35); background: linear-gradient(135deg,#DDEFC6,#BCE4A8); border-color:#3F7F22; }
+        .breath-circle.inhale { transform: scale(1.35); background: linear-gradient(135deg,#D0F0D8,#A8E4BC); border-color:#16A34A; }
         .breath-circle.hold { transform: scale(1.35); background: linear-gradient(135deg,#FEF3C7,#FDE68A); border-color:#F59E0B; color:#B45309; }
         .breath-circle.exhale { transform: scale(0.8); background: linear-gradient(135deg,#DBEAFE,#93C5FD); border-color:#3B82F6; color:#1D4ED8; }
         #breath-text { min-height: 30px; font-weight: 700; font-size: 18px; color: var(--gray-700); }

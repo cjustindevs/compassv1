@@ -15,7 +15,7 @@
     .hc-error { font-size: 13px; font-weight: 500; color: #B91C1C; }
     .hc-field.has-error input, .hc-field.has-error textarea { border-color: #DC2626; }
     .hc-check { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 10px; padding: 12px; border: 1px solid var(--compass-border, #E5E7EB); border-radius: 12px; margin-bottom: 8px; font-size: 14px; }
-    .hc-check input { margin-top: 3px; width: 18px; height: 18px; accent-color: #38731B; }
+    .hc-check input { margin-top: 3px; width: 18px; height: 18px; accent-color: #078749; }
     .hc-check strong { display: block; color: var(--compass-text, #1F2937); }
     .hc-after ol { margin: 0 0 8px; padding-left: 20px; display: grid; gap: 6px; font-size: 14px; color: var(--compass-muted, #6B7280); }
     .hc-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; flex-wrap: wrap; }

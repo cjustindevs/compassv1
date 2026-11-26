@@ -67,7 +67,7 @@ class DutySchedulingService
                         ->where(fn ($q) => $q->whereNull('helper_schedule_id')->orWhere('helper_schedule_id', '!=', $shift->id))->update(['is_active' => false]);
                 }
                 CalendarEvent::updateOrCreate(['helper_schedule_id' => $shift->id], ['title' => 'Duty: '.$helper->full_name, 'description' => $data['description'] ?? null,
-                    'event_date' => $date->toDateString(), 'start_time' => $data['shift_start'], 'end_time' => $data['shift_end'], 'event_type' => CalendarEvent::TYPE_MEETING, 'created_by' => auth()->id(), 'color' => '#4E9A2A']);
+                    'event_date' => $date->toDateString(), 'start_time' => $data['shift_start'], 'end_time' => $data['shift_end'], 'event_type' => CalendarEvent::TYPE_MEETING, 'created_by' => auth()->id(), 'color' => '#04A052']);
                 SupportAudit::record($edit ? 'helper_duty_updated' : 'helper_duty_created', $shift);
                 $saved++;
                 if (! $recurring) {

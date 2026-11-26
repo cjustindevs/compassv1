@@ -26,7 +26,7 @@
             background: white;
             font-size: 14px;
         }
-        .form-input:focus { border-color: #4E9A2A; box-shadow: 0 0 0 3px rgba(78, 154, 42,0.08); }
+        .form-input:focus { border-color: #04A052; box-shadow: 0 0 0 3px rgba(4,160,82,0.08); }
 
         .rating-group {
             display: flex;
@@ -48,8 +48,8 @@
             align-items: center;
             justify-content: center;
         }
-        .rating-btn:hover { border-color: #4E9A2A; background: #F1F8E6; }
-        .rating-btn.active { border-color: #4E9A2A; background: #F1F8E6; color: #4E9A2A; }
+        .rating-btn:hover { border-color: #04A052; background: #EAF8F0; }
+        .rating-btn.active { border-color: #04A052; background: #EAF8F0; color: #04A052; }
 
 
         .score-display {
@@ -66,7 +66,7 @@
             font-size: 13px;
             font-weight: 600;
         }
-        .competency-level.outstanding { background: #e4f2cf; color: #275a18; }
+        .competency-level.outstanding { background: #dcfce7; color: #166534; }
         .competency-level.very-good { background: #dbeafe; color: #1e40af; }
         .competency-level.satisfactory { background: #fef3c7; color: #92400e; }
         .competency-level.needs-improvement { background: #fee2e2; color: #991b1b; }
@@ -76,7 +76,7 @@
         @media (max-width: 768px) {
             .rating-btn { width: 38px; height: 38px; font-size: 14px; }
         }
-        .flash-success { background: #F1F8E6; color: #2b6619; border: 1px solid #DDEFC6; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
+        .flash-success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
         .flash-error { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 500; margin-bottom: 16px; }
         @media (max-width: 480px) {
             .rating-btn { width: 34px; height: 34px; font-size: 13px; }
@@ -247,7 +247,7 @@
             <style>
                 .eval-checklist { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 8px; }
                 .eval-checklist li { position: relative; padding-left: 26px; font-size: 14px; line-height: 1.5; color: #334155; }
-                .eval-checklist li::before { content: ''; position: absolute; left: 4px; top: 5px; width: 6px; height: 11px; border: solid #31711d; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+                .eval-checklist li::before { content: ''; position: absolute; left: 4px; top: 5px; width: 6px; height: 11px; border: solid #087341; border-width: 0 2px 2px 0; transform: rotate(45deg); }
                 .eval-note { margin: 0 0 12px; font-size: 13px; color: #64748b; }
                 .eval-scale { width: 100%; border-collapse: collapse; font-size: 13px; }
                 .eval-scale :is(th, td) { padding: 8px 10px; text-align: left; border-bottom: 1px solid #edf2ef; vertical-align: top; }
@@ -346,7 +346,7 @@
                 </div>
 
                 <div class="flex items-start gap-3 text-xs text-gray-500 pt-4 border-t border-gray-200">
-                    <input type="checkbox" id="evaluationDeclaration" required class="mt-0.5 accent-[#4E9A2A]" aria-required="true">
+                    <input type="checkbox" id="evaluationDeclaration" required class="mt-0.5 accent-[#04A052]" aria-required="true">
                     <label for="evaluationDeclaration" class="leading-relaxed">
                         I declare that I rated each criterion independently against the 5-point descriptors and the evidence listed above, without duplicating any prior score. This declaration is attestation only and is not stored as a separate record.
                     </label>

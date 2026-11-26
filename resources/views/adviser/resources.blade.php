@@ -23,18 +23,18 @@
             background: white; border: 1px solid #E5E7EB; border-radius: 18px;
             padding: 20px; transition: all 0.2s; display: flex; flex-direction: column; gap: 10px;
         }
-        .resource-card:hover { border-color: #4E9A2A; box-shadow: none; transform: translateY(-2px); }
+        .resource-card:hover { border-color: #04A052; box-shadow: none; transform: translateY(-2px); }
         .resource-card .icon-box {
-            width: 48px; height: 48px; border-radius: 14px; background: #F1F8E6;
+            width: 48px; height: 48px; border-radius: 14px; background: #EAF8F0;
             display: flex; align-items: center; justify-content: center; font-size: 20px;
         }
-        .category-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #2b6619; }
+        .category-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #027039; }
 
         .form-input {
             width: 100%; padding: 10px 14px; border: 1px solid #E5E7EB;
             border-radius: 12px; font-size: 14px; outline: none; transition: border-color 0.15s;
         }
-        .form-input:focus { border-color: #4E9A2A; }
+        .form-input:focus { border-color: #04A052; }
         .form-label { font-size: 12px; font-weight: 600; color: #4B5563; margin-bottom: 6px; display: block; }
 
         .modal-backdrop {
@@ -44,7 +44,7 @@
         .modal-backdrop.active { display: flex; }
         .modal-box { background: white; border-radius: 20px; padding: 24px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
 
-        .flash-success { background: #F1F8E6; color: #2b6619; border: 1px solid #DDEFC6; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
+        .flash-success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
     </style>
 @endpush
 
@@ -231,10 +231,10 @@
                 </div>
                 <div class="flex items-center gap-6 mb-6">
                     <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-600">
-                        <input type="checkbox" name="is_featured" value="1" class="accent-[#4E9A2A]"> Featured
+                        <input type="checkbox" name="is_featured" value="1" class="accent-[#04A052]"> Featured
                     </label>
                     <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-600">
-                        <input type="checkbox" name="is_published" value="1" checked class="accent-[#4E9A2A]"> Published
+                        <input type="checkbox" name="is_published" value="1" checked class="accent-[#04A052]"> Published
                     </label>
                 </div>
                 <button type="submit" class="btn-primary w-full justify-center"><x-ui-icon name="save"  /> Save Resource</button>

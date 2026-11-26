@@ -7,11 +7,11 @@
     @vite(['resources/js/moderator-notifications.js'])
     <style>
         .ref-flash { border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
-        .ref-flash.success { background: #F1F8E6; color: #2b6619; border: 1px solid #DDEFC6; }
+        .ref-flash.success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; }
         .ref-flash.error { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
         .ref-assign { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0; }
         .ref-assign select, .ref-complete select { min-height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--compass-border, #E5E7EB); font-size: 15px; background: var(--bg-card, #fff); color: var(--compass-text, #1F2937); max-width: 100%; }
-        .ref-assign select:focus, .ref-complete select:focus { outline: 2px solid var(--compass-green, #4E9A2A); outline-offset: 1px; }
+        .ref-assign select:focus, .ref-complete select:focus { outline: 2px solid var(--compass-green, #04A052); outline-offset: 1px; }
         .ref-reason { max-width: 420px; color: var(--compass-muted, #6B7280); }
         .ref-complete { display: grid; gap: 8px; margin-top: 8px; }
         .ref-complete label { display: grid; gap: 6px; font-size: 14px; font-weight: 600; }

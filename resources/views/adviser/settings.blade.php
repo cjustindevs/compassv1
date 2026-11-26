@@ -4,14 +4,14 @@
 
 @push('styles')
 <style>
-        .settings-flash { background: #F1F8E6; color: #2b6619; border: 1px solid #DDEFC6; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
+        .settings-flash { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
         .settings-section { display: none; }
         .settings-section.active { display: block; }
         .settings-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
         @media (min-width: 769px) { .settings-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         .form-label { display: block; font-weight: 600; font-size: 14px; color: #374151; margin-bottom: 6px; }
         .form-input { width: 100%; min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid #E5E7EB; font-size: 15px; background: #fff; }
-        .form-input:focus { outline: 2px solid #4E9A2A; outline-offset: 1px; }
+        .form-input:focus { outline: 2px solid #04A052; outline-offset: 1px; }
         .form-input.error { border-color: #DC2626; }
         .error-text { font-size: 13px; color: #DC2626; margin-top: 4px; }
         .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid #F3F4F6; }
@@ -23,9 +23,9 @@
         .switch input { opacity: 0; width: 0; height: 0; }
         .switch .slider { position: absolute; cursor: pointer; inset: 0; background: #E5E7EB; border-radius: 24px; transition: 0.3s; }
         .switch .slider::before { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #fff; left: 3px; bottom: 3px; transition: 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
-        .switch input:checked + .slider { background: #4E9A2A; }
+        .switch input:checked + .slider { background: #04A052; }
         .switch input:checked + .slider::before { transform: translateX(20px); }
-        .switch input:focus-visible + .slider { outline: 2px solid #4E9A2A; outline-offset: 2px; }
+        .switch input:focus-visible + .slider { outline: 2px solid #04A052; outline-offset: 2px; }
     </style>
 @endpush
 

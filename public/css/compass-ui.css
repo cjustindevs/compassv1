@@ -2,9 +2,9 @@
    Page grids, workflow colors, hidden states and chart geometry stay local. */
 :root {
     --compass-font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    --compass-green: #4e9a2a;
-    --compass-green-dark: #2b6619;
-    --compass-green-soft: #f1f8e6;
+    --compass-green: #04a052;
+    --compass-green-dark: #027039;
+    --compass-green-soft: #eaf8f0;
     --compass-background: #f8fbf9;
     --compass-card: #fff;
     --compass-border: #e5e7eb;
@@ -87,7 +87,7 @@
 .compass-privacy-text p + p { margin-top:14px; }
 .compass-password-field { position:relative; }
 .compass-password-field input { padding-right:58px!important; }
-.compass-password-toggle { position:absolute; right:8px; top:50%; transform:translateY(-50%); border:0; background:white; color:#326618; padding:6px; cursor:pointer; font-size:12px; }
+.compass-password-toggle { position:absolute; right:8px; top:50%; transform:translateY(-50%); border:0; background:white; color:#08763f; padding:6px; cursor:pointer; font-size:12px; }
 
 /* Existing Administrator rules retain their theme/accent and composition. */
 .compass-ui:not(.compass-ui-admin) body {
@@ -311,7 +311,7 @@
 .compass-ui .font-small :is(.form-input, .form-control, .ui-input, .form-label) { font-size: 13px; }
 .compass-ui .high-contrast {
     --compass-text: #000; --compass-muted: #374151; --compass-border: #4b5563;
-    --compass-green: #2b6619; --compass-green-dark: #01562b;
+    --compass-green: #027039; --compass-green-dark: #01562b;
 }
 .compass-ui .reduced-motion *, .compass-ui.admin-reduced-motion * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 
@@ -372,7 +372,7 @@
 .compass-ui .auth-page .registration-fields > div { min-width: 0; }
 .compass-ui .auth-page .registration-full { grid-column: 1 / -1; }
 .compass-ui .auth-page .registration-divider { border-top: 1px solid var(--compass-border); padding-top: 16px; margin-top: 4px; }
-.compass-ui .auth-page :is(.verification-panel, .agreement-panel) { padding: 20px; background: var(--compass-green-soft); border: 1px solid #dfedd8; border-radius: var(--compass-radius); align-self: start; }
+.compass-ui .auth-page :is(.verification-panel, .agreement-panel) { padding: 20px; background: var(--compass-green-soft); border: 1px solid #d8ede1; border-radius: var(--compass-radius); align-self: start; }
 .compass-ui .auth-page .registration-input-action { display: flex; align-items: stretch; gap: 8px; }
 .compass-ui .auth-page .registration-input-action input { min-width: 0; flex: 1; width: 0; }
 .compass-ui .auth-page .registration-action { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--compass-control-height); margin-top: 10px; padding: 10px 16px; border: 1px solid var(--compass-border); border-radius: var(--compass-control-radius); background: white; color: var(--compass-green-dark); font-size: 14px; font-weight: 600; cursor: pointer; }
@@ -392,7 +392,7 @@
 .compass-ui .auth-page .agreement-check input { margin-top: 3px; width: 18px; height: 18px; flex-shrink: 0; }
 .compass-ui .auth-page #alias-status { margin-top: 8px; }
 .compass-ui .auth-page .nickname-reminder { margin-top: 10px; font-size: 13px; color: var(--compass-green-dark); line-height: 1.6; overflow-wrap: anywhere; }
-.compass-ui .auth-page #verification-status.demo-code-visible { padding: 12px; border: 1px solid #cae3bd; border-radius: 10px; background: white; color: var(--compass-green-dark); font-weight: 600; line-height: 1.6; overflow-wrap: anywhere; }
+.compass-ui .auth-page #verification-status.demo-code-visible { padding: 12px; border: 1px solid #bde3cb; border-radius: 10px; background: white; color: var(--compass-green-dark); font-weight: 600; line-height: 1.6; overflow-wrap: anywhere; }
 
 @media (min-width: 769px) { .compass-ui .auth-page .registration-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .compass-ui .auth-page .registration-columns { grid-template-columns: minmax(0, 1fr) minmax(0, 1.65fr); gap: 28px; } }
@@ -419,8 +419,8 @@
 
 /* Professional: the user block links to the Profile. */
 .compass-ui .sidebar a.sidebar-user { text-decoration: none; color: inherit; border-radius: 10px; }
-.compass-ui .sidebar a.sidebar-user:hover, .compass-ui .sidebar a.sidebar-user.active { background: #f3f9ea; }
-.compass-ui .sidebar a.sidebar-user:focus-visible { outline: 2px solid #31711d; outline-offset: 2px; }
+.compass-ui .sidebar a.sidebar-user:hover, .compass-ui .sidebar a.sidebar-user.active { background: #f0fdf4; }
+.compass-ui .sidebar a.sidebar-user:focus-visible { outline: 2px solid #087341; outline-offset: 2px; }
 .compass-ui .sidebar a.sidebar-user .user-role { color: #475569; }
 /* Links inside a sentence are underlined and dark enough to read (WCAG link-in-text-block, contrast). */
-.compass-ui a.hf-inline-link { color: #31711d; text-decoration: underline; text-underline-offset: 2px; }
+.compass-ui a.hf-inline-link { color: #087341; text-decoration: underline; text-underline-offset: 2px; }

@@ -2,13 +2,13 @@
  * COMPASS accessibility: WCAG 2 AA text contrast (QA pass, November 2026).
  * Loaded last on every screen (partials/ui-assets). Each colour below was checked at 4.5:1 or better
  * on every background it sits on. Rules are scoped away from the admin dark theme, which has its own colours.
- *   muted grey  #566170   green text  #31711d   red text  #b91c1c   amber text  #a15c00
- *   white text sits on the darker brand green #2b6619 (6.2:1), never on #4e9a2a (3.4:1).
+ *   muted grey  #566170   green text  #087341   red text  #b91c1c   amber text  #a15c00
+ *   white text sits on the darker brand green #027039 (6.2:1), never on #04a052 (3.4:1).
  */
 .sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
 
 /* Green used as text: links, names, headings. */
-html.compass-ui:not([data-admin-theme="dark"]) { --green-600: #31711d; }
+html.compass-ui:not([data-admin-theme="dark"]) { --green-600: #087341; }
 
 /* Muted grey text: secondary lines, captions, timestamps, sidebar section titles. */
 html.compass-ui:not([data-admin-theme="dark"]) :is(
@@ -27,18 +27,18 @@ html.compass-ui:not([data-admin-theme="dark"]) :is(
     .health-incident time, .settings-unavailable-badge, .csv-file-status, .activity-list time, .log-main small
 ) { color: #566170; }
 html.compass-ui:not([data-admin-theme="dark"]) :is(.audit-target-cell, .audit-time-cell) { color: #566170 !important; }
-html.compass-ui:not([data-admin-theme="dark"]) .health-sla span { color: #31711d; }
+html.compass-ui:not([data-admin-theme="dark"]) .health-sla span { color: #087341; }
 html.compass-ui:not([data-admin-theme="dark"]) .health-incident header span { color: #a15c00; }
-html.compass-ui:not([data-admin-theme="dark"]) .health-service-healthy .health-service-badge { color: #31711d; }
+html.compass-ui:not([data-admin-theme="dark"]) .health-service-healthy .health-service-badge { color: #087341; }
 html.compass-ui:not([data-admin-theme="dark"]) .health-service-warning .health-service-badge { color: #a15c00; }
 html.compass-ui:not([data-admin-theme="dark"]) .health-service-critical .health-service-badge { color: #b4233c; }
-html.compass-ui:not([data-admin-theme="dark"]) .user-role-badge { color: #31711d; }
+html.compass-ui:not([data-admin-theme="dark"]) .user-role-badge { color: #087341; }
 
 /* Green text. */
-html.compass-ui :is(.link, .av-link, .mood-heading, .attribution, .text-green-600, .text-\[\#4E9A2A\]) { color: #31711d; }
-html.compass-ui .text-emerald-600 { color: #31711d; }
-html.compass-ui .calendar-cell.today .day-num { color: #31711d; }
-html.compass-ui #availStatus[style*="green-500"], html.compass-ui [data-dashboard-availability][style*="green-500"] { color: #31711d !important; }
+html.compass-ui :is(.link, .av-link, .mood-heading, .attribution, .text-green-600, .text-\[\#04A052\]) { color: #087341; }
+html.compass-ui .text-emerald-600 { color: #047857; }
+html.compass-ui .calendar-cell.today .day-num { color: #087341; }
+html.compass-ui #availStatus[style*="green-500"], html.compass-ui [data-dashboard-availability][style*="green-500"] { color: #087341 !important; }
 html.compass-ui #availStatus[style*="yellow-500"], html.compass-ui [data-dashboard-availability][style*="yellow-500"] { color: #a15c00 !important; }
 
 /* Red text. */
@@ -48,16 +48,16 @@ html.compass-ui .status-badge.cancelled { color: #b91c1c; }
 /* White text on green: use the darker brand green. */
 html.compass-ui :is(.seeker-button:not(.secondary):not(.danger), .duty-button, .helper-avatar, .cm-primary, .cal-cell.today .day-num),
 html.compass-ui .nav-badge:not(.warning):not(.danger),
-html.compass-ui #seekerConsentDialog .consent-action.primary { background-color: #2b6619; border-color: #2b6619; }
+html.compass-ui #seekerConsentDialog .consent-action.primary { background-color: #027039; border-color: #027039; }
 /* Admin buttons follow the chosen accent; in the light theme they are darkened enough for white text. */
 html.compass-ui:not([data-admin-theme="dark"]) :is(.admin-button-primary, .analytics-button-primary, .settings-segmented button[aria-checked="true"]) {
-    background-color: #2b6619;
-    background-color: color-mix(in srgb, var(--admin-accent, #4e9a2a) 66%, #000);
+    background-color: #027039;
+    background-color: color-mix(in srgb, var(--admin-accent, #04a052) 66%, #000);
 }
 
 /* Second pass (full-site scan). */
-html.compass-ui .card .card-header a.link, html.compass-ui a.link { color: #31711d; }
-html.compass-ui .filter-btn.active { background-color: #2b6619; border-color: #2b6619; }
+html.compass-ui .card .card-header a.link, html.compass-ui a.link { color: #087341; }
+html.compass-ui .filter-btn.active { background-color: #027039; border-color: #027039; }
 html.compass-ui .text-blue-500 { color: #1d4ed8; }
 html.compass-ui .text-amber-500 { color: #a15c00; }
 html.compass-ui .text-purple-500 { color: #7e22ce; }

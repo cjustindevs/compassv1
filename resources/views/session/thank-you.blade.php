@@ -21,7 +21,7 @@
             padding: 0;
         }
         .completion-header { display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;max-width:1080px;margin:0 auto;padding:16px 24px; }
-        .completion-header a { color:#2F6017;font-size:13px;text-decoration:none;font-weight:600; }
+        .completion-header a { color:#176240;font-size:13px;text-decoration:none;font-weight:600; }
         .completion-main { flex:1;display:grid;place-items:center;width:100%;padding:24px 20px max(32px,env(safe-area-inset-bottom));min-width:0; }
 
         .thank-you-card {
@@ -47,14 +47,14 @@
             width: 320px;
             height: 320px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(78, 154, 42,0.10) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(4,160,82,0.10) 0%, transparent 70%);
         }
 
         .check-circle {
             width: 88px;
             height: 88px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #8CC13D, #3F7F22);
+            background: linear-gradient(135deg, #38C172, #038A45);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -90,7 +90,7 @@
             align-items: center;
             justify-content: center;
             gap: 12px;
-            color: #4E9A2A;
+            color: #04A052;
             font-size: 14px;
             margin: 20px 0 32px;
         }
@@ -103,7 +103,7 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #4E9A2A, #3F7F22);
+            background: linear-gradient(135deg, #04A052, #038A45);
             color: white;
             font-weight: 600;
             padding: 14px 40px;
@@ -134,7 +134,7 @@
             margin-top: 16px;
             transition: color 0.2s;
         }
-        .btn-ghost:hover { color: #4E9A2A; }
+        .btn-ghost:hover { color: #04A052; }
 
         @media (max-width: 480px) {
             .thank-you-card { padding: 40px 20px; border-radius: 20px; }

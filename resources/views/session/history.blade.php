@@ -13,9 +13,9 @@
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --green-50: #F1F8E6;
-            --green-500: #4E9A2A;
-            --green-700: #2b6619;
+            --green-50: #EAF8F0;
+            --green-500: #04A052;
+            --green-700: #027039;
             --gray-50: #F9FAFB;
             --gray-100: #F3F4F6;
             --gray-200: #E5E7EB;
@@ -37,7 +37,7 @@
             height: 100vh;
             background: rgba(255,255,255,0.92);
             backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(78, 154, 42,0.06);
+            border-right: 1px solid rgba(4,160,82,0.06);
             box-shadow: 4px 0 40px rgba(0,0,0,0.02);
             z-index: 100;
             transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
@@ -52,14 +52,14 @@
             align-items: center;
             gap: 12px;
             padding-bottom: 24px;
-            border-bottom: 1px solid rgba(78, 154, 42,0.06);
+            border-bottom: 1px solid rgba(4,160,82,0.06);
             margin-bottom: 20px;
         }
         .sidebar .logo .icon {
             width: 40px;
             height: 40px;
             border-radius: 12px;
-            background: linear-gradient(135deg, #8CC13D, #3F7F22);
+            background: linear-gradient(135deg, #38C172, #038A45);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -99,7 +99,7 @@
         .sidebar .nav .nav-item.active :is(i, .compass-icon) { color: var(--green-500); }
 
         .sidebar .user-section {
-            border-top: 1px solid rgba(78, 154, 42,0.06);
+            border-top: 1px solid rgba(4,160,82,0.06);
             padding-top: 16px;
             margin-top: auto;
         }
@@ -112,7 +112,7 @@
             width: 42px;
             height: 42px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #8CC13D, #3F7F22);
+            background: linear-gradient(135deg, #38C172, #038A45);
             display: flex;
             align-items: center;
             justify-content: center;

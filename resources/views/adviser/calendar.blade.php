@@ -8,10 +8,10 @@
         .cal-day-head { padding: 10px 8px; text-align: center; font-size: 12px; font-weight: 700; color: #6B7280; background: #F9FAFB; border-bottom: 1px solid #E5E7EB; }
         .cal-cell { min-height: 110px; border-right: 1px solid #F3F4F6; border-bottom: 1px solid #F3F4F6; padding: 6px; cursor: pointer; transition: background 0.15s; background: white; }
         .cal-cell:nth-child(7n) { border-right: none; }
-        .cal-cell:hover { background: #F1F8E6; }
+        .cal-cell:hover { background: #EAF8F0; }
         .cal-cell.other-month { background: #F9FAFB; color: #9CA3AF; }
         .cal-cell .day-num { font-size: 12px; font-weight: 600; color: #6B7280; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-        .cal-cell.today .day-num { background: #4E9A2A; color: white; }
+        .cal-cell.today .day-num { background: #04A052; color: white; }
         .cal-cell .event-chip {
             display: flex; align-items: center; gap: 4px;
             font-size: 11px; font-weight: 600; color: white;
@@ -34,10 +34,10 @@
             width: 100%; padding: 10px 14px; border: 1px solid #E5E7EB;
             border-radius: 12px; font-size: 14px; outline: none; transition: border-color 0.15s;
         }
-        .form-input:focus { border-color: #4E9A2A; }
+        .form-input:focus { border-color: #04A052; }
         .form-label { font-size: 12px; font-weight: 600; color: #4B5563; margin-bottom: 6px; display: block; }
 
-        .flash-success { background: #F1F8E6; color: #2b6619; border: 1px solid #DDEFC6; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
+        .flash-success { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
         @media (max-width: 768px) {
             .cal-cell { min-height: 70px; }
             .cal-cell .event-chip { display: none; }
@@ -77,7 +77,7 @@
                 </div>
             </x-slot:actions>
             <div class="cal-legend">
-                <span><span class="legend-dot" style="background:#4E9A2A;"></span> Session</span>
+                <span><span class="legend-dot" style="background:#04A052;"></span> Session</span>
                 <span><span class="legend-dot" style="background:#3B82F6;"></span> Evaluation</span>
                 <span><span class="legend-dot" style="background:#F59E0B;"></span> Event</span>
             </div>
@@ -168,7 +168,7 @@
                     <div class="mb-6">
                         <label class="form-label">Color</label>
                         <div class="flex items-center gap-3">
-                            <input type="color" name="color" value="#4E9A2A" class="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer">
+                            <input type="color" name="color" value="#04A052" class="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer">
                             <span class="text-xs text-gray-400">Pick a highlight color for this event</span>
                         </div>
                     </div>

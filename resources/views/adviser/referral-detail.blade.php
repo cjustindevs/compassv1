@@ -7,7 +7,7 @@
     .referral-detail-page :is(p,dd){ overflow-wrap: anywhere; }
     .rd-flash { border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
     .rd-flash p { margin: 0; }
-    .rd-flash--ok { background: #F1F8E6; color: #2b6619; border: 1px solid #DDEFC6; }
+    .rd-flash--ok { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; }
     .rd-flash--err { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
     .rd-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px 24px; margin: 0; }
     .rd-facts dt { font-size: 13px; color: var(--compass-muted, #6B7280); }
@@ -25,14 +25,14 @@
     .referral-release summary { cursor:pointer; font-weight:600; color:#173e2c; padding:2px 0; }
     .referral-release .release-intro { font-size:14px; color:#64748b; margin:12px 0 16px; }
     .identity-field-grid label { border:1px solid #e2e8e5; border-radius:9px; padding:10px; font-size:14px; }
-    .identity-field-grid input { accent-color:#3f811e; }
-    .identity-field-grid label:has(input:checked) { background:#f1f9ed; border-color:#a8d990; }
-    .referral-detail-page :is(input,select,textarea,button,summary):focus-visible { outline:2px solid #3f811e; outline-offset:3px; }
+    .identity-field-grid input { accent-color:#049b50; }
+    .identity-field-grid label:has(input:checked) { background:#edf9f1; border-color:#90d9b0; }
+    .referral-detail-page :is(input,select,textarea,button,summary):focus-visible { outline:2px solid #049b50; outline-offset:3px; }
     .coordination-grid, .identity-field-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
     .identity-field-grid > p { grid-column:1/-1; }
     .referral-release textarea, .coordination-form textarea, .coordination-form select { width:100%; border:1px solid #d1d5db; border-radius:10px; padding:10px 12px; font:inherit; margin:6px 0 12px; }
     .referral-release textarea, .coordination-form textarea { min-height:76px; }
-    .referral-next-step{border-top:3px solid #3f811e}.referral-next-step .btn-primary{display:inline-flex;margin-top:12px}.referral-next-step,#professionalAssignment,#professionalIdentityRelease{scroll-margin-top:20px}
+    .referral-next-step{border-top:3px solid #049b50}.referral-next-step .btn-primary{display:inline-flex;margin-top:12px}.referral-next-step,#professionalAssignment,#professionalIdentityRelease{scroll-margin-top:20px}
     .referral-release button:disabled { opacity:.5; cursor:not-allowed; }
     @media (max-width: 768px) {
         .coordination-grid, .identity-field-grid { grid-template-columns:1fr; }

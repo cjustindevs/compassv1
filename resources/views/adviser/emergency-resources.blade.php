@@ -25,7 +25,7 @@
     </x-ui.card>
 </div>
 <style>
-.erx-note{background:#f1f8ed;color:#2f6117;border-radius:12px;padding:12px 16px;margin:0 0 16px;font-size:14px}.erx-error{background:#fef2f2;color:#b42318}
+.erx-note{background:#edf8f1;color:#17633d;border-radius:12px;padding:12px 16px;margin:0 0 16px;font-size:14px}.erx-error{background:#fef2f2;color:#b42318}
 .erx-form{padding:16px 0;border-top:1px solid var(--compass-divider,#e5e7eb)}.erx-form:first-of-type{border-top:0;padding-top:0}
 .erx-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 16px;margin-bottom:16px}
 .erx-grid .ui-field{width:auto;min-width:0}

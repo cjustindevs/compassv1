@@ -10,16 +10,16 @@
 .chat-action-dialog textarea{min-height:68px;resize:vertical}.chat-action-dialog .form-label{display:block;margin:0 0 5px;font-size:13px;font-weight:600}
 .chat-action-dialog .modal-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;padding-top:12px;margin-top:12px;border-top:1px solid #e5ece7;flex-shrink:0}
 .chat-action-dialog .modal-actions button{min-height:40px;padding:9px 14px;border-radius:9px;border:1px solid #d3ded7;background:white;cursor:pointer;font:600 13px Inter,sans-serif;max-width:100%;white-space:normal}
-.chat-action-dialog .modal-actions .btn-info{background:#3d7e1d;color:white;border-color:#3d7e1d}.chat-action-dialog .modal-actions .btn-danger{background:#c6263a;color:white;border-color:#c6263a}
+.chat-action-dialog .modal-actions .btn-info{background:#009b58;color:white;border-color:#009b58}.chat-action-dialog .modal-actions .btn-danger{background:#c6263a;color:white;border-color:#c6263a}
 .chat-action-dialog .modal-actions button:disabled{opacity:.55;cursor:wait}.chat-action-errors:not(:empty){background:#fff4f4;color:#a62737;padding:10px;border-radius:8px;margin-bottom:12px;font-size:13px;max-height:140px;overflow:auto}
-.chat-workflow-feedback:empty{display:none}.chat-workflow-feedback{padding:12px;border:1px solid #cfe3c5;background:#f2f9ee;border-radius:10px;margin-bottom:12px;font-size:13px}
-.chat-action-dialog :focus-visible{outline:2px solid #3d7e1d;outline-offset:3px}
+.chat-workflow-feedback:empty{display:none}.chat-workflow-feedback{padding:12px;border:1px solid #c5e3cf;background:#eef9f2;border-radius:10px;margin-bottom:12px;font-size:13px}
+.chat-action-dialog :focus-visible{outline:2px solid #009b58;outline-offset:3px}
 @media(max-width:600px){.chat-action-dialog .referral-fields{grid-template-columns:1fr}.chat-action-dialog .modal-box{padding:16px}.chat-action-dialog .modal-actions button{flex:1}}
 
 .chat-action-dialog .referral-fields>*{min-width:0;max-width:100%}
 .chat-action-dialog fieldset legend{max-width:100%;white-space:normal;overflow-wrap:anywhere;padding:0 4px}
 .chat-action-dialog fieldset label{display:flex;align-items:flex-start;gap:7px;margin:0;font-size:12px;line-height:1.5;min-width:0;overflow-wrap:anywhere}
-.chat-action-dialog fieldset input[type=checkbox]{flex:0 0 auto;margin:3px 0 0;accent-color:#3d7e1d}
+.chat-action-dialog fieldset input[type=checkbox]{flex:0 0 auto;margin:3px 0 0;accent-color:#009b58}
 .chat-action-dialog .form-label,.chat-action-dialog p{white-space:normal;overflow-wrap:anywhere}
 .chat-action-dialog #referralClarificationForm{overflow-y:auto}
 @media(max-width:600px){.chat-action-dialog fieldset{grid-template-columns:1fr}.chat-action-dialog .modal-actions{align-items:stretch}.chat-action-dialog .modal-actions button{flex:1 1 100%;min-width:0}}

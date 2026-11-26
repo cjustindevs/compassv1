@@ -9,8 +9,8 @@ $followUp = $session->requires_adviser_review && !in_array($session->session_sta
 .seeker-follow-up fieldset{border:0;padding:0;min-width:0}.seeker-follow-up legend{font-size:14px;font-weight:500}
 .seeker-follow-up .follow-up-choices{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
 .seeker-follow-up .follow-up-choice{display:flex;align-items:center;gap:8px;min-height:44px;padding:8px 12px;border:1px solid #dce8e1;border-radius:8px;font-size:14px;cursor:pointer}
-.seeker-follow-up .follow-up-choice:has(input:checked){background:#f1f9ed;border-color:#3d7e1d}
-.seeker-follow-up button{padding:10px 16px;border:0;border-radius:8px;background:#3d7e1d;color:#fff;font-size:14px;font-weight:600}
+.seeker-follow-up .follow-up-choice:has(input:checked){background:#edf9f1;border-color:#009b58}
+.seeker-follow-up button{padding:10px 16px;border:0;border-radius:8px;background:#009b58;color:#fff;font-size:14px;font-weight:600}
 </style>
 <section class="seeker-follow-up" aria-labelledby="follow-up-heading">
 <h2 id="follow-up-heading" class="font-semibold">Your Adviser's follow-up</h2>

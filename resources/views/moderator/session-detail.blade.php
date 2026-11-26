@@ -7,7 +7,7 @@
     @vite(['resources/js/moderator-notifications.js'])
     <style>
         .detail-card { margin-bottom: 24px; }
-        .detail-flash { background: #F1F8E6; color: #2b6619; border: 1px solid #DDEFC6; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
+        .detail-flash { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
         .detail-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin: 0; }
         .detail-summary dt { font-size: 13px; color: var(--compass-muted, #6B7280); margin-bottom: 4px; }
         .detail-summary dd { margin: 0; font-size: 15px; font-weight: 600; color: var(--compass-text, #1F2937); overflow-wrap: anywhere; }
@@ -23,7 +23,7 @@
         .msg-row { display: flex; }
         .msg-row.helper { justify-content: flex-end; }
         .msg-bubble { padding: 10px 14px; border-radius: 14px; font-size: 15px; max-width: 80%; line-height: 1.5; overflow-wrap: anywhere; }
-        .msg-bubble.seeker { background: #F1F8E6; color: #285213; }
+        .msg-bubble.seeker { background: #EAF8F0; color: #065F46; }
         .msg-bubble.helper { background: #F3F4F6; color: #374151; }
         .msg-bubble .msg-who { display: block; font-size: 12px; margin-bottom: 2px; color: var(--compass-muted, #6B7280); }
         .detail-note { font-size: 13px; color: var(--compass-muted, #6B7280); margin: 0 0 12px; }

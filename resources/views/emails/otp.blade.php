@@ -40,7 +40,7 @@
             justify-content: center;
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, #3f7f22, #31711d);
+            background: linear-gradient(135deg, #16a34a, #15803d);
             border-radius: 16px;
             color: #fff;
             font-size: 30px;
@@ -77,13 +77,13 @@
         }
 
         .message strong {
-            color: #3f7f22;
+            color: #16a34a;
         }
 
         /* ---- OTP Box ---- */
         .otp-box {
             background: #f2fbf5;
-            border: 2px solid #dbf0d1;
+            border: 2px solid #d1f0df;
             border-radius: 18px;
             padding: 28px 20px;
             text-align: center;
@@ -94,7 +94,7 @@
             font-size: 44px;
             letter-spacing: 14px;
             font-weight: 700;
-            color: #1d4a16;
+            color: #14532d;
             font-family: 'Courier New', monospace;
             background: #ffffff;
             padding: 8px 16px;
@@ -110,7 +110,7 @@
         }
 
         .otp-box .expiry span {
-            color: #3f7f22;
+            color: #16a34a;
             font-weight: 600;
         }
 
@@ -130,12 +130,12 @@
         }
 
         .footer .brand {
-            color: #3f7f22;
+            color: #16a34a;
             font-weight: 600;
         }
 
         .footer .contact-link {
-            color: #3f7f22;
+            color: #16a34a;
             text-decoration: none;
             font-weight: 500;
         }

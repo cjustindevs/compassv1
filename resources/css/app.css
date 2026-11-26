@@ -68,7 +68,7 @@ body.font-large h2 { font-size: 1.6rem; } /* scale-exempt: Large text preference
 }
 
 .stats-card {
-    border-left: 4px solid #4E9A2A;
+    border-left: 4px solid #04A052;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -97,7 +97,7 @@ body.font-large h2 { font-size: 1.6rem; } /* scale-exempt: Large text preference
 }
 
 .stats-card.border-danger { border-left-color: #ef4444; }
-.stats-card.border-success { border-left-color: #8cc13d; }
+.stats-card.border-success { border-left-color: #10b981; }
 .stats-card.border-info { border-left-color: #6366f1; }
 .stats-card.border-warning { border-left-color: #f59e0b; }
 

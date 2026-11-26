@@ -14,7 +14,7 @@
         'coping'      => ['#fdeee9', '#f6cdbf', '#e2846a', '#a64b33'],
         'sleep'       => ['#e9ecf8', '#c4cbee', '#6f7fcf', '#3c4a94'],
         'anxiety'     => ['#e7f4f6', '#bfe1e7', '#5aa9b8', '#2d7280'],
-        'more'        => ['#f1f8e6', '#cde8bf', '#67b63f', '#2b6619'],
+        'more'        => ['#eaf8f0', '#bfe8cf', '#3fb672', '#027039'],
     ];
     [$bg, $soft, $mid, $deep] = $themes[$topic] ?? $themes['more'];
 @endphp
