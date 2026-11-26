@@ -90,7 +90,7 @@ class HelperSessionController extends Controller
         foreach ($records as $record) $responses = array_replace($responses, $record->responses ?? []);
         $summary = $this->createScreeningSummary($responses);
         return [
-            'concern_category' => $session->concern?->concern_name ?? $session->concern_category ?? $responses['concern_category'] ?? 'Not specified',
+            'concern_category' => $session->concern_label ?? $responses['concern_category'] ?? 'Not specified',
             'description' => $responses['concern_description'] ?? $responses['description'] ?? null,
             'custom_concern' => $responses['custom_concern'] ?? null,
             'summary' => $records->isEmpty() ? 'No request-linked screening summary available.' : $summary['text'],

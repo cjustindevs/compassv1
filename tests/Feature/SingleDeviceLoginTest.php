@@ -38,7 +38,7 @@ class SingleDeviceLoginTest extends TestCase
         $user = User::factory()->create(['role' => 'seeker']);
 
         $this->post('/login', $this->loginPayload($user))
-            ->assertRedirect(route('seeker.dashboard'));
+            ->assertRedirect(route('request.screening'));
 
         $this->assertAuthenticatedAs($user);
     }

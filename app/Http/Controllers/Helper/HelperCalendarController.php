@@ -40,7 +40,7 @@ class HelperCalendarController extends Controller
                 'status_label' => $session->status_label,
                 'status_class' => str_replace('_', '-', $session->session_status),
                 'risk' => 'Assigned support',
-                'concern' => $session->concern->concern_name ?? 'Session',
+                'concern' => $session->concern_label ?? 'Session',
                 'mode' => $session->mode_label,
                 'date' => ($session->scheduled_start ?? $session->start_time ?? $session->created_date ?? $session->created_at)->copy()->timezone('Asia/Manila')->format('Y-m-d'),
                 'time' => ($session->scheduled_start ?? $session->start_time)?->copy()->timezone('Asia/Manila')->format('h:i A'),

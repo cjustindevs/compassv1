@@ -94,7 +94,7 @@ class October21QaWorkflowTest extends TestCase
         $case->emergencyAlerts()->update(['status' => 'resolved', 'resolved_at' => now()]);
         $this->get(route('request.matching'))->assertViewIs('request.matching')->assertSee('Review closed')->assertSee('Your helper is preparing');
         $workflow->start($case->helper->user, $case->fresh());
-        $this->get(route('request.matching'))->assertViewIs('request.matching')->assertSee('Your chat is ready');
+        $this->get(route('request.matching'))->assertRedirect(route('session.chat', ['session_id' => $case->id]));
     }
 
     public function test_old_evaluation_pointer_cannot_take_over_new_chat_or_voice(): void

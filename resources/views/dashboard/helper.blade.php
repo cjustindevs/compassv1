@@ -184,7 +184,7 @@
 @forelse($recentSessions as $session)
 <tr>
 <td>{{ $session->reference_number }}</td>
-<td>{{ $session->concern?->concern_name ?? 'Unrecorded' }}</td>
+<td>{{ $session->concern_label ?? 'Unrecorded' }}</td>
 <td>
 <span class="hf-status hf-status-muted">{{ $session->status_label }}</span>
 </td>

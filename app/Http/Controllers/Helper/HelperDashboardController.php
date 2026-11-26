@@ -100,7 +100,7 @@ class HelperDashboardController extends Controller
                     'mode' => $session->mode_label,
                     'language' => $session->seeker?->user?->preferred_language ?: 'English',
                     'waiting' => $session->created_at?->diffForHumans(),
-                    'notes' => $session->concern->concern_name ?? 'No concern specified',
+                    'notes' => $session->concern_label ?? 'No concern specified',
                     'status' => $session->session_status,
                 ];
             });
@@ -139,7 +139,7 @@ class HelperDashboardController extends Controller
                     'id' => $session->id,
                     'reference' => $session->reference_number,
                     'alias' => $session->seeker->generated_alias ?? 'Unknown',
-                    'incident' => $session->concern->concern_name ?? 'Emergency risk case',
+                    'incident' => $session->concern_label ?? 'Emergency risk case',
                     'time' => $session->created_at?->diffForHumans() ?? 'just now',
                 ];
             });

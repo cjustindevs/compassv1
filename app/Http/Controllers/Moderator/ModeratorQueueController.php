@@ -40,7 +40,7 @@ class ModeratorQueueController extends Controller
         $queueItems->getCollection()->concat($recentlyMatched)->each(function (QueueRequest $queue) {
             $session = Session::with('concern')->where('queue_request_id', $queue->id)->latest('id')->first();
             $queue->setRelation('supportSession', $session);
-            $queue->concern_name = $session?->concern?->concern_name ?? 'General Concern';
+            $queue->concern_name = $session?->concern_label ?? 'General Concern';
             // request_date is the queue-entry timestamp. Clamp at zero so a
             // request can never render a negative wait: the underlying skew is
             // fixed by pinning the database session to UTC (config/database.php).

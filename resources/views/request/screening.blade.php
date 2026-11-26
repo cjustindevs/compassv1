@@ -13,11 +13,11 @@
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --green-50: #EAF8F0;
-            --green-100: #D0F0D8;
-            --green-500: #04A052;
-            --green-600: #038A45;
-            --green-700: #027039;
+            --green-50: #F1F8E6;
+            --green-100: #DDEFC6;
+            --green-500: #4E9A2A;
+            --green-600: #3F7F22;
+            --green-700: #2b6619;
             --gray-50: #F9FAFB;
             --gray-100: #F3F4F6;
             --gray-200: #E5E7EB;
@@ -44,7 +44,7 @@
             background: rgba(255,255,255,0.92);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(4,160,82,0.06);
+            border-right: 1px solid rgba(78, 154, 42,0.06);
             box-shadow: 4px 0 40px rgba(0,0,0,0.02);
             z-index: 100;
             transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
@@ -59,14 +59,14 @@
             align-items: center;
             gap: 12px;
             padding-bottom: 24px;
-            border-bottom: 1px solid rgba(4,160,82,0.06);
+            border-bottom: 1px solid rgba(78, 154, 42,0.06);
             margin-bottom: 20px;
         }
         .sidebar .logo .icon {
             width: 40px;
             height: 40px;
             border-radius: 12px;
-            background: linear-gradient(135deg, #38C172, #038A45);
+            background: linear-gradient(135deg, #8CC13D, #3F7F22);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -116,7 +116,7 @@
         }
 
         .sidebar .user-section {
-            border-top: 1px solid rgba(4,160,82,0.06);
+            border-top: 1px solid rgba(78, 154, 42,0.06);
             padding-top: 16px;
             margin-top: auto;
         }
@@ -129,7 +129,7 @@
             width: 42px;
             height: 42px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #38C172, #038A45);
+            background: linear-gradient(135deg, #8CC13D, #3F7F22);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -204,7 +204,7 @@
         }
         .form-input:focus {
             border-color: var(--green-500);
-            box-shadow: 0 0 0 3px rgba(4,160,82,0.08);
+            box-shadow: 0 0 0 3px rgba(78, 154, 42,0.08);
         }
 
         textarea.form-input { resize: vertical; min-height: 100px; }
@@ -518,9 +518,9 @@
             background: #f8fbf9;
         }
         .safety-modal-footer button, .safety-modal-footer a.primary {
-            border: 1px solid #d1e5d9;
+            border: 1px solid #d8e5d1;
             background: white;
-            color: #027039;
+            color: #2b6619;
             border-radius: 10px;
             padding: 10px 18px;
             font-size: 13px;
@@ -529,7 +529,7 @@
             text-decoration: none;
             display: inline-block;
         }
-        .safety-modal-footer button.primary, .safety-modal-footer a:hover.primary { background: #04a052; color: white; border-color: #04a052; }
+        .safety-modal-footer button.primary, .safety-modal-footer a:hover.primary { background: #4e9a2a; color: white; border-color: #4e9a2a; }
     </style>
     @vite(['resources/css/app.css'])
     @include('partials.ui-assets')
@@ -549,119 +549,104 @@
     <main class="main-content request-flow-compact">
 
         <!-- Top Bar -->
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center justify-between mb-5">
             <div class="flex items-center gap-4">
                 <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation" aria-controls="sidebar">
                     <x-ui-icon name="menu"  />
                 </button>
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-gray-800">Request Peer Support</h1>
-                    <p class="text-sm text-gray-500 hidden sm:block">
-                        <span class="text-green-600">Step 1 of 3</span> · Screening
-                    </p>
+                    <h1 class="text-xl md:text-2xl font-bold text-gray-800">What's on your mind?</h1>
+                    <p class="text-sm text-gray-500">Pick your topics and how you want to talk. That's it.</p>
                 </div>
-            </div>
-            <div class="flex items-center gap-3">
             </div>
         </div>
 
-        <!-- Step Indicator -->
-        @include('request.partials.progress', ['currentStep'=>1])
+        @php
+            $voiceAvailability = app(\App\Services\VoiceConfiguration::class)->availability();
+            $voiceReady = $voiceAvailability === 'ready';
+            $selectedConcerns = array_map('intval', (array) old('concern_ids', array_filter([$draft?->payload['concern_id'] ?? null])));
+            $language = old('preferred_language', $draft?->payload['preferred_language'] ?? auth()->user()->preferred_language ?? 'English');
+            $mode = old('support_mode', $voiceReady ? (auth()->user()->preferred_communication_mode ?? 'chat') : 'chat');
+        @endphp
 
-        <!-- ─── FORM CARD ─── -->
+        <!-- ─── ONE-PAGE REQUEST ─── -->
         <div class="form-card">
 
-            <form id="screeningForm" class="form-maximized" method="POST" action="{{ route('request.screening.process') }}" data-request-form>
+            <form id="screeningForm" class="form-maximized request-one-page" method="POST" action="{{ route('request.screening.process') }}" data-request-form>
                 @csrf
                 <input type="hidden" name="screening_form_version" value="{{ \App\Services\CompactScreening::SINGLE_VERSION }}">
                 <input type="hidden" name="instrument_version" value="{{ \App\Services\CompactScreening::SINGLE_VERSION }}">
                 <input type="hidden" name="stage" value="screening">
                 @if($draft)<p class="text-sm text-gray-500 mb-4" role="status">Your previously saved screening entries were restored. They have not been submitted.</p>@endif
-                <p class="text-sm text-gray-500 mb-4">Select your concern, add a brief description, and answer the safety check to continue.</p>
-                <p class="text-sm text-gray-500 mb-3">If you need urgent assistance, do not wait in the matching queue.</p>
-                <div class="request-help-actions">
-                    <a class="btn-outline request-emergency-action" href="{{ route('emergency') }}">Open emergency resources</a>
-                    <button type="button" data-open-seeker-consent class="btn-outline">Terms and Privacy</button>
-                </div>
 
-                <!-- ============================================ -->
-                <!-- SECTION 1: AREA OF CONCERN                  -->
-                <!-- ============================================ -->
-                <div class="mb-8">
-                    <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">General</h3>
-                    <p class="text-sm text-gray-500 mb-4">What is your main concern today?</p>
+                <fieldset class="request-block" @error('concern_ids') aria-invalid="true" @enderror>
+                    <legend class="request-block-title">Area of Concern <span class="request-block-hint">Pick all that fit</span></legend>
+                    <div class="request-concern-chips">
+                        @foreach($concerns as $concern)
+                            <label class="request-chip">
+                                <input type="checkbox" name="concern_ids[]" value="{{ $concern->id }}" @checked(in_array($concern->id, $selectedConcerns, true)) @if(in_array(strtolower(trim($concern->concern_name)), ['other', 'others'], true)) data-other-concern @endif>
+                                <span>{{ $concern->concern_name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    <p class="request-chip-count" data-concern-count aria-live="polite"></p>
+                    @error('concern_ids')<p class="text-red-500 text-sm mt-1" role="alert">{{ $message }}</p>@enderror
+                    @error('concern_id')<p class="text-red-500 text-sm mt-1" role="alert">Pick at least one topic.</p>@enderror
+                    <div id="customConcernContainer" class="mt-3 hidden">
+                        <label class="form-label" for="custom_concern">Tell us your other concern</label>
+                        <input type="text" id="custom_concern" name="custom_concern" class="form-input" placeholder="Type your concern..." maxlength="255" value="{{ old('custom_concern', $draft?->payload['custom_concern'] ?? '') }}">
+                        @error('custom_concern')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                    </div>
+                </fieldset>
 
-                    <div>
-                        <label class="form-label" for="concern_id">Area of Concern <span class="text-red-500">*</span></label>
-                        <select id="concern_id" name="concern_id" class="form-input" required>
-                            <option value="">Select your concern...</option>
-                            @foreach($concerns as $concern)
-                                <option value="{{ $concern->id }}" {{ old('concern_id', $draft?->payload['concern_id'] ?? null) == $concern->id ? 'selected' : '' }}>
-                                    {{ $concern->concern_name }}
-                                </option>
+                <fieldset class="request-block request-safety-question" @error('safety_check') aria-describedby="safety-check-error" aria-invalid="true" @enderror>
+                    <legend class="request-block-title">{{ \App\Services\CompactScreening::SINGLE_QUESTION }} <span class="text-red-500" aria-label="required">*</span></legend>
+                    <div class="safety-buttons">
+                        @foreach(['yes'=>'Yes','no'=>'No','prefer_not_to_say'=>'Prefer not to say'] as $value=>$label)
+                        <div class="safety-btn">
+                            <input type="radio" id="safety_{{ $value }}" name="safety_check" value="{{ $value }}" required @checked(old('safety_check', $draft?->payload['suicidal_thoughts'] ?? null) === $value)>
+                            <label for="safety_{{ $value }}">{{ $label }}</label>
+                        </div>
+                        @endforeach
+                    </div>
+                    @error('safety_check')<p id="safety-check-error" class="text-red-500 text-sm mt-1" role="alert">{{ $message }}</p>@enderror
+                </fieldset>
+
+                <fieldset class="request-block">
+                    <legend class="request-block-title">How do you want to talk?</legend>
+                    <div class="request-mode-options">
+                        <label class="request-mode-option"><input type="radio" name="support_mode" value="chat" @checked($mode !== 'voice') required><span><strong>Chat</strong><small>Type at your own pace</small></span><x-ui-icon name="message" /></label>
+                        <label class="request-mode-option {{ !$voiceReady ? 'is-unavailable' : '' }}"><input type="radio" name="support_mode" value="voice" @checked($voiceReady && $mode === 'voice') @disabled(!$voiceReady)><span><strong>Voice</strong><small>{{ $voiceReady ? 'Talk out loud' : 'Not available right now' }}</small></span><x-ui-icon name="phone" /></label>
+                    </div>
+                    @if($voiceReady)
+                        <label class="request-voice-agree hidden" data-voice-agree><input type="checkbox" name="voice_participation" value="1" @checked(old('voice_participation'))> <span>I agree to a live call. My Adviser may listen live to keep it safe. Calls are not recorded.</span></label>
+                        @error('voice_participation')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                    @endif
+                    @error('support_mode')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                    <div class="request-inline-fields">
+                        <label class="form-label" for="preferred_language">Language</label>
+                        <select id="preferred_language" name="preferred_language" class="form-input" required>
+                            @foreach(['English'=>'English','Tagalog'=>'Tagalog','English/Tagalog'=>'Both'] as $value=>$label)
+                                <option value="{{ $value }}" @selected($language === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
-                        @error('concern_id')
-                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                        @enderror
                     </div>
+                    @error('preferred_language')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                </fieldset>
 
-                    <!-- Custom Concern (appears when "Others" selected) -->
-                    <div id="customConcernContainer" class="mt-3 hidden">
-                        <label class="form-label" for="custom_concern">Please specify your concern</label>
-                        <input type="text" id="custom_concern" name="custom_concern" class="form-input" placeholder="Type your concern..." maxlength="255" value="{{ old('custom_concern', $draft?->payload['custom_concern'] ?? '') }}">
-                        @error('custom_concern')
-                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
+                <details class="request-note" @if(old('description', $draft?->payload['description'] ?? '')) open @endif>
+                    <summary>Add a note for your helper <span>(optional)</span></summary>
+                    <label class="sr-only" for="description">Note for your helper</label>
+                    <textarea id="description" name="description" class="form-input" maxlength="200" data-character-count="charCount" aria-describedby="charCount" placeholder="Anything you want your helper to know first.">{{ old('description', $draft?->payload['description'] ?? '') }}</textarea>
+                    <div class="char-count" id="charCount" aria-live="polite">0 / 200</div>
+                    @error('description')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
+                </details>
 
-                <!-- ============================================ -->
-                <!-- SECTION 2: BRIEF DESCRIPTION                -->
-                <!-- ============================================ -->
-                <div class="mb-8">
-                    <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Brief Description</h3>
-                    <p class="text-sm text-gray-500 mb-4">Tell us more about your concern.</p>
-
-                    <div>
-                        <label class="form-label" for="description">Description <span class="text-red-500">*</span></label>
-                        <textarea id="description" name="description" class="form-input" maxlength="200" required data-character-count="charCount" aria-describedby="charCount" placeholder="I have several deadlines this week and I'm having trouble sleeping because I feel like I cannot keep up with my classes.">{{ old('description', $draft?->payload['description'] ?? '') }}</textarea>
-                        <div class="char-count" id="charCount" aria-live="polite">0 / 200</div>
-                        @error('description')
-                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
-
-                <section class="mb-6" aria-labelledby="safety-check-heading">
-                    <h3 id="safety-check-heading" class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">Safety Check</h3>
-                    <p class="text-xs text-gray-500 mb-2">If you choose Prefer not to say, matching continues while an Adviser reviews your request and may send one follow-up question.</p>
-                    <fieldset class="request-safety-question" @error('safety_check') aria-describedby="safety-check-error" aria-invalid="true" @enderror>
-                        <legend>{{ \App\Services\CompactScreening::SINGLE_QUESTION }} <span class="text-red-500" aria-label="required">*</span></legend>
-                        <div class="safety-buttons">
-                            @foreach(['yes'=>'Yes','no'=>'No','prefer_not_to_say'=>'Prefer not to say'] as $value=>$label)
-                            <div class="safety-btn">
-                                <input type="radio" id="safety_{{ $value }}" name="safety_check" value="{{ $value }}" required @checked(old('safety_check', $draft?->payload['suicidal_thoughts'] ?? null) === $value)>
-                                <label for="safety_{{ $value }}">{{ $label }}</label>
-                            </div>
-                            @endforeach
-                        </div>
-                        @error('safety_check')<p id="safety-check-error" class="text-red-500 text-sm mt-1" role="alert">{{ $message }}</p>@enderror
-                    </fieldset>
-                </section>
-
-                <!-- ============================================ -->
-                <!-- FORM ACTIONS                                -->
-                <!-- ============================================ -->
-                <div class="actions-compact">
-                    <a href="{{ route('seeker.dashboard') }}" class="btn-outline">
-                        <x-ui-icon name="arrow-left" class="mr-2" /> Back
-                    </a>
-                    <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                        <button type="submit" class="btn-primary w-full sm:w-auto">
-                            Continue <x-ui-icon name="arrow-right"  />
-                        </button>
-                    </div>
+                <div class="actions-compact request-one-page-actions">
+                    <button type="button" data-open-seeker-consent class="btn-outline">Terms and Privacy</button>
+                    <button type="submit" class="btn-primary w-full sm:w-auto">
+                        Start <span data-start-label>chatting</span> <x-ui-icon name="arrow-right"  />
+                    </button>
                 </div>
 
             </form>
@@ -736,26 +721,42 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
 
-            const concernSelect = document.getElementById('concern_id');
+            // Several concerns can be picked; "Other" asks for a short label.
+            const chips = [...document.querySelectorAll('input[name="concern_ids[]"]')];
+            const count = document.querySelector('[data-concern-count]');
             const customContainer = document.getElementById('customConcernContainer');
             const customConcernInput = document.getElementById('custom_concern');
-
-            function isOthers(option) {
-                return option && ['other','others'].includes(option.text.trim().toLowerCase());
-            }
-
-            concernSelect.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                if (isOthers(selectedOption)) {
-                    customContainer.classList.remove('hidden');
-                    customConcernInput.setAttribute('required', 'required');
-                } else {
-                    customContainer.classList.add('hidden');
-                    customConcernInput.removeAttribute('required');
-                    customConcernInput.value = '';
+            const syncConcerns = () => {
+                const picked = chips.filter(c => c.checked);
+                count.textContent = picked.length ? picked.length + ' selected' : '';
+                const other = picked.some(c => c.hasAttribute('data-other-concern'));
+                customContainer.classList.toggle('hidden', !other);
+                customConcernInput.toggleAttribute('required', other);
+                if (!other) customConcernInput.value = '';
+            };
+            chips.forEach(c => c.addEventListener('change', syncConcerns));
+            syncConcerns();
+            document.getElementById('screeningForm').addEventListener('submit', (event) => {
+                if (!chips.some(c => c.checked)) {
+                    event.preventDefault();
+                    count.textContent = 'Pick at least one topic.';
+                    chips[0]?.focus();
                 }
             });
-            concernSelect.dispatchEvent(new Event('change'));
+
+            // Voice asks for one agreement; the button says what happens next.
+            const voiceAgree = document.querySelector('[data-voice-agree]');
+            const startLabel = document.querySelector('[data-start-label]');
+            const syncMode = () => {
+                const voice = document.querySelector('input[name="support_mode"]:checked')?.value === 'voice';
+                if (voiceAgree) {
+                    voiceAgree.classList.toggle('hidden', !voice);
+                    voiceAgree.querySelector('input').toggleAttribute('required', voice);
+                }
+                if (startLabel) startLabel.textContent = voice ? 'voice call' : 'chatting';
+            };
+            document.querySelectorAll('input[name="support_mode"]').forEach(r => r.addEventListener('change', syncMode));
+            syncMode();
 
             // ── Safety check modal ──
             const safetyModal = document.getElementById('safetyModal');

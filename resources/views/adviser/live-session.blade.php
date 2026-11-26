@@ -10,7 +10,7 @@
             <div><dt>Status</dt><dd><x-ui.badge tone="red" class="lw-live" data-live-badge>Live</x-ui.badge></dd></div>
             <div><dt>Helper</dt><dd>{{ $session->helper?->full_name ?? 'Helper' }}</dd></div>
             <div><dt>Seeker</dt><dd>{{ $session->seeker?->generated_alias ?? 'Seeker' }}</dd></div>
-            <div><dt>Concern</dt><dd>{{ $session->concern?->concern_name ?? 'General concern' }}</dd></div>
+            <div><dt>Concern</dt><dd>{{ $session->concern_label ?? 'General concern' }}</dd></div>
             <div><dt>Risk</dt><dd><x-ui.badge :tone="in_array($risk, ['high', 'emergency']) ? 'red' : ($risk === 'moderate' ? 'amber' : 'neutral')">{{ ucfirst($risk) }} risk</x-ui.badge></dd></div>
             <div><dt>Started</dt><dd>{{ $session->start_time?->copy()->timezone('Asia/Manila')->format('g:i A') }} PHT</dd></div>
         </dl>
@@ -80,7 +80,7 @@
 .lw-msg { max-width: 75%; padding: 8px 12px; border-radius: 12px; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
 .lw-msg small { display: block; font-size: 11px; opacity: .75; margin-bottom: 2px; }
 .lw-msg.from-seeker { align-self: flex-start; background: #fff; border: 1px solid #E5E7EB; color: #1F2937; }
-.lw-msg.from-helper { align-self: flex-end; background: #04A052; color: #fff; }
+.lw-msg.from-helper { align-self: flex-end; background: #4E9A2A; color: #fff; }
 .lw-empty { color: #6B7280; font-size: 13px; margin: auto; text-align: center; }
 .lw-coach { position: sticky; top: calc(12px + env(safe-area-inset-top, 0px)); }
 .lw-coach form { display: grid; gap: 8px; margin: 12px 0; }
@@ -94,14 +94,14 @@
 @media (max-width: 1000px) { .lw-grid { grid-template-columns: 1fr; } .lw-coach { position: static; } }
 .lw-listen { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; margin-bottom: 16px; }
 .lw-listen-copy { display: flex; align-items: flex-start; gap: 12px; min-width: 0; flex: 1 1 320px; }
-.lw-listen-icon { display: inline-grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: #ecfdf3; color: #087341; }
-.lw-listen[data-listen-state="listening"] .lw-listen-icon { background: #027039; color: #fff; }
+.lw-listen-icon { display: inline-grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: #f2fbee; color: #31711d; }
+.lw-listen[data-listen-state="listening"] .lw-listen-icon { background: #2b6619; color: #fff; }
 .lw-listen .ui-card-sub { margin: 2px 0 0; }
 .lw-listen-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .lw-listen-form { display: grid; gap: 8px; }
 .lw-listen-form select, .lw-listen-form textarea { width: 100%; }
 .lw-private { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #334155; }
-.lw-private input { width: 16px; height: 16px; accent-color: #027039; }
+.lw-private input { width: 16px; height: 16px; accent-color: #2b6619; }
 .lw-notes li.is-private { background: #fffbeb; border: 1px dashed #fcd34d; }
 @media (max-width: 700px) { .lw-msg { max-width: 90%; } }
 </style>

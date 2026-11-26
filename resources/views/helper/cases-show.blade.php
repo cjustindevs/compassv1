@@ -48,7 +48,7 @@
 
                 <div class="form-group">
                     <label class="form-label">Area of concern</label>
-                    <div class="text-sm text-gray-700">{{ $session->concern->concern_name ?? 'No concern specified' }}</div>
+                    <div class="text-sm text-gray-700">{{ $session->concern_label ?? 'No concern specified' }}</div>
                     @if($session->concern?->description)
                         <div class="text-sm text-gray-500 mt-1">{{ $session->concern->description }}</div>
                     @endif

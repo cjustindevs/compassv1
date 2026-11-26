@@ -48,7 +48,8 @@ class AuthenticatedSessionController extends Controller
             'helper' => route('helper.dashboard'),
             'moderator' => route('moderator.dashboard'),
             'professional' => route('professional.dashboard'),
-            default => route('seeker.dashboard'),
+            // Seekers go straight to the request page; it forwards to an open request or chat.
+            default => route('request.screening'),
         };
 
         if ($user->role === 'moderator') {

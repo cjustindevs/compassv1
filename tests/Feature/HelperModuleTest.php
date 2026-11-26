@@ -854,7 +854,7 @@ class HelperModuleTest extends TestCase
         $response->assertDontSee($this->helperUser->helper->full_name);
     }
 
-    public function test_matching_page_shows_active_session_state(): void
+    public function test_matching_page_opens_chat_when_session_is_active(): void
     {
         $seekerUser = User::where('role', 'seeker')->firstOrFail();
         $seeker = $seekerUser->helpSeeker;
@@ -877,9 +877,8 @@ class HelperModuleTest extends TestCase
         $response = $this->actingAs($seekerUser)
             ->get(route('request.matching'));
 
-        $response->assertOk();
-        $response->assertSee('Your chat is ready');
-        $response->assertSee('Open chat');
+        // The waiting page forwards straight to chat once the session is active.
+        $response->assertRedirect(route('session.chat', ['session_id' => $session->id]));
     }
 
     public function test_seeker_chat_page_renders_premium_chat_interface(): void

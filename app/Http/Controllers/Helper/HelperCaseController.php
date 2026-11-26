@@ -69,7 +69,7 @@ class HelperCaseController extends Controller
                 'risk_class' => 'assigned',
                 'mode' => $session->mode_label,
                 'language' => $session->seeker?->user?->preferred_language ?: 'English',
-                'concern' => $session->concern->concern_name ?? 'No concern specified',
+                'concern' => $session->concern_label ?? 'No concern specified',
                 'age' => $session->seeker?->age,
                 'gender' => $session->seeker?->genderLabel(),
                 'created' => $session->created_at?->format('M d, Y h:i A'),

@@ -56,6 +56,14 @@ class RequestSupportController extends Controller
 
             return $this->next($this->workflow->screen($request->user(), $answers));
         }
+        // One-page request: several concerns plus chat/voice and language in a
+        // single post. The first concern stays the main concern (concern_id).
+        $onePage = $request->has('support_mode');
+        $concernIds = array_values(array_unique(array_filter(array_map('intval', (array) $request->input('concern_ids', [])))));
+        if ($concernIds) {
+            $request->merge(['concern_id' => $concernIds[0], 'concern_ids' => $concernIds]);
+        }
+        $preferences = $onePage ? $this->validatePreferences($request) : null;
         // Versioned single-question intake never accepts manufactured hidden answers.
         // Keep complete older clients compatible without reinterpreting their records.
         $single = $request->input('screening_form_version') === CompactScreening::SINGLE_VERSION;
@@ -63,14 +71,30 @@ class RequestSupportController extends Controller
             'screening_form_version' => ['sometimes', Rule::in([CompactScreening::FORM_VERSION, CompactScreening::SINGLE_VERSION])]]);
         $rules = $single ? array_fill_keys(CompactScreening::FIELDS, 'prohibited') + ['safety_check' => 'required|in:yes,no,prefer_not_to_say']
             : ($request->has('screening_form_version') ? CompactScreening::formRules() : CompactScreening::rules());
-        $data = $request->validate($rules + ['screening_form_version' => 'sometimes|string', 'concern_id' => ['required', Rule::exists('concern_categories', 'id')->where('is_active', true)], 'description' => $single ? 'required|string|max:200' : 'nullable|string|max:500', 'custom_concern' => ['nullable', 'string', 'max:255', Rule::requiredIf(function () use ($request) {
-            $concern = ConcernCategory::find($request->input('concern_id'));
-
-            return $concern && in_array(strtolower(trim($concern->concern_name)), ['other', 'others'], true);
-        })]]);
+        $data = $request->validate($rules + ['screening_form_version' => 'sometimes|string', 'concern_id' => ['required', Rule::exists('concern_categories', 'id')->where('is_active', true)],
+            'concern_ids' => 'sometimes|array|min:1|max:8', 'concern_ids.*' => ['integer', Rule::exists('concern_categories', 'id')->where('is_active', true)],
+            'description' => $single && ! $onePage ? 'required|string|max:200' : 'nullable|string|max:'.($single ? 200 : 500), 'custom_concern' => ['nullable', 'string', 'max:255', Rule::requiredIf(function () use ($request) {
+                return ConcernCategory::whereIn('id', $request->input('concern_ids') ?: [$request->input('concern_id')])->get()
+                    ->contains(fn ($concern) => in_array(strtolower(trim($concern->concern_name)), ['other', 'others'], true));
+            })]]);
         $answers = $single ? ['suicidal_thoughts' => $data['safety_check']] : array_intersect_key($data, array_flip(CompactScreening::FIELDS));
+        $session = $this->workflow->screen($request->user(), $answers, $data);
+        if ($preferences && $session->workflow_state === 'session_preferences_required' && $session->concern_id
+            && (! $session->requires_adviser_review || $session->permitsParallelScreeningSupport()) && $session->risk_level !== 'emergency') {
+            $session = $this->workflow->submit($request->user(), $preferences);
+        }
 
-        return $this->next($this->workflow->screen($request->user(), $answers, $data));
+        return $this->next($session);
+    }
+
+    /** Chat/voice and language rules shared by the one-page request and the preferences step. */
+    private function validatePreferences(Request $request): array
+    {
+        $voiceReady = app(VoiceConfiguration::class)->ready();
+
+        return $request->validate(['support_mode' => $voiceReady ? 'required|in:chat,voice' : 'required|in:chat',
+            'preferred_language' => 'required|in:English,Tagalog,English/Tagalog',
+            'voice_participation' => [Rule::excludeIf($request->input('support_mode') !== 'voice'), 'required', 'accepted']]);
     }
 
     public function concern(Request $request)
@@ -111,12 +135,7 @@ class RequestSupportController extends Controller
         if ($redirect = $this->requireConsentOrRedirect($request->user())) {
             return $redirect;
         }
-        $voiceReady = app(VoiceConfiguration::class)->ready();
-        $data = $request->validate(['support_mode' => $voiceReady ? 'required|in:chat,voice' : 'required|in:chat',
-            'preferred_language' => 'required|in:English,Tagalog,English/Tagalog',
-            'voice_participation' => [Rule::excludeIf($request->input('support_mode') !== 'voice'), 'required', 'accepted']]);
-
-        return $this->next($this->workflow->submit($request->user(), $data));
+        return $this->next($this->workflow->submit($request->user(), $this->validatePreferences($request)));
     }
 
     public function matching(Request $request)
@@ -146,6 +165,13 @@ class RequestSupportController extends Controller
         }
         if (! $session) {
             return redirect()->route('request.screening');
+        }
+
+        // Chat opens by itself: once the helper starts the session the waiting
+        // page forwards straight to chat (or voice) instead of asking for a click.
+        if ($session->isActive() && $session->helper_accepted_at && $session->helper_id) {
+            return redirect()->route($session->session_type === 'voice' && ! $session->voice_consent_obtained ? 'request.voice-consent'
+                : ($session->session_type === 'voice' ? 'session.voice' : 'session.chat'), ['session_id' => $session->id]);
         }
 
         // Review and matching are separate statuses in the same queue workspace.

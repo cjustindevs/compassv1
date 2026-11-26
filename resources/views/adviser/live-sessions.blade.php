@@ -21,7 +21,7 @@
                         <x-ui.badge :tone="in_array($risk, ['high', 'emergency']) ? 'red' : ($risk === 'moderate' ? 'amber' : 'neutral')">{{ ucfirst($risk) }} risk</x-ui.badge>
                     </div>
                     <h2 class="ui-card-title">{{ $session->helper?->full_name ?? 'Helper' }}</h2>
-                    <p class="ui-card-sub">With {{ $session->seeker?->generated_alias ?? 'Seeker' }} · {{ $session->concern?->concern_name ?? 'General concern' }}</p>
+                    <p class="ui-card-sub">With {{ $session->seeker?->generated_alias ?? 'Seeker' }} · {{ $session->concern_label ?? 'General concern' }}</p>
                     <p class="ui-card-sub">Started {{ $session->start_time?->copy()->timezone('Asia/Manila')->format('g:i A') }} PHT · {{ $session->start_time?->diffForHumans(null, true) }} ago</p>
                     <div class="ui-card-foot"><a class="btn-primary" href="{{ route('adviser.live.show', $session->id) }}">{{ $session->session_type === 'voice' ? 'Open and listen' : 'Watch live' }}</a></div>
                 </x-ui.card>

@@ -23,7 +23,7 @@
                                 <span class="font-semibold text-gray-800">{{ $session->seeker->generated_alias ?? 'Seeker' }}</span>
                                 <span class="status-badge {{ str_replace('_', '-', $session->session_status) }}">{{ $session->status_label }}</span>
                             </div>
-                            <div class="text-xs text-gray-400">{{ $session->concern->concern_name ?? 'Session' }} · {{ $session->created_at?->diffForHumans() }}</div>
+                            <div class="text-xs text-gray-400">{{ $session->concern_label ?? 'Session' }} · {{ $session->created_at?->diffForHumans() }}</div>
                             @if($session->messages->isNotEmpty())
                                 <div class="text-xs text-gray-500 mt-1" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">
                                     {{ $session->messages->sortByDesc('sent_datetime')->first()->sender_role === 'helper' ? 'You: ' : '' }}{{ $session->messages->sortByDesc('sent_datetime')->first()->message_text }}

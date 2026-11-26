@@ -27,7 +27,7 @@ class SetupValidationTest extends TestCase
             ['moderator@compass.local', 'Moderator@123', 'moderator'],
             ['anna.cruz@compass.local', 'Professional@123', 'professional'],
         ] as [$login, $password, $role]) {
-            $this->post('/login', ['email' => $login, 'password' => $password])->assertRedirect(route($role . '.dashboard'));
+            $this->post('/login', ['email' => $login, 'password' => $password])->assertRedirect($role === 'seeker' ? route('request.screening') : route($role . '.dashboard'));
             $this->assertAuthenticated();
             $this->get(route($role . '.dashboard'))->assertOk();
             $this->post('/logout')->assertRedirect('/');

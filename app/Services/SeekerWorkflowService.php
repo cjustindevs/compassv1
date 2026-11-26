@@ -41,7 +41,7 @@ class SeekerWorkflowService {
                 'workflow_state'=>$emergency?'emergency_escalated':($review&&!$parallelIntake?'adviser_review_required':($compactDetails !== null ? 'session_preferences_required' : 'concern_required')),
                 'requires_adviser_review'=>$review,'review_adviser_id'=>$adviser?->id,
                 'requires_closer_monitoring'=>$result['risk_level']==='moderate','elevated_priority'=>$result['risk_level']==='moderate',
-                'concern_id'=>$compactDetails['concern_id'] ?? null,'completion_status'=>'pending','created_date'=>now()]);
+                'concern_id'=>$compactDetails['concern_id'] ?? null,'concern_ids'=>$compactDetails['concern_ids'] ?? null,'completion_status'=>'pending','created_date'=>now()]);
             $screening = ScreeningResponse::create(['seeker_id'=>$session->seeker_id,'session_id'=>$session->id,
                 'responses'=>$answers + ($compactDetails !== null ? ['description'=>$compactDetails['description'] ?? null,'custom_concern'=>$compactDetails['custom_concern'] ?? null] : []),'risk_level'=>$result['risk_level'],'priority'=>$result['priority'],
                 'action'=>$result['action'],'reason'=>$result['reason'],'classified_at'=>now(),'classified_by'=>'system',

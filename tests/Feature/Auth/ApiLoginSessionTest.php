@@ -98,7 +98,7 @@ class ApiLoginSessionTest extends TestCase
         $user = $this->user();
         $token = $this->login();
         DB::table('sessions')->where('user_id', $user->id)->update(['last_activity' => now()->subMinutes(6)->timestamp]);
-        $this->post('/login', ['email' => 'CalmFox123', 'password' => 'password'])->assertRedirect(route('seeker.dashboard'));
+        $this->post('/login', ['email' => 'CalmFox123', 'password' => 'password'])->assertRedirect(route('request.screening'));
         $this->assertAuthenticatedAs($user);
         $this->withToken($token)->getJson('/api/user')->assertUnauthorized();
     }

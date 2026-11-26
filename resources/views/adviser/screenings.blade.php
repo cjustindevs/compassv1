@@ -94,7 +94,7 @@
                 <dl class="screening-review-meta">
                     <div>
                         <dt>Concern</dt>
-                        <dd>{{ $session->concern?->concern_name ?? 'Not specified' }}</dd>
+                        <dd>{{ $session->concern_label ?? 'Not specified' }}</dd>
                     </div>
                     <div>
                         <dt>Assigned Helper</dt>

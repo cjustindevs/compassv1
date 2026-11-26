@@ -20,7 +20,7 @@
         <p class="text-sm text-gray-500 mb-4">{{ \App\Services\SeekerRequestPresentation::explanation($session) }}</p>
         <dl class="request-details-grid">
             <div><dt>Status</dt><dd>{{ \App\Services\SeekerRequestPresentation::status($session) }}</dd></div>
-            <div><dt>Concern</dt><dd>{{ $session->concern?->concern_name ?? 'Not recorded' }}</dd></div>
+            <div><dt>Concern</dt><dd>{{ $session->concern_label ?? 'Not recorded' }}</dd></div>
             @if($screening?->responses['custom_concern'] ?? null)<div><dt>Other concern</dt><dd>{{ $screening->responses['custom_concern'] }}</dd></div>@endif
             @if($description=$narrative?->responses['concern_description'] ?? $screening?->responses['description'] ?? null)<div><dt>Submitted description</dt><dd class="whitespace-pre-wrap">{{ $description }}</dd></div>@endif
             @if($screening?->instrument_version === \App\Services\CompactScreening::SINGLE_VERSION && $screening->follow_up_requested_at)

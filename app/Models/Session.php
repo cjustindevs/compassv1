@@ -143,6 +143,7 @@ class Session extends Model
         'moderator_id',
         'queue_request_id',
         'concern_id',
+        'concern_ids',
         'scheduled_start',
         'pre_session_brief_expires_at',
         'session_type',
@@ -181,6 +182,7 @@ class Session extends Model
     ];
 
     protected $casts = [
+        'concern_ids' => 'array',
         'documentation_notified_at' => 'datetime',
 
         'scheduled_start' => 'datetime',
@@ -232,6 +234,28 @@ class Session extends Model
     public function concern(): BelongsTo
     {
         return $this->belongsTo(ConcernCategory::class, 'concern_id', 'id');
+    }
+
+    /**
+     * Every concern the seeker picked, main concern first, e.g.
+     * "Academic Stress, Family Problems". Null when none was recorded.
+     */
+    public function getConcernLabelAttribute(): ?string
+    {
+        $ids = array_values(array_unique(array_map('intval', array_filter((array) ($this->concern_ids ?? [])))));
+        if (count($ids) > 1) {
+            static $names = [];
+            $missing = array_diff($ids, array_keys($names));
+            if ($missing) {
+                $names += ConcernCategory::whereIn('id', $missing)->pluck('concern_name', 'id')->all();
+            }
+            $labels = array_values(array_filter(array_map(fn ($id) => $names[$id] ?? null, $ids)));
+            if ($labels) {
+                return implode(', ', $labels);
+            }
+        }
+
+        return $this->concern?->concern_name ?? ($this->concern_category ?: null);
     }
 
     public function messages(): HasMany

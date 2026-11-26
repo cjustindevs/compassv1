@@ -32,7 +32,7 @@
                 @forelse($requests as $item)
                     <tr>
                         <td class="font-semibold">{{ $item->reference_number }}</td>
-                        <td>{{ $item->concern?->concern_name ?? 'Not recorded' }}</td>
+                        <td>{{ $item->concern_label ?? 'Not recorded' }}</td>
                         <td>{{ ($item->submitted_at ?? $item->created_date ?? $item->created_at)?->copy()->timezone('Asia/Manila')->format('M d, Y g:i A') }}<br><span class="text-xs text-gray-500">{{ $item->submitted_at ? 'Submitted' : 'Created' }}</span></td>
                         <td><span class="seeker-badge">{{ \App\Services\SeekerRequestPresentation::status($item) }}</span></td>
                         <td class="rh-actions"><div class="rh-action-buttons">

@@ -17,11 +17,11 @@
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --green-50: #EAF8F0;
-            --green-100: #D0F0D8;
-            --green-500: #04A052;
-            --green-600: #038A45;
-            --green-700: #027039;
+            --green-50: #F1F8E6;
+            --green-100: #DDEFC6;
+            --green-500: #4E9A2A;
+            --green-600: #3F7F22;
+            --green-700: #2b6619;
             --gray-50: #F9FAFB;
             --gray-100: #F3F4F6;
             --gray-200: #E5E7EB;
@@ -49,7 +49,7 @@
             background: rgba(255,255,255,0.92);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(4,160,82,0.06);
+            border-right: 1px solid rgba(78, 154, 42,0.06);
             box-shadow: 4px 0 40px rgba(0,0,0,0.02);
             z-index: 100;
             transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
@@ -64,14 +64,14 @@
             align-items: center;
             gap: 12px;
             padding-bottom: 24px;
-            border-bottom: 1px solid rgba(4,160,82,0.06);
+            border-bottom: 1px solid rgba(78, 154, 42,0.06);
             margin-bottom: 20px;
         }
         .sidebar .logo .icon {
             width: 40px;
             height: 40px;
             border-radius: 12px;
-            background: linear-gradient(135deg, #38C172, #038A45);
+            background: linear-gradient(135deg, #8CC13D, #3F7F22);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -121,7 +121,7 @@
         }
 
         .sidebar .user-section {
-            border-top: 1px solid rgba(4,160,82,0.06);
+            border-top: 1px solid rgba(78, 154, 42,0.06);
             padding-top: 16px;
             margin-top: auto;
         }
@@ -134,7 +134,7 @@
             width: 42px;
             height: 42px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #38C172, #038A45);
+            background: linear-gradient(135deg, #8CC13D, #3F7F22);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -459,7 +459,7 @@
                                 <div class="text-left">
                                     <p class="font-semibold text-gray-800">{{ $availableHelper->public_alias }}</p>
                                     <p class="text-sm text-gray-500">{{ $availableHelper->specializations ?: 'Peer support' }}</p>
-                                    <span class="text-xs text-green-600 font-medium">Level {{ $availableHelper->competency_level }} Peer Helper</span>
+                                    <span class="text-xs text-green-600 font-medium">Peer helper</span>
                                 </div>
                             </div>
                         </div>
@@ -513,11 +513,6 @@
                                 Queue position: #<span data-queue-position>{{ $currentQueueRequest->queue_position }}</span>
                             </p>
                         @endif
-                        @if($availableHelperCount > 0)
-                            <p class="mt-1 text-green-600">
-                                 {{ $availableHelperCount }} {{ $availableHelperCount === 1 ? 'helper is' : 'helpers are' }} eligible for this priority; matching also checks language, schedule, and workload
-                            </p>
-                        @endif
                         @if(!empty($matchingReason))
                             <p class="mt-2 text-left text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 inline-block" role="status">
                                  {{ $matchingReason }}
@@ -539,9 +534,7 @@
                         <a href="{{ route('seeker.dashboard') }}" class="btn-outline w-full sm:w-auto">
                             <x-ui-icon name="home" class="mr-2" /> Return to Dashboard
                         </a>
-                        <button class="btn-primary w-full sm:w-auto" onclick="window.location.reload()">
-                            <x-ui-icon name="refresh" class="mr-2" /> Check Status
-                        </button>
+                        <p class="text-sm text-gray-500">This page updates by itself. Your chat opens as soon as a helper is ready.</p>
                     </div>
                 </div>
             @endif
@@ -581,7 +574,7 @@
             if (noHelperSection) {
                 setInterval(function() {
                     if (!document.hidden && !document.querySelector('dialog[open]')) window.location.reload();
-                }, 15000);
+                }, 8000);
             }
         });
     </script>

@@ -58,7 +58,7 @@ class LoginRateLimitingTest extends TestCase
 
         $this->travel(2)->seconds();
         $this->post('/login', ['email' => 'GentleBear1463@compasslocal', 'password' => 'password'])
-            ->assertRedirect(route('seeker.dashboard'));
+            ->assertRedirect(route('request.screening'));
         $this->assertAuthenticatedAs($user);
     }
 
@@ -127,7 +127,7 @@ class LoginRateLimitingTest extends TestCase
     {
         $user = User::factory()->create(['role' => 'seeker', 'email' => 'gentlebear1463@compass.local']);
         $this->post('/login', ['email' => $login, 'password' => 'password'])
-            ->assertRedirect(route('seeker.dashboard'));
+            ->assertRedirect(route('request.screening'));
         $this->assertAuthenticatedAs($user);
     }
 
@@ -147,7 +147,7 @@ class LoginRateLimitingTest extends TestCase
         // Preserve authentication for the exact stored staff email, including its case.
         $user = User::factory()->create(['role' => $role, 'email' => 'Existing.Account@example.test', 'remember_token' => null]);
         $this->post('/login', ['email' => '  Existing.Account@example.test  ', 'password' => 'password', 'remember' => true])
-            ->assertRedirect(route($role.'.dashboard'));
+            ->assertRedirect(($role === 'seeker' ? route('request.screening') : route($role.'.dashboard')));
         $this->assertAuthenticatedAs($user);
         $this->assertNotEmpty($user->fresh()->remember_token);
         $this->post('/logout')->assertRedirect('/');
