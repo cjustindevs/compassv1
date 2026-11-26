@@ -46,7 +46,7 @@
 .training-page .training-form .training-submit{grid-column:1/-1}
 .training-page .ui-field{min-width:0}
 .training-page .ui-field textarea{padding:12px;font-size:15px;border:1px solid var(--compass-border,#e5e7eb);border-radius:12px;background:#fff;resize:vertical;font-family:inherit}
-.training-page .ui-field textarea:focus-visible{outline:none;box-shadow:var(--ring,0 0 0 3px rgba(4,160,82,.25))}
+.training-page .ui-field textarea:focus-visible{outline:none;box-shadow:var(--ring,0 0 0 3px rgba(78, 154, 42,.25))}
 .training-page .training-update{display:grid;gap:12px;margin-top:16px}
 .training-page .training-buttons{display:flex;flex-wrap:wrap;gap:8px}
 .training-page .training-danger{color:#b91c1c;border-color:#fecaca}

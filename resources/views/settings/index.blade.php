@@ -11,8 +11,8 @@
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --green-50: #EAF8F0; --green-100: #DCF5E0; --green-200: #A8E0B0; --green-300: #6DCB80;
-            --green-400: #30B650; --green-500: #04A052; --green-600: #038A45; --green-700: #027039;
+            --green-50: #F1F8E6; --green-100: #E4F2CF; --green-200: #C5E39A; --green-300: #A9D46E;
+            --green-400: #8CC13D; --green-500: #4E9A2A; --green-600: #3F7F22; --green-700: #2b6619;
             --green-800: #01562B; --green-900: #003D1E;
             --gray-50: #F9FAFB; --gray-100: #F3F4F6; --gray-200: #E5E7EB; --gray-300: #D1D5DB;
             --gray-400: #9CA3AF; --gray-500: #6B7280; --gray-600: #4B5563; --gray-700: #374151;
@@ -107,7 +107,7 @@
 
             Signed in as <strong class="text-gray-700">{{ $user->email }}</strong>
             @if($user->role)
-                <span class="bg-green-50 text-[#04A052] text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">{{ $user->role }}</span>
+                <span class="bg-green-50 text-[#4E9A2A] text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">{{ $user->role }}</span>
             @endif
         </div>
 

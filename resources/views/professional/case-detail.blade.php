@@ -12,10 +12,10 @@
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --green-50: #EAF8F0;
-            --green-500: #04A052;
-            --green-600: #038A45;
-            --green-700: #027039;
+            --green-50: #F1F8E6;
+            --green-500: #4E9A2A;
+            --green-600: #3F7F22;
+            --green-700: #2b6619;
             --gray-50: #F9FAFB;
             --gray-100: #F3F4F6;
             --gray-200: #E5E7EB;
@@ -249,15 +249,15 @@
         }
         .case-history-refs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
         .case-history-ref { display: grid; gap: 2px; padding: 8px 12px; border: 1px solid var(--gray-200, #e5e7eb); border-radius: 10px; text-decoration: none; color: inherit; font-size: 13px; }
-        .case-history-ref.is-current { border-color: #04a052; background: #eaf8f0; }
-        .case-history-ref span { font-size: 11px; font-weight: 700; color: #027039; }
+        .case-history-ref.is-current { border-color: #4e9a2a; background: #f1f8e6; }
+        .case-history-ref span { font-size: 11px; font-weight: 700; color: #2b6619; }
         .case-history-ref small { color: #6b7280; font-size: 12px; }
-        .case-history-timeline { list-style: none; margin: 0; padding: 0 0 0 14px; border-left: 2px solid #dcf5e0; display: grid; gap: 12px; }
+        .case-history-timeline { list-style: none; margin: 0; padding: 0 0 0 14px; border-left: 2px solid #e4f2cf; display: grid; gap: 12px; }
         .case-history-timeline li { position: relative; display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 4px 14px; font-size: 13px; }
-        .case-history-timeline li::before { content: ""; position: absolute; left: -20px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #04a052; }
+        .case-history-timeline li::before { content: ""; position: absolute; left: -20px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #4e9a2a; }
         .case-history-timeline time { color: #6b7280; font-size: 12px; }
         .case-history-timeline p { margin: 2px 0 0; color: #4b5563; }
-        .case-history-tag { font-size: 11px; font-weight: 600; color: #027039; background: #eaf8f0; border-radius: 99px; padding: 1px 8px; }
+        .case-history-tag { font-size: 11px; font-weight: 600; color: #2b6619; background: #f1f8e6; border-radius: 99px; padding: 1px 8px; }
         @media (max-width: 640px) { .case-history-timeline li { grid-template-columns: 1fr; } }
     </style>
     @vite(['resources/css/app.css'])

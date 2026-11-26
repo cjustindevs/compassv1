@@ -29,9 +29,9 @@
 </dialog>
 @endif
 <style>
-#connectionNotice{padding:12px 16px;background:#f0faf4;border:1px solid #cce6d7;border-radius:12px;margin:8px 12px;font:13px/1.5 Inter,system-ui,sans-serif}
-#connectionNotice button{font:600 13px Inter,system-ui,sans-serif;padding:10px 14px;min-height:42px;border:1px solid #bcd8c7;border-radius:9px;background:#fff;color:#087642;cursor:pointer}
-#connectionNotice button:focus-visible{outline:2px solid #087642;outline-offset:3px}
+#connectionNotice{padding:12px 16px;background:#f0faf4;border:1px solid #d5e6cc;border-radius:12px;margin:8px 12px;font:13px/1.5 Inter,system-ui,sans-serif}
+#connectionNotice button{font:600 13px Inter,system-ui,sans-serif;padding:10px 14px;min-height:42px;border:1px solid #c5d8bc;border-radius:9px;background:#fff;color:#326618;cursor:pointer}
+#connectionNotice button:focus-visible{outline:2px solid #326618;outline-offset:3px}
 #connectionNotice:not([hidden]){display:flex;align-items:center;justify-content:space-between;gap:14px}#connectionNotice button{flex-shrink:0}
 @media(max-width:540px){#connectionNotice:not([hidden]){align-items:stretch;flex-direction:column}}
 </style>

@@ -4,7 +4,7 @@
 
 @push('styles')
 <style>
-    .helper-flash { border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; }
+    .helper-flash { border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; background: #F1F8E6; color: #2b6619; border: 1px solid #DDEFC6; }
     .hd-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px 24px; margin: 0 0 16px; }
     .hd-facts dt { font-size: 13px; color: var(--compass-muted, #6B7280); }
     .hd-facts dd { margin: 2px 0 0; font-size: 15px; font-weight: 600; color: var(--compass-text, #1F2937); }

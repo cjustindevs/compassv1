@@ -90,7 +90,7 @@ class UiComponentsTest extends TestCase
 
         $this->assertStringNotContainsString('border: 1px solid transparent; text-align: center;', $css, 'KPI cards must not hide their border.');
         $this->assertMatchesRegularExpression('/\.ui-kpi \{[^}]*border: 1px solid var\(--compass-border\)/', $css);
-        foreach (['green' => '#bbf7d0', 'amber' => '#fde68a', 'blue' => '#bfdbfe', 'red' => '#fecaca'] as $tone => $border) {
+        foreach (['green' => '#cbe6a3', 'amber' => '#fde68a', 'blue' => '#bfdbfe', 'red' => '#fecaca'] as $tone => $border) {
             $this->assertStringContainsString(".ui-kpi--{$tone} { background: ", $css);
             $this->assertMatchesRegularExpression('/\.ui-kpi--'.$tone.' \{[^}]*border-color: '.$border.'/', $css);
         }
@@ -184,7 +184,7 @@ class UiComponentsTest extends TestCase
         $assets = file_get_contents(resource_path('views/partials/ui-assets.blade.php'));
         $this->assertGreaterThan(strpos($assets, 'css/compass-layout.css'), strpos($assets, 'css/accessibility-contrast.css'), 'Contrast fixes load last.');
         $css = file_get_contents(public_path('css/accessibility-contrast.css'));
-        foreach (['.sr-only', '--green-600: #087341', '--compass-danger: #b91c1c', '.text-gray-400', 'compass-badge-ring', 'prefers-reduced-motion'] as $needle) $this->assertStringContainsString($needle, $css);
+        foreach (['.sr-only', '--green-600: #31711d', '--compass-danger: #b91c1c', '.text-gray-400', 'compass-badge-ring', 'prefers-reduced-motion'] as $needle) $this->assertStringContainsString($needle, $css);
         $this->assertDoesNotMatchRegularExpression('/<span aria-disabled="true" aria-label=/', file_get_contents(resource_path('views/vendor/pagination/tailwind.blade.php')));
         foreach (['professional/profile', 'helper/profile', 'helper/settings', 'moderator/settings'] as $view) {
             $html = file_get_contents(resource_path("views/$view.blade.php"));
@@ -197,14 +197,14 @@ class UiComponentsTest extends TestCase
     public function test_case_categories_chart_is_all_green_and_kpi_numbers_are_green(): void
     {
         $html = (string) $this->blade('<x-dashboard-chart :chart="$chart" />', ['chart' => ['title' => 'Case categories', 'values' => ['Academic Stress' => 3, 'Emergency' => 1, 'Family' => 2]]]);
-        $this->assertStringContainsString('"colors":["#087341","#087341","#087341"]', $html);
+        $this->assertStringContainsString('"colors":["#31711d","#31711d","#31711d"]', $html);
         $other = (string) $this->blade('<x-dashboard-chart :chart="$chart" />', ['chart' => ['title' => 'Cases by status', 'values' => ['Active' => 1, 'Resolved' => 2]]]);
         $this->assertStringNotContainsString('"colors":', $other, 'Status charts keep their status colours.');
 
         $css = file_get_contents(public_path('css/compass-components.css'));
-        $this->assertStringContainsString('.ui-kpi[class*="ui-kpi--"] .ui-kpi-value, .ui-kpi .ui-kpi-value { color: #087341; }', $css);
+        $this->assertStringContainsString('.ui-kpi[class*="ui-kpi--"] .ui-kpi-value, .ui-kpi .ui-kpi-value { color: #31711d; }', $css);
         $this->assertStringContainsString('html.compass-ui .co-overview .co-kpi > strong', $css);
-        $this->assertStringContainsString('color:#087341;font-variant-numeric', file_get_contents(resource_path('views/components/performance-cards.blade.php')));
+        $this->assertStringContainsString('color:#31711d;font-variant-numeric', file_get_contents(resource_path('views/components/performance-cards.blade.php')));
     }
 
     public function test_every_page_loads_one_modal_look_and_notices_use_it(): void
@@ -296,7 +296,7 @@ class UiComponentsTest extends TestCase
             preg_match_all('/([^{}]*kpi\s*>\s*strong[^{}]*)\{([^}]*)\}/i', file_get_contents($file), $rules, PREG_SET_ORDER);
             foreach ($rules as [, $selector, $body]) {
                 if (preg_match('/(?<![-\w])color\s*:\s*([^;!}]+)/i', $body, $c)) {
-                    $this->assertStringContainsString('#087341', $c[1], basename($file).': '.trim($selector).' sets KPI numbers to '.trim($c[1]));
+                    $this->assertStringContainsString('#31711d', $c[1], basename($file).': '.trim($selector).' sets KPI numbers to '.trim($c[1]));
                 }
             }
         }

@@ -17,8 +17,8 @@
         .rc-status .dot {
             width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
         }
-        .rc-status.ready { border-left: 3px solid #22C55E; }
-        .rc-status.ready .dot { background: #22C55E; }
+        .rc-status.ready { border-left: 3px solid #8CC13D; }
+        .rc-status.ready .dot { background: #8CC13D; }
         .rc-status.not_ready { border-left: 3px solid #EF4444; }
         .rc-status.not_ready .dot { background: #EF4444; }
         .rc-status.not_assessed { border-left: 3px solid #F59E0B; }
@@ -83,7 +83,7 @@
             border-color: var(--green-500);
             background: var(--green-600);
             color: white;
-            box-shadow: 0 2px 8px rgba(4, 160, 82, 0.25);
+            box-shadow: 0 2px 8px rgba(78, 154, 42, 0.25);
         }
         .seg input[type="radio"]:checked + label .hint { color: rgba(255,255,255,0.85); }
         .seg input[type="radio"]:focus-visible + label { outline:2px solid var(--green-500); outline-offset:2px; }
@@ -174,13 +174,13 @@
 
         .breath-circle {
             width: 130px; height: 130px; border-radius: 50%;
-            background: linear-gradient(135deg, #EAF8F0, #D0F0D8);
+            background: linear-gradient(135deg, #F1F8E6, #DDEFC6);
             margin: 16px auto; display: flex; align-items: center; justify-content: center;
             font-size: 28px; color: var(--green-700);
             transition: transform 1s ease, background 0.5s ease, border-color 0.5s ease;
-            border: 4px solid #04A052;
+            border: 4px solid #4E9A2A;
         }
-        .breath-circle.inhale { transform: scale(1.3); background: linear-gradient(135deg,#D0F0D8,#A8E0B0); border-color:#16A34A; }
+        .breath-circle.inhale { transform: scale(1.3); background: linear-gradient(135deg,#DDEFC6,#C5E39A); border-color:#3F7F22; }
         .breath-circle.hold { transform: scale(1.3); background: linear-gradient(135deg,#FEF3C7,#FDE68A); border-color:#F59E0B; color:#B45309; }
         .breath-circle.exhale { transform: scale(0.8); background: linear-gradient(135deg,#DBEAFE,#93C5FD); border-color:#3B82F6; color:#1D4ED8; }
         #breath-text { min-height: 24px; font-weight: 700; font-size: 16px; color: var(--gray-700); }
@@ -209,10 +209,10 @@
         }
         .rc-step { border: 1px solid var(--gray-200); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; background: #fff; }
         .rc-step-head { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px; }
-        .rc-step-num { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--green-50, #eaf8f0); color: var(--green-700, #027039); font-weight: 800; font-size: 14px; }
+        .rc-step-num { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--green-50, #f1f8e6); color: var(--green-700, #2b6619); font-weight: 800; font-size: 14px; }
         .rc-step-head h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--gray-800); }
         .rc-step-head p { margin: 2px 0 0; font-size: 13px; color: var(--gray-500); }
-        .rc-pass-rule { font-size: 13px; line-height: 1.55; color: var(--gray-600, #4b5563); background: var(--green-50, #eaf8f0); border: 1px solid var(--green-200, #a8e0b0); border-radius: 12px; padding: 10px 14px; margin: 4px 0 12px; }
+        .rc-pass-rule { font-size: 13px; line-height: 1.55; color: var(--gray-600, #4b5563); background: var(--green-50, #f1f8e6); border: 1px solid var(--green-200, #c5e39a); border-radius: 12px; padding: 10px 14px; margin: 4px 0 12px; }
     </style>
 @endsection
 

@@ -42,7 +42,7 @@
 .rating-explainer { display: grid; gap: 10px; margin: 0 0 16px; }
 .re-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .re-item { display: grid; gap: 2px; align-content: start; background: #fff; border: 1px solid #dfe9e3; border-radius: 12px; padding: 12px 14px; }
-.re-item strong { font-size: 20px; color: #087341; font-variant-numeric: tabular-nums; }
+.re-item strong { font-size: 20px; color: #31711d; font-variant-numeric: tabular-nums; }
 .re-item small { font-size: 12px; color: #64746b; line-height: 1.45; }
 .re-total { background: #f3fbf6; }
 .re-label { font-size: 13px; font-weight: 600; color: #334155; }

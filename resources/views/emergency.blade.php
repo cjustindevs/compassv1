@@ -5,8 +5,8 @@
 @push('styles')
 <style>
     :root {
-        --green-50: #EAF8F0; --green-100: #D0F0D8; --green-300: #6DCB80;
-        --green-400: #38C172; --green-500: #04A052; --green-600: #038A45; --green-700: #027039;
+        --green-50: #F1F8E6; --green-100: #DDEFC6; --green-300: #A9D46E;
+        --green-400: #8CC13D; --green-500: #4E9A2A; --green-600: #3F7F22; --green-700: #2b6619;
         --gray-50: #F9FAFB; --gray-100: #F3F4F6; --gray-200: #E5E7EB; --gray-300: #D1D5DB;
         --gray-400: #9CA3AF; --gray-500: #6B7280; --gray-600: #4B5563; --gray-700: #374151;
         --gray-800: #163B2D;
@@ -58,7 +58,7 @@
         font-size: 13px; font-weight: 600; text-decoration: none; white-space: normal; text-align: center;
     }
     .emg-urgent-btn:hover { background: var(--red-100); border-color: var(--red-500); }
-    .emg-urgent-btn.ghost { background: #fff; color: var(--green-700); border-color: #cce8d9; }
+    .emg-urgent-btn.ghost { background: #fff; color: var(--green-700); border-color: #d5e8cc; }
     .emg-urgent-btn.ghost:hover { background: var(--green-50); border-color: var(--green-500); }
 
     /* ── Section headings ── */
@@ -121,7 +121,7 @@
     .emg-panel-link {
         display: inline-flex; align-items: center; gap: 6px;
         font-size: 13px; font-weight: 600; color: var(--green-700); text-decoration: none;
-        border: 1px solid #cce8d9; border-radius: 10px; padding: 9px 14px; min-height: 44px;
+        border: 1px solid #d5e8cc; border-radius: 10px; padding: 9px 14px; min-height: 44px;
     }
     .emg-panel-link:hover { background: var(--green-50); border-color: var(--green-500); }
     .emg-page a:focus-visible { outline: 2px solid var(--green-600); outline-offset: 3px; }

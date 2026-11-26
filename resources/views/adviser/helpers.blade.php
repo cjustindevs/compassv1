@@ -4,9 +4,9 @@
 
 @push('styles')
 <style>
-    .helpers-flash { border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; }
+    .helpers-flash { border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; background: #F1F8E6; color: #2b6619; border: 1px solid #DDEFC6; }
     .helper-person { display: flex; align-items: center; gap: 12px; min-width: 0; }
-    .helper-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--compass-green, #04A052); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+    .helper-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--compass-green, #4E9A2A); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
     .helper-person strong, .helper-person small { display: block; }
     .ui-table td small { display: block; font-size: 13px; color: var(--compass-muted, #6B7280); }
     .helpers-footer { margin-top: 24px; text-align: center; font-size: 14px; color: var(--compass-muted, #6B7280); }

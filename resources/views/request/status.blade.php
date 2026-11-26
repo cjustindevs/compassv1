@@ -8,10 +8,10 @@
 .request-status .seeker-toolbar p {margin:0;font-size:13px}
 .request-status .seeker-button {min-height:44px;padding:10px 14px;white-space:normal;text-align:center}
 .request-status .review-layout {display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,320px);gap:24px;align-items:start}
-.request-status .review-label {display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#027039;margin-bottom:8px}
+.request-status .review-label {display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#2b6619;margin-bottom:8px}
 .request-status .review-copy h2 {font-size:20px;line-height:1.4;margin:0 0 8px}
 .request-status .review-copy p {max-width:620px;margin:0;line-height:1.6}
-.request-status .review-assignment {padding:16px;background:#f0faf4;border:1px solid #d4eee0;border-radius:10px;overflow-wrap:anywhere}
+.request-status .review-assignment {padding:16px;background:#f0faf4;border:1px solid #ddeed4;border-radius:10px;overflow-wrap:anywhere}
 .request-status .review-assignment p {margin:0;line-height:1.5}
 .request-status .review-assignment strong {display:block;font-size:16px;color:#163b2d;margin-top:6px}
 .request-status .review-actions {display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
@@ -22,15 +22,15 @@
 .request-status .status-history {margin-top:14px}
 .request-status .status-history summary {cursor:pointer;font-size:13px;font-weight:600;padding:8px 0}
 .request-status .status-history ol {list-style:none;padding:0;margin:8px 0 0;display:grid;gap:12px}
-.request-status .status-history li {border-left:2px solid #cce8d9;padding-left:12px;font-size:13px;overflow-wrap:anywhere}
+.request-status .status-history li {border-left:2px solid #d5e8cc;padding-left:12px;font-size:13px;overflow-wrap:anywhere}
 .request-status .status-history time {display:block;font-size:12px;color:#64748b;margin-top:3px}
 .request-status .seeker-follow-up{margin-top:20px;padding-top:16px;border-top:1px solid #edf2ef;min-width:0}
 .request-status .seeker-follow-up p{margin:8px 0;overflow-wrap:anywhere;white-space:pre-wrap}
 .request-status .seeker-follow-up fieldset{min-width:0;border:0;padding:0;margin:12px 0}
 .request-status .follow-up-choices{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .request-status .follow-up-choice{display:flex;align-items:center;gap:8px;min-height:44px;padding:10px 14px;border:1px solid #d4e4da;border-radius:8px;cursor:pointer}
-.request-status .follow-up-choice:has(input:checked){background:#edf9f1;border-color:#009b58}
-.request-status .follow-up-choice input{accent-color:#009b58}
+.request-status .follow-up-choice:has(input:checked){background:#f1f9ed;border-color:#3d7e1d}
+.request-status .follow-up-choice input{accent-color:#3d7e1d}
 @media(max-width:768px){.request-status .review-layout{grid-template-columns:minmax(0,1fr);gap:16px}.seeker-page:has(.request-status) .seeker-card{padding:16px}.request-status .review-copy h2{font-size:18px}}
 @media(max-width:480px){.request-status .seeker-toolbar{align-items:stretch;flex-direction:column}.request-status .review-actions{flex-direction:column}.request-status .review-actions .seeker-button{width:100%}.request-status .status-refresh{align-items:stretch;flex-direction:column}}
 </style>

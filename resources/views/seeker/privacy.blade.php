@@ -12,11 +12,11 @@
     <style>
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --green-50:  #EAF8F0;
-            --green-100: #D0F0D8;
-            --green-500: #04A052;
-            --green-600: #038A45;
-            --green-700: #027039;
+            --green-50:  #F1F8E6;
+            --green-100: #DDEFC6;
+            --green-500: #4E9A2A;
+            --green-600: #3F7F22;
+            --green-700: #2b6619;
             --gray-50:   #F9FAFB;
             --gray-100:  #F3F4F6;
             --gray-200:  #E5E7EB;

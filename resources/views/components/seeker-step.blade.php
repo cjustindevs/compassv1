@@ -9,18 +9,18 @@
 .seeker-card p {line-height:1.7;font-size:14px;color:#64748b;}
 .seeker-toolbar {display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px;}
 .seeker-toolbar h2,.seeker-card h2 {font-size:16px;font-weight:600;}
-.seeker-button {display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:10px;background:#04a052;color:white;font-weight:600;font-size:13px;border:1px solid #04a052;text-decoration:none;cursor:pointer;}
-.seeker-button.secondary {background:white;color:#027039;border-color:#cce8d9;}
+.seeker-button {display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:10px;background:#4e9a2a;color:white;font-weight:600;font-size:13px;border:1px solid #4e9a2a;text-decoration:none;cursor:pointer;}
+.seeker-button.secondary {background:white;color:#2b6619;border-color:#d5e8cc;}
 .seeker-button.danger {background:white;color:#b91c1c;border-color:#fecaca;}
 .seeker-table-wrap {overflow-x:auto;}
 .seeker-table {width:100%;border-collapse:collapse;text-align:left;font-size:13px;}
 .seeker-table th {background:#f8faf9;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:14px 16px;}
 .seeker-table td {padding:18px 16px;border-bottom:1px solid #edf2ef;vertical-align:middle;}
-.seeker-badge {display:inline-flex;padding:5px 10px;border-radius:20px;background:#eaf8f0;color:#027039;font-size:12px;font-weight:600;}
+.seeker-badge {display:inline-flex;padding:5px 10px;border-radius:20px;background:#f1f8e6;color:#2b6619;font-size:12px;font-weight:600;}
 .seeker-badge.muted {background:#f3f4f6;color:#64748b;}
 .seeker-empty {padding:40px 16px;text-align:center;color:#64748b;}
-.seeker-empty :is(i, .compass-icon) {display:block;font-size:28px;color:#04a052;margin-bottom:14px;}
-.seeker-notice {padding:16px;background:#eaf8f0;border:1px solid #d4eee0;border-radius:12px;margin-bottom:24px;}
+.seeker-empty :is(i, .compass-icon) {display:block;font-size:28px;color:#4e9a2a;margin-bottom:14px;}
+.seeker-notice {padding:16px;background:#f1f8e6;border:1px solid #ddeed4;border-radius:12px;margin-bottom:24px;}
 .seeker-record {padding:20px;border:1px solid #e5e7eb;border-radius:14px;margin-top:16px;}
 .seeker-actions {display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
 @media(max-width:768px){.seeker-page{padding:20px 16px 100px}.seeker-card{padding:18px}.seeker-heading h1{font-size:20px}.seeker-heading time{display:none}}

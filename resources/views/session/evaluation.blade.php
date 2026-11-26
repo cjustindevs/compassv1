@@ -13,11 +13,11 @@
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --green-50: #EAF8F0;
-            --green-100: #D0F0D8;
-            --green-500: #04A052;
-            --green-600: #038A45;
-            --green-700: #027039;
+            --green-50: #F1F8E6;
+            --green-100: #DDEFC6;
+            --green-500: #4E9A2A;
+            --green-600: #3F7F22;
+            --green-700: #2b6619;
             --gray-50: #F9FAFB;
             --gray-100: #F3F4F6;
             --gray-200: #E5E7EB;
@@ -42,7 +42,7 @@
             height: 100vh;
             background: rgba(255,255,255,0.92);
             backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(4,160,82,0.06);
+            border-right: 1px solid rgba(78, 154, 42,0.06);
             box-shadow: 4px 0 40px rgba(0,0,0,0.02);
             z-index: 100;
             transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
@@ -57,14 +57,14 @@
             align-items: center;
             gap: 12px;
             padding-bottom: 24px;
-            border-bottom: 1px solid rgba(4,160,82,0.06);
+            border-bottom: 1px solid rgba(78, 154, 42,0.06);
             margin-bottom: 20px;
         }
         .sidebar .logo .icon {
             width: 40px;
             height: 40px;
             border-radius: 12px;
-            background: linear-gradient(135deg, #38C172, #038A45);
+            background: linear-gradient(135deg, #8CC13D, #3F7F22);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -104,7 +104,7 @@
         .sidebar .nav .nav-item.active :is(i, .compass-icon) { color: var(--green-500); }
 
         .sidebar .user-section {
-            border-top: 1px solid rgba(4,160,82,0.06);
+            border-top: 1px solid rgba(78, 154, 42,0.06);
             padding-top: 16px;
             margin-top: auto;
         }
@@ -117,7 +117,7 @@
             width: 42px;
             height: 42px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #38C172, #038A45);
+            background: linear-gradient(135deg, #8CC13D, #3F7F22);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -344,7 +344,7 @@
         .feedback-field { min-width: 0; padding: 16px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fafcfb; }
         .feedback-form label { display: block; color: #374151; font-size: 14px; font-weight: 600; line-height: 1.5; margin-bottom: 10px; }
         #evaluationForm .feedback-control { display: block; width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 10px; background-color: white; color: #163b2d; font-family: Inter, sans-serif; font-size: 14px; outline: none; }
-        #evaluationForm .feedback-control:focus { border-color: #16a34a; box-shadow: 0 0 0 3px #16a34a22; }
+        #evaluationForm .feedback-control:focus { border-color: #3f7f22; box-shadow: 0 0 0 3px #16a34a22; }
         #evaluationForm .feedback-control[aria-invalid="true"] { border-color: #dc2626; }
         .feedback-comments { margin-top: 24px; }
         #evaluationForm textarea.feedback-control { min-height: 112px; resize: vertical; }

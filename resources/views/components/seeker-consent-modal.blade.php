@@ -14,13 +14,13 @@
 #seekerConsentDialog p,#seekerConsentDialog li {font-size:13px;line-height:1.7;color:#64748b;}
 #seekerConsentDialog .consent-body {padding:0 24px 20px;max-height:58dvh;overflow:auto;}
 #seekerConsentDialog .consent-footer {display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;padding:16px 24px;border-top:1px solid #e5e7eb;background:#f8fbf9;}
-#seekerConsentDialog .consent-action {border:1px solid #d1e5d9;background:white;color:#027039;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;}
-#seekerConsentDialog .consent-action.primary {background:#04a052;color:white;border-color:#04a052;}
+#seekerConsentDialog .consent-action {border:1px solid #d8e5d1;background:white;color:#2b6619;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;}
+#seekerConsentDialog .consent-action.primary {background:#4e9a2a;color:white;border-color:#4e9a2a;}
 #seekerConsentDialog .consent-check {display:flex;gap:10px;align-items:flex-start;padding:10px 0;font-size:13px;color:#374151;}
-#seekerConsentDialog input {margin-top:3px;accent-color:#04a052;flex-shrink:0;}
-#seekerConsentDialog button:focus-visible {outline:3px solid #86efac;outline-offset:3px;}
+#seekerConsentDialog input {margin-top:3px;accent-color:#4e9a2a;flex-shrink:0;}
+#seekerConsentDialog button:focus-visible {outline:3px solid #b5db80;outline-offset:3px;}
 #seekerConsentDialog details.see-more {border-top:1px solid #eef2ef;margin-top:10px;padding-top:8px;}
-#seekerConsentDialog details.see-more summary {font-size:12px;font-weight:600;color:#027039;cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;user-select:none;}
+#seekerConsentDialog details.see-more summary {font-size:12px;font-weight:600;color:#2b6619;cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;user-select:none;}
 #seekerConsentDialog details.see-more summary::-webkit-details-marker {display:none;}
 #seekerConsentDialog details.see-more summary::after {content:'';width:7px;height:7px;border-right:1.8px solid currentColor;border-bottom:1.8px solid currentColor;transform:rotate(45deg);margin-left:4px;}
 #seekerConsentDialog details.see-more[open] summary::after {content:'';width:7px;height:7px;border-right:1.8px solid currentColor;border-bottom:1.8px solid currentColor;transform:rotate(45deg);margin-left:4px;}

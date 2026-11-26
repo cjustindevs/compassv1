@@ -26,6 +26,8 @@
     document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!inbox.hidden){close();bell.focus();}});
     async function toast(notice){
         if (notice.type === 'emergency' && document.getElementById('staffEmergencyNotice')) return;
+        window.compassSounds?.chime();
+        window.compassSounds?.chime();
         if (notice.important && window.CompassImportantNotices) { window.CompassImportantNotices.enqueue(notice); return; }
         const presentation = window.CompassPopupPresentation;
         // Minor updates remain in the inbox while someone is using the voice room.

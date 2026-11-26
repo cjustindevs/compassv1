@@ -17,7 +17,7 @@
         'datasets' => [[
             'label' => $skillLabel.' (1–5)',
             'data' => $chartRows->map(fn ($row) => $row['score'] === null ? null : round($row['score'], 2))->values()->all(),
-            'colors' => $chartRows->map(fn ($row) => $row['needs_attention'] ? '#c58532' : '#078749')->values()->all(),
+            'colors' => $chartRows->map(fn ($row) => $row['needs_attention'] ? '#c58532' : '#38731B')->values()->all(),
         ]],
     ];
 @endphp

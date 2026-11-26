@@ -49,7 +49,7 @@
         --as-soft: var(--admin-accent-soft);
         --as-accent: var(--admin-accent);
         --as-accent-dark: var(--admin-accent-dark);
-        --as-line: rgba(4, 160, 82, .08);
+        --as-line: rgba(78, 154, 42, .08);
         padding: 22px 12px 18px;
         transition: width .35s cubic-bezier(.4, 0, .2, 1);
         overflow: hidden;
@@ -136,7 +136,7 @@
         padding-right: 6px;
     }
     .admin-sidebar .sidebar-nav::-webkit-scrollbar { width: 6px; }
-    .admin-sidebar .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(4, 160, 82, .15); border-radius: 3px; }
+    .admin-sidebar .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(78, 154, 42, .15); border-radius: 3px; }
 
     .admin-sidebar .nav-section {
         padding: 16px 14px 6px;
@@ -214,7 +214,7 @@
         align-items: center;
         justify-content: center;
         border-radius: 50%;
-        background: linear-gradient(135deg, #30b650, var(--admin-green-dark));
+        background: linear-gradient(135deg, #8cc13d, var(--admin-green-dark));
         color: #fff;
         font-weight: 700;
         font-size: 14px;

@@ -93,7 +93,7 @@
                         </fieldset>
 
                         <label class="flex items-start gap-3 mt-5 p-4 rounded-xl bg-green-50 border border-green-100 cursor-pointer">
-                            <input type="checkbox" name="identity_disclosure" value="1" required class="mt-0.5 w-4 h-4 shrink-0" style="accent-color:#04A052">
+                            <input type="checkbox" name="identity_disclosure" value="1" required class="mt-0.5 w-4 h-4 shrink-0" style="accent-color:#4E9A2A">
                             <span class="text-sm leading-relaxed text-gray-800">
                                 I have read the referral consent above, and I voluntarily consent to store these contact details and authorize their disclosure to the professional assigned to this referral.
                             </span>

@@ -12,9 +12,9 @@
             <input type="text" name="search" value="{{ $search }}" class="form-control" placeholder="Search resources..." style="flex:1;">
             <button type="submit" class="btn btn-primary" aria-label="Search" title="Search"><x-ui-icon name="search"  /></button>
         </form>
-        <a href="{{ route('helper.resources') }}" class="btn btn-secondary" style="{{ $activeCategory ? '' : 'background:#027039;color:white;border-color:#027039;' }}">All</a>
+        <a href="{{ route('helper.resources') }}" class="btn btn-secondary" style="{{ $activeCategory ? '' : 'background:#2b6619;color:white;border-color:#2b6619;' }}">All</a>
         @foreach($categories as $category)
-            <a href="{{ route('helper.resources', ['category' => $category]) }}" class="btn btn-secondary" style="{{ $activeCategory === $category ? 'background:#027039;color:white;border-color:#027039;' : '' }}">{{ $category }}</a>
+            <a href="{{ route('helper.resources', ['category' => $category]) }}" class="btn btn-secondary" style="{{ $activeCategory === $category ? 'background:#2b6619;color:white;border-color:#2b6619;' : '' }}">{{ $category }}</a>
         @endforeach
     </div>
 

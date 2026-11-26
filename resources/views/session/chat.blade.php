@@ -48,7 +48,7 @@
             width: 42px;
             height: 42px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #04A052, #038A45);
+            background: linear-gradient(135deg, #4E9A2A, #3F7F22);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -69,7 +69,7 @@
         }
         .chat-header .helper-info .status {
             font-size: 12px;
-            color: #059669;
+            color: #4e9a2a;
             display: flex;
             align-items: center;
             gap: 5px;
@@ -78,7 +78,7 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #10b981;
+            background: #8cc13d;
             display: inline-block;
             animation: pulse-dot 2s infinite;
         }
@@ -124,7 +124,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .chat-messages .message.seeker {
-            background: #04A052;
+            background: #4E9A2A;
             color: white;
             align-self: flex-end;
             border-bottom-right-radius: 4px;
@@ -239,8 +239,8 @@
             min-width: 0;
         }
         .chat-input input:focus {
-            border-color: #04A052;
-            outline: 2px solid #04A052;
+            border-color: #4E9A2A;
+            outline: 2px solid #4E9A2A;
             outline-offset: 0;
             box-shadow: none !important;
         }
@@ -248,7 +248,7 @@
         .chat-input button {
             padding: 11px 22px;
             border-radius: 24px;
-            background: #04A052;
+            background: #4E9A2A;
             color: white;
             border: none;
             font-weight: 600;
@@ -261,7 +261,7 @@
             white-space: nowrap;
             flex-shrink: 0;
         }
-        .chat-input button:hover { background: #038A45; }
+        .chat-input button:hover { background: #3F7F22; }
         .chat-input button:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* ─── Seeker check-in card ─── */
@@ -270,7 +270,7 @@
             max-width: 100%;
             width: 100%;
             background: #ffffff;
-            border: 1px solid #d1e5d9;
+            border: 1px solid #d8e5d1;
             border-radius: 16px;
             padding: 16px 18px;
             box-shadow: 0 4px 16px rgba(0,0,0,0.04);
@@ -296,9 +296,9 @@
             border-color: transparent;
         }
         .checkin-options label:has(input:checked) {
-            border-color: #04A052;
-            background: #EAF8F0;
-            color: #027039;
+            border-color: #4E9A2A;
+            background: #F1F8E6;
+            color: #2b6619;
         }
         .checkin-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
         .checkin-actions button {
@@ -309,10 +309,10 @@
             cursor: pointer;
             border: none;
         }
-        .checkin-actions button[type="submit"] { background: #04A052; color: white; }
+        .checkin-actions button[type="submit"] { background: #4E9A2A; color: white; }
         .checkin-actions button[data-skip] { background: transparent; color: #6b7280; border: 1.5px solid #e5e7eb; }
         .checkin-error { color: #b91c1c; font-size: 12px; margin-top: 8px; }
-        .checkin-saved { font-size: 13px; color: #027039; font-weight: 600; }
+        .checkin-saved { font-size: 13px; color: #2b6619; font-weight: 600; }
 
         /* ─── Responsive ─── */
         @media (max-width: 640px) {

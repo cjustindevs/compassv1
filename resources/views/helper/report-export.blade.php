@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<style>body{font-family:DejaVu Sans,sans-serif;font-size:10px;color:#193b30}h1{font-size:20px}h2{font-size:14px;margin-top:20px}table{width:100%;border-collapse:collapse}th,td{padding:7px;border-bottom:1px solid #dce6df;text-align:left}th{background:#edf8f2}thead{display:table-header-group}tr{page-break-inside:avoid}</style>
+<style>body{font-family:DejaVu Sans,sans-serif;font-size:10px;color:#193b30}h1{font-size:20px}h2{font-size:14px;margin-top:20px}table{width:100%;border-collapse:collapse}th,td{padding:7px;border-bottom:1px solid #dce6df;text-align:left}th{background:#f1f8ed}thead{display:table-header-group}tr{page-break-inside:avoid}</style>
 </head>
 <body>
 <h1>COMPASS - My Service Report</h1>

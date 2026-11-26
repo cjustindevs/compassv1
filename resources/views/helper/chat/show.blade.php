@@ -39,7 +39,7 @@
             width: 42px;
             height: 42px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #38C172, #038A45);
+            background: linear-gradient(135deg, #8CC13D, #3F7F22);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -60,7 +60,7 @@
         }
         .room-header .peer-info .status {
             font-size: 12px;
-            color: #059669;
+            color: #4e9a2a;
             display: flex;
             align-items: center;
             gap: 5px;
@@ -69,7 +69,7 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #10b981;
+            background: #8cc13d;
             display: inline-block;
             animation: pulse-dot 2s infinite;
         }

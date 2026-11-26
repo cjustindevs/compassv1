@@ -53,7 +53,7 @@ class BrandingHelper
      */
     public static function themeColor(): string
     {
-        return config('app.brand.theme_color', '#04A052');
+        return config('app.brand.theme_color', '#4E9A2A');
     }
 
     /**

@@ -159,7 +159,7 @@ html.compass-ui .analytics-toolbar > .analytics-button {
     padding: 10px 14px;
     font-size: var(--cs-small);
     font-weight: 600;
-    color: #087341;
+    color: #31711d;
     cursor: pointer;
     list-style: none;
 }
@@ -167,7 +167,7 @@ html.compass-ui .analytics-toolbar > .analytics-button {
 .ui-explainer > summary .compass-icon { width: 16px; height: 16px; flex: none; }
 .ui-explainer > summary::after { content: ''; margin-left: auto; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform .15s ease; }
 .ui-explainer[open] > summary::after { transform: rotate(-135deg); }
-.ui-explainer > summary:focus-visible { outline: 2px solid #087341; outline-offset: 2px; border-radius: 12px; }
+.ui-explainer > summary:focus-visible { outline: 2px solid #31711d; outline-offset: 2px; border-radius: 12px; }
 .ui-explainer-body {
     padding: 0 14px 14px;
     font-size: var(--cs-small);
@@ -205,7 +205,7 @@ html.compass-ui .top-bar-actions .analytics-toolbar { margin: 0 !important; }
 
 /* ---------- Helper summary tiles (Assigned Cases): same compact size as other KPI cards ---------- */
 html.compass-ui .main-content .stat-card { padding: 16px 18px; }
-html.compass-ui .main-content .stat-card .stat-number { font-size: var(--cs-kpi); line-height: 1.2; color: #087341; }
+html.compass-ui .main-content .stat-card .stat-number { font-size: var(--cs-kpi); line-height: 1.2; color: #31711d; }
 html.compass-ui .main-content .stat-card .stat-label { font-size: var(--cs-small); font-weight: 600; }
 html.compass-ui .case-rating { background: #f1f5f9; color: #334155; font-weight: 600; }
 html.compass-ui .cases-filters { padding: 0 0 14px; }
@@ -235,3 +235,36 @@ html.compass-ui :is(.workspace-content, .main-content, .admin-content) input[typ
 @media (max-width: 1280px) {
     html.compass-ui .er-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* COMPASS × Project Dial-A-Friend lockup (components/pdaf-lockup). */
+.pdaf-lockup { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; min-width: 0; }
+.pdaf-lockup-seal img { width: 48px; height: 48px; border-radius: 50%; display: block; }
+.pdaf-lockup-divider { width: 1px; height: 34px; background: #dde8d6; flex: none; }
+.pdaf-lockup-words { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pdaf-lockup-words img { width: 150px; height: auto; display: block; }
+.pdaf-lockup-words small { font-size: 11px; line-height: 1.2; font-weight: 600; color: #31711d; white-space: nowrap; }
+.pdaf-lockup--sm .pdaf-lockup-seal img { width: 38px; height: 38px; }
+.pdaf-lockup--sm .pdaf-lockup-divider { height: 28px; }
+.pdaf-lockup--sm .pdaf-lockup-words img { width: 120px; }
+.pdaf-lockup--sm .pdaf-lockup-words small { font-size: 11px; }
+.pdaf-lockup:focus-visible { outline: 2px solid #31711d; outline-offset: 4px; border-radius: 8px; }
+@media (max-width: 380px) {
+    .pdaf-lockup { gap: 9px; }
+    .pdaf-lockup-divider { display: none; }
+    .pdaf-lockup-words img { width: 118px; }
+    .pdaf-lockup-words small { font-size: 11px; }
+}
+.compass-ui .auth-brand .pdaf-lockup { text-align: left; }
+.compass-ui .auth-brand .pdaf-lockup-seal img { width: 48px; }
+.compass-ui .auth-brand .pdaf-lockup-words img { width: 150px; }
+
+/* Faint Project Dial-A-Friend seal behind chat messages (stays put while messages scroll). */
+.compass-ui #chatMessages {
+    background-image: url('/images/pdaf/pdaf-watermark.png');
+    background-image: image-set(url('/images/pdaf/pdaf-watermark.webp') type('image/webp'), url('/images/pdaf/pdaf-watermark.png') type('image/png'));
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: min(300px, 62%) auto;
+    background-attachment: scroll;
+}
+@media print { .compass-ui #chatMessages { background-image: none; } }

@@ -8,17 +8,17 @@
     <style>
         .notif-item { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; border-bottom: 1px solid var(--compass-divider, #F3F4F6); }
         .notif-item:last-child { border-bottom: none; }
-        .notif-item.unread { background: #F0FDF4; }
+        .notif-item.unread { background: #F3F9EA; }
         .notif-item .content { flex: 1; min-width: 0; }
         .notif-item .content .title { font-weight: 600; font-size: 15px; color: var(--compass-text, #1F2937); margin: 0; }
         .notif-item .content .msg { font-size: 14px; color: var(--compass-muted, #6B7280); margin: 2px 0 0; }
         .notif-item .content .time { font-size: 13px; color: var(--compass-muted, #6B7280); margin: 4px 0 0; }
         .notif-item .actions { display: flex; gap: 6px; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: #04A052; flex-shrink: 0; margin-top: 6px; }
-        .notif-flash { background: #EAF8F0; color: #027039; border: 1px solid #D0F0D8; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #4E9A2A; flex-shrink: 0; margin-top: 6px; }
+        .notif-flash { background: #F1F8E6; color: #2b6619; border: 1px solid #DDEFC6; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; margin-bottom: 16px; }
         .filter-pill { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--compass-muted, #6B7280); background: var(--bg-card, #fff); border: 1px solid var(--compass-border, #E5E7EB); text-decoration: none; }
-        .filter-pill:hover { border-color: var(--compass-green, #04A052); color: var(--compass-green, #04A052); }
-        .filter-pill.active { background: #EAF8F0; border-color: var(--compass-green, #04A052); color: #027039; }
+        .filter-pill:hover { border-color: var(--compass-green, #4E9A2A); color: var(--compass-green, #4E9A2A); }
+        .filter-pill.active { background: #F1F8E6; border-color: var(--compass-green, #4E9A2A); color: #2b6619; }
         .btn-ghost { background: var(--bg-card, #fff); color: var(--compass-muted, #6B7280); padding: 0 14px; min-height: 40px; border-radius: 999px; font-weight: 600; font-size: 13px; border: 1px solid var(--compass-border, #E5E7EB); cursor: pointer; }
         .btn-ghost:hover { border-color: #DC2626; color: #DC2626; }
         .notification-page .ui-notification-list { padding: 0; }

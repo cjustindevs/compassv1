@@ -17,14 +17,14 @@
         * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --green-50: #F0F8F2;
-            --green-100: #DCF5E0;
-            --green-200: #A8E0B0;
-            --green-300: #6DCB80;
-            --green-400: #30B650;
-            --green-500: #04A052;
-            --green-600: #038A45;
-            --green-700: #027039;
+            --green-50: #F3F9EA;
+            --green-100: #E4F2CF;
+            --green-200: #C5E39A;
+            --green-300: #A9D46E;
+            --green-400: #8CC13D;
+            --green-500: #4E9A2A;
+            --green-600: #3F7F22;
+            --green-700: #2b6619;
             --green-800: #01562B;
             --green-900: #003D1E;
             --gray-50: #F9FAFB;
@@ -59,7 +59,7 @@
             background: rgba(255, 255, 255, 0.88);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(4, 160, 82, 0.08);
+            border-right: 1px solid rgba(78, 154, 42, 0.08);
             box-shadow: 4px 0 40px rgba(0, 0, 0, 0.02);
             z-index: 100;
             transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -74,7 +74,7 @@
             align-items: center;
             gap: 12px;
             padding-bottom: 24px;
-            border-bottom: 1px solid rgba(4, 160, 82, 0.08);
+            border-bottom: 1px solid rgba(78, 154, 42, 0.08);
             margin-bottom: 20px;
         }
         .sidebar .logo .icon {
@@ -132,7 +132,7 @@
         }
 
         .sidebar .user-section {
-            border-top: 1px solid rgba(4, 160, 82, 0.08);
+            border-top: 1px solid rgba(78, 154, 42, 0.08);
             padding-top: 16px;
             margin-top: auto;
         }
@@ -194,12 +194,12 @@
 
         /* ─── Hero ─── */
         .hero-section {
-            background: linear-gradient(135deg, #F0F8F2 0%, #DCF5E0 40%, #F5F8F6 100%);
+            background: linear-gradient(135deg, #F3F9EA 0%, #E4F2CF 40%, #F5F8F6 100%);
             border-radius: 24px;
             padding: 40px 36px;
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(4, 160, 82, 0.08);
+            border: 1px solid rgba(78, 154, 42, 0.08);
         }
         .hero-section::before {
             content: '';
@@ -208,7 +208,7 @@
             right: -10%;
             width: 400px;
             height: 400px;
-            background: radial-gradient(circle, rgba(4, 160, 82, 0.06) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(78, 154, 42, 0.06) 0%, transparent 70%);
             border-radius: 50%;
         }
         .hero-section .hero-content { position: relative; z-index: 1; }
@@ -660,7 +660,7 @@
                 <div>
                     <h1 class="text-xl md:text-2xl font-bold text-gray-800" id="pageTitle">Home</h1>
                     <p class="text-sm text-gray-500 hidden sm:block" id="pageSubtitle">
-                        Welcome back, <span class="font-semibold text-[#04A052]">{{ optional(auth()->user())->name ?? optional(auth()->user())->email }}</span>
+                        Welcome back, <span class="font-semibold text-[#4E9A2A]">{{ optional(auth()->user())->name ?? optional(auth()->user())->email }}</span>
                     </p>
                 </div>
             </div>
@@ -678,7 +678,7 @@
 {{-- Urgent first: a live or pending session comes before the welcome hero. --}}
             <!-- ═══════ ACTIVE SESSION / PENDING REQUEST ═══════ -->
             @if($activeSession)
-                <div class="mb-6 p-5 rounded-2xl bg-white border border-[#04A052] shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4" style="border-left: 6px solid #04A052;">
+                <div class="mb-6 p-5 rounded-2xl bg-white border border-[#4E9A2A] shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4" style="border-left: 6px solid #4E9A2A;">
 
                     <div class="flex-1 min-w-0">
                         <h3 class="font-bold text-gray-800">Your session is active</h3>
@@ -722,8 +722,8 @@
                 <div class="hero-content">
                     <div class="flex flex-col md:flex-row md:items-start md:justify-between">
                         <div>
-                            <div class="inline-flex items-center gap-2 text-sm font-medium text-[#04A052] bg-white/60 px-4 py-1.5 rounded-full backdrop-blur-sm mb-4">
-                                <span class="w-2 h-2 rounded-full bg-[#04A052] animate-pulse"></span>
+                            <div class="inline-flex items-center gap-2 text-sm font-medium text-[#4E9A2A] bg-white/60 px-4 py-1.5 rounded-full backdrop-blur-sm mb-4">
+                                <span class="w-2 h-2 rounded-full bg-[#4E9A2A] animate-pulse"></span>
                                 Welcome to COMPASS
                             </div>
                             <h1 class="hero-title">
@@ -798,19 +798,19 @@
 
             <!-- ═══════ QUICK LINKS ═══════ -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <a href="{{ route('selfhelp') }}" class="glass-card p-5 flex items-center gap-4 cursor-pointer hover:border-[#04A052] transition-all" style="text-decoration: none;">
+                <a href="{{ route('selfhelp') }}" class="glass-card p-5 flex items-center gap-4 cursor-pointer hover:border-[#4E9A2A] transition-all" style="text-decoration: none;">
                     <div>
                         <h4 class="font-semibold text-gray-800">Resources</h4>
                         <p class="text-xs text-gray-500">Articles &amp; guides</p>
                     </div>
                 </a>
-                <a href="{{ route('selfhelp') }}" class="glass-card p-5 flex items-center gap-4 cursor-pointer hover:border-[#04A052] transition-all" style="text-decoration: none;">
+                <a href="{{ route('selfhelp') }}" class="glass-card p-5 flex items-center gap-4 cursor-pointer hover:border-[#4E9A2A] transition-all" style="text-decoration: none;">
                     <div>
                         <h4 class="font-semibold text-gray-800">Meditation</h4>
                         <p class="text-xs text-gray-500">Guided sessions</p>
                     </div>
                 </a>
-                <a href="{{ route('emergency') }}" class="glass-card p-5 flex items-center gap-4 cursor-pointer hover:border-[#04A052] transition-all" style="text-decoration: none;">
+                <a href="{{ route('emergency') }}" class="glass-card p-5 flex items-center gap-4 cursor-pointer hover:border-[#4E9A2A] transition-all" style="text-decoration: none;">
                     <div>
                         <h4 class="font-semibold text-gray-800">Crisis Support</h4>
                         <p class="text-xs text-gray-500">Immediate help</p>
@@ -838,14 +838,14 @@
             <nav class="seeker-tasks" aria-label="Things to do">
                 @foreach($seekerTasks as $task)<a href="{{ $task['link'] }}"><strong>{{ $task['value'] }}</strong> {{ $task['label'] }}</a>@endforeach
             </nav>
-            <style>.seeker-tasks{display:flex;flex-wrap:wrap;gap:8px;margin:-8px 0 20px}.seeker-tasks a{display:inline-flex;gap:6px;align-items:center;padding:6px 12px;border:1px solid #bbf7d0;border-radius:999px;background:#f0fdf4;color:#14532d;font-size:14px;text-decoration:none}.seeker-tasks a:hover{border-color:#04a052}.seeker-tasks a:focus-visible{outline:2px solid #087341;outline-offset:2px}</style>
+            <style>.seeker-tasks{display:flex;flex-wrap:wrap;gap:8px;margin:-8px 0 20px}.seeker-tasks a{display:inline-flex;gap:6px;align-items:center;padding:6px 12px;border:1px solid #cbe6a3;border-radius:999px;background:#f3f9ea;color:#1d4a16;font-size:14px;text-decoration:none}.seeker-tasks a:hover{border-color:#4e9a2a}.seeker-tasks a:focus-visible{outline:2px solid #31711d;outline-offset:2px}</style>
             @endif
 
             <!-- Recent Sessions -->
             <div class="bg-white rounded-2xl border border-gray-200 p-4 md:p-6 mb-6">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="font-bold text-gray-800">Recent Sessions</h2>
-                    <a href="{{ route('session.history', $analyticsDates) }}" class="text-sm text-[#04A052] hover:underline">View All</a>
+                    <a href="{{ route('session.history', $analyticsDates) }}" class="text-sm text-[#4E9A2A] hover:underline">View All</a>
                 </div>
                 <div class="table-container">
                     <table>

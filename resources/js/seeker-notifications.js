@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
             'background:' + getThemeColor('--bg-card', '#ffffff'),
             'border-radius:16px',
             'box-shadow:0 12px 40px ' + getThemeColor('--shadow-lg', 'rgba(0,0,0,0.18)'),
-            'border-left:5px solid #04A052',
+            'border-left:5px solid #4E9A2A',
             'padding:16px 18px',
             'display:flex',
             'gap:12px',
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <div style="flex:1;min-width:0;">
                 <p style="margin:0;font-weight:700;font-size:14px;color:${getThemeColor('--text-primary', '#163B2D')};">${escapeHtml(title)}</p>
                 <p style="margin:4px 0 0;font-size:13px;color:${getThemeColor('--text-secondary', '#6B7280')};line-height:1.45;">${escapeHtml(message)}</p>
-                ${safePath(link, '') ? `<a href="${escapeHtml(safePath(link, ''))}" style="display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:#04A052;text-decoration:none;">${escapeHtml(linkLabel || 'View')} →</a>` : ''}
+                ${safePath(link, '') ? `<a href="${escapeHtml(safePath(link, ''))}" style="display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:#4E9A2A;text-decoration:none;">${escapeHtml(linkLabel || 'View')} →</a>` : ''}
             </div>
             <button type="button" style="background:none;border:none;color:${getThemeColor('--text-muted', '#9CA3AF')};font-size:14px;cursor:pointer;padding:2px;" aria-label="Dismiss">${uiIcon('close', '')}</button>
         `;

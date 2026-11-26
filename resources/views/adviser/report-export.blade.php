@@ -3,7 +3,7 @@
 <style>
 @page { margin: 100px 36px 55px; }
 body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #24352c; }
-header { position: fixed; top: -80px; left: 0; right: 0; border-bottom: 2px solid #04a052; padding-bottom: 10px; }
+header { position: fixed; top: -80px; left: 0; right: 0; border-bottom: 2px solid #4e9a2a; padding-bottom: 10px; }
 header img { height: 30px; float: right; }
 footer { position: fixed; bottom: -30px; font-size: 8px; }
 h1 { font-size: 17px; margin: 0 0 5px; }

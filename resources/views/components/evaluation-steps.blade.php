@@ -42,8 +42,8 @@
 .eval-steps strong { color: #163b2d; font-weight: 700; }
 .eval-steps small { color: #64746b; font-size: 12px; line-height: 1.4; }
 .eval-steps li.is-done .es-num { background: #0ca30c; color: #fff; }
-.eval-steps li.is-current { border-color: #04a052; background: #eaf8f0; }
-.eval-steps li.is-current .es-num { background: #04a052; color: #fff; }
+.eval-steps li.is-current { border-color: #4e9a2a; background: #f1f8e6; }
+.eval-steps li.is-current .es-num { background: #4e9a2a; color: #fff; }
 .eval-steps.is-compact { margin: 8px 0 0; gap: 4px; }
 .eval-steps.is-compact li { padding: 4px 8px; border-radius: 99px; align-items: center; }
 .eval-steps.is-compact .es-num { width: 18px; height: 18px; font-size: 11px; }

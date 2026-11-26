@@ -8,11 +8,11 @@
 .analytics-period-form { display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; min-width: 0; }
 .analytics-period-form label { display: grid; gap: 4px; font-size: 12px; font-weight: 600; min-width: 0; }
 .analytics-period-form :is(input, select) { box-sizing: border-box; width: 100%; max-width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid var(--admin-border, #e5e7eb); border-radius: 9px; background: var(--admin-card, #fff); color: inherit; font: inherit; font-size: 13px; }
-.analytics-button { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 40px; padding: 8px 12px; border: 1px solid var(--admin-border, #e5e7eb); border-radius: 9px; background: var(--admin-card, #fff); color: var(--admin-accent-dark, #027039); font: inherit; font-size: 13px; font-weight: 600; text-decoration: none !important; white-space: nowrap; cursor: pointer; }
+.analytics-button { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 40px; padding: 8px 12px; border: 1px solid var(--admin-border, #e5e7eb); border-radius: 9px; background: var(--admin-card, #fff); color: var(--admin-accent-dark, #2b6619); font: inherit; font-size: 13px; font-weight: 600; text-decoration: none !important; white-space: nowrap; cursor: pointer; }
 .analytics-button:hover { background: var(--admin-bg, #f8fbf9); }
-.analytics-button-primary { background: var(--admin-accent, #04a052); border-color: transparent; color: #fff; }
-.analytics-button-primary:hover { background: var(--admin-accent-dark, #027039); }
-.analytics-button:focus-visible, .analytics-period-form :is(input,select):focus-visible { outline: 2px solid var(--admin-accent, #04a052); outline-offset: 2px; }
+.analytics-button-primary { background: var(--admin-accent, #4e9a2a); border-color: transparent; color: #fff; }
+.analytics-button-primary:hover { background: var(--admin-accent-dark, #2b6619); }
+.analytics-button:focus-visible, .analytics-period-form :is(input,select):focus-visible { outline: 2px solid var(--admin-accent, #4e9a2a); outline-offset: 2px; }
 .analytics-chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .analytics-chart-grid .analytics-chart-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .analytics-chart-card { min-width: 0; border: 1px solid var(--admin-border, #e5e7eb); border-radius: 12px; padding: 18px; background: var(--admin-card, #fff); }

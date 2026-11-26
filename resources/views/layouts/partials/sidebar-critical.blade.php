@@ -133,7 +133,7 @@
             flex-direction: column;
             overflow: hidden;
             background: rgba(255,255,255,0.96);
-            border-right: 1px solid rgba(4,160,82,0.08);
+            border-right: 1px solid rgba(78, 154, 42,0.08);
             box-sizing: border-box;
             contain: layout paint;
             will-change: width, transform;

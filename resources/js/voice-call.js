@@ -23,6 +23,19 @@ function watchConnectionProblems(root) {
     sync();
 }
 
+// Ringtone for an incoming call and a quiet ringback while the caller waits.
+function watchRinging(root) {
+    if (typeof MutationObserver === 'undefined') return;
+    const sync = () => {
+        const state = root.getAttribute('data-voice-state');
+        if (state === 'incoming') window.compassSounds?.ring('incoming');
+        else if (state === 'ringing') window.compassSounds?.ring('ringback');
+        else window.compassSounds?.stopRing();
+    };
+    new MutationObserver(sync).observe(root, { attributes: true, attributeFilter: ['data-voice-state'] });
+    sync();
+}
+
 function initialize() {
     document.querySelectorAll('[data-voice-call]').forEach(root => {
         let client, config;
@@ -40,6 +53,7 @@ function initialize() {
             return;
         }
         watchConnectionProblems(root);
+        watchRinging(root);
         const toggle = document.querySelector('[data-voice-toggle]');
         toggle?.addEventListener?.('click', () => { root.hidden = !root.hidden; toggle.setAttribute('aria-expanded',String(!root.hidden)); });
         const consent = root.querySelector('[data-voice-consent]'), consentDialog = root.querySelector('[data-voice-consent-dialog]');

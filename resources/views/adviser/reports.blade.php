@@ -121,6 +121,6 @@
 .reports-page .reports-details>summary{cursor:pointer;font-size:18px;font-weight:700}
 .reports-page .reports-details[open]>summary{margin-bottom:12px}
 .reports-page .ui-badge{white-space:nowrap}
-.reports-charts-note{display:flex;gap:8px;align-items:center;font-size:13px;color:#53665a;margin:4px 0 16px}.reports-charts-note .compass-icon{color:#087341;flex:none}
+.reports-charts-note{display:flex;gap:8px;align-items:center;font-size:13px;color:#53665a;margin:4px 0 16px}.reports-charts-note .compass-icon{color:#31711d;flex:none}
 </style>
 @endsection

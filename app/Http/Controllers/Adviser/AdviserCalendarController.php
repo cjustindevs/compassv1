@@ -92,7 +92,7 @@ class AdviserCalendarController extends Controller
             'end_time' => $validated['end_time'] ?? null,
             'event_type' => $validated['event_type'],
             'created_by' => Auth::id(),
-            'color' => $validated['color'] ?? '#04A052',
+            'color' => $validated['color'] ?? '#4E9A2A',
         ]);
 
         return redirect()->route('adviser.calendar', [
@@ -116,7 +116,7 @@ class AdviserCalendarController extends Controller
                 $events[$date][] = [
                     'type' => 'session',
                     'title' => 'Session: ' . ($session->seeker->generated_alias ?? 'Seeker'),
-                    'color' => '#04A052',
+                    'color' => '#4E9A2A',
                     'time' => $effective->format('H:i'),
                     'detail' => $session->getStatusLabelAttribute() . ' · ' . ucfirst($session->session_type),
                 ];

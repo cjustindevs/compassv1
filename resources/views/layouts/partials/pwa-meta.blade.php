@@ -1,5 +1,5 @@
 <!-- ── PWA Meta Tags ── -->
-<meta name="theme-color" content="#04A052">
+<meta name="theme-color" content="#4E9A2A">
 <meta name="application-name" content="COMPASS">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,7 +21,7 @@
 <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png">
 
 <!-- Microsoft Tiles -->
-<meta name="msapplication-TileColor" content="#04A052">
+<meta name="msapplication-TileColor" content="#4E9A2A">
 <meta name="msapplication-TileImage" content="/icons/icon-144x144.png">
 
 <!-- Open Graph / social preview (uses the 512 app icon) -->

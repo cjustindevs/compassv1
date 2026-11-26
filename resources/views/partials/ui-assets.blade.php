@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="{{ asset('css/compass-ui.css') }}?v={{ filemtime(public_path('css/compass-ui.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/compass-components.css') }}?v={{ filemtime(public_path('css/compass-components.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/workflow-dialogs.css') }}?v={{ filemtime(public_path('css/workflow-dialogs.css')) }}">
+    <script src="{{ asset('js/compass-sounds.js') }}?v={{ filemtime(public_path('js/compass-sounds.js')) }}" defer></script>
     <script src="{{ asset('js/workflow-dialogs.js') }}?v={{ filemtime(public_path('js/workflow-dialogs.js')) }}" defer></script>
     <script src="{{ asset('js/compass-ui.js') }}?v={{ filemtime(public_path('js/compass-ui.js')) }}" defer></script>
     <link rel="stylesheet" href="{{ asset('css/interface-refinement.css') }}?v={{ filemtime(public_path('css/interface-refinement.css')) }}">

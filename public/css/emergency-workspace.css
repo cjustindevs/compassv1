@@ -1,6 +1,6 @@
 .emergency-workspace{max-width:none;margin:0;min-width:0}
 .ew-cell-detail{display:block;color:var(--compass-muted,#6b7280);font-size:13px;margin-top:3px}
-.ew-feedback{background:#edf8f1;color:#17633d;border-radius:12px;padding:12px 16px;margin:0 0 16px;font-size:14px}
+.ew-feedback{background:#f1f8ed;color:#2f6117;border-radius:12px;padding:12px 16px;margin:0 0 16px;font-size:14px}
 .ew-pagination{margin-top:16px}.ew-pagination:empty{display:none}
 .emergency-workspace .ui-card-actions .btn span{margin-left:4px;font-weight:700}
 .emergency-workspace td.ui-actions .btn{white-space:nowrap}

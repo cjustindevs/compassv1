@@ -184,6 +184,8 @@ class ChatApp {
         this.renderedIds.add(msg.id);
 
         const isCurrentUser = this.isCurrentUser(msg);
+        // Soft chime for a new message from the other person (not for history loading).
+        if (!isCurrentUser && this.messagesContainer.dataset.historyLoaded === 'true') window.compassSounds?.chime();
         const role = this.roleFor(msg, isCurrentUser);
         const senderName = isCurrentUser
             ? 'You'

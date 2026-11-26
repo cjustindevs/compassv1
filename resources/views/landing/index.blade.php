@@ -4,8 +4,8 @@
     @include('layouts.partials.pwa-meta')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="COMPASS connects students with supervised peer support and self-help resources.">
-    <title>COMPASS - Peer Support, Student Wellness</title>
+    <meta name="description" content="COMPASS, in partnership with Project Dial-A-Friend, connects students with trained psychology student helpers.">
+    <title>COMPASS - Project Dial-A-Friend Peer Support</title>
     @vite(['resources/css/app.css'])
     @include('partials.ui-assets')
     <link rel="stylesheet" href="{{ asset('css/landing-page.css') }}?v={{ filemtime(public_path('css/landing-page.css')) }}">
@@ -13,14 +13,11 @@
 <body class="landing-page">
     <header id="navbar" class="landing-header">
         <div class="landing-container landing-nav">
-            <a href="{{ url('/') }}" class="landing-brand" aria-label="COMPASS home">
-                <img src="{{ asset('images/compass/logo-wordmark.png') }}" alt="COMPASS" width="190" height="46">
-            </a>
+            <x-pdaf-lockup class="landing-brand" />
             <nav class="landing-desktop-nav" aria-label="Main navigation">
                 <a href="#home">Home</a>
-                <a href="#features">Features</a>
+                <a href="#about">About PDAF</a>
                 <a href="#how-it-works">How it works</a>
-                <a href="#contact">About</a>
             </nav>
             <div class="landing-nav-actions">
                 <a href="{{ route('login') }}" class="landing-sign-in">Log in</a>
@@ -32,81 +29,96 @@
         </div>
         <nav id="mobileMenu" class="landing-container landing-mobile-menu hidden" aria-label="Mobile navigation">
             <a href="#home">Home</a>
-            <a href="#features">Features</a>
+            <a href="#about">About PDAF</a>
             <a href="#how-it-works">How it works</a>
-            <a href="#contact">About</a>
             <a href="{{ route('login') }}">Log in</a>
+            <a href="{{ route('register') }}">Get started</a>
         </nav>
     </header>
+
     <main id="landing-main">
         <section id="home" class="landing-hero">
-            <div class="landing-container landing-hero-copy">
-                <p class="landing-eyebrow">Project Dial-A-Friend <span>Student peer support</span></p>
-                <h1 class="landing-title">You do not have to<br>figure it out <span>alone.</span></h1>
-                <div class="landing-hero-bottom">
-                    <p class="landing-lead">A conversation. A moment to breathe. A little direction. Find supervised student peer support and self-help resources, at your own pace.</p>
-                    <div class="landing-hero-start">
-                        <div class="landing-actions">
-                            <a href="{{ route('register') }}" class="btn-primary">Find your support <x-ui-icon name="arrow-right" /></a>
-                            <a href="#how-it-works" class="btn-outline">How it works</a>
-                        </div>
-                        <ul class="landing-trust" aria-label="About peer support">
-                            <li>Your nickname, your space</li><li>At your own pace</li>
-                        </ul>
+            <div class="landing-container landing-hero-grid">
+                <div class="landing-hero-copy">
+                    <p class="landing-est">
+                        <img src="{{ asset('images/pdaf/pdaf-seal-160.webp') }}" alt="" width="24" height="24">
+                        Project Dial-A-Friend · Since 2021
+                    </p>
+                    <h1 class="landing-title">You don't have to figure it out <span>alone.</span></h1>
+                    <p class="landing-lead">Talk privately with a trained psychology student. Use a nickname, no real name needed.</p>
+                    <div class="landing-actions">
+                        <a href="{{ route('register') }}" class="btn-primary">Talk to someone now <x-ui-icon name="arrow-right" /></a>
+                        <a href="#about" class="btn-outline">Our story</a>
                     </div>
+                    <p class="landing-hours">Live helpers: <strong>6:00–11:00 PM, Monday to Saturday</strong></p>
+                </div>
+                <div class="landing-hero-art" aria-hidden="true">
+                    <svg class="landing-ribbon" viewBox="0 0 600 420" fill="none">
+                        <defs><linearGradient id="landingRibbon" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8CC13D"/><stop offset=".55" stop-color="#31711D"/><stop offset="1" stop-color="#2BA9C9"/></linearGradient></defs>
+                        <path d="M40 360C160 380 210 120 330 110S520 250 590 60" stroke="url(#landingRibbon)" stroke-width="34" stroke-linecap="round" opacity=".18"/>
+                    </svg>
+                    <picture>
+                        <source srcset="{{ asset('images/pdaf/pdaf-seal-512.webp') }}" type="image/webp">
+                        <img class="landing-seal" src="{{ asset('images/pdaf/pdaf-seal-512.png') }}" alt="" width="300" height="300">
+                    </picture>
+                    <div class="landing-bubble landing-bubble--helper"><small>Helper</small>Hi! I'm here to listen. Take your time.</div>
+                    <div class="landing-bubble landing-bubble--you"><small>You</small>Thank you. It's been a rough week.</div>
                 </div>
             </div>
         </section>
-        <div class="landing-reassurance" aria-label="What to expect">
-            <div class="landing-container landing-reassurance-grid">
-                <div><strong>Your space, your nickname.</strong><p>Connect through a pseudonymous account.</p></div>
-                <div><strong>Someone to listen.</strong><p>Talk with a trained student peer helper.</p></div>
-                <div><strong>Care, with guidance.</strong><p>Peer support under adviser supervision.</p></div>
-            </div>
-        </div>
-        <section id="features" class="landing-section">
+
+        <section id="about" class="landing-section" aria-labelledby="about-heading">
             <div class="landing-container">
-                <header class="landing-section-heading">
-                    <div><p class="landing-eyebrow">A little care goes a long way</p><h2>Support that meets<br>you where you are.</h2></div>
-                    <p>Whether you need a conversation, a moment to breathe, or a little direction, there is a place for you here.</p>
-                </header>
-                <div class="landing-feature-grid">
-                    <article class="landing-feature-highlight"><p class="landing-feature-label">A space to be yourself</p><h3>Less pressure.<br>More room to talk.</h3><p>Use your COMPASS nickname and share what you feel comfortable discussing. Start with the concerns that matter to you.</p><a href="{{ route('register') }}" class="landing-text-link">Start a conversation <x-ui-icon name="arrow-right" /></a><div class="landing-feature-word" aria-hidden="true">hello.</div></article>
-                    <article><p class="landing-feature-label">Your way of connecting</p><h3>Chat or voice.<br>You choose.</h3><p>Connect in the supported way that feels comfortable for you.</p></article>
-                    <article><p class="landing-feature-label">Practical care</p><h3>A moment<br>to breathe.</h3><p>Explore self-help resources, breathing exercises, and grounding tools.</p></article>
-                    <article><p class="landing-feature-label">Guidance behind the care</p><h3>Student support.<br>Adviser supervision.</h3><p>Trained peer helpers work under adviser supervision.</p></article>
-                    <article><p class="landing-feature-label">When you need more</p><h3>A path to<br>further support.</h3><p>Advisers coordinate professional referrals when appropriate, with existing privacy and consent controls.</p></article>
+                <div class="landing-about-head">
+                    <h2 id="about-heading">A friend on the other end of the line, since 2021.</h2>
+                    <p>Project Dial-A-Friend is a student-led peer-support program of the Psychology Department of Divine Word College of Calapan. Trained psychology students listen; faculty advisers supervise every step.</p>
+                </div>
+                <ol class="landing-timeline">
+                    <li><b>2021</b><h3>The program begins</h3><p>The Psychology Department opens a confidential space for students to talk.</p></li>
+                    <li><b>Facebook era</b><h3>One message at a time</h3><p>Students wrote to the official page; moderators matched each one to a helper on duty.</p></li>
+                    <li><b>Growing</b><h3>More helpers</h3><p>Volunteers from DWCC and partner schools join, trained and supervised by advisers.</p></li>
+                    <li><b>2026</b><h3>COMPASS</h3><p>Requests, chat, voice, supervision and referrals in one secure place.</p></li>
+                </ol>
+                <div class="landing-about-lower">
+                    <dl class="landing-stats" aria-label="Project Dial-A-Friend as of 2026">
+                        <div><dt>peer-support sessions</dt><dd>48</dd></div>
+                        <div><dt>students supported</dt><dd>42</dd></div>
+                        <div><dt>trained volunteers</dt><dd>34</dd></div>
+                        <div><dt>volunteers from partner schools</dt><dd>4</dd></div>
+                    </dl>
+                    <blockquote class="landing-quote">
+                        <p>“We are here to provide a safe space for you to share your thoughts and feelings, offering a listening ear without any judgment.”</p>
+                        <footer>How every PDAF conversation begins</footer>
+                    </blockquote>
                 </div>
             </div>
         </section>
-        <section id="how-it-works" class="landing-section landing-section-soft">
+
+        <section id="how-it-works" class="landing-section landing-section-soft" aria-labelledby="how-heading">
             <div class="landing-container">
-                <header class="landing-section-heading">
-                    <div><p class="landing-eyebrow">One step at a time</p><h2>Reaching out can<br>start small.</h2></div>
-                    <p>Create your account, then take these steps toward peer support. Matching depends on helper availability.</p>
-                </header>
-                <ol class="landing-steps">
-                    <li><span aria-hidden="true">1</span><div><h3>Choose a concern</h3><p>Select what you would like to talk about.</p></div></li>
-                    <li><span aria-hidden="true">2</span><div><h3>Get matched</h3><p>Your request is matched when an eligible helper is available.</p></div></li>
-                    <li><span aria-hidden="true">3</span><div><h3>Chat or voice</h3><p>Connect in a way that feels comfortable.</p></div></li>
-                    <li><span aria-hidden="true">4</span><div><h3>Receive guidance</h3><p>Talk through your concerns and explore coping strategies.</p></div></li>
-                    <li><span aria-hidden="true">5</span><div><h3>Feedback &amp; resources</h3><p>Share feedback and explore wellness tools.</p></div></li>
+                <h2 id="how-heading" class="landing-how-title">Three steps to a conversation.</h2>
+                <ol class="landing-steps landing-steps--three">
+                    <li><span aria-hidden="true">1</span><div><h3>Pick a nickname</h3><p>No real name needed.</p></div></li>
+                    <li><span aria-hidden="true">2</span><div><h3>Tell us what's on your mind</h3><p>Choose one or more topics, then chat or voice.</p></div></li>
+                    <li><span aria-hidden="true">3</span><div><h3>Start talking</h3><p>Your chat opens as soon as a helper is ready.</p></div></li>
                 </ol>
             </div>
         </section>
+
         <section class="landing-container landing-callout" aria-labelledby="start-heading">
-            <div><p class="landing-eyebrow">Whenever you are ready</p><h2 id="start-heading">Your next chapter can<br>begin with a conversation.</h2><p>You do not need to have all the words. Just a place to start.</p></div>
-            <div class="landing-callout-actions"><a href="{{ route('register') }}" class="btn-primary">Create an account <x-ui-icon name="arrow-right" /></a><span>Already part of COMPASS? <a href="{{ route('login') }}">Log in</a></span></div>
+            <div><h2 id="start-heading">You don't need all the words.<br>Just a place to start.</h2></div>
+            <div class="landing-callout-actions"><a href="{{ route('register') }}" class="btn-primary">Create a nickname <x-ui-icon name="arrow-right" /></a><span>Already have one? <a href="{{ route('login') }}">Log in</a></span></div>
         </section>
     </main>
+
     <footer id="contact" class="landing-footer">
         <div class="landing-container">
             <div class="landing-footer-grid">
-                <div class="landing-footer-brand"><a href="{{ url('/') }}" aria-label="COMPASS home"><img src="{{ asset('images/compass/logo-wordmark.png') }}" alt="COMPASS" width="190" height="46"></a><p>A calm place to talk.<br>A safe place to heal.</p><p>Project Dial-A-Friend provides supervised student peer support and wellness resources.</p></div>
-                <nav aria-label="Explore COMPASS"><h3>Explore</h3><a href="#features">Features</a><a href="#how-it-works">How it works</a><a href="{{ route('login') }}">Log in</a><a href="{{ route('register') }}">Create an account</a></nav>
-                <div class="landing-policies"><h3>Privacy &amp; terms</h3><p>Read the same documents used during registration.</p><details><summary>Privacy Notice</summary><div class="landing-policy-text">@include('partials.privacy-text')</div></details><details><summary>Terms and Condition</summary><div class="landing-policy-text">@include('partials.terms-text')</div></details></div>
+                <div class="landing-footer-brand"><x-pdaf-lockup /><p>Supervised student peer support from the Psychology Department of Divine Word College of Calapan.</p><p>In danger right now? Call <a href="tel:911">911</a> or the NCMH crisis line <a href="tel:1553">1553</a>.</p></div>
+                <nav aria-label="Explore COMPASS"><h3>Explore</h3><a href="#about">About PDAF</a><a href="#how-it-works">How it works</a><a href="{{ route('login') }}">Log in</a><a href="{{ route('register') }}">Get started</a></nav>
+                <div class="landing-policies"><h3>Privacy &amp; terms</h3><details><summary>Privacy Notice</summary><div class="landing-policy-text">@include('partials.privacy-text')</div></details><details><summary>Terms and Condition</summary><div class="landing-policy-text">@include('partials.terms-text')</div></details></div>
             </div>
-            <p class="landing-copyright">&copy; {{ now()->year }} COMPASS &middot; Project Dial-A-Friend.</p>
+            <p class="landing-copyright">&copy; {{ now()->year }} COMPASS &middot; in partnership with Project Dial-A-Friend.</p>
         </div>
     </footer>
     <script>

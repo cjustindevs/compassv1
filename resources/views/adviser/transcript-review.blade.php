@@ -101,7 +101,7 @@
 </div>
 <style>
 .at-access-note{display:flex;gap:10px;align-items:flex-start}
-.at-access-note>.compass-icon{flex:none;color:#087341;margin-top:1px}
+.at-access-note>.compass-icon{flex:none;color:#31711d;margin-top:1px}
 .at-access-note p{margin:0}
 .at-toolbar{grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr)) repeat(2,minmax(150px,1fr)) auto;align-items:end;margin-bottom:12px}
 .at-toolbar-actions{display:flex;align-items:end}
